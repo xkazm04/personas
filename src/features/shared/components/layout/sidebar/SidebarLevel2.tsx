@@ -325,13 +325,15 @@ function SchedulesSidebarNav() {
 function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const personas = useAgentStore((s) => s.personas);
+  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
   const agentTab = useSystemStore((s) => s.agentTab);
   const setAgentTab = useSystemStore((s) => s.setAgentTab);
   const cloudTab = useSystemStore((s) => s.cloudTab);
   const setCloudTab = useSystemStore((s) => s.setCloudTab);
   const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
-  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
-  const buildPhase = useAgentStore((s) => s.buildPhase);
+  const buildSessions = useAgentStore((s) => s.buildSessions);
+  const activeBuildSessionId = useAgentStore((s) => s.activeBuildSessionId);
+  const setActiveBuildSession = useAgentStore((s) => s.setActiveBuildSession);
   const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
@@ -349,8 +351,20 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
     return ids;
   }, [isExecuting, executionPersonaId, backgroundExecutions]);
 
-  const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
-  const buildingPersona = hasActiveBuild ? personas.find((p) => p.id === buildPersonaId) : null;
+  // Active draft builds — one entry per session in the buildSessions map.
+  // Multiple drafts can be in progress at once; clicking switches the active one.
+  const activeDrafts = useMemo(() => {
+    return Object.values(buildSessions)
+      .filter((sess) => sess.phase !== 'initializing' && sess.phase !== 'promoted')
+      .map((sess) => ({
+        sessionId: sess.sessionId,
+        personaId: sess.personaId,
+        phase: sess.phase,
+        persona: personas.find((p) => p.id === sess.personaId),
+        createdAt: sess.createdAt,
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt);
+  }, [buildSessions, personas]);
 
   // Favorites from localStorage
   const { favorites, toggleFavorite } = useFavoriteAgentsInline();
@@ -402,23 +416,39 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
           <span className="ml-auto text-[11px] text-muted-foreground/40">{personas.length}</span>
         </button>
 
-        {/* Active build indicator */}
-        {hasActiveBuild && buildingPersona && (
-          <button
-            onClick={() => {
-              useAgentStore.setState({ buildPersonaId: buildingPersona.id });
-              useSystemStore.getState().setIsCreatingPersona(true);
-            }}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-              isCreatingPersona
-                ? 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
-                : 'text-muted-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
-            }`}
-          >
-            <LoadingSpinner className="flex-shrink-0 text-violet-400" />
-            <span className="truncate">{buildingPersona.name}</span>
-            <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{buildPhase}</span>
-          </button>
+        {/* Active draft builds — one row per session in the buildSessions map.
+            Click to switch to that draft. "New draft" button starts another one. */}
+        {activeDrafts.length > 0 && (
+          <div className="mt-1 space-y-0.5">
+            <div className="flex items-center justify-between px-3 py-1">
+              <span className="text-[10px] uppercase tracking-wider text-violet-400/50 font-medium">
+                Draft builds {activeDrafts.length > 1 ? `(${activeDrafts.length})` : ''}
+              </span>
+            </div>
+            {activeDrafts.map((draft) => {
+              const isActive = isCreatingPersona && draft.sessionId === activeBuildSessionId;
+              const displayName = draft.persona?.name ?? 'Draft agent';
+              return (
+                <button
+                  key={draft.sessionId}
+                  onClick={() => {
+                    setActiveBuildSession(draft.sessionId);
+                    useSystemStore.getState().setIsCreatingPersona(true);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                    isActive
+                      ? 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
+                      : 'text-muted-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
+                  }`}
+                  title={`Switch to draft: ${displayName} (${draft.phase})`}
+                >
+                  <LoadingSpinner className="flex-shrink-0 text-violet-400" />
+                  <span className="truncate">{displayName}</span>
+                  <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{draft.phase}</span>
+                </button>
+              );
+            })}
+          </div>
         )}
 
         {/* Favorites section */}
@@ -479,12 +509,18 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
               <div className="mt-1 space-y-0.5">
                 {recentPersonas.map((p) => {
                   const isRunning = executingPersonaIds.has(p.id);
+                  const isActive = selectedPersonaId === p.id && !isCreatingPersona;
                   return (
                     <button
                       key={p.id}
                       onClick={() => selectPersona(p.id)}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group ${
-                        isRunning ? 'bg-orange-500/5' : ''
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                        isActive
+                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
+                          : isRunning
+                            ? 'bg-orange-500/5 hover:bg-secondary/40'
+                            : 'hover:bg-secondary/40'
                       }`}
                     >
                       {isRunning ? (
@@ -495,7 +531,9 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                       ) : (
                         <PersonaIcon icon={p.icon} color={p.color} />
                       )}
-                      <span className={`truncate text-[13px] min-w-0 ${isRunning ? 'text-orange-300/90' : 'text-foreground/70'}`}>{p.name}</span>
+                      <span className={`truncate text-[13px] min-w-0 ${
+                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground/70'
+                      }`}>{p.name}</span>
                       <span
                         role="button"
                         tabIndex={0}

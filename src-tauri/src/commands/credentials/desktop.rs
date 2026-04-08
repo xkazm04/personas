@@ -17,6 +17,19 @@ pub async fn discover_desktop_apps(
     Ok(crate::engine::desktop_discovery::discover_apps().await)
 }
 
+/// Scan the system for known SaaS CLIs on $PATH.
+///
+/// Returns one entry per CLI in the manifest (see `KNOWN_CLIS` in
+/// `desktop_discovery.rs`), whether or not the binary is present. The
+/// frontend can use the result to suggest connector installs for CLIs the
+/// user already has locally.
+#[tauri::command]
+pub async fn discover_desktop_clis(
+    _state: State<'_, Arc<AppState>>,
+) -> Result<Vec<DiscoveredApp>, AppError> {
+    Ok(crate::engine::desktop_discovery::discover_clis().await)
+}
+
 /// Import MCP servers from Claude Desktop configuration.
 #[tauri::command]
 pub async fn import_claude_mcp_servers(

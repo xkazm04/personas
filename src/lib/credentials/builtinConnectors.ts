@@ -74,6 +74,7 @@ import attio from '../../../scripts/connectors/builtin/attio.json';
 import crisp from '../../../scripts/connectors/builtin/crisp.json';
 import woocommerce from '../../../scripts/connectors/builtin/woocommerce.json';
 import lemonsqueezy from '../../../scripts/connectors/builtin/lemonsqueezy.json';
+import ramp from '../../../scripts/connectors/builtin/ramp.json';
 import awsS3 from '../../../scripts/connectors/builtin/aws-s3.json';
 import cloudflareR2 from '../../../scripts/connectors/builtin/cloudflare-r2.json';
 import backblazeB2 from '../../../scripts/connectors/builtin/backblaze-b2.json';
@@ -162,6 +163,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   crisp,
   woocommerce,
   lemonsqueezy,
+  ramp,
   awsS3,
   cloudflareR2,
   backblazeB2,

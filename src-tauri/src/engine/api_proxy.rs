@@ -394,6 +394,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "attio" => Some("https://api.attio.com/v2"),
         "crisp" => Some("https://api.crisp.chat/v1"),
         "lemonsqueezy" => Some("https://api.lemonsqueezy.com/v1"),
+        "ramp" => Some("https://api.ramp.com/developer/v1"),
         "novu" => Some("https://api.novu.co/v1"),
         "knock" => Some("https://api.knock.app/v1"),
         "linkedin" => Some("https://api.linkedin.com"),

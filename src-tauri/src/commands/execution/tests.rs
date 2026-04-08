@@ -317,7 +317,7 @@ pub async fn test_n8n_draft(
         Some(credential_hint_refs.as_slice())
     };
 
-    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None, #[cfg(feature = "desktop")] None);
+    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None, None, #[cfg(feature = "desktop")] None);
 
     // Spawn CLI process via CliProcessDriver (with piped stderr)
     let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "personas-test") {

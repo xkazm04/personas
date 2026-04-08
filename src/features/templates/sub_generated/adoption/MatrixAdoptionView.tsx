@@ -13,7 +13,6 @@ import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
 import { QuestionnaireFormGrid } from "./QuestionnaireFormGrid";
-import { Grid3X3, Gem, Ruler } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
 import type { ThemeId } from "@/stores/themeStore";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
@@ -137,13 +136,8 @@ function extractDimensionData(ir: unknown): CellDataMap {
   return data;
 }
 
-// -- Matrix variant tab switcher types --
+// -- Matrix variant (switcher removed; kept for potential future re-enable) --
 type MatrixVariant = "original" | "glass" | "blueprint";
-const MATRIX_VARIANTS: { key: MatrixVariant; label: string; icon: React.ElementType }[] = [
-  { key: "original", label: "Grid", icon: Grid3X3 },
-  { key: "glass", label: "Glass", icon: Gem },
-  { key: "blueprint", label: "Blueprint", icon: Ruler },
-];
 
 /** Map themes to their preferred matrix visual variant. */
 const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
@@ -221,12 +215,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       for (const q of adoptionQuestions) {
         if (adoptionAnswers[q.id]) answerMap[q.id] = adoptionAnswers[q.id]!;
       }
-      useAgentStore.setState({
-        buildDraft: { ...currentDraft, _adoption_answers: answerMap },
-        buildPhase: "draft_ready",
+      useAgentStore.getState().patchActiveSession({
+        draft: { ...currentDraft, _adoption_answers: answerMap },
+        phase: "draft_ready",
       });
     } else {
-      useAgentStore.setState({ buildPhase: "draft_ready" });
+      useAgentStore.getState().patchActiveSession({ phase: "draft_ready" });
     }
   }, [questionsComplete, seeded, adoptionAnswers, adoptionQuestions]);
 
@@ -263,13 +257,25 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           resolvedCellsJson,
         });
 
-        useAgentStore.setState({
-          buildPersonaId: persona.id,
-          buildSessionId: sessionId,
-          buildPhase: hasAdoptionQuestions && !questionsComplete ? "awaiting_input" : "draft_ready",
-          buildCellStates: cellStates,
-          buildCellData: dimensionData,
-          buildDraft: designResult,
+        // Register the adoption session in buildSessions via hydrateBuildSession.
+        // This creates the session slot in the map (required by multi-draft slice)
+        // AND mirrors the scalars automatically. Building a PersistedBuildSession
+        // shaped object lets us reuse the existing hydration path.
+        const initialPhase = hasAdoptionQuestions && !questionsComplete ? "awaiting_input" : "draft_ready";
+        const resolvedCellsForHydration: Record<string, unknown> = {};
+        for (const [key, cellValue] of Object.entries(dimensionData)) {
+          resolvedCellsForHydration[key] = cellValue;
+        }
+        useAgentStore.getState().hydrateBuildSession({
+          id: sessionId,
+          personaId: persona.id,
+          phase: initialPhase,
+          resolvedCells: resolvedCellsForHydration,
+          pendingQuestion: null,
+          agentIr: designResult,
+          intent: review.instruction || templateName,
+          errorMessage: null,
+          createdAt: new Date().toISOString(),
         });
 
         // Register process activity for the adoption flow
@@ -407,7 +413,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // Re-seed from template
     if (designResult) {
       const dimensionData = extractDimensionData(designResult);
-      useAgentStore.setState({ buildCellData: dimensionData, buildDraft: designResult });
+      store.patchActiveSession({ cellData: dimensionData, draft: designResult });
     }
   }, [designResult]);
 
@@ -421,31 +427,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Matrix variant tab switcher */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
-          {MATRIX_VARIANTS.map((v) => {
-            const VIcon = v.icon;
-            return (
-              <button
-                key={v.key}
-                onClick={() => setMatrixVariant(v.key)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                  matrixVariant === v.key
-                    ? "bg-white/[0.08] text-foreground shadow-sm"
-                    : "text-muted-dark hover:text-foreground/70 hover:bg-white/[0.04]"
-                }`}
-              >
-                <VIcon className="h-3.5 w-3.5" />
-                {v.label}
-              </button>
-            );
-          })}
-        </div>
-        <span className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">Matrix View</span>
-      </div>
-
-      {/* Matrix variant rendering */}
+      {/* Matrix variant rendering — always the grid variant (switcher hidden) */}
       {matrixVariant === "original" && (
         <PersonaMatrix
           designResult={null}

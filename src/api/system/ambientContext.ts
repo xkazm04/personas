@@ -4,8 +4,9 @@ import type { SensoryPolicy } from "@/lib/bindings/SensoryPolicy";
 import type { ContextRule } from "@/lib/bindings/ContextRule";
 import type { ContextRuleMatch } from "@/lib/bindings/ContextRuleMatch";
 import type { ContextStreamStats } from "@/lib/bindings/ContextStreamStats";
+import type { ValidationScreenshot } from "@/lib/bindings/ValidationScreenshot";
 
-export type { AmbientContextSnapshot, SensoryPolicy, ContextRule, ContextRuleMatch, ContextStreamStats };
+export type { AmbientContextSnapshot, SensoryPolicy, ContextRule, ContextRuleMatch, ContextStreamStats, ValidationScreenshot };
 
 // -- Ambient Context Snapshot -----------------------------------------------
 
@@ -51,3 +52,15 @@ export const getContextRuleMatches = () =>
 
 export const getContextStreamStats = () =>
   invoke<ContextStreamStats>("get_context_stream_stats", {});
+
+// -- Validation Screenshot Capture ------------------------------------------
+//
+// Opt-in capability for personas that deliver visual output. The agent calls
+// this when it wants to screenshot the current state (a target window by
+// title, or the primary display) and read the resulting PNG back via its
+// multimodal Read path.
+
+export const captureValidationScreenshot = (windowTitle?: string) =>
+  invoke<ValidationScreenshot>("capture_validation_screenshot", {
+    windowTitle: windowTitle ?? null,
+  });

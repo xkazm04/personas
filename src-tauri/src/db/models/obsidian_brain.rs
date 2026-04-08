@@ -192,3 +192,68 @@ pub struct VaultLintReport {
     pub orphans: Vec<OrphanNote>,
     pub generated_at: String,
 }
+
+// ── Semantic Vault Lint (LLM-assisted knowledge integrity check) ─────
+//
+// Extends the syntactic VaultLintReport with LLM-assisted checks:
+// inconsistencies between notes, topics mentioned but not given their own
+// page, and obvious-but-missing wikilinks. Inspired by Karpathy's LLM
+// knowledge base setup (research run 2026-04-08, Karpathy wiki walkthrough).
+//
+// Unlike the syntactic lint (pure file-system walk, cheap, always safe),
+// the semantic lint spawns a short Claude Code CLI call and bills tokens.
+// Opt-in only; surfaced via a separate Tauri command.
+
+/// Two or more notes that appear to contradict each other.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct Inconsistency {
+    /// Vault-relative paths of the notes involved in the contradiction.
+    pub source_paths: Vec<String>,
+    /// Human-readable description of the conflict.
+    pub description: String,
+}
+
+/// A topic mentioned across several notes that doesn't have its own page yet.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MissingPageCandidate {
+    /// The topic / concept that should have a dedicated page.
+    pub topic: String,
+    /// Vault-relative paths where the topic is mentioned without a wikilink.
+    pub mentioned_in: Vec<String>,
+    /// One-sentence justification for why a dedicated page would help.
+    pub rationale: String,
+}
+
+/// Two notes that should be cross-linked but aren't.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ProposedLink {
+    /// Vault-relative path of the note that should gain the wikilink.
+    pub from_path: String,
+    /// Vault-relative path of the target note.
+    pub to_path: String,
+    /// Why the LLM believes these notes should be linked.
+    pub rationale: String,
+}
+
+/// LLM-assisted semantic lint report. Complementary to `VaultLintReport`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SemanticLintReport {
+    pub vault_path: String,
+    /// Number of notes fed to the LLM for analysis (may be less than the
+    /// total vault size if truncated to stay within the prompt budget).
+    pub scanned_count: i64,
+    pub inconsistencies: Vec<Inconsistency>,
+    pub missing_page_candidates: Vec<MissingPageCandidate>,
+    pub proposed_links: Vec<ProposedLink>,
+    /// Raw CLI log lines captured during the Claude call (for debugging).
+    pub cli_log: Vec<String>,
+    pub generated_at: String,
+}

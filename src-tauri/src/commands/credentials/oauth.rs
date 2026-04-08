@@ -717,6 +717,19 @@ static PROVIDER_REGISTRY: &[OAuthProviderConfig] = &[
         extra_auth_params: &[("duration", "permanent")],
         default_scopes: &["identity", "read"],
     },
+    OAuthProviderConfig {
+        id: "ramp",
+        name: "Ramp",
+        // NOTE(handoff-2026-04-08-ramp): the Ramp developer API is relatively
+        // young; URLs should be re-verified against https://docs.ramp.com/developer-api/v1
+        // before depending on this connector in production. The authorize
+        // URL is served by app.ramp.com; the token URL by api.ramp.com.
+        authorize_url: "https://app.ramp.com/v1/authorize",
+        token_url: "https://api.ramp.com/developer/v1/token",
+        supports_pkce: true,
+        extra_auth_params: &[],
+        default_scopes: &["transactions:read", "cards:read", "users:read", "reimbursements:read"],
+    },
 ];
 
 fn find_provider(provider_id: &str) -> Option<&'static OAuthProviderConfig> {

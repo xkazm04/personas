@@ -179,6 +179,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   quickbooks:         { label: 'QuickBooks',         color: '#2CA01C', iconUrl: 'https://cdn.simpleicons.org/quickbooks/2CA01C',       Icon: Calculator },
   xero:               { label: 'Xero',               color: '#13B5EA', iconUrl: 'https://cdn.simpleicons.org/xero/13B5EA',            Icon: Calculator },
   plaid:              { label: 'Plaid',              color: '#111111', iconUrl: null,                                                    Icon: Link },
+  ramp:               { label: 'Ramp',               color: '#FFCD1C', iconUrl: '/icons/connectors/ramp.svg',                          Icon: CreditCard },
 
   // -- Scheduling ------------------------------------------------
   cal_com:            { label: 'Cal.com',             color: '#292929', iconUrl: '/icons/connectors/cal-com.svg',                        Icon: Calendar },

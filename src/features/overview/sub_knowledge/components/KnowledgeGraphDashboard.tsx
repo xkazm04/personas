@@ -248,7 +248,7 @@ export default function KnowledgeGraphDashboard() {
           ) : loading ? (
             null
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
-            <div className="flex-1 flex items-center justify-center p-6">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <EmptyState
                 icon={Brain}
                 title="No knowledge patterns yet"
@@ -258,6 +258,12 @@ export default function KnowledgeGraphDashboard() {
                 action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
                 secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
               />
+              {/* Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article). */}
+              {/* This dashboard surfaces auto-extracted execution knowledge. For curated docs,
+                  personas also offers an Obsidian vault — cheaper and better for <1000 notes. */}
+              <div className="max-w-md text-xs text-muted-foreground/60 text-center px-4 py-2 rounded-lg bg-violet-500/5 border border-violet-500/10">
+                <span className="font-medium text-muted-foreground/80">Curating documents manually?</span> For fewer than ~1000 notes, an Obsidian vault is usually cheaper and better than a vector store — cross-links beat chunk similarity and the content stays human-editable.
+              </div>
             </div>
           ) : allEntries.length === 0 ? (
             <div className="py-8 text-center">

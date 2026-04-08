@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Play, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
 import { useAgentStore } from "@/stores/agentStore";
@@ -10,8 +10,11 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
 import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { createLogger } from '@/lib/log';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
+
+const logger = createLogger('persona-editor-header');
 
 interface PersonaEditorHeaderProps {
   draft: PersonaDraft;
@@ -23,11 +26,27 @@ interface PersonaEditorHeaderProps {
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const executePersonaAction = useAgentStore((s) => s.executePersona);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
   const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
   const [showReadinessPopover, setShowReadinessPopover] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Execute button state: running if this persona is the active execution
+  const isThisPersonaExecuting = isExecuting && executionPersonaId === selectedPersona?.id;
+
+  const handleExecute = useCallback(async () => {
+    if (!selectedPersona?.id || isThisPersonaExecuting) return;
+    try {
+      await executePersonaAction(selectedPersona.id);
+    } catch (err) {
+      logger.error('Execute failed', { error: err instanceof Error ? err.message : String(err) });
+      useToastStore.getState().addToast('Failed to start execution. Please try again.', 'error');
+    }
+  }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction]);
 
   useClickOutside(popoverRef, showReadinessPopover, () => setShowReadinessPopover(false));
 
@@ -90,18 +109,39 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
         </span>
       }
       actions={
-        <div className="relative flex items-center gap-2 flex-shrink-0">
-          <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
-            {effective.enabled ? 'Active' : 'Off'}
-          </span>
-          <AccessibleToggle
-            checked={effective.enabled}
-            onChange={handleHeaderToggle}
-            label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
-            disabled={!effective.enabled && !readiness.canEnable}
-            size="md"
-            className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
-          />
+        <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
+          {/* Execute button — top row, above the Active toggle */}
+          <button
+            type="button"
+            onClick={handleExecute}
+            disabled={isThisPersonaExecuting}
+            data-testid="persona-header-execute-btn"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+              isThisPersonaExecuting
+                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 cursor-not-allowed'
+                : 'bg-primary/10 text-primary border-primary/15 hover:bg-primary/15'
+            }`}
+            title={isThisPersonaExecuting ? 'Execution in progress' : 'Execute this agent'}
+          >
+            {isThisPersonaExecuting
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Play className="w-3.5 h-3.5" />}
+            {isThisPersonaExecuting ? 'Running…' : 'Execute'}
+          </button>
+          {/* Active toggle row */}
+          <div className="flex items-center gap-2">
+            <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
+              {effective.enabled ? 'Active' : 'Off'}
+            </span>
+            <AccessibleToggle
+              checked={effective.enabled}
+              onChange={handleHeaderToggle}
+              label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
+              disabled={!effective.enabled && !readiness.canEnable}
+              size="md"
+              className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+            />
+          </div>
           <AnimatePresence>
             {showReadinessPopover && readiness.reasons.length > 0 && (
               <motion.div

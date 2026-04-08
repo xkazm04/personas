@@ -99,6 +99,8 @@ interface PersonaMatrixBaseProps {
   onStartTest?: () => void;
   /** Lifecycle: approve test results */
   onApproveTest?: () => void;
+  /** Lifecycle: force-promote even when tests were skipped or failed */
+  onApproveTestAnyway?: () => void;
   /** Lifecycle: reject test results */
   onRejectTest?: () => void;
   /** Lifecycle: streaming test output lines */
@@ -139,7 +141,7 @@ export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers, onSaveVersion } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers, onSaveVersion } = props;
   const isEditMode = props.mode === 'edit';
 
   // Track which question modal is currently open (only one at a time)
@@ -168,12 +170,22 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const isCreationMode = variant === 'creation';
   const isSavedMode = variant === 'saved';
 
-  // Build draft data for enhanced cell rendering (connectors, protocol badges)
-  const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
-  const { draftConnectors } = useMatrixCredentialGap();
+  // For saved variant, read cell data / draft from the isolated savedBuildSnapshot
+  // (set by MatrixTab) instead of the live build slice. This prevents MatrixTab's
+  // snapshot from clobbering an in-progress build of a different persona.
+  const savedSnapshot = useAgentStore((s) => s.savedBuildSnapshot);
+  const liveBuildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
+  const liveBuildCellData = useAgentStore((s) => s.buildCellData);
+  const buildDraft = isSavedMode && savedSnapshot
+    ? (savedSnapshot.draft as Record<string, unknown> | null)
+    : liveBuildDraft;
+  const buildCellData = isSavedMode && savedSnapshot ? savedSnapshot.cellData : liveBuildCellData;
+  const { draftConnectors: liveDraftConnectors } = useMatrixCredentialGap();
+  // In saved mode, ignore the live buildDraft's connectors (they belong to a
+  // potentially-unrelated in-progress build) — always derive from the snapshot.
+  const draftConnectors = isSavedMode ? [] : liveDraftConnectors;
 
   // Extract cell data from store (available before agent_ir for template adoptions)
-  const buildCellData = useAgentStore((s) => s.buildCellData);
   const connectorsCellRaw = buildCellData["connectors"]?.raw;
   const cellConnectors = useMemo(() => {
     if (draftConnectors.length > 0) return draftConnectors; // prefer agent_ir source
@@ -413,7 +425,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode || isSavedMode;
   const effectiveLaunch = isPreBuild ? handleLaunchWithConfig : onLaunch;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={effectiveLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={effectiveLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onApproveTestAnyway={onApproveTestAnyway} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);

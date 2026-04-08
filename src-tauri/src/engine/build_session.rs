@@ -94,15 +94,14 @@ impl BuildSessionManager {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
 
-        // Guard: reject if there's already an active build for this persona
-        if let Some(existing) = build_session_repo::get_active_for_persona(&pool, &persona_id)? {
-            return Err(AppError::Validation(format!(
-                "Build session {} already active for persona {}",
-                existing.id, persona_id
-            )));
-        }
+        // Multi-draft builds: a persona can have multiple concurrent active
+        // sessions (e.g. user iterates on the same draft in parallel tabs).
+        // Sessions are uniquely keyed by session_id in the BuildSessionManager
+        // map and in the buildSessions DB table, so there's no collision risk.
+        // The frontend matrixBuildSlice routes events to the correct session
+        // via event.session_id.
 
-        // Create the DB row (after duplicate check to avoid orphaned rows)
+        // Create the DB row
         let now = chrono::Utc::now().to_rfc3339();
         let session = BuildSession {
             id: session_id.clone(),
@@ -717,7 +716,7 @@ pub async fn run_tool_tests(
         .filter_map(tool_runner::tool_def_from_ir)
         .collect();
 
-    let (env_vars, hints, cred_failures) =
+    let (env_vars, hints, cred_failures, _injected_connectors) =
         super::runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
             .await;
 
@@ -1597,7 +1596,7 @@ The structured_prompt.instructions MUST reference at least user_message, agent_m
 6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
 7. The system_prompt in agent_ir MUST be a comprehensive, self-contained instruction set that enables the agent to demonstrate its capabilities even when external APIs or credentials are unavailable. Include MANDATORY fallback behavior in the system_prompt: "CRITICAL: If any required service (e.g., Gmail, database) is not accessible or returns auth errors, you MUST generate realistic sample data and continue the FULL workflow — creating tables, emitting all protocol messages (user_message, agent_memory, manual_review, emit_event), and completing every step. NEVER stop or report 'blocked'. The workflow must complete end-to-end with sample data."
 8. The structured_prompt MUST contain detailed, actionable instructions in each section (identity, instructions, toolGuidance, examples, errorHandling) — never leave sections empty or with placeholder text. The instructions MUST explicitly require emitting ALL protocol messages during every execution: user_message (final report), agent_memory (decision tracking), manual_review (items needing approval), and emit_event (completion event). Include the exact JSON format for each
-9. agent_ir.icon MUST be a valid Lucide icon name (PascalCase). Map from the dominant connector: gmail→Mail, slack→MessageSquare, github→GitBranch, notion→FileText, postgres→Database, personas_database→Database, codebase→Code2, personas_messages→Bell. If no connector dominates, use Bot, Search, Globe, or FileText. NEVER use plain text descriptions — only Lucide icon component names
+9. agent_ir.icon MUST be EXACTLY ONE of these lowercase catalog ids (no prefix, no PascalCase, no Lucide names): assistant, code, data, security, monitor, email, document, support, automation, research, finance, marketing, devops, content, sales, hr, legal, notification, calendar, search. Pick the one that best matches the agent's dominant purpose or primary connector (gmail/outlook→email, github/gitlab→code, notion→document, postgres/airtable→data, slack/discord→assistant, stripe→finance, hubspot/salesforce→sales, sentry→monitor, jira/linear→devops). agent_ir.color MUST be a hex color string like "#8b5cf6". NEVER use Lucide icon names, emoji, or free-text descriptions for agent_ir.icon
 
 {template_context}
 

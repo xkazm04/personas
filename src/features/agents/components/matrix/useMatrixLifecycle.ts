@@ -182,7 +182,17 @@ export function useMatrixLifecycle({
 
   // -- handlePromote ----------------------------------------------------------
 
-  const handlePromote = useCallback(async (): Promise<PromoteResult> => {
+  /**
+   * Promote the current draft to a live persona.
+   *
+   * @param options.force  When true, bypass the `buildTestPassed === true`
+   *                       guard and promote regardless of test outcome.
+   *                       Used by the "Approve Anyway" flow when tests were
+   *                       skipped / partially failed but the user wants to
+   *                       proceed (e.g. missing credentials, connector gaps).
+   */
+  const handlePromote = useCallback(async (options?: { force?: boolean }): Promise<PromoteResult> => {
+    const force = options?.force ?? false;
     const state = useAgentStore.getState();
     const emptyResult: PromoteResult = {
       success: false,
@@ -192,8 +202,12 @@ export function useMatrixLifecycle({
       entityErrors: [],
     };
 
-    // Guard: only callable when test_complete and test passed
-    if (state.buildPhase !== "test_complete" || state.buildTestPassed !== true) {
+    // Guard: must be in test_complete phase. Test result check is skipped
+    // when force=true so users can promote after skipped/failed tests.
+    if (state.buildPhase !== "test_complete") {
+      return emptyResult;
+    }
+    if (!force && state.buildTestPassed !== true) {
       return emptyResult;
     }
 

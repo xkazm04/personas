@@ -6,6 +6,7 @@
 //! - Set/get sensory policies per persona
 //! - CRUD for context rules (pattern-based ambient subscriptions)
 //! - Context stream stats
+//! - Validation screenshot capture (opt-in; desktop only)
 
 use std::sync::Arc;
 
@@ -14,6 +15,8 @@ use tauri::State;
 use crate::error::AppError;
 use crate::AppState;
 use crate::engine::ambient_context::{AmbientContextSnapshot, ContextStreamStats, SensoryPolicy};
+#[cfg(feature = "desktop")]
+use crate::engine::ambient_context::{capture_validation_screenshot as ac_capture, ValidationScreenshot};
 use crate::engine::context_rules::{ContextRule, ContextRuleMatch};
 
 /// Get the ambient context snapshot for a specific persona, filtered by its sensory policy.
@@ -130,4 +133,31 @@ pub async fn get_context_stream_stats(
 ) -> Result<ContextStreamStats, AppError> {
     let ctx = state.ambient_context.lock().await;
     Ok(ctx.stream_stats())
+}
+
+// ---------------------------------------------------------------------------
+// Validation Screenshot Capture (desktop only)
+// ---------------------------------------------------------------------------
+
+/// Capture a validation screenshot -- either of a target window (by title
+/// match) or of the primary display when no title is supplied. Writes the
+/// PNG to `<app_data_dir>/validation_screenshots/` and returns metadata the
+/// agent can use to read the file back via its standard file access path.
+///
+/// This is an opt-in capability. runner.rs does NOT auto-screenshot; a
+/// persona must call this command explicitly when it wants visual
+/// verification.
+#[cfg(feature = "desktop")]
+#[tauri::command]
+pub async fn capture_validation_screenshot(
+    app: tauri::AppHandle,
+    window_title: Option<String>,
+) -> Result<ValidationScreenshot, AppError> {
+    use tauri::Manager;
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Internal(format!("Cannot resolve app_data_dir: {e}")))?;
+    let save_dir = base.join("validation_screenshots");
+    ac_capture(window_title.as_deref(), &save_dir).await
 }

@@ -465,5 +465,5 @@ pub fn preview_prompt(
 
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
-    Ok(prompt::assemble_prompt(&persona, &tools, None, None, None, #[cfg(feature = "desktop")] None))
+    Ok(prompt::assemble_prompt(&persona, &tools, None, None, None, None, #[cfg(feature = "desktop")] None))
 }

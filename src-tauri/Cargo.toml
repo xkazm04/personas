@@ -24,6 +24,8 @@ desktop = [
     "dep:notify",
     "dep:keyring",
     "dep:which",
+    "dep:xcap",
+    "dep:image",
     "dep:tauri-plugin-window-state",
     "dep:tauri-plugin-updater",
     "dep:tauri-plugin-single-instance",
@@ -32,6 +34,17 @@ desktop = [
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing
 test-automation = []
+# Phase 0 scaffolding for the always-on daemon mode. Gates the
+# `personas-daemon` bin target.
+#
+# Currently implies `desktop` because the lib has pre-existing
+# `#[cfg(feature = "desktop")]` gaps in engine/enclave.rs,
+# engine/healthcheck.rs, commands/ocr/mod.rs, and commands/credentials/
+# auth_detect.rs — non-desktop builds fail to link. Fixing those is
+# tracked as Phase 1 cleanup; the daemon binary doesn't actually use
+# the desktop-specific plugins at runtime.
+# See .planning/research/2026-04-08-cloud-headless-personas.md.
+daemon = ["desktop"]
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
@@ -51,7 +64,7 @@ serde_yaml = "0.9"
 toml = "0.8"
 tokio = { version = "1", features = [
     "rt-multi-thread", "macros", "sync", "time",
-    "process", "io-util", "fs", "net",
+    "process", "io-util", "fs", "net", "signal",
 ] }
 tokio-util = "0.7"
 tracing = "0.1"
@@ -121,10 +134,22 @@ notify = { version = "7", default-features = false, features = ["macos_kqueue"],
 arboard = { version = "3", optional = true }
 keyring = { version = "3", optional = true }
 which = { version = "8.0.1", optional = true }
+# Screen capture for validation loops (see engine/ambient_context.rs::capture_validation_screenshot)
+xcap = { version = "0.7", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"], optional = true }
 
 [[bin]]
 name = "personas-mcp"
 path = "src/mcp_bin.rs"
+
+# Always-on daemon binary (Phase 0 scaffold). Opt-in via the `daemon` feature
+# so default builds and CI do not compile it. Boots without a Tauri window,
+# acquires the daemon lock file, and in future sessions will spawn the
+# headless trigger runtime.
+[[bin]]
+name = "personas-daemon"
+path = "src/daemon_bin.rs"
+required-features = ["daemon"]
 
 # Daily release profile: thin LTO is ~2-4x faster link with <2% perf difference.
 # Use `cargo tauri build` (default) for daily releases.

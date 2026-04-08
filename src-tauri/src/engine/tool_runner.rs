@@ -68,7 +68,7 @@ pub async fn invoke_tool_direct(
     let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
-    let (env_vars, _hints, cred_failures) =
+    let (env_vars, _hints, cred_failures, _injected_connectors) =
         super::runner::resolve_credential_env_vars(pool, std::slice::from_ref(tool), persona_id, persona_name)
             .await;
 

@@ -8,7 +8,11 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { updatePersona } from '@/api/agents/personas';
 import { isAgentIcon, AGENT_ICONS, toAgentIconValue } from './agentIconCatalog';
 
-const ASSIGNMENT_KEY = 'personas-icon-auto-assigned-v1';
+// v2: broadened filter to also migrate personas whose icon is a stale Lucide
+// PascalCase name ("Mail", "Database", …) — the legacy output of the build LLM
+// before the Rust-side normalizer started coercing to agent-icon:<id>. Bumping
+// the key forces one migration pass per existing install.
+const ASSIGNMENT_KEY = 'personas-icon-auto-assigned-v2';
 
 /** Keyword → icon ID mapping (most specific first). */
 const KEYWORD_MAP: Array<{ keywords: string[]; iconId: string }> = [
@@ -53,9 +57,20 @@ export async function autoAssignPersonaIcons(personas: Persona[]): Promise<void>
   const done = localStorage.getItem(ASSIGNMENT_KEY);
   if (done) return;
 
-  const needsIcon = personas.filter(
-    (p) => !p.icon || (!isAgentIcon(p.icon) && !p.icon.startsWith('http')),
-  );
+  // An icon is considered "user-preserved" if it's already in the catalog form,
+  // a URL, or looks like an emoji (short non-ASCII string) — matches the
+  // PersonaIcon renderer heuristic so we don't overwrite legitimate choices.
+  const isEmojiLike = (s: string) => {
+    const t = s.trim();
+    return t.length > 0 && t.length <= 8 && !/^[a-zA-Z0-9_:.\-/]+$/.test(t);
+  };
+  const needsIcon = personas.filter((p) => {
+    if (!p.icon) return true;
+    if (isAgentIcon(p.icon)) return false;
+    if (p.icon.startsWith('http')) return false;
+    if (isEmojiLike(p.icon)) return false;
+    return true; // stale Lucide name, garbage, etc. — eligible for rewrite
+  });
 
   if (needsIcon.length === 0) {
     localStorage.setItem(ASSIGNMENT_KEY, new Date().toISOString());

@@ -16,13 +16,15 @@ const ROOT = join(__dirname, '..');
 const CONNECTORS_DIR = join(ROOT, 'scripts', 'connectors', 'builtin');
 const OUTPUT_FILE = join(ROOT, 'src-tauri', 'src', 'db', 'builtin_connectors.rs');
 
-/** Escape a string for use inside a Rust raw string r#"..."# */
+/** Escape a string for use inside a Rust raw string r##"..."## */
 function rustRawStr(s) {
-  // If the string contains "# we need more pounds, but in practice our JSON won't
-  if (s.includes('"#')) {
-    throw new Error(`Cannot safely embed string containing '"#' in r#"..."#: ${s.slice(0, 80)}`);
+  // Use two pound signs so the raw string terminates on "## -- lets us safely
+  // embed payloads that contain "# (e.g. JSON fragments with channel names or
+  // CSS colors). If a payload ever contains "## we need more pounds still.
+  if (s.includes('"##')) {
+    throw new Error(`Cannot safely embed string containing '"##' in r##"..."##: ${s.slice(0, 80)}`);
   }
-  return `r#"${s}"#`;
+  return `r##"${s}"##`;
 }
 
 const files = readdirSync(CONNECTORS_DIR)

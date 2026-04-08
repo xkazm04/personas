@@ -118,6 +118,114 @@ const KNOWN_APPS: &[AppDetector] = &[
     },
 ];
 
+// -- CLI detection ---------------------------------------------------
+
+/// Known general-purpose SaaS CLIs that can be surfaced to users as
+/// connector-installation hints.
+///
+/// Unlike `KNOWN_APPS` (desktop GUI apps), these are command-line tools that
+/// agents can shell out to directly. Detection is PATH-based only -- CLIs
+/// don't have well-known install paths the way GUI apps do.
+struct CliDetector {
+    /// Internal connector name (e.g., "cli_gh", "cli_gcloud").
+    connector_name: &'static str,
+    /// Display name.
+    label: &'static str,
+    /// Binary names to search in PATH.
+    binaries: &'static [&'static str],
+    /// The connector name in `scripts/connectors/builtin/` that this CLI
+    /// maps to, if any. `None` means the CLI exists but personas has no
+    /// connector for it yet -- the discovery flow surfaces this as
+    /// "installed, no connector".
+    #[allow(dead_code)]
+    suggested_connector: Option<&'static str>,
+}
+
+const KNOWN_CLIS: &[CliDetector] = &[
+    CliDetector {
+        connector_name: "cli_gh",
+        label: "GitHub CLI",
+        binaries: &["gh", "gh.exe"],
+        suggested_connector: Some("github"),
+    },
+    CliDetector {
+        connector_name: "cli_gcloud",
+        label: "Google Cloud CLI",
+        binaries: &["gcloud", "gcloud.cmd"],
+        suggested_connector: None, // no gcloud connector yet
+    },
+    CliDetector {
+        connector_name: "cli_stripe",
+        label: "Stripe CLI",
+        binaries: &["stripe", "stripe.exe"],
+        suggested_connector: None, // no stripe connector yet
+    },
+    CliDetector {
+        connector_name: "cli_linear",
+        label: "Linear CLI",
+        binaries: &["linear", "linear.exe"],
+        suggested_connector: Some("linear"),
+    },
+    CliDetector {
+        connector_name: "cli_supabase",
+        label: "Supabase CLI",
+        binaries: &["supabase", "supabase.exe"],
+        suggested_connector: Some("supabase"),
+    },
+    CliDetector {
+        connector_name: "cli_vercel",
+        label: "Vercel CLI",
+        binaries: &["vercel", "vercel.exe"],
+        suggested_connector: Some("vercel"),
+    },
+    CliDetector {
+        connector_name: "cli_ob",
+        label: "Obsidian Headless CLI",
+        binaries: &["ob"],
+        suggested_connector: Some("obsidian"),
+    },
+];
+
+/// Scan the system for general-purpose SaaS CLIs on $PATH.
+///
+/// CLIs are detected by probing `which` for each candidate binary name.
+/// Unlike `discover_apps`, no process-list check is done (CLIs are not
+/// long-running), and version detection is optional (see the
+/// `TODO(cli-version)` note below).
+pub async fn discover_clis() -> Vec<DiscoveredApp> {
+    let mut results = Vec::new();
+
+    for cli in KNOWN_CLIS {
+        let (installed, binary_path) = detect_cli_binary(cli);
+
+        // TODO(cli-version): invoking `<bin> --version` with a 1s timeout
+        // would populate the version field. Skipped on the first iteration
+        // to keep discovery fast and avoid shelling out per entry during a
+        // startup scan. Re-enable when the UI wants to display versions.
+        results.push(DiscoveredApp {
+            connector_name: cli.connector_name.to_string(),
+            label: cli.label.to_string(),
+            installed,
+            binary_path,
+            version: None,
+            running: false, // CLIs aren't long-running processes
+            category: "cli".to_string(),
+        });
+    }
+
+    results
+}
+
+/// Probe `which` for each candidate binary name in a CLI detector.
+fn detect_cli_binary(cli: &CliDetector) -> (bool, Option<String>) {
+    for bin in cli.binaries {
+        if let Ok(path) = which::which(bin) {
+            return (true, Some(path.to_string_lossy().to_string()));
+        }
+    }
+    (false, None)
+}
+
 /// Scan the system for known desktop applications.
 pub async fn discover_apps() -> Vec<DiscoveredApp> {
     // Fetch the full process list once and check all apps against it in memory
@@ -399,6 +507,72 @@ fn humanize_mcp_name(name: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `discover_clis()` MUST return one entry per `KNOWN_CLIS` manifest
+    /// entry in order, so the frontend can rely on stable shape.
+    #[tokio::test]
+    async fn test_discover_clis_returns_full_manifest() {
+        let results = discover_clis().await;
+        assert_eq!(
+            results.len(),
+            KNOWN_CLIS.len(),
+            "discover_clis() must return one entry per KNOWN_CLIS"
+        );
+
+        // Verify each entry has the expected connector_name and label.
+        for (idx, cli) in KNOWN_CLIS.iter().enumerate() {
+            assert_eq!(results[idx].connector_name, cli.connector_name);
+            assert_eq!(results[idx].label, cli.label);
+            assert_eq!(results[idx].category, "cli");
+            // CLIs should never be reported as running -- they aren't
+            // long-lived processes.
+            assert!(!results[idx].running);
+            // Version is always None on the fast path.
+            assert!(results[idx].version.is_none());
+        }
+    }
+
+    /// A CliDetector whose binaries do not exist anywhere on PATH must
+    /// produce `installed: false` with no `binary_path`.
+    #[test]
+    fn test_detect_cli_binary_missing_returns_false() {
+        let cli = CliDetector {
+            connector_name: "cli_nope",
+            label: "Nonexistent",
+            binaries: &["__definitely_not_a_real_binary_name_12345__"],
+            suggested_connector: None,
+        };
+        let (found, path) = detect_cli_binary(&cli);
+        assert!(!found);
+        assert!(path.is_none());
+    }
+
+    /// The manifest must list the 7 CLIs the handoff called out as the
+    /// initial seed. This locks the contract so future edits don't
+    /// accidentally drop an entry.
+    #[test]
+    fn test_known_clis_manifest_shape() {
+        let names: Vec<&str> = KNOWN_CLIS.iter().map(|c| c.connector_name).collect();
+        for expected in &[
+            "cli_gh",
+            "cli_gcloud",
+            "cli_stripe",
+            "cli_linear",
+            "cli_supabase",
+            "cli_vercel",
+            "cli_ob",
+        ] {
+            assert!(
+                names.contains(expected),
+                "KNOWN_CLIS missing expected entry: {expected}"
+            );
+        }
+    }
 }
 
 /// Get the app version by running the binary with --version.

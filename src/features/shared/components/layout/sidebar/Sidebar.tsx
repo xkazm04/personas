@@ -100,9 +100,10 @@ export default function Sidebar() {
   // Budget polling is now consolidated into useBadgeCounts alongside badge fetches.
 
   const handleCreatePersona = useCallback(() => {
-    // Reset build state so user gets a fresh creation form
-    // (any in-progress build continues in the background)
-    useAgentStore.getState().resetBuildSession();
+    // Clear the active draft pointer so the creation form starts empty.
+    // Any in-progress draft sessions remain in buildSessions and continue
+    // receiving events — the sidebar lists them so the user can switch back.
+    useAgentStore.getState().setActiveBuildSession(null);
     selectPersona(null);
     setIsCreatingPersona(true);
     setSidebarSection('personas');

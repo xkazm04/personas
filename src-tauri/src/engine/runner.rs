@@ -267,13 +267,42 @@ pub async fn run_execution(
         None,
         Some(serde_json::json!({ "tool_count": tools.len() })),
     );
-    let (mut cred_env, mut cred_hints, cred_failures) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    let (mut cred_env, mut cred_hints, cred_failures, mut injected_connectors) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
 
     // Second pass: inject credentials for ALL connectors referenced in the persona's
     // design_context, not just those matched by tool name. This ensures that generic
     // tools like http_request can access connector credentials (e.g. alpha_vantage API key)
     // even if the tool name doesn't match the connector name.
-    inject_design_context_credentials(&pool, &persona, &mut cred_env, &mut cred_hints, &persona.id, &persona.name).await;
+    inject_design_context_credentials(&pool, &persona, &mut cred_env, &mut cred_hints, &mut injected_connectors, &persona.id, &persona.name).await;
+
+    // Resolve connector usage hints (metadata.llm_usage_hint) for every
+    // connector whose credentials were actually injected. Passed into
+    // assemble_prompt below so the system prompt includes a Connector Usage
+    // Reference section -- saves the agent from exploratory API calls.
+    let connector_usage_hints: Vec<prompt::ResolvedConnectorHint> = {
+        let mut resolved: Vec<prompt::ResolvedConnectorHint> = Vec::new();
+        if !injected_connectors.is_empty() {
+            if let Ok(all_conns) = connector_repo::get_all(&pool) {
+                let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+                for name in &injected_connectors {
+                    if !seen.insert(name.clone()) { continue; }
+                    let Some(conn) = all_conns.iter().find(|c| &c.name == name) else { continue };
+                    let Some(meta_str) = conn.metadata.as_deref() else { continue };
+                    let parsed: Option<crate::db::models::ConnectorMetadataPartial> =
+                        serde_json::from_str(meta_str).ok();
+                    if let Some(partial) = parsed {
+                        if let Some(hint) = partial.llm_usage_hint {
+                            resolved.push(prompt::ResolvedConnectorHint {
+                                label: conn.label.clone(),
+                                hint,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        resolved
+    };
 
     trace.end_span(&cred_span, None, None, None, None);
 
@@ -392,11 +421,17 @@ pub async fn run_execution(
         Some(serde_json::json!({ "is_resume": is_session_resume })),
     );
     let hint_refs: Vec<&str> = cred_hints.iter().map(|s| s.as_str()).collect();
+    let connector_hints_opt: Option<&[prompt::ResolvedConnectorHint]> = if connector_usage_hints.is_empty() {
+        None
+    } else {
+        Some(&connector_usage_hints)
+    };
     let prompt_text = if is_session_resume {
         // For session resume, send a lighter prompt -- the session already has context
         prompt::assemble_resume_prompt(
             input_data.as_ref(),
             if hint_refs.is_empty() { None } else { Some(&hint_refs) },
+            connector_hints_opt,
         )
     } else {
         prompt::assemble_prompt(
@@ -409,6 +444,7 @@ pub async fn run_execution(
                 Some(&hint_refs)
             },
             workspace_instructions.as_deref(),
+            connector_hints_opt,
             #[cfg(feature = "desktop")]
             None, // Ambient context is injected by the engine layer (see mod.rs)
         )
@@ -1820,17 +1856,22 @@ pub(crate) async fn resolve_credential_env_vars(
     tools: &[PersonaToolDefinition],
     persona_id: &str,
     persona_name: &str,
-) -> (Vec<(String, String)>, Vec<String>, Vec<String>) {
+) -> (Vec<(String, String)>, Vec<String>, Vec<String>, Vec<String>) {
     let mut env_vars: Vec<(String, String)> = Vec::new();
     let mut hints: Vec<String> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
+    // Names of connectors that had credentials successfully injected for this
+    // execution. Deduped by connector.name. Used downstream to load
+    // `metadata.llm_usage_hint` for the prompt's Connector Usage Reference
+    // section.
+    let mut injected_connector_names: Vec<String> = Vec::new();
     let mut seen_connectors: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     let connectors = match connector_repo::get_all(pool) {
         Ok(c) => c,
         Err(e) => {
             tracing::warn!("Failed to load connectors for credential injection: {}", e);
-            return (env_vars, hints, failures);
+            return (env_vars, hints, failures, injected_connector_names);
         }
     };
 
@@ -1859,7 +1900,10 @@ pub(crate) async fn resolve_credential_env_vars(
                 persona_id,
                 persona_name,
             ).await {
-                Ok(true) => { matched_connector = true; }
+                Ok(true) => {
+                    matched_connector = true;
+                    injected_connector_names.push(connector.name.clone());
+                }
                 Ok(false) => {}
                 Err(name) => { failures.push(name); }
             }
@@ -1893,6 +1937,7 @@ pub(crate) async fn resolve_credential_env_vars(
                     ).await {
                         Ok(true) => {
                             matched_connector = true;
+                            injected_connector_names.push(connector.name.clone());
                             break;
                         }
                         Ok(false) => {}
@@ -1923,7 +1968,7 @@ pub(crate) async fn resolve_credential_env_vars(
         }
     }
 
-    (env_vars, hints, failures)
+    (env_vars, hints, failures, injected_connector_names)
 }
 
 /// Inject credentials for connectors referenced in the persona's design_context.
@@ -1934,6 +1979,7 @@ async fn inject_design_context_credentials(
     persona: &crate::db::models::Persona,
     env_vars: &mut Vec<(String, String)>,
     hints: &mut Vec<String>,
+    injected_connector_names: &mut Vec<String>,
     persona_id: &str,
     persona_name: &str,
 ) {
@@ -2013,12 +2059,16 @@ async fn inject_design_context_credentials(
 
         // Try to find a matching connector definition
         if let Some(conn) = connectors.iter().find(|c| c.name.to_lowercase() == name_lower) {
-            let _ = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await;
+            if let Ok(true) = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await {
+                injected_connector_names.push(conn.name.clone());
+            }
         } else {
             // Direct service_type lookup as fallback
             if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
                 if let Some(cred) = creds.first() {
-                    let _ = inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await;
+                    if inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await.is_ok() {
+                        injected_connector_names.push(name.clone());
+                    }
                 }
             }
         }

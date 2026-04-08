@@ -66,7 +66,17 @@ export function UnifiedMatrixEntry() {
 
   const draftPersonaId = useAgentStore((s) => s.buildPersonaId);
   const setDraftPersonaId = useCallback(
-    (id: string | null) => useAgentStore.setState({ buildPersonaId: id }),
+    (id: string | null) => {
+      if (id === null) {
+        // Clear the current active draft session (promotion / failure cleanup).
+        // resetBuildSession removes the active session from the map and syncs scalars.
+        useAgentStore.getState().resetBuildSession();
+      }
+      // For non-null id: no-op. The draft id is set implicitly by
+      // createBuildSession once session.startSession completes successfully.
+      // Callers that need a sentinel before session creation should use
+      // their own local state.
+    },
     [],
   );
 
@@ -342,7 +352,8 @@ export function UnifiedMatrixEntry() {
           hasDesignResult={hasDesignResult}
           buildPhase={build.buildPhase}
           onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
+          onApproveTest={() => { void lifecycle.handlePromote(); }}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
           onRejectTest={lifecycle.handleRejectTest}
           onRefine={lifecycle.handleRefine}
           testOutputLines={build.buildTestOutputLines}

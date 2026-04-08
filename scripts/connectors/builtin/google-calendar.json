@@ -33,6 +33,21 @@
     "auth_methods": [
       {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
       {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@googleworkspace/cli", "transport": "stdio", "suggested_env": {"GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": ""}}
-    ]
+    ],
+    "llm_usage_hint": {
+      "overview": "Google Calendar API v3. OAuth bearer in $GOOGLE_ACCESS_TOKEN. Base URL: https://www.googleapis.com/calendar/v3. Use 'primary' as the calendarId shortcut for the authenticated user's main calendar. All times must be RFC 3339 (e.g. 2026-04-08T14:00:00-07:00).",
+      "examples": [
+        "curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" \"https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=2026-04-08T00:00:00Z&timeMax=2026-04-15T00:00:00Z&singleEvents=true&orderBy=startTime\"",
+        "curl -X POST -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"summary\":\"Team Sync\",\"start\":{\"dateTime\":\"2026-04-10T15:00:00-07:00\"},\"end\":{\"dateTime\":\"2026-04-10T15:30:00-07:00\"},\"attendees\":[{\"email\":\"a@example.com\"}]}' https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "curl -X PATCH -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"start\":{\"dateTime\":\"2026-04-10T16:00:00-07:00\"},\"end\":{\"dateTime\":\"2026-04-10T16:30:00-07:00\"}}' https://www.googleapis.com/calendar/v3/calendars/primary/events/{eventId}",
+        "curl -X POST -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"timeMin\":\"2026-04-08T00:00:00Z\",\"timeMax\":\"2026-04-08T23:59:59Z\",\"items\":[{\"id\":\"primary\"}]}' https://www.googleapis.com/calendar/v3/freeBusy"
+      ],
+      "gotchas": [
+        "Set singleEvents=true when listing recurring events, otherwise you get one entry per recurrence master (not every instance).",
+        "All-day events use start.date + end.date (YYYY-MM-DD); timed events use start.dateTime + end.dateTime.",
+        "sendUpdates=all must be passed as a query param to notify attendees on create/update -- otherwise invites are silent.",
+        "Use the freeBusy endpoint (POST) to find scheduling gaps instead of listing + filtering events manually."
+      ]
+    }
   }
 }

@@ -33,6 +33,21 @@
     "auth_type_label": "PAT",
     "docs_url": "https://developers.hubspot.com/docs/api/private-apps",
     "setup_guide": "1. Go to HubSpot -> Settings -> Integrations -> Private Apps\n2. Click 'Create a private app'\n3. Name it and select the scopes you need\n4. Click 'Create app' then copy the pat-... access token",
-    "pricing_tier": "paid"
+    "pricing_tier": "paid",
+    "llm_usage_hint": {
+      "overview": "HubSpot CRM API v3. Bearer token in $HUBSPOT_ACCESS_TOKEN. Base URL: https://api.hubapi.com/crm/v3. Core objects are contacts, companies, deals, tickets. Use /objects/{type} for generic CRUD and /objects/{type}/search for filtered queries.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $HUBSPOT_ACCESS_TOKEN\" \"https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,company\"",
+        "curl -X POST -H \"Authorization: Bearer $HUBSPOT_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"filterGroups\":[{\"filters\":[{\"propertyName\":\"email\",\"operator\":\"EQ\",\"value\":\"jane@example.com\"}]}],\"properties\":[\"email\",\"firstname\",\"company\"]}' https://api.hubapi.com/crm/v3/objects/contacts/search",
+        "curl -X POST -H \"Authorization: Bearer $HUBSPOT_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"properties\":{\"email\":\"new@example.com\",\"firstname\":\"New\",\"lastname\":\"Lead\"}}' https://api.hubapi.com/crm/v3/objects/contacts",
+        "curl -X PATCH -H \"Authorization: Bearer $HUBSPOT_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"properties\":{\"dealstage\":\"closedwon\",\"amount\":\"5000\"}}' https://api.hubapi.com/crm/v3/objects/deals/{dealId}"
+      ],
+      "gotchas": [
+        "You MUST explicitly request properties via ?properties=a,b,c or the search body; default payloads omit most fields.",
+        "Private App tokens need per-endpoint scopes; 403 'MISSING_SCOPES' tells you which scope to add in HubSpot settings.",
+        "Search is paginated via 'after' cursor + 'paging.next.after'; list is paginated via after + limit (max 100).",
+        "Deal stages and pipelines are workspace-specific -- look them up via /crm/v3/pipelines/deals before writing."
+      ]
+    }
   }
 }

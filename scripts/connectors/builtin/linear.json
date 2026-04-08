@@ -35,6 +35,21 @@
     "auth_type_label": "PAT",
     "docs_url": "https://linear.app/settings/api",
     "setup_guide": "1. Go to linear.app/settings/api and sign in\n2. Under 'Personal API keys', click 'Create key'\n3. Give it a descriptive label\n4. Copy the lin_api_... key value",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "Linear GraphQL API. Single endpoint: https://api.linear.app/graphql. Auth header is just $LINEAR_API_KEY (NO 'Bearer ' prefix -- Linear API keys go directly in the Authorization header). All operations are GraphQL queries/mutations over POST.",
+      "examples": [
+        "curl -X POST -H \"Authorization: $LINEAR_API_KEY\" -H \"Content-Type: application/json\" -d '{\"query\":\"query { viewer { id name email } }\"}' https://api.linear.app/graphql",
+        "curl -X POST -H \"Authorization: $LINEAR_API_KEY\" -H \"Content-Type: application/json\" -d '{\"query\":\"query { issues(filter:{state:{type:{eq:\\\"started\\\"}}}) { nodes { id title state { name } assignee { name } } } }\"}' https://api.linear.app/graphql",
+        "curl -X POST -H \"Authorization: $LINEAR_API_KEY\" -H \"Content-Type: application/json\" -d '{\"query\":\"mutation { issueCreate(input:{title:\\\"New bug\\\",teamId:\\\"{team_id}\\\",description:\\\"Details...\\\"}) { success issue { id identifier } } }\"}' https://api.linear.app/graphql",
+        "curl -X POST -H \"Authorization: $LINEAR_API_KEY\" -H \"Content-Type: application/json\" -d '{\"query\":\"query { teams { nodes { id name key } } }\"}' https://api.linear.app/graphql"
+      ],
+      "gotchas": [
+        "Authorization header does NOT take the 'Bearer ' prefix; use the raw key.",
+        "Linear is GraphQL-only -- no REST endpoints exist. Use POST with a JSON body containing {query, variables}.",
+        "Issue IDs come in two forms: UUID (id) and human key like ENG-123 (identifier). Mutations need UUIDs.",
+        "Default pagination returns 50 items; use first: 250 (max 250) and pageInfo.hasNextPage to iterate."
+      ]
+    }
   }
 }

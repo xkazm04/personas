@@ -17,12 +17,12 @@ use crate::error::AppError;
 const MAX_PAYLOAD_BYTES: usize = 64 * 1024;
 
 /// Maximum length for event_type and source_type strings.
-const MAX_TYPE_LEN: usize = 128;
+pub(crate) const MAX_TYPE_LEN: usize = 128;
 
 /// Validate that `event_type` and `source_type` contain only safe characters:
 /// alphanumeric, underscore, hyphen, dot, colon, forward-slash.
 /// Must start with an alphanumeric or underscore character.
-fn is_safe_type_string(s: &str) -> bool {
+pub(crate) fn is_safe_type_string(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
@@ -396,6 +396,43 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
         )?;
 
         Ok(rows as i64)
+    })
+}
+
+/// Delete every event whose `source_id` matches a specific id. Used when a
+/// trigger is deleted to purge its event history from persona_events. Returns
+/// the number of deleted rows.
+pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32, AppError> {
+    timed_query!("persona_events", "persona_events::delete_events_by_source_id", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM persona_events WHERE source_id = ?1",
+            params![source_id],
+        )?;
+        Ok(rows as u32)
+    })
+}
+
+/// Delete events emitted by triggers that no longer exist (or whose owning
+/// persona no longer exists). Catches accumulated noise from orphaned
+/// triggers that the cleanup sweep in background.rs then prunes. Returns
+/// the count deleted. Runs in one DELETE with a NOT EXISTS anti-join.
+pub fn delete_orphaned_trigger_events(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("persona_events", "persona_events::delete_orphaned_trigger_events", {
+        let conn = pool.get()?;
+        // Events where source_type == 'trigger' but source_id no longer exists
+        // in persona_triggers. Left-join would be cleaner but sqlite's DELETE
+        // doesn't allow JOIN syntax — use NOT EXISTS instead.
+        let rows = conn.execute(
+            "DELETE FROM persona_events
+             WHERE source_type = 'trigger'
+               AND source_id IS NOT NULL
+               AND NOT EXISTS (
+                 SELECT 1 FROM persona_triggers t WHERE t.id = persona_events.source_id
+               )",
+            [],
+        )?;
+        Ok(rows as u32)
     })
 }
 
@@ -1948,5 +1985,137 @@ mod tests {
         // 3 should still be pending
         let remaining = get_pending(&pool, None, None).unwrap();
         assert_eq!(remaining.len(), 3);
+    }
+
+    // ========================================================================
+    // Fix 1: orphan event cleanup
+    // ========================================================================
+
+    #[test]
+    fn test_fix1_delete_events_by_source_id() {
+        let pool = init_test_db().unwrap();
+
+        // Publish 3 events tied to one fake trigger id + 2 events tied to another
+        for i in 0..3 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("evt_{i}"),
+                    source_type: "trigger".into(),
+                    source_id: Some("trigger-alpha".into()),
+                    target_persona_id: None,
+                    project_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+        for i in 0..2 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("beta_{i}"),
+                    source_type: "trigger".into(),
+                    source_id: Some("trigger-beta".into()),
+                    target_persona_id: None,
+                    project_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+
+        let removed = delete_events_by_source_id(&pool, "trigger-alpha").unwrap();
+        assert_eq!(removed, 3);
+
+        // Beta events still there
+        let conn = pool.get().unwrap();
+        let beta_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                params!["trigger-beta"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(beta_count, 2);
+    }
+
+    #[test]
+    fn test_fix1_delete_orphaned_trigger_events_matches_only_orphans() {
+        let pool = init_test_db().unwrap();
+
+        // Create a live trigger with raw INSERT so we don't get auto-listener
+        // side-effects confusing the test
+        let persona = crate::db::repos::test_fixtures::create_test_persona(
+            &pool,
+            "Event Test Persona",
+            "Events happen here.",
+        );
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES ('live-trigger', ?1, 'manual', NULL, 1, 'active', NULL, '2026-01-01', '2026-01-01')",
+                params![persona.id],
+            )
+            .unwrap();
+        }
+
+        // Event tied to live trigger — should SURVIVE
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "live_event".into(),
+                source_type: "trigger".into(),
+                source_id: Some("live-trigger".into()),
+                target_persona_id: None,
+                project_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Event tied to a ghost trigger — should be DELETED
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "ghost_event".into(),
+                source_type: "trigger".into(),
+                source_id: Some("ghost-trigger".into()),
+                target_persona_id: None,
+                project_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Non-trigger event (source_type != 'trigger') — should SURVIVE regardless
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "webhook_event".into(),
+                source_type: "webhook".into(),
+                source_id: Some("some-webhook-id".into()),
+                target_persona_id: None,
+                project_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let removed = delete_orphaned_trigger_events(&pool).unwrap();
+        assert_eq!(removed, 1, "only the ghost trigger event should be deleted");
+
+        let conn = pool.get().unwrap();
+        let remaining: i64 = conn
+            .query_row("SELECT COUNT(*) FROM persona_events", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(remaining, 2, "live + webhook events should survive");
     }
 }

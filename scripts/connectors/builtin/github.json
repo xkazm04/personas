@@ -35,6 +35,21 @@
     "auth_type_label": "PAT",
     "docs_url": "https://github.com/settings/tokens",
     "setup_guide": "1. Go to github.com/settings/tokens?type=beta for fine-grained tokens\n2. Click 'Generate new token', set expiration and repository access\n3. Select required permissions: Contents (read), Issues (read/write), Pull requests (read/write)\n4. Click 'Generate token' and copy the github_pat_... value",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "GitHub REST API v3. Auth via PAT in $GITHUB_PERSONAL_ACCESS_TOKEN. Use curl with 'Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN' and 'Accept: application/vnd.github+json'. Base URL: https://api.github.com.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN\" -H \"Accept: application/vnd.github+json\" https://api.github.com/repos/{owner}/{repo}/issues?state=open&per_page=100",
+        "curl -X POST -H \"Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN\" -H \"Accept: application/vnd.github+json\" -d '{\"title\":\"Bug: X\",\"body\":\"Details...\"}' https://api.github.com/repos/{owner}/{repo}/issues",
+        "curl -H \"Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN\" https://api.github.com/repos/{owner}/{repo}/pulls?state=open",
+        "curl -H \"Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN\" https://api.github.com/repos/{owner}/{repo}/releases/latest"
+      ],
+      "gotchas": [
+        "Pagination defaults to 30 items; use ?per_page=100 (max 100). Follow Link header for next pages.",
+        "Rate limit is 5000/hr authenticated. Check X-RateLimit-Remaining response header.",
+        "Issues and pull requests share an ID namespace -- a PR is also an issue, but not vice versa. Use /issues/{n} for both, /pulls/{n} only for PRs.",
+        "Fine-grained PATs have per-repository scopes; a 404 may actually mean 'no permission' rather than 'not found'."
+      ]
+    }
   }
 }

@@ -34,6 +34,21 @@
     "auth_type_label": "PAT",
     "docs_url": "https://www.notion.so/my-integrations",
     "setup_guide": "1. Go to notion.so/my-integrations\n2. Click 'New integration' and name it\n3. Select the workspace and set capabilities\n4. Click 'Submit' then copy the ntn_... internal integration token\n5. Share relevant Notion pages with the integration",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "Notion API (v2022-06-28). Bearer token in $NOTION_API_KEY. Base URL: https://api.notion.com/v1. Always send the 'Notion-Version: 2022-06-28' header. Pages/databases must be explicitly shared with the integration or you get 'object_not_found'.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $NOTION_API_KEY\" -H \"Notion-Version: 2022-06-28\" https://api.notion.com/v1/databases/{database_id}",
+        "curl -X POST -H \"Authorization: Bearer $NOTION_API_KEY\" -H \"Notion-Version: 2022-06-28\" -H \"Content-Type: application/json\" -d '{\"filter\":{\"property\":\"Status\",\"select\":{\"equals\":\"Open\"}},\"page_size\":100}' https://api.notion.com/v1/databases/{database_id}/query",
+        "curl -X POST -H \"Authorization: Bearer $NOTION_API_KEY\" -H \"Notion-Version: 2022-06-28\" -H \"Content-Type: application/json\" -d '{\"parent\":{\"database_id\":\"{database_id}\"},\"properties\":{\"Name\":{\"title\":[{\"text\":{\"content\":\"New item\"}}]}}}' https://api.notion.com/v1/pages",
+        "curl -X PATCH -H \"Authorization: Bearer $NOTION_API_KEY\" -H \"Notion-Version: 2022-06-28\" -H \"Content-Type: application/json\" -d '{\"properties\":{\"Status\":{\"select\":{\"name\":\"Done\"}}}}' https://api.notion.com/v1/pages/{page_id}"
+      ],
+      "gotchas": [
+        "403 'object_not_found' usually means the page/database was not shared with the integration -- not that it doesn't exist.",
+        "Notion-Version header is REQUIRED on every request; omitting it triggers a 400.",
+        "Page titles live in 'properties.Name.title' (array of rich_text objects), not in a top-level 'title' field.",
+        "Database queries paginate via has_more / next_cursor; always loop until has_more is false."
+      ]
+    }
   }
 }

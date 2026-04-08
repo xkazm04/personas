@@ -112,14 +112,45 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
         // Encrypt sensitive config fields before writing to DB
         let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
 
+        // Fix 4a: for schedule / polling / webhook source triggers, auto-create a
+        // paired event_listener inside the same transaction so the target persona
+        // actually runs when the trigger fires. Without this, the scheduler would
+        // publish an event into the bus that nothing listens to. See the
+        // auto-listener helpers below + docs/design/event-routing-proposal.md.
+        let needs_auto_listener =
+            AUTO_LISTENER_SOURCE_TYPES.contains(&input.trigger_type.as_str());
+
+        // Compute the event_type the listener should match. Mirrors
+        // TriggerConfig::event_type() — read from config.event_type or fall
+        // back to "trigger_fired" (same default the scheduler uses at
+        // publish time, see db/models/trigger.rs:367).
+        let auto_listener_event_type: Option<String> = if needs_auto_listener {
+            let event_type = input
+                .config
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                .and_then(|v| v.get("event_type").and_then(|e| e.as_str()).map(String::from))
+                .unwrap_or_else(|| "trigger_fired".to_string());
+            Some(event_type)
+        } else {
+            None
+        };
+
         {
-            let conn = pool.get()?;
-            conn.execute(
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            tx.execute(
                 "INSERT INTO persona_triggers
                  (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
                 params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, now],
             )?;
+
+            if let Some(event_type) = &auto_listener_event_type {
+                insert_auto_listener_in_tx(&tx, &input.persona_id, &id, event_type)?;
+            }
+
+            tx.commit().map_err(AppError::Database)?;
         }
 
         // Immediately compute and persist next_trigger_at so the scheduler loop picks
@@ -604,6 +635,191 @@ pub fn update_persona_event_handler(
     })
 }
 
+// ============================================================================
+// Orphan cleanup (Fix 1 + Fix 2 from docs/design/event-routing-proposal.md)
+// ============================================================================
+
+/// Delete triggers whose `persona_id` no longer exists in the `personas` table.
+/// Returns the number of rows deleted. This is the self-healing sweep that
+/// prevents schedule triggers from firing into the void after their owning
+/// persona is gone. Also cascade-deletes the paired Fix 4a auto-listener
+/// event_listener trigger before removing the primary.
+pub fn delete_orphaned_triggers(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::delete_orphaned_triggers", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+
+        // 1. Find all orphaned trigger IDs.
+        let orphan_ids: Vec<String> = {
+            let mut stmt = tx.prepare(
+                "SELECT t.id FROM persona_triggers t
+                 WHERE NOT EXISTS (SELECT 1 FROM personas p WHERE p.id = t.persona_id)",
+            )?;
+            let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
+        };
+
+        if orphan_ids.is_empty() {
+            return Ok(0);
+        }
+
+        // 2. For each orphan, also delete any paired Fix 4a auto-listener.
+        //    (Their owning persona is gone too, so they'd be caught by step 3
+        //    anyway — but an explicit pass is cheap and makes the intent clear.)
+        let mut deleted: u32 = 0;
+        for id in &orphan_ids {
+            deleted += tx.execute(
+                "DELETE FROM persona_triggers
+                 WHERE trigger_type = 'event_listener'
+                   AND json_extract(config, '$._auto_for_trigger') = ?1",
+                params![id],
+            )? as u32;
+        }
+
+        // 3. Delete the orphans themselves. Use a fresh NOT EXISTS query so
+        //    we skip rows that were already removed in step 2 (would return 0
+        //    rows affected and be counted as no-ops anyway, but this is more
+        //    explicit about what's happening).
+        for id in &orphan_ids {
+            deleted += tx.execute(
+                "DELETE FROM persona_triggers WHERE id = ?1",
+                params![id],
+            )? as u32;
+        }
+
+        tx.commit().map_err(AppError::Database)?;
+        Ok(deleted)
+    })
+}
+
+// ============================================================================
+// Fix 4a — auto-listener wiring
+// See docs/design/event-routing-proposal.md section "Fix 4a"
+//
+// Schedule / polling / webhook triggers publish events into the bus; the bus
+// only invokes personas when a listener row matches. To close that gap, every
+// create/update/delete of a source trigger also writes the matching listener
+// trigger in lock-step. The auto-listener uses source_filter = trigger_id so
+// it fires *only* for the paired source trigger, and carries an advisory
+// `_auto_for_trigger` key so cleanup knows which listener to delete.
+// ============================================================================
+
+/// Trigger types that get an auto-created event_listener in Fix 4a.
+pub(crate) const AUTO_LISTENER_SOURCE_TYPES: &[&str] =
+    &["schedule", "polling", "webhook"];
+
+/// Build the JSON config string for an auto-listener. Stores advisory fields
+/// so cleanup can identify it later.
+fn build_auto_listener_config(source_trigger_id: &str, event_type: &str) -> String {
+    serde_json::json!({
+        "listen_event_type": event_type,
+        "source_filter": source_trigger_id,
+        "_auto_for_trigger": source_trigger_id,
+    })
+    .to_string()
+}
+
+/// INSERT an auto-listener row inside an existing transaction. Used by the
+/// trigger `create` path to stay atomic with the primary trigger write.
+fn insert_auto_listener_in_tx(
+    tx: &rusqlite::Transaction<'_>,
+    persona_id: &str,
+    source_trigger_id: &str,
+    event_type: &str,
+) -> Result<(), AppError> {
+    let config_json = build_auto_listener_config(source_trigger_id, event_type);
+    validate_config("event_listener", Some(&config_json))?;
+    let encrypted = encrypt_config(&config_json)?;
+    let listener_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    tx.execute(
+        "INSERT INTO persona_triggers
+         (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+         VALUES (?1, ?2, 'event_listener', ?3, 1, 'active', NULL, ?4, ?4)",
+        params![listener_id, persona_id, encrypted, now],
+    )
+    .map_err(AppError::Database)?;
+    Ok(())
+}
+
+/// Cascade-delete any auto-listener paired with a source trigger. Safe on a
+/// pool (no outer transaction) — used by the primary `delete` path. Returns
+/// the number of listeners deleted (usually 0 or 1).
+pub fn delete_auto_listeners_for(pool: &DbPool, source_trigger_id: &str) -> Result<u32, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::delete_auto_listeners_for", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM persona_triggers
+             WHERE trigger_type = 'event_listener'
+               AND json_extract(config, '$._auto_for_trigger') = ?1",
+            params![source_trigger_id],
+        )?;
+        Ok(rows as u32)
+    })
+}
+
+/// Backfill: walk every schedule/polling/webhook trigger in the DB and create
+/// a matching event_listener auto-listener for any that don't already have
+/// one. Idempotent. Returns (triggers_scanned, listeners_created).
+pub fn backfill_auto_listeners(pool: &DbPool) -> Result<(u32, u32), AppError> {
+    timed_query!("persona_triggers", "persona_triggers::backfill_auto_listeners", {
+        // 1. Load all source triggers that need auto-listeners.
+        let candidates: Vec<PersonaTrigger> = {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_triggers
+                 WHERE trigger_type IN ('schedule', 'polling', 'webhook')
+                 ORDER BY created_at",
+            )?;
+            let rows = stmt.query_map([], row_to_trigger)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
+        };
+
+        if candidates.is_empty() {
+            return Ok((0, 0));
+        }
+
+        let scanned = candidates.len() as u32;
+
+        // 2. Load existing auto-listener source_trigger ids so we can skip ones that
+        //    already have a pair. json_extract with plaintext config works fine; for
+        //    encrypted configs the extract silently returns NULL, which is also fine
+        //    (we just skip them — if decrypt is needed, user already created it).
+        let existing_pairs: std::collections::HashSet<String> = {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT json_extract(config, '$._auto_for_trigger')
+                 FROM persona_triggers
+                 WHERE trigger_type = 'event_listener'
+                   AND json_extract(config, '$._auto_for_trigger') IS NOT NULL",
+            )?;
+            let rows = stmt.query_map([], |row| row.get::<_, Option<String>>(0))?;
+            rows.filter_map(|r| r.ok().flatten()).collect()
+        };
+
+        // 3. Create missing listeners in one transaction.
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        let mut created = 0u32;
+        for src in &candidates {
+            if existing_pairs.contains(&src.id) {
+                continue;
+            }
+            // Parse config to get the event_type the trigger publishes.
+            let cfg = src.parse_config();
+            let event_type = cfg.event_type().to_string();
+            insert_auto_listener_in_tx(&tx, &src.persona_id, &src.id, &event_type)?;
+            created += 1;
+        }
+        tx.commit().map_err(AppError::Database)?;
+
+        Ok((scanned, created))
+    })
+}
+
 /// Get enabled chain triggers whose source_persona_id matches the given value.
 /// Uses SQL-level filtering with json_extract to avoid loading all triggers.
 pub fn get_chain_triggers_for_source(
@@ -1041,9 +1257,12 @@ mod tests {
         let fetched = get_by_id(&pool, &trigger.id).unwrap();
         assert_eq!(fetched.config, Some(r#"{"cron":"0 * * * *"}"#.into()));
 
-        // List by persona
+        // List by persona — since Fix 4a, creating a `schedule` trigger also
+        // creates a paired `event_listener` auto-listener. Assert on the
+        // source trigger type count, not the raw total.
         let list = get_by_persona_id(&pool, &persona.id).unwrap();
-        assert_eq!(list.len(), 1);
+        let schedule_count = list.iter().filter(|t| t.trigger_type == "schedule").count();
+        assert_eq!(schedule_count, 1);
 
         // Update
         let updated = update(
@@ -1533,5 +1752,283 @@ mod tests {
             .get("eventHandlers")
             .and_then(|h| h.get("test.event"))
             .is_some());
+    }
+
+    // ========================================================================
+    // Fix 1 + Fix 2: orphan cleanup
+    // ========================================================================
+
+    #[test]
+    fn test_fix1_delete_orphaned_triggers_skips_live_personas() {
+        let pool = init_test_db().unwrap();
+        let live_persona = create_test_persona(&pool);
+
+        // Live persona's trigger should survive
+        let live_trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: live_persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Insert an orphan referencing a non-existent persona. FK is enforced
+        // per-connection, so temporarily disable it on this connection to
+        // simulate a pre-FK-enforcement install where orphans accumulated
+        // (which is what the user's production DB looked like).
+        {
+            let conn = pool.get().unwrap();
+            let _guard = crate::db::FkDisabledGuard::new(&conn).unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES ('orphan-1', 'ghost-persona', 'schedule', '{}', 1, 'active', NULL, '2026-01-01', '2026-01-01')",
+                [],
+            )
+            .unwrap();
+        }
+
+        let deleted = delete_orphaned_triggers(&pool).unwrap();
+        assert_eq!(deleted, 1, "should delete exactly the one orphan");
+
+        // Live trigger still there
+        assert!(get_by_id(&pool, &live_trigger.id).is_ok());
+        assert!(get_by_id(&pool, "orphan-1").is_err());
+    }
+
+    #[test]
+    fn test_fix1_delete_orphaned_triggers_cascades_auto_listeners() {
+        let pool = init_test_db().unwrap();
+
+        // Create an orphaned source trigger + matching auto-listener directly
+        // (simulates a trigger whose persona got deleted while the trigger +
+        // its Fix 4a auto-listener lingered). Needs FK disabled because the
+        // persona doesn't exist.
+        {
+            let conn = pool.get().unwrap();
+            let _guard = crate::db::FkDisabledGuard::new(&conn).unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES ('orphan-src', 'ghost', 'schedule', '{\"cron\":\"0 * * * *\"}', 1, 'active', NULL, '2026-01-01', '2026-01-01')",
+                [],
+            )
+            .unwrap();
+            // Auto-listener with the advisory pointer — unencrypted so json_extract works
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES ('orphan-listener', 'ghost', 'event_listener',
+                   '{\"listen_event_type\":\"trigger_fired\",\"source_filter\":\"orphan-src\",\"_auto_for_trigger\":\"orphan-src\"}',
+                   1, 'active', NULL, '2026-01-01', '2026-01-01')",
+                [],
+            )
+            .unwrap();
+        }
+
+        let deleted = delete_orphaned_triggers(&pool).unwrap();
+        // Both the source AND the listener should be gone: source via the
+        // orphan loop, listener via the cascade pass inside the loop.
+        assert_eq!(deleted, 2);
+        assert!(get_by_id(&pool, "orphan-src").is_err());
+        assert!(get_by_id(&pool, "orphan-listener").is_err());
+    }
+
+    // ========================================================================
+    // Fix 4a: auto-listener wiring
+    // ========================================================================
+
+    #[test]
+    fn test_fix4a_create_schedule_also_creates_auto_listener() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let src = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"*/15 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Find the auto-listener by querying triggers for this persona
+        let listeners = get_by_persona_id(&pool, &persona.id).unwrap();
+        let auto_listener = listeners
+            .iter()
+            .find(|t| t.trigger_type == "event_listener")
+            .expect("should have created an auto-listener");
+
+        // Decrypt and inspect its config
+        let decrypted = crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap())
+            .unwrap();
+        let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
+        assert_eq!(
+            cfg.get("listen_event_type").and_then(|v| v.as_str()).unwrap(),
+            "trigger_fired",
+            "default event_type should be trigger_fired",
+        );
+        assert_eq!(
+            cfg.get("source_filter").and_then(|v| v.as_str()).unwrap(),
+            src.id.as_str(),
+            "source_filter should be the source trigger id"
+        );
+        assert_eq!(
+            cfg.get("_auto_for_trigger").and_then(|v| v.as_str()).unwrap(),
+            src.id.as_str(),
+            "_auto_for_trigger advisory must match source id"
+        );
+    }
+
+    #[test]
+    fn test_fix4a_create_schedule_uses_custom_event_type() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *","event_type":"morning_digest"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let listeners = get_by_persona_id(&pool, &persona.id).unwrap();
+        let auto_listener = listeners
+            .iter()
+            .find(|t| t.trigger_type == "event_listener")
+            .unwrap();
+        let decrypted = crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap())
+            .unwrap();
+        let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
+        assert_eq!(
+            cfg.get("listen_event_type").and_then(|v| v.as_str()).unwrap(),
+            "morning_digest",
+        );
+    }
+
+    #[test]
+    fn test_fix4a_manual_trigger_skips_auto_listener() {
+        // Manual / event_listener / chain triggers should NOT get auto-listeners
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "manual".into(),
+                config: None,
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let listeners = get_by_persona_id(&pool, &persona.id).unwrap();
+        let event_listeners = listeners
+            .iter()
+            .filter(|t| t.trigger_type == "event_listener")
+            .count();
+        assert_eq!(event_listeners, 0, "manual triggers should not auto-create listeners");
+    }
+
+    #[test]
+    fn test_fix4a_delete_auto_listeners_for() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let src = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 0 * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Confirm listener exists
+        let listeners_before: Vec<_> = get_by_persona_id(&pool, &persona.id)
+            .unwrap()
+            .into_iter()
+            .filter(|t| t.trigger_type == "event_listener")
+            .collect();
+        assert_eq!(listeners_before.len(), 1);
+
+        // Cascade delete
+        let removed = delete_auto_listeners_for(&pool, &src.id).unwrap();
+        assert_eq!(removed, 1);
+
+        let listeners_after: Vec<_> = get_by_persona_id(&pool, &persona.id)
+            .unwrap()
+            .into_iter()
+            .filter(|t| t.trigger_type == "event_listener")
+            .collect();
+        assert_eq!(listeners_after.len(), 0);
+    }
+
+    #[test]
+    fn test_fix4a_backfill_creates_missing_only() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // Create a source trigger via a raw INSERT to simulate a pre-Fix-4a
+        // trigger that never got its auto-listener.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES ('pre-fix-src', ?1, 'schedule', '{\"cron\":\"0 * * * *\"}', 1, 'active', NULL, '2026-01-01', '2026-01-01')",
+                params![persona.id],
+            ).unwrap();
+        }
+
+        let (scanned, created) = backfill_auto_listeners(&pool).unwrap();
+        assert_eq!(scanned, 1);
+        assert_eq!(created, 1);
+
+        // Second call should be a no-op
+        let (scanned2, created2) = backfill_auto_listeners(&pool).unwrap();
+        assert_eq!(scanned2, 1);
+        assert_eq!(created2, 0, "backfill must be idempotent");
+    }
+
+    #[test]
+    fn test_fix4a_backfill_respects_existing_auto_listener() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // Creating via create() produces both rows
+        create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Backfill finds the source but skips listener creation
+        let (scanned, created) = backfill_auto_listeners(&pool).unwrap();
+        assert_eq!(scanned, 1);
+        assert_eq!(created, 0);
     }
 }

@@ -137,6 +137,19 @@ pub fn delete_trigger(
             id, persona_id
         )));
     }
+
+    // Fix 4a: cascade-delete the paired auto-listener event_listener, if any,
+    // BEFORE the primary delete. Best-effort — a failure here doesn't block
+    // the intentional delete because the orphan sweep in cleanup_tick will
+    // pick up any stragglers on the next minute.
+    if let Err(e) = repo::delete_auto_listeners_for(&state.db, &id) {
+        tracing::warn!(
+            trigger_id = %id,
+            error = %e,
+            "delete_trigger: failed to cascade-delete auto-listener (will be caught by cleanup sweep)"
+        );
+    }
+
     repo::delete(&state.db, &id)
 }
 
@@ -885,6 +898,49 @@ pub fn update_persona_event_handler(
     require_auth_sync(&state)?;
     repo::update_persona_event_handler(&state.db, &persona_id, &event_type, &handler_text)?;
     Ok(true)
+}
+
+// =============================================================================
+// Fix 1 + Fix 4a: trigger / event cleanup + backfill
+// See docs/design/event-routing-proposal.md Fix 1, Fix 2, Fix 4a
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct TriggerCleanupResult {
+    pub orphaned_triggers_deleted: u32,
+    pub orphaned_events_deleted: u32,
+    pub auto_listeners_backfilled: u32,
+    pub source_triggers_scanned: u32,
+}
+
+/// One-shot cleanup + self-healing sweep for the trigger / event subsystem.
+///
+/// 1. Deletes triggers whose owning persona no longer exists (with cascade
+///    to their paired auto-listeners).
+/// 2. Deletes persona_events rows whose `source_id` no longer matches any
+///    trigger in persona_triggers (dead audit log rows).
+/// 3. Backfills missing auto-listeners for schedule / polling / webhook
+///    triggers that predate Fix 4a.
+///
+/// All three steps are idempotent and safe to run on app boot or from a
+/// Builder "Clean up" button. Returns counts for UI feedback.
+#[tauri::command]
+pub fn cleanup_dead_trigger_events(
+    state: State<'_, Arc<AppState>>,
+) -> Result<TriggerCleanupResult, AppError> {
+    require_auth_sync(&state)?;
+
+    let orphaned_triggers_deleted = repo::delete_orphaned_triggers(&state.db)?;
+    let orphaned_events_deleted = event_repo::delete_orphaned_trigger_events(&state.db)?;
+    let (scanned, backfilled) = repo::backfill_auto_listeners(&state.db)?;
+
+    Ok(TriggerCleanupResult {
+        orphaned_triggers_deleted,
+        orphaned_events_deleted,
+        auto_listeners_backfilled: backfilled,
+        source_triggers_scanned: scanned,
+    })
 }
 
 // =============================================================================

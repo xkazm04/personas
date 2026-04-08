@@ -898,6 +898,58 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
     trigger_scheduler_tick_counted(scheduler, pool);
 }
 
+/// Fix 3 helper: when a trigger author didn't specify a payload, synthesize
+/// a diagnostic one so downstream consumers (Live Stream, Event Log, dev
+/// inspection) can see WHAT fired, WHY, and WHEN. Pure function — unit-tested
+/// in the `tests` module below.
+pub(crate) fn synthesize_trigger_fired_payload(
+    trigger: &crate::db::models::PersonaTrigger,
+    cfg: &crate::db::models::TriggerConfig,
+    fired_at: &str,
+) -> String {
+    use crate::db::models::TriggerConfig;
+    let (cron, interval_seconds) = match cfg {
+        TriggerConfig::Schedule { cron, interval_seconds, .. } => {
+            (cron.clone(), *interval_seconds)
+        }
+        TriggerConfig::Polling { interval_seconds, .. } => (None, *interval_seconds),
+        _ => (None, None),
+    };
+    let mut meta = serde_json::Map::new();
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "trigger_type".into(),
+        serde_json::Value::String(trigger.trigger_type.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "fired_at".into(),
+        serde_json::Value::String(fired_at.to_string()),
+    );
+    if let Some(c) = cron {
+        meta.insert("cron".into(), serde_json::Value::String(c));
+    }
+    if let Some(iv) = interval_seconds {
+        meta.insert(
+            "interval_seconds".into(),
+            serde_json::Value::Number(iv.into()),
+        );
+    }
+    if let Some(uc) = trigger.use_case_id.as_ref() {
+        meta.insert(
+            "use_case_id".into(),
+            serde_json::Value::String(uc.clone()),
+        );
+    }
+    serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
+}
+
 /// Same as `trigger_scheduler_tick` but returns the number of triggers fired.
 /// Used by the startup overdue sweep to know how many were recovered.
 pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
@@ -979,7 +1031,17 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
 
         // 5. Schedule advanced -- now safe to publish the event
         let event_type = cfg.event_type().to_string();
-        let payload = cfg.payload();
+
+        // Fix 3: payload enrichment.
+        //
+        // When the trigger author set an explicit `payload` in config we
+        // respect it verbatim. When they didn't, synthesize a self-documenting
+        // diagnostic payload so `trigger_fired` rows in the Live Stream /
+        // Event Log actually tell you WHAT fired, WHY, and WHEN — instead of
+        // 158 rows of NULL like we had in the user's dead-data audit.
+        let payload = cfg
+            .payload()
+            .or_else(|| Some(synthesize_trigger_fired_payload(&trigger, &cfg, &now_str)));
 
         match event_repo::publish(
             pool,
@@ -1067,6 +1129,39 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Ok(_) => {}
         Err(e) => tracing::error!("Execution log cleanup error: {}", e),
     }
+
+    // Fix 2: orphan trigger sweep — delete triggers whose owning persona no
+    // longer exists, then purge their dead audit events. Also heal any
+    // schedule/polling/webhook trigger that's missing its Fix 4a auto-listener
+    // (e.g. after an import, a template adoption, or a pre-Fix-4a install).
+    // All three are idempotent; logs only surface when work was done.
+    match trigger_repo::delete_orphaned_triggers(pool) {
+        Ok(n) if n > 0 => tracing::warn!(
+            count = n,
+            "Orphan sweep: deleted {} trigger(s) whose persona no longer exists",
+            n,
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Orphan trigger sweep error: {}", e),
+    }
+    match event_repo::delete_orphaned_trigger_events(pool) {
+        Ok(n) if n > 0 => tracing::info!(
+            count = n,
+            "Orphan sweep: purged {} persona_events row(s) from deleted triggers",
+            n,
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Orphan event sweep error: {}", e),
+    }
+    match trigger_repo::backfill_auto_listeners(pool) {
+        Ok((_scanned, created)) if created > 0 => tracing::info!(
+            created,
+            "Auto-listener backfill: created {} missing event_listener trigger(s)",
+            created,
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Auto-listener backfill error: {}", e),
+    }
 }
 
 /// Emit event update to frontend for realtime visualization.
@@ -1131,6 +1226,109 @@ mod tests {
         assert_eq!(stats.triggers_fired, 0);
         assert_eq!(stats.queue_rejections, 0);
         assert_eq!(stats.subscriptions_crashed, 0);
+    }
+
+    // ========================================================================
+    // Fix 3: trigger_fired payload enrichment
+    // ========================================================================
+
+    fn make_trigger_for_test(
+        id: &str,
+        persona_id: &str,
+        trigger_type: &str,
+    ) -> crate::db::models::PersonaTrigger {
+        crate::db::models::PersonaTrigger {
+            id: id.into(),
+            persona_id: persona_id.into(),
+            trigger_type: trigger_type.into(),
+            config: None,
+            enabled: true,
+            status: "active".into(),
+            last_triggered_at: None,
+            next_trigger_at: None,
+            trigger_version: 0,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+            use_case_id: None,
+        }
+    }
+
+    #[test]
+    fn test_fix3_synthesize_payload_schedule_cron() {
+        use crate::db::models::TriggerConfig;
+        let trigger = make_trigger_for_test("t-cron-1", "p-alice", "schedule");
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("*/15 * * * *".into()),
+            interval_seconds: None,
+            event_type: None,
+            payload: None,
+        };
+        let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["trigger_id"], "t-cron-1");
+        assert_eq!(v["trigger_type"], "schedule");
+        assert_eq!(v["target_persona_id"], "p-alice");
+        assert_eq!(v["fired_at"], "2026-04-08T16:30:00Z");
+        assert_eq!(v["cron"], "*/15 * * * *");
+        assert!(
+            v.get("interval_seconds").is_none(),
+            "no interval for cron-based schedules",
+        );
+    }
+
+    #[test]
+    fn test_fix3_synthesize_payload_polling_interval() {
+        use crate::db::models::TriggerConfig;
+        let trigger = make_trigger_for_test("t-poll-1", "p-bob", "polling");
+        let cfg = TriggerConfig::Polling {
+            url: Some("https://example.com/api".into()),
+            headers: None,
+            content_hash: None,
+            interval_seconds: Some(300),
+            event_type: None,
+            payload: None,
+        };
+        let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["trigger_id"], "t-poll-1");
+        assert_eq!(v["trigger_type"], "polling");
+        assert_eq!(v["interval_seconds"], 300);
+        assert!(v.get("cron").is_none());
+    }
+
+    #[test]
+    fn test_fix3_synthesize_payload_webhook_no_cadence() {
+        use crate::db::models::TriggerConfig;
+        let trigger = make_trigger_for_test("t-wh-1", "p-carol", "webhook");
+        let cfg = TriggerConfig::Webhook {
+            webhook_secret: None,
+            event_type: None,
+            payload: None,
+        };
+        let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        // Core fields still present even without cron/interval
+        assert_eq!(v["trigger_id"], "t-wh-1");
+        assert_eq!(v["trigger_type"], "webhook");
+        assert_eq!(v["target_persona_id"], "p-carol");
+        assert!(v.get("cron").is_none());
+        assert!(v.get("interval_seconds").is_none());
+    }
+
+    #[test]
+    fn test_fix3_synthesize_payload_includes_use_case_id_when_set() {
+        use crate::db::models::TriggerConfig;
+        let mut trigger = make_trigger_for_test("t-uc-1", "p-d", "schedule");
+        trigger.use_case_id = Some("usecase-42".into());
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            event_type: None,
+            payload: None,
+        };
+        let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["use_case_id"], "usecase-42");
     }
 
     #[test]

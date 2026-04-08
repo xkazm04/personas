@@ -61,10 +61,18 @@ export function PersonaAvatar({
         />
       );
     }
-    if (!isIconUrl(icon)) {
+    // Only render as emoji if it actually looks like one: short strings (≤8 chars)
+    // that aren't plain ASCII identifiers (Lucide names, "persona:Foo", etc.).
+    // Matches the heuristic in PersonaIcon.tsx so both renderers agree.
+    const trimmed = icon.trim();
+    const isEmoji = !isIconUrl(icon)
+      && trimmed.length > 0
+      && trimmed.length <= 8
+      && !/^[a-zA-Z0-9_:.\-/]+$/.test(trimmed);
+    if (isEmoji) {
       return <span className={`${cfg.emoji} ${className}`}>{icon}</span>;
     }
-    return null;
+    // Unknown string (stale Lucide name, garbage) → fall through to Bot/initial fallback
   }
 
   if (fallbackStyle === 'bot') {

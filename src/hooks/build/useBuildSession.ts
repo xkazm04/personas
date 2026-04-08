@@ -104,8 +104,13 @@ export function useBuildSession(
    * Flush all pending events to the store. Each event is routed to the
    * correct slice handler based on its discriminant `type` field.
    *
-   * Events whose session_id does not match the current session are silently
-   * dropped to prevent cross-session interference.
+   * Every handler is session-scoped: it uses `event.session_id` to look up
+   * the target session in `buildSessions`. Events for sessions that don't
+   * exist in the map are silently dropped by the handlers (updateSessionInState
+   * returns a no-op patch when the session is missing). This means we can
+   * stream events for multiple concurrent draft builds through the same
+   * channel without cross-contamination, and we no longer need the
+   * sessionIdRef-based stale-event filter that used to live here.
    */
   const flushEvents = useCallback(() => {
     const events = pendingEventsRef.current;
@@ -114,11 +119,6 @@ export function useBuildSession(
     const store = useAgentStore.getState();
 
     for (const event of events) {
-      // Stale-event guard: only process events for the active session
-      if (event.session_id !== sessionIdRef.current) {
-        continue;
-      }
-
       switch (event.type) {
         case "cell_update":
           store.handleBuildCellUpdate(event);
@@ -206,8 +206,10 @@ export function useBuildSession(
       channelRef.current = channel;
       sessionIdRef.current = sessionId;
 
-      // Update the store
-      useAgentStore.setState({ buildSessionId: sessionId, buildPersonaId: effectivePersonaId });
+      // Create a session slot in the buildSessions map and activate it.
+      // Scalar fields (buildSessionId, buildPersonaId, etc.) are mirrored
+      // automatically from the active session.
+      useAgentStore.getState().createBuildSession(effectivePersonaId, sessionId);
 
       return sessionId;
     },
@@ -298,11 +300,9 @@ export function useBuildSession(
 
       if (session) {
         sessionIdRef.current = session.id;
+        // hydrateBuildSession creates the buildSessions entry and activates it,
+        // so buildPersonaId / buildSessionId / etc. are mirrored automatically.
         useAgentStore.getState().hydrateBuildSession(session);
-        // Ensure buildPersonaId is set (may be null if component unmounted and remounted)
-        if (!useAgentStore.getState().buildPersonaId) {
-          useAgentStore.setState({ buildPersonaId: effectivePersonaId });
-        }
       } else if (currentStore.buildSessionId && Object.keys(currentStore.buildCellStates).length > 0) {
         // No active session in DB but store has stale data — restore ref for UI consistency
         sessionIdRef.current = currentStore.buildSessionId;

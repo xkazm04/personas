@@ -1134,6 +1134,21 @@ const lemonsqueezy: EP[] = [
   ep('GET', '/customers', 'List customers', [], ['Customers']),
 ];
 
+// -- Ramp -----------------------------------------------------------
+
+const ramp: EP[] = [
+  ep('GET', '/developer/v1/users', 'List users', [queryP('page_size', false)], ['Users']),
+  ep('GET', '/developer/v1/cards', 'List cards', [queryP('page_size', false)], ['Cards']),
+  ep('GET', '/developer/v1/transactions', 'List transactions', [
+    queryP('from_date', false, 'ISO 8601 date'),
+    queryP('to_date', false, 'ISO 8601 date'),
+    queryP('page_size', false),
+  ], ['Transactions']),
+  ep('GET', '/developer/v1/reimbursements', 'List reimbursements', [queryP('page_size', false)], ['Reimbursements']),
+  ep('GET', '/developer/v1/departments', 'List departments', [], ['Departments']),
+  ep('GET', '/developer/v1/locations', 'List locations', [], ['Locations']),
+];
+
 // -- Novu ------------------------------------------------------------
 
 const novu: EP[] = [
@@ -1256,6 +1271,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   crisp,
   woocommerce,
   lemonsqueezy,
+  ramp,
   novu,
   knock,
   obsidian,

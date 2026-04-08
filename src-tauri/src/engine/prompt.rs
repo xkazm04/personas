@@ -1,7 +1,18 @@
 use super::types::{providers, CliArgs, ModelProfile};
-use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::models::{LlmUsageHint, Persona, PersonaToolDefinition};
 #[cfg(test)]
 use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
+
+/// Resolved connector usage hint scoped to a single execution.
+///
+/// `label` is the human-readable connector name (e.g. "GitHub") used to
+/// head the rendered section; `hint` is the structured payload loaded from
+/// `metadata.llm_usage_hint` in the connector JSON.
+#[derive(Debug, Clone)]
+pub struct ResolvedConnectorHint {
+    pub label: String,
+    pub hint: LlmUsageHint,
+}
 
 /// Parse the model_profile JSON string into a ModelProfile struct.
 /// Returns None if the input is None, empty, or invalid JSON.
@@ -53,6 +64,7 @@ pub fn assemble_prompt(
     input_data: Option<&serde_json::Value>,
     credential_hints: Option<&[&str]>,
     workspace_instructions: Option<&str>,
+    connector_usage_hints: Option<&[ResolvedConnectorHint]>,
     #[cfg(feature = "desktop")] ambient_context: Option<&str>,
 ) -> String {
     let mut prompt = String::new();
@@ -350,6 +362,34 @@ pub fn assemble_prompt(
                 "\nExample: `curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" https://api.example.com`\n\
                  IMPORTANT: Do NOT check if env vars exist -- they are pre-configured. Just use them.\n\n",
             );
+        }
+    }
+
+    // Connector Usage Reference -- structured metadata loaded from each
+    // connector's `metadata.llm_usage_hint` block. Saves tokens by giving the
+    // agent the essential API shape up front instead of forcing exploratory calls.
+    if let Some(connector_hints) = connector_usage_hints {
+        if !connector_hints.is_empty() {
+            prompt.push_str("## Connector Usage Reference\n");
+            prompt.push_str("Quick reference for the connectors above. Use these examples as starting points -- adapt params to your task.\n\n");
+            for entry in connector_hints {
+                prompt.push_str(&format!("### {}\n{}\n\n", entry.label, entry.hint.overview));
+                if !entry.hint.examples.is_empty() {
+                    prompt.push_str("Examples:\n");
+                    for example in &entry.hint.examples {
+                        prompt.push_str(&format!("```\n{}\n```\n", example));
+                    }
+                }
+                if let Some(gotchas) = &entry.hint.gotchas {
+                    if !gotchas.is_empty() {
+                        prompt.push_str("Gotchas:\n");
+                        for g in gotchas {
+                            prompt.push_str(&format!("- {}\n", g));
+                        }
+                    }
+                }
+                prompt.push('\n');
+            }
         }
     }
 
@@ -869,6 +909,7 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
 pub fn assemble_resume_prompt(
     input_data: Option<&serde_json::Value>,
     credential_hints: Option<&[&str]>,
+    connector_usage_hints: Option<&[ResolvedConnectorHint]>,
 ) -> String {
     let mut prompt = String::new();
 
@@ -879,6 +920,19 @@ pub fn assemble_resume_prompt(
             prompt.push_str("## Available Credentials\n");
             for hint in hints {
                 prompt.push_str(&format!("- {hint}\n"));
+            }
+            prompt.push('\n');
+        }
+    }
+
+    // Resume prompts skip the full Connector Usage Reference header because
+    // the resumed session already has that context from the initial run.
+    // We re-emit a compact reminder only if any hint has a non-empty overview.
+    if let Some(connector_hints) = connector_usage_hints {
+        if !connector_hints.is_empty() {
+            prompt.push_str("## Connector Usage Reference (reminder)\n");
+            for entry in connector_hints {
+                prompt.push_str(&format!("- **{}**: {}\n", entry.label, entry.hint.overview));
             }
             prompt.push('\n');
         }
@@ -1346,7 +1400,7 @@ mod tests {
     #[test]
     fn test_assemble_minimal_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -1360,7 +1414,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_persona_name() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are Test Agent."));
@@ -1369,7 +1423,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_system_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Identity"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -1392,7 +1446,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Identity\n"));
         assert!(prompt.contains("I am a code reviewer."));
@@ -1422,7 +1476,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Web Search Research Prompt"));
         assert!(prompt.contains("Q1 2026 tech industry reports"));
@@ -1441,7 +1495,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(!prompt.contains("## Web Search Research Prompt"));
     }
@@ -1450,7 +1504,7 @@ mod tests {
     fn test_prompt_with_tools() {
         let persona = test_persona();
         let tool = test_tool();
-        let prompt = assemble_prompt(&persona, &[tool], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[tool], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Available Tools"));
         assert!(prompt.contains("### file_reader"));
@@ -1488,7 +1542,7 @@ mod tests {
     fn test_prompt_with_input_data() {
         let persona = test_persona();
         let input = serde_json::json!({"task": "review", "files": ["main.rs"]});
-        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Input Data"));
         assert!(prompt.contains("```json"));
@@ -1496,10 +1550,143 @@ mod tests {
         assert!(prompt.contains("\"main.rs\""));
     }
 
+    // -- Connector Usage Reference (llm_usage_hint injection) ----------
+    //
+    // These tests lock the contract that when a persona has connector
+    // credentials attached and those connectors have llm_usage_hint metadata,
+    // the system prompt exposes a Connector Usage Reference section the
+    // agent can consult instead of probing APIs blindly.
+
+    /// Contract: connectors WITH llm_usage_hint render a full section with
+    /// label, overview, examples, and gotchas.
+    #[test]
+    fn test_prompt_usage_reference_section_present() {
+        let persona = test_persona();
+        let hint = LlmUsageHint {
+            overview: "GitHub REST API v3. Auth via PAT in $GITHUB_TOKEN.".into(),
+            examples: vec![
+                "curl -H \"Authorization: Bearer $GITHUB_TOKEN\" https://api.github.com/user".into(),
+            ],
+            gotchas: Some(vec!["Pagination defaults to 30 items; use ?per_page=100.".into()]),
+        };
+        let hints = vec![ResolvedConnectorHint {
+            label: "GitHub".into(),
+            hint,
+        }];
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            Some(&hints),
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        assert!(prompt.contains("## Connector Usage Reference"));
+        assert!(prompt.contains("### GitHub"));
+        assert!(prompt.contains("GitHub REST API v3"));
+        assert!(prompt.contains("Examples:"));
+        assert!(prompt.contains("api.github.com/user"));
+        assert!(prompt.contains("Gotchas:"));
+        assert!(prompt.contains("?per_page=100"));
+    }
+
+    /// Contract: when no connector hints are in scope, the section header
+    /// is absent -- no dangling empty block.
+    #[test]
+    fn test_prompt_usage_reference_section_absent() {
+        let persona = test_persona();
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        assert!(!prompt.contains("## Connector Usage Reference"));
+
+        // Also verify empty slice is treated same as None.
+        let empty: [ResolvedConnectorHint; 0] = [];
+        let prompt2 = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            Some(&empty),
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        assert!(!prompt2.contains("## Connector Usage Reference"));
+    }
+
+    /// Contract: the section is rendered immediately after the Available
+    /// Credentials section when both are present.
+    #[test]
+    fn test_prompt_usage_reference_follows_credentials_section() {
+        let persona = test_persona();
+        let cred_hints = ["`GITHUB_TOKEN` (from GitHub credential 'my-gh')"];
+        let hint = LlmUsageHint {
+            overview: "GitHub REST API v3.".into(),
+            examples: vec![],
+            gotchas: None,
+        };
+        let hints = vec![ResolvedConnectorHint {
+            label: "GitHub".into(),
+            hint,
+        }];
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            Some(&cred_hints),
+            None,
+            Some(&hints),
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        let creds_pos = prompt.find("## Available Credentials").unwrap();
+        let refs_pos = prompt.find("## Connector Usage Reference").unwrap();
+        assert!(refs_pos > creds_pos);
+    }
+
+    /// Roundtrip: a JSON metadata blob with llm_usage_hint deserializes
+    /// via ConnectorMetadataPartial, and the blob WITHOUT it also parses.
+    #[test]
+    fn test_connector_metadata_partial_roundtrip() {
+        use crate::db::models::ConnectorMetadataPartial;
+
+        let with_hint = r#"{
+            "summary": "GitHub connector",
+            "llm_usage_hint": {
+                "overview": "GitHub API",
+                "examples": ["curl https://api.github.com"],
+                "gotchas": ["rate limited"]
+            }
+        }"#;
+        let parsed: ConnectorMetadataPartial =
+            serde_json::from_str(with_hint).expect("parse with hint");
+        let hint = parsed.llm_usage_hint.expect("hint present");
+        assert_eq!(hint.overview, "GitHub API");
+        assert_eq!(hint.examples.len(), 1);
+        assert_eq!(hint.gotchas.as_ref().unwrap().len(), 1);
+
+        let without_hint = r#"{"summary":"Something","setup_guide":"..."}"#;
+        let parsed2: ConnectorMetadataPartial =
+            serde_json::from_str(without_hint).expect("parse without hint");
+        assert!(parsed2.llm_usage_hint.is_none());
+    }
+
     #[test]
     fn test_prompt_contains_protocols() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Communication Protocols"));
         assert!(prompt.contains("### User Message Protocol"));
@@ -1514,7 +1701,7 @@ mod tests {
     #[test]
     fn test_prompt_ends_with_execute_now() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## EXECUTE NOW"));
         assert!(prompt.contains("Act autonomously"));
@@ -1826,6 +2013,7 @@ mod tests {
             Some(&legacy_input),
             None,
             None,
+            None,
             #[cfg(feature = "desktop")]
             None,
         );
@@ -1854,6 +2042,7 @@ mod tests {
             &persona,
             &[],
             Some(&event_input),
+            None,
             None,
             None,
             #[cfg(feature = "desktop")]
@@ -1903,6 +2092,7 @@ mod tests {
             Some(&input),
             None,
             None,
+            None,
             #[cfg(feature = "desktop")]
             None,
         );
@@ -1945,6 +2135,7 @@ mod tests {
             Some(&input),
             None,
             None,
+            None,
             #[cfg(feature = "desktop")]
             None,
         );
@@ -1971,6 +2162,7 @@ mod tests {
         let prompt = assemble_prompt(
             &persona,
             &[],
+            None,
             None,
             None,
             None,
@@ -2002,6 +2194,7 @@ mod tests {
         let prompt = assemble_prompt(
             &persona,
             &[],
+            None,
             None,
             None,
             None,

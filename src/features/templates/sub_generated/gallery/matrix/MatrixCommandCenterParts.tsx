@@ -506,12 +506,14 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
 
 /** Test results panel -- pass/fail summary with View Report button. */
 export function TestResultsPanel({
-  passed, error, onApprove, onReject, toolResults = [], summary,
+  passed, error, onApprove, onApproveAnyway, onReject, toolResults = [], summary,
 }: {
   passed?: boolean | null;
   outputLines?: string[];
   error?: string | null;
   onApprove?: () => void;
+  /** Force-promote bypass when tests didn't pass (skipped / failed / connector gaps). */
+  onApproveAnyway?: () => void;
   onReject?: () => void;
   toolResults?: ToolTestResult[];
   summary?: string | null;
@@ -576,6 +578,20 @@ export function TestResultsPanel({
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve
+          </button>
+        )}
+        {!didPass && onApproveAnyway && (
+          <button
+            type="button"
+            onClick={onApproveAnyway}
+            data-testid="agent-approve-anyway-btn"
+            title={hasConnectorGaps
+              ? `Promote without credentials for: ${missingConnectors.map((c) => c.name).join(', ')}`
+              : 'Promote this agent despite skipped or failed tests'}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Approve Anyway
           </button>
         )}
         {(toolResults.length > 0 || error) && (

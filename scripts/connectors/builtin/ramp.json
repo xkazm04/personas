@@ -1,0 +1,78 @@
+{
+  "id": "builtin-ramp",
+  "name": "ramp",
+  "label": "Ramp",
+  "color": "#FFCD1C",
+  "icon_url": "/icons/connectors/ramp.svg",
+  "category": "finance",
+  "fields": [
+    {
+      "key": "client_id",
+      "label": "Client ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "ramp_id_...",
+      "helpText": "From Ramp Developer Portal -> Apps -> your app -> Credentials",
+      "sensitive": true
+    },
+    {
+      "key": "client_secret",
+      "label": "Client Secret",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Ramp Developer Portal -> Apps -> your app -> Credentials",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.ramp.com/developer/v1/users",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates OAuth token via Ramp users endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Ramp corporate cards, expense management, and accounting automation.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_provider_id": "ramp",
+    "oauth_scopes": [
+      "transactions:read",
+      "cards:read",
+      "users:read",
+      "reimbursements:read"
+    ],
+    "docs_url": "https://docs.ramp.com/developer-api/v1",
+    "setup_guide": "1. Go to app.ramp.com/developers and create a new app\n2. Copy the Client ID and Client Secret from the Credentials tab\n3. Add http://127.0.0.1 as an authorized redirect URL\n4. Paste Client ID and Client Secret here, then click Authorize with Ramp\n\nNote: Ramp API URLs and scopes may evolve. Verify against https://docs.ramp.com/developer-api/v1 before production use.",
+    "pricing_tier": "paid",
+    "auth_methods": [
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
+    ],
+    "llm_usage_hint": {
+      "overview": "Ramp Developer API v1. OAuth 2.0 bearer in $RAMP_ACCESS_TOKEN. Base URL: https://api.ramp.com/developer/v1. Core resources: transactions, cards, users, reimbursements, departments, locations.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $RAMP_ACCESS_TOKEN\" \"https://api.ramp.com/developer/v1/transactions?limit=100\"",
+        "curl -H \"Authorization: Bearer $RAMP_ACCESS_TOKEN\" \"https://api.ramp.com/developer/v1/transactions?from_date=2026-01-01&to_date=2026-04-08&limit=100\"",
+        "curl -H \"Authorization: Bearer $RAMP_ACCESS_TOKEN\" \"https://api.ramp.com/developer/v1/cards?limit=50\"",
+        "curl -H \"Authorization: Bearer $RAMP_ACCESS_TOKEN\" \"https://api.ramp.com/developer/v1/users?limit=50\"",
+        "curl -H \"Authorization: Bearer $RAMP_ACCESS_TOKEN\" \"https://api.ramp.com/developer/v1/reimbursements?limit=50\""
+      ],
+      "gotchas": [
+        "Responses include a 'page' object with 'next' for pagination -- keep GETting the next URL until absent.",
+        "Scopes are granular (transactions:read, cards:read, ...) -- request only what your persona needs at OAuth time.",
+        "Amounts are in minor currency units (cents). Divide by 100 for display.",
+        "Verify the base URL and endpoints at https://docs.ramp.com/developer-api/v1 -- the API is relatively young and evolves."
+      ]
+    }
+  }
+}

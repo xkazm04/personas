@@ -52,6 +52,21 @@
     "auth_type_label": "API Token",
     "docs_url": "https://id.atlassian.com/manage-profile/security/api-tokens",
     "setup_guide": "1. Go to id.atlassian.com/manage-profile/security/api-tokens\n2. Click 'Create API token' and give it a label\n3. Copy the generated token\n4. Enter your Atlassian email, the API token, and your Jira domain (e.g. your-company.atlassian.net)",
-    "pricing_tier": "paid"
+    "pricing_tier": "paid",
+    "llm_usage_hint": {
+      "overview": "Jira Cloud REST API v3. Basic auth = email:api_token base64-encoded. Env vars: $JIRA_EMAIL, $JIRA_API_TOKEN, $JIRA_DOMAIN (e.g. 'your-company.atlassian.net'). Base URL: https://$JIRA_DOMAIN/rest/api/3. Build the auth header with: -u \"$JIRA_EMAIL:$JIRA_API_TOKEN\".",
+      "examples": [
+        "curl -u \"$JIRA_EMAIL:$JIRA_API_TOKEN\" -H \"Accept: application/json\" \"https://$JIRA_DOMAIN/rest/api/3/search?jql=project=PROJ+AND+status=%22To+Do%22&maxResults=50\"",
+        "curl -u \"$JIRA_EMAIL:$JIRA_API_TOKEN\" -H \"Accept: application/json\" \"https://$JIRA_DOMAIN/rest/api/3/issue/{issueIdOrKey}\"",
+        "curl -X POST -u \"$JIRA_EMAIL:$JIRA_API_TOKEN\" -H \"Content-Type: application/json\" -d '{\"fields\":{\"project\":{\"key\":\"PROJ\"},\"summary\":\"Bug X\",\"description\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Details\"}]}]},\"issuetype\":{\"name\":\"Bug\"}}}' \"https://$JIRA_DOMAIN/rest/api/3/issue\"",
+        "curl -X PUT -u \"$JIRA_EMAIL:$JIRA_API_TOKEN\" -H \"Content-Type: application/json\" -d '{\"fields\":{\"summary\":\"Updated title\"}}' \"https://$JIRA_DOMAIN/rest/api/3/issue/{issueIdOrKey}\""
+      ],
+      "gotchas": [
+        "Jira v3 uses Atlassian Document Format (ADF) for description/comment bodies -- plain strings won't work; use {type:'doc',version:1,content:[...]}.",
+        "JQL strings must be URL-encoded; spaces become + or %20, quotes become %22.",
+        "Transitioning issue status requires POST to /issue/{key}/transitions with a transition id (list them via GET first).",
+        "Rate limit is dynamic; 429 responses include a Retry-After header you must honor."
+      ]
+    }
   }
 }

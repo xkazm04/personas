@@ -557,6 +557,195 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
 }
 
 // ============================================================================
+// Step 2c: Normalize agent icon to "agent-icon:<catalog_id>" format
+// ============================================================================
+
+/// The 20-icon catalog — MUST stay in sync with `src/lib/icons/agentIconCatalog.ts`.
+/// Tuple: (id, suggested_hex_color).
+const AGENT_ICON_CATALOG: &[(&str, &str)] = &[
+    ("assistant",    "#8b5cf6"),
+    ("code",         "#06b6d4"),
+    ("data",         "#3b82f6"),
+    ("security",     "#ef4444"),
+    ("monitor",      "#f59e0b"),
+    ("email",        "#ec4899"),
+    ("document",     "#a78bfa"),
+    ("support",      "#14b8a6"),
+    ("automation",   "#f97316"),
+    ("research",     "#6366f1"),
+    ("finance",      "#22c55e"),
+    ("marketing",    "#e879f9"),
+    ("devops",       "#0ea5e9"),
+    ("content",      "#c084fc"),
+    ("sales",        "#fb923c"),
+    ("hr",           "#4ade80"),
+    ("legal",        "#94a3b8"),
+    ("notification", "#fbbf24"),
+    ("calendar",     "#2dd4bf"),
+    ("search",       "#818cf8"),
+];
+
+/// Normalize `ir.icon` to `agent-icon:<catalog_id>` — the only icon shape the
+/// frontend renderers (PersonaIcon, PersonaAvatar) can handle. The build LLM
+/// historically returns Lucide PascalCase names ("Mail", "Database") which
+/// render as literal text in the avatar and as a default robot in PersonaIcon.
+///
+/// Resolution order (first match wins):
+///   1. Already `agent-icon:<valid id>` → keep
+///   2. Bare catalog id (case-insensitive) → prepend prefix
+///   3. Known Lucide PascalCase → mapped catalog id
+///   4. Dominant connector in `ir.required_connectors` → mapped id
+///   5. Keyword scan of `ir.name` + `ir.description` → mapped id
+///   6. Fallback `assistant`
+///
+/// Also fills `ir.color` from the catalog's suggested color when empty, so
+/// the snapshot and persona row get a consistent theme-aware accent.
+fn normalize_agent_icon(ir: &mut crate::db::models::AgentIr) {
+    const PREFIX: &str = "agent-icon:";
+
+    fn lookup_catalog(id: &str) -> Option<&'static str> {
+        AGENT_ICON_CATALOG.iter().find(|(x, _)| *x == id).map(|(x, _)| *x)
+    }
+
+    fn catalog_color(id: &str) -> Option<&'static str> {
+        AGENT_ICON_CATALOG.iter().find(|(x, _)| *x == id).map(|(_, c)| *c)
+    }
+
+    // Lucide PascalCase name → nearest catalog id.
+    fn lucide_to_id(name: &str) -> Option<&'static str> {
+        match name {
+            "Mail" | "MailOpen" | "AtSign" | "Send" | "Inbox" => Some("email"),
+            "Database" | "BarChart" | "BarChart2" | "BarChart3" | "PieChart"
+                | "LineChart" | "Table" | "Table2" => Some("data"),
+            "MessageSquare" | "MessageCircle" | "MessagesSquare" | "Bot" => Some("assistant"),
+            "Code" | "Code2" | "GitBranch" | "GitCommit" | "GitPullRequest"
+                | "Github" | "Terminal" | "TerminalSquare" => Some("code"),
+            "FileText" | "FileCode" | "File" | "Files" | "BookOpen" | "Book"
+                | "Notebook" | "NotebookText" => Some("document"),
+            "Bell" | "BellRing" | "BellDot" => Some("notification"),
+            "Calendar" | "CalendarDays" | "CalendarCheck" | "CalendarClock"
+                | "Clock" | "Timer" => Some("calendar"),
+            "Search" | "SearchCheck" | "ScanSearch" | "Binoculars" => Some("search"),
+            "Shield" | "ShieldCheck" | "ShieldAlert" | "Lock" | "KeyRound" | "Key" => Some("security"),
+            "DollarSign" | "CircleDollarSign" | "Banknote" | "Wallet"
+                | "CreditCard" | "Receipt" => Some("finance"),
+            "Users" | "UserPlus" | "UserCheck" | "User" | "UserCog" => Some("hr"),
+            "Briefcase" | "Scale" | "Gavel" | "FileSignature" => Some("legal"),
+            "Megaphone" | "Speaker" | "Sparkles" | "Palette" | "Image" | "Camera" => Some("marketing"),
+            "Zap" | "Workflow" | "Cog" | "Settings" | "Settings2" => Some("automation"),
+            "Activity" | "Gauge" | "Heart" | "HeartPulse" => Some("monitor"),
+            "Headphones" | "LifeBuoy" | "HelpCircle" => Some("support"),
+            "Server" | "Cloud" | "CloudCog" | "Container" | "Boxes" => Some("devops"),
+            "Flask" | "FlaskConical" | "Microscope" | "Lightbulb" | "GraduationCap" => Some("research"),
+            "ShoppingCart" | "ShoppingBag" | "Store" | "TrendingUp" | "Target" => Some("sales"),
+            "Edit" | "Edit2" | "Edit3" | "Pen" | "PenTool" | "PenLine" | "Type" => Some("content"),
+            _ => None,
+        }
+    }
+
+    // Connector service name → catalog id (lowercase substring match).
+    fn connector_to_id(name: &str) -> Option<&'static str> {
+        let n = name.to_lowercase();
+        let c = |needle: &str| n.contains(needle);
+        if c("gmail") || c("outlook") || c("mailgun") || c("sendgrid") || c("mailchimp") { return Some("email"); }
+        if c("github") || c("gitlab") || c("bitbucket") { return Some("code"); }
+        if c("notion") || c("confluence") { return Some("document"); }
+        if c("airtable") || c("postgres") || c("mysql") || c("supabase") || c("sheets") || c("bigquery") { return Some("data"); }
+        if c("slack") || c("discord") || c("telegram") || c("teams") || c("whatsapp") { return Some("assistant"); }
+        if c("stripe") || c("quickbooks") || c("xero") || c("plaid") { return Some("finance"); }
+        if c("hubspot") || c("salesforce") || c("pipedrive") || c("attio") { return Some("sales"); }
+        if c("sentry") || c("datadog") || c("newrelic") || c("grafana") { return Some("monitor"); }
+        if c("jira") || c("linear") || c("asana") || c("clickup") || c("trello") { return Some("devops"); }
+        if c("google-calendar") || c("google_calendar") || c("calcom") || c("calendly") { return Some("calendar"); }
+        if c("zendesk") || c("intercom") || c("freshdesk") { return Some("support"); }
+        if c("greenhouse") || c("workday") || c("lever") { return Some("hr"); }
+        if c("docusign") || c("hellosign") { return Some("legal"); }
+        None
+    }
+
+    // Keyword scan mirrors `src/lib/icons/autoAssignIcons.ts` KEYWORD_MAP — order matters (first match wins).
+    fn keyword_scan(text: &str) -> Option<&'static str> {
+        let t = text.to_lowercase();
+        let any = |kws: &[&str]| kws.iter().any(|kw| t.contains(kw));
+        if any(&["developer", "codebase", "feature flag", "source code"]) { return Some("code"); }
+        if any(&["devops", "sentry", "infrastructure", "deploy", "incident"]) { return Some("devops"); }
+        if any(&["security", "vulnerability", "sentinel"]) { return Some("security"); }
+        if any(&["monitor", "watchdog", "health check"]) { return Some("monitor"); }
+        if any(&["email", "inbox", "mail", "digest", "newsletter"]) { return Some("email"); }
+        if any(&["document", "documentation", "knowledge base", "wiki"]) { return Some("document"); }
+        if any(&["support", "helpdesk", "ticket", "escalation", "customer service"]) { return Some("support"); }
+        if any(&["automat", "workflow", "orchestrat"]) { return Some("automation"); }
+        if any(&["research", "intelligence", "analyst", "insight", "scout"]) { return Some("research"); }
+        if any(&["finance", "invoice", "expense", "budget", "billing", "revenue", "accounting", "payment"]) { return Some("finance"); }
+        if any(&["marketing", "campaign", "seo", "content distribution"]) { return Some("marketing"); }
+        if any(&["editorial", "blog", "writer"]) { return Some("content"); }
+        if any(&["sales", "crm", "proposal", "outbound"]) { return Some("sales"); }
+        if any(&["recruit", "onboard", "hiring", "employee"]) { return Some("hr"); }
+        if any(&["legal", "contract", "compliance", "regulation"]) { return Some("legal"); }
+        if any(&["notification", "webhook"]) { return Some("notification"); }
+        if any(&["calendar", "schedule", "meeting", "appointment", "deadline"]) { return Some("calendar"); }
+        if any(&["search", "discover", "explore", "lookup"]) { return Some("search"); }
+        if any(&["data", "analytics", "chart", "metric", "dashboard"]) { return Some("data"); }
+        None
+    }
+
+    // ---- Resolve the canonical catalog id ----
+    let resolved_id: &'static str = 'resolve: {
+        if let Some(raw) = ir.icon.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            // Case 1: already `agent-icon:<valid id>`
+            if let Some(rest) = raw.strip_prefix(PREFIX) {
+                if let Some(id) = lookup_catalog(rest) {
+                    break 'resolve id;
+                }
+            }
+            // Case 2: bare catalog id (case-insensitive)
+            let lower = raw.to_lowercase();
+            if let Some(id) = lookup_catalog(&lower) {
+                break 'resolve id;
+            }
+            // Case 3: Lucide PascalCase name
+            if let Some(id) = lucide_to_id(raw) {
+                break 'resolve id;
+            }
+        }
+        // Case 4: dominant connector
+        if let Some(id) = ir
+            .required_connectors
+            .iter()
+            .find_map(|c| c.name().and_then(connector_to_id))
+        {
+            break 'resolve id;
+        }
+        // Case 5: keyword scan of name + description
+        let text = format!(
+            "{} {}",
+            ir.name.as_deref().unwrap_or(""),
+            ir.description.as_deref().unwrap_or(""),
+        );
+        keyword_scan(&text).unwrap_or("assistant")
+    };
+
+    let previous = ir.icon.clone();
+    ir.icon = Some(format!("{}{}", PREFIX, resolved_id));
+
+    // Backfill color from catalog if empty
+    let color_empty = ir.color.as_deref().map(|s| s.trim().is_empty()).unwrap_or(true);
+    if color_empty {
+        if let Some(col) = catalog_color(resolved_id) {
+            ir.color = Some(col.to_string());
+        }
+    }
+
+    if previous.as_deref() != ir.icon.as_deref() {
+        tracing::info!(
+            previous = ?previous,
+            resolved = %resolved_id,
+            "normalize_agent_icon: rewrote persona icon to catalog id"
+        );
+    }
+}
+
+// ============================================================================
 // Step 3: Validate triggers before the transaction
 // ============================================================================
 
@@ -979,6 +1168,12 @@ pub async fn promote_build_draft_inner(
     // Templates and adoption flows produce webhook triggers without a secret
     // since the user has no UI to set one before promotion.
     ensure_webhook_secrets(&mut ir);
+
+    // Coerce `ir.icon` to the `agent-icon:<id>` form the frontend renderers
+    // expect. The build LLM historically returns Lucide PascalCase names
+    // which render as either a default robot (PersonaIcon) or literal text
+    // (PersonaAvatar). This fills `ir.color` from the catalog too when empty.
+    normalize_agent_icon(&mut ir);
 
     // ================================================================
     // Pre-transaction preparation (read-only + encryption)

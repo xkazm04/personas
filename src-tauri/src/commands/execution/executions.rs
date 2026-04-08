@@ -465,6 +465,7 @@ pub fn preview_execution(
         input_json.as_ref(),
         None, // no credential hints in preview
         None, // no workspace instructions in preview
+        None, // no connector usage hints in preview
         #[cfg(feature = "desktop")]
         None, // no ambient context in preview
     );

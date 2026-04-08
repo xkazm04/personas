@@ -72,6 +72,11 @@ pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
 /// Defaults to `claude-haiku-4-5-20251001` when unset.
 pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
 
+/// Model override for the LLM-assisted semantic vault lint.
+/// Value: model ID string (e.g., `"claude-haiku-4-5-20251001"`).
+/// Defaults to `claude-haiku-4-5-20251001` when unset.
+pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
+
 /// Whether the weekly health digest is enabled. Value: `"true"` or `"false"`.
 pub const HEALTH_DIGEST_ENABLED: &str = "health_digest_enabled";
 
@@ -107,6 +112,7 @@ const ALLOWED_KEYS: &[&str] = &[
     PERFORMANCE_DIGEST_LAST,
     QUALITY_GATE_CONFIG,
     SMART_SEARCH_MODEL,
+    SEMANTIC_LINT_MODEL,
     HEALTH_DIGEST_ENABLED,
     HEALTH_DIGEST_LAST_RUN,
     NOTIFICATION_PREFS,

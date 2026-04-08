@@ -42,6 +42,21 @@
     "auth_type_label": "PAT",
     "docs_url": "https://airtable.com/create/tokens",
     "setup_guide": "1. Go to airtable.com/create/tokens\n2. Click 'Create new token'\n3. Name your token and select the scopes and bases you need\n4. Click 'Create token' and copy the pat... value",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "Airtable REST API. Bearer token in $AIRTABLE_API_KEY. Base URL: https://api.airtable.com/v0/{baseId}/{tableIdOrName}. If the connector has $AIRTABLE_BASE_ID set, use it; otherwise the user must supply the baseId per request. Table names with spaces must be URL-encoded.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $AIRTABLE_API_KEY\" \"https://api.airtable.com/v0/$AIRTABLE_BASE_ID/Tasks?maxRecords=100&filterByFormula=%7BStatus%7D%3D%22Open%22\"",
+        "curl -X POST -H \"Authorization: Bearer $AIRTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"records\":[{\"fields\":{\"Name\":\"New task\",\"Status\":\"Open\"}}]}' \"https://api.airtable.com/v0/$AIRTABLE_BASE_ID/Tasks\"",
+        "curl -X PATCH -H \"Authorization: Bearer $AIRTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"records\":[{\"id\":\"rec123\",\"fields\":{\"Status\":\"Done\"}}]}' \"https://api.airtable.com/v0/$AIRTABLE_BASE_ID/Tasks\"",
+        "curl -H \"Authorization: Bearer $AIRTABLE_API_KEY\" \"https://api.airtable.com/v0/meta/bases/$AIRTABLE_BASE_ID/tables\""
+      ],
+      "gotchas": [
+        "filterByFormula uses Airtable's own formula language; field names with spaces go in curly braces: {Field Name}. Remember URL-encoding.",
+        "Max 10 records per create/update/delete request; batch larger operations in chunks.",
+        "Rate limit is 5 requests per second per base -- 429 responses lock the base for 30 seconds.",
+        "List responses are paginated via 'offset' -- keep passing it until absent; don't assume all records fit in one call."
+      ]
+    }
   }
 }

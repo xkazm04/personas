@@ -100,6 +100,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   crisp:                           'personal',
   woocommerce:                     'personal',
   lemonsqueezy:                    'personal',
+  ramp:                            'personal',
   aws_s3:                          'personal',
   cloudflare_r2:                   'personal',
   backblaze_b2:                    'personal',

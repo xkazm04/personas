@@ -49,6 +49,21 @@
           "GOOGLE_REFRESH_TOKEN": ""
         }
       }
-    ]
+    ],
+    "llm_usage_hint": {
+      "overview": "Gmail API v1. OAuth bearer in $GOOGLE_ACCESS_TOKEN. Base URL: https://gmail.googleapis.com/gmail/v1/users/me. Address the current user as 'me' everywhere. Messages are stored as base64url-encoded RFC 2822; to read body text you must decode 'payload.parts[].body.data'.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" \"https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+label:inbox&maxResults=20\"",
+        "curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" \"https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}?format=full\"",
+        "curl -X POST -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"raw\":\"{base64url-encoded RFC 2822 message}\"}' https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "curl -X POST -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"addLabelIds\":[\"Label_123\"],\"removeLabelIds\":[\"INBOX\"]}' \"https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}/modify\""
+      ],
+      "gotchas": [
+        "List endpoint returns only {id, threadId} per message -- you must GET each by ID for headers/body.",
+        "The 'raw' field in send is base64URL (not standard base64): replace + with -, / with _, and strip trailing =.",
+        "Message body lives nested in payload.parts[].body.data; multipart messages have multiple parts and no top-level body.",
+        "Search uses Gmail search operators: from:, to:, subject:, after:, label:, is:unread, has:attachment -- identical to the web UI."
+      ]
+    }
   }
 }

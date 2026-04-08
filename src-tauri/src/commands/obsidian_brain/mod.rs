@@ -1,6 +1,7 @@
 pub mod conflict;
 pub mod lint;
 pub mod markdown;
+pub mod semantic_lint;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -10,9 +11,12 @@ use tauri::State;
 use uuid::Uuid;
 
 use crate::db::models::{
-    DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SyncConflict,
-    SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
+    DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport,
+    SyncConflict, SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
+use crate::db::repos::core::settings;
+use crate::db::settings_keys;
+use crate::ipc_auth::require_auth;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::core::settings as settings_repo;
@@ -1190,4 +1194,33 @@ pub fn obsidian_brain_lint_vault(
 
     let stale_days = stale_days.unwrap_or(self::lint::DEFAULT_STALE_DAYS);
     self::lint::lint_vault(Path::new(&path), stale_days)
+}
+
+// ── Phase 5.1: Semantic Vault Lint (LLM-assisted integrity check) ────
+//
+// Complement to `obsidian_brain_lint_vault`: spawns a short Claude Code CLI
+// call to find inconsistencies, missing-page candidates, and obvious missing
+// wikilinks the syntactic lint can't catch. Opt-in; bills tokens. Inspired by
+// Karpathy's LLM knowledge base walkthrough (research run 2026-04-08,
+// youtube.com/watch?v=sboNwYmH3AY).
+
+#[tauri::command]
+pub async fn obsidian_brain_semantic_lint_vault(
+    state: State<'_, Arc<AppState>>,
+    vault_path: Option<String>,
+) -> Result<SemanticLintReport, AppError> {
+    require_auth(&state).await?;
+
+    // If the caller didn't supply a path, fall back to the configured vault.
+    let path = match vault_path {
+        Some(p) if !p.trim().is_empty() => p,
+        _ => get_config_or_err(&state.db)?.vault_path,
+    };
+
+    // Resolve the model: per-app override, else the module default.
+    let model = settings::get(&state.db, settings_keys::SEMANTIC_LINT_MODEL)?
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| self::semantic_lint::DEFAULT_SEMANTIC_LINT_MODEL.to_string());
+
+    self::semantic_lint::run_semantic_lint(Path::new(&path), model).await
 }

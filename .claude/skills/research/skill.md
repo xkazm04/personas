@@ -257,13 +257,22 @@ For each surviving idea, gather concrete evidence to make the user's triage easy
 
 This catches existing-but-undocumented surface area in one grep. **A single discovery here typically reframes 2-4 findings at once** — what looked like "build new infrastructure" becomes "add routes to existing router" / "add column to existing table". Reframing changes both effort estimates and file anchors, so do it before deeper greps.
 
+**Step 1b — Catalog vs runtime check.** Before scoring any finding about "tool surface", "prompt size", "connector count", or similar quantitative architectural critiques, verify the catalog count is NOT the same as the per-execution count. Personas examples:
+- 87 connectors in the catalog ≠ 87 connectors in any execution. Each persona binds **0-3** connectors. Per-execution surface uses 0-3 as the denominator.
+- 92 templates in the catalog ≠ 92 prompts the LLM sees. Each persona uses 1 template at most.
+- N protocol blocks defined ≠ N injected per execution. Some are conditional on persona type, dev-tools mode, etc.
+
+If the finding's premise depends on catalog count = runtime count, **the finding is wrong** — drop it or reframe before presenting. See `codebase-stack.md` Section 3 for the connector binding model.
+
+**Step 1c — Framework vs plugin routing.** Before deciding the file anchor for a code finding, check whether it belongs in the **core engine** or in a **plugin**. Personas-the-framework is general-purpose; code/SDLC-specific features (worktree isolation, CLAUDE.md updates, repo scans, PR generation, build automation) belong in `src/features/plugins/dev-tools/` + `src-tauri/src/commands/infrastructure/dev_tools.rs`, NOT in the core engine. See `codebase-stack.md` Section 3, subsection "Personas framework vs `dev-tools` plugin". When in doubt: ask "would a non-coding persona benefit from this?" If no → plugin, not core.
+
 **Step 2 — Then search for the specific feature.** Now grep for the actual thing the idea proposes (function name, env var, flag, table name).
 
-**Step 3 — Read the anchor file.** `Read` the most relevant file(s) — limit to ~100 lines. Identify the exact `file_path:line_number` where the change would land.
+**Step 3 — Read the anchor file.** `Read` the most relevant file(s) — limit to ~100 lines. Identify the exact `file_path:line_number` where the change would land. **For host-infrastructure verification, read enough to confirm the public API (~30 lines), not the implementation (~500 lines)** — token efficiency matters.
 
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
 
-**Security escalation rule:** When the Step 2 grep against a file that exposes an HTTP, IPC, webhook, or external surface returns **zero hits for auth-relevant patterns** (`api_key|Authorization|Bearer|require_auth|middleware`), do NOT drop the finding as "no existing pattern". Instead, **escalate it to severity `CRITICAL` and re-label it as a security gap, not a feature add.** Open HTTP/IPC surfaces are findings even when the user didn't ask about security — the source video may not even mention security, but the codebase reality does.
+**Security escalation rule:** When a grep against a file that exposes an HTTP, IPC, webhook, or external surface — **OR** that spawns a privileged subprocess (e.g. with `--dangerously-skip-permissions`) — returns **zero hits for auth/sandbox patterns** (`api_key|Authorization|Bearer|require_auth|middleware|sandbox|seatbelt|seccomp|landlock`), do NOT drop the finding as "no existing pattern". Instead, **escalate it to severity `CRITICAL` and re-label it as a security gap, not a feature add.** Open HTTP/IPC surfaces and unsandboxed privileged spawn sites are findings even when the user didn't ask about security — the source may not even mention security, but the codebase reality does.
 
 ### Template bucket
 - **First** scan `codebase-catalogs.md` Template Catalog section for duplicates (faster than filesystem)
@@ -489,6 +498,20 @@ Read all files in `Lessons/` and look for repeated decline reasons:
 - If the same reason (or close synonym) has appeared in **3+** runs, propose adding it to `Patterns/user-preferences.md`.
 - Show the proposed pattern to the user and ask: "I've seen this 3+ times — promote to permanent rule?"
 - If yes, append to `Patterns/user-preferences.md` as a new bullet with date and source-run links.
+
+### 10e. codebase-stack.md update check
+
+Did this run discover a **structural fact about the codebase** that future runs would need to know? Examples:
+- A misreading the user corrected (e.g. catalog vs runtime distinction)
+- A plugin or module the skill didn't know existed (e.g. a separate cloud client, a dev-tools plugin)
+- An architectural boundary that determines where findings should be routed (e.g. framework vs plugin)
+- A security model invariant that affects threat assessment
+
+If yes, **edit `codebase-stack.md`** with the new fact. Tag the addition with the run date and source so the iteration log can reference it. The file is hand-curated and `/refresh-context` does NOT regenerate it — your edits are durable.
+
+If no, skip this step.
+
+This step exists because runs 2 and 3 both discovered structural facts the skill needed but didn't have. The pattern: a finding gets misframed, the user corrects, the correction is broader than just "this run was wrong" — it's a fact every future run needs to know. Capturing it in `codebase-stack.md` prevents the same misframe in run N+1.
 
 ---
 
@@ -760,6 +783,26 @@ This section records *why* each non-obvious rule exists. When a rule looks redun
 - Does the bundling pattern hold across different source types? (this run was a tightly-scoped technical video — articles may extract more diffuse findings)
 - Is the 30-second timestamp anchor frequency right? Could be denser for fast-paced videos
 - Is loading all 3 reference files always worth the token cost? Focus-aware loading (Phase 1a) helps but only on user opt-in
+
+### 2026-04-08 — runs 2 and 3 batch update (after Codex/Bolin video)
+
+**Rules added (Phase 6):**
+- **Step 1b — Catalog vs runtime check.** Before scoring any "tool surface" / "prompt size" / "connector count" finding, verify catalog count ≠ runtime count. Personas has 87 connectors in the catalog but each persona binds only 0-3. Got bitten by this in run 3 when I built an architectural critique on the wrong denominator. The rule prevents future runs from making the same mistake.
+- **Step 1c — Framework vs plugin routing.** Before deciding the file anchor for a code finding, check whether it belongs in core engine or in a plugin. Personas-the-framework is general-purpose; SDLC features go in `dev-tools` plugin. Misrouted findings [3] and [4] in run 3 — the user corrected by pointing me to `src/features/plugins/dev-tools/`.
+- **Step 3 efficiency note** — when verifying host infrastructure, read 30 lines (struct + public API), not 500 lines (full implementation). I read 481 lines of `desktop_discovery.rs` in run 2 to confirm it existed; could have read 30.
+- **Security escalation rule expanded** — now also covers "spawn site for privileged subprocess with no sandbox", not just "HTTP/IPC surface with no auth". Both follow the same pattern: privileged surface + missing standard defense → CRITICAL severity. Run 3's `--dangerously-skip-permissions` finding fit the new shape.
+
+**Rules added (Phase 10):**
+- **Step 10e — codebase-stack.md update check.** After each run, ask: did this run discover a structural fact about the codebase that future runs would need? If yes, edit `codebase-stack.md`. Runs 2 and 3 both discovered such facts (run 2: cloud client/runner exists; run 3: catalog vs runtime + framework vs plugin) — capturing them in the file prevents the same misframe in future runs. The file is hand-curated and `/refresh-context` does NOT regenerate it, so edits are durable.
+
+**Rules considered but not added:**
+- "Auto-write handoff plan when 3+ findings cluster with file anchors" — three runs in a row produced handoff plans, so the pattern is established, but I'm not making it the silent default yet. The user's choice between Option A/B/C is part of the value of Phase 8 — automating it would remove the user's ability to say "actually, don't bundle this run". Leaving as user-choice.
+- "Always grep for security patterns proactively" — too broad; would create noise. The escalation rule is narrow and targeted (only fires on privileged surfaces with missing standard defenses).
+
+**Open questions for future runs:**
+- Pattern observation: 3 runs, 3 handoff plans. Run 4 will test whether this is a pattern or just selection bias from picking dense technical videos.
+- Two runs in a row needed `codebase-stack.md` updates. Is this a 1-2 runs-of-update phenomenon, or is the file going to keep accumulating corrections indefinitely?
+- The discovery brief format (run 2 [4], run 3 [5] originally) is being descoped consistently. Either the user doesn't want them, or I'm proposing them at the wrong moments. Watch this in runs 4 and 5.
 
 ### 2026-04-08 — release log content is news, not a changelog (run 3/5)
 

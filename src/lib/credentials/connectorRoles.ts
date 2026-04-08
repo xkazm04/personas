@@ -53,7 +53,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   // -- Finance & Commerce ----------------------------------------
   { role: 'payment_processing',  label: 'Payment Processing',   members: ['stripe', 'paddle'] },
   { role: 'accounting',          label: 'Accounting',           members: ['quickbooks', 'xero'] },
-  { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid'] },
+  { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid', 'ramp'] },
   { role: 'market_data',         label: 'Market Data',          members: ['alpha_vantage'] },
   { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy'] },
 

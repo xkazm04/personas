@@ -561,6 +561,7 @@ pub async fn cloud_execute_persona(
         input_value.as_ref(),
         None,
         None,
+        None,
         #[cfg(feature = "desktop")] None,
     );
 
@@ -798,7 +799,7 @@ pub async fn cloud_deploy_persona(
 
     // First, sync the persona to the cloud orchestrator so it exists there
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(&persona, &tools, None, None, None, #[cfg(feature = "desktop")] None);
+    let prompt = engine::prompt::assemble_prompt(&persona, &tools, None, None, None, None, #[cfg(feature = "desktop")] None);
 
     // Upsert the persona on the cloud side
     let persona_body = serde_json::json!({
@@ -849,7 +850,7 @@ pub async fn cloud_sync_persona(
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
     let tools_list = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+    let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
 
     let persona_body = serde_json::json!({
         "id": persona.id,

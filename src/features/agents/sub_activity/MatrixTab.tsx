@@ -7,7 +7,8 @@ const logger = createLogger("matrix-tab");
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { answerBuildQuestion, testBuildDraft } from '@/api/agents/buildSession';
 import { RefreshCw } from 'lucide-react';
-import type { CellBuildStatus } from '@/lib/types/buildTypes';
+import type { CellBuildStatus, BuildPhase } from '@/lib/types/buildTypes';
+import type { BuildSessionState } from '@/stores/slices/agents/matrixBuildSlice';
 
 interface BuildSessionSummary {
   id: string;
@@ -30,26 +31,88 @@ export function MatrixTab() {
   // Use get_latest_build_session which includes promoted sessions — the original
   // get_active_build_session filters them out with `phase NOT IN (..., 'promoted')`,
   // which causes dimension data loss after promotion.
+  //
+  // Writes to `savedBuildSnapshot` (read-only view state) instead of the live
+  // `buildCellData` — this prevents MatrixTab from clobbering an in-progress
+  // build of a different persona in the background.
   useEffect(() => {
     if (!selectedPersona?.id) return;
     let cancelled = false;
     setIsLoading(true);
+    const personaId = selectedPersona.id;
 
-    invokeWithTimeout<BuildSessionSummary | null>('get_latest_build_session', { personaId: selectedPersona.id })
+    invokeWithTimeout<BuildSessionSummary | null>('get_latest_build_session', { personaId })
       .then((s) => {
         if (cancelled) return;
         setSession(s ?? null);
-        // Hydrate buildCellData from session's resolvedCells so the matrix
-        // displays the original template data (tasks, connectors, etc.)
-        // instead of falling back to generic category extraction.
         if (s?.resolvedCells && Object.keys(s.resolvedCells).length > 0) {
-          useAgentStore.setState({ buildCellData: s.resolvedCells });
+          // Build a BuildSessionState snapshot from the loaded session
+          const cellStates: Record<string, CellBuildStatus> = {};
+          const cellData: Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }> = {};
+          for (const [key, val] of Object.entries(s.resolvedCells)) {
+            cellStates[key] = 'resolved';
+            if (val && typeof val === 'object') {
+              const obj = val as Record<string, unknown>;
+              const items = Array.isArray(obj.items) ? obj.items.filter((i): i is string => typeof i === 'string') : undefined;
+              const summary = typeof obj.summary === 'string' ? obj.summary : undefined;
+              cellData[key] = { items, summary, raw: obj };
+            }
+          }
+          const snapshot: BuildSessionState = {
+            personaId,
+            sessionId: s.id,
+            phase: (s.phase as BuildPhase) ?? 'draft_ready',
+            cellStates,
+            cellData,
+            pendingQuestions: [],
+            pendingAnswers: {},
+            progress: 100,
+            outputLines: [],
+            activity: null,
+            error: null,
+            draft: s.agentIr,
+            connectorLinks: {},
+            workflowJson: null,
+            parserResultJson: null,
+            workflowName: null,
+            workflowPlatform: null,
+            testId: null,
+            testPassed: null,
+            testOutputLines: [],
+            testError: null,
+            toolTestResults: [],
+            testSummary: null,
+            testConnectors: [],
+            editState: {
+              connectorCredentialMap: {},
+              connectorSwaps: {},
+              triggerConfigs: {},
+              requireApproval: false,
+              autoApproveSeverity: '',
+              reviewTimeout: '',
+              memoryEnabled: false,
+              memoryScope: '',
+              messagePreset: '',
+              errorStrategy: '',
+              useCases: [],
+            },
+            editDirty: false,
+            editingCellKey: null,
+            createdAt: Date.now(),
+          };
+          useAgentStore.getState().setSavedBuildSnapshot(snapshot);
+        } else {
+          useAgentStore.getState().setSavedBuildSnapshot(null);
         }
       })
       .catch(() => setSession(null))
       .finally(() => { if (!cancelled) setIsLoading(false); });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Clear the snapshot on unmount so the next persona doesn't see stale state
+      useAgentStore.getState().setSavedBuildSnapshot(null);
+    };
   }, [selectedPersona?.id]);
 
   // Build designResult from session or persona data

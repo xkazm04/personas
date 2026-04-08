@@ -189,6 +189,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "get_mcp_pool_metrics",
     // Credentials -- Desktop Discovery
     "discover_desktop_apps",
+    "discover_desktop_clis",
     "import_claude_mcp_servers",
     "get_desktop_connector_manifest",
     "get_pending_desktop_capabilities",

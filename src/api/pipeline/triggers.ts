@@ -73,6 +73,28 @@ export const updatePersonaEventHandler = (
   });
 
 // ============================================================================
+// Trigger / event cleanup (Fix 1 + Fix 4a)
+// Self-healing sweep for dead trigger audit rows + missing auto-listeners.
+// See docs/design/event-routing-proposal.md
+// ============================================================================
+
+export interface TriggerCleanupResult {
+  orphaned_triggers_deleted: number;
+  orphaned_events_deleted: number;
+  auto_listeners_backfilled: number;
+  source_triggers_scanned: number;
+}
+
+/**
+ * One-shot cleanup for the trigger / event subsystem. Deletes triggers whose
+ * owning persona is gone, purges dead `trigger_fired` audit rows, and
+ * backfills missing auto-listeners for pre-existing schedule/polling/webhook
+ * triggers. Idempotent.
+ */
+export const cleanupDeadTriggerEvents = () =>
+  invoke<TriggerCleanupResult>("cleanup_dead_trigger_events");
+
+// ============================================================================
 // Trigger Health
 // ============================================================================
 

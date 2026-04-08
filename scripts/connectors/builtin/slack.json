@@ -33,6 +33,21 @@
     "auth_type_label": "Bot Token",
     "docs_url": "https://api.slack.com/authentication/token-types",
     "setup_guide": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Go to 'OAuth & Permissions' in the sidebar\n3. Add the bot token scopes your integration needs\n4. Click 'Install to Workspace' and authorize\n5. Copy the xoxb-... Bot User OAuth Token and paste it here",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "Slack Web API. Bearer token in $SLACK_BOT_TOKEN. Base URL: https://slack.com/api. Responses always include {\"ok\": bool, \"error\": \"...\" } -- check ok before trusting the payload.",
+      "examples": [
+        "curl -X POST -H \"Authorization: Bearer $SLACK_BOT_TOKEN\" -H \"Content-Type: application/json; charset=utf-8\" -d '{\"channel\":\"C01234ABC\",\"text\":\"Hello\"}' https://slack.com/api/chat.postMessage",
+        "curl -H \"Authorization: Bearer $SLACK_BOT_TOKEN\" \"https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=200\"",
+        "curl -H \"Authorization: Bearer $SLACK_BOT_TOKEN\" \"https://slack.com/api/conversations.history?channel={channel_id}&limit=50\"",
+        "curl -X POST -H \"Authorization: Bearer $SLACK_BOT_TOKEN\" -H \"Content-Type: application/json; charset=utf-8\" -d '{\"channel\":\"{channel_id}\",\"blocks\":[{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Report*\"}}]}' https://slack.com/api/chat.postMessage"
+      ],
+      "gotchas": [
+        "Always check the 'ok' field in the response -- Slack returns HTTP 200 with {\"ok\":false,\"error\":\"...\"} for most failures.",
+        "Channel IDs (like C01234ABC) work everywhere; channel names with a hash prefix only work in chat.postMessage.",
+        "Bot tokens need specific scopes per endpoint: chat:write, channels:read, channels:history, etc. missing_scope errors tell you which.",
+        "Use Content-Type: application/json; charset=utf-8 for POST bodies; form-encoded is legacy."
+      ]
+    }
   }
 }

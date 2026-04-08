@@ -1,5 +1,7 @@
 pub mod auto_rollback;
+pub mod backend;
 pub mod build_session;
+pub mod events;
 pub mod event_registry;
 pub mod config_merge;
 pub mod identity;

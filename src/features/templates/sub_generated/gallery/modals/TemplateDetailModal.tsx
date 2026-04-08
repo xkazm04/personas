@@ -80,7 +80,7 @@ export function TemplateDetailModal({
       onClose={onClose}
       titleId="template-detail-title"
       maxWidthClass="max-w-7xl"
-      panelClassName="h-[calc(100vh-2rem)] bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      panelClassName="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header with gradient accent */}
         <div className="relative flex-shrink-0 overflow-hidden">
@@ -144,8 +144,9 @@ export function TemplateDetailModal({
           })}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        {/* Content — min-h-0 lets flex-1 shrink below intrinsic content size
+            on small viewports so overflow-y-auto actually takes effect */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
           <TabTransition tabKey={activeTab}>
             {activeTab === 'overview' && (
               <OverviewTab

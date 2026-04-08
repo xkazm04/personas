@@ -33,6 +33,21 @@
     "auth_methods": [
       {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
       {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@googleworkspace/cli", "transport": "stdio", "suggested_env": {"GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": ""}}
-    ]
+    ],
+    "llm_usage_hint": {
+      "overview": "Google Sheets API v4. OAuth bearer token in $GOOGLE_ACCESS_TOKEN. Base URL: https://sheets.googleapis.com/v4/spreadsheets. Use A1 notation (e.g. 'Sheet1!A1:C10') for ranges.",
+      "examples": [
+        "curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" \"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/Sheet1!A1:Z1000\"",
+        "curl -X PUT -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"values\":[[\"a\",\"b\",\"c\"],[1,2,3]]}' \"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/Sheet1!A1?valueInputOption=USER_ENTERED\"",
+        "curl -X POST -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d '{\"values\":[[\"new row\"]]}' \"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED\"",
+        "curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" \"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}?fields=sheets.properties.title\""
+      ],
+      "gotchas": [
+        "valueInputOption=USER_ENTERED parses formulas/dates; use RAW for literal strings.",
+        "Empty cells are omitted from response rows; rows shorter than expected are a common bug.",
+        "Batch multiple updates with values:batchUpdate to avoid per-call quota costs.",
+        "Requires 'spreadsheets' OAuth scope for writes, 'spreadsheets.readonly' for reads."
+      ]
+    }
   }
 }

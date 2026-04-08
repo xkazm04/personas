@@ -59,6 +59,9 @@ export const CAPABILITY_INFO: Record<
 export const discoverDesktopApps = () =>
   invoke<DiscoveredApp[]>("discover_desktop_apps", {});
 
+export const discoverDesktopClis = () =>
+  invoke<DiscoveredApp[]>("discover_desktop_clis", {});
+
 export const importClaudeMcpServers = () =>
   invoke<ImportedMcpServer[]>("import_claude_mcp_servers", {});
 

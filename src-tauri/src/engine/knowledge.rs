@@ -3,6 +3,35 @@
 //! After each execution completes (success or failure), this module extracts
 //! structured intelligence and upserts it into the `execution_knowledge` table.
 //! Over time, this creates a knowledge graph that makes future executions smarter.
+//!
+//! # Choosing a knowledge surface (wiki vs. vector)
+//!
+//! Personas has two knowledge surfaces with different tradeoffs; the choice
+//! matters for both cost and quality. This module is the auto-extracted
+//! execution knowledge graph — not a user-curated document store.
+//!
+//! For user-curated documents, personas offers:
+//!
+//! | Characteristic        | Obsidian Brain (wiki)                      | Vector Store (RAG)                |
+//! |-----------------------|--------------------------------------------|-----------------------------------|
+//! | Storage               | Markdown files in a vault                  | `vector_store` with embeddings    |
+//! | Query mechanism       | LLM reads index + follows wikilinks        | Semantic similarity search        |
+//! | Best corpus size      | **Up to ~1000 notes**                      | **1000+ documents**               |
+//! | Cost                  | Tokens only (no infra)                     | Embeddings + vector DB cost       |
+//! | Maintenance           | Run the vault lint, fix broken links       | Re-embed when content changes     |
+//! | Human-editable        | Yes — markdown is canonical                | No — embeddings are derived       |
+//! | Cross-link awareness  | High (wikilinks are first-class)           | Low (chunks are independent)      |
+//!
+//! **Rule of thumb:** for curated knowledge under ~1000 docs, prefer the
+//! Obsidian vault path — it's cheaper, cross-links beat chunk similarity,
+//! and the content stays human-editable. Reach for the vector store when the
+//! corpus is too large for the LLM to read via indexes or when human curation
+//! isn't feasible.
+//!
+//! Source: Karpathy's LLM knowledge base walkthrough, surfaced via `/research`
+//! run 2026-04-08, `youtube.com/watch?v=sboNwYmH3AY`. The video's claim of
+//! ~95% token reduction vs. vector RAG for small corpora matches our internal
+//! observations on the Obsidian vault surface.
 
 use serde::Deserialize;
 use tracing::warn;

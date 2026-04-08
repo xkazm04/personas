@@ -139,7 +139,7 @@ pub fn update_persona(
             Ok(t) => t,
             Err(_) => return,
         };
-        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
         let body = serde_json::json!({
             "id": sync_persona.id,
             "name": sync_persona.name,
@@ -232,7 +232,7 @@ pub fn update_persona_parameters(
             Ok(t) => t,
             Err(_) => return,
         };
-        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
         let body = serde_json::json!({
             "id": sync_persona.id,
             "name": sync_persona.name,

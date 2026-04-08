@@ -1,6 +1,7 @@
 pub mod background_job;
 mod cloud;
 mod commands;
+pub mod daemon;
 mod db;
 mod engine;
 mod error;
@@ -1332,6 +1333,8 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
             #[cfg(feature = "desktop")]
+            commands::credentials::desktop::discover_desktop_clis,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::import_claude_mcp_servers,
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::get_desktop_connector_manifest,
@@ -1378,6 +1381,8 @@ pub fn run() {
             commands::execution::ambient::get_context_rule_matches,
             #[cfg(feature = "desktop")]
             commands::execution::ambient::get_context_stream_stats,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::capture_validation_screenshot,
             // Clipboard Intelligence -- error detection + KB search
             #[cfg(feature = "desktop")]
             commands::execution::clipboard_intel::search_kb_for_clipboard_error,
@@ -1559,6 +1564,7 @@ pub fn run() {
             commands::tools::triggers::unlink_persona_from_event,
             commands::tools::triggers::initialize_event_handlers_for_persona,
             commands::tools::triggers::update_persona_event_handler,
+            commands::tools::triggers::cleanup_dead_trigger_events,
             commands::tools::triggers::get_webhook_status,
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
@@ -1613,6 +1619,7 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_read_vault_note,
             commands::obsidian_brain::obsidian_brain_push_goals,
             commands::obsidian_brain::obsidian_brain_lint_vault,
+            commands::obsidian_brain::obsidian_brain_semantic_lint_vault,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
