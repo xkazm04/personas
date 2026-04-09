@@ -35,7 +35,7 @@ const snapshots: Snapshot[] = [];
 let timerId: ReturnType<typeof setInterval> | null = null;
 
 function getHeapMB(): number {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chrome-only performance.memory API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = (performance as any).memory;
   return m ? Math.round(m.usedJSHeapSize / 1048576) : -1;
 }
@@ -121,11 +121,11 @@ function tick(): void {
       console.error(alertMsg);
       // Write to Rust log
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tauri internal API not typed
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
           level: 'error', message: alertMsg + '\n' + summary
         });
-      } catch { /* best-effort IPC */ }
+      } catch { /* intentional: fire-and-forget IPC */ }
     }
   }
 
@@ -139,7 +139,7 @@ function tick(): void {
       alerts,
       history: snapshots.slice(-5),
     }));
-  } catch { /* best-effort persistence */ }
+  } catch { /* intentional: localStorage may be unavailable */ }
 }
 
 export function startMonitor(): void {
@@ -154,7 +154,7 @@ export function stopMonitor(): void {
 }
 
 // Expose on window
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- debug console API
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).__STORE_MONITOR__ = {
   get snapshots() { return [...snapshots]; },
   get stores() { return Object.fromEntries(storeUpdates); },

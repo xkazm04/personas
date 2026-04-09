@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Swords, CheckCircle2, RefreshCw, Dna } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
 import { startCompetition, startBatchExecution } from '@/api/devTools/devTools';
@@ -29,8 +30,15 @@ export function NewCompetitionModal({
     setStrategies(generateStrategies(slotCount, previousWinnerGenes));
   }, [slotCount, previousWinnerGenes]);
 
-  useEffect(() => { if (open) { setTitle(''); setDescription(''); regenerate(); } }, [open, regenerate]);
-  useEffect(() => { regenerate(); }, [slotCount, regenerate]);
+  // Reset form fields and strategies when modal opens
+  useEffect(() => { if (open) { setTitle(''); setDescription(''); setStrategies(generateStrategies(slotCount, previousWinnerGenes)); } },
+    [open], // only on open transition
+  );
+
+  // Regenerate strategies when slot count changes while modal is open
+  useEffect(() => { if (open) { regenerate(); } },
+    [slotCount], // slotCount drives regenerate identity
+  );
 
   const handleCreate = useCallback(async () => {
     if (!title.trim()) { addToast('Task title is required', 'error'); return; }
@@ -59,16 +67,14 @@ export function NewCompetitionModal({
     } finally { setCreating(false); }
   }, [title, description, strategies, projectId, addToast, onCreated, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6" onClick={onClose}>
-      <div className="w-full max-w-2xl max-h-[90vh] rounded-card bg-background border border-primary/15 shadow-elevation-4 flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <BaseModal isOpen={open} onClose={onClose} titleId="new-competition-title" size="lg">
+      <div className="flex flex-col overflow-hidden max-h-[85vh]">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/10 bg-primary/5">
           <div className="w-9 h-9 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
             <Swords className="w-4 h-4 text-violet-400" />
           </div>
-          <h2 className="typo-heading text-primary [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+          <h2 id="new-competition-title" className="typo-heading text-primary [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
             Start a Competition
           </h2>
         </div>
@@ -143,6 +149,6 @@ export function NewCompetitionModal({
           </Button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

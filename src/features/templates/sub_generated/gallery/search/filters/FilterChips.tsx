@@ -106,7 +106,7 @@ export function FilterChips({
             onKeyDown={(e) => {
               const values = ['all', 'full', 'partial'];
               const idx = values.indexOf(coverageFilter ?? 'all');
-              let next: number | null = null;
+              let next: number;
 
               switch (e.key) {
                 case 'ArrowRight':
