@@ -19,6 +19,9 @@ import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
+import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
+import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
+import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
 
 export default function ExecutionMiniPlayer() {
   const { isStarter: isSimple } = useTier();
@@ -123,6 +126,10 @@ export default function ExecutionMiniPlayer() {
     [pipelineTrace],
   );
 
+  // Structured execution trace for summary card
+  const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
+  const executionSummary = useExecutionSummary(traceEntries, traceLive);
+
   const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId || backgroundExecutions.length > 0;
   if (!miniPlayerPinned || !hasContent) return null;
 
@@ -209,16 +216,14 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* Simple mode: friendly progress bar with stage label */}
-        {isSimple && (
+        {/* Simple mode: progress bar during execution, summary card on completion */}
+        {isSimple && isExecuting && (
           <div className="px-3 py-3">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-sm text-foreground/80">
-                {isExecuting
-                  ? error ? 'Something went wrong' : stageProgress.label
-                  : error ? 'Failed' : 'Complete'}
+                {error ? 'Something went wrong' : stageProgress.label}
               </span>
-              {isExecuting && !error && (
+              {!error && (
                 <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
                   {Math.round(stageProgress.fraction * 100)}%
                 </span>
@@ -226,16 +231,32 @@ export default function ExecutionMiniPlayer() {
             </div>
             <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ease-out ${
-                  error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'
-                }`}
-                style={{
-                  width: error && !isExecuting
-                    ? '100%'
-                    : isExecuting
-                      ? `${stageProgress.fraction * 100}%`
-                      : '100%',
-                }}
+                className="h-full rounded-full transition-all duration-700 ease-out bg-blue-400"
+                style={{ width: `${stageProgress.fraction * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Simple mode: structured summary card after completion */}
+        {isSimple && !isExecuting && traceEntries.length > 0 && (
+          <div className="px-2.5 py-2.5">
+            <ExecutionSummaryCard summary={executionSummary} compact />
+          </div>
+        )}
+
+        {/* Simple mode: fallback when no trace data available */}
+        {isSimple && !isExecuting && traceEntries.length === 0 && (
+          <div className="px-3 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-foreground/80">
+                {error ? 'Failed' : 'Complete'}
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden mt-2">
+              <div
+                className={`h-full rounded-full ${error ? 'bg-red-400' : 'bg-emerald-400'}`}
+                style={{ width: '100%' }}
               />
             </div>
           </div>
@@ -252,6 +273,13 @@ export default function ExecutionMiniPlayer() {
             </span>
           )}
         </div>
+        )}
+
+        {/* Full mode: summary card on completion */}
+        {!isSimple && !isExecuting && traceEntries.length > 0 && (
+          <div className="px-2.5 py-2">
+            <ExecutionSummaryCard summary={executionSummary} compact />
+          </div>
         )}
 
         {/* Full mode: Collapsed single last line */}
