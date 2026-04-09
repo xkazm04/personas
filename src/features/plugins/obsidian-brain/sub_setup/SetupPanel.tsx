@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, FolderOpen, CheckCircle2, XCircle, Save, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, FolderOpen, CheckCircle2, XCircle, Save, RefreshCw, AlertTriangle } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -26,6 +26,8 @@ export default function SetupPanel() {
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [configLoadError, setConfigLoadError] = useState(false);
+
   // Sync options
   const [syncMemories, setSyncMemories] = useState(true);
   const [syncPersonas, setSyncPersonas] = useState(true);
@@ -37,9 +39,11 @@ export default function SetupPanel() {
   const [personasFolder, setPersonasFolder] = useState('Personas');
   const [connectorsFolder, setConnectorsFolder] = useState('Connectors');
 
-  // Load existing config on mount
-  useEffect(() => {
-    obsidianBrainGetConfig().then((config) => {
+  // Load existing config
+  const loadConfig = useCallback(async () => {
+    setConfigLoadError(false);
+    try {
+      const config = await obsidianBrainGetConfig();
       if (config) {
         setVaultPath(config.vaultPath);
         setSyncMemories(config.syncMemories);
@@ -53,7 +57,17 @@ export default function SetupPanel() {
         setObsidianVaultName(config.vaultName);
         setObsidianConnected(true);
       }
-    }).catch(() => {});
+    } catch (e) {
+      setConfigLoadError(true);
+      addToast(`Failed to load Obsidian config: ${e}`, 'error');
+    }
+  }, [addToast, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected]);
+
+  const loadConfigRef = useRef(loadConfig);
+  loadConfigRef.current = loadConfig;
+
+  useEffect(() => {
+    loadConfigRef.current();
   }, []);
 
   const detectVaults = useCallback(async () => {
@@ -125,6 +139,22 @@ export default function SetupPanel() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 py-4">
+      {configLoadError && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <p className="typo-body text-foreground flex-1">
+            Could not load existing configuration. If you already have a setup, retry before making changes.
+          </p>
+          <button
+            onClick={loadConfig}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors typo-caption whitespace-nowrap"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Vault Discovery */}
       <section className="space-y-3">
         <h2 className="typo-heading text-foreground/90">Vault Connection</h2>

@@ -140,8 +140,10 @@ export const cs = {
     appearance: "Vzhled",
     notifications: "Oznámení",
     engine: "Engine",
-    byom: "BYOM",
+    byom: "Poskytovatelé modelů",
     data: "Data",
+    quality_gates: "Filtry obsahu",
+    config_resolution: "Konfigurace agentů",
     admin: "Admin",
 
     coming_soon: "Již brzy",
@@ -937,6 +939,7 @@ export const cs = {
 
   settings: {
     title: "Nastavení",
+    settings_saved: "Uloženo",
 
     account: {
       title: "Účet",

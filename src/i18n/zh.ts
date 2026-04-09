@@ -138,8 +138,10 @@ export const zh = {
     appearance: "外观",
     notifications: "通知",
     engine: "引擎",
-    byom: "BYOM",
+    byom: "模型提供商",
     data: "数据",
+    quality_gates: "内容过滤器",
+    config_resolution: "智能体配置",
     admin: "管理",
 
     coming_soon: "即将推出",
@@ -909,6 +911,7 @@ export const zh = {
 
   settings: {
     title: "设置",
+    settings_saved: "已保存",
 
     account: {
       title: "账户",

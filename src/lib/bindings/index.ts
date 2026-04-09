@@ -71,6 +71,7 @@ export type { DirectoryScanResult } from "./DirectoryScanResult";
 export type { EnclavePolicy } from "./EnclavePolicy";
 export type { EnclaveSealResult } from "./EnclaveSealResult";
 export type { EnclaveVerifyResult } from "./EnclaveVerifyResult";
+export type { EvalMethod } from "./EvalMethod";
 export type { EvalStrategyKind } from "./EvalStrategyKind";
 export type { ExecutionDashboardData } from "./ExecutionDashboardData";
 export type { ExecutionKnowledge } from "./ExecutionKnowledge";

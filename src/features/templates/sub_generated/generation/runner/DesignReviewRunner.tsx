@@ -5,6 +5,7 @@ import { TemplateSourcePanel } from '../sources/TemplateSourcePanel';
 import { TerminalOutput, ResultSummary } from './DesignReviewTerminal';
 import { ModeTabBar } from '../sources/ModeTabBar';
 import { useDesignRunnerState } from './useDesignRunnerState';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 export type { PredefinedTestCase } from './designRunnerConstants';
 
@@ -34,21 +35,19 @@ export default function DesignReviewRunner({
   personaName, personaDescription, onStart, onCancel,
 }: DesignReviewRunnerProps) {
   const state = useDesignRunnerState({
-    isOpen, isRunning, lines, runProgress, personaName, onStart, onClose,
+    isRunning, lines, runProgress, personaName, onStart,
   });
 
-  if (!isOpen) return null;
+  const guardedClose = isRunning ? () => {} : onClose;
 
   return (
-    <div
-        className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-        onClick={(e) => e.target === e.currentTarget && !isRunning && onClose()}
-      >
-        <div
-          ref={state.modalRef}
-          role="dialog" aria-modal="true" aria-labelledby="design-runner-title"
-          className="animate-fade-slide-in max-w-3xl w-full mx-4 sm:mx-6 md:mx-auto max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
-        >
+    <BaseModal
+      isOpen={isOpen}
+      onClose={guardedClose}
+      titleId="design-runner-title"
+      size="lg"
+      panelClassName="max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+    >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
             <div className="flex items-center gap-3">
@@ -188,7 +187,6 @@ export default function DesignReviewRunner({
               </div>
             )}
           </div>
-        </div>
-      </div>
+    </BaseModal>
   );
 }

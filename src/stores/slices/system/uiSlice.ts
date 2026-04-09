@@ -161,7 +161,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
-  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain']),
+  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain', 'twin']),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);
     if (next.has(plugin)) {

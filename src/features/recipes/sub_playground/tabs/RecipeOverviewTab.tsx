@@ -2,6 +2,7 @@ import { Tag, Cpu, FileText } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { parseTags, parseInputSchema } from '@/features/recipes/shared/recipeParseUtils';
+import { SchemaParseErrorBanner } from '@/features/recipes/shared/SchemaParseErrorBanner';
 
 interface RecipeOverviewTabProps {
   recipe: RecipeDefinition;
@@ -9,7 +10,7 @@ interface RecipeOverviewTabProps {
 
 export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
   const tags = parseTags(recipe.tags);
-  const inputs = parseInputSchema(recipe.input_schema);
+  const { fields: inputs, parseError } = parseInputSchema(recipe.input_schema);
 
   return (
     <div className="p-4 space-y-4">
@@ -43,6 +44,9 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           </div>
         </div>
       )}
+
+      {/* Schema parse error */}
+      {parseError && <SchemaParseErrorBanner parseError={parseError} />}
 
       {/* Input Schema */}
       {inputs.length > 0 && (

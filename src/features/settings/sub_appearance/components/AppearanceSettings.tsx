@@ -5,6 +5,8 @@ import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGH
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { useSettingsSaveToast } from '@/hooks/utility/interaction/useSettingsSaveToast';
+import { useTranslation } from '@/i18n/useTranslation';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 
@@ -152,15 +154,23 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
 }
 
 export default function AppearanceSettings() {
+  const { t } = useTranslation();
+  const { trigger } = useSettingsSaveToast(t.settings.settings_saved);
+
   const themeId = useThemeStore((s) => s.themeId);
-  const setTheme = useThemeStore((s) => s.setTheme);
+  const rawSetTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
-  const setTextScale = useThemeStore((s) => s.setTextScale);
+  const rawSetTextScale = useThemeStore((s) => s.setTextScale);
   const timezone = useThemeStore((s) => s.timezone);
-  const setTimezone = useThemeStore((s) => s.setTimezone);
+  const rawSetTimezone = useThemeStore((s) => s.setTimezone);
 
   const brightness = useThemeStore((s) => s.brightness);
-  const setBrightness = useThemeStore((s) => s.setBrightness);
+  const rawSetBrightness = useThemeStore((s) => s.setBrightness);
+
+  const setTheme = useCallback((id: ThemeId) => { rawSetTheme(id); trigger(); }, [rawSetTheme, trigger]);
+  const setTextScale = useCallback((id: TextScale) => { rawSetTextScale(id); trigger(); }, [rawSetTextScale, trigger]);
+  const setTimezone = useCallback((v: TimezoneMode) => { rawSetTimezone(v); trigger(); }, [rawSetTimezone, trigger]);
+  const setBrightness = useCallback((v: BrightnessLevel) => { rawSetBrightness(v); trigger(); }, [rawSetBrightness, trigger]);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);

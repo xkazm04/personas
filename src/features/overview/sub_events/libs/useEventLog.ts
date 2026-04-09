@@ -52,6 +52,7 @@ export function useEventLog() {
   const [serverHasMore, setServerHasMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   // Cursor-based "load older" pagination — fetched on-demand via search_events
   // with `until` cursor. Lives alongside recentEvents/serverResults.
@@ -101,6 +102,11 @@ export function useEventLog() {
 
   // Server-side search with debounce
   const executeSearch = useCallback(async () => {
+    // Abort any in-flight search to prevent stale results from overwriting
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+
     const filter: EventFilterInput = { limit: 200 };
 
     if (statusFilter !== 'all') filter.status = statusFilter;
@@ -119,12 +125,17 @@ export function useEventLog() {
     setIsSearching(true);
     try {
       const result = await searchEvents(filter);
+      // Discard results if a newer search was started while we were waiting
+      if (controller.signal.aborted) return;
       setServerResults(result.events);
       setServerHasMore(result.has_more);
     } catch (err) {
+      if (controller.signal.aborted) return;
       logger.error('Event search failed', { error: err });
     } finally {
-      setIsSearching(false);
+      if (!controller.signal.aborted) {
+        setIsSearching(false);
+      }
     }
   }, [statusFilter, typeFilter, selectedPersonaId, searchText]);
 
@@ -136,8 +147,13 @@ export function useEventLog() {
     if (!hasFilters) {
       setServerResults([]);
       setServerHasMore(false);
+      setIsSearching(false);
       return;
     }
+
+    // Set searching immediately so filteredEvents doesn't flash empty
+    // while the debounced/deferred executeSearch is still pending.
+    setIsSearching(true);
 
     searchTimerRef.current = setTimeout(() => {
       executeSearch();
@@ -145,6 +161,7 @@ export function useEventLog() {
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      searchAbortRef.current?.abort();
     };
   }, [executeSearch, statusFilter, typeFilter, selectedPersonaId, searchText]);
 

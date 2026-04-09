@@ -5,6 +5,8 @@ import HeroHeader from './HeroHeader';
 import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import TourLauncher from '@/features/onboarding/components/TourLauncher';
+import FleetHealthStrip from './FleetHealthStrip';
+import { useHomeTranslation } from '@/features/home/i18n/useTranslation';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
 
@@ -37,6 +39,7 @@ export default function WelcomeLayout({
   navTranslations,
   onCardClick
 }: WelcomeLayoutProps) {
+  const { t } = useHomeTranslation();
   // Defer below-fold content to reduce initial DOM from ~666 to ~200 nodes.
   // WebView2 renderer hangs when too many nodes are committed at once.
   const [showBelowFold, setShowBelowFold] = useState(false);
@@ -52,9 +55,11 @@ export default function WelcomeLayout({
         <div className="w-full px-6 py-4 space-y-4">
           <HeroHeader greeting={greeting} displayName={displayName} />
 
+          <FleetHealthStrip />
+
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="typo-section-title">Get Started</span>
+            <span className="typo-section-title">{t.get_started}</span>
             <TourLauncher />
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
@@ -67,7 +72,7 @@ export default function WelcomeLayout({
               <SectionDivider label={quickNavLabel} />
               <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 
-              <SectionDivider label="Language" />
+              <SectionDivider label={t.language_section} />
               <Suspense fallback={<SuspenseFallback />}>
                 <LanguageCards />
               </Suspense>

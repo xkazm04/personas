@@ -1,6 +1,8 @@
 import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { getAnomalyLabel, SEVERITY_STYLES } from '@/features/overview/libs/anomalySeverity';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 
 // -- Summary Card -----------------------------------------------------
@@ -52,19 +54,27 @@ interface AnomalyBadgeProps {
 }
 
 export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
+  const { t } = useOverviewTranslation();
+  const label = getAnomalyLabel(anomaly.deviation_sigma);
+  const sev = SEVERITY_STYLES[label.severity];
+  const severityText = t.anomaly[`severity_${label.severity}` as const];
+
   return (
-    <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10">
-      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+    <div className={`flex items-start gap-2 px-3 py-2 rounded-xl border ${sev.border} ${sev.bg}`}>
+      <AlertTriangle className={`w-3.5 h-3.5 ${sev.text} mt-0.5 flex-shrink-0`} />
       <div className="min-w-0">
-        <p className="typo-heading text-amber-300">
-          {fmtDate(anomaly.date)} -- Cost spike {fmtCost(anomaly.cost)}
-          <span className="text-amber-400/70 ml-1">
-            ({anomaly.deviation_sigma.toFixed(1)} above avg {fmtCost(anomaly.moving_avg)})
+        <p className={`typo-heading ${sev.text}`}>
+          {fmtDate(anomaly.date)} &mdash; {t.anomaly.cost_spike} {fmtCost(anomaly.cost)}
+          <span
+            className={`${sev.text} opacity-80 ml-1`}
+            title={t.anomaly.sigma_tooltip.replace('{value}', anomaly.deviation_sigma.toFixed(1))}
+          >
+            ({severityText} &middot; {label.multiplier} {t.anomaly.above_avg} {fmtCost(anomaly.moving_avg)})
           </span>
         </p>
         {anomaly.execution_ids.length > 0 && (
           <div className="flex items-center gap-1 mt-1 flex-wrap">
-            <span className="text-sm text-muted-foreground/60">Top executions:</span>
+            <span className="text-sm text-foreground/60">{t.anomaly.top_executions}</span>
             {anomaly.execution_ids.map((id) => (
               <button
                 key={id}

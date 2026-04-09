@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plug, ChevronDown, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -59,24 +59,32 @@ export function ConnectStep() {
   const [testingAll, setTestingAll] = useState(false);
   const [testAllResults, setTestAllResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
+  // Clear stale test results when credentials or connectors change
+  useEffect(() => {
+    setTestAllResults({});
+  }, [connectorCredentialMap]);
+
   const handleTestAll = useCallback(async () => {
     setTestingAll(true);
-    const results: Record<string, { success: boolean; message: string }> = {};
-    const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
+    try {
+      const results: Record<string, { success: boolean; message: string }> = {};
+      const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
 
-    for (const c of requiredConnectors) {
-      if (BUILTIN.has(c.activeName)) continue;
-      const credId = connectorCredentialMap[c.activeName];
-      if (!credId) continue;
-      try {
-        const result = await healthcheckCredential(credId);
-        results[c.activeName] = { success: result.success, message: result.message };
-      } catch (err) {
-        results[c.activeName] = { success: false, message: err instanceof Error ? err.message : 'Test failed' };
+      for (const c of requiredConnectors) {
+        if (BUILTIN.has(c.activeName)) continue;
+        const credId = connectorCredentialMap[c.activeName];
+        if (!credId) continue;
+        try {
+          const result = await healthcheckCredential(credId);
+          results[c.activeName] = { success: result.success, message: result.message };
+        } catch (err) {
+          results[c.activeName] = { success: false, message: err instanceof Error ? err.message : 'Test failed' };
+        }
       }
+      setTestAllResults(results);
+    } finally {
+      setTestingAll(false);
     }
-    setTestAllResults(results);
-    setTestingAll(false);
   }, [requiredConnectors, connectorCredentialMap]);
 
   const handleOpenInlineForm = useCallback((name: string) => {

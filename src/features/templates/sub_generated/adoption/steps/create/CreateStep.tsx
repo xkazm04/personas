@@ -137,7 +137,7 @@ export function CreateStep() {
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <div
           className="animate-fade-in w-8 h-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-400/60" />
-        <p className="text-sm text-muted-foreground/60">Waiting for persona draft...</p>
+        <p className="text-sm text-foreground">Waiting for persona draft...</p>
       </div>
     );
   }
@@ -146,7 +146,7 @@ export function CreateStep() {
     <div className="space-y-3">
       <div>
         <h3 className="text-base font-semibold text-foreground">Review & Create</h3>
-        <p className="text-sm text-muted-foreground/60 mt-0.5">Review the generated persona, then create it.</p>
+        <p className="text-sm text-foreground mt-0.5">Review the generated persona, then create it.</p>
       </div>
       <PromptQualityGate draft={draft} />
       <ScanResultsBanner result={safetyScan} scanning={false} />

@@ -3,19 +3,29 @@ import {
   Sparkles, Play, Loader2, CheckCircle2, XCircle,
   ToggleLeft, ToggleRight, TrendingUp,
   Zap, DollarSign, Target, Settings2,
-  RefreshCw,
+  RefreshCw, AlertTriangle,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import * as evolutionApi from '@/api/agents/evolution';
 import type { EvolutionPolicy } from '@/lib/bindings/EvolutionPolicy';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
+import type { EvolutionCycleSummary } from '@/lib/bindings/EvolutionCycleSummary';
 import type { FitnessObjective } from '@/lib/bindings/FitnessObjective';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
 
 // ============================================================================
 // Cycle status badge
 // ============================================================================
+
+const statusLabels: Record<string, string> = {
+  breeding: 'Generating',
+  evaluating: 'Testing',
+  promoting: 'Applying',
+  completed: 'Done',
+  failed: 'Failed',
+};
 
 function CycleStatusBadge({ status }: { status: string }) {
   const config: Record<string, { color: string; icon: React.ReactNode }> = {
@@ -29,7 +39,7 @@ function CycleStatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${color}`}>
       {icon}
-      <span className="capitalize">{status}</span>
+      <span>{statusLabels[status] ?? status}</span>
     </span>
   );
 }
@@ -58,7 +68,7 @@ function ObjectiveEditor({
 
   const row = (key: keyof FitnessObjective, label: string, icon: React.ReactNode, color: string) => (
     <div className="flex items-center gap-2">
-      <span className={`flex items-center gap-1 text-xs w-14 ${color}`}>{icon} {label}</span>
+      <span className={`flex items-center gap-1 text-xs w-16 ${color}`}>{icon} {label}</span>
       <input
         type="range"
         min={0} max={100}
@@ -84,10 +94,18 @@ function ObjectiveEditor({
 // Cycle history card
 // ============================================================================
 
-function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
+function parseSummary(cycle: EvolutionCycle): EvolutionCycleSummary | null {
+  if (!cycle.summary) return null;
+  try { return JSON.parse(cycle.summary) as EvolutionCycleSummary; }
+  catch { return null; }
+}
+
+function CycleCard({ cycle, statusWarningLabel }: { cycle: EvolutionCycle; statusWarningLabel: string }) {
   const improvement = cycle.winnerFitness != null && cycle.incumbentFitness != null
     ? cycle.winnerFitness - cycle.incumbentFitness
     : null;
+  const summary = parseSummary(cycle);
+  const statusUnreliable = summary != null && summary.statusReliable === false;
 
   return (
     <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-primary/10 bg-primary/[0.02]">
@@ -95,29 +113,37 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">
-            {cycle.variantsTested} variants tested
+            {cycle.variantsTested} variations tested
           </span>
           {cycle.promoted && (
             <span className="text-emerald-400 font-medium flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> Promoted
+              <TrendingUp className="w-3 h-3" /> Applied
             </span>
           )}
           {improvement != null && improvement > 0 && (
-            <span className="text-violet-400 text-[10px]">
+            <span className="text-violet-400 typo-caption">
               +{(improvement * 100).toFixed(1)}%
+            </span>
+          )}
+          {statusUnreliable && (
+            <span
+              className="text-amber-400 flex items-center gap-0.5"
+              title={statusWarningLabel}
+            >
+              <AlertTriangle className="w-3 h-3" />
             </span>
           )}
         </div>
         {cycle.incumbentFitness != null && (
-          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground/60">
-            <span>Incumbent: {Math.round(cycle.incumbentFitness * 100)}%</span>
+          <div className="flex items-center gap-3 mt-0.5 typo-caption text-muted-foreground/60">
+            <span>Current: {Math.round(cycle.incumbentFitness * 100)}%</span>
             {cycle.winnerFitness != null && (
-              <span>Winner: {Math.round(cycle.winnerFitness * 100)}%</span>
+              <span>Best: {Math.round(cycle.winnerFitness * 100)}%</span>
             )}
           </div>
         )}
       </div>
-      <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
+      <span className="typo-caption text-muted-foreground/40 whitespace-nowrap">
         {new Date(cycle.startedAt).toLocaleDateString()}
       </span>
     </div>
@@ -131,6 +157,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
 export function EvolutionPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useLabTranslation();
   const personaId = selectedPersona?.id;
 
   const [policy, setPolicy] = useState<EvolutionPolicy | null>(null);
@@ -189,7 +216,7 @@ export function EvolutionPanel() {
       const updated = await evolutionApi.toggleEvolution(personaId, newEnabled);
       setPolicy(updated);
       addToast(
-        newEnabled ? 'Auto-evolution enabled' : 'Auto-evolution disabled',
+        newEnabled ? 'Auto-improvement enabled' : 'Auto-improvement disabled',
         'success',
       );
     } catch (err: unknown) {
@@ -212,7 +239,7 @@ export function EvolutionPanel() {
       });
       setPolicy(updated);
       setShowSettings(false);
-      addToast('Evolution settings saved', 'success');
+      addToast('Improvement settings saved', 'success');
     } catch (err: unknown) {
       addToast(`Failed to save: ${err instanceof Error ? err.message : String(err)}`, 'error');
     } finally {
@@ -226,7 +253,7 @@ export function EvolutionPanel() {
     try {
       const cycle = await evolutionApi.triggerCycle(personaId);
       setCycles((prev) => [cycle, ...prev]);
-      addToast('Evolution cycle started', 'success');
+      addToast('Improvement round started', 'success');
 
       // Poll for completion
       const poll = setInterval(async () => {
@@ -235,7 +262,7 @@ export function EvolutionPanel() {
           clearInterval(poll);
           loadData();
           if (updated[0]!.status === 'completed' && updated[0]!.promoted) {
-            addToast('Evolution: variant promoted!', 'success');
+            addToast('Improvement applied!', 'success');
           }
         }
       }, 3000);
@@ -252,7 +279,7 @@ export function EvolutionPanel() {
   if (!personaId) {
     return (
       <div className="text-center py-10 text-muted-foreground/60 text-sm">
-        Select a persona to configure auto-evolution
+        {t.evolution.selectPersona}
       </div>
     );
   }
@@ -268,26 +295,31 @@ export function EvolutionPanel() {
   const isEnabled = policy?.enabled ?? false;
 
   return (
-    <div className="space-y-4" role="region" aria-label="Auto-evolution panel">
+    <div className="space-y-4" role="region" aria-label="Auto-improve panel">
       {/* Header with toggle */}
       <SectionCard
-        title="Auto-Evolution"
-        subtitle="Continuously evolve this persona through lab-driven optimization"
+        title={t.evolution.title}
+        subtitle={t.evolution.subtitle}
       >
         <div className="space-y-4">
+          {/* Purpose line */}
+          <p className="typo-body text-foreground">
+            {t.purpose.autoImprove}
+          </p>
+
           {/* Enable toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-violet-400" />
               <span className="text-sm font-medium">
-                Darwinian Evolution
+                {t.evolution.toggle}
               </span>
             </div>
             <button
               onClick={handleToggle}
               disabled={isSaving}
-              className="flex items-center gap-1.5 text-sm transition-colors"
-              aria-label={isEnabled ? 'Disable auto-evolution' : 'Enable auto-evolution'}
+              className="flex items-center gap-1.5 text-sm transition-colors focus-ring rounded-lg"
+              aria-label={isEnabled ? 'Disable auto-improvement' : 'Enable auto-improvement'}
             >
               {isEnabled ? (
                 <ToggleRight className="w-8 h-8 text-emerald-400" />
@@ -302,11 +334,11 @@ export function EvolutionPanel() {
             <div className="grid grid-cols-3 gap-2">
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">{policy.totalCycles}</div>
-                <div className="text-[10px] text-muted-foreground">Cycles</div>
+                <div className="typo-caption text-muted-foreground">{t.evolution.rounds}</div>
               </div>
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-emerald-400">{policy.totalPromotions}</div>
-                <div className="text-[10px] text-muted-foreground">Promotions</div>
+                <div className="typo-caption text-muted-foreground">{t.evolution.improvements}</div>
               </div>
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">
@@ -316,7 +348,7 @@ export function EvolutionPanel() {
                     <span className="text-muted-foreground/60">Waiting</span>
                   )}
                 </div>
-                <div className="text-[10px] text-muted-foreground">Next Cycle</div>
+                <div className="typo-caption text-muted-foreground">{t.evolution.nextRound}</div>
               </div>
             </div>
           )}
@@ -326,29 +358,29 @@ export function EvolutionPanel() {
             <button
               onClick={handleTriggerCycle}
               disabled={isTriggering}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {isTriggering ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Evolving...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t.evolution.improving}</>
               ) : (
-                <><Play className="w-4 h-4" /> Trigger Evolution Cycle</>
+                <><Play className="w-4 h-4" /> {t.evolution.triggerRound}</>
               )}
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg border transition-colors ${
+              className={`p-2 rounded-lg border transition-colors focus-ring ${
                 showSettings
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
                   : 'border-primary/10 text-muted-foreground hover:bg-primary/5'
               }`}
-              aria-label="Toggle evolution settings"
+              aria-label="Toggle improvement settings"
             >
               <Settings2 className="w-4 h-4" />
             </button>
             <button
               onClick={loadData}
-              className="p-2 rounded-lg border border-primary/10 text-muted-foreground hover:bg-primary/5 transition-colors"
-              aria-label="Refresh evolution data"
+              className="p-2 rounded-lg border border-primary/10 text-muted-foreground hover:bg-primary/5 transition-colors focus-ring"
+              aria-label="Refresh improvement data"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -364,8 +396,8 @@ export function EvolutionPanel() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground" htmlFor="evo-mutation">
-                        Mutation Rate
+                      <label className="text-xs text-muted-foreground" htmlFor="evo-mutation" title={t.evolution.creativityTooltip}>
+                        {t.evolution.creativityLevel}
                       </label>
                       <div className="flex items-center gap-2 mt-1">
                         <input
@@ -374,6 +406,7 @@ export function EvolutionPanel() {
                           value={Math.round(mutationRate * 100)}
                           onChange={(e) => setMutationRate(Number(e.target.value) / 100)}
                           className="flex-1 h-1 accent-violet-500"
+                          title={t.evolution.creativityTooltip}
                         />
                         <span className="text-xs text-muted-foreground w-8 text-right">
                           {Math.round(mutationRate * 100)}%
@@ -382,13 +415,13 @@ export function EvolutionPanel() {
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground" htmlFor="evo-variants">
-                        Variants per Cycle
+                        {t.evolution.variationsPerRound}
                       </label>
                       <select
                         id="evo-variants"
                         value={variants}
                         onChange={(e) => setVariants(Number(e.target.value))}
-                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground"
+                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground focus-ring"
                       >
                         {[2, 3, 4, 5, 6, 8].map((v) => (
                           <option key={v} value={v}>{v}</option>
@@ -400,7 +433,7 @@ export function EvolutionPanel() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground" htmlFor="evo-threshold">
-                        Improvement Threshold
+                        {t.evolution.minimumImprovement}
                       </label>
                       <div className="flex items-center gap-2 mt-1">
                         <input
@@ -417,13 +450,13 @@ export function EvolutionPanel() {
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground" htmlFor="evo-min-execs">
-                        Min Executions Between
+                        {t.evolution.runsBetweenRounds}
                       </label>
                       <select
                         id="evo-min-execs"
                         value={minExecs}
                         onChange={(e) => setMinExecs(Number(e.target.value))}
-                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground"
+                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground focus-ring"
                       >
                         {[3, 5, 10, 15, 20, 30, 50].map((v) => (
                           <option key={v} value={v}>{v}</option>
@@ -435,14 +468,14 @@ export function EvolutionPanel() {
                   <button
                     onClick={handleSaveSettings}
                     disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-40"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
                   >
                     {isSaving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     )}
-                    Save Settings
+                    {t.evolution.saveSettings}
                   </button>
                 </div>
               </div>
@@ -452,10 +485,10 @@ export function EvolutionPanel() {
 
       {/* Cycle history */}
       {cycles.length > 0 && (
-        <SectionCard title="Evolution History" subtitle={`${cycles.length} cycle${cycles.length !== 1 ? 's' : ''}`}>
-          <div className="space-y-1.5" role="list" aria-label="Evolution cycles">
+        <SectionCard title={t.evolution.historyTitle} subtitle={`${cycles.length} ${t.evolution.rounds.toLowerCase()}`}>
+          <div className="space-y-1.5" role="list" aria-label="Improvement rounds">
             {cycles.map((cycle) => (
-              <CycleCard key={cycle.id} cycle={cycle} />
+              <CycleCard key={cycle.id} cycle={cycle} statusWarningLabel={t.evolution.statusUnreliable} />
             ))}
           </div>
         </SectionCard>
@@ -468,12 +501,10 @@ export function EvolutionPanel() {
             <Sparkles className="w-7 h-7 text-violet-400/60" />
           </div>
           <h3 className="text-sm font-medium text-muted-foreground mb-1">
-            Self-improving personas
+            {t.evolution.emptyTitle}
           </h3>
           <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto leading-relaxed">
-            Enable auto-evolution to continuously optimize this persona. After each batch of
-            executions, variants are automatically generated, evaluated, and promoted if they
-            outperform the current configuration.
+            {t.evolution.emptyDesc}
           </p>
         </div>
       )}

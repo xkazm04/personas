@@ -5,6 +5,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
+import { useSettingsTranslation } from '@/features/settings/i18n/useSettingsTranslation';
 
 const SOURCE_ICON: Record<ConfigSource, typeof Globe> = {
   agent: User,
@@ -59,6 +60,7 @@ const FIELDS: { key: keyof EffectiveModelConfig; label: string; mask?: boolean }
 ];
 
 export default function ConfigResolutionPanel() {
+  const { t } = useSettingsTranslation();
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
 
@@ -96,9 +98,9 @@ export default function ConfigResolutionPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary/60" />
-          <h2 className="text-sm font-semibold text-foreground/90">Config Resolution</h2>
+          <h2 className="text-sm font-semibold text-foreground/90">{t.configResolution.title}</h2>
           <span className="text-[10px] text-muted-foreground/50">
-            Shows which tier (agent / workspace / global) supplies each setting per persona
+            {t.configResolution.subtitle}
           </span>
         </div>
         <button

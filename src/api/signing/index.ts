@@ -43,9 +43,6 @@ export const verifyDocument = (filePath: string, sidecarJson: string) =>
 export const listDocumentSignatures = () =>
   invoke<DocumentSignature[]>("list_document_signatures");
 
-export const getDocumentSignature = (id: string) =>
-  invoke<DocumentSignature>("get_document_signature", { id });
-
 export const deleteDocumentSignature = (id: string) =>
   invoke<boolean>("delete_document_signature", { id });
 

@@ -8,6 +8,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 
@@ -301,6 +302,7 @@ export default function ContextMapPage() {
         subtitle="Scan codebases into business-feature contexts"
         actions={
           <div className="flex items-center gap-2">
+            <LifecycleProjectPicker />
             <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>Group</Button>
             <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>Scan Codebase</Button>
           </div>

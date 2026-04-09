@@ -116,8 +116,10 @@ export const hi = {
     appearance: "दिखावट",
     notifications: "सूचनाएँ",
     engine: "इंजन",
-    byom: "BYOM",
+    byom: "मॉडल प्रदाता",
     data: "डेटा",
+    quality_gates: "सामग्री फ़िल्टर",
+    config_resolution: "एजेंट कॉन्फ़िगरेशन",
     admin: "एडमिन",
 
     coming_soon: "जल्द आ रहा है",
@@ -886,6 +888,7 @@ export const hi = {
 
   settings: {
     title: "सेटिंग्स",
+    settings_saved: "सहेजा गया",
 
     account: {
       title: "खाता",

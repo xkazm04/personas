@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useId } from 'react';
+import { useMemo, useRef, useEffect, useId, useState, useCallback, useSyncExternalStore } from 'react';
 import type { RealtimeEvent, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
@@ -10,6 +10,20 @@ import {
   iconChar,
 } from '../../libs/visualizationHelpers';
 import EventLogSidebar from '../panels/EventLogSidebar';
+import { RealtimeWelcomeOverlay } from './RealtimeWelcomeOverlay';
+
+const MOBILE_MQ = '(max-width: 767px)';
+const TABLET_MQ = '(max-width: 1023px)';
+
+function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback((cb: () => void) => {
+    const mql = window.matchMedia(query);
+    mql.addEventListener('change', cb);
+    return () => mql.removeEventListener('change', cb);
+  }, [query]);
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
+}
 
 /*
  * Swim Lane visualization -- horizontal left-to-right flow.
@@ -41,6 +55,7 @@ interface Props {
   animationMapRef: React.RefObject<AnimationMap>;
   animTick: number;
   onSelectEvent: (event: RealtimeEvent | null) => void;
+  onTestFlow?: () => void;
 }
 
 interface LaneNode {
@@ -64,8 +79,16 @@ function distributeVertically(
   return items.map((item, i) => ({ ...item, y: topY + i * step }));
 }
 
-export default function SwimLaneVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
+export default function SwimLaneVisualization({ events, personas, animationMapRef, animTick, onSelectEvent, onTestFlow }: Props) {
   const uid = useId();
+  const isMobile = useMediaQuery(MOBILE_MQ);
+  const isTablet = useMediaQuery(TABLET_MQ);
+  const [manualCollapse, setManualCollapse] = useState<boolean | null>(null);
+
+  const sidebarCollapsed = manualCollapse ?? isTablet;
+  const toggleCollapse = useCallback(() => setManualCollapse(prev => !(prev ?? isTablet)), [isTablet]);
+
+  useEffect(() => setManualCollapse(null), [isMobile, isTablet]);
 
   /* ---------- source discovery ---------- */
   const discoveredRef = useRef(new Map<string, DiscoveredSource>());
@@ -126,8 +149,8 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
   };
 
   return (
-    <div className="w-full h-full flex min-h-[280px]">
-      <div className="flex-1 relative">
+    <div className="w-full h-full flex min-h-[280px] relative">
+      <div className="flex-1 relative transition-all duration-300 ease-out">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
             <filter id={`${uid}-glow`}>
@@ -247,16 +270,17 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
         </svg>
 
         {events.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center gap-2 bg-background/40 backdrop-blur-sm border border-primary/10 rounded-2xl px-6 py-4">
-              <span className="text-sm text-muted-foreground/40 font-mono">Idle</span>
-              <span className="text-xs text-muted-foreground/30">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
-            </div>
-          </div>
+          <RealtimeWelcomeOverlay onTestFlow={onTestFlow} />
         )}
       </div>
 
-      <EventLogSidebar events={events} onSelectEvent={onSelectEvent} />
+      <EventLogSidebar
+        events={events}
+        onSelectEvent={onSelectEvent}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={toggleCollapse}
+        isMobileDrawer={isMobile}
+      />
     </div>
   );
 }

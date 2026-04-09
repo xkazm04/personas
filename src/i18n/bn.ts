@@ -101,8 +101,10 @@ export const bn = {
     appearance: "চেহারা",
     notifications: "বিজ্ঞপ্তি",
     engine: "ইঞ্জিন",
-    byom: "BYOM",
+    byom: "মডেল প্রদানকারী",
     data: "ডাটা",
+    quality_gates: "বিষয়বস্তু ফিল্টার",
+    config_resolution: "এজেন্ট কনফিগারেশন",
     admin: "অ্যাডমিন",
     coming_soon: "শীঘ্রই আসছে",
     sign_in_to_unlock: "ক্লাউড ফিচার আনলক করতে সাইন ইন করুন",
@@ -831,6 +833,7 @@ export const bn = {
 
   settings: {
     title: "সেটিংস",
+    settings_saved: "সংরক্ষিত",
     account: {
       title: "অ্যাকাউন্ট",
       subtitle: "সাইন-ইন ও প্রোফাইল পরিচালনা",

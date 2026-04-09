@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle, ScrollText } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from "@/stores/systemStore";
-import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import { hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
 
 export default function AdminSettings() {
@@ -11,6 +11,7 @@ export default function AdminSettings() {
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourCurrentStepIndex = useSystemStore((s) => s.tourCurrentStepIndex);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const tourActiveTourId = useSystemStore((s) => s.tourActiveTourId);
   const resetTour = useSystemStore((s) => s.resetTour);
   const finishTour = useSystemStore((s) => s.finishTour);
   const dismissTour = useSystemStore((s) => s.dismissTour);
@@ -20,7 +21,8 @@ export default function AdminSettings() {
   const [consentStatus, setConsentStatus] = useState(hasUserConsented);
   const [confirmConsentReset, setConfirmConsentReset] = useState(false);
 
-  const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
+  const activeTourSteps = getActiveTourSteps(tourActiveTourId);
+  const completedCount = activeTourSteps.filter((s) => tourStepCompleted[s.id]).length;
 
   const handleForceStart = () => {
     resetTour();
@@ -89,13 +91,13 @@ export default function AdminSettings() {
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Progress</p>
                   <p className="text-sm font-medium text-foreground/80">
-                    {completedCount} / {TOUR_STEPS.length} steps
+                    {completedCount} / {activeTourSteps.length} steps
                   </p>
                 </div>
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Current Step</p>
                   <p className="text-sm font-medium text-foreground/80">
-                    {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
+                    {tourActive ? activeTourSteps[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
                   </p>
                 </div>
               </div>
@@ -104,7 +106,7 @@ export default function AdminSettings() {
               <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">Step Status</p>
                 <div className="space-y-1.5">
-                  {TOUR_STEPS.map((step, i) => (
+                  {activeTourSteps.map((step, i) => (
                     <div key={step.id} className="flex items-center gap-2">
                       <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
                         tourStepCompleted[step.id]

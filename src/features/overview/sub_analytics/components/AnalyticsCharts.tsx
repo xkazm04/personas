@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -10,6 +11,8 @@ import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTool
 import { CHART_COLORS, CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
+import { dashboardContainer, dashboardItem } from '@/features/templates/animationPresets';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { formatToolName } from '../libs/analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
@@ -30,11 +33,18 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
   pieData, latencyData, barData, handleFailureBarClick,
 }: AnalyticsChartsProps) {
   const sf = useScaledFontSize();
+  const { shouldAnimate } = useMotion();
   return (
     <>
       {/* Charts -- 2 column grid */}
-      <div className={DASHBOARD_GRID}>
+      <motion.div
+        className={DASHBOARD_GRID}
+        variants={shouldAnimate ? dashboardContainer : undefined}
+        initial={shouldAnimate ? "hidden" : false}
+        animate="show"
+      >
         {/* Cost Over Time */}
+        <motion.div variants={shouldAnimate ? dashboardItem : undefined}>
         <MetricChart title="Cost Over Time" height={180}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
@@ -47,8 +57,10 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
           </AreaChart>
         </MetricChart>
+        </motion.div>
 
         {/* Execution Health */}
+        <motion.div variants={shouldAnimate ? dashboardItem : undefined}>
         <MetricChart title="Execution Health" height={180}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
@@ -75,9 +87,11 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             )}
           </ComposedChart>
         </MetricChart>
+        </motion.div>
 
         {/* Tool Usage Over Time */}
         {areaData.length > 0 && (
+          <motion.div variants={shouldAnimate ? dashboardItem : undefined}>
           <LazyChart height={180}>
             <MetricChart title="Tool Usage Over Time" height={180}>
               <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
@@ -91,9 +105,11 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
               </AreaChart>
             </MetricChart>
           </LazyChart>
+          </motion.div>
         )}
 
         {/* Executions by Persona (donut) */}
+        <motion.div variants={shouldAnimate ? dashboardItem : undefined}>
         <LazyChart height={180}>
           <MetricChart
             title="Executions by Persona"
@@ -115,9 +131,11 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             </PieChart>
           </MetricChart>
         </LazyChart>
+        </motion.div>
 
         {/* Latency Distribution */}
         {latencyData.length > 0 && (
+          <motion.div variants={shouldAnimate ? dashboardItem : undefined}>
           <LazyChart height={180}>
             <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
               <LineChart data={latencyData}>
@@ -132,11 +150,17 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
               </LineChart>
             </MetricChart>
           </LazyChart>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Tool Invocations -- full width horizontal bar */}
       {barData.length > 0 && (
+        <motion.div
+          initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut', delay: 0.25 }}
+        >
         <LazyChart height={Math.max(200, barData.length * 40)}>
           <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
             <BarChart data={barData} margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
@@ -148,6 +172,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             </BarChart>
           </MetricChart>
         </LazyChart>
+        </motion.div>
       )}
     </>
   );

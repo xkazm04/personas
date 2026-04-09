@@ -108,11 +108,17 @@ async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
     );
 
     let result = timeout(Duration::from_secs(5), async {
-        Command::new(probe.cmd)
-            .args(probe.args)
+        let mut cmd = Command::new(probe.cmd);
+        cmd.args(probe.args)
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
+            .stderr(std::process::Stdio::piped());
+        // Prevent empty console windows flashing on Windows
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+        cmd.spawn()
             .ok()?
             .wait_with_output()
             .await

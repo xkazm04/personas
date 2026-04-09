@@ -5,9 +5,11 @@ import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { buildEvalGridData, type VersionAggregate } from '../../libs/evalAggregation';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
+import { LabResultCard, LabResultCardHeader, LabResultCardBody, LabResultCardSectionHeader } from '../shared/LabResultCard';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 interface UserRatingEntry {
   rating: number;
@@ -126,24 +128,20 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   return (
     <div className="space-y-6" data-testid="eval-results-grid">
       {/* Summary */}
-      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
-              <Grid3X3 className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-foreground/90">Evaluation Summary</h4>
-              <p className="text-xs text-muted-foreground/50">{versions.length} versions x {models.length} models x {scenarios.length} scenarios</p>
-            </div>
-          </div>
+      <LabResultCard className="bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm">
+        <LabResultCardHeader
+          className="space-y-3"
+          icon={<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center"><Grid3X3 className="w-4 h-4 text-primary" /></div>}
+          title="Evaluation Summary"
+          subtitle={`${versions.length} versions x ${models.length} models x ${scenarios.length} scenarios`}
+        >
           {summary && (
-            <p className="text-sm text-foreground/75 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+            <p className="typo-body text-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>') }}
             />
           )}
-        </div>
-      </div>
+        </LabResultCardHeader>
+      </LabResultCard>
 
       <EvalVersionCards versionAggs={versionAggs} winnerId={winnerId} celebrateWinnerId={celebrateWinnerId} />
       <EvalRadarChart versionAggs={versionAggs} />
@@ -152,37 +150,37 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       {(insights.length > 0 || suggestions.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {insights.length > 0 && (
-            <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+            <LabResultCard className="bg-secondary/20">
+              <LabResultCardSectionHeader className="bg-secondary/30">
+                <h4 className="flex items-center gap-1.5 typo-caption font-semibold text-muted-foreground/70 uppercase tracking-wider">
                   <MessageSquare className="w-3 h-3" /> Evaluation Insights
                 </h4>
-              </div>
-              <div className="px-4 py-3 space-y-2.5">
+              </LabResultCardSectionHeader>
+              <LabResultCardBody className="space-y-2.5">
                 {insights.map((r, i) => (
-                  <div key={i} className="text-sm leading-relaxed">
-                    <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase">{r.label}</span>
-                    <p className="text-foreground/70 mt-0.5">{r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</p>
+                  <div key={i} className="typo-body leading-relaxed">
+                    <span className="typo-caption font-semibold text-muted-foreground/40 uppercase">{r.label}</span>
+                    <p className="text-foreground mt-0.5">{r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</p>
                   </div>
                 ))}
-              </div>
-            </div>
+              </LabResultCardBody>
+            </LabResultCard>
           )}
           {suggestions.length > 0 && (
-            <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
+            <LabResultCard borderClass="border-amber-500/10" className="bg-amber-500/[0.03]">
+              <LabResultCardSectionHeader className="bg-amber-500/[0.05] border-amber-500/10">
+                <h4 className="flex items-center gap-1.5 typo-caption font-semibold text-amber-400/70 uppercase tracking-wider">
                   <Lightbulb className="w-3 h-3" /> Improvement Suggestions
                 </h4>
-              </div>
-              <div className="px-4 py-3 space-y-2">
+              </LabResultCardSectionHeader>
+              <LabResultCardBody className="space-y-2">
                 {suggestions.map((s, i) => (
-                  <p key={i} className="text-sm text-foreground/70 leading-relaxed">
+                  <p key={i} className="typo-body text-foreground leading-relaxed">
                     {s.length > 200 ? s.slice(0, 200) + '...' : s}
                   </p>
                 ))}
-              </div>
-            </div>
+              </LabResultCardBody>
+            </LabResultCard>
           )}
         </div>
       )}
@@ -193,10 +191,10 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
           <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Version x Model Matrix</h4>
         </summary>
-        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
-          <table className="w-full text-sm" data-testid="eval-matrix-table">
+        <div className={`mt-3 overflow-x-auto border ${BORDER_DEFAULT} rounded-card`}>
+          <table className="w-full typo-body" data-testid="eval-matrix-table">
             <thead>
-              <tr className="border-b border-primary/10 bg-secondary/20">
+              <tr className={`border-b ${BORDER_DEFAULT} bg-secondary/20`}>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Version</th>
                 {models.map((m) => (
                   <th key={m} className="text-center px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">{m}</th>
@@ -245,12 +243,12 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
             <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Scenario Breakdown</h4>
-            <span className="text-[10px] text-muted-foreground/30">Click a cell for details</span>
+            <span className="typo-caption text-muted-foreground/30">Click a cell for details</span>
           </summary>
-          <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
-            <table className="w-full text-sm" data-testid="eval-scenario-table">
+          <div className={`mt-3 overflow-x-auto border ${BORDER_DEFAULT} rounded-card`}>
+            <table className="w-full typo-body" data-testid="eval-scenario-table">
               <thead>
-                <tr className="border-b border-primary/10 bg-secondary/20">
+                <tr className={`border-b ${BORDER_DEFAULT} bg-secondary/20`}>
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Scenario</th>
                   {versions.map((vId) => {
                     const agg = versionAggs.find((a) => a.versionId === vId);
@@ -319,6 +317,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
               errorMessage: selectedResult.errorMessage,
               rationale: selectedResult.rationale ?? null,
               suggestions: selectedResult.suggestions ?? null,
+              evalMethod: selectedResult.evalMethod ?? null,
             }}
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}

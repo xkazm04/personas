@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Wand2, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Wand2 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { MatrixHistory } from './MatrixHistory';
-import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { selectedModelsAndEffortsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
-import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { ModelToggleGrid, EffortToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
+import type { GuideItem } from '../../shared';
 
 export function MatrixPanel() {
   const matrixRuns = useAgentStore((s) => s.matrixRuns);
@@ -18,6 +20,7 @@ export function MatrixPanel() {
 
   const {
     selectedPersona, selectedModels, toggleModel,
+    selectedEfforts, toggleEffort,
     expandedRunId, setExpandedRunId,
     setActiveRunId,
     selectedUseCaseId, setSelectedUseCaseId,
@@ -33,13 +36,23 @@ export function MatrixPanel() {
 
   const handleStart = async () => {
     if (!selectedPersona || !instruction.trim() || selectedModels.size === 0) return;
-    const models = selectedModelsToConfigs(selectedModels);
+    const models = selectedModelsAndEffortsToConfigs(selectedModels, selectedEfforts);
     const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
     const runId = await startMatrix(selectedPersona.id, instruction.trim(), models, useCaseFilter);
     if (runId) { setActiveRunId(runId); setInstruction(''); }
   };
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
+  const { t } = useLabTranslation();
+  const setLabMode = useAgentStore((s) => s.setLabMode);
+
+  const guideItems = useMemo(() => {
+    const items: GuideItem[] = [];
+    if (!hasPrompt) items.push({ message: t.guide.noPrompt.message, actionLabel: t.guide.noPrompt.action, onAction: () => setLabMode('versions') });
+    if (!instruction.trim()) items.push({ message: t.guide.describeChanges.message });
+    if (selectedModels.size === 0) items.push({ message: t.guide.selectModels.message });
+    return items;
+  }, [hasPrompt, instruction, selectedModels.size, t, setLabMode]);
 
   return (
     <div className="space-y-6">
@@ -48,7 +61,8 @@ export function MatrixPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
-        disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : !instruction.trim() ? 'Describe your desired changes above' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        disabledReason={!hasPrompt ? t.guide.noPrompt.message : !instruction.trim() ? t.guide.describeChanges.message : selectedModels.size === 0 ? t.guide.selectModels.message : ''}
+        guideItems={guideItems}
         runLabel="Generate & Test Draft"
         cancelLabel="Cancel Matrix Test"
         runIcon={<Wand2 className="w-4 h-4" />}
@@ -56,12 +70,9 @@ export function MatrixPanel() {
         cancelTestId="matrix-cancel-btn"
         runTestId="matrix-run-btn"
       >
-        {!hasPrompt && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-amber-400/90">This persona has no prompt configured. Add a prompt first.</p>
-          </div>
-        )}
+        <p className="typo-body text-foreground">
+          {t.purpose.improve}
+        </p>
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground/80">Describe your desired changes</label>
@@ -75,6 +86,7 @@ export function MatrixPanel() {
         </div>
 
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
+        <EffortToggleGrid selectedEfforts={selectedEfforts} toggleEffort={toggleEffort} />
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
       </LabPanelShell>
 

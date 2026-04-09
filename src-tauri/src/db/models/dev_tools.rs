@@ -224,6 +224,7 @@ pub struct DevCompetition {
     pub status: String, // 'running' | 'awaiting_review' | 'resolved' | 'cancelled'
     pub winner_task_id: Option<String>,
     pub winner_insight: Option<String>,
+    pub baseline_json: Option<String>,
     pub reviewer_notes: Option<String>,
     pub created_at: String,
     pub resolved_at: Option<String>,

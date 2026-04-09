@@ -224,6 +224,52 @@ pub fn is_mutation(query_text: &str) -> bool {
     }
 }
 
+/// Validate that a SQL statement is safe DDL (CREATE TABLE/INDEX/VIEW/TRIGGER)
+/// or transaction control (BEGIN/COMMIT/ROLLBACK). Rejects DML (INSERT, UPDATE,
+/// DELETE) and destructive DDL (DROP, ALTER, TRUNCATE). Used during schema setup
+/// in template adoption to guard against hallucinated AI proposals or careless
+/// user edits destroying operational data.
+fn validate_ddl_only(sql: &str) -> Result<(), AppError> {
+    let trimmed = sql.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+    let upper = trimmed.to_uppercase();
+    let upper = upper.trim_start();
+
+    // Allow transaction control
+    if upper.starts_with("BEGIN")
+        || upper.starts_with("COMMIT")
+        || upper.starts_with("ROLLBACK")
+        || upper.starts_with("SAVEPOINT")
+        || upper.starts_with("RELEASE")
+    {
+        return Ok(());
+    }
+
+    // Allow only CREATE TABLE / INDEX / UNIQUE INDEX / VIEW / TRIGGER
+    if upper.starts_with("CREATE ") {
+        let after = upper["CREATE ".len()..].trim_start();
+        // Handle optional "IF NOT EXISTS" and similar noise after the object type
+        if after.starts_with("TABLE")
+            || after.starts_with("INDEX")
+            || after.starts_with("UNIQUE")
+            || after.starts_with("VIEW")
+            || after.starts_with("TRIGGER")
+            || after.starts_with("TEMP ")
+            || after.starts_with("TEMPORARY ")
+        {
+            return Ok(());
+        }
+    }
+
+    let preview: String = trimmed.chars().take(80).collect();
+    Err(AppError::Validation(format!(
+        "Only CREATE TABLE/INDEX/VIEW/TRIGGER statements are allowed during schema setup. \
+         Blocked: \"{preview}\""
+    )))
+}
+
 /// Execute a query against the database credential's service.
 ///
 /// `user_db` is required for `personas_database` (built-in SQLite) queries.
@@ -239,7 +285,15 @@ pub async fn execute_query(
     query_text: &str,
     user_db: Option<&UserDbPool>,
     allow_mutation: bool,
+    ddl_only: bool,
 ) -> Result<QueryResult, AppError> {
+    // DDL-only guard: when set, only safe CREATE statements and tx control are allowed.
+    // This protects the built-in database from destructive AI-proposed or user-edited SQL
+    // during schema setup (template adoption DataStep).
+    if ddl_only {
+        validate_ddl_only(query_text)?;
+    }
+
     // Safe-mode guard: reject mutations unless explicitly allowed
     if !allow_mutation && is_mutation(query_text) {
         return Err(AppError::Validation(

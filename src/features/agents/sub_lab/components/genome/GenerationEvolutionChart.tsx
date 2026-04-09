@@ -76,16 +76,16 @@ export function GenerationEvolutionChart({
   const maxFitness = Math.max(...stats.map((s) => s.bestFitness), 0.01);
 
   return (
-    <div className="space-y-3" role="region" aria-label="Generation evolution chart">
+    <div className="space-y-3" role="region" aria-label="Progress chart">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-muted-foreground">Evolution Progress</h4>
+        <h4 className="text-xs font-medium text-muted-foreground">Progress</h4>
         <span className="text-xs text-muted-foreground/60">
-          {stats.length} generation{stats.length !== 1 ? 's' : ''}
+          {stats.length} round{stats.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Bar chart */}
-      <div className="flex items-end gap-1.5 h-28" role="img" aria-label="Fitness progression across generations">
+      <div className="flex items-end gap-1.5 h-28" role="img" aria-label="Score progression across rounds">
         {stats.map((gen, _idx) => {
           const bestHeight = maxFitness > 0 ? (gen.bestFitness / maxFitness) * 100 : 0;
           const avgHeight = maxFitness > 0 ? (gen.avgFitness / maxFitness) * 100 : 0;
@@ -96,7 +96,7 @@ export function GenerationEvolutionChart({
               key={gen.generation}
               onClick={() => onSelectOffspring?.(gen.bestId)}
               className="flex-1 flex flex-col items-center gap-0.5 group cursor-pointer"
-              aria-label={`Generation ${gen.generation}: best ${Math.round(gen.bestFitness * 100)}%, avg ${Math.round(gen.avgFitness * 100)}%`}
+              aria-label={`Round ${gen.generation}: best ${Math.round(gen.bestFitness * 100)}%, avg ${Math.round(gen.avgFitness * 100)}%`}
             >
               <div className="w-full flex items-end justify-center gap-px h-24 relative">
                 {/* Worst (background) */}
@@ -119,7 +119,7 @@ export function GenerationEvolutionChart({
                   Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground/60">G{gen.generation}</span>
+              <span className="typo-caption text-muted-foreground/60">R{gen.generation}</span>
             </button>
           );
         })}
@@ -127,13 +127,13 @@ export function GenerationEvolutionChart({
 
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center">
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1 typo-caption text-muted-foreground">
           <span className="w-2 h-2 rounded-sm bg-violet-500 inline-block" /> Best
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1 typo-caption text-muted-foreground">
           <span className="w-2 h-2 rounded-sm bg-amber-500/40 inline-block" /> Avg
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1 typo-caption text-muted-foreground">
           <span className="w-2 h-2 rounded-sm bg-red-500/20 inline-block" /> Worst
         </span>
       </div>
@@ -151,13 +151,13 @@ export function GenerationEvolutionChart({
               />
               <span>
                 {first.bestFitness > 0
-                  ? `${Math.round(((last.bestFitness - first.bestFitness) / first.bestFitness) * 100)}% fitness change`
-                  : 'No baseline fitness data'}
+                  ? `${Math.round(((last.bestFitness - first.bestFitness) / first.bestFitness) * 100)}% score change`
+                  : 'No baseline data'}
               </span>
             </div>
             <span className="text-muted-foreground/40">|</span>
             <span>
-              {results.length} total offspring
+              {results.length} total results
             </span>
           </div>
         );

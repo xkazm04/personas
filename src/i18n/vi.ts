@@ -117,8 +117,10 @@ export const vi = {
     appearance: "Giao diện",
     notifications: "Thông báo",
     engine: "Công cụ xử lý",
-    byom: "BYOM",
+    byom: "Nhà cung cấp mô hình",
     data: "Dữ liệu",
+    quality_gates: "Bộ lọc nội dung",
+    config_resolution: "Cấu hình tác tử",
     admin: "Quản trị",
 
     coming_soon: "Sắp ra mắt",
@@ -888,6 +890,7 @@ export const vi = {
 
   settings: {
     title: "Cài đặt",
+    settings_saved: "Đã lưu",
 
     account: {
       title: "Tài khoản",

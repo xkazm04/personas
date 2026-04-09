@@ -1,6 +1,7 @@
-import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
+import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap, AlertTriangle } from 'lucide-react';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
 
 interface ScenarioResult {
   scenarioName: string;
@@ -17,6 +18,7 @@ interface ScenarioResult {
   errorMessage: string | null;
   rationale: string | null;
   suggestions: string | null;
+  evalMethod?: string | null;
 }
 
 interface StructuredRationale {
@@ -96,8 +98,10 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
   const oq = result.outputQualityScore ?? 0;
   const pc = result.protocolCompliance ?? 0;
   const composite = compositeScore(ta, oq, pc);
+  const { t } = useLabTranslation();
 
   const { structured, plain } = parseRationale(result.rationale);
+  const isDegraded = result.evalMethod === 'heuristic_fallback' || result.evalMethod === 'timeout';
 
   return (
     <div className="border border-primary/15 rounded-xl bg-gradient-to-b from-secondary/20 to-background/30 overflow-hidden">
@@ -113,6 +117,21 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Degraded evaluation warning */}
+        {isDegraded && (
+          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-300">
+                {result.evalMethod === 'timeout' ? t.evalMethod.timeoutTitle : t.evalMethod.fallbackTitle}
+              </p>
+              <p className="text-xs text-foreground/70 mt-0.5">
+                {result.evalMethod === 'timeout' ? t.evalMethod.timeoutDesc : t.evalMethod.fallbackDesc}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Verdict banner */}
         {structured?.verdict && (
           <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">

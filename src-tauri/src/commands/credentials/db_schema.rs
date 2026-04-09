@@ -174,6 +174,7 @@ pub async fn execute_db_query(
     query_text: String,
     saved_query_id: Option<String>,
     allow_mutation: Option<bool>,
+    ddl_only: Option<bool>,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "execute_db_query").await?;
     let result = crate::engine::db_query::execute_query(
@@ -182,6 +183,7 @@ pub async fn execute_db_query(
         &query_text,
         Some(&state.user_db),
         allow_mutation.unwrap_or(false),
+        ddl_only.unwrap_or(false),
     ).await;
 
     // Update last_run stats if we have a saved query ID

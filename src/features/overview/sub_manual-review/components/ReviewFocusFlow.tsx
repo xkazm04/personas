@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -20,6 +20,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
 import { parseSuggestedActions } from '../libs/reviewHelpers';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -205,6 +206,7 @@ type ActionType = 'reject' | 'retry' | 'approve' | null;
 // ---------------------------------------------------------------------------
 
 export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: ReviewFocusFlowProps) {
+  const { t } = useOverviewTranslation();
   const pending = useMemo(() => reviews.filter((r) => r.status === 'pending'), [reviews]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewDir, setReviewDir] = useState(0);
@@ -214,6 +216,28 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   const [actionNotes, setActionNotes] = useState('');
   const [decisionVerdicts, setDecisionVerdicts] = useState<Record<string, DecisionVerdict>>({});
 
+  // -- Progress tracking --
+  const initialQueueSizeRef = useRef(0);
+  const prevPendingRef = useRef(pending.length);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Capture initial queue size on first render with items
+  useEffect(() => {
+    if (pending.length > 0 && initialQueueSizeRef.current === 0) {
+      initialQueueSizeRef.current = pending.length;
+    }
+  }, [pending.length]);
+
+  // Detect queue-clear transition → celebration
+  useEffect(() => {
+    if (prevPendingRef.current > 0 && pending.length === 0 && initialQueueSizeRef.current > 0) {
+      setShowCelebration(true);
+    }
+    prevPendingRef.current = pending.length;
+  }, [pending.length]);
+
+  const processedCount = initialQueueSizeRef.current - pending.length;
+
   // Keep index in bounds
   useEffect(() => {
     if (reviewIdx >= pending.length && pending.length > 0) setReviewIdx(pending.length - 1);
@@ -221,14 +245,16 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
 
   const resetAction = useCallback(() => { setActiveAction(null); setActionNotes(''); }, []);
 
-  // Reset when review changes
+  const current = pending[reviewIdx] ?? null;
+
+  // Reset when the actual review changes (keyed on id, not index, so array
+  // shifts after approve/reject still trigger a reset).
+  const currentReviewId = current?.id;
   useEffect(() => {
     setDecisionVerdicts({});
     setDecisionIdx(0);
     resetAction();
-  }, [reviewIdx, resetAction]);
-
-  const current = pending[reviewIdx] ?? null;
+  }, [currentReviewId, resetAction]);
   const { decisions, galleryImage } = current ? parseDecisions(current.context_data) : { decisions: [], galleryImage: null };
   const hasDecisions = decisions.length > 0;
   const hasMultipleDecisions = decisions.length > 1;
@@ -372,16 +398,76 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   }, [reviewIdx]);
 
   // -----------------------------------------------------------------------
-  // Empty state
+  // Empty / celebration state
   // -----------------------------------------------------------------------
   if (pending.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
-        <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
-          <Check className="w-8 h-8 text-emerald-400" />
-        </div>
-        <p className="text-lg font-medium text-foreground">All caught up</p>
-        <p className="text-sm text-foreground/60">No pending reviews to process.</p>
+        {showCelebration ? (
+          <>
+            {/* Animated checkmark ring */}
+            <motion.div
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="relative w-20 h-20"
+            >
+              {/* Outer glow pulse */}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-emerald-500/20"
+                animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <div className="w-20 h-20 rounded-full bg-emerald-500/15 flex items-center justify-center ring-2 ring-emerald-500/30">
+                <motion.div
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  <Check className="w-10 h-10 text-emerald-400" strokeWidth={2.5} />
+                </motion.div>
+              </div>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="typo-heading text-foreground"
+            >
+              {t.reviewFocus.all_caught_up}
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="typo-body text-foreground"
+            >
+              {t.reviewFocus.queue_cleared}
+            </motion.p>
+            {/* Processed count badge */}
+            {initialQueueSizeRef.current > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8 }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="typo-caption text-emerald-400">
+                  {t.reviewFocus.processed_count.replace('{count}', String(initialQueueSizeRef.current))}
+                </span>
+              </motion.div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <Check className="w-8 h-8 text-emerald-400" />
+            </div>
+            <p className="typo-heading text-foreground">{t.reviewFocus.all_caught_up}</p>
+            <p className="typo-body text-foreground">{t.reviewFocus.no_pending_reviews}</p>
+          </>
+        )}
       </div>
     );
   }
@@ -442,17 +528,44 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
 
       {/* ---- Main Content ---- */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Top nav bar */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
-          <span className="text-sm font-medium text-foreground/70">Review {reviewIdx + 1} of {pending.length}</span>
-          <div className="flex items-center gap-2">
-            <button onClick={goPrevReview} disabled={reviewIdx === 0} className="p-1.5 rounded-md hover:bg-primary/10 disabled:opacity-30 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button onClick={goNextReview} disabled={reviewIdx >= pending.length - 1} className="p-1.5 rounded-md hover:bg-primary/10 disabled:opacity-30 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {/* Top nav bar with progress */}
+        <div className="flex-shrink-0 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-6 py-2">
+            <div className="flex items-center gap-3">
+              <span className="typo-body text-foreground">
+                {t.reviewFocus.progress_of
+                  .replace('{current}', String(reviewIdx + 1))
+                  .replace('{total}', String(pending.length))}
+              </span>
+              {processedCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span className="typo-caption text-emerald-400">
+                    {t.reviewFocus.processed_count.replace('{count}', String(processedCount))}
+                  </span>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={goPrevReview} disabled={reviewIdx === 0} className="p-1.5 rounded-interactive hover:bg-primary/10 disabled:opacity-30 transition-colors">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button onClick={goNextReview} disabled={reviewIdx >= pending.length - 1} className="p-1.5 rounded-interactive hover:bg-primary/10 disabled:opacity-30 transition-colors">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
+          {/* Thin progress bar */}
+          {initialQueueSizeRef.current > 0 && (
+            <div className="h-0.5 bg-primary/5">
+              <motion.div
+                className="h-full bg-emerald-500/60"
+                initial={false}
+                animate={{ width: `${(processedCount / initialQueueSizeRef.current) * 100}%` }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Scrollable review area */}

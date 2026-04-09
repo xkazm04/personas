@@ -66,7 +66,6 @@ export function useToolSelectorState() {
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [justToggledId, setJustToggledId] = useState<string | null>(null);
   const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'grouped'>('grid');
@@ -122,8 +121,6 @@ export function useToolSelectorState() {
       } else {
         await assignTool(personaId, toolId);
       }
-      setJustToggledId(toolId);
-      setTimeout(() => setJustToggledId(null), 600);
     } catch {
       // error state is set by the store slice
     }
@@ -133,8 +130,6 @@ export function useToolSelectorState() {
     if (!undoToast) return;
     try {
       await assignTool(personaId, undoToast.toolId);
-      setJustToggledId(undoToast.toolId);
-      setTimeout(() => setJustToggledId(null), 600);
     } catch {
       // error state is set by the store slice
     }
@@ -180,7 +175,6 @@ export function useToolSelectorState() {
     categoryCounts,
     selectedCategory, setSelectedCategory,
     searchQuery, setSearchQuery,
-    justToggledId,
     undoToast,
     viewMode, setViewMode,
     isSearching,

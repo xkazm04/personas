@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState, useCallback, useId } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback, useId, useSyncExternalStore } from 'react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { ProcessingInfo, ReturnFlow, DiscoveredSource } from '../../libs/visualizationHelpers';
@@ -9,6 +9,7 @@ import {
   distributeOnRing,
 } from '../../libs/visualizationHelpers';
 import EventLogSidebar from '../panels/EventLogSidebar';
+import { RealtimeWelcomeOverlay } from './RealtimeWelcomeOverlay';
 import type { Props } from '../renderers/EventBusTypes';
 import { ORBIT_R_OUTER, ORBIT_R_INNER } from '../renderers/EventBusTypes';
 import { EventBusSvgDefs, EventBusCoreElements } from '../renderers/EventBusSvgScene';
@@ -16,8 +17,31 @@ import { OuterNodeGroup, InnerNodeGroup } from '../renderers/EventBusNodeRendere
 import { InboundCometTrails, ReturnFlowComets } from '../renderers/EventBusParticleRenderers';
 import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
 
-export default function EventBusVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
+const MOBILE_MQ = '(max-width: 767px)';
+const TABLET_MQ = '(max-width: 1023px)';
+
+function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback((cb: () => void) => {
+    const mql = window.matchMedia(query);
+    mql.addEventListener('change', cb);
+    return () => mql.removeEventListener('change', cb);
+  }, [query]);
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
+}
+
+export default function EventBusVisualization({ events, personas, animationMapRef, animTick, onSelectEvent, onTestFlow }: Props) {
   const uid = useId();
+  const isMobile = useMediaQuery(MOBILE_MQ);
+  const isTablet = useMediaQuery(TABLET_MQ);
+  const [manualCollapse, setManualCollapse] = useState<boolean | null>(null);
+
+  // Auto-collapse on tablet; drawer mode on mobile
+  const sidebarCollapsed = manualCollapse ?? isTablet;
+  const toggleCollapse = useCallback(() => setManualCollapse(prev => !(prev ?? isTablet)), [isTablet]);
+
+  // Reset manual override when breakpoint changes
+  useEffect(() => setManualCollapse(null), [isMobile, isTablet]);
 
   /* ---------- source topology ---------- */
   const discoveredRef = useRef(new Map<string, DiscoveredSource>());
@@ -127,8 +151,8 @@ export default function EventBusVisualization({ events, personas, animationMapRe
   const hasTraffic = animatedEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 
   return (
-    <div className="w-full h-full flex min-h-[280px]">
-      <div className="flex-1 relative">
+    <div className="w-full h-full flex min-h-[280px] relative">
+      <div className="flex-1 relative transition-all duration-300 ease-out">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <EventBusSvgDefs uid={uid} hasTraffic={hasTraffic} />
           <EventBusCoreElements uid={uid} hasTraffic={hasTraffic} />
@@ -157,16 +181,17 @@ export default function EventBusVisualization({ events, personas, animationMapRe
         )}
 
         {events.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center gap-2 bg-background/40 backdrop-blur-sm border border-purple-500/10 rounded-2xl px-6 py-4">
-              <span className="text-sm text-muted-foreground/40 font-mono">Idle</span>
-              <span className="text-xs text-muted-foreground/30">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
-            </div>
-          </div>
+          <RealtimeWelcomeOverlay onTestFlow={onTestFlow} />
         )}
       </div>
 
-      <EventLogSidebar events={events} onSelectEvent={onSelectEvent} />
+      <EventLogSidebar
+        events={events}
+        onSelectEvent={onSelectEvent}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={toggleCollapse}
+        isMobileDrawer={isMobile}
+      />
     </div>
   );
 }

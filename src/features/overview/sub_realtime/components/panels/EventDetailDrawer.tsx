@@ -4,6 +4,8 @@ import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
+import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 
 interface Props {
   event: RealtimeEvent;
@@ -29,6 +31,7 @@ function formatPayload(payload: string | null): string {
 
 export default function EventDetailDrawer({ event, onClose }: Props) {
   const personas = useAgentStore((s) => s.personas);
+  const { t } = useOverviewTranslation();
   const statusInfo = STATUS_ICONS[event.status] ?? STATUS_ICONS.pending!;
   const StatusIcon = statusInfo.icon;
   const typeColor = EVENT_TYPE_HEX_COLORS[event.event_type] ?? '#818cf8';
@@ -99,10 +102,12 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         </div>
 
         {event.error_message && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/15">
-            <span className="text-sm font-mono uppercase text-red-400/60 block mb-1">Error</span>
-            <p className="text-sm text-red-300/80 font-mono">{event.error_message}</p>
-          </div>
+          <ErrorRecoveryBanner
+            severity="error"
+            message={t.errorRecovery.event_failed_message}
+            cause={event.error_message}
+            compact
+          />
         )}
 
         {event.payload && (

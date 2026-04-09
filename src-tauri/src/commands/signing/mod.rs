@@ -88,7 +88,9 @@ pub fn sign_document(
         signed_at: now,
         metadata: metadata
             .as_deref()
-            .and_then(|m| serde_json::from_str(m).ok()),
+            .map(|m| serde_json::from_str(m))
+            .transpose()
+            .map_err(|e| AppError::Validation(format!("Invalid metadata JSON: {e}")))?,
     };
     let sidecar_json = serde_json::to_string_pretty(&sidecar)?;
 
@@ -244,7 +246,9 @@ pub fn export_signature_sidecar(
         metadata: sig
             .metadata
             .as_deref()
-            .and_then(|m| serde_json::from_str(m).ok()),
+            .map(|m| serde_json::from_str(m))
+            .transpose()
+            .map_err(|e| AppError::Validation(format!("Invalid metadata JSON: {e}")))?,
     };
 
     Ok(serde_json::to_string_pretty(&sidecar)?)

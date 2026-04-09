@@ -109,18 +109,6 @@ export function validateWorkflow(
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-/** Return IDs of nodes with no incoming edges (root/source nodes). */
-export function getRootNodes(nodes: WorkflowNode[], edges: WorkflowEdge[]): string[] {
-  const targets = new Set(edges.map((e) => e.target));
-  return nodes.filter((n) => !targets.has(n.id)).map((n) => n.id);
-}
-
-/** Return IDs of nodes with no outgoing edges (leaf/sink nodes). */
-export function getLeafNodes(nodes: WorkflowNode[], edges: WorkflowEdge[]): string[] {
-  const sources = new Set(edges.map((e) => e.source));
-  return nodes.filter((n) => !sources.has(n.id)).map((n) => n.id);
-}
-
 /** Get direct upstream node IDs for a given node. */
 export function getUpstream(nodeId: string, edges: WorkflowEdge[]): string[] {
   return edges.filter((e) => e.target === nodeId).map((e) => e.source);

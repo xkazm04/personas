@@ -47,6 +47,7 @@ export function useDeploymentHealth(
         if (data) mapped[entry.id] = data;
       }
       setHealthMap(mapped);
+      setIsLoading(false);
       return;
     }
 
@@ -55,42 +56,45 @@ export function useDeploymentHealth(
     setIsLoading(true);
 
     (async () => {
-      const newStats: Record<string, HealthDataPoint[]> = {};
+      try {
+        const newStats: Record<string, HealthDataPoint[]> = {};
 
-      // Fetch stats for each unique personaId (7-day window)
-      const results = await Promise.allSettled(
-        uniquePersonaIds.map(async (pid) => {
-          const stats = await cloudExecutionStats(pid, 7);
-          return { personaId: pid, daily: stats.daily_breakdown };
-        }),
-      );
+        // Fetch stats for each unique personaId (7-day window)
+        const results = await Promise.allSettled(
+          uniquePersonaIds.map(async (pid) => {
+            const stats = await cloudExecutionStats(pid, 7);
+            return { personaId: pid, daily: stats.daily_breakdown };
+          }),
+        );
 
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          const { personaId, daily } = result.value;
-          newStats[personaId] = daily.map((d) => ({
-            date: d.date,
-            count: d.count,
-            successRate: d.success_rate,
-            cost: d.cost,
-          }));
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            const { personaId, daily } = result.value;
+            newStats[personaId] = daily.map((d) => ({
+              date: d.date,
+              count: d.count,
+              successRate: d.success_rate,
+              cost: d.cost,
+            }));
+          }
         }
+
+        if (cancelled) return;
+
+        statsCache.current = newStats;
+
+        // Map persona stats back to deployment row IDs
+        const entries = personaEntriesRef.current;
+        const mapped: DeploymentHealthMap = {};
+        for (const entry of entries) {
+          const data = newStats[entry.personaId];
+          if (data) mapped[entry.id] = data;
+        }
+
+        setHealthMap(mapped);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-
-      if (cancelled) return;
-
-      statsCache.current = newStats;
-
-      // Map persona stats back to deployment row IDs
-      const entries = personaEntriesRef.current;
-      const mapped: DeploymentHealthMap = {};
-      for (const entry of entries) {
-        const data = newStats[entry.personaId];
-        if (data) mapped[entry.id] = data;
-      }
-
-      setHealthMap(mapped);
-      setIsLoading(false);
     })();
 
     return () => { cancelled = true; };

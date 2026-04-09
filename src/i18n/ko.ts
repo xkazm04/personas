@@ -101,8 +101,10 @@ export const ko = {
     appearance: "외관",
     notifications: "알림",
     engine: "엔진",
-    byom: "BYOM",
+    byom: "모델 제공자",
     data: "데이터",
+    quality_gates: "콘텐츠 필터",
+    config_resolution: "에이전트 구성",
     admin: "관리자",
     coming_soon: "곧 제공 예정",
     sign_in_to_unlock: "클라우드 기능을 사용하려면 로그인하세요",
@@ -831,6 +833,7 @@ export const ko = {
 
   settings: {
     title: "설정",
+    settings_saved: "저장됨",
     account: {
       title: "계정",
       subtitle: "로그인 및 프로필을 관리합니다",

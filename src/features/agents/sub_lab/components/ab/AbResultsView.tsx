@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
+import { LabStaggerGroup, LabStaggerItem } from '../shared/LabStaggerGroup';
+import { LabResultCard, LabResultCardHeader, LabResultCardBody, LabResultCardSectionHeader } from '../shared/LabResultCard';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock, ArrowRight, MessageSquare, Lightbulb, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateAbResults, type AbVersionAggregate } from '../../libs/labAggregation';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 interface UserRatingEntry {
   rating: number;
@@ -145,31 +148,25 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
   return (
     <div className="space-y-6">
       {/* Executive summary */}
-      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-foreground/90">A/B Test Summary</h4>
-              <p className="text-xs text-muted-foreground/50">
-                v{versionAggs[0]?.versionNumber} vs v{versionAggs[1]?.versionNumber} across {scenarios.length} scenarios
-              </p>
-            </div>
-          </div>
+      <LabResultCard className="bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm">
+        <LabResultCardHeader
+          className="space-y-3"
+          icon={<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center"><Trophy className="w-4 h-4 text-primary" /></div>}
+          title="A/B Test Summary"
+          subtitle={`v${versionAggs[0]?.versionNumber} vs v${versionAggs[1]?.versionNumber} across ${scenarios.length} scenarios`}
+        >
           {summary && (
-            <p className="text-sm text-foreground/75 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+            <p className="typo-body text-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>') }}
             />
           )}
-        </div>
-      </div>
+        </LabResultCardHeader>
+      </LabResultCard>
 
       {/* Head-to-head comparison */}
       <div className="space-y-3">
         <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Head-to-Head</h4>
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-0 items-stretch">
+        <LabStaggerGroup className="grid grid-cols-[1fr_auto_1fr] gap-0 items-stretch">
           {versionAggs.map((agg, idx) => {
             const isWinner = agg.versionId === winnerId;
             const c = VERSION_COLORS[idx] ?? VERSION_COLORS[0]!;
@@ -180,99 +177,101 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
                 {idx === 1 && (
                   <div className="flex items-center justify-center px-3">
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">vs</span>
+                      <span className="typo-caption font-bold text-muted-foreground/30 uppercase tracking-widest">vs</span>
                       <ArrowRight className="w-4 h-4 text-muted-foreground/20 rotate-90" />
                     </div>
                   </div>
                 )}
-                <div className={`rounded-xl border overflow-hidden ${isWinner ? `${c.border} shadow-elevation-3 shadow-primary/5` : 'border-primary/10'}`}>
-                  {/* Version header */}
-                  <div className={`px-4 py-3 bg-gradient-to-r ${c.gradient}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
-                        {isWinner && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
-                            <Trophy className="w-2.5 h-2.5" /> Winner
-                          </span>
+                <LabStaggerItem>
+                  <LabResultCard
+                    borderClass={isWinner ? c.border : undefined}
+                    className={isWinner ? 'shadow-elevation-3 shadow-primary/5' : ''}
+                  >
+                    {/* Version header */}
+                    <LabResultCardHeader className={`bg-gradient-to-r ${c.gradient}`}
+                      trailing={isWinner ? (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+                          <Trophy className="w-2.5 h-2.5" /> Winner
+                        </span>
+                      ) : undefined}
+                    >
+                      <span className={`px-2 py-0.5 rounded-md typo-body font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
+                    </LabResultCardHeader>
+
+                    {/* Scores */}
+                    <LabResultCardBody className="space-y-3 bg-background/40">
+                      <div className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
+                        <span className={`text-3xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className={`typo-caption font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
+                          <p className="typo-caption text-muted-foreground/50">Composite Score</p>
+                        </div>
+                        {other && (
+                          <div className="flex items-center gap-0.5 typo-caption text-muted-foreground/50">
+                            {agg.compositeScore > other.compositeScore
+                              ? <><TrendingUp className="w-3 h-3 text-emerald-400/60" /><span>+{agg.compositeScore - other.compositeScore}</span></>
+                              : agg.compositeScore < other.compositeScore
+                                ? <><TrendingDown className="w-3 h-3 text-red-400/60" /><span>{agg.compositeScore - other.compositeScore}</span></>
+                                : <span>tied</span>
+                            }
+                          </div>
                         )}
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Scores */}
-                  <div className="px-4 py-3 space-y-3 bg-background/40">
-                    <div className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
-                      <span className={`text-3xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
-                        <p className="text-[10px] text-muted-foreground/50">Composite Score</p>
+                      <div className="space-y-2">
+                        <ScoreBar value={agg.avgToolAccuracy} label="Tool Usage" icon={Target} />
+                        <ScoreBar value={agg.avgOutputQuality} label="Output Quality" icon={FileText} />
+                        <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
                       </div>
-                      {other && (
-                        <div className="flex items-center gap-0.5 text-xs text-muted-foreground/50">
-                          {agg.compositeScore > other.compositeScore
-                            ? <><TrendingUp className="w-3 h-3 text-emerald-400/60" /><span>+{agg.compositeScore - other.compositeScore}</span></>
-                            : agg.compositeScore < other.compositeScore
-                              ? <><TrendingDown className="w-3 h-3 text-red-400/60" /><span>{agg.compositeScore - other.compositeScore}</span></>
-                              : <span>tied</span>
-                          }
-                        </div>
-                      )}
-                    </div>
 
-                    <div className="space-y-2">
-                      <ScoreBar value={agg.avgToolAccuracy} label="Tool Usage" icon={Target} />
-                      <ScoreBar value={agg.avgOutputQuality} label="Output Quality" icon={FileText} />
-                      <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-muted-foreground/50">
-                      <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
-                    </div>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-3 pt-1 border-t border-primary/5 typo-body text-muted-foreground/50">
+                        <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
+                      </div>
+                    </LabResultCardBody>
+                  </LabResultCard>
+                </LabStaggerItem>
               </div>
             );
           })}
-        </div>
+        </LabStaggerGroup>
       </div>
 
       {/* Key insights */}
       {(topRationale.length > 0 || topSuggestions.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {topRationale.length > 0 && (
-            <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+            <LabResultCard className="bg-secondary/20">
+              <LabResultCardSectionHeader className="bg-secondary/30">
+                <h4 className="flex items-center gap-1.5 typo-caption font-semibold text-muted-foreground/70 uppercase tracking-wider">
                   <MessageSquare className="w-3 h-3" /> Evaluation Insights
                 </h4>
-              </div>
-              <div className="px-4 py-3 space-y-2.5">
+              </LabResultCardSectionHeader>
+              <LabResultCardBody className="space-y-2.5">
                 {topRationale.map((r, i) => (
-                  <div key={i} className="text-sm leading-relaxed">
-                    <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase">v{r.version} — {r.scenario}</span>
-                    <p className="text-foreground/70 mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
+                  <div key={i} className="typo-body leading-relaxed">
+                    <span className="typo-caption font-semibold text-muted-foreground/40 uppercase">v{r.version} — {r.scenario}</span>
+                    <p className="text-foreground mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
                   </div>
                 ))}
-              </div>
-            </div>
+              </LabResultCardBody>
+            </LabResultCard>
           )}
           {topSuggestions.length > 0 && (
-            <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
+            <LabResultCard borderClass="border-amber-500/10" className="bg-amber-500/[0.03]">
+              <LabResultCardSectionHeader className="bg-amber-500/[0.05] border-amber-500/10">
+                <h4 className="flex items-center gap-1.5 typo-caption font-semibold text-amber-400/70 uppercase tracking-wider">
                   <Lightbulb className="w-3 h-3" /> Improvement Suggestions
                 </h4>
-              </div>
-              <div className="px-4 py-3 space-y-2">
+              </LabResultCardSectionHeader>
+              <LabResultCardBody className="space-y-2">
                 {topSuggestions.map((s, i) => (
-                  <p key={i} className="text-sm text-foreground/70 leading-relaxed">
+                  <p key={i} className="typo-body text-foreground leading-relaxed">
                     {s.length > 200 ? s.slice(0, 200) + '...' : s}
                   </p>
                 ))}
-              </div>
-            </div>
+              </LabResultCardBody>
+            </LabResultCard>
           )}
         </div>
       )}
@@ -282,12 +281,12 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
         <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
           <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Scenario Breakdown</h4>
-          <span className="text-[10px] text-muted-foreground/30">Click a cell for details</span>
+          <span className="typo-caption text-muted-foreground/30">Click a cell for details</span>
         </summary>
-        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
+        <div className={`mt-3 overflow-x-auto border ${BORDER_DEFAULT} rounded-card`}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-primary/10 bg-secondary/20">
+              <tr className={`border-b ${BORDER_DEFAULT} bg-secondary/20`}>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Scenario</th>
                 {versionAggs.map((agg, idx) => {
                   const c = VERSION_COLORS[idx] ?? VERSION_COLORS[0]!;
@@ -355,6 +354,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
               errorMessage: selectedFirst.errorMessage,
               rationale: selectedFirst.rationale ?? null,
               suggestions: selectedFirst.suggestions ?? null,
+              evalMethod: selectedFirst.evalMethod ?? null,
             }}
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}

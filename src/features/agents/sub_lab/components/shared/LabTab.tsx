@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState, useCallback, useMemo } from 'react';
 import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
 
 const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
 const MatrixPanel = lazy(() => import('../matrix/MatrixPanel').then((m) => ({ default: m.MatrixPanel })));
@@ -13,21 +14,31 @@ const EvolutionPanel = lazy(() => import('../evolution/EvolutionPanel').then((m)
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 
-const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof FlaskConical }> = [
-  { id: 'arena', label: 'Arena', desc: 'Compare models head-to-head', icon: FlaskConical },
-  { id: 'matrix', label: 'Improve', desc: 'AI-driven prompt improvement', icon: Wand2 },
-  { id: 'breed', label: 'Breed', desc: 'Cross-breed top performers', icon: Dna },
-  { id: 'evolve', label: 'Evolve', desc: 'Auto-evolving optimization', icon: Sparkles },
-  { id: 'versions', label: 'Versions', desc: 'Track prompt evolution', icon: GitBranch },
+type TabDef = { id: LabMode; tabKey: keyof typeof import('../../i18n/en').en.lab.tabs; icon: typeof FlaskConical };
+
+const tabDefs: TabDef[] = [
+  { id: 'arena', tabKey: 'arena', icon: FlaskConical },
+  { id: 'matrix', tabKey: 'improve', icon: Wand2 },
+  { id: 'breed', tabKey: 'mixMatch', icon: Dna },
+  { id: 'evolve', tabKey: 'autoImprove', icon: Sparkles },
+  { id: 'versions', tabKey: 'versions', icon: GitBranch },
 ];
 
-const validModes = new Set<string>(modeTabs.map((t) => t.id));
+const validModes = new Set<string>(tabDefs.map((t) => t.id));
 
 export function LabTab() {
   const labMode = useAgentStore((s) => s.labMode);
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
   const hydrateActiveProgress = useAgentStore((s) => s.hydrateActiveProgress);
+  const { t } = useLabTranslation();
+
+  const modeTabs = useMemo(() => tabDefs.map((def) => ({
+    id: def.id,
+    label: t.tabs[def.tabKey].label,
+    desc: t.tabs[def.tabKey].desc,
+    icon: def.icon,
+  })), [t]);
 
   // Restore persisted tab on mount
   useEffect(() => {
@@ -69,7 +80,7 @@ export function LabTab() {
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
               </span>
-              <span className="text-[10px] text-muted-foreground/60 font-mono tracking-wider">
+              <span className="typo-caption text-muted-foreground/60 font-mono tracking-wider">
                 {tab.desc}
               </span>
               {isActive && (

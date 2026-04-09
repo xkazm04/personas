@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
+import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 export const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
@@ -15,9 +15,10 @@ export const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
   'data-monitor': { pipeline: 'etl-daily', check_interval_min: 5 },
 };
 
-export function getSampleInput(personaName: string | undefined): string {
+export async function getSampleInput(personaName: string | undefined): Promise<string> {
   if (!personaName) return '{}';
-  const match = TEMPLATE_CATALOG.find((t) => t.name === personaName);
+  const catalog = await getTemplateCatalog();
+  const match = catalog.find((t) => t.name === personaName);
   const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};
   return JSON.stringify(data, null, 2);
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { Rocket, Play, Clock } from 'lucide-react';
@@ -27,7 +27,10 @@ export function ExecutionList() {
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
 
-  const sampleInput = useMemo(() => getSampleInput(selectedPersona?.name), [selectedPersona]);
+  const [sampleInput, setSampleInput] = useState('{}');
+  useEffect(() => {
+    getSampleInput(selectedPersona?.name).then(setSampleInput);
+  }, [selectedPersona?.name]);
 
   const handleTryIt = () => {
     setRerunInputData(sampleInput === '{}' ? '{}' : sampleInput);

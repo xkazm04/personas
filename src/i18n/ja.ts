@@ -117,8 +117,10 @@ export const ja = {
     appearance: "外観",
     notifications: "通知",
     engine: "エンジン",
-    byom: "BYOM",
+    byom: "モデルプロバイダー",
     data: "データ",
+    quality_gates: "コンテンツフィルター",
+    config_resolution: "エージェント設定",
     admin: "管理",
 
     coming_soon: "近日公開",
@@ -888,6 +890,7 @@ export const ja = {
 
   settings: {
     title: "設定",
+    settings_saved: "保存しました",
 
     account: {
       title: "アカウント",

@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap,
+  GraduationCap, User, Mic, BookOpen, Volume2, Sparkles, Dumbbell,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -102,6 +102,17 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'task-runner', label: 'Task Runner', icon: Play },
 ];
 
+export const twinItems: SubNavItem[] = [
+  { id: 'profiles', label: 'Profiles', icon: Sparkles },
+  { id: 'identity', label: 'Identity', icon: User },
+  { id: 'tone', label: 'Tone', icon: Mic },
+  { id: 'brain', label: 'Brain', icon: Brain },
+  { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
+  { id: 'voice', label: 'Voice', icon: Volume2 },
+  { id: 'channels', label: 'Channels', icon: Radio },
+  { id: 'training', label: 'Training Room', icon: Dumbbell },
+];
+
 export const cloudItems: SubNavItem[] = [
   { id: 'unified', label: 'All Deployments', icon: LayoutDashboard },
   { id: 'cloud', label: 'Cloud Runs', icon: Cloud },
@@ -115,11 +126,11 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
-    { id: 'byom', label: 'Custom Models', icon: Network, devOnly: true },
+    { id: 'byom', label: 'Model Providers', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
-    { id: 'quality-gates', label: 'Quality Gates', icon: FlaskConical, devOnly: true },
-    { id: 'config', label: 'Config Resolution', icon: Layers, devOnly: true },
+    { id: 'quality-gates', label: 'Content Filters', icon: FlaskConical, devOnly: true },
+    { id: 'config', label: 'Agent Configuration', icon: Layers, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
   ].filter((item) => {
     if (item.devOnly && !isDev) return false;

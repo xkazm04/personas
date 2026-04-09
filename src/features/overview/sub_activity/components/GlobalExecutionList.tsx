@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
@@ -23,6 +24,8 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { dashboardItem } from '@/features/templates/animationPresets';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 
@@ -150,6 +153,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
   const hasMore = globalExecutionsOffset < globalExecutionsTotal;
   const { parentRef, virtualizer } = useVirtualList(filteredExecutions, 44);
+  const { shouldAnimate } = useMotion();
 
   return (
     <ContentBox>
@@ -182,12 +186,29 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
         }
       />
 
+      <AnimatePresence mode="wait">
       {showDashboard ? (
+        <motion.div
+          key="dashboard"
+          className="flex-1 min-h-0 flex flex-col"
+          variants={shouldAnimate ? dashboardItem : undefined}
+          initial={shouldAnimate ? "hidden" : false}
+          animate="show"
+          exit={shouldAnimate ? "exit" : undefined}
+        >
         <ContentBody flex>
           <ExecutionMetricsDashboard onClose={() => setShowDashboard(false)} />
         </ContentBody>
+        </motion.div>
       ) : (
-        <>
+        <motion.div
+          key="list"
+          className="flex-1 min-h-0 flex flex-col"
+          variants={shouldAnimate ? dashboardItem : undefined}
+          initial={shouldAnimate ? "hidden" : false}
+          animate="show"
+          exit={shouldAnimate ? "exit" : undefined}
+        >
           <FilterBar<FilterStatus>
             options={(['all', 'running', 'completed', 'failed'] as FilterStatus[]).map((id) => ({
               id, label: FILTER_LABELS[id], badge: statusCounts[id],
@@ -308,8 +329,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               </div>
             )}
           </ContentBody>
-        </>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {selectedExec && (
         <DetailModal title={`${selectedExec.persona_name || 'Unknown'} - Execution`} subtitle={`ID: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>

@@ -35,6 +35,9 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
     let _ = conn.execute_batch(
         "ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;"
     );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;"
+    );
 
     conn.execute_batch(SCHEMA)?;
 
@@ -1596,6 +1599,7 @@ CREATE TABLE IF NOT EXISTS dev_competitions (
   status              TEXT NOT NULL DEFAULT 'running',
   winner_task_id      TEXT,
   winner_insight      TEXT,
+  baseline_json       TEXT,
   reviewer_notes      TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   resolved_at         TEXT
@@ -3804,6 +3808,144 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE executions ADD COLUMN pending_auth_credential_id TEXT;",
     ] {
         let _ = conn.execute_batch(stmt); // ignore duplicate column errors on re-run
+    }
+
+    // -- Twin plugin: digital twin profiles (P0) -----------------------------
+    // First slice of the Twin plugin. Multi-twin from day one (the user can
+    // have a Founder Twin and a Personal Twin); exactly one is_active row is
+    // resolved by the `builtin-twin` connector when a persona invokes a twin
+    // tool. Tone, voice, channels, and memory tables land in P1-P4. The slug
+    // is unique because it doubles as the Obsidian vault subfolder name.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_profiles (
+            id              TEXT PRIMARY KEY,
+            name            TEXT NOT NULL,
+            slug            TEXT NOT NULL UNIQUE,
+            bio             TEXT,
+            role            TEXT,
+            languages       TEXT,
+            pronouns        TEXT,
+            obsidian_subpath TEXT NOT NULL,
+            is_active       INTEGER NOT NULL DEFAULT 0,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_twin_profiles_active ON twin_profiles(is_active);"
+    )?;
+
+    // -- Twin plugin: per-channel tone profiles (P1) -------------------------
+    // Each twin can speak differently on each channel. The `generic` row is
+    // the default fallback. UNIQUE(twin_id, channel) enforces at most one
+    // tone per (twin, channel) pair.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_tones (
+            id              TEXT PRIMARY KEY,
+            twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+            channel         TEXT NOT NULL DEFAULT 'generic',
+            voice_directives TEXT NOT NULL DEFAULT '',
+            examples_json   TEXT,
+            constraints_json TEXT,
+            length_hint     TEXT,
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(twin_id, channel)
+        );
+        CREATE INDEX IF NOT EXISTS idx_twin_tones_twin ON twin_tones(twin_id);"
+    )?;
+
+    // -- Twin plugin: knowledge_base_id on profiles (P2) ---------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"
+    ); // ignore "duplicate column" on re-run
+
+    // -- Twin plugin: pending memories inbox (P2) ----------------------------
+    // Human-approval gate for memories. record_interaction writes here; the
+    // user approves/rejects in the Knowledge tab. Approved memories get
+    // ingested into the twin's knowledge base.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_pending_memories (
+            id              TEXT PRIMARY KEY,
+            twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+            channel         TEXT,
+            content         TEXT NOT NULL,
+            title           TEXT,
+            importance      INTEGER NOT NULL DEFAULT 3,
+            status          TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+            reviewer_notes  TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            reviewed_at     TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_twin_pending_twin ON twin_pending_memories(twin_id);
+        CREATE INDEX IF NOT EXISTS idx_twin_pending_status ON twin_pending_memories(status);"
+    )?;
+
+    // -- Twin plugin: communication log (P2) ---------------------------------
+    // Interaction log — what the twin said and received across channels.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_communications (
+            id              TEXT PRIMARY KEY,
+            twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+            channel         TEXT NOT NULL,
+            direction       TEXT NOT NULL DEFAULT 'out' CHECK(direction IN ('in','out')),
+            contact_handle  TEXT,
+            content         TEXT NOT NULL,
+            summary         TEXT,
+            key_facts_json  TEXT,
+            occurred_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_twin_comms_twin ON twin_communications(twin_id);
+        CREATE INDEX IF NOT EXISTS idx_twin_comms_occurred ON twin_communications(occurred_at DESC);"
+    )?;
+
+    // -- Twin plugin: voice profiles (P3) ------------------------------------
+    // One voice config per twin. Stores the provider, voice_id, and synthesis
+    // parameters. UNIQUE(twin_id) enforces one voice per twin.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_voice_profiles (
+            id              TEXT PRIMARY KEY,
+            twin_id         TEXT NOT NULL UNIQUE REFERENCES twin_profiles(id) ON DELETE CASCADE,
+            provider        TEXT NOT NULL DEFAULT 'elevenlabs',
+            credential_id   TEXT,
+            voice_id        TEXT NOT NULL,
+            model_id        TEXT,
+            stability       REAL NOT NULL DEFAULT 0.5,
+            similarity_boost REAL NOT NULL DEFAULT 0.75,
+            style           REAL NOT NULL DEFAULT 0.0,
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );"
+    )?;
+
+    // -- Twin plugin: channel bindings (P4) ----------------------------------
+    // Maps a twin to its deployment channels. Each row = one channel where
+    // the twin speaks, via a credential (e.g. Discord bot token) and
+    // optionally a persona that operates there.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS twin_channels (
+            id              TEXT PRIMARY KEY,
+            twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+            channel_type    TEXT NOT NULL,
+            credential_id   TEXT NOT NULL,
+            persona_id      TEXT,
+            label           TEXT,
+            is_active       INTEGER NOT NULL DEFAULT 1,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(twin_id, channel_type, credential_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_twin_channels_twin ON twin_channels(twin_id);"
+    )?;
+
+    // -- eval_method column on all lab result tables ----------------------------
+    // Tracks whether scores came from full LLM evaluation, heuristic fallback, or timeout.
+    for table in &[
+        "lab_arena_results",
+        "lab_ab_results",
+        "lab_matrix_results",
+        "lab_eval_results",
+    ] {
+        let _ = conn.execute_batch(&format!(
+            "ALTER TABLE {table} ADD COLUMN eval_method TEXT;"
+        ));
     }
 
     Ok(())

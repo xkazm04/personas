@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { computePeriodTrends } from '@/features/overview/utils/computeTrends';
 
 /**
  * Exposes high-level summary metrics and an optional auto-refresh toggle
@@ -88,10 +89,23 @@ export function useOverviewMetrics() {
 
   const costAnomalies = executionDashboard?.cost_anomalies ?? [];
 
+  // Derive trend indicators from execution dashboard daily points
+  const trends = useMemo(() => {
+    if (!compareEnabled || !executionDashboard?.daily_points.length) return null;
+    const chartRows = executionDashboard.daily_points.map((pt) => ({
+      cost: pt.total_cost,
+      executions: pt.total_executions,
+      successRate: pt.success_rate * 100,
+      p50: pt.p50_duration_ms,
+    }));
+    return computePeriodTrends(chartRows, effectiveDays, compareEnabled);
+  }, [compareEnabled, effectiveDays, executionDashboard]);
+
   return {
     summary,
     successRate,
     costAnomalies,
+    trends,
     observabilityError,
     autoRefresh,
     setAutoRefresh,

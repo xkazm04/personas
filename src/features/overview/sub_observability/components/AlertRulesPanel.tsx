@@ -3,6 +3,8 @@ import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } fro
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
+import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { AlertRule } from '@/lib/bindings/AlertRule';
 import {
   ALERT_METRIC_OPTIONS,
@@ -33,19 +35,26 @@ const DEFAULT_FORM: RuleFormData = {
   personaId: null,
 };
 
+function isValidThreshold(value: string): boolean {
+  return value !== '' && Number.isFinite(parseFloat(value));
+}
+
 function RuleForm({
   initial,
   personas,
   onSubmit,
   onCancel,
+  invalidThresholdLabel,
 }: {
   initial?: RuleFormData;
   personas: { id: string; name: string }[];
   onSubmit: (data: RuleFormData) => void;
   onCancel: () => void;
+  invalidThresholdLabel: string;
 }) {
   const [form, setForm] = useState<RuleFormData>(initial ?? DEFAULT_FORM);
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === form.metric);
+  const thresholdInvalid = form.threshold !== '' && !isValidThreshold(form.threshold);
 
   return (
     <div className="space-y-3 p-3 rounded-xl border border-primary/15 bg-secondary/20">
@@ -85,13 +94,16 @@ function RuleForm({
             type="number"
             value={form.threshold}
             onChange={(e) => setForm({ ...form, threshold: e.target.value })}
-            className="w-24 px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none pr-6"
+            className={`w-24 px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border text-foreground focus-visible:outline-none pr-6 ${thresholdInvalid ? 'border-red-400/60' : 'border-primary/15'}`}
             step="any"
           />
           {metricInfo?.unit && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 typo-caption text-muted-foreground/50">
               {metricInfo.unit}
             </span>
+          )}
+          {thresholdInvalid && (
+            <p className="typo-caption text-red-400 mt-1">{invalidThresholdLabel}</p>
           )}
         </div>
       </div>
@@ -124,10 +136,10 @@ function RuleForm({
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => {
-            if (!form.name.trim() || !form.threshold) return;
+            if (!form.name.trim() || !isValidThreshold(form.threshold)) return;
             onSubmit(form);
           }}
-          disabled={!form.name.trim() || !form.threshold}
+          disabled={!form.name.trim() || !isValidThreshold(form.threshold)}
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Check className="w-3.5 h-3.5" /> Save
@@ -196,7 +208,7 @@ function RuleRow({
 
 // -- Eval Health Indicator ---------------------------------------------
 
-function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
+function EvalHealthIndicator({ health, t }: { health: AlertEvalHealth; t: ReturnType<typeof useOverviewTranslation>['t'] }) {
   if (!health.lastEvalAt) return null;
 
   const age = Date.now() - new Date(health.lastEvalAt).getTime();
@@ -210,15 +222,24 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
   const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';
 
   return (
-    <div className="flex items-center gap-1.5 typo-caption text-muted-foreground/60" title={
-      health.lastError
-        ? `Last error: ${health.lastError} (${health.totalFailures} total failures)`
-        : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
-    }>
-      <Activity className="w-3 h-3" />
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-      <span>{agoText}</span>
-      {health.lastError && <span className="text-red-400/80">failed</span>}
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 typo-caption text-muted-foreground/60" title={
+        health.lastError
+          ? `${t.errorRecovery.alert_eval_cause_prefix} ${health.lastError} (${health.totalFailures} ${t.errorRecovery.alert_eval_total_failures})`
+          : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
+      }>
+        <Activity className="w-3 h-3" />
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        <span>{agoText}</span>
+      </div>
+      {health.lastError && (
+        <ErrorRecoveryBanner
+          severity="error"
+          message={t.errorRecovery.alert_eval_failed}
+          cause={`${t.errorRecovery.alert_eval_cause_prefix} ${health.lastError}`}
+          compact
+        />
+      )}
     </div>
   );
 }
@@ -238,15 +259,18 @@ export function AlertRulesPanel() {
     alertEvalHealth: s.alertEvalHealth,
   })));
   const personas = useAgentStore((s) => s.personas);
+  const { t } = useOverviewTranslation();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const personaList = personas.map(p => ({ id: p.id, name: p.name }));
 
   const handleAdd = async (data: RuleFormData) => {
     const threshold = parseFloat(data.threshold);
     if (!Number.isFinite(threshold)) return;
+    setActionError(null);
     try {
       await addAlertRule({
         name: data.name.trim(),
@@ -259,13 +283,14 @@ export function AlertRulesPanel() {
       });
       setShowForm(false);
     } catch {
-      // Store already handles error state; form stays open so user can retry
+      setActionError(t.errorRecovery.alert_save_failed);
     }
   };
 
   const handleEdit = async (id: string, data: RuleFormData) => {
     const threshold = parseFloat(data.threshold);
     if (!Number.isFinite(threshold)) return;
+    setActionError(null);
     try {
       await updateAlertRule(id, {
         name: data.name.trim(),
@@ -277,7 +302,7 @@ export function AlertRulesPanel() {
       });
       setEditingId(null);
     } catch {
-      // Store already handles error state; form stays open so user can retry
+      setActionError(t.errorRecovery.alert_save_failed);
     }
   };
 
@@ -286,7 +311,7 @@ export function AlertRulesPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="typo-heading text-foreground">Alert Rules</h3>
-          <EvalHealthIndicator health={alertEvalHealth} />
+          <EvalHealthIndicator health={alertEvalHealth} t={t} />
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); }}
@@ -296,9 +321,19 @@ export function AlertRulesPanel() {
         </button>
       </div>
 
+      {actionError && (
+        <ErrorRecoveryBanner
+          severity="error"
+          message={actionError}
+          cause={t.errorRecovery.alert_save_cause}
+          onDismiss={() => setActionError(null)}
+          compact
+        />
+      )}
+
       {showForm && (
           <div className="animate-fade-slide-in">
-            <RuleForm personas={personaList} onSubmit={handleAdd} onCancel={() => setShowForm(false)} />
+            <RuleForm personas={personaList} onSubmit={handleAdd} onCancel={() => setShowForm(false)} invalidThresholdLabel={t.errorRecovery.alert_invalid_threshold} />
           </div>
         )}
 
@@ -316,14 +351,15 @@ export function AlertRulesPanel() {
               personas={personaList}
               onSubmit={(data) => handleEdit(rule.id, data)}
               onCancel={() => setEditingId(null)}
+              invalidThresholdLabel={t.errorRecovery.alert_invalid_threshold}
             />
           ) : (
             <RuleRow
               key={rule.id}
               rule={rule}
               personas={personaList}
-              onToggle={() => { toggleAlertRule(rule.id).catch(() => {}); }}
-              onDelete={() => { deleteAlertRule(rule.id).catch(() => {}); }}
+              onToggle={() => { toggleAlertRule(rule.id); }}
+              onDelete={() => { deleteAlertRule(rule.id); }}
               onEdit={() => { setEditingId(rule.id); setShowForm(false); }}
             />
           )

@@ -75,6 +75,11 @@ export const ja = {
             description:
               "Personas now captures the lessons from each agent session, distills them into reusable knowledge, and brings them forward to the next run. Your agents get smarter the longer you use them — no manual training needed.",
           },
+          '5': {
+            title: 'Predictable costs across every run',
+            description:
+              "Agent executions now lock reasoning effort to a consistent level, so your costs stay stable no matter what account or CLI version you're on. In the lab, you can experiment with low, medium, and high effort side by side.",
+          },
         },
       },
       roadmap: {

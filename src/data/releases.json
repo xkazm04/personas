@@ -20,7 +20,8 @@
         { "id": "1", "type": "feature", "status": "completed", "added_at": "2026-04-08" },
         { "id": "2", "type": "feature", "status": "completed", "added_at": "2026-04-08" },
         { "id": "3", "type": "feature", "status": "completed", "added_at": "2026-04-08" },
-        { "id": "4", "type": "feature", "status": "completed", "added_at": "2026-04-08" }
+        { "id": "4", "type": "feature", "status": "completed", "added_at": "2026-04-08" },
+        { "id": "5", "type": "feature", "status": "completed", "added_at": "2026-04-09" }
       ]
     },
     {

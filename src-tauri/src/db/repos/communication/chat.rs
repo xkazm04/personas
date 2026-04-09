@@ -84,8 +84,12 @@ pub fn list_sessions(
 
 pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessage, AppError> {
     timed_query!("chat_messages", "chat_messages::create", {
+        // Validate role (defence-in-depth — ChatRole enum handles serde, this
+        // covers any future loosening of the input type).
+        let mut errors = cv::validate_role(&input.role.to_string());
+
         // Validate content: non-empty and within length limit
-        let mut errors = cv::validate_content(&input.content);
+        errors.extend(cv::validate_content(&input.content));
 
         // Validate metadata length if present
         if let Some(ref meta) = input.metadata {

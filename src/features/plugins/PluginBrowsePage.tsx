@@ -1,4 +1,4 @@
-import { Palette, Wrench, FileSignature, Brain, ScanLine, type LucideIcon } from 'lucide-react';
+import { Palette, Wrench, FileSignature, Brain, ScanLine, Sparkles, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -59,6 +59,15 @@ const PLUGINS: PluginDef[] = [
     color: 'text-cyan-400',
     activeBg: 'bg-cyan-500/10',
     activeBorder: 'border-cyan-500/20',
+  },
+  {
+    id: 'twin',
+    label: 'Twin',
+    description: 'Manage your digital twin — identity, tone, voice, and Obsidian-backed memory that any persona can adopt.',
+    icon: Sparkles,
+    color: 'text-violet-400',
+    activeBg: 'bg-violet-500/10',
+    activeBorder: 'border-violet-500/20',
   },
 ];
 

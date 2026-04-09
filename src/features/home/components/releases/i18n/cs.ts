@@ -1,3 +1,4 @@
+// TODO(i18n-cs): translate from English placeholders. Structure must match en.ts exactly.
 export const cs = {
   whatsNew: {
     title: 'Novinky',
@@ -72,6 +73,11 @@ export const cs = {
             title: 'Vaši agenti se učí z každé relace',
             description:
               'Personas nyní zachycuje poznatky z každé relace agenta, destiluje je do znovupoužitelných znalostí a přenáší je do dalšího běhu. Vaši agenti jsou tím chytřejší, čím déle je používáte — bez nutnosti je sami trénovat.',
+          },
+          '5': {
+            title: 'Predictable costs across every run',
+            description:
+              "Agent executions now lock reasoning effort to a consistent level, so your costs stay stable no matter what account or CLI version you're on. In the lab, you can experiment with low, medium, and high effort side by side.",
           },
         },
       },

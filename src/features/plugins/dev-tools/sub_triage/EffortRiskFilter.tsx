@@ -51,11 +51,11 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
             return (
               <button
                 key={p.label}
+                title={p.label}
                 onClick={() => onEffortChange(isActive ? allRange : p.range)}
-                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 text-md font-medium rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex items-center justify-center p-2 rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
               >
                 <Icon className="w-4.5 h-4.5" />
-                {p.label}
               </button>
             );
           })}
@@ -78,11 +78,11 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
             return (
               <button
                 key={p.label}
+                title={p.label}
                 onClick={() => onRiskChange(isActive ? allRange : p.range)}
-                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 text-md font-medium rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex items-center justify-center p-2 rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
               >
                 <Icon className="w-4.5 h-4.5" />
-                {p.label}
               </button>
             );
           })}

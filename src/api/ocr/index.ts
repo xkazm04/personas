@@ -32,8 +32,5 @@ export const ocrWithClaude = (filePath: string, prompt?: string) =>
 export const listOcrDocuments = () =>
   invoke<OcrDocument[]>("list_ocr_documents");
 
-export const getOcrDocument = (id: string) =>
-  invoke<OcrDocument>("get_ocr_document", { id });
-
 export const deleteOcrDocument = (id: string) =>
   invoke<boolean>("delete_ocr_document", { id });

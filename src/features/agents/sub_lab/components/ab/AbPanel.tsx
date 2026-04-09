@@ -4,9 +4,11 @@ import { useAgentStore } from "@/stores/agentStore";
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { AbHistory } from './AbHistory';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { selectedModelsAndEffortsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
-import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { ModelToggleGrid, EffortToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
+import type { GuideItem } from '../../shared';
 
 export function AbPanel() {
   const promptVersions = useAgentStore((s) => s.promptVersions);
@@ -25,6 +27,7 @@ export function AbPanel() {
 
   const {
     selectedPersona, selectedModels, toggleModel,
+    selectedEfforts, toggleEffort,
     expandedRunId, setExpandedRunId,
     setActiveRunId,
     selectedUseCaseId, setSelectedUseCaseId,
@@ -52,10 +55,21 @@ export function AbPanel() {
   const versionB = useMemo(() => promptVersions.find((v) => v.id === versionBId) ?? null, [promptVersions, versionBId]);
 
   const versionOptions = useMemo(() => promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} -- ${v.tag}` })), [promptVersions]);
+  const { t } = useLabTranslation();
+  const setLabMode = useAgentStore((s) => s.setLabMode);
+
+  const abGuideItems = useMemo(() => {
+    const items: GuideItem[] = [];
+    if (promptVersions.length < 2) items.push({ message: t.guide.needMoreVersions.message, actionLabel: t.guide.needMoreVersions.action, onAction: () => setLabMode('versions') });
+    if (!versionAId) items.push({ message: t.guide.selectVersionA.message });
+    else if (!versionBId) items.push({ message: t.guide.selectVersionB.message });
+    if (selectedModels.size === 0) items.push({ message: t.guide.selectModels.message });
+    return items;
+  }, [promptVersions.length, versionAId, versionBId, selectedModels.size, t, setLabMode]);
 
   const handleStart = async () => {
     if (!selectedPersona || !versionAId || !versionBId || selectedModels.size === 0) return;
-    const models = selectedModelsToConfigs(selectedModels);
+    const models = selectedModelsAndEffortsToConfigs(selectedModels, selectedEfforts);
     const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
     const runId = await startAb(selectedPersona.id, versionAId, versionBId, models, useCaseFilter, testInput.trim() || undefined);
     if (runId) setActiveRunId(runId);
@@ -68,7 +82,7 @@ export function AbPanel() {
         renderTrigger={({ isOpen, toggle }) => (
           <button onClick={toggle} data-testid={testId}
 
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all focus-ring ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -77,7 +91,7 @@ export function AbPanel() {
           <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-elevation-3 mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
               <button key={opt.value} data-testid={`ab-version-opt-${opt.label.replace(/\s+/g, '-').toLowerCase()}`} onClick={() => { onChange(opt.value); close(); }}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
+                className={`w-full text-left px-3 py-1.5 text-sm transition-colors focus-ring ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
                 {opt.label}
               </button>
             ))}
@@ -94,12 +108,17 @@ export function AbPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={!versionAId || !versionBId || selectedModels.size === 0}
-        disabledReason={!versionAId ? 'Select Version A to continue' : !versionBId ? 'Select Version B to continue' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        disabledReason={!versionAId ? t.guide.selectVersionA.message : !versionBId ? t.guide.selectVersionB.message : selectedModels.size === 0 ? t.guide.selectModels.message : ''}
+        guideItems={abGuideItems}
         runLabel="Run A/B Test"
         cancelLabel="Cancel A/B Test"
         cancelTestId="ab-cancel-btn"
         runTestId="ab-run-btn"
       >
+        <p className="typo-body text-foreground">
+          {t.purpose.ab}
+        </p>
+
         <div className="grid grid-cols-2 gap-3">
           {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
           {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
@@ -112,6 +131,7 @@ export function AbPanel() {
         )}
 
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
+        <EffortToggleGrid selectedEfforts={selectedEfforts} toggleEffort={toggleEffort} />
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
 
         <div className="space-y-1">

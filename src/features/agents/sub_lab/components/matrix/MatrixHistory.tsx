@@ -3,6 +3,7 @@ import { Wand2, Check } from 'lucide-react';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
+import { ExportReportButton } from '../shared/ExportReportButton';
 import { MatrixResultsView } from './MatrixResultsView';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
@@ -62,7 +63,10 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
           }
           footerActions={
             activeRun.status === 'completed' ? (
-              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="matrix" />
+              <>
+                <ExportReportButton mode="matrix" run={activeRun} results={resultsMap[activeRun.id] ?? []} />
+                <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="matrix" />
+              </>
             ) : undefined
           }
         >

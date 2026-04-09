@@ -2063,6 +2063,76 @@ pub async fn dev_tools_get_dependency_graph(
 // Competitions (multi-clone parallel task execution via Claude Code worktrees)
 // ============================================================================
 
+/// Capture project health baseline before a competition starts.
+/// Runs quick checks (build, test runner detection, git status) to establish
+/// a before-snapshot that can be compared to each competitor's after-state.
+fn capture_project_baseline(root_path: &str) -> serde_json::Value {
+    let root = std::path::Path::new(root_path);
+
+    // TypeScript check (tsc --noEmit) — count errors
+    let tsc_errors = std::process::Command::new("npx")
+        .args(["tsc", "--noEmit"])
+        .current_dir(root)
+        .output()
+        .ok()
+        .map(|out| {
+            if out.status.success() {
+                0i32
+            } else {
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let combined = format!("{stdout}\n{stderr}");
+                combined.lines().filter(|l| l.contains("error TS")).count() as i32
+            }
+        });
+
+    // Cargo check (for Rust projects)
+    let cargo_errors = if root.join("Cargo.toml").exists() {
+        std::process::Command::new("cargo")
+            .args(["check", "--message-format=short"])
+            .current_dir(root)
+            .output()
+            .ok()
+            .map(|out| {
+                if out.status.success() { 0i32 }
+                else {
+                    let stderr = String::from_utf8_lossy(&out.stderr);
+                    stderr.lines().filter(|l| l.contains("error[E")).count() as i32
+                }
+            })
+    } else {
+        None
+    };
+
+    // Test runner detection
+    let has_test_config = root.join("vitest.config.ts").exists()
+        || root.join("vitest.config.js").exists()
+        || root.join("jest.config.ts").exists()
+        || root.join("jest.config.js").exists()
+        || root.join("jest.config.cjs").exists()
+        || root.join("pytest.ini").exists()
+        || root.join("pyproject.toml").exists();
+
+    // Git status — clean or dirty
+    let git_clean = std::process::Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(root)
+        .output()
+        .ok()
+        .map(|out| {
+            out.status.success() && String::from_utf8_lossy(&out.stdout).trim().is_empty()
+        })
+        .unwrap_or(false);
+
+    serde_json::json!({
+        "tsc_errors": tsc_errors,
+        "cargo_errors": cargo_errors,
+        "has_test_runner": has_test_config,
+        "git_clean": git_clean,
+        "captured_at": chrono::Utc::now().to_rfc3339(),
+    })
+}
+
 /// Strategy slot config for a single competitor in a competition.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
@@ -2097,7 +2167,11 @@ pub fn dev_tools_start_competition(
     }
 
     // Verify project exists
-    let _project = repo::get_project_by_id(&state.db, &project_id)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+
+    // Baseline capture — measure project health BEFORE competitors run.
+    // Non-blocking: if any check fails, we still create the competition.
+    let baseline = capture_project_baseline(&project.root_path);
 
     // Create competition row
     let competition = repo::create_competition(
@@ -2109,6 +2183,16 @@ pub fn dev_tools_start_competition(
         source_goal_id.as_deref(),
         slots.len() as i32,
     )?;
+
+    // Persist the baseline on the competition record (best-effort update)
+    if let Ok(baseline_str) = serde_json::to_string(&baseline) {
+        let _ = state.db.get().map(|conn| {
+            conn.execute(
+                "UPDATE dev_competitions SET baseline_json = ?1 WHERE id = ?2",
+                rusqlite::params![baseline_str, competition.id],
+            )
+        });
+    }
 
     // Short competition tag used inside worktree names (Claude Code trims + normalizes)
     let comp_tag: String = competition.id.chars().take(8).collect();
@@ -2422,57 +2506,170 @@ fn compute_slot_diff(
 ) -> Option<(String, String, i32, i32, i32)> {
     use sha2::{Digest, Sha256};
 
-    // Claude Code names the branch `worktree-<name>`.
     let branch = format!("worktree-{}", worktree_name);
+    let worktree_path = std::path::PathBuf::from(project_root)
+        .join(".claude")
+        .join("worktrees")
+        .join(worktree_name);
 
-    // Get the unified diff between HEAD and the worktree branch.
-    // `HEAD...branch` uses the merge base so we see only what the competitor added.
-    let diff_out = std::process::Command::new("git")
+    // Strategy 1: Check committed branch diff (HEAD...branch from project root).
+    // This captures changes that Claude committed on the worktree branch.
+    let branch_diff = std::process::Command::new("git")
         .args(["diff", "--unified=3"])
         .arg(format!("HEAD...{}", branch))
         .current_dir(project_root)
         .output()
-        .ok()?;
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+        .unwrap_or_default();
 
-    if !diff_out.status.success() {
-        // Branch probably doesn't exist yet or points to the same commit
-        return None;
+    // Strategy 2: Check UNCOMMITTED changes inside the worktree directory.
+    // Claude Code sometimes makes changes but doesn't commit them.
+    let uncommitted_diff = if worktree_path.exists() {
+        std::process::Command::new("git")
+            .args(["diff", "--unified=3", "HEAD"])
+            .current_dir(&worktree_path)
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    // Use whichever diff is larger (more informative).
+    // If Claude committed, branch_diff has the changes.
+    // If Claude didn't commit, uncommitted_diff has the working-tree changes.
+    let diff_text = if branch_diff.len() >= uncommitted_diff.len() {
+        branch_diff
+    } else {
+        uncommitted_diff
+    };
+
+    if diff_text.is_empty() {
+        // Last resort: check for untracked new files in the worktree
+        if worktree_path.exists() {
+            let untracked = std::process::Command::new("git")
+                .args(["status", "--porcelain"])
+                .current_dir(&worktree_path)
+                .output()
+                .ok()
+                .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+                .unwrap_or_default();
+            if untracked.trim().is_empty() {
+                // Genuinely no changes at all
+            }
+        }
     }
-
-    let diff_text = String::from_utf8_lossy(&diff_out.stdout).to_string();
 
     // Hash the diff for duplicate detection
     let mut hasher = Sha256::new();
     hasher.update(diff_text.as_bytes());
     let diff_hash = format!("{:x}", hasher.finalize());
 
-    // Compute stats via git diff --numstat
-    let stats_out = std::process::Command::new("git")
-        .args(["diff", "--numstat"])
-        .arg(format!("HEAD...{}", branch))
-        .current_dir(project_root)
-        .output()
-        .ok()?;
+    // Compute stats — use numstat for the same source we picked
+    let numstat_args = if branch_diff.len() >= uncommitted_diff.len() {
+        // Branch diff — run from project root
+        let out = std::process::Command::new("git")
+            .args(["diff", "--numstat"])
+            .arg(format!("HEAD...{}", branch))
+            .current_dir(project_root)
+            .output()
+            .ok();
+        out
+    } else {
+        // Uncommitted diff — run from worktree
+        std::process::Command::new("git")
+            .args(["diff", "--numstat", "HEAD"])
+            .current_dir(&worktree_path)
+            .output()
+            .ok()
+    };
 
-    let stats_text = String::from_utf8_lossy(&stats_out.stdout);
     let mut files_changed = 0i32;
     let mut lines_added = 0i32;
     let mut lines_removed = 0i32;
-    for line in stats_text.lines() {
-        let parts: Vec<&str> = line.split('\t').collect();
-        if parts.len() >= 3 {
-            files_changed += 1;
-            // "-" means binary file; skip line counting in that case
-            if let Ok(a) = parts[0].parse::<i32>() {
-                lines_added += a;
-            }
-            if let Ok(r) = parts[1].parse::<i32>() {
-                lines_removed += r;
+    if let Some(stats_out) = numstat_args {
+        let stats_text = String::from_utf8_lossy(&stats_out.stdout);
+        for line in stats_text.lines() {
+            let parts: Vec<&str> = line.split('\t').collect();
+            if parts.len() >= 3 {
+                files_changed += 1;
+                if let Ok(a) = parts[0].parse::<i32>() { lines_added += a; }
+                if let Ok(r) = parts[1].parse::<i32>() { lines_removed += r; }
             }
         }
     }
 
     Some((diff_text, diff_hash, files_changed, lines_added, lines_removed))
+}
+
+/// Open a competition slot's worktree directory for review.
+/// Returns the absolute path that the frontend can open in a terminal/editor.
+#[tauri::command]
+pub fn dev_tools_switch_to_worktree(
+    state: State<'_, Arc<AppState>>,
+    slot_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+
+    let conn = state.db.get()?;
+    let (worktree_name, competition_id): (String, String) = conn
+        .query_row(
+            "SELECT worktree_name, competition_id FROM dev_competition_slots WHERE id = ?1",
+            rusqlite::params![slot_id],
+            |row| Ok((row.get("worktree_name")?, row.get("competition_id")?)),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Slot {slot_id}")),
+            other => AppError::Database(other),
+        })?;
+    drop(conn);
+
+    let competition = repo::get_competition_by_id(&state.db, &competition_id)?;
+    let project = repo::get_project_by_id(&state.db, &competition.project_id)?;
+
+    let worktree_path = std::path::PathBuf::from(&project.root_path)
+        .join(".claude")
+        .join("worktrees")
+        .join(&worktree_name);
+
+    let branch_name = format!("worktree-{}", worktree_name);
+
+    if !worktree_path.exists() {
+        return Err(AppError::Validation(format!(
+            "Worktree directory does not exist: {}. The competition may have been cleaned up.",
+            worktree_path.display()
+        )));
+    }
+
+    // Reveal the worktree directory in the OS file manager
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("explorer")
+            .arg(worktree_path.to_string_lossy().as_ref())
+            .spawn();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open")
+            .arg(worktree_path.to_string_lossy().as_ref())
+            .spawn();
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open")
+            .arg(worktree_path.to_string_lossy().as_ref())
+            .spawn();
+    }
+
+    Ok(serde_json::json!({
+        "worktree_path": worktree_path.to_string_lossy(),
+        "branch_name": branch_name,
+        "project_root": project.root_path,
+    }))
 }
 
 /// Remove a Claude Code worktree by shelling out to `git worktree remove --force`.
@@ -2615,6 +2812,16 @@ pub fn dev_tools_pick_competition_winner(
             &winner_slot.strategy_label,
             insight_text,
         );
+
+        // Also push to Obsidian vault (best-effort — vault may not be configured)
+        let _ = crate::commands::obsidian_brain::push_competition_insight_to_vault(
+            &state.db,
+            &id,
+            &winner_slot.strategy_label,
+            insight_text,
+            &project.name,
+            &resolved.task_title,
+        );
     }
 
     Ok(resolved)
@@ -2634,7 +2841,7 @@ fn apply_winner_insight_to_dev_clone_memory(
     use crate::db::models::CreatePersonaMemoryInput;
 
     // Find a persona whose name contains "dev clone" (case-insensitive)
-    let personas = persona_repo::list_personas(pool)?;
+    let personas = persona_repo::get_all(pool)?;
     let dev_clone = personas.iter().find(|p| {
         let name = p.name.to_lowercase();
         name.contains("dev clone") || name.contains("dev-clone")
@@ -2660,11 +2867,11 @@ fn apply_winner_insight_to_dev_clone_memory(
             content,
             category: Some("learned".to_string()),
             importance: Some(7),
-            tags: Some(vec![
+            tags: Some(crate::db::models::Json(vec![
                 "competition".to_string(),
                 "winner".to_string(),
                 winning_strategy.to_lowercase(),
-            ]),
+            ])),
         },
     );
 
@@ -2717,4 +2924,200 @@ pub fn dev_tools_cancel_competition(
     );
 
     repo::update_competition_status(&state.db, &id, "cancelled", None, None, None)
+}
+
+// ============================================================================
+// Dev Server management (launch preview servers per worktree)
+// ============================================================================
+
+/// Global registry of running dev servers for competition worktrees.
+/// Key: slot_id, Value: (child PID, port)
+static DEV_SERVERS: std::sync::LazyLock<std::sync::Mutex<std::collections::HashMap<String, (u32, u16)>>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+
+/// Find a free TCP port by binding to port 0.
+fn find_free_port() -> Option<u16> {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .ok()
+        .map(|l| l.local_addr().unwrap().port())
+}
+
+/// Detect the dev server command from package.json in a directory.
+fn detect_dev_command(dir: &std::path::Path) -> (String, Vec<String>) {
+    let pkg_json = dir.join("package.json");
+    if pkg_json.exists() {
+        if let Ok(content) = std::fs::read_to_string(&pkg_json) {
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&content) {
+                let scripts = parsed.get("scripts").and_then(|s| s.as_object());
+                if let Some(s) = scripts {
+                    // Prefer "dev" script, fall back to "start"
+                    if s.contains_key("dev") {
+                        return ("npm".to_string(), vec!["run".to_string(), "dev".to_string()]);
+                    }
+                    if s.contains_key("start") {
+                        return ("npm".to_string(), vec!["run".to_string(), "start".to_string()]);
+                    }
+                }
+            }
+        }
+    }
+    // Fallback for Python/Rust
+    if dir.join("manage.py").exists() {
+        return ("python".to_string(), vec!["manage.py".to_string(), "runserver".to_string()]);
+    }
+    ("npm".to_string(), vec!["run".to_string(), "dev".to_string()])
+}
+
+/// Start a dev server in a competition slot's worktree.
+/// Returns the port and URL for the frontend to display.
+#[tauri::command]
+pub fn dev_tools_start_slot_server(
+    state: State<'_, Arc<AppState>>,
+    slot_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+
+    // Check if already running
+    {
+        let servers = DEV_SERVERS.lock().unwrap();
+        if let Some((pid, port)) = servers.get(&slot_id) {
+            return Ok(serde_json::json!({
+                "status": "already_running",
+                "port": port,
+                "pid": pid,
+                "url": format!("http://localhost:{}", port),
+            }));
+        }
+    }
+
+    // Look up the worktree path
+    let conn = state.db.get()?;
+    let (worktree_name, competition_id): (String, String) = conn
+        .query_row(
+            "SELECT worktree_name, competition_id FROM dev_competition_slots WHERE id = ?1",
+            rusqlite::params![slot_id],
+            |row| Ok((row.get("worktree_name")?, row.get("competition_id")?)),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Slot {slot_id}")),
+            other => AppError::Database(other),
+        })?;
+    drop(conn);
+
+    let competition = repo::get_competition_by_id(&state.db, &competition_id)?;
+    let project = repo::get_project_by_id(&state.db, &competition.project_id)?;
+
+    let worktree_path = std::path::PathBuf::from(&project.root_path)
+        .join(".claude")
+        .join("worktrees")
+        .join(&worktree_name);
+
+    if !worktree_path.exists() {
+        return Err(AppError::Validation("Worktree directory does not exist".into()));
+    }
+
+    let port = find_free_port()
+        .ok_or_else(|| AppError::Internal("Could not find a free port".into()))?;
+
+    let (cmd_name, mut cmd_args) = detect_dev_command(&worktree_path);
+
+    // Inject port via common env var patterns
+    // Next.js/Vite: PORT env var. Also pass --port for Vite.
+    let is_vite = worktree_path.join("vite.config.ts").exists()
+        || worktree_path.join("vite.config.js").exists();
+
+    if is_vite {
+        cmd_args.push("--".to_string());
+        cmd_args.push("--port".to_string());
+        cmd_args.push(port.to_string());
+    }
+
+    let mut command = std::process::Command::new(&cmd_name);
+    command
+        .args(&cmd_args)
+        .current_dir(&worktree_path)
+        .env("PORT", port.to_string())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let child = command.spawn().map_err(|e| {
+        AppError::Internal(format!("Failed to start dev server: {e}"))
+    })?;
+
+    let pid = child.id();
+    tracing::info!("Started dev server for slot {} on port {} (PID {})", slot_id, port, pid);
+
+    DEV_SERVERS.lock().unwrap().insert(slot_id.clone(), (pid, port));
+
+    Ok(serde_json::json!({
+        "status": "started",
+        "port": port,
+        "pid": pid,
+        "url": format!("http://localhost:{}", port),
+        "command": format!("{} {}", cmd_name, cmd_args.join(" ")),
+    }))
+}
+
+/// Stop a running dev server for a competition slot.
+#[tauri::command]
+pub fn dev_tools_stop_slot_server(
+    state: State<'_, Arc<AppState>>,
+    slot_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let entry = DEV_SERVERS.lock().unwrap().remove(&slot_id);
+    if let Some((pid, port)) = entry {
+        tracing::info!("Stopping dev server for slot {} (PID {}, port {})", slot_id, pid, port);
+
+        // Kill the process tree
+        #[cfg(windows)]
+        {
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = std::process::Command::new("kill")
+                .args(["-9", &pid.to_string()])
+                .output();
+        }
+
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Delete a resolved or cancelled competition and its slots from the database.
+/// Also cleans up any remaining worktrees.
+#[tauri::command]
+pub fn dev_tools_delete_competition(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let competition = repo::get_competition_by_id(&state.db, &id)?;
+    if competition.status != "resolved" && competition.status != "cancelled" {
+        return Err(AppError::Validation("Can only delete resolved or cancelled competitions".into()));
+    }
+    // Cleanup any remaining worktrees (winner's worktree may still exist)
+    if let Ok(project) = repo::get_project_by_id(&state.db, &competition.project_id) {
+        if let Ok(slots) = repo::list_competition_slots(&state.db, &id) {
+            for slot in &slots {
+                let _ = remove_claude_worktree(&project.root_path, &slot.worktree_name);
+                let _ = remove_claude_worktree_branch(&project.root_path, &slot.worktree_name);
+            }
+        }
+    }
+    // CASCADE delete: slots are deleted automatically via foreign key
+    let conn = state.db.get()?;
+    let count = conn.execute("DELETE FROM dev_competitions WHERE id = ?1", rusqlite::params![id])?;
+    Ok(count > 0)
 }

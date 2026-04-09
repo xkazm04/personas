@@ -1,6 +1,7 @@
 import { Map } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
-import { TOUR_STEPS } from "@/stores/slices/system/tourSlice";
+import { getActiveTourSteps } from "@/stores/slices/system/tourSlice";
+import { useOnboardingTranslation } from '@/features/onboarding/i18n/useOnboardingTranslation';
 
 function TourProgressArc({ completed, total }: { completed: number; total: number }) {
   const radius = 7;
@@ -41,12 +42,17 @@ export default function TourLauncher() {
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const tourId = useSystemStore((s) => s.tourActiveTourId);
+
+  const { t } = useOnboardingTranslation();
+  const tt = t.tour;
 
   // Hide when tour is active (it's running) or fully completed
   if (tourActive || tourCompleted) return null;
 
-  const completedCount = Object.values(tourStepCompleted).filter(Boolean).length;
-  const totalSteps = TOUR_STEPS.length;
+  const activeTourStepIds = new Set(getActiveTourSteps(tourId).map((s) => s.id));
+  const completedCount = Object.entries(tourStepCompleted).filter(([id, done]) => done && activeTourStepIds.has(id)).length;
+  const totalSteps = activeTourStepIds.size;
   const hasProgress = completedCount > 0;
 
   const handleClick = () => {
@@ -71,12 +77,12 @@ export default function TourLauncher() {
       {hasProgress ? (
         <>
           <TourProgressArc completed={completedCount} total={totalSteps} />
-          Resume Tour ({completedCount}/{totalSteps})
+          {tt.resume_tour.replace('{completed}', String(completedCount)).replace('{total}', String(totalSteps))}
         </>
       ) : (
         <>
           <Map className="w-3.5 h-3.5" />
-          Start Tour
+          {tt.start_tour}
         </>
       )}
     </button>

@@ -1224,3 +1224,72 @@ pub async fn obsidian_brain_semantic_lint_vault(
 
     self::semantic_lint::run_semantic_lint(Path::new(&path), model).await
 }
+
+// ============================================================================
+// Competition insight sync — push a winning insight as a markdown note
+// ============================================================================
+
+/// Push a competition's winning insight to the Obsidian vault.
+/// Creates a note in DevTools/Competitions/<competition_id>.md with
+/// YAML frontmatter linking the strategy, timestamp, and project.
+///
+/// Can be called from the frontend or from dev_tools pick_winner.
+/// Returns true if the note was written, false if Obsidian is not configured.
+pub fn push_competition_insight_to_vault(
+    pool: &crate::db::DbPool,
+    competition_id: &str,
+    strategy_label: &str,
+    insight_text: &str,
+    project_name: &str,
+    task_title: &str,
+) -> Result<bool, AppError> {
+    let config = match get_config_or_err(pool) {
+        Ok(c) => c,
+        Err(_) => return Ok(false), // Obsidian not configured — skip silently
+    };
+
+    let folder = Path::new(&config.vault_path)
+        .join("DevTools")
+        .join("Competitions");
+    std::fs::create_dir_all(&folder)
+        .map_err(|e| AppError::Validation(format!("Failed to create Competitions folder: {e}")))?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let short_id: String = competition_id.chars().take(8).collect();
+    let filename = format!("comp-{}-{}.md", short_id, sanitize_filename(strategy_label));
+
+    let content = format!(
+        r#"---
+id: "{competition_id}"
+type: "competition-insight"
+strategy: "{strategy_label}"
+project: "{project_name}"
+task: "{task_title}"
+created: "{now}"
+---
+
+# Competition Winner — {strategy_label}
+
+**Project:** {project_name}
+**Task:** {task_title}
+**Strategy:** {strategy_label}
+**Date:** {now}
+
+## Winning Insight
+
+{insight_text}
+"#
+    );
+
+    let file_path = folder.join(&filename);
+    match std::fs::write(&file_path, &content) {
+        Ok(()) => {
+            tracing::info!("Pushed competition insight to Obsidian: {}", filename);
+            Ok(true)
+        }
+        Err(e) => {
+            tracing::warn!("Failed to write competition insight to vault: {}", e);
+            Ok(false)
+        }
+    }
+}

@@ -9,6 +9,8 @@ import { useScaledFontSize } from '@/stores/themeStore';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { ChartEmptyState } from '@/features/shared/components/display/ChartEmptyState';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
@@ -34,6 +36,7 @@ export interface MetricsChartsProps {
 export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
   const sf = useScaledFontSize();
   const { shouldAnimate } = useMotion();
+  const { t: ot } = useOverviewTranslation();
   const visibleAnnotations = useMemo(() => {
     const chartDates = new Set(chartData.map((point) => point.date));
     return annotations.filter((annotation) => chartDates.has(annotation.date));
@@ -52,7 +55,15 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Cost Over Time */}
-        <MetricChart title="Cost Over Time" height={240}>
+        <MetricChart
+          title="Cost Over Time"
+          height={240}
+          emptySlot={
+            chartData.length === 0 ? (
+              <ChartEmptyState variant="area" title={ot.emptyState.cost_chart_title} description={ot.emptyState.cost_chart_subtitle} className="h-[240px] py-0" />
+            ) : undefined
+          }
+        >
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
             <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
@@ -125,7 +136,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
           height={240}
           emptySlot={
             pieData.length === 0 ? (
-              <EmptyState variant="metrics" className="h-[240px] py-0" />
+              <EmptyState variant="metrics" heading={ot.emptyState.obs_metrics_title} description={ot.emptyState.obs_metrics_subtitle} className="h-[240px] py-0" />
             ) : undefined
           }
         >
@@ -153,7 +164,15 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       )}
 
       {/* Charts Row 2 */}
-      <MetricChart title="Execution Health" height={240}>
+      <MetricChart
+        title="Execution Health"
+        height={240}
+        emptySlot={
+          chartData.length === 0 ? (
+            <ChartEmptyState variant="bar" title={ot.emptyState.health_chart_title} description={ot.emptyState.health_chart_subtitle} className="h-[240px] py-0" />
+          ) : undefined
+        }
+      >
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
           <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />

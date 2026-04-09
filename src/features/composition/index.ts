@@ -3,4 +3,4 @@ export { default as WorkflowCanvas } from './components/WorkflowCanvas';
 export { default as WorkflowList } from './components/WorkflowList';
 export { default as WorkflowPersonaNode } from './components/nodes/WorkflowPersonaNode';
 export { default as DataFlowEdge } from './components/edges/DataFlowEdge';
-export { topologicalSort, validateWorkflow, getRootNodes, getLeafNodes } from './libs/dagUtils';
+export { topologicalSort, validateWorkflow } from './libs/dagUtils';

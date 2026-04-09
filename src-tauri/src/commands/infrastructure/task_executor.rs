@@ -699,22 +699,45 @@ async fn run_task_execution(
                 output_lines += 1;
                 TASK_EXEC_JOBS.emit_line(app, task_id, trimmed.to_string());
 
-                // Update progress estimate based on output lines
+                // Parse structured [Progress] markers for milestone tracking.
+                // Format: [Progress] {"milestone": "implementing", "detail": "..."}
+                if trimmed.starts_with("[Progress]") {
+                    if let Some(json_str) = trimmed.strip_prefix("[Progress]").map(|s| s.trim()) {
+                        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
+                            if let Some(milestone) = parsed.get("milestone").and_then(|v| v.as_str()) {
+                                let pct = match milestone {
+                                    "analyzing" => 10,
+                                    "planning" => 25,
+                                    "implementing" => 55,
+                                    "testing" => 80,
+                                    "committing" => 95,
+                                    "done" => 100,
+                                    _ => 0,
+                                };
+                                if pct > 0 {
+                                    let _ = repo::update_task(
+                                        pool, task_id, None, None, None, None,
+                                        Some(pct), Some(output_lines), None, None, None,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: estimate progress from output volume (every 10 lines)
                 if output_lines % 10 == 0 {
-                    let progress = output_lines.min(90).min(95);
-                    let _ = repo::update_task(
-                        pool,
-                        task_id,
-                        None,
-                        None,
-                        None,
-                        None,
-                        Some(progress),
-                        Some(output_lines),
-                        None,
-                        None,
-                        None,
-                    );
+                    // Only update if we haven't received a structured milestone
+                    let current = repo::get_task_by_id(pool, task_id)
+                        .map(|t| t.progress_pct)
+                        .unwrap_or(0);
+                    let estimated = output_lines.min(90);
+                    if estimated > current {
+                        let _ = repo::update_task(
+                            pool, task_id, None, None, None, None,
+                            Some(estimated), Some(output_lines), None, None, None,
+                        );
+                    }
                 }
             } else {
                 let (line_type, _) = parse_stream_line(&line);

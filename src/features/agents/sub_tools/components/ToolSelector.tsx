@@ -47,7 +47,6 @@ export function ToolSelector() {
         credentialLabel={persona.credentialLabel}
         usageByTool={persona.usageByTool}
         impactDataMap={impactDataMap}
-        justToggledId={actions.justToggledId}
         isSearching={search.isSearching}
         searchQuery={search.searchQuery}
         onClearSearch={() => search.setSearchQuery('')}

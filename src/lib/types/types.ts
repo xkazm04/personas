@@ -237,8 +237,9 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "quality-gates";
 export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle";
 export type AgentTab = "all" | "create" | "team" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr" | "artist" | "obsidian-brain";
+export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr" | "artist" | "obsidian-brain" | "twin";
 export type ObsidianBrainTab = "setup" | "sync" | "browse";
+export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";
 export type ArtistTab = "blender" | "gallery";
 export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 

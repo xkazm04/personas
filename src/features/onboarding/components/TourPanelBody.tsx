@@ -5,6 +5,8 @@ import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
 import { StepProgress } from './StepProgress';
+import { STATE_DISABLED_OPACITY } from '@/lib/utils/designTokens';
+import { useOnboardingTranslation } from '@/features/onboarding/i18n/useOnboardingTranslation';
 
 const TourAppearanceContent = lazy(() => import('./steps/TourAppearanceContent'));
 const CredentialsTourContent = lazy(() => import('./steps/CredentialsTourContent'));
@@ -35,6 +37,8 @@ export function TourPanelBody({
   onPrev,
   onJump,
 }: TourPanelBodyProps) {
+  const { t } = useOnboardingTranslation();
+  const tt = t.tour;
   const steps = getActiveTourSteps(tourId);
   const currentStep = steps[currentIndex];
   if (!currentStep) return null;
@@ -59,7 +63,7 @@ export function TourPanelBody({
           {isStepCompleted && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-sm font-medium text-emerald-400">
               <Check className="w-2.5 h-2.5" />
-              Done
+              {tt.done}
             </span>
           )}
         </h4>
@@ -90,7 +94,7 @@ export function TourPanelBody({
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-3" key={currentStep.id}>
-        <Suspense fallback={<div className="py-4 text-center text-muted-foreground/40 text-sm">Loading...</div>}>
+        <Suspense fallback={<div className="py-4 text-center text-muted-foreground/40 text-sm">{tt.loading}</div>}>
           {/* Tour 1: Getting Started - specialized content */}
           {isGettingStarted && currentStep.id === 'appearance-setup' && <TourAppearanceContent />}
           {isGettingStarted && currentStep.id === 'credentials-intro' && <CredentialsTourContent subStepIndex={subStepIndex} />}
@@ -109,10 +113,10 @@ export function TourPanelBody({
           onClick={onPrev}
           disabled={currentIndex === 0}
           data-testid="tour-btn-prev"
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg border border-primary/10 text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg border border-primary/10 text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground/70 transition-all ${STATE_DISABLED_OPACITY} disabled:cursor-not-allowed disabled:hover:bg-transparent`}
         >
           <ChevronLeft className="w-3.5 h-3.5" />
-          Back
+          {tt.back}
         </button>
         <div className="flex items-center gap-2">
           {allCompleted ? (
@@ -122,7 +126,7 @@ export function TourPanelBody({
               className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
-              Complete Tour
+              {tt.complete_tour}
             </button>
           ) : (
             <button
@@ -130,7 +134,7 @@ export function TourPanelBody({
               data-testid="tour-btn-next"
               className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl ${colors.bg} ${colors.text} border ${colors.border} hover:brightness-125 transition-all`}
             >
-              {isStepCompleted ? 'Continue' : 'Skip'}
+              {isStepCompleted ? tt.continue : tt.skip}
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           )}
@@ -146,6 +150,8 @@ function GenericStepContent({ step, subStepIndex, colors }: {
   subStepIndex: number;
   colors: { bg: string; border: string; text: string };
 }) {
+  const { t } = useOnboardingTranslation();
+  const tt = t.tour;
   const activeHint = step.subSteps[subStepIndex]?.hint ?? step.hint;
 
   return (
@@ -161,7 +167,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
       {/* Sub-step hints as checklist */}
       {step.subSteps.length > 0 && (
         <div className="space-y-2">
-          <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">What to explore</span>
+          <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{tt.what_to_explore}</span>
           {step.subSteps.map((sub, i) => (
             <div
               key={sub.id}
@@ -188,7 +194,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
 
       {/* Step auto-completion notice */}
       <p className="text-[11px] text-muted-foreground/40 italic text-center">
-        Spend a moment exploring — this step will complete automatically, or click Skip to continue.
+        {tt.auto_complete_hint}
       </p>
     </div>
   );

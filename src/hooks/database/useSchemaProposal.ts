@@ -47,6 +47,25 @@ interface UseSchemaProposalReturn {
   setProposedSQL: (sql: string) => void;
 }
 
+// -- DDL Validation ---------------------------------------------------
+
+/**
+ * Validate that every statement is safe DDL (CREATE TABLE/INDEX/VIEW/TRIGGER).
+ * Returns null when valid, or a human-readable error for the first unsafe statement.
+ */
+function validateSchemaDDL(statements: string[]): string | null {
+  const ALLOWED_RE = /^CREATE\s+(TABLE|INDEX|UNIQUE\s+INDEX|VIEW|TRIGGER)\s/i;
+  for (const stmt of statements) {
+    const trimmed = stmt.trim();
+    if (!trimmed) continue;
+    if (!ALLOWED_RE.test(trimmed)) {
+      const preview = trimmed.length > 80 ? trimmed.slice(0, 80) + '…' : trimmed;
+      return `Blocked unsafe statement: "${preview}". Only CREATE TABLE/INDEX/VIEW/TRIGGER statements are allowed during schema setup.`;
+    }
+  }
+  return null;
+}
+
 // -- Hook -------------------------------------------------------------
 
 export function useSchemaProposal({
@@ -158,18 +177,27 @@ export function useSchemaProposal({
     try {
       const statements = splitSqlStatements(sql);
 
+      // Validate DDL-only: reject DML (INSERT/UPDATE/DELETE) and destructive DDL (DROP/ALTER/TRUNCATE)
+      const ddlError = validateSchemaDDL(statements);
+      if (ddlError) {
+        setExecutionResult({ success: false, message: ddlError });
+        setError(ddlError);
+        setPhase('failed');
+        return false;
+      }
+
       // Wrap in a transaction so a mid-sequence failure rolls back cleanly
-      await executeDbQuery(credentialId, 'BEGIN', undefined, true);
+      await executeDbQuery(credentialId, 'BEGIN', undefined, true, true);
 
       try {
         for (const stmt of statements) {
-          await executeDbQuery(credentialId, stmt, undefined, true);
+          await executeDbQuery(credentialId, stmt, undefined, true, true);
         }
-        await executeDbQuery(credentialId, 'COMMIT', undefined, true);
+        await executeDbQuery(credentialId, 'COMMIT', undefined, true, true);
       } catch (stmtErr) {
         // Roll back the partial changes
         try {
-          await executeDbQuery(credentialId, 'ROLLBACK', undefined, true);
+          await executeDbQuery(credentialId, 'ROLLBACK', undefined, true, true);
         } catch {
           // best-effort rollback
         }

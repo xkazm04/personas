@@ -14,6 +14,8 @@ export interface Props {
   animationMapRef: React.RefObject<AnimationMap>;
   animTick: number;
   onSelectEvent: (event: RealtimeEvent | null) => void;
+  /** Optional callback to trigger a test event flow from the empty state CTA. */
+  onTestFlow?: () => void;
 }
 
 /* Layout constants */

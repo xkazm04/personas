@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { MoreVertical, Eye, Trash2, CheckCircle2, XCircle, GraduationCap, Clock } from 'lucide-react';
 import { TrustBadge } from '../../../shared/TrustBadge';
+import { useTemplatesTranslation } from '@/features/templates/i18n/useTemplatesTranslation';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { readinessTier } from '../../../shared/adoptionReadiness';
-import type { DifficultyMeta, SetupMeta } from '../../../shared/templateComplexity';
+import type { DifficultyLevel, DifficultyMeta, SetupMeta } from '../../../shared/templateComplexity';
 
 interface TemplateCardHeaderProps {
   name: string;
@@ -15,8 +16,10 @@ interface TemplateCardHeaderProps {
   motionCss: string;
   onViewDetails: () => void;
   onDelete: () => void;
+  difficulty?: DifficultyLevel;
   difficultyMeta?: DifficultyMeta;
   setupMeta?: SetupMeta;
+  setupMinutes?: number;
 }
 
 export function TemplateCardHeader({
@@ -28,11 +31,13 @@ export function TemplateCardHeader({
   motionCss,
   onViewDetails,
   onDelete,
+  difficulty,
   difficultyMeta,
-  setupMeta,
+  setupMinutes,
 }: TemplateCardHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { t } = useTemplatesTranslation();
 
   return (
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
@@ -59,22 +64,20 @@ export function TemplateCardHeader({
               --%
             </span>
           )}
-          {difficultyMeta && (
+          {difficultyMeta && difficulty && (
             <span
               className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded border ${difficultyMeta.bgClass}`}
-              title={`Difficulty: ${difficultyMeta.label}`}
+              title={`${t.complexity[difficulty]}${setupMinutes ? ` · ${t.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
             >
               <GraduationCap className="w-2.5 h-2.5" />
-              {difficultyMeta.label}
-            </span>
-          )}
-          {setupMeta && (
-            <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded border ${setupMeta.bgClass}`}
-              title={`Setup: ${setupMeta.label}`}
-            >
-              <Clock className="w-2.5 h-2.5" />
-              {setupMeta.label}
+              {t.complexity[difficulty]}
+              {setupMinutes != null && (
+                <>
+                  <span className="opacity-50">·</span>
+                  <Clock className="w-2.5 h-2.5" />
+                  {t.complexity.minuteShort.replace('{minutes}', String(setupMinutes))}
+                </>
+              )}
             </span>
           )}
         </div>

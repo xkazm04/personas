@@ -65,8 +65,8 @@ export const classifyDbQuery = (queryText: string) =>
 
 // -- Query Execution ----------------------------------------------------
 
-export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string, allowMutation?: boolean) =>
-  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId, allowMutation });
+export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string, allowMutation?: boolean, ddlOnly?: boolean) =>
+  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId, allowMutation, ddlOnly });
 
 // -- Schema Introspection ----------------------------------------------
 

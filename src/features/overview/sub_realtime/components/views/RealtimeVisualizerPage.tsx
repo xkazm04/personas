@@ -112,10 +112,10 @@ export default function RealtimeVisualizerPage() {
 
       <div className="flex-1 relative overflow-hidden">
         {variant === 'galaxy' && (
-          <EventBusVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} />
+          <EventBusVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} onTestFlow={triggerTestFlow} />
         )}
         {variant === 'lanes' && (
-          <SwimLaneVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} />
+          <SwimLaneVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} onTestFlow={triggerTestFlow} />
         )}
         {selectedEvent && <EventDetailDrawer event={selectedEvent} onClose={() => selectEvent(null)} />}
       </div>

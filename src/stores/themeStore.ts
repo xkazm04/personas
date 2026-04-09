@@ -125,6 +125,8 @@ function applyThemeToDOM(id: ThemeId, customConfig?: CustomThemeConfig | null) {
   // Inject or remove the custom theme stylesheet
   if (id === 'custom' && customConfig) {
     injectCustomThemeStyle(deriveCustomThemeVars(customConfig));
+  } else {
+    removeCustomThemeStyle();
   }
 
   if (id === 'dark-midnight') {
@@ -198,11 +200,12 @@ interface ThemeState {
 
 /** Derived selector: true when the active theme is dark. */
 export function useIsDarkTheme(): boolean {
-  const themeId = useThemeStore((s) => s.themeId);
-  if (themeId === 'custom') {
-    return useThemeStore.getState().customTheme?.baseMode !== 'light';
-  }
-  return !themeId.startsWith('light');
+  return useThemeStore((s) => {
+    if (s.themeId === 'custom') {
+      return s.customTheme?.baseMode !== 'light';
+    }
+    return !s.themeId.startsWith('light');
+  });
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -231,11 +234,11 @@ export const useThemeStore = create<ThemeState>()(
         storeBus.emit('appearance:changed', { field: 'brightness', value: level });
       },
       setCustomTheme: (config: CustomThemeConfig) => {
-        set({ customTheme: config });
         // Inject styles and activate
         applyThemeToDOM('custom', config);
         applyBrightness(get().brightness, 'custom', config);
-        set({ themeId: 'custom' });
+        // Single set() to avoid intermediate state where customTheme and themeId disagree
+        set({ customTheme: config, themeId: 'custom' });
       },
       clearCustomTheme: () => {
         removeCustomThemeStyle();

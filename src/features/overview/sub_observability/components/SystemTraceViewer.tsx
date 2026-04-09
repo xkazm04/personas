@@ -1,8 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Activity, Trash2, AlertCircle, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { Trash2, AlertCircle, ChevronDown, ChevronRight, Clock } from 'lucide-react';
 import { useSystemTraces } from '@/hooks/execution/useSystemTrace';
 import { SYSTEM_OPERATION_CONFIG, getSpanConfig } from '@/features/agents/sub_executions/libs/traceHelpers';
 import { buildSpanTree, flattenTree } from '@/features/agents/sub_executions/libs/traceHelpers';
+import { ChartEmptyState } from '@/features/shared/components/display/ChartEmptyState';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { SystemTrace } from '@/lib/execution/systemTrace';
 import type { SystemOperationType } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
@@ -184,6 +186,7 @@ function SpanRowCompact({
 
 export default function SystemTraceViewer() {
   const { traces, activeCount, errorCount, clear } = useSystemTraces();
+  const { t: ot } = useOverviewTranslation();
   const [filter, setFilter] = useState<SystemOperationType | 'all'>('all');
 
   const filtered = useMemo(
@@ -198,15 +201,11 @@ export default function SystemTraceViewer() {
 
   if (traces.length === 0) {
     return (
-      <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-muted-foreground/60" />
-        </div>
-        <p className="typo-body text-muted-foreground/80">No system traces recorded</p>
-        <p className="typo-body text-muted-foreground/60 mt-1">
-          Traces appear when design, credential, or template operations run
-        </p>
-      </div>
+      <ChartEmptyState
+        variant="trace"
+        title={ot.emptyState.traces_title}
+        description={ot.emptyState.traces_subtitle}
+      />
     );
   }
 

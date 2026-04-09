@@ -30,9 +30,9 @@ pub struct UpdateN8nSessionParams {
     pub questions_json: Option<Option<String>>,
 }
 
-/// Maximum raw workflow JSON size allowed in session storage (10 MB),
-/// consistent with the transform payload limit in cli_runner.rs.
-const MAX_WORKFLOW_JSON_BYTES: usize = 10 * 1024 * 1024;
+/// Maximum raw workflow JSON size allowed in session storage (5 MB).
+/// Keep in sync with frontend: useWorkflowImport.ts, useMatrixWorkflowImport.ts, n8nUploadTypes.ts.
+const MAX_WORKFLOW_JSON_BYTES: usize = 5 * 1024 * 1024;
 
 #[tauri::command]
 pub async fn create_n8n_session(
@@ -45,7 +45,7 @@ pub async fn create_n8n_session(
     require_auth(&state).await?;
     if raw_workflow_json.len() > MAX_WORKFLOW_JSON_BYTES {
         return Err(AppError::Validation(
-            "Workflow JSON too large (>10 MB). Use a smaller workflow export.".into(),
+            "Workflow JSON too large (>5 MB). Use a smaller workflow export.".into(),
         ));
     }
 

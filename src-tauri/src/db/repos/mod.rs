@@ -4,6 +4,7 @@ pub mod dev_tools;
 pub mod execution;
 pub mod lab;
 pub mod resources;
+pub mod twin;
 pub mod utils;
 
 #[cfg(test)]

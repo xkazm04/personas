@@ -417,80 +417,86 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }
   }, [designResult]);
 
-  if (!seeded) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm text-muted-foreground/50 animate-pulse">Loading template into matrix...</div>
-      </div>
-    );
-  }
+  // Cross-fade step key: triggers animate-fade-slide-in when the visual state changes.
+  // Only keyed by seeded (loading→content) to avoid remounting the matrix on phase changes.
+  const stepKey = seeded ? 'content' : 'loading';
 
   return (
-    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Matrix variant rendering — always the grid variant (switcher hidden) */}
-      {matrixVariant === "original" && (
-        <PersonaMatrix
-          designResult={null}
-          variant="creation"
-          hideHeader
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildLocked={false}
-          cellBuildStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          hasDesignResult={build.buildPhase === "draft_ready" || build.buildPhase === "test_complete" || build.buildPhase === "promoted"}
-          buildPhase={build.buildPhase}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onRejectTest={lifecycle.handleRejectTest}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-          buildActivity={build.buildActivity}
-          onApplyEdits={handleApplyEdits}
-          onDiscardEdits={handleDiscardEdits}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-        />
-      )}
-      {matrixVariant === "glass" && (
-        <PersonaMatrixGlass
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
-          buildActivity={build.buildActivity}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onViewAgent={handleViewAgent}
-        />
-      )}
-      {matrixVariant === "blueprint" && (
-        <PersonaMatrixBlueprint
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
-          buildActivity={build.buildActivity}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onViewAgent={handleViewAgent}
-        />
-      )}
+    <div key={stepKey} className="flex-1 min-h-0 flex flex-col animate-fade-slide-in">
+      {!seeded ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-sm text-muted-foreground/50 animate-pulse">Loading template into matrix...</div>
+        </div>
+      ) : (
+        <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+          {/* Matrix variant rendering — always the grid variant (switcher hidden) */}
+          {matrixVariant === "original" && (
+            <PersonaMatrix
+              designResult={null}
+              variant="creation"
+              hideHeader
+              completeness={build.completeness}
+              isRunning={build.isBuilding}
+              buildLocked={false}
+              cellBuildStates={build.cellStates}
+              pendingQuestions={build.pendingQuestions}
+              onAnswerBuildQuestion={build.handleAnswer}
+              hasDesignResult={build.buildPhase === "draft_ready" || build.buildPhase === "test_complete" || build.buildPhase === "promoted"}
+              buildPhase={build.buildPhase}
+              onStartTest={lifecycle.handleStartTest}
+              onApproveTest={lifecycle.handlePromote}
+              onRejectTest={lifecycle.handleRejectTest}
+              onRefine={lifecycle.handleRefine}
+              testOutputLines={build.buildTestOutputLines}
+              testPassed={build.buildTestPassed}
+              testError={build.buildTestError}
+              toolTestResults={lifecycle.buildToolTestResults}
+              testSummary={lifecycle.buildTestSummary}
+              onViewAgent={handleViewAgent}
+              buildActivity={build.buildActivity}
+              onApplyEdits={handleApplyEdits}
+              onDiscardEdits={handleDiscardEdits}
+              onSubmitAllAnswers={build.handleSubmitAnswers}
+            />
+          )}
+          {matrixVariant === "glass" && (
+            <PersonaMatrixGlass
+              buildPhase={build.buildPhase}
+              completeness={build.completeness}
+              isRunning={build.isBuilding}
+              cellBuildStates={build.cellStates}
+              buildActivity={build.buildActivity}
+              onStartTest={lifecycle.handleStartTest}
+              onApproveTest={lifecycle.handlePromote}
+              onViewAgent={handleViewAgent}
+            />
+          )}
+          {matrixVariant === "blueprint" && (
+            <PersonaMatrixBlueprint
+              buildPhase={build.buildPhase}
+              completeness={build.completeness}
+              isRunning={build.isBuilding}
+              cellBuildStates={build.cellStates}
+              buildActivity={build.buildActivity}
+              onStartTest={lifecycle.handleStartTest}
+              onApproveTest={lifecycle.handlePromote}
+              onViewAgent={handleViewAgent}
+            />
+          )}
 
-      {/* Adoption questions — FormGrid variant */}
-      {hasAdoptionQuestions && !questionsComplete && seeded && (
-        <QuestionnaireFormGrid
-          questions={adoptionQuestions}
-          userAnswers={adoptionAnswers}
-          onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
-          onSubmit={() => setQuestionsComplete(true)}
-          onClose={onClose}
-        />
+          {/* Adoption questions — FormGrid variant */}
+          {hasAdoptionQuestions && !questionsComplete && seeded && (
+            <div className="animate-fade-slide-in">
+              <QuestionnaireFormGrid
+                questions={adoptionQuestions}
+                userAnswers={adoptionAnswers}
+                onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
+                onSubmit={() => setQuestionsComplete(true)}
+                onClose={onClose}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

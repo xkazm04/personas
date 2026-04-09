@@ -1,7 +1,7 @@
 import { RotateCcw, ArrowRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useShallow } from 'zustand/react/shallow';
-import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 
 export default function ResumeSetupCard() {
   const {
@@ -10,19 +10,22 @@ export default function ResumeSetupCard() {
     tourDismissed,
     tourStepCompleted,
     tourCurrentStepIndex,
+    tourActiveTourId,
   } = useSystemStore(useShallow((s) => ({
     tourActive: s.tourActive,
     tourCompleted: s.tourCompleted,
     tourDismissed: s.tourDismissed,
     tourStepCompleted: s.tourStepCompleted,
     tourCurrentStepIndex: s.tourCurrentStepIndex,
+    tourActiveTourId: s.tourActiveTourId,
   })));
 
   // Only show when tour was dismissed mid-flow
   if (tourActive || tourCompleted || !tourDismissed) return null;
 
-  const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
-  const currentStep = TOUR_STEPS[tourCurrentStepIndex];
+  const activeTourSteps = getActiveTourSteps(tourActiveTourId);
+  const completedCount = activeTourSteps.filter((s) => tourStepCompleted[s.id]).length;
+  const currentStep = activeTourSteps[tourCurrentStepIndex];
   const currentStepLabel = currentStep?.title ?? 'Setup';
 
   const handleResume = () => {
@@ -45,7 +48,7 @@ export default function ResumeSetupCard() {
           <p className="typo-body text-muted-foreground/70">
             You left off at <span className="text-violet-400 font-medium">{currentStepLabel}</span>
             {completedCount > 0 && (
-              <> &mdash; {completedCount}/{TOUR_STEPS.length} steps completed</>
+              <> &mdash; {completedCount}/{activeTourSteps.length} steps completed</>
             )}
           </p>
         </div>

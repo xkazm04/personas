@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
+import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock, Sparkles, ArrowRight } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useHomeTranslation } from '@/features/home/i18n/useTranslation';
+import { STATE_DISABLED_OPACITY, STATE_LOCKED, STATE_INACTIVE_BORDER } from '@/lib/utils/designTokens';
 
 /* ------------------------------------------------------------------ */
 /*  Role definitions                                                    */
@@ -21,10 +24,10 @@ interface RoleDef {
 
 const ROLES: RoleDef[] = [
   {
-    id: 'office-rat',
-    label: 'Office Rat',
+    id: 'office-pro',
+    label: 'Office Pro',
     subtitle: 'Non-technical user',
-    illustration: '/illustrations/roles/office-rat.svg',
+    illustration: '/illustrations/roles/office-pro.svg',
     accentColor: '#F59E0B',
     tools: ['google_workspace', 'microsoft_excel', 'notion'],
   },
@@ -44,30 +47,45 @@ const ROLES: RoleDef[] = [
     accentColor: '#8B5CF6',
     tools: ['cal_com', 'google_workspace', 'jira'],
   },
+  {
+    id: 'explorer',
+    label: 'Explorer',
+    subtitle: 'All tools, no filters',
+    illustration: '/illustrations/roles/explorer.svg',
+    accentColor: '#10B981',
+    tools: ['google_workspace', 'slack', 'github', 'notion', 'jira', 'n8n'],
+  },
 ];
+
+/** Maps role.id → i18n key pair inside t.setup.roles */
+const ROLE_I18N: Record<string, { label: string; sub: string }> = {
+  'office-pro': { label: 'office_pro', sub: 'office_pro_sub' },
+  developer:    { label: 'developer',  sub: 'developer_sub' },
+  manager:      { label: 'manager',    sub: 'manager_sub' },
+  explorer:     { label: 'explorer',   sub: 'explorer_sub' },
+};
 
 /* ------------------------------------------------------------------ */
 /*  Stepper steps                                                       */
 /* ------------------------------------------------------------------ */
 
-const STEPS = [
-  { id: 'role' as const, icon: User, label: 'Role' },
-  { id: 'tool' as const, icon: Wrench, label: 'Tool' },
-  { id: 'goal' as const, icon: Target, label: 'Goal' },
-];
+const STEP_IDS = ['role', 'tool', 'goal'] as const;
 
 /* ------------------------------------------------------------------ */
 /*  Step indicator                                                      */
 /* ------------------------------------------------------------------ */
 
-function StepIndicator({ current, completed }: { current: number; completed: Record<string, boolean> }) {
+const STEP_ICONS = [User, Wrench, Target] as const;
+
+function StepIndicator({ current, completed, labels }: { current: number; completed: Record<string, boolean>; labels: string[] }) {
   return (
     <div className="flex items-center gap-2">
-      {STEPS.map((step, i) => {
-        const done = completed[step.id];
+      {STEP_IDS.map((id, i) => {
+        const done = completed[id];
         const active = i === current;
+        const Icon = STEP_ICONS[i] ?? User;
         return (
-          <div key={step.id} className="flex items-center gap-2">
+          <div key={id} className="flex items-center gap-2">
             {i > 0 && (
               <div className={`w-8 h-px transition-colors duration-300 ${i <= current || done ? 'bg-primary/30' : 'bg-primary/8'}`} />
             )}
@@ -80,8 +98,8 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
                     : 'bg-primary/5 text-muted-foreground/40 border border-primary/8'
               }`}
             >
-              {done ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
-              {step.label}
+              {done ? <Check className="w-3 h-3" /> : <Icon className="w-3 h-3" />}
+              {labels[i]}
             </div>
           </div>
         );
@@ -96,21 +114,27 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
 
 function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (role: string) => void }) {
   const isDark = useIsDarkTheme();
+  const { shouldAnimate } = useMotion();
+  const { t } = useHomeTranslation();
+  const s = t.setup;
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">Choose your role</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">We'll tailor the experience to match how you work.</p>
+        <h3 className="typo-heading-lg text-foreground">{s.choose_role}</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">{s.choose_role_hint}</p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {ROLES.map((role) => {
-          const isSelected = selected === role.label;
+          const isSelected = selected === role.id;
+          const i18n = ROLE_I18N[role.id];
+          const roleLabel = i18n ? (s.roles as Record<string, string>)[i18n.label] ?? role.label : role.label;
+          const roleSub = i18n ? (s.roles as Record<string, string>)[i18n.sub] ?? role.subtitle : role.subtitle;
           return (
             <motion.button
               key={role.id}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => onSelect(role.label)}
+              whileHover={shouldAnimate ? { y: -4 } : {}}
+              whileTap={shouldAnimate ? { scale: 0.97 } : {}}
+              onClick={() => onSelect(role.id)}
               className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-5 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
@@ -124,20 +148,20 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               >
                 <img
                   src={role.illustration}
-                  alt={role.label}
+                  alt={roleLabel}
                   className="w-full h-full"
                   style={{ filter: isDark ? 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.1)) brightness(0.7) contrast(1.2)' }}
                 />
               </div>
 
               {/* Label */}
-              <span className="typo-body-lg font-bold text-foreground">{role.label}</span>
-              <span className="typo-body text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
+              <span className="typo-body-lg font-bold text-foreground">{roleLabel}</span>
+              <span className="typo-body text-muted-foreground/60 mt-0.5">{roleSub}</span>
 
               {/* Selection indicator */}
               {isSelected && (
                 <motion.div
-                  initial={{ scale: 0 }}
+                  initial={shouldAnimate ? { scale: 0 } : false}
                   animate={{ scale: 1 }}
                   className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"
                 >
@@ -165,18 +189,21 @@ function ToolStep({
   selected: string | null;
   onSelect: (tool: string) => void;
 }) {
-  const roleDef = ROLES.find((r) => r.label === role);
+  const roleDef = ROLES.find((r) => r.id === role);
   const tools = roleDef?.tools ?? [];
+  const { shouldAnimate } = useMotion();
+  const { t } = useHomeTranslation();
+  const s = t.setup;
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">Pick your favorite tool</h3>
+        <h3 className="typo-heading-lg text-foreground">{s.pick_tool}</h3>
         <p className="typo-body text-muted-foreground/60 mt-1">
-          This will be your first connector integration.
+          {s.pick_tool_hint}
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {tools.map((toolKey) => {
           const meta = CONNECTOR_META[toolKey];
           if (!meta) return null;
@@ -184,8 +211,8 @@ function ToolStep({
           return (
             <motion.button
               key={toolKey}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={shouldAnimate ? { y: -4 } : {}}
+              whileTap={shouldAnimate ? { scale: 0.97 } : {}}
               onClick={() => onSelect(meta.label)}
               className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-6 transition-all duration-300 cursor-pointer ${
                 isSelected
@@ -211,7 +238,7 @@ function ToolStep({
 
               {isSelected && (
                 <motion.div
-                  initial={{ scale: 0 }}
+                  initial={shouldAnimate ? { scale: 0 } : false}
                   animate={{ scale: 1 }}
                   className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"
                 >
@@ -231,12 +258,14 @@ function ToolStep({
 /* ------------------------------------------------------------------ */
 
 function GoalStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useHomeTranslation();
+  const s = t.setup;
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">What do you want to automate?</h3>
+        <h3 className="typo-heading-lg text-foreground">{s.automation_goal}</h3>
         <p className="typo-body text-muted-foreground/60 mt-1">
-          Describe your first automation goal — we'll help you set it up.
+          {s.automation_goal_hint}
         </p>
       </div>
       <textarea
@@ -248,7 +277,7 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
       />
       <div className="flex items-center justify-between">
         <span className="typo-body text-muted-foreground/50">
-          {value.trim().length < 10 ? `Min 10 characters (${value.trim().length}/10)` : 'Ready to save'}
+          {value.trim().length < 10 ? s.min_chars.replace('{count}', String(value.trim().length)) : s.ready}
         </span>
       </div>
     </div>
@@ -256,16 +285,131 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
 }
 
 /* ------------------------------------------------------------------ */
+/*  Celebration modal                                                   */
+/* ------------------------------------------------------------------ */
+
+function SetupCelebration({
+  isOpen,
+  onCreateAgent,
+  onDismiss,
+}: {
+  isOpen: boolean;
+  onCreateAgent: () => void;
+  onDismiss: () => void;
+}) {
+  const setupRole = useSystemStore((s) => s.setupRole);
+  const setupTool = useSystemStore((s) => s.setupTool);
+  const setupGoal = useSystemStore((s) => s.setupGoal);
+  const { shouldAnimate } = useMotion();
+  const { t } = useHomeTranslation();
+  const c = t.setup.celebration;
+
+  const roleDef = ROLES.find((r) => r.id === setupRole);
+  const roleI18n = roleDef ? ROLE_I18N[roleDef.id] : null;
+  const roleLabel = roleI18n
+    ? (t.setup.roles as Record<string, string>)[roleI18n.label] ?? roleDef?.label ?? setupRole
+    : setupRole;
+
+  const summaryItems = [
+    { icon: User, label: c.role_label, value: roleLabel, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
+    { icon: Wrench, label: c.tool_label, value: setupTool, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+    { icon: Target, label: c.goal_label, value: setupGoal, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  ];
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onDismiss} titleId="setup-celebration" maxWidthClass="max-w-md" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
+      <div className="p-6 flex flex-col items-center text-center">
+        {/* Celebration icon */}
+        <motion.div
+          initial={shouldAnimate ? { scale: 0, rotate: -30 } : false}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={shouldAnimate ? { type: 'spring', stiffness: 200, damping: 15, delay: 0.1 } : { duration: 0 }}
+          className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mb-4"
+        >
+          <Sparkles className="w-8 h-8 text-emerald-400" />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h2
+          initial={shouldAnimate ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={shouldAnimate ? { delay: 0.2, duration: 0.35 } : { duration: 0 }}
+          className="typo-heading-lg text-primary [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+        >
+          {c.title}
+        </motion.h2>
+        <motion.p
+          initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={shouldAnimate ? { delay: 0.3, duration: 0.35 } : { duration: 0 }}
+          className="typo-body text-foreground mt-1 mb-5"
+        >
+          {c.subtitle}
+        </motion.p>
+
+        {/* Summary items */}
+        <div className="w-full space-y-2.5 mb-6">
+          {summaryItems.map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={shouldAnimate ? { opacity: 0, x: -16 } : false}
+              animate={{ opacity: 1, x: 0 }}
+              transition={shouldAnimate ? { delay: 0.35 + i * 0.08, duration: 0.3 } : { duration: 0 }}
+              className={`flex items-start gap-3 p-3 rounded-xl border ${item.border} ${item.bg} text-left`}
+            >
+              <div className={`flex-shrink-0 mt-0.5 ${item.color}`}>
+                <item.icon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className={`typo-caption ${item.color} block`}>{item.label}</span>
+                <span className="typo-body text-foreground line-clamp-2">{item.value}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <motion.button
+          initial={shouldAnimate ? { opacity: 0, y: 8 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={shouldAnimate ? { delay: 0.6, duration: 0.35 } : { duration: 0 }}
+          whileHover={shouldAnimate ? { scale: 1.02 } : {}}
+          whileTap={shouldAnimate ? { scale: 0.98 } : {}}
+          onClick={onCreateAgent}
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl typo-heading bg-primary/20 border border-primary/30 text-foreground hover:bg-primary/30 transition-all"
+        >
+          {c.cta}
+          <ArrowRight className="w-4 h-4" />
+        </motion.button>
+
+        {/* Dismiss */}
+        <motion.button
+          initial={shouldAnimate ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
+          transition={shouldAnimate ? { delay: 0.7, duration: 0.3 } : { duration: 0 }}
+          onClick={onDismiss}
+          className="mt-3 typo-body text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {c.dismiss}
+        </motion.button>
+      </div>
+    </BaseModal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Stepper modal                                                       */
 /* ------------------------------------------------------------------ */
 
-function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClose: () => void; initialStep: number }) {
+function SetupStepper({ isOpen, onClose, onFinish, initialStep }: { isOpen: boolean; onClose: () => void; onFinish: () => void; initialStep: number }) {
   const setupRole = useSystemStore((s) => s.setupRole);
   const setupTool = useSystemStore((s) => s.setupTool);
   const setupGoal = useSystemStore((s) => s.setupGoal);
   const setSetupRole = useSystemStore((s) => s.setSetupRole);
   const setSetupTool = useSystemStore((s) => s.setSetupTool);
   const setSetupGoal = useSystemStore((s) => s.setSetupGoal);
+  const { t } = useHomeTranslation();
+  const s = t.setup;
 
   const [step, setStep] = useState(initialStep);
   const [goalDraft, setGoalDraft] = useState(setupGoal ?? '');
@@ -286,30 +430,38 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   const goNext = () => {
     if (step === 2 && goalDraft.trim().length >= 10) {
       setSetupGoal(goalDraft.trim());
-      onClose();
+      onFinish();
       return;
     }
     setDirection(1);
-    setStep((s) => Math.min(s + 1, 2));
+    setStep((prev) => Math.min(prev + 1, 2));
   };
 
   const goBack = () => {
     setDirection(-1);
-    setStep((s) => Math.max(s - 1, 0));
+    setStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const slideVariants = {
-    enter: (d: number) => ({ x: d > 0 ? 60 : -60, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
-  };
+  const { shouldAnimate } = useMotion();
+
+  const slideVariants = shouldAnimate
+    ? {
+        enter: (d: number) => ({ x: d > 0 ? 60 : -60, opacity: 0 }),
+        center: { x: 0, opacity: 1 },
+        exit: (d: number) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
+      }
+    : {
+        enter: { x: 0, opacity: 1 },
+        center: { x: 0, opacity: 1 },
+        exit: { x: 0, opacity: 1 },
+      };
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="setup-stepper" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
       <div className="p-6 flex flex-col" style={{ minHeight: '480px' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <StepIndicator current={step} completed={completed} />
+          <StepIndicator current={step} completed={completed} labels={[s.step_role, s.step_tool, s.step_goal]} />
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -325,7 +477,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: shouldAnimate ? 0.25 : 0, ease: [0.22, 1, 0.36, 1] }}
               className="w-full"
             >
               {step === 0 && <RoleStep selected={setupRole} onSelect={setSetupRole} />}
@@ -343,14 +495,14 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back
+            {s.back}
           </button>
           <button
             onClick={goNext}
             disabled={!canNext}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className={`flex items-center gap-1.5 px-5 py-2 rounded-xl typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all ${STATE_DISABLED_OPACITY} disabled:cursor-not-allowed`}
           >
-            {step === 2 ? 'Finish' : 'Next'}
+            {step === 2 ? s.finish : s.next}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
@@ -367,8 +519,6 @@ interface CardMeta {
   id: 'role' | 'tool' | 'goal';
   stepIndex: number;
   icon: typeof User;
-  defaultTitle: string;
-  description: string;
   gradFrom: string;
   gradTo: string;
   glowColor: string;
@@ -381,8 +531,6 @@ const CARD_DEFS: CardMeta[] = [
     id: 'role',
     stepIndex: 0,
     icon: User,
-    defaultTitle: 'Your Role',
-    description: 'Tell us your role so we can tailor the experience.',
     gradFrom: 'from-violet-500/8',
     gradTo: 'to-purple-500/4',
     glowColor: 'bg-violet-500/20',
@@ -393,8 +541,6 @@ const CARD_DEFS: CardMeta[] = [
     id: 'tool',
     stepIndex: 1,
     icon: Wrench,
-    defaultTitle: 'Favorite Tool',
-    description: 'Pick the first connector you want to integrate.',
     gradFrom: 'from-cyan-500/8',
     gradTo: 'to-blue-500/4',
     glowColor: 'bg-cyan-500/20',
@@ -405,8 +551,6 @@ const CARD_DEFS: CardMeta[] = [
     id: 'goal',
     stepIndex: 2,
     icon: Target,
-    defaultTitle: 'Automation Goal',
-    description: 'Describe what you would like to automate first.',
     gradFrom: 'from-amber-500/8',
     gradTo: 'to-orange-500/4',
     glowColor: 'bg-amber-500/20',
@@ -430,27 +574,37 @@ function SetupCardItem({
 }) {
   const [hovered, setHovered] = useState(false);
   const completed = value !== null;
-  const displayTitle = card.id === 'role' && value ? value : card.defaultTitle;
+  const { shouldAnimate, staggerDelay } = useMotion();
+  const { t } = useHomeTranslation();
+  const s = t.setup;
 
-  // For role card, find the role's illustration
-  const roleDef = card.id === 'role' && value ? ROLES.find((r) => r.label === value) : null;
+  // Resolve i18n text for each card type
+  const cardTitles: Record<string, string> = { role: s.card_role_title, tool: s.card_tool_title, goal: s.card_goal_title };
+  const cardDescs: Record<string, string> = { role: s.card_role_desc, tool: s.card_tool_desc, goal: s.card_goal_desc };
+
+  // For role card, resolve the role label from i18n and find illustration
+  const roleDef = card.id === 'role' && value ? ROLES.find((r) => r.id === value) : null;
+  const roleI18n = roleDef ? ROLE_I18N[roleDef.id] : null;
+  const roleLabel = roleI18n ? (s.roles as Record<string, string>)[roleI18n.label] ?? roleDef?.label : null;
+  const displayTitle = card.id === 'role' && roleLabel ? roleLabel : cardTitles[card.id];
+  const badgeText = card.id === 'role' && roleLabel ? roleLabel : value;
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 24 }}
+      initial={shouldAnimate ? { opacity: 0, y: 24 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 + index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={locked ? {} : { y: -6, transition: { duration: 0.25 } }}
+      transition={shouldAnimate ? { delay: 0.1 + index * staggerDelay, duration: 0.45, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+      whileHover={locked || !shouldAnimate ? {} : { y: -6, transition: { duration: 0.25 } }}
       onClick={locked ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`group relative text-left focus-ring h-[224px] flex flex-col ${
-        locked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+        locked ? STATE_LOCKED.container : 'cursor-pointer'
       }`}
     >
       {/* Illustration area */}
       <div
-        className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 ${!locked ? 'group-hover:shadow-elevation-3' : ''} transition-all duration-400`}
+        className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${locked ? STATE_INACTIVE_BORDER : card.accentBorder} shadow-elevation-1 ${!locked ? 'group-hover:shadow-elevation-3' : ''} transition-all duration-400`}
       >
         {/* Glow blob */}
         <div
@@ -462,18 +616,13 @@ function SetupCardItem({
           className={`absolute inset-0 flex items-center justify-center ${card.iconText} transition-all duration-500 pointer-events-none ${hovered && !locked ? 'opacity-100' : 'opacity-90'}`}
         >
           {roleDef ? (
-            <img src={roleDef.illustration} alt={roleDef.label} className="w-20 h-20 opacity-80" />
+            <img src={roleDef.illustration} alt={roleLabel ?? roleDef.label} className="w-20 h-20 opacity-80" />
           ) : (
             <card.icon className="w-16 h-16" strokeWidth={1} />
           )}
         </div>
 
-        {/* Lock overlay */}
-        {locked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
-            <Lock className="w-6 h-6 text-muted-foreground/40" />
-          </div>
-        )}
+        {/* Lock overlay — rendered at card level (below) to avoid compounding */}
 
         {/* Title overlaid at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-8 bg-gradient-to-t dark:from-black/40 from-transparent to-transparent pointer-events-none z-10">
@@ -487,7 +636,7 @@ function SetupCardItem({
           <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30">
             <Check className="w-3 h-3 text-emerald-400" />
             <span className="text-sm font-medium text-emerald-400 max-w-[80px] truncate">
-              {value}
+              {badgeText}
             </span>
           </div>
         )}
@@ -503,11 +652,18 @@ function SetupCardItem({
         <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">
           {locked
             ? card.id === 'tool'
-              ? 'Select a role first to unlock tool options.'
-              : 'Select a tool first to set your goal.'
-            : card.description}
+              ? s.lock_tool
+              : s.lock_goal
+            : cardDescs[card.id]}
         </p>
       </div>
+
+      {/* Full-card lock overlay — covers entire card without compounding container opacity */}
+      {locked && (
+        <div className={`absolute inset-0 z-20 flex items-center justify-center rounded-card ${STATE_LOCKED.overlay}`}>
+          <Lock className={`w-6 h-6 ${STATE_LOCKED.icon}`} />
+        </div>
+      )}
     </motion.button>
   );
 }
@@ -518,11 +674,17 @@ function SetupCardItem({
 
 export default function SetupCards() {
   const setupCompleted = useSystemStore((s) => s.setupCompleted);
+  const dismissSetup = useSystemStore((s) => s.dismissSetup);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setupRole = useSystemStore((s) => s.setupRole);
   const setupTool = useSystemStore((s) => s.setupTool);
   const setupGoal = useSystemStore((s) => s.setupGoal);
   const [stepperOpen, setStepperOpen] = useState(false);
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
   const [initialStep, setInitialStep] = useState(0);
+
+  const { shouldAnimate } = useMotion();
 
   if (setupCompleted) return null;
 
@@ -540,14 +702,31 @@ export default function SetupCards() {
     setStepperOpen(true);
   };
 
+  const handleStepperFinish = () => {
+    setStepperOpen(false);
+    setCelebrationOpen(true);
+  };
+
+  const handleCreateAgent = () => {
+    setCelebrationOpen(false);
+    dismissSetup();
+    setSidebarSection('personas');
+    setIsCreatingPersona(true);
+  };
+
+  const handleDismiss = () => {
+    setCelebrationOpen(false);
+    dismissSetup();
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={shouldAnimate ? { opacity: 0, y: 16 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.4 }}
+      transition={shouldAnimate ? { delay: 0.2, duration: 0.4 } : { duration: 0 }}
       className="space-y-3"
     >
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {CARD_DEFS.map((card, i) => (
           <SetupCardItem
             key={card.id}
@@ -564,9 +743,16 @@ export default function SetupCards() {
         <SetupStepper
           isOpen={stepperOpen}
           onClose={() => setStepperOpen(false)}
+          onFinish={handleStepperFinish}
           initialStep={initialStep}
         />
       )}
+
+      <SetupCelebration
+        isOpen={celebrationOpen}
+        onCreateAgent={handleCreateAgent}
+        onDismiss={handleDismiss}
+      />
     </motion.div>
   );
 }

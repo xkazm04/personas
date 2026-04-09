@@ -7,6 +7,7 @@ import type { SensoryPolicy } from '@/lib/bindings/SensoryPolicy';
 import type { ContextRule } from '@/lib/bindings/ContextRule';
 import type { ContextAction } from '@/lib/bindings/ContextAction';
 import { DEFAULT_SENSORY_POLICY } from '@/stores/slices/system/ambientContextSlice';
+import { useSettingsTranslation } from '@/features/settings/i18n/useSettingsTranslation';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -22,6 +23,7 @@ const ACTION_LABELS: Record<ContextAction, string> = {
 
 
 export function AmbientContextPanel() {
+  const { t } = useSettingsTranslation();
   const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
   const {
     ambientSnapshot,
@@ -159,18 +161,17 @@ export function AmbientContextPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-blue-400" />
-          <h3 className="text-sm font-medium text-foreground">Ambient Context Fusion</h3>
+          <h3 className="text-sm font-medium text-foreground">{t.ambientContext.title}</h3>
         </div>
         <AccessibleToggle
           checked={ambientEnabled}
           onChange={handleToggleEnabled}
-          label="Ambient context fusion"
+          label={t.ambientContext.toggleLabel}
         />
       </div>
 
       <p className="text-xs text-muted-foreground/60">
-        Ambient context captures clipboard, file changes, and app focus signals to give personas
-        awareness of your desktop workflow.
+        {t.ambientContext.description}
       </p>
 
       {/* Context Stream Stats */}

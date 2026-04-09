@@ -371,7 +371,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
     })
 }
 
-fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
+pub(crate) fn row_to_persona(row: &Row) -> rusqlite::Result<Persona> {
     row_to_persona_with_mode(row, ProfileMode::Decrypt)
 }
 

@@ -2,6 +2,7 @@ import { Check, Sun, Type, Languages } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, TextScale, BrightnessLevel } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
+import { useOnboardingTranslation } from '@/features/onboarding/i18n/useOnboardingTranslation';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
@@ -27,6 +28,8 @@ export function AppearanceStep() {
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const { language, setLanguage } = useI18nStore();
+  const { t: onb } = useOnboardingTranslation();
+  const a = onb.appearance;
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -34,9 +37,9 @@ export function AppearanceStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading text-foreground/90 mb-1">Set up your preferences</h3>
+        <h3 className="typo-heading text-foreground/90 mb-1">{a.title}</h3>
         <p className="text-sm text-muted-foreground/60">
-          Configure language, text size, and theme. You can change these anytime in Settings.
+          {a.hint}
         </p>
       </div>
 
@@ -44,7 +47,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">Language</span>
+          <span className="text-sm font-medium text-foreground/80">{a.language}</span>
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {ONBOARDING_LANGUAGES.map((lang) => {
@@ -72,7 +75,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">Text Size</span>
+          <span className="text-sm font-medium text-foreground/80">{a.text_size}</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {TEXT_SCALES.map((scale) => {
@@ -99,7 +102,7 @@ export function AppearanceStep() {
 
       {/* Dark themes */}
       <div className="space-y-2">
-        <span className="text-sm text-muted-foreground/50">Dark</span>
+        <span className="text-sm text-muted-foreground/50">{a.dark}</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {darkThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -130,7 +133,7 @@ export function AppearanceStep() {
 
       {/* Light themes */}
       <div className="space-y-2">
-        <span className="text-sm text-muted-foreground/50">Light</span>
+        <span className="text-sm text-muted-foreground/50">{a.light}</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {lightThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -161,9 +164,9 @@ export function AppearanceStep() {
 
       {/* Brightness */}
       <div className="space-y-2">
-        <span className="text-sm text-muted-foreground/50">Brightness</span>
+        <span className="text-sm text-muted-foreground/50">{a.brightness}</span>
         <p className="text-sm text-muted-foreground/50">
-          If the app feels too dark on your monitor, increase brightness.
+          {a.brightness_hint}
         </p>
         <div className="grid grid-cols-3 gap-2">
           {brightnessLevels.map((level, i) => {

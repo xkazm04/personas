@@ -1,5 +1,6 @@
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
+import { LabStaggerGroup, LabStaggerItem } from '../shared/LabStaggerGroup';
 import type { VersionAggregate } from '../../libs/evalAggregation';
 
 interface EvalVersionCardsProps {
@@ -53,24 +54,23 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
   return (
     <div className="space-y-3">
       <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Version Performance</h4>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(versionAggs.length, 4)}, 1fr)` }}>
+      <LabStaggerGroup className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(versionAggs.length, 4)}, 1fr)` }}>
         {versionAggs.map((agg, idx) => {
           const isWinner = agg.versionId === winnerId;
           const c = colors[idx % colors.length]!;
           return (
-            <div key={agg.versionId} data-testid={`eval-version-card-${agg.versionNumber}`}
-              className={`rounded-xl border overflow-hidden transition-all animate-fade-slide-in ${
+            <LabStaggerItem key={agg.versionId} data-testid={`eval-version-card-${agg.versionNumber}`}
+              className={`rounded-xl border overflow-hidden transition-all ${
                 isWinner
                   ? `${c.border} shadow-elevation-3 shadow-primary/5 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20' : ''}`
                   : 'border-primary/10'
-              }`}
-              style={{ animationDelay: `${idx * 60}ms`, animationDuration: '300ms' }}>
+              }`}>
               {/* Card header */}
               <div className={`px-4 py-2.5 bg-gradient-to-r ${isWinner ? c.gradient : 'from-secondary/40 to-secondary/20'}`}>
                 <div className="flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
                   {isWinner && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-2.5 h-2.5" /> Best
                     </span>
                   )}
@@ -83,7 +83,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
                   <span className={`text-2xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                   <div>
                     <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
-                    <p className="text-[10px] text-muted-foreground/50">Composite</p>
+                    <p className="typo-caption text-muted-foreground/50">Composite</p>
                   </div>
                 </div>
 
@@ -93,15 +93,15 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
                   <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
                 </div>
 
-                <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-muted-foreground/50">
+                <div className="flex items-center gap-3 pt-1 border-t border-primary/5 typo-body text-muted-foreground/50">
                   <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
                 </div>
               </div>
-            </div>
+            </LabStaggerItem>
           );
         })}
-      </div>
+      </LabStaggerGroup>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
+import { LabStaggerGroup, LabStaggerItem } from '../shared/LabStaggerGroup';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
@@ -9,6 +10,7 @@ import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { MatrixScoreComparison } from './MatrixScoreComparison';
 import { useAgentStore } from "@/stores/agentStore";
 import { aggregateMatrixResults } from '../../libs/labAggregation';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 interface UserRatingEntry {
   rating: number;
@@ -36,31 +38,31 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
   const draftAgg = variantAggs.find((a) => a.variant === 'draft');
 
   return (
-    <div className="space-y-6">
+    <LabStaggerGroup className="space-y-6">
       {run.draftPromptJson && (
-        <div className="space-y-2">
+        <LabStaggerItem className="space-y-2">
           <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" />
             Draft Changes
           </h4>
           <DraftDiffViewer currentPromptJson={selectedPersona?.structured_prompt ?? null}
             draftPromptJson={run.draftPromptJson} changeSummary={run.draftChangeSummary} />
-        </div>
+        </LabStaggerItem>
       )}
 
-      {variantAggs.length === 2 && <MatrixScoreComparison currentAgg={currentAgg} draftAgg={draftAgg} />}
+      {variantAggs.length === 2 && <LabStaggerItem><MatrixScoreComparison currentAgg={currentAgg} draftAgg={draftAgg} /></LabStaggerItem>}
 
       {scenarios.length > 0 && (
-        <div className="space-y-2">
+        <LabStaggerItem className="space-y-2">
           <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
             Scenario Breakdown
             <span className="text-xs font-normal text-muted-foreground/50 ml-1">Click a cell for details</span>
           </h4>
-          <div className="overflow-x-auto border border-primary/10 rounded-xl">
-            <table className="w-full text-sm">
+          <div className={`overflow-x-auto border ${BORDER_DEFAULT} rounded-card`}>
+            <table className="w-full typo-body">
               <thead>
-                <tr className="border-b border-primary/10 bg-secondary/30">
+                <tr className={`border-b ${BORDER_DEFAULT} bg-secondary/30`}>
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">Scenario</th>
                   <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">Current</th>
                   <th className="text-center px-3 py-2.5 font-medium text-violet-400">Draft</th>
@@ -122,7 +124,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
               />
             </table>
           </div>
-        </div>
+        </LabStaggerItem>
       )}
 
       {/* Scenario detail panel */}
@@ -149,6 +151,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
               errorMessage: r.errorMessage,
               rationale: r.rationale ?? null,
               suggestions: r.suggestions ?? null,
+              evalMethod: r.evalMethod ?? null,
             }}
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
@@ -174,6 +177,6 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
           <Check className="w-4 h-4" />Draft accepted and applied
         </div>
       )}
-    </div>
+    </LabStaggerGroup>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   motion, AnimatePresence, useMotionValue, useTransform,
 } from 'framer-motion';
@@ -9,9 +9,10 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
+import { DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor } from '../constants/ideaColors';
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
-import { ProjectSelector } from '../DevToolsPage';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,19 +39,6 @@ interface TriageIdea {
 
 const SWIPE_THRESHOLD = 150;
 
-function levelColor(value: number): string {
-  if (value <= 3) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-  if (value <= 6) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
-  return 'bg-red-500/15 text-red-400 border-red-500/25';
-}
-
-const DEFAULT_TRIAGE_TW = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25', dot: 'bg-blue-400' };
-const CATEGORY_TW: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  technical: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25', dot: 'bg-blue-400' },
-  user: { bg: 'bg-pink-500/15', text: 'text-pink-400', border: 'border-pink-500/25', dot: 'bg-pink-400' },
-  business: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/25', dot: 'bg-amber-400' },
-  mastermind: { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/25', dot: 'bg-violet-400' },
-};
 
 // ---------------------------------------------------------------------------
 // Swipe Card
@@ -85,7 +73,7 @@ function SwipeCard({
     ],
   );
 
-  const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_TRIAGE_TW;
+  const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_CATEGORY_TW;
   const catLabel = AGENT_CATEGORIES.find((c) => c.key === idea.category)?.label ?? idea.category;
 
   const scale = 1 - stackIndex * 0.04;
@@ -132,12 +120,20 @@ function SwipeCard({
 
       {/* Card content */}
       <div className="p-6 h-full flex flex-col">
-        {/* Category + agent */}
-        <div className="flex items-center gap-2 mb-4">
+        {/* Category + agent + effort/impact/risk */}
+        <div className="flex items-center gap-1.5 flex-wrap mb-4">
           <span className="text-xl">{idea.agentEmoji}</span>
           <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
+          {(['effort', 'impact', 'risk'] as const).map((key) => (
+            <span
+              key={key}
+              className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(idea[key])}`}
+            >
+              {key}: {idea[key]}
+            </span>
+          ))}
         </div>
 
         {/* Title + description */}
@@ -148,23 +144,11 @@ function SwipeCard({
 
         {/* Reasoning */}
         {idea.reasoning && (
-          <div className="bg-primary/5 rounded-xl p-3 mb-4">
+          <div className="bg-primary/5 rounded-xl p-3">
             <p className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">Reasoning</p>
             <p className="text-md text-muted-foreground/60 leading-relaxed">{idea.reasoning}</p>
           </div>
         )}
-
-        {/* Badges */}
-        <div className="flex items-center gap-1.5 flex-wrap mt-auto pt-3 border-t border-primary/5">
-          {(['effort', 'impact', 'risk'] as const).map((key) => (
-            <span
-              key={key}
-              className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(idea[key])}`}
-            >
-              {key}: {idea[key]}
-            </span>
-          ))}
-        </div>
       </div>
     </motion.div>
   );
@@ -223,20 +207,26 @@ export default function IdeaTriagePage() {
 
   const visibleStack = pendingIdeas.slice(0, 3);
 
+  // Keep a ref to always have the latest pending ideas — avoids stale closure
+  // in the keyboard handler when the effect teardown/re-register races with
+  // rapid keypresses after a triage action.
+  const pendingRef = useRef(pendingIdeas);
+  pendingRef.current = pendingIdeas;
+
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
-    const idea = pendingIdeas[0];
+    const idea = pendingRef.current[0];
     if (!idea) return;
     const decision = direction === 'right' ? 'accepted' : 'rejected';
     triageIdea(idea.id, decision);
-  }, [pendingIdeas, triageIdea]);
+  }, [triageIdea]);
 
   const handleDelete = useCallback(() => {
-    const idea = pendingIdeas[0];
+    const idea = pendingRef.current[0];
     if (!idea) return;
     deleteIdea(idea.id);
-  }, [pendingIdeas, deleteIdea]);
+  }, [deleteIdea]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — stable listener (no dep on handleSwipe/pendingIdeas)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -246,7 +236,7 @@ export default function IdeaTriagePage() {
         setShowShortcuts((prev) => !prev);
         return;
       }
-      if (e.key === 'Escape' && showShortcuts) {
+      if (e.key === 'Escape') {
         setShowShortcuts(false);
         return;
       }
@@ -260,7 +250,7 @@ export default function IdeaTriagePage() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleSwipe, showShortcuts]);
+  }, [handleSwipe]);
 
   return (
     <ContentBox>
@@ -271,6 +261,7 @@ export default function IdeaTriagePage() {
         subtitle="Evaluate and prioritize generated ideas"
         actions={
           <div className="flex items-center gap-2">
+            <LifecycleProjectPicker />
             <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
               {acceptedCount} accepted
             </span>
@@ -289,9 +280,7 @@ export default function IdeaTriagePage() {
             </button>
           </div>
         }
-      >
-        <ProjectSelector />
-      </ContentHeader>
+      />
 
       <ContentBody>
         {/* Auto-Triage Rules Panel */}
@@ -301,7 +290,7 @@ export default function IdeaTriagePage() {
           </div>
         )}
 
-        <div className="flex gap-6 h-full min-h-[500px]">
+        <div className="flex gap-2 h-full min-h-[500px]">
           {/* Left sidebar: category + scan type filters + effort/risk filter */}
           <div className="w-52 flex-shrink-0 space-y-1">
             <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
@@ -319,7 +308,7 @@ export default function IdeaTriagePage() {
             </button>
             {AGENT_CATEGORIES.map((cat) => {
               const count = ideas.filter((i) => i.status === 'pending' && i.category === cat.key).length;
-              const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_TRIAGE_TW;
+              const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
               return (
                 <button
                   key={cat.key}
@@ -377,10 +366,10 @@ export default function IdeaTriagePage() {
           </div>
 
           {/* Center: card stack */}
-          <div className="flex-1 flex flex-col items-center justify-center min-w-0">
+          <div className="flex-1 flex flex-col items-center justify-center" style={{ minWidth: '540px' }}>
             {/* Progress bar */}
             {totalCount > 0 && (
-              <div className="w-full max-w-md mb-6">
+              <div className="w-full max-w-lg mb-6">
                 <div className="flex items-center justify-between text-md text-muted-foreground/50 mb-1.5">
                   <span>{pendingIdeas.length} remaining</span>
                   <span>{totalCount - pendingCount} / {totalCount} reviewed</span>
@@ -410,7 +399,7 @@ export default function IdeaTriagePage() {
                 </p>
               </div>
             ) : (
-              <div className="relative w-full max-w-md" style={{ height: '420px' }}>
+              <div className="relative w-full max-w-lg" style={{ height: '420px' }}>
                 <AnimatePresence>
                   {visibleStack.map((idea, i) => (
                     <SwipeCard

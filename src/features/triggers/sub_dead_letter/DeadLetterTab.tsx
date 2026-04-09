@@ -12,7 +12,17 @@ const MAX_MANUAL_RETRIES = 5;
 export function DeadLetterTab() {
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
+  const startAction = useCallback((id: string) => {
+    setActionsInProgress((prev) => new Set(prev).add(id));
+  }, []);
+  const endAction = useCallback((id: string) => {
+    setActionsInProgress((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
   const { modal, confirm } = useConfirmDestructive();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -31,7 +41,7 @@ export function DeadLetterTab() {
   useEffect(() => { void loadEvents(); }, [loadEvents]);
 
   const handleRetry = async (id: string) => {
-    setActionInProgress(id);
+    startAction(id);
     try {
       await retryDeadLetterEvent(id);
       setEvents((prev) => prev.filter((e) => e.id !== id));
@@ -43,7 +53,7 @@ export function DeadLetterTab() {
         addToast('Failed to retry event — please try again', 'error');
       }
     } finally {
-      setActionInProgress(null);
+      endAction(id);
     }
   };
 
@@ -57,14 +67,14 @@ export function DeadLetterTab() {
         { label: 'Retries', value: String(evt.retry_count) },
       ],
       onConfirm: async () => {
-        setActionInProgress(evt.id);
+        startAction(evt.id);
         try {
           await discardDeadLetterEvent(evt.id);
           setEvents((prev) => prev.filter((e) => e.id !== evt.id));
         } catch {
           addToast('Failed to discard event — please try again', 'error');
         } finally {
-          setActionInProgress(null);
+          endAction(evt.id);
         }
       },
     });
@@ -161,17 +171,17 @@ export function DeadLetterTab() {
                     ) : (
                       <button
                         onClick={() => void handleRetry(evt.id)}
-                        disabled={actionInProgress === evt.id}
+                        disabled={actionsInProgress.has(evt.id)}
                         className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
                         title={`Retry this event (${evt.retry_count}/${MAX_MANUAL_RETRIES} attempts used)`}
                       >
-                        <RefreshCw className={`w-3 h-3 ${actionInProgress === evt.id ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
                         Retry
                       </button>
                     )}
                     <button
                       onClick={() => handleDiscard(evt)}
-                      disabled={actionInProgress === evt.id}
+                      disabled={actionsInProgress.has(evt.id)}
                       className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
                       title="Discard this event permanently"
                     >

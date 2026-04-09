@@ -7,6 +7,8 @@ import { listHealingAuditLog } from '@/api/overview/healing';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
+import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 interface HealingIssuesPanelProps {
@@ -53,10 +55,13 @@ export function HealingIssuesPanel({
     if (issue) setSelectedIssue(issue);
   };
 
+  const { t } = useOverviewTranslation();
+
   // Audit log state with 30-second cache to avoid duplicate API calls on toggle
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [auditEntries, setAuditEntries] = useState<HealingAuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
   const auditCacheRef = useRef<{ personaId: string | null; ts: number }>({ personaId: null, ts: 0 });
 
   const fetchAudit = useCallback(async () => {
@@ -66,16 +71,17 @@ export function HealingIssuesPanel({
       return;
     }
     setAuditLoading(true);
+    setAuditError(null);
     try {
       const entries = await listHealingAuditLog(selectedPersonaId ?? undefined, 50);
       setAuditEntries(entries);
       auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
     } catch {
-      // non-critical -- silently degrade
+      setAuditError(t.errorRecovery.audit_fetch_failed);
     } finally {
       setAuditLoading(false);
     }
-  }, [selectedPersonaId]);
+  }, [selectedPersonaId, t.errorRecovery.audit_fetch_failed]);
 
   useEffect(() => {
     if (auditExpanded) fetchAudit();
@@ -242,7 +248,19 @@ export function HealingIssuesPanel({
 
         {auditExpanded && (
           <div className="px-4 pb-3 max-h-64 overflow-y-auto">
-            {auditLoading ? (
+            {auditError ? (
+              <div className="py-2">
+                <ErrorRecoveryBanner
+                  severity="warning"
+                  message={auditError}
+                  cause={t.errorRecovery.audit_fetch_cause}
+                  actionType="retry"
+                  actionLabel={t.errorRecovery.action_retry}
+                  onAction={() => { auditCacheRef.current = { personaId: null, ts: 0 }; fetchAudit(); }}
+                  compact
+                />
+              </div>
+            ) : auditLoading ? (
               <div className="flex items-center justify-center py-4">
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
               </div>

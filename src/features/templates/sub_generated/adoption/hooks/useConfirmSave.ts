@@ -109,7 +109,7 @@ export function useConfirmSave({
 
       // Auto-assign an agent icon if the draft doesn't already have one
       if (!normalized.icon || !isAgentIcon(normalized.icon)) {
-        const agentIcon = resolveTemplateAgentIcon(reviewTestCaseName ?? state.templateName);
+        const agentIcon = await resolveTemplateAgentIcon(reviewTestCaseName ?? state.templateName);
         if (agentIcon) {
           normalized.icon = agentIcon.icon;
           if (!normalized.color) normalized.color = agentIcon.color;

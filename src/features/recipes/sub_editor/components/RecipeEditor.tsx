@@ -6,6 +6,7 @@ import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { TagChipInput } from './TagChipInput';
 import { SchemaFieldBuilder, type SchemaField } from './SchemaFieldBuilder';
+import { parseTags, parseSchemaFields } from '@/features/recipes/shared/recipeParseUtils';
 
 interface RecipeEditorProps {
   /** null = create mode, RecipeDefinition = edit mode */
@@ -15,32 +16,6 @@ interface RecipeEditorProps {
 }
 
 const CATEGORIES = ['analysis', 'automation', 'generation', 'transform', 'monitoring'];
-
-function parseTagsString(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function parseSchemaString(raw: string | null | undefined): SchemaField[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((f: Record<string, unknown>) => ({
-      key: String(f.key ?? ''),
-      type: String(f.type ?? 'text'),
-      label: String(f.label ?? ''),
-      default: f.default != null ? String(f.default) : '',
-    }));
-  } catch {
-    return [];
-  }
-}
 
 function serializeTags(tags: string[]): string | null {
   return tags.length > 0 ? JSON.stringify(tags) : null;
@@ -66,8 +41,8 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
   const [category, setCategory] = useState(recipe?.category ?? '');
   const [promptTemplate, setPromptTemplate] = useState(recipe?.prompt_template ?? '');
 
-  const initialTags = useMemo(() => parseTagsString(recipe?.tags), [recipe?.tags]);
-  const initialSchema = useMemo(() => parseSchemaString(recipe?.input_schema), [recipe?.input_schema]);
+  const initialTags = useMemo(() => parseTags(recipe?.tags), [recipe?.tags]);
+  const initialSchema = useMemo(() => parseSchemaFields(recipe?.input_schema) as SchemaField[], [recipe?.input_schema]);
   const [tags, setTags] = useState<string[]>(initialTags);
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>(initialSchema);
   const [saving, setSaving] = useState(false);

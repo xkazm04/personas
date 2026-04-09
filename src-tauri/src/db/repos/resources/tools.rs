@@ -4,7 +4,7 @@ use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefin
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_tool_def(row: &Row) -> rusqlite::Result<PersonaToolDefinition> {
+pub(crate) fn row_to_tool_def(row: &Row) -> rusqlite::Result<PersonaToolDefinition> {
     Ok(PersonaToolDefinition {
         id: row.get("id")?,
         name: row.get("name")?,
@@ -174,8 +174,11 @@ pub fn update_definition(
 pub fn delete_definition(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_tool_definitions", "persona_tool_definitions::delete_definition", {
         let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM persona_tools WHERE tool_id = ?1", params![id])?;
         let rows =
-            conn.execute("DELETE FROM persona_tool_definitions WHERE id = ?1", params![id])?;
+            tx.execute("DELETE FROM persona_tool_definitions WHERE id = ?1", params![id])?;
+        tx.commit()?;
         Ok(rows > 0)
 
     })
@@ -531,5 +534,80 @@ mod tests {
         // Only one row should exist
         let tools = get_tools_for_persona(&pool, &persona.id).unwrap();
         assert_eq!(tools.len(), 1);
+    }
+
+    #[test]
+    fn test_delete_definition_cleans_up_persona_tools() {
+        let pool = init_test_db().unwrap();
+
+        use crate::db::models::CreatePersonaInput;
+        let persona = crate::db::repos::core::personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Orphan Cleanup Agent".into(),
+                system_prompt: "Test orphan cleanup.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        // Create a custom tool definition
+        let def = create_definition(
+            &pool,
+            CreateToolDefinitionInput {
+                name: "orphan_test_tool".into(),
+                category: "custom".into(),
+                description: "Will be deleted".into(),
+                script_path: "/tmp/test.sh".into(),
+                input_schema: None,
+                output_schema: None,
+                requires_credential_type: None,
+                implementation_guide: None,
+                is_builtin: Some(false),
+            },
+        )
+        .unwrap();
+
+        // Assign it to the persona
+        assign_tool(&pool, &persona.id, &def.id, None).unwrap();
+        assert_eq!(get_tools_for_persona(&pool, &persona.id).unwrap().len(), 1);
+
+        // Verify junction row exists
+        let conn = pool.get().unwrap();
+        let junction_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_tools WHERE tool_id = ?1",
+                params![def.id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(junction_count, 1);
+
+        // Delete the definition — should also remove persona_tools rows
+        let deleted = delete_definition(&pool, &def.id).unwrap();
+        assert!(deleted);
+
+        // Junction row must be gone (no orphan)
+        let orphan_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_tools WHERE tool_id = ?1",
+                params![def.id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(orphan_count, 0, "persona_tools should have no orphaned rows after definition delete");
     }
 }

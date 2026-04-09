@@ -343,7 +343,7 @@ export default function EventLogList() {
               data={displayedEvents}
               getRowKey={(e) => e.id}
               onRowClick={setSelectedEvent}
-              isLoading={isLoading}
+              isLoading={isLoading || isSearching}
               emptyTitle="No events match current filters"
               rowHeight={44}
               className="flex-1"

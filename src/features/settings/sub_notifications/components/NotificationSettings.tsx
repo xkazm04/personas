@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert, Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SaveFeedbackCheck } from '@/features/shared/components/feedback/SaveFeedbackCheck';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
+import { useSettingsSaveToast } from '@/hooks/utility/interaction/useSettingsSaveToast';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SETTINGS_KEY = 'notification_prefs';
 
@@ -53,7 +56,9 @@ const SEVERITY_ROWS: Array<{
 ];
 
 function WeeklyDigestToggle() {
+  const { t } = useTranslation();
   const digestSetting = useAppSetting('health_digest_enabled', 'true', (v) => v === 'true' || v === 'false');
+  const feedback = useSettingsSaveToast(t.settings.settings_saved);
 
   const enabled = digestSetting.value === 'true';
 
@@ -69,7 +74,9 @@ function WeeklyDigestToggle() {
       digestLoadedOnce.current = true;
       return;
     }
-    const timer = setTimeout(() => digestSetting.save(), 300);
+    const timer = setTimeout(() => {
+      digestSetting.save().then(feedback.trigger);
+    }, 300);
     return () => clearTimeout(timer);
   }, [digestSetting.value]);
 
@@ -84,25 +91,31 @@ function WeeklyDigestToggle() {
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="space-y-0.5">
           <span className="text-sm font-medium text-foreground/80">Agent Health Digest</span>
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             Weekly notification summarizing health issues across all agents with a total health score
           </p>
         </div>
-        <AccessibleToggle
-          checked={enabled}
-          onChange={handleToggle}
-          label="Weekly health digest"
-        />
+        <div className="flex items-center gap-2">
+          <SaveFeedbackCheck visible={feedback.visible} />
+          <AccessibleToggle
+            checked={enabled}
+            onChange={handleToggle}
+            label="Weekly health digest"
+          />
+        </div>
       </div>
     </div>
   );
 }
 
 export default function NotificationSettings() {
+  const { t } = useTranslation();
   const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
+  const lastToggledKey = useRef<keyof NotificationPrefs | null>(null);
+  const feedback = useSettingsSaveToast(t.settings.settings_saved);
 
   // Auto-save whenever value changes (debounced to prevent race conditions from rapid toggles)
   useEffect(() => {
@@ -111,7 +124,9 @@ export default function NotificationSettings() {
       hasLoadedOnce.current = true;
       return;
     }
-    const timer = setTimeout(() => setting.save(), 300);
+    const timer = setTimeout(() => {
+      setting.save().then(feedback.trigger);
+    }, 300);
     return () => clearTimeout(timer);
   }, [setting.value]); // intentionally not including setting.save
 
@@ -126,6 +141,7 @@ export default function NotificationSettings() {
 
   const toggle = useCallback(
     (key: keyof NotificationPrefs) => {
+      lastToggledKey.current = key;
       const next = { ...prefs, [key]: !prefs[key] };
       setting.setValue(JSON.stringify(next));
     },
@@ -156,13 +172,16 @@ export default function NotificationSettings() {
                 <div key={key} className="flex items-center justify-between px-4 py-3">
                   <div className="space-y-0.5">
                     <span className={`text-sm font-medium ${color}`}>{label}</span>
-                    <p className="text-sm text-muted-foreground/80">{description}</p>
+                    <p className="text-sm text-foreground">{description}</p>
                   </div>
-                  <AccessibleToggle
-                    checked={prefs[key]}
-                    onChange={() => toggle(key)}
-                    label={`${label} notifications`}
-                  />
+                  <div className="flex items-center gap-2">
+                    <SaveFeedbackCheck visible={feedback.visible && lastToggledKey.current === key} />
+                    <AccessibleToggle
+                      checked={prefs[key]}
+                      onChange={() => toggle(key)}
+                      label={`${label} notifications`}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -171,7 +190,7 @@ export default function NotificationSettings() {
           {/* Weekly Health Digest */}
           <WeeklyDigestToggle />
 
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.
           </p>
         </div>

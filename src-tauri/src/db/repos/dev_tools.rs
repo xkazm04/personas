@@ -2225,6 +2225,7 @@ fn row_to_competition(row: &Row) -> rusqlite::Result<DevCompetition> {
         status: row.get("status")?,
         winner_task_id: row.get("winner_task_id")?,
         winner_insight: row.get::<_, Option<String>>("winner_insight").ok().flatten(),
+        baseline_json: row.get::<_, Option<String>>("baseline_json").ok().flatten(),
         reviewer_notes: row.get("reviewer_notes")?,
         created_at: row.get("created_at")?,
         resolved_at: row.get("resolved_at")?,
@@ -2304,16 +2305,18 @@ pub fn list_competitions_by_project(
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 AND status = ?2 ORDER BY created_at DESC",
             )?;
-            stmt.query_map(params![project_id, s], row_to_competition)?
+            let result = stmt.query_map(params![project_id, s], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
+                .map_err(AppError::Database)?;
+            result
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 ORDER BY created_at DESC",
             )?;
-            stmt.query_map(params![project_id], row_to_competition)?
+            let result = stmt.query_map(params![project_id], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
+                .map_err(AppError::Database)?;
+            result
         };
         Ok(rows)
     })

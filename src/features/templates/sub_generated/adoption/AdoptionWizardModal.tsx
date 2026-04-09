@@ -39,7 +39,7 @@ export default function AdoptionWizardModal({
               <h2 id="adoption-matrix-title" className="text-sm font-semibold text-foreground/90">
                 Adopt Template
               </h2>
-              <p className="text-[11px] text-muted-foreground/60">{review.test_case_name}</p>
+              <p className="text-[11px] text-foreground">{review.test_case_name}</p>
             </div>
           </div>
           <button

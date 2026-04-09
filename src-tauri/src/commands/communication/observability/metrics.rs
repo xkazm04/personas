@@ -87,13 +87,21 @@ pub fn get_all_monthly_spend(
     let local_month_start_dt = local_month_start
         .and_hms_opt(0, 0, 0)
         .unwrap();
-    // Convert local start-of-month back to UTC
+    // Convert local start-of-month back to UTC.
+    // Use earliest() instead of single() so that DST-ambiguous times resolve
+    // to the earlier UTC instant (guaranteeing period_start <= now).
+    // The fallback manually subtracts the offset rather than misinterpreting
+    // the local naive datetime as UTC.
     let period_start_utc: chrono::DateTime<chrono::Utc> = local_offset
         .from_local_datetime(&local_month_start_dt)
-        .single()
+        .earliest()
         .map(|dt| dt.with_timezone(&chrono::Utc))
         .unwrap_or_else(|| {
-            chrono::DateTime::from_naive_utc_and_offset(local_month_start_dt, chrono::Utc)
+            // Gap (e.g. spring-forward): subtract the offset manually so the
+            // result is always at-or-before now, never in the future.
+            let offset_secs = chrono::Duration::seconds(offset_mins as i64 * 60);
+            let naive_utc = local_month_start_dt - offset_secs;
+            chrono::DateTime::from_naive_utc_and_offset(naive_utc, chrono::Utc)
         });
 
     let period_start_str = period_start_utc.format("%Y-%m-%dT%H:%M:%S").to_string();

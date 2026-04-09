@@ -11,7 +11,6 @@ import {
   type SyncLogEntry,
   type SyncConflict,
   type PushSyncResult,
-  type PullSyncResult,
 } from '@/api/obsidianBrain';
 
 export default function SyncPanel() {
@@ -27,7 +26,6 @@ export default function SyncPanel() {
   const [pushing, setPushing] = useState(false);
   const [pulling, setPulling] = useState(false);
   const [pushResult, setPushResult] = useState<PushSyncResult | null>(null);
-  const [, setPullResult] = useState<PullSyncResult | null>(null);
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
 
@@ -74,7 +72,6 @@ export default function SyncPanel() {
     setSyncRunning(true);
     try {
       const result = await obsidianBrainPullSync();
-      setPullResult(result);
       setConflicts(result.conflicts);
       setPendingConflicts(result.conflicts.length);
       setLastSyncAt(new Date().toISOString());

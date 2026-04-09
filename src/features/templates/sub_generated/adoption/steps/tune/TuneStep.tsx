@@ -73,7 +73,7 @@ export function TuneStep() {
       {/* Step header */}
       <div className="mb-1">
         <h3 className="text-base font-semibold text-foreground">Customize Persona</h3>
-        <p className="text-sm text-muted-foreground/60 mt-0.5">
+        <p className="text-sm text-foreground mt-0.5">
           Answer questions to tailor the persona to your needs, then configure triggers and policies.
           {hasRequiredMissing && (
             <span className="text-amber-400/70 ml-1">Required fields marked below.</span>

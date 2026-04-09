@@ -2,18 +2,23 @@ import { Cpu, RotateCcw, AlertTriangle, Check, Minus, Lock } from 'lucide-react'
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
+import { useSettingsSaveToast } from '@/hooks/utility/interaction/useSettingsSaveToast';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
 import { AmbientContextPanel } from '@/features/settings/components/AmbientContextPanel';
 
 export default function EngineSettings() {
+  const { t } = useTranslation();
+  const { trigger } = useSettingsSaveToast(t.settings.settings_saved);
+
   const {
     installedProviders,
     loaded,
     isEnabled,
     toggle,
     resetToDefaults,
-  } = useEngineCapabilities();
+  } = useEngineCapabilities({ onSave: trigger });
 
   if (!loaded) {
     return (

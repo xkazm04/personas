@@ -49,8 +49,10 @@ export const TemplateCard = memo(function TemplateCard({
     tier,
     verification,
     systemPromptPreview,
+    difficulty,
     difficultyMeta,
     setupMeta,
+    setupMinutes,
   } = useTemplateCardData(review, installedConnectorNames, credentialServiceTypes, hasInteracted);
 
   return (
@@ -72,8 +74,10 @@ export const TemplateCard = memo(function TemplateCard({
           motionCss={MOTION.snappy.css}
           onViewDetails={onViewDetails}
           onDelete={onDelete}
+          difficulty={difficulty}
           difficultyMeta={difficultyMeta}
           setupMeta={setupMeta}
+          setupMinutes={setupMinutes}
         />
 
         <TemplateCardBody

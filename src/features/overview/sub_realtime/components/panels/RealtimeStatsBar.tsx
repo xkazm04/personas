@@ -1,6 +1,8 @@
 import { memo } from 'react';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Radio } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
   testFlowLoading: boolean;
   onPause: () => void;
   onTestFlow: () => void;
+  onReconnect?: () => void;
 }
 
 const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: string | number; color?: string }) {
@@ -23,9 +26,22 @@ const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: s
   );
 });
 
-export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow }: Props) {
+export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow, onReconnect }: Props) {
+  const { t } = useOverviewTranslation();
+
   return (
-    <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
+    <div className="bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
+    {!isConnected && !isPaused && (
+      <ErrorRecoveryBanner
+        severity="warning"
+        message={t.errorRecovery.offline_message}
+        cause={t.errorRecovery.offline_cause}
+        actionLabel={t.errorRecovery.offline_action}
+        onAction={onReconnect}
+        compact
+      />
+    )}
+    <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4">
       <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
         <div className="flex items-center gap-1.5 sm:gap-2 bg-background/50 px-2 sm:px-3 py-1.5 rounded-xl border border-primary/5 shadow-inner">
           <div className="relative flex h-2 w-2">
@@ -92,6 +108,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
         </button>
       </div>
+    </div>
     </div>
   );
 }

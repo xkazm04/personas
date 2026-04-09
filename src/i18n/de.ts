@@ -116,8 +116,10 @@ export const de = {
     appearance: "Darstellung",
     notifications: "Benachrichtigungen",
     engine: "Engine",
-    byom: "BYOM",
+    byom: "Modellanbieter",
     data: "Daten",
+    quality_gates: "Inhaltsfilter",
+    config_resolution: "Agenten-Konfiguration",
     admin: "Admin",
 
     coming_soon: "Demnächst verfügbar",
@@ -887,6 +889,7 @@ export const de = {
 
   settings: {
     title: "Einstellungen",
+    settings_saved: "Gespeichert",
 
     account: {
       title: "Konto",

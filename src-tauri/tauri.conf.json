@@ -91,15 +91,24 @@
           "English",
           "SimpChinese",
           "Arabic",
+          "Hindi",
+          "Russian",
+          "Indonesian",
           "Spanish",
           "French",
-          "German",
           "Japanese",
+          "Vietnamese",
+          "German",
           "Korean",
-          "Russian",
           "Czech",
           "PortugueseBR"
-        ]
+        ],
+        "customLanguageFiles": {
+          "Czech": "nsis/languages/Czech.nsh",
+          "Vietnamese": "nsis/languages/Vietnamese.nsh",
+          "Hindi": "nsis/languages/Hindi.nsh",
+          "Indonesian": "nsis/languages/Indonesian.nsh"
+        }
       }
     }
   }

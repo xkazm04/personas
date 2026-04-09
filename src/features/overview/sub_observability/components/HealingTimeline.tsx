@@ -4,6 +4,8 @@ import {
   ChevronDown, ChevronRight, Tag, Search, Shield,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ChartEmptyState } from '@/features/shared/components/display/ChartEmptyState';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
@@ -223,6 +225,18 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
   );
 }
 
+function HealingEmptyState() {
+  const { t } = useOverviewTranslation();
+  const es = t.emptyState;
+  return (
+    <ChartEmptyState
+      variant="healing"
+      title={es.healing_title}
+      description={es.healing_subtitle}
+    />
+  );
+}
+
 export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimelineProps) {
   const { chains, knowledgeEvents } = useMemo(() => {
     const knowledgeEvents = events.filter(e => e.eventType === 'knowledge');
@@ -276,17 +290,7 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
   }
 
   if (chains.length === 0 && knowledgeEvents.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <div className="text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
-            <CheckCircle className="w-6 h-6 text-emerald-400" />
-          </div>
-          <p className="typo-heading text-foreground/80">No healing events</p>
-          <p className="text-sm text-muted-foreground mt-1">Run analysis to build the resilience timeline.</p>
-        </div>
-      </div>
-    );
+    return <HealingEmptyState />;
   }
 
   return (

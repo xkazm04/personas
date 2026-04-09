@@ -141,8 +141,10 @@ export const ru = {
     appearance: "Внешний вид",
     notifications: "Уведомления",
     engine: "Движок",
-    byom: "BYOM",
+    byom: "Провайдеры моделей",
     data: "Данные",
+    quality_gates: "Фильтры контента",
+    config_resolution: "Конфигурация агентов",
     admin: "Администрирование",
 
     coming_soon: "Скоро",
@@ -938,6 +940,7 @@ export const ru = {
 
   settings: {
     title: "Настройки",
+    settings_saved: "Сохранено",
 
     account: {
       title: "Аккаунт",

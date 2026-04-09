@@ -3,6 +3,7 @@ import { Grid3X3 } from 'lucide-react';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
+import { ExportReportButton } from '../shared/ExportReportButton';
 import { EvalResultsGrid } from './EvalResultsGrid';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import type { LabEvalRun } from '@/lib/bindings/LabEvalRun';
@@ -64,7 +65,10 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
           }
           footerActions={
             activeRun.status === 'completed' ? (
-              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="eval" />
+              <>
+                <ExportReportButton mode="eval" run={activeRun} results={resultsMap[activeRun.id] ?? []} />
+                <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="eval" />
+              </>
             ) : undefined
           }
         >

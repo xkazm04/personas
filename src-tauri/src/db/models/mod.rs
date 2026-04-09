@@ -54,6 +54,7 @@ mod sla;
 mod skill;
 mod obsidian_brain;
 mod external_api_key;
+mod twin;
 
 pub use json_column::Json;
 pub use persona::*;
@@ -110,3 +111,4 @@ pub use skill::*;
 pub use obsidian_brain::*;
 pub use agent_ir::*;
 pub use external_api_key::*;
+pub use twin::*;

@@ -12,6 +12,7 @@ import { ByomAuditLog } from './ByomAuditLog';
 import { ByomApiKeyManager } from './ByomApiKeyManager';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
+import { useSettingsTranslation } from '@/features/settings/i18n/useSettingsTranslation';
 
 const SECTION_TABS: { id: ByomSection; label: string; icon: typeof Shield }[] = [
   { id: 'policy', label: 'Providers', icon: Shield },
@@ -22,6 +23,7 @@ const SECTION_TABS: { id: ByomSection; label: string; icon: typeof Shield }[] = 
 ];
 
 export default function ByomSettings() {
+  const { t } = useSettingsTranslation();
   const bm = useByomSettings();
 
   const guardCallbacks = useMemo(() => ({
@@ -37,8 +39,8 @@ export default function ByomSettings() {
         <ContentHeader
           icon={<Network className="w-5 h-5 text-violet-400" />}
           iconColor="violet"
-          title="BYOM"
-          subtitle="Loading..."
+          title={t.byom.title}
+          subtitle={t.byom.loadingSubtitle}
         />
       </ContentBox>
     );
@@ -49,8 +51,8 @@ export default function ByomSettings() {
       <ContentHeader
         icon={<Network className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Bring Your Own Model"
-        subtitle="Configure approved providers, compliance restrictions, and cost-optimized routing"
+        title={t.byom.title}
+        subtitle={t.byom.subtitle}
         actions={
           <div className="flex items-center gap-2">
             {bm.isDirty && (
@@ -87,7 +89,7 @@ export default function ByomSettings() {
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-red-300">BYOM Policy Corrupted</h3>
+                <h3 className="text-sm font-medium text-red-300">{t.byom.corruptTitle}</h3>
                 <p className="text-sm text-red-300/80 mt-1">
                   The stored policy JSON could not be parsed. All provider restrictions are
                   currently inactive and executions are blocked. Reset the policy to restore
@@ -108,15 +110,15 @@ export default function ByomSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-foreground">BYOM Policy Enforcement</h3>
+                <h3 className="text-sm font-medium text-foreground">{t.byom.policyToggleTitle}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-0.5">
-                  When enabled, provider selection follows your configured rules
+                  {t.byom.policyToggleDescription}
                 </p>
               </div>
               <AccessibleToggle
                 checked={bm.policy.enabled}
                 onChange={bm.toggleEnabled}
-                label="BYOM policy enforcement"
+                label={t.byom.policyToggleLabel}
               />
             </div>
           </div>
@@ -190,7 +192,7 @@ export default function ByomSettings() {
       <UnsavedChangesModal
         isOpen={guard.isOpen}
         onAction={guard.resolve}
-        changedSections={['BYOM Policy']}
+        changedSections={[t.byom.unsavedSection]}
       />
     </ContentBox>
   );

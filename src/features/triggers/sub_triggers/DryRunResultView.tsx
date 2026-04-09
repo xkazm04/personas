@@ -1,4 +1,4 @@
-import { X, CheckCircle2, Zap, ArrowRight, Radio, FlaskConical } from 'lucide-react';
+import { X, CheckCircle2, Zap, ArrowRight, Radio, FlaskConical, AlertTriangle } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 
 interface DryRunResultViewProps {
@@ -6,7 +6,24 @@ interface DryRunResultViewProps {
 }
 
 export function DryRunResultView({ detail }: DryRunResultViewProps) {
-  const { dryRunResult, clearDryRunResult } = detail;
+  const { dryRunResult, dryRunError, clearDryRunResult, clearDryRunError } = detail;
+
+  if (dryRunError) {
+    return (
+      <div className="animate-fade-slide-in overflow-hidden">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-2.5 py-1.5 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-sm font-mono text-red-400">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            {dryRunError.message}
+          </div>
+          <button onClick={clearDryRunError} className="p-0.5 hover:bg-red-500/15 rounded-card transition-colors">
+            <X className="w-3 h-3 text-red-400/60" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!dryRunResult) return null;
 
   return (

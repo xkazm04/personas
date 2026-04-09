@@ -19,6 +19,7 @@ import { GenomeDiffView } from './GenomeDiffView';
 import { silentCatch } from '@/lib/silentCatch';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
 
 // ============================================================================
 // Parent selector
@@ -28,15 +29,19 @@ function ParentSelector({
   personas,
   selectedIds,
   onToggle,
+  selectLabel,
+  emptyLabel,
 }: {
   personas: Persona[];
   selectedIds: string[];
   onToggle: (id: string) => void;
+  selectLabel: string;
+  emptyLabel: string;
 }) {
   return (
-    <div className="space-y-1.5" role="group" aria-label="Parent persona selection">
+    <div className="space-y-1.5" role="group" aria-label="Agent selection">
       <label className="text-xs font-medium text-muted-foreground">
-        Select Parents (2-5 personas)
+        {selectLabel}
       </label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
         {personas.map((p) => {
@@ -46,7 +51,7 @@ function ParentSelector({
               key={p.id}
               onClick={() => onToggle(p.id)}
               aria-pressed={isSelected}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left focus-ring ${
                 isSelected
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300'
                   : 'bg-primary/5 border border-primary/10 text-muted-foreground hover:bg-primary/10'
@@ -60,7 +65,7 @@ function ParentSelector({
         })}
       </div>
       {personas.length === 0 && (
-        <p className="text-xs text-muted-foreground/60 italic">No personas available</p>
+        <p className="text-xs text-muted-foreground/60 italic">{emptyLabel}</p>
       )}
     </div>
   );
@@ -116,7 +121,7 @@ function ObjectiveSliders({
 
   return (
     <fieldset className="space-y-2">
-      <legend className="text-xs font-medium text-muted-foreground">Fitness Objective</legend>
+      <legend className="text-xs font-medium text-muted-foreground">Priority Balance</legend>
       {sliderRow('quality', 'Quality', <Target className="w-3 h-3" aria-hidden="true" />, 'text-emerald-400')}
       {sliderRow('speed', 'Speed', <Zap className="w-3 h-3" aria-hidden="true" />, 'text-amber-400')}
       {sliderRow('cost', 'Cost', <DollarSign className="w-3 h-3" aria-hidden="true" />, 'text-blue-400')}
@@ -168,11 +173,13 @@ function OffspringCard({
   onAdopt,
   isAdopting,
   parentGenomes,
+  labels,
 }: {
   result: GenomeBreedingResult;
   onAdopt: () => void;
   isAdopting: boolean;
   parentGenomes: Map<string, PersonaGenome>;
+  labels: { saved: string; saveAsAgent: string; showChanges: string; hideChanges: string; compareWithSource: string };
 }) {
   const [showDiff, setShowDiff] = useState(false);
   const genome = parseGenome(result.genomeJson);
@@ -192,23 +199,23 @@ function OffspringCard({
     <div
       className="animate-fade-slide-in border border-primary/10 rounded-lg p-3 space-y-2 bg-primary/[0.02]"
       role="article"
-      aria-label={`Offspring: ${genome?.sourcePersonaName ?? result.id.slice(0, 6)}, generation ${result.generation}`}
+      aria-label={`Result: ${genome?.sourcePersonaName ?? result.id.slice(0, 6)}, round ${result.generation}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Dna className="w-4 h-4 text-violet-400" aria-hidden="true" />
           <span className="text-sm font-medium truncate max-w-40">
-            {genome?.sourcePersonaName ?? `Offspring ${result.id.slice(0, 6)}`}
+            {genome?.sourcePersonaName ?? `Result ${result.id.slice(0, 6)}`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Gen {result.generation}</span>
+          <span className="text-xs text-muted-foreground">Round {result.generation}</span>
           {firstParentGenome && genome && (
             <button
               onClick={() => setShowDiff(!showDiff)}
-              className="p-0.5 rounded text-muted-foreground/50 hover:text-violet-400 transition-colors"
-              aria-label={showDiff ? 'Hide genome diff' : 'Show genome diff'}
-              title="Compare with parent"
+              className="p-0.5 rounded text-muted-foreground/50 hover:text-violet-400 transition-colors focus-ring"
+              aria-label={showDiff ? labels.hideChanges : labels.showChanges}
+              title={labels.compareWithSource}
             >
               {showDiff ? <EyeOff className="w-3.5 h-3.5" /> : <GitCompare className="w-3.5 h-3.5" />}
             </button>
@@ -231,7 +238,7 @@ function OffspringCard({
         <div className="flex items-center gap-1.5 text-xs">
           <Sparkles className="w-3 h-3 text-violet-400" aria-hidden="true" />
           <span className="text-violet-300 font-medium">
-            Fitness: {Math.round(result.fitnessOverall * 100)}%
+            Score: {Math.round(result.fitnessOverall * 100)}%
           </span>
         </div>
       )}
@@ -248,20 +255,20 @@ function OffspringCard({
       <div className="flex items-center justify-end pt-1 border-t border-primary/5">
         {result.adopted ? (
           <span className="text-xs text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> Adopted
+            <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> {labels.saved}
           </span>
         ) : (
           <button
             onClick={onAdopt}
             disabled={isAdopting}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50 focus-ring"
           >
             {isAdopting ? (
               <Loader2 className="w-3 h-3 animate-spin" />
             ) : (
               <Plus className="w-3 h-3" aria-hidden="true" />
             )}
-            Adopt as Persona
+            {labels.saveAsAgent}
           </button>
         )}
       </div>
@@ -301,7 +308,7 @@ function RunCard({
     <button
       onClick={onSelect}
       aria-current={isSelected ? 'true' : undefined}
-      className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
+      className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors focus-ring ${
         isSelected
           ? 'bg-violet-500/10 border-violet-500/25'
           : 'bg-primary/[0.02] border-primary/10 hover:bg-primary/5'
@@ -311,15 +318,15 @@ function RunCard({
         <div className="flex items-center gap-2">
           <Dna className="w-3.5 h-3.5 text-violet-400" aria-hidden="true" />
           <span className="text-sm font-medium">
-            {parentCount} parents &rarr; {run.offspringCount} offspring
+            {parentCount} sources &rarr; {run.offspringCount} results
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-xs capitalize ${statusColor}`}>{run.status}</span>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="text-muted-foreground/40 hover:text-red-400 transition-colors"
-            aria-label="Delete breeding run"
+            className="text-muted-foreground/40 hover:text-red-400 transition-colors focus-ring rounded-sm"
+            aria-label="Delete run"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -339,19 +346,17 @@ function RunCard({
 // Empty state
 // ============================================================================
 
-function BreedingEmptyState() {
+function BreedingEmptyState({ labels }: { labels: { emptyTitle: string; emptyDesc: string } }) {
   return (
     <div className="text-center py-10">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-violet-500/10 mb-3">
         <HeartPulse className="w-7 h-7 text-violet-400/60" aria-hidden="true" />
       </div>
       <h3 className="text-sm font-medium text-muted-foreground mb-1">
-        Evolve your personas
+        {labels.emptyTitle}
       </h3>
       <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto leading-relaxed">
-        Select 2-5 parent personas above, tune the fitness objective, then click
-        Start Breeding. The genetic algorithm will cross-breed prompts, tools,
-        and model configurations to discover novel high-performing variants.
+        {labels.emptyDesc}
       </p>
     </div>
   );
@@ -364,6 +369,7 @@ function BreedingEmptyState() {
 export function GenomeBreedingPanel() {
   const personas = useAgentStore((s) => s.personas);
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useLabTranslation();
 
   const [selectedParents, setSelectedParents] = useState<string[]>([]);
   const [objective, setObjective] = useState<FitnessObjective>({
@@ -451,7 +457,7 @@ export function GenomeBreedingPanel() {
         mutationRate,
         generations,
       );
-      addToast('Breeding run started', 'success');
+      addToast('Combination started', 'success');
       setRuns((prev) => [run, ...prev]);
       setSelectedRunId(run.id);
 
@@ -469,9 +475,9 @@ export function GenomeBreedingPanel() {
           pollRef.current = null;
           if (current.status === 'completed') {
             loadResults(run.id);
-            addToast(`Breeding complete: ${current.offspringCount} offspring`, 'success');
+            addToast(`Done: ${current.offspringCount} results created`, 'success');
           } else {
-            addToast(`Breeding failed: ${current.error ?? 'Unknown error'}`, 'error');
+            addToast(`Combination failed: ${current.error ?? 'Unknown error'}`, 'error');
           }
         }
       }, 2000);
@@ -485,7 +491,7 @@ export function GenomeBreedingPanel() {
       }, 120_000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      addToast(`Breeding failed: ${msg}`, 'error');
+      addToast(`Combination failed: ${msg}`, 'error');
     } finally {
       setIsBreeding(false);
     }
@@ -502,7 +508,7 @@ export function GenomeBreedingPanel() {
       useAgentStore.getState().fetchPersonas();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      addToast(`Adoption failed: ${msg}`, 'error');
+      addToast(`Save failed: ${msg}`, 'error');
     } finally {
       setAdoptingId(null);
     }
@@ -522,22 +528,29 @@ export function GenomeBreedingPanel() {
   const hasResults = selectedRunId !== null && results.length > 0;
 
   return (
-    <div className="space-y-4" role="region" aria-label="Genome breeding panel">
-      {/* Breeding configuration */}
-      <SectionCard title="Genome Breeding" subtitle="Cross-breed top-performing personas to discover novel configurations">
+    <div className="space-y-4" role="region" aria-label="Mix and match panel">
+      {/* Configuration */}
+      <SectionCard title={t.mixMatch.title} subtitle={t.mixMatch.subtitle}>
         <div className="space-y-4">
+          {/* Purpose line */}
+          <p className="typo-body text-foreground">
+            {t.purpose.mixMatch}
+          </p>
+
           <ParentSelector
             personas={personas}
             selectedIds={selectedParents}
             onToggle={toggleParent}
+            selectLabel={t.mixMatch.selectParents}
+            emptyLabel={t.mixMatch.noPersonas}
           />
 
           <ObjectiveSliders objective={objective} onChange={setObjective} />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground" htmlFor="mutation-rate">
-                Mutation Rate
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="mutation-rate" title={t.evolution.creativityTooltip}>
+                {t.mixMatch.creativityLevel}
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <input
@@ -547,7 +560,8 @@ export function GenomeBreedingPanel() {
                   max={50}
                   value={Math.round(mutationRate * 100)}
                   onChange={(e) => setMutationRate(Number(e.target.value) / 100)}
-                  aria-label="Mutation rate"
+                  aria-label={t.mixMatch.creativityLevel}
+                  title={t.evolution.creativityTooltip}
                   className="flex-1 h-1.5 accent-violet-500"
                 />
                 <span className="text-xs text-muted-foreground w-10 text-right" aria-live="polite">
@@ -557,13 +571,13 @@ export function GenomeBreedingPanel() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground" htmlFor="generations-select">
-                Generations
+                {t.mixMatch.rounds}
               </label>
               <select
                 id="generations-select"
                 value={generations}
                 onChange={(e) => setGenerations(Number(e.target.value))}
-                className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1.5 text-foreground"
+                className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1.5 text-foreground focus-ring"
               >
                 {[1, 2, 3, 4, 5].map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -575,17 +589,17 @@ export function GenomeBreedingPanel() {
           <button
             onClick={handleStartBreeding}
             disabled={isBreeding || selectedParents.length < 2}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
           >
             {isBreeding ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                Breeding...
+                {t.mixMatch.combining}
               </>
             ) : (
               <>
                 <Play className="w-4 h-4" aria-hidden="true" />
-                Start Breeding ({selectedParents.length} parents)
+                {t.mixMatch.startCombining} ({selectedParents.length})
               </>
             )}
           </button>
@@ -594,8 +608,8 @@ export function GenomeBreedingPanel() {
 
       {/* Run history */}
       {hasRunHistory && (
-        <SectionCard title="Breeding History">
-          <div className="space-y-1.5" role="list" aria-label="Breeding runs">
+        <SectionCard title={t.mixMatch.historyTitle}>
+          <div className="space-y-1.5" role="list" aria-label="Combination runs">
             {runs.map((run) => (
               <RunCard
                 key={run.id}
@@ -611,7 +625,7 @@ export function GenomeBreedingPanel() {
 
       {/* Evolution chart (shows when offspring have multi-generation data) */}
       {hasResults && results.some((r) => r.generation > 0) && (
-        <SectionCard title="Evolution Progress" subtitle="Fitness trajectory across generations">
+        <SectionCard title={t.mixMatch.progressTitle} subtitle={t.mixMatch.progressSubtitle}>
           <GenerationEvolutionChart results={results} />
         </SectionCard>
       )}
@@ -621,8 +635,8 @@ export function GenomeBreedingPanel() {
           <div className="animate-fade-slide-in"
           >
             <SectionCard
-              title={`Offspring (${results.length})`}
-              subtitle="Adopt top performers as new personas"
+              title={`${t.mixMatch.results} (${results.length})`}
+              subtitle={t.mixMatch.resultsSubtitle}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {results.map((result) => (
@@ -632,6 +646,7 @@ export function GenomeBreedingPanel() {
                     onAdopt={() => handleAdopt(result.id)}
                     isAdopting={adoptingId === result.id}
                     parentGenomes={parentGenomes}
+                    labels={t.mixMatch}
                   />
                 ))}
               </div>
@@ -642,13 +657,13 @@ export function GenomeBreedingPanel() {
       {selectedRunId && results.length === 0 && (
         <div className="text-center py-8 text-muted-foreground/60 text-sm" role="status">
           <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin opacity-30" aria-hidden="true" />
-          <p>Breeding in progress...</p>
-          <p className="text-xs mt-1">Results will appear when the breeding run completes</p>
+          <p>{t.mixMatch.inProgress}</p>
+          <p className="text-xs mt-1">{t.mixMatch.resultsWillAppear}</p>
         </div>
       )}
 
       {/* Empty state when no runs exist */}
-      {!hasRunHistory && !selectedRunId && <BreedingEmptyState />}
+      {!hasRunHistory && !selectedRunId && <BreedingEmptyState labels={t.mixMatch} />}
     </div>
   );
 }

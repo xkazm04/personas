@@ -15,6 +15,14 @@ import { EventTypeChip } from './EventTypeChip';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 
+/** Trim timestamps older than `windowMs` from a sorted array (mutates in place). */
+function trimRollingWindow(timestamps: number[], windowMs: number): void {
+  const cutoff = Date.now() - windowMs;
+  while (timestamps.length > 0 && timestamps[0]! < cutoff) {
+    timestamps.shift();
+  }
+}
+
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
   { value: 'completed', label: 'Completed' },
@@ -65,13 +73,8 @@ export function LiveStreamTab() {
     if (!evt?.id || !evt?.event_type) return;
 
     // Stats: track every received event regardless of pause state
-    const now = Date.now();
-    recvTimestamps.current.push(now);
-    // Trim outside the rolling window
-    const cutoff = now - STREAM_WINDOW_MS;
-    while (recvTimestamps.current.length > 0 && recvTimestamps.current[0]! < cutoff) {
-      recvTimestamps.current.shift();
-    }
+    recvTimestamps.current.push(Date.now());
+    trimRollingWindow(recvTimestamps.current, STREAM_WINDOW_MS);
     setTotalReceived((c) => c + 1);
     setEventsPerMin(recvTimestamps.current.length);
 
@@ -105,10 +108,7 @@ export function LiveStreamTab() {
   // need to fall out of the rolling window.
   useEffect(() => {
     const interval = setInterval(() => {
-      const cutoff = Date.now() - STREAM_WINDOW_MS;
-      while (recvTimestamps.current.length > 0 && recvTimestamps.current[0]! < cutoff) {
-        recvTimestamps.current.shift();
-      }
+      trimRollingWindow(recvTimestamps.current, STREAM_WINDOW_MS);
       setEventsPerMin(recvTimestamps.current.length);
     }, 2000);
     return () => clearInterval(interval);

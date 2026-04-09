@@ -163,14 +163,14 @@ function DiffSection({
     <div className="border border-primary/8 rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-primary/5 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-primary/5 transition-colors focus-ring"
         aria-expanded={open}
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
         <span>{title}</span>
         {changeCount > 0 && (
-          <span className="ml-auto text-amber-400/80 text-[10px]">
+          <span className="ml-auto text-amber-400/80 typo-caption">
             {changeCount} change{changeCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -187,7 +187,7 @@ function DiffSection({
                   <div className="min-w-0">
                     <span className="break-words">{entry.label}</span>
                     {entry.kind === 'changed' && entry.parentValue && entry.offspringValue && (
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                      <div className="flex items-center gap-1.5 mt-0.5 typo-caption">
                         <span className="text-red-400/70 line-through">{entry.parentValue}</span>
                         <span className="text-muted-foreground/30">&rarr;</span>
                         <span className="text-emerald-400/70">{entry.offspringValue}</span>
@@ -219,17 +219,17 @@ export function GenomeDiffView({
     diff.config.filter((e) => e.kind !== 'unchanged').length;
 
   return (
-    <div className="space-y-2" role="region" aria-label="Genome comparison">
+    <div className="space-y-2" role="region" aria-label="What changed">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <GitCompare className="w-3.5 h-3.5 text-violet-400" />
-        <span className="font-medium">Genome Diff</span>
+        <span className="font-medium">What Changed</span>
         <span className="text-muted-foreground/50">
-          {totalChanges} mutation{totalChanges !== 1 ? 's' : ''}
+          {totalChanges} change{totalChanges !== 1 ? 's' : ''}
         </span>
       </div>
 
       <DiffSection
-        title="Prompt Segments"
+        title="Instructions"
         icon={<Layers className="w-3 h-3" />}
         entries={diff.prompt}
         defaultOpen={diff.prompt.some((e) => e.kind !== 'unchanged')}
@@ -245,7 +245,7 @@ export function GenomeDiffView({
         entries={diff.model}
       />
       <DiffSection
-        title="Config"
+        title="Settings"
         icon={<Settings2 className="w-3 h-3" />}
         entries={diff.config}
       />

@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { ArenaHistory } from './ArenaHistory';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
-import { ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { ALL_MODELS, selectedModelsAndEffortsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
-import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { ModelToggleGrid, EffortToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useLabTranslation } from '../../i18n/useLabTranslation';
+import type { GuideItem } from '../../shared';
 
 export function ArenaPanel() {
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
@@ -20,6 +21,7 @@ export function ArenaPanel() {
 
   const {
     selectedPersona, selectedModels, setSelectedModels, toggleModel,
+    selectedEfforts, toggleEffort,
     expandedRunId, setExpandedRunId,
     setActiveRunId,
     selectedUseCaseId, setSelectedUseCaseId,
@@ -44,7 +46,7 @@ export function ArenaPanel() {
 
   const handleStart = async () => {
     if (!selectedPersona || selectedModels.size === 0) return;
-    const models = selectedModelsToConfigs(selectedModels);
+    const models = selectedModelsAndEffortsToConfigs(selectedModels, selectedEfforts);
     const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
     const runId = await startArena(selectedPersona.id, models, useCaseFilter);
     if (runId) setActiveRunId(runId);
@@ -53,9 +55,19 @@ export function ArenaPanel() {
   const handleDelete = async (runId: string) => { await deleteArenaRun(runId); if (expandedRunId === runId) setExpandedRunId(null); };
 
   const healthCheck = useHealthCheck();
+  const { t } = useLabTranslation();
+  const setLabMode = useAgentStore((s) => s.setLabMode);
 
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
+
+  const guideItems = useMemo(() => {
+    const items: GuideItem[] = [];
+    if (!hasPrompt) items.push({ message: t.guide.noPrompt.message, actionLabel: t.guide.noPrompt.action, onAction: () => setLabMode('versions') });
+    if (!hasTools) items.push({ message: t.guide.noTools.message });
+    if (selectedModels.size === 0) items.push({ message: t.guide.selectModels.message });
+    return items;
+  }, [hasPrompt, hasTools, selectedModels.size, t, setLabMode]);
 
   return (
     <div className="space-y-6">
@@ -66,24 +78,20 @@ export function ArenaPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={selectedModels.size === 0 || !hasPrompt}
-        disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        disabledReason={!hasPrompt ? t.guide.noPrompt.message : selectedModels.size === 0 ? t.guide.selectModels.message : ''}
+        guideItems={guideItems}
         runLabel={<>Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})</>}
         cancelLabel="Cancel Test"
         cancelTestId="arena-cancel-btn"
         runTestId="arena-run-btn"
       >
-        {(!hasPrompt || !hasTools) && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-amber-400/90">
-              {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
-              {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
-            </div>
-          </div>
-        )}
+        <p className="typo-body text-foreground">
+          {t.purpose.arena}
+        </p>
 
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label="Focus on Use Case" />
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="arena" />
+        <EffortToggleGrid selectedEfforts={selectedEfforts} toggleEffort={toggleEffort} testIdPrefix="arena" />
       </LabPanelShell>
 
       {/* Right: Health Check */}

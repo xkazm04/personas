@@ -3,6 +3,7 @@ import { Bookmark, Check, Plus, Trash2, X } from 'lucide-react';
 import { listSavedViews, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 
 interface SavedViewsDropdownProps {
   currentPersonaId: string | null;
@@ -47,9 +48,11 @@ export function SavedViewsDropdown({
   currentCompareEnabled,
   onApplyPreset,
 }: SavedViewsDropdownProps) {
+  const { t } = useOverviewTranslation();
   const [views, setViews] = useState<SavedView[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [newViewName, setNewViewName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +84,7 @@ export function SavedViewsDropdown({
 
   const handleSave = async () => {
     if (!newViewName.trim()) return;
+    setSaveError(null);
     try {
       await createSavedView({
         name: newViewName.trim(),
@@ -98,6 +102,9 @@ export function SavedViewsDropdown({
       await loadViews();
     } catch (e) {
       log.error('SavedViewsDropdown', 'Failed to save view', { operation: 'createSavedView', name: newViewName.trim(), error: errMsg(e, 'Failed to save view') });
+      setSaveError(t.savedViews.save_failed);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -140,25 +147,30 @@ export function SavedViewsDropdown({
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 overflow-hidden flex flex-col">
           {isSaving ? (
-            <div className="p-2 flex items-center gap-2 border-b border-primary/10">
-              <input
-                autoFocus
-                type="text"
-                placeholder="View name..."
-                className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
-                value={newViewName}
-                onChange={(e) => setNewViewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSave();
-                  if (e.key === 'Escape') setIsSaving(false);
-                }}
-              />
-              <button onClick={handleSave} disabled={!newViewName.trim()} title={!newViewName.trim() ? 'Enter a view name to save' : 'Save view'} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
-                <Check className="w-4 h-4" />
-              </button>
-              <button onClick={() => setIsSaving(false)} className="p-1.5 text-muted-foreground hover:bg-secondary rounded">
-                <X className="w-4 h-4" />
-              </button>
+            <div className="border-b border-primary/10">
+              <div className="p-2 flex items-center gap-2">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="View name..."
+                  className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
+                  value={newViewName}
+                  onChange={(e) => { setNewViewName(e.target.value); setSaveError(null); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') setIsSaving(false);
+                  }}
+                />
+                <button onClick={handleSave} disabled={!newViewName.trim()} title={!newViewName.trim() ? 'Enter a view name to save' : 'Save view'} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
+                  <Check className="w-4 h-4" />
+                </button>
+                <button onClick={() => { setIsSaving(false); setSaveError(null); }} className="p-1.5 text-muted-foreground hover:bg-secondary rounded">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {saveError && (
+                <p className="px-2 pb-2 typo-caption text-destructive">{saveError}</p>
+              )}
             </div>
           ) : (
             <button

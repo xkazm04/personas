@@ -1,11 +1,16 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
-import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
+import { dashboardContainer, dashboardItem } from '@/features/templates/animationPresets';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { DAY_OPTIONS, formatPercent, formatDuration, slaColor } from '../libs/slaHelpers';
 import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
 
@@ -26,6 +31,8 @@ export default function SLADashboard() {
     return () => { cancelled = true; };
   }, [debouncedDays]);
 
+  const { t } = useOverviewTranslation();
+  const { shouldAnimate } = useMotion();
   const togglePersona = (id: string) => setExpandedPersona((prev) => (prev === id ? null : id));
 
   return (
@@ -47,32 +54,55 @@ export default function SLADashboard() {
       />
 
       <ContentBody centered>
+        <AnimatePresence mode="wait">
         {loading && !data ? (
-          null
+          <motion.div
+            key="loading"
+            initial={shouldAnimate ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            exit={shouldAnimate ? { opacity: 0 } : undefined}
+            className="flex items-center justify-center py-16"
+          >
+            <LoadingSpinner size="xl" className="text-primary/60" />
+          </motion.div>
         ) : !data ? (
-          <InlineErrorBanner severity="info" message="No execution data available." />
+          <motion.div
+            key="empty"
+            initial={shouldAnimate ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            exit={shouldAnimate ? { opacity: 0 } : undefined}
+          >
+            <EmptyState variant="metrics" heading={t.emptyState.sla_title} description={t.emptyState.sla_subtitle} />
+          </motion.div>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <motion.div
+            key={`sla-${days}`}
+            className="space-y-6"
+            variants={shouldAnimate ? dashboardContainer : undefined}
+            initial={shouldAnimate ? "hidden" : false}
+            animate="show"
+            exit={shouldAnimate ? { opacity: 0, transition: { duration: 0.15 } } : undefined}
+          >
+            <motion.div variants={shouldAnimate ? dashboardItem : undefined} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <SlaCard label="Success Rate" value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.successful + data.global.failed} decided`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
               <SlaCard label="Avg Latency" value={formatDuration(data.global.avg_duration_ms)} sub={`${data.global.active_persona_count} active agents`} color="blue" icon={<Clock className="w-4 h-4" />} />
               <SlaCard label="Open Issues" value={String(data.healing_summary.open_issues)} sub={`${data.healing_summary.circuit_breaker_count} circuit breakers`} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
               <SlaCard label="Auto-Healed" value={String(data.healing_summary.auto_fixed_count)} sub={`${data.healing_summary.knowledge_patterns} known patterns`} color="violet" icon={<Wrench className="w-4 h-4" />} />
-            </div>
+            </motion.div>
 
             {data.daily_trend.length > 0 && (
-              <div className="rounded-xl border border-primary/10 bg-card-bg p-5 space-y-3">
+              <motion.div variants={shouldAnimate ? dashboardItem : undefined} className="rounded-xl border border-primary/10 bg-card-bg p-5 space-y-3">
                 <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Daily Success Rate -- {days} Days</h2>
                 <DailyTrendChart points={data.daily_trend} />
-              </div>
+              </motion.div>
             )}
 
-            <div className="rounded-xl border border-primary/10 bg-card-bg overflow-hidden">
+            <motion.div variants={shouldAnimate ? dashboardItem : undefined} className="rounded-xl border border-primary/10 bg-card-bg overflow-hidden">
               <div className="px-5 py-3.5 border-b border-primary/10">
                 <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Per-Agent Reliability</h2>
               </div>
               {data.persona_stats.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-muted-foreground/60">No agents have executed in this period.</div>
+                <div className="px-5 py-8 text-center typo-body text-foreground">{t.emptyState.sla_no_agents}</div>
               ) : (
                 <div className="divide-y divide-primary/5">
                   {data.persona_stats.map((ps) => (
@@ -80,9 +110,10 @@ export default function SLADashboard() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </ContentBody>
     </ContentBox>
   );

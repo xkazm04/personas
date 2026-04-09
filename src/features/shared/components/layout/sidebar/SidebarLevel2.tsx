@@ -6,7 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
-import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab } from '@/lib/types/types';
+import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab, TwinTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
@@ -16,7 +16,7 @@ import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
-  cloudItems, devToolsItems, eventBusItems, getSettingsItems,
+  cloudItems, devToolsItems, twinItems, eventBusItems, getSettingsItems,
 } from './sidebarData';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from './sidebarData';
@@ -613,6 +613,10 @@ function PluginsSidebarNav() {
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const twinTab = useSystemStore((s) => s.twinTab);
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const activeTwinId = useSystemStore((s) => s.activeTwinId);
+  const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -755,6 +759,56 @@ function PluginsSidebarNav() {
             <ScanLine className="w-4 h-4 flex-shrink-0" />
             OCR
           </button>
+        )}
+
+        {/* Twin */}
+        {enabledPlugins.has('twin') && (
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('twin')}
+              aria-current={pluginTab === 'twin' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'twin'
+                  ? 'bg-primary/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 flex-shrink-0" />
+              Twin
+            </button>
+            {pluginTab === 'twin' && (
+              <>
+                <div className="ml-4 space-y-0.5">
+                  {twinItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setTwinTab(item.id as TwinTab)}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                        twinTab === item.id
+                          ? 'bg-primary/10 text-foreground/80'
+                          : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                      }`}
+                    >
+                      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                {(() => {
+                  const activeTwin = activeTwinId ? twinProfiles.find((t) => t.id === activeTwinId) : null;
+                  return activeTwin ? (
+                    <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-0.5">Active Twin</p>
+                      <p className="typo-caption text-foreground/70 truncate">{activeTwin.name}</p>
+                      {activeTwin.role && (
+                        <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeTwin.role}</p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

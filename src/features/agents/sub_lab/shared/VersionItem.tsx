@@ -85,10 +85,10 @@ export function VersionItem({
             {version.tag}
           </span>
           {version.icon && (
-            <span className="text-[10px] text-muted-foreground/50 font-mono">{version.icon}</span>
+            <span className="typo-caption text-muted-foreground/50 font-mono">{version.icon}</span>
           )}
           {version.resolved_cells && (() => {
-            try { const rc = JSON.parse(version.resolved_cells); return <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span>; } catch { return null; }
+            try { const rc = JSON.parse(version.resolved_cells); return <span className="typo-caption text-muted-foreground/40">{Object.keys(rc).length} dims</span>; } catch { return null; }
           })()}
           {isCompareA && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-blue-500/20 text-blue-400">A</span>}
           {isCompareB && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-violet-500/20 text-violet-400">B</span>}

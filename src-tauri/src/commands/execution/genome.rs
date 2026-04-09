@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use tauri::State;
@@ -275,6 +276,10 @@ pub fn genome_delete_breeding_run(
 ///
 /// Creates a new persona with the offspring's genome configuration
 /// and marks it as adopted in the breeding results.
+///
+/// All three operations (persona creation, tool assignment, adoption marker)
+/// run inside a single SQLite transaction so a partial failure cannot leave
+/// orphan persona records or unmarked adoption results.
 #[tauri::command]
 pub fn genome_adopt_offspring(
     state: State<'_, Arc<AppState>>,
@@ -283,7 +288,7 @@ pub fn genome_adopt_offspring(
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
 
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
     let genome_json: String = conn
         .query_row(
             "SELECT genome_json FROM genome_breeding_results WHERE id = ?1",
@@ -314,34 +319,106 @@ pub fn genome_adopt_offspring(
         format!("Offspring: {}", genome.source_persona_name)
     });
 
-    let input = CreatePersonaInput {
-        name: persona_name,
-        system_prompt: genome.reassemble_prompt(),
-        project_id: Some(project_id),
-        description: genome.description,
-        structured_prompt: genome.structured_prompt,
-        icon: None,
-        color: None,
-        enabled: Some(true),
-        max_concurrent: Some(genome.config.max_concurrent),
-        timeout_ms: Some(genome.model.timeout_ms),
-        model_profile: genome.model.model_profile,
-        max_budget_usd: genome.model.max_budget_usd,
-        max_turns: genome.model.max_turns,
-        design_context: None,
-        group_id: None,
-        notification_channels: None,
-    };
+    // Encrypt model_profile if it contains an auth_token
+    let encrypted_profile = encrypt_profile_for_adoption(&genome.model.model_profile)?;
 
-    let persona = persona_repo::create(&state.db, input)?;
+    let persona_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
 
-    // Assign tools from genome
+    // Wrap all three operations in a single transaction to prevent orphan records
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    // 1. Create persona
+    tx.execute(
+        "INSERT INTO personas
+         (id, project_id, name, description, system_prompt, structured_prompt,
+          icon, color, enabled, sensitive, max_concurrent, timeout_ms,
+          model_profile, max_budget_usd, max_turns, design_context, group_id,
+          notification_channels, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
+        rusqlite::params![
+            persona_id,
+            project_id,
+            persona_name,
+            genome.description,
+            genome.reassemble_prompt(),
+            genome.structured_prompt,
+            Option::<String>::None, // icon
+            Option::<String>::None, // color
+            1i32,                   // enabled
+            0i32,                   // sensitive
+            genome.config.max_concurrent,
+            genome.model.timeout_ms,
+            encrypted_profile,
+            genome.model.max_budget_usd,
+            genome.model.max_turns,
+            Option::<String>::None, // design_context
+            Option::<String>::None, // group_id
+            Option::<String>::None, // notification_channels
+            now,
+        ],
+    )?;
+
+    // 2. Assign tools from genome (deduplicate to handle crossover artifacts)
+    let mut seen_tools = HashSet::new();
     for tool_id in &genome.tools.tool_ids {
-        let _ = tool_repo::assign_tool(&state.db, &persona.id, tool_id, None);
+        if !seen_tools.insert(tool_id.as_str()) {
+            continue;
+        }
+        let tool_assign_id = uuid::Uuid::new_v4().to_string();
+        let tool_now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+             VALUES (?1, ?2, ?3, NULL, ?4)",
+            rusqlite::params![tool_assign_id, persona_id, tool_id, tool_now],
+        ).map_err(|e| {
+            AppError::Internal(format!("Failed to assign tool {tool_id} to offspring: {e}"))
+        })?;
     }
 
-    // Mark as adopted
-    let _ = genome_repo::mark_adopted(&state.db, &result_id, &persona.id);
+    // 3. Mark as adopted
+    tx.execute(
+        "UPDATE genome_breeding_results SET adopted = 1, adopted_persona_id = ?1 WHERE id = ?2",
+        rusqlite::params![persona_id, result_id],
+    )?;
 
-    Ok(persona)
+    tx.commit().map_err(AppError::Database)?;
+
+    // Return the fully materialized persona (with decrypted fields)
+    persona_repo::get_by_id(&state.db, &persona_id)
+}
+
+/// Encrypt model_profile for adoption if it contains an auth_token.
+fn encrypt_profile_for_adoption(profile: &Option<String>) -> Result<Option<String>, AppError> {
+    let json = match profile {
+        Some(ref j) if !j.trim().is_empty() => j,
+        _ => return Ok(profile.clone()),
+    };
+
+    let mut val: serde_json::Value = serde_json::from_str(json)
+        .map_err(|e| AppError::Validation(format!("Invalid model_profile JSON: {e}")))?;
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return Ok(Some(json.to_string())),
+    };
+
+    let token = obj
+        .get("auth_token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    if token.is_empty() {
+        return Ok(Some(json.to_string()));
+    }
+
+    let (ciphertext, nonce) = crate::engine::crypto::encrypt_for_db(&token)?;
+    obj.remove("auth_token");
+    obj.insert("auth_token_enc".into(), serde_json::Value::String(ciphertext));
+    obj.insert("auth_token_iv".into(), serde_json::Value::String(nonce));
+
+    serde_json::to_string(&val)
+        .map(Some)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize model_profile: {e}")))
 }

@@ -164,8 +164,10 @@ export const ar = {
     appearance: "المظهر",
     notifications: "الإشعارات",
     engine: "المحرك",
-    byom: "BYOM",
+    byom: "مزودو النماذج",
     data: "البيانات",
+    quality_gates: "مرشحات المحتوى",
+    config_resolution: "تكوين الوكيل",
     admin: "المسؤول",
 
     coming_soon: "قريبًا",
@@ -935,6 +937,7 @@ export const ar = {
 
   settings: {
     title: "الإعدادات",
+    settings_saved: "تم الحفظ",
 
     account: {
       title: "الحساب",

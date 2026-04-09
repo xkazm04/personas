@@ -131,23 +131,33 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
           {/* Execute button — top row, above the Active toggle */}
-          <button
-            type="button"
-            onClick={handleExecute}
-            disabled={isThisPersonaExecuting}
-            data-testid="persona-header-execute-btn"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-              isThisPersonaExecuting
-                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 cursor-not-allowed'
-                : 'bg-primary/10 text-primary border-primary/15 hover:bg-primary/15'
-            }`}
-            title={isThisPersonaExecuting ? 'Execution in progress' : 'Execute this agent'}
-          >
-            {isThisPersonaExecuting
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <Play className="w-3.5 h-3.5" />}
-            {isThisPersonaExecuting ? 'Running…' : 'Execute'}
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleExecute}
+              disabled={isThisPersonaExecuting}
+              data-testid="persona-header-execute-btn"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                isThisPersonaExecuting
+                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 cursor-not-allowed'
+                  : 'bg-primary/10 text-primary border-primary/15 hover:bg-primary/15'
+              }`}
+              title={isThisPersonaExecuting ? 'Execution in progress' : preRunCheck.reasons.length > 0 ? `Warnings: ${preRunCheck.reasons.join('; ')}` : 'Execute this agent'}
+            >
+              {isThisPersonaExecuting
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Play className="w-3.5 h-3.5" />}
+              {isThisPersonaExecuting ? 'Running…' : 'Execute'}
+            </button>
+            {!isThisPersonaExecuting && preRunCheck.missingCredentials.length > 0 && (
+              <span
+                className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                title={`${preRunCheck.missingCredentials.length} missing credential${preRunCheck.missingCredentials.length !== 1 ? 's' : ''}`}
+              >
+                {preRunCheck.missingCredentials.length}
+              </span>
+            )}
+          </div>
           {/* Active toggle row */}
           <div className="flex items-center gap-2">
             <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
