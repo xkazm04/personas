@@ -42,6 +42,16 @@
 - [2026-04-02] Sidebar badge priority system (lower = higher): count badges (1) > executing (2) > tests (3) > transforms (4) > scan (5) > completion dots (6)
 - [2026-04-02] Only `contextScan` has redirect-on-completion: navigates to devToolsTab 'context-map'. Other processes lack this
 
+## Execution System
+
+- [2026-04-09] Backend emits structured events on `execution-event` channel: `TextEvent`, `ToolUseEvent`, `ToolResultEvent`, `SystemInitEvent`, `ResultEvent` (cost/tokens/duration), `FileChangeEvent`, `HeartbeatEvent`. Typed in `src/lib/types/terminalEvents.ts`.
+- [2026-04-09] `useStructuredStream` hook (`src/hooks/execution/useStructuredStream.ts`) dispatches typed handlers per event type, filtered by execution_id.
+- [2026-04-09] `useReasoningTrace` hook builds an ordered `ReasoningEntry[]` from structured events. Now includes `file_change` entries (extended in Run #1).
+- [2026-04-09] `useExecutionSummary` hook derives structured stats (tool calls, file changes, cost, tokens, model) from trace entries.
+- [2026-04-09] `ExecutionSummaryCard` in `sub_executions/detail/views/` now accepts `ExecutionSummary` type with expandable tool call list and file change list.
+- [2026-04-09] MiniPlayer has two modes: Starter (isSimple) and Full (!isSimple). Tier checked via `useTier()` hook from `src/hooks/utility/interaction/useTier.ts`.
+- [2026-04-09] Starter MiniPlayer now shows: progress bar during execution → summary card on completion → expandable ReasoningTrace feed. All tiers get summary card on completion.
+
 ## Build & Tooling
 
 - [2026-04-02] TypeScript check: `npx tsc --noEmit` (tsc not on PATH directly on Windows)
@@ -52,3 +62,11 @@
 - [2026-04-02] React 19, Zustand 5, Framer Motion 12
 - [2026-04-02] State management: Zustand with slice pattern in `src/stores/slices/`
 - [2026-04-02] The app uses Tauri v2 APIs — imports from `@tauri-apps/api/*` and `@tauri-apps/plugin-*`
+
+## Open follow-ups (from Vibeman Run #1, 2026-04-09)
+
+- Pre-execution intent preview: show tools/credentials/scope before running. Competitive research says this is the next trust UX feature after structured results.
+- 31 test failures in matrixBuildSlice (11) + API mock tests (4 files) — all pre-existing, test-code drift not logic bugs. Should be fixed for production readiness.
+- 31 lint errors (mostly `no-empty` blocks) — pre-existing, should be cleaned up.
+- Execution history dashboard: searchable/filterable past executions with structured data. Currently only accessible via overview tabs.
+- `ProcessActivityDrawer` and MiniPlayer both consume execution data independently — consider whether they should share state or whether the drawer should link to the MiniPlayer's trace.
