@@ -63,6 +63,14 @@
 - [2026-04-02] State management: Zustand with slice pattern in `src/stores/slices/`
 - [2026-04-02] The app uses Tauri v2 APIs — imports from `@tauri-apps/api/*` and `@tauri-apps/plugin-*`
 
+## Pre-Run System
+
+- [2026-04-09] `usePreRunCheck` hook at `src/hooks/execution/usePreRunCheck.ts` — maps tool credential status, trigger count, model, budget, readiness level from PersonaWithDetails + CredentialMetadata[].
+- [2026-04-09] `PreRunPreview` component at `src/features/execution/components/PreRunPreview.tsx` — popover showing tools/credentials/model/budget/trust before execution. Keyboard accessible (Escape/Enter), click-outside dismissable.
+- [2026-04-09] Starter tier: Execute button opens PreRunPreview popover before running. Team/Builder: direct execution unchanged.
+- [2026-04-09] Readiness badge (amber dot with count) on Execute button when missing credentials detected. All tiers.
+- [2026-04-09] Existing readiness logic at PersonaEditorHeader.tsx:66-79 gates the Enable toggle, not the Run button. The new usePreRunCheck hook extracts and extends this logic for the Run flow.
+
 ## Open follow-ups (from Vibeman Run #1, 2026-04-09)
 
 - Pre-execution intent preview: show tools/credentials/scope before running. Competitive research says this is the next trust UX feature after structured results.
