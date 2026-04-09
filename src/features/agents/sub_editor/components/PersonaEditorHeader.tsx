@@ -10,6 +10,9 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
 import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import { usePreRunCheck } from '@/hooks/execution/usePreRunCheck';
+import { PreRunPreview } from '@/features/execution/components/PreRunPreview';
 import { createLogger } from '@/lib/log';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
@@ -32,13 +35,16 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
+  const { isStarter } = useTier();
   const [showReadinessPopover, setShowReadinessPopover] = useState(false);
+  const [showPreRunPreview, setShowPreRunPreview] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const preRunCheck = usePreRunCheck(selectedPersona, credentials);
 
   // Execute button state: running if this persona is the active execution
   const isThisPersonaExecuting = isExecuting && executionPersonaId === selectedPersona?.id;
 
-  const handleExecute = useCallback(async () => {
+  const doExecute = useCallback(async () => {
     if (!selectedPersona?.id || isThisPersonaExecuting) return;
     try {
       await executePersonaAction(selectedPersona.id);
@@ -47,6 +53,20 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       useToastStore.getState().addToast('Failed to start execution. Please try again.', 'error');
     }
   }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction]);
+
+  const handleExecute = useCallback(() => {
+    if (isThisPersonaExecuting) return;
+    if (isStarter) {
+      setShowPreRunPreview(true);
+    } else {
+      doExecute();
+    }
+  }, [isThisPersonaExecuting, isStarter, doExecute]);
+
+  const handlePreRunConfirm = useCallback(() => {
+    setShowPreRunPreview(false);
+    doExecute();
+  }, [doExecute]);
 
   useClickOutside(popoverRef, showReadinessPopover, () => setShowReadinessPopover(false));
 
@@ -143,6 +163,14 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             />
           </div>
           <AnimatePresence>
+            {showPreRunPreview && !isThisPersonaExecuting && (
+              <PreRunPreview
+                check={preRunCheck}
+                personaName={effective.name}
+                onConfirm={handlePreRunConfirm}
+                onCancel={() => setShowPreRunPreview(false)}
+              />
+            )}
             {showReadinessPopover && readiness.reasons.length > 0 && (
               <motion.div
                 ref={popoverRef}
