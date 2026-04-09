@@ -18,7 +18,7 @@ describe("api/system/settings", () => {
     expect(mockedInvoke).toHaveBeenCalledWith(
       "get_app_setting",
       expect.objectContaining({ key: "theme" }),
-      undefined,
+      expect.objectContaining({ headers: expect.any(Headers) }),
     );
   });
 

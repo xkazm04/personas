@@ -50,6 +50,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildCellUpdate", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("sets cell status from event", () => {
       useAgentStore.getState().handleBuildCellUpdate({
         type: "cell_update",
@@ -86,6 +90,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildQuestion", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("pushes question to buildPendingQuestions and marks cell as highlighted", () => {
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
@@ -147,6 +155,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("clearBuildQuestion", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("removes question by cellKey from the array", () => {
       // Setup: two pending questions
       const handle = useAgentStore.getState().handleBuildQuestion;
@@ -221,6 +233,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildProgress", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("updates progress when percent is provided", () => {
       useAgentStore.getState().handleBuildProgress({
         type: "progress",
@@ -234,7 +250,16 @@ describe("matrixBuildSlice", () => {
     });
 
     it("does not change progress when percent is null", () => {
-      useAgentStore.setState({ buildProgress: 25 });
+      // Set progress via event (not setState) so the session tracks it
+      useAgentStore.getState().handleBuildProgress({
+        type: "progress",
+        session_id: "s1",
+        dimension: null,
+        message: "Initial",
+        percent: 25,
+      });
+      expect(useAgentStore.getState().buildProgress).toBe(25);
+
       useAgentStore.getState().handleBuildProgress({
         type: "progress",
         session_id: "s1",
@@ -269,13 +294,14 @@ describe("matrixBuildSlice", () => {
     });
 
     it("caps output lines at 500", () => {
-      // Pre-fill with 499 lines
-      useAgentStore.setState({
-        buildOutputLines: Array.from({ length: 499 }, (_, i) => `Line ${i}`),
-      });
+      // Pre-fill with 499 lines via events so the session tracks them
+      const handle = useAgentStore.getState().handleBuildProgress;
+      for (let i = 0; i < 499; i++) {
+        handle({ type: "progress", session_id: "s1", dimension: null, message: `Line ${i}`, percent: null });
+      }
+      expect(useAgentStore.getState().buildOutputLines.length).toBe(499);
 
       // Add 3 more lines (should cap at 500, dropping oldest)
-      const handle = useAgentStore.getState().handleBuildProgress;
       handle({ type: "progress", session_id: "s1", dimension: null, message: "New 1", percent: null });
       handle({ type: "progress", session_id: "s1", dimension: null, message: "New 2", percent: null });
       handle({ type: "progress", session_id: "s1", dimension: null, message: "New 3", percent: null });
@@ -289,6 +315,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildError", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("sets error message and phase to failed", () => {
       useAgentStore.getState().handleBuildError({
         type: "error",
@@ -305,6 +335,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildSessionStatus", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("updates phase and calculates progress from counts", () => {
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
@@ -369,6 +403,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleStartTest", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("sets buildPhase to testing and stores testId", () => {
       useAgentStore.getState().handleStartTest("test-run-1");
 
@@ -396,6 +434,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleTestComplete", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("sets testPassed=true, stores output preview, transitions to test_complete", () => {
       useAgentStore.getState().handleStartTest("test-run-1");
       useAgentStore.getState().handleTestComplete(true, "All 5 tests passed");
@@ -408,6 +450,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleTestFailed", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("sets testPassed=false, stores error, transitions to test_complete", () => {
       useAgentStore.getState().handleStartTest("test-run-1");
       useAgentStore.getState().handleTestFailed("Assertion failed: expected 200 got 500");
@@ -420,6 +466,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleRejectTest", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("resets buildPhase to draft_ready and clears test state", () => {
       // Set up a test_complete state
       useAgentStore.setState({
@@ -487,6 +537,10 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("hydrateBuildSession", () => {
+    beforeEach(() => {
+      useAgentStore.getState().createBuildSession("p-test", "s1");
+    });
+
     it("wraps single pending_question into buildPendingQuestions array", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "session-abc",

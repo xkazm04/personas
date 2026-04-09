@@ -53,7 +53,7 @@ describe("api/agents/personas", () => {
     mockInvoke("list_personas", [stubPersona]);
     const result = await listPersonas();
     expect(result).toEqual([stubPersona]);
-    expect(mockedInvoke).toHaveBeenCalledWith("list_personas", undefined, undefined);
+    expect(mockedInvoke).toHaveBeenCalledWith("list_personas", undefined, expect.objectContaining({ headers: expect.any(Headers) }));
   });
 
   it("getPersona calls get_persona with id", async () => {

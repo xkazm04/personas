@@ -29,7 +29,7 @@ describe("api/agents/executions", () => {
     expect(mockedInvoke).toHaveBeenCalledWith(
       "list_executions",
       expect.objectContaining({ personaId: "p-1", limit: 10 }),
-      undefined,
+      expect.objectContaining({ headers: expect.any(Headers) }),
     );
   });
 
