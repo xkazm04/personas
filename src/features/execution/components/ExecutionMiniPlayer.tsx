@@ -22,6 +22,7 @@ import { traceProgress } from '@/lib/execution/pipeline';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
 import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
+import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 
 export default function ExecutionMiniPlayer() {
   const { isStarter: isSimple } = useTier();
@@ -175,7 +176,6 @@ export default function ExecutionMiniPlayer() {
               </Button>
             </Tooltip>
           )}
-          {!isSimple && (
           <Tooltip content={miniPlayerExpanded ? 'Collapse' : 'Expand'}>
             <Button
               variant="ghost"
@@ -185,7 +185,6 @@ export default function ExecutionMiniPlayer() {
               {miniPlayerExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </Button>
           </Tooltip>
-          )}
           <Tooltip content="Unpin mini-player">
             <Button
               variant="ghost"
@@ -259,6 +258,13 @@ export default function ExecutionMiniPlayer() {
                 style={{ width: '100%' }}
               />
             </div>
+          </div>
+        )}
+
+        {/* Simple mode: expanded reasoning trace (structured event feed) */}
+        {isSimple && miniPlayerExpanded && traceEntries.length > 0 && (
+          <div className="border-t border-primary/5">
+            <ReasoningTrace entries={traceEntries} isLive={traceLive} />
           </div>
         )}
 
