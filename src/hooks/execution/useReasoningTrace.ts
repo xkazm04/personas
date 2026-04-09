@@ -6,6 +6,7 @@ export type ReasoningEntry =
   | { type: "text"; content: string; ts: number }
   | { type: "tool_call"; toolName: string; inputPreview: string; ts: number }
   | { type: "tool_result"; contentPreview: string; ts: number }
+  | { type: "file_change"; path: string; changeType: "read" | "write" | "edit"; ts: number }
   | { type: "heartbeat"; elapsed: number; silence: number; ts: number }
   | { type: "complete"; durationMs: number; cost?: number; tokens?: number; ts: number }
   | { type: "error"; message: string; ts: number };
@@ -58,6 +59,12 @@ export function useReasoningTrace(executionId: string | null): {
     onHeartbeat: useCallback(
       (e) => {
         push({ type: "heartbeat", elapsed: e.elapsed_ms, silence: e.silence_ms, ts: Date.now() });
+      },
+      [push],
+    ),
+    onFileChange: useCallback(
+      (e) => {
+        push({ type: "file_change", path: e.path, changeType: e.change_type, ts: Date.now() });
       },
       [push],
     ),
