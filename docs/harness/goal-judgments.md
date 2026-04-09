@@ -56,3 +56,21 @@ User explicitly requested test fixes after Run #2. Two root causes: (1) invokeWi
 - Test failures from refactors (not bugs) are quick wins: diagnostic takes longer than the fix
 - setState-based test setup breaks when the store moves to a session/map architecture — always use the store's own actions for setup
 - Running targeted test files (`vitest run <file>`) is much faster than full suite for iteration
+
+## Run #4 — 2026-04-09
+
+**Mode:** stabilize
+**Health scan:** 0 TS errors, 670/675 tests, 31 lint errors
+**Selected goal:** Fix 31 lint errors
+**Source:** health-scan (user-selected)
+**Confidence at selection:** high
+**Quality score:** 100/100
+**User verdict:** pending
+
+**Reasoning:**
+User explicitly selected lint cleanup. 31 errors across 14 files, 7 distinct error categories. Fixed all 31 → 0 in a single task. Root causes: empty catch blocks in debug code, browser-only `any` types, stale eslint-disable comments referencing unloaded react-hooks plugin, unused imports in harness code, dynamic require() replaceable with static import.
+
+**Lessons for future ranking:**
+- Lint cleanup is fast when errors are well-categorized: 31 errors = 1 task, ~10 minutes
+- Debug/diagnostic code accounts for ~60% of lint errors (intentional `any` for browser APIs, empty catches for fire-and-forget)
+- `eslint-disable` comments referencing plugins that aren't loaded generate "rule not found" errors — remove the comments, not fix the config
