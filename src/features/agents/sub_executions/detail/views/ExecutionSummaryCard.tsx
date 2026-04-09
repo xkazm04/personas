@@ -1,68 +1,135 @@
-import { Timer, DollarSign, Wrench, RotateCw } from 'lucide-react';
+import { useState } from 'react';
+import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins } from 'lucide-react';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { StatusIcon } from '../../runnerTypes';
+import type { ExecutionSummary, ToolCallSummary, FileChangeSummary } from '@/hooks/execution/useExecutionSummary';
 
 interface ExecutionSummaryCardProps {
-  executionSummary: {
-    status: string;
-    duration_ms?: number | null;
-    cost_usd?: number | null;
-    last_tool?: string | null;
-  };
-  onResume: () => void;
+  summary: ExecutionSummary;
+  compact?: boolean;
 }
 
-export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSummaryCardProps) {
-  const summaryPresentation = getStatusEntry(executionSummary.status);
+function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]; uniqueTools: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (toolCalls.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 typo-caption text-muted-foreground/80 hover:text-foreground transition-colors"
+      >
+        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        <Wrench className="w-3 h-3" />
+        <span>{toolCalls.length} tool call{toolCalls.length !== 1 ? 's' : ''}</span>
+        <span className="text-muted-foreground/50">
+          ({uniqueTools.length} unique)
+        </span>
+      </button>
+      {expanded && (
+        <div className="mt-1.5 ml-4 space-y-1 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
+          {toolCalls.map((tc, i) => (
+            <div key={i} className="flex items-start gap-2 typo-caption">
+              <span className="text-green-400 shrink-0">{'\u25B6'}</span>
+              <span className="font-medium shrink-0">{tc.name}</span>
+              <span className="text-muted-foreground/60 truncate">{tc.inputPreview}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: FileChangeSummary[]; writeCount: number; readCount: number }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (fileChanges.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 typo-caption text-muted-foreground/80 hover:text-foreground transition-colors"
+      >
+        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        <FileText className="w-3 h-3" />
+        <span>{fileChanges.length} file{fileChanges.length !== 1 ? 's' : ''}</span>
+        {writeCount > 0 && (
+          <span className="text-orange-400/70">{writeCount} modified</span>
+        )}
+        {readCount > 0 && (
+          <span className="text-blue-400/70">{readCount} read</span>
+        )}
+      </button>
+      {expanded && (
+        <div className="mt-1.5 ml-4 space-y-0.5 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
+          {fileChanges.map((fc, i) => (
+            <div key={i} className="flex items-center gap-2 typo-caption">
+              <span className={fc.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}>{'\u25CF'}</span>
+              <span className="text-muted-foreground truncate">{fc.path.split('/').pop()}</span>
+              <span className="text-muted-foreground/40 capitalize typo-caption">{fc.changeType}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ExecutionSummaryCard({ summary, compact }: ExecutionSummaryCardProps) {
+  const presentation = getStatusEntry(summary.status);
 
   return (
     <div
-      className={`animate-fade-slide-in rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
+      className={`animate-fade-slide-in rounded-xl border ${compact ? 'p-2.5' : 'p-4'} ${presentation.border} ${presentation.bg}`}
     >
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Status row */}
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <StatusIcon status={executionSummary.status} className="w-5 h-5" />
-          <span className={`typo-heading capitalize ${summaryPresentation.text}`}>
-            {executionSummary.status}
+          <StatusIcon status={summary.status} className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
+          <span className={`${compact ? 'typo-body font-medium' : 'typo-heading'} capitalize ${presentation.text}`}>
+            {summary.status}
           </span>
         </div>
 
-        {executionSummary.duration_ms != null && (
-          <div className="flex items-center gap-1.5 text-muted-foreground/80">
-            <Timer className="w-3.5 h-3.5" />
-            <span className="typo-code">{(executionSummary.duration_ms / 1000).toFixed(1)}s</span>
+        {summary.durationMs != null && (
+          <div className="flex items-center gap-1 text-muted-foreground/80">
+            <Timer className="w-3 h-3" />
+            <span className="typo-code">{(summary.durationMs / 1000).toFixed(1)}s</span>
           </div>
         )}
 
-        {executionSummary.cost_usd != null && (
-          <div className="flex items-center gap-1.5 text-muted-foreground/80">
-            <DollarSign className="w-3.5 h-3.5" />
-            <span className="typo-code">${executionSummary.cost_usd.toFixed(4)}</span>
+        {summary.costUsd != null && (
+          <div className="flex items-center gap-1 text-muted-foreground/80">
+            <DollarSign className="w-3 h-3" />
+            <span className="typo-code">${summary.costUsd.toFixed(4)}</span>
+          </div>
+        )}
+
+        {summary.totalTokens != null && (
+          <div className="flex items-center gap-1 text-muted-foreground/80">
+            <Coins className="w-3 h-3" />
+            <span className="typo-code">{summary.totalTokens.toLocaleString()} tokens</span>
           </div>
         )}
       </div>
 
-      {/* Cancelled-specific: last tool + resume */}
-      {executionSummary.status === 'cancelled' && (
-        <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
-          {executionSummary.last_tool && (
-            <div className="flex items-center gap-2 typo-body text-muted-foreground/90">
-              <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-              <span>Stopped while running</span>
-              <code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 typo-code">
-                {executionSummary.last_tool}
-              </code>
-            </div>
-          )}
-          <button
-            onClick={onResume}
-            className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            Resume from here
-          </button>
+      {/* Model badge */}
+      {summary.model && (
+        <div className="mt-1.5">
+          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary/40 typo-caption text-muted-foreground/70">
+            {summary.model}
+          </span>
         </div>
       )}
+
+      {/* Tool calls expandable section */}
+      <ToolCallList toolCalls={summary.toolCalls} uniqueTools={summary.uniqueTools} />
+
+      {/* File changes expandable section */}
+      <FileChangeList fileChanges={summary.fileChanges} writeCount={summary.fileWriteCount} readCount={summary.fileReadCount} />
     </div>
   );
 }
