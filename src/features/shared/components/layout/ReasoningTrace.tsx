@@ -88,6 +88,18 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         </div>
       );
 
+    case "file_change":
+      return (
+        <div className="flex items-start gap-2 py-1">
+          <span className={`shrink-0 ${entry.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}`}>{entry.changeType === 'read' ? '\u25CB' : '\u25CF'}</span>
+          <div className="min-w-0 flex-1 typo-caption">
+            <span className="font-medium capitalize">{entry.changeType}</span>
+            <span className="text-muted-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
+          </div>
+          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+        </div>
+      );
+
     case "heartbeat":
       if (entry.silence < 10_000) return null;
       return (
