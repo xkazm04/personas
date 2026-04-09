@@ -20,6 +20,7 @@ function wrapFn(fn: TimerHandler, label: string, s: string): TimerHandler {
   if (typeof fn !== 'function') return fn;
   return function (this: unknown, ...args: unknown[]) {
     currentCallback = `${label}\n${s}`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     try { return (fn as Function).apply(this, args); }
     finally { currentCallback = null; }
   } as unknown as TimerHandler;

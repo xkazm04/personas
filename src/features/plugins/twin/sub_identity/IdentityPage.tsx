@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 
 /**
@@ -34,6 +34,64 @@ function genderToPronouns(g: Gender): string {
   return 'neutral';
 }
 
+/* ------------------------------------------------------------------ */
+/*  BioGeneratorPanel — AI-powered bio drafting                       */
+/* ------------------------------------------------------------------ */
+
+interface BioGeneratorPanelProps {
+  name: string;
+  role: string;
+  onBioGenerated: (bio: string) => void;
+  onClose: () => void;
+}
+
+function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGeneratorPanelProps) {
+  const [bioKeywords, setBioKeywords] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!bioKeywords.trim() || !name.trim()) return;
+    setGenerating(true);
+    try {
+      const result = await generateBio(name.trim(), role.trim() || null, bioKeywords.trim());
+      onBioGenerated(result);
+      onClose();
+    } catch {
+      // Fallback: construct a basic bio from keywords
+      const keywords = bioKeywords.split(',').map((k) => k.trim()).filter(Boolean);
+      onBioGenerated(`${name.trim()}${role.trim() ? `, ${role.trim()}` : ''}. ${keywords.join('. ')}.`);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="p-3 rounded-card border border-violet-500/15 bg-violet-500/5 space-y-3">
+      <p className="typo-caption text-foreground">
+        Enter keywords or short phrases separated by commas. AI will compose a polished bio.
+      </p>
+      <input
+        type="text"
+        placeholder="e.g. full-stack developer, open source, AI tools, Czech Republic"
+        value={bioKeywords}
+        onChange={(e) => setBioKeywords(e.target.value)}
+        className={INPUT_FIELD}
+        autoFocus
+      />
+      <div className="flex justify-end">
+        <Button onClick={handleGenerate} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
+          <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+          {generating ? 'Generating...' : 'Generate Bio'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  IdentityPage                                                      */
+/* ------------------------------------------------------------------ */
+
 export default function IdentityPage() {
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -50,9 +108,6 @@ export default function IdentityPage() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  // AI bio generation
-  const [bioKeywords, setBioKeywords] = useState('');
-  const [generating, setGenerating] = useState(false);
   const [showBioGen, setShowBioGen] = useState(false);
 
   useEffect(() => {
@@ -65,7 +120,7 @@ export default function IdentityPage() {
       setDirty(false);
       setShowBioGen(false);
     }
-  }, [activeTwin?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTwin?.id]); // reset form when active twin changes
 
   useEffect(() => {
     if (twinProfiles.length === 0) fetchTwinProfiles();
@@ -88,27 +143,9 @@ export default function IdentityPage() {
     }
   };
 
-  const handleGenerateBio = async () => {
-    if (!bioKeywords.trim() || !name.trim()) return;
-    setGenerating(true);
-    try {
-      const result = await invoke<string>("twin_generate_bio", {
-        name: name.trim(),
-        role: role.trim() || null,
-        keywords: bioKeywords.trim(),
-      });
-      setBio(result);
-      setDirty(true);
-      setShowBioGen(false);
-      setBioKeywords('');
-    } catch {
-      // Fallback: construct a basic bio from keywords
-      const keywords = bioKeywords.split(',').map((k) => k.trim()).filter(Boolean);
-      setBio(`${name.trim()}${role.trim() ? `, ${role.trim()}` : ''}. ${keywords.join('. ')}.`);
-      setDirty(true);
-    } finally {
-      setGenerating(false);
-    }
+  const handleBioGenerated = (generatedBio: string) => {
+    setBio(generatedBio);
+    setDirty(true);
   };
 
   const markDirty = () => setDirty(true);
@@ -173,25 +210,12 @@ export default function IdentityPage() {
             </div>
 
             {showBioGen && (
-              <div className="p-3 rounded-card border border-violet-500/15 bg-violet-500/5 space-y-3">
-                <p className="typo-caption text-foreground">
-                  Enter keywords or short phrases separated by commas. AI will compose a polished bio.
-                </p>
-                <input
-                  type="text"
-                  placeholder="e.g. full-stack developer, open source, AI tools, Czech Republic"
-                  value={bioKeywords}
-                  onChange={(e) => setBioKeywords(e.target.value)}
-                  className={INPUT_FIELD}
-                  autoFocus
-                />
-                <div className="flex justify-end">
-                  <Button onClick={handleGenerateBio} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                    {generating ? 'Generating...' : 'Generate Bio'}
-                  </Button>
-                </div>
-              </div>
+              <BioGeneratorPanel
+                name={name}
+                role={role}
+                onBioGenerated={handleBioGenerated}
+                onClose={() => setShowBioGen(false)}
+              />
             )}
 
             <textarea

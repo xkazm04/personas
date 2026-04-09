@@ -168,7 +168,7 @@ if (import.meta.env.DEV) (async () => {
     // Lazy stores monitored when they load
     import("./stores/overviewStore").then(({ useOverviewStore }) => monitorStore(useOverviewStore, 'overviewStore')).catch(() => {});
     import("./stores/vaultStore").then(({ useVaultStore }) => monitorStore(useVaultStore, 'vaultStore')).catch(() => {});
-  } catch {}
+  } catch { /* intentional: store monitoring is non-critical */ }
 })();
 
 (async () => {

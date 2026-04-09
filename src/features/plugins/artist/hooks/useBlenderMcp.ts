@@ -73,7 +73,7 @@ export function useBlenderMcp() {
       mountedRef.current = false;
       cancelIdleCallback(id);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // mount-only effect: check runs once at startup
 
   return { status: cachedStatus, checking, installing, check: () => check(true), installMcp };
 }

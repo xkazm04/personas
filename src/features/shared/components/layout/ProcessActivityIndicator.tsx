@@ -9,7 +9,7 @@ export default function ProcessActivityIndicator() {
 
   let count = 0;
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // Hook called inside try/catch for store error resilience
     count = useOverviewStore(
       useShallow((s) => Object.keys(s.activeProcesses).length),
     );

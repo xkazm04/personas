@@ -64,7 +64,7 @@ export function TemplateDetailModal({
   const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const keys = TAB_CONFIG.map(t => t.key);
     const idx = keys.indexOf(activeTab);
-    let next: number | null = null;
+    let next: number;
 
     switch (e.key) {
       case 'ArrowRight':

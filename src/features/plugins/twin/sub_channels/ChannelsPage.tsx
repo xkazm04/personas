@@ -36,6 +36,63 @@ const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({
   label: ct.label,
 }));
 
+/* ------------------------------------------------------------------ */
+/*  ChannelCard — single row in the channel list                      */
+/* ------------------------------------------------------------------ */
+
+interface ChannelCardProps {
+  channel: TwinChannel;
+  meta: ReturnType<typeof getChannelMeta>;
+  credential: { id: string; name: string } | undefined;
+  onToggle: (ch: TwinChannel) => void;
+  onDelete: (ch: TwinChannel) => void;
+}
+
+function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelCardProps) {
+  return (
+    <div className={`p-4 rounded-card border transition-colors ${
+      channel.is_active ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30 opacity-60'
+    }`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-interactive ${meta.bg} flex items-center justify-center flex-shrink-0`}>
+          <Radio className={`w-4 h-4 ${meta.color}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="typo-heading text-foreground">{channel.label ?? meta.label}</span>
+            <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
+            {!channel.is_active && (
+              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-muted-foreground">Paused</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="typo-caption text-foreground truncate">
+              {credential ? credential.name : channel.credential_id.slice(0, 12) + '...'}
+            </span>
+            {channel.persona_id && (
+              <span className="flex items-center gap-1 typo-caption text-muted-foreground">
+                <User className="w-3 h-3" />{channel.persona_id.slice(0, 8)}...
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={() => onToggle(channel)} title={channel.is_active ? 'Pause' : 'Activate'} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+            {channel.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+          </button>
+          <button onClick={() => onDelete(channel)} title="Remove" className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  ChannelsPage                                                      */
+/* ------------------------------------------------------------------ */
+
 export default function ChannelsPage() {
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
@@ -55,6 +112,7 @@ export default function ChannelsPage() {
   const [newPersonaId, setNewPersonaId] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTwinId) fetchChannels(activeTwinId);
@@ -74,11 +132,11 @@ export default function ChannelsPage() {
   // Auto-prefill when only one credential exists
   useEffect(() => {
     if (filteredCredentials.length === 1) {
-      setNewCredId(filteredCredentials[0]!.id);
+      setNewCredId(filteredCredentials[0]?.id ?? '');
     } else if (!filteredCredentials.find((c) => c.id === newCredId)) {
       setNewCredId('');
     }
-  }, [filteredCredentials]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filteredCredentials, newCredId]);
 
   const credentialOptions: ThemedSelectOption[] = filteredCredentials.map((c) => ({
     value: c.id,
@@ -91,27 +149,40 @@ export default function ChannelsPage() {
     setNewCredId('');
     setNewPersonaId('');
     setNewLabel('');
+    setFormError(null);
   };
 
   const handleCreate = async () => {
     if (!activeTwinId || !newCredId.trim()) return;
     setSubmitting(true);
+    setFormError(null);
     try {
       await createChannel(activeTwinId, newType, newCredId.trim(), newPersonaId.trim() || undefined, newLabel.trim() || undefined);
       resetForm();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to create channel';
+      setFormError(message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleToggle = async (ch: TwinChannel) => {
-    await updateChannel(ch.id, { isActive: !ch.is_active });
+    try {
+      await updateChannel(ch.id, { isActive: !ch.is_active });
+    } catch {
+      // Toggle failed — state stays unchanged
+    }
   };
 
   const handleDelete = async (ch: TwinChannel) => {
     const label = ch.label ?? `${ch.channel_type} channel`;
     if (!confirm(`Remove "${label}"? The credential and persona are not deleted.`)) return;
-    await deleteChannel(ch.id);
+    try {
+      await deleteChannel(ch.id);
+    } catch {
+      // Delete failed — channel stays in the list
+    }
   };
 
   if (!activeTwinId) return <TwinEmptyState icon={Radio} title="Channels" />;
@@ -180,6 +251,9 @@ export default function ChannelsPage() {
                   <input type="text" placeholder="Persona that operates here" value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)} className={`${INPUT_FIELD} font-mono`} />
                 </div>
               </div>
+              {formError && (
+                <p className="typo-caption text-red-400">{formError}</p>
+              )}
               <div className="flex justify-end gap-2">
                 <Button onClick={resetForm} variant="ghost" size="sm">Cancel</Button>
                 <Button onClick={handleCreate} disabled={!newCredId.trim() || submitting} size="sm">{submitting ? 'Adding...' : 'Add Channel'}</Button>
@@ -202,42 +276,14 @@ export default function ChannelsPage() {
                 const meta = getChannelMeta(ch.channel_type);
                 const cred = credentials.find((c) => c.id === ch.credential_id);
                 return (
-                  <div key={ch.id} className={`p-4 rounded-card border transition-colors ${
-                    ch.is_active ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30 opacity-60'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-interactive ${meta.bg} flex items-center justify-center flex-shrink-0`}>
-                        <Radio className={`w-4 h-4 ${meta.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="typo-heading text-foreground">{ch.label ?? meta.label}</span>
-                          <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
-                          {!ch.is_active && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-muted-foreground">Paused</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="typo-caption text-foreground truncate">
-                            {cred ? cred.name : ch.credential_id.slice(0, 12) + '...'}
-                          </span>
-                          {ch.persona_id && (
-                            <span className="flex items-center gap-1 typo-caption text-muted-foreground">
-                              <User className="w-3 h-3" />{ch.persona_id.slice(0, 8)}...
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => handleToggle(ch)} title={ch.is_active ? 'Pause' : 'Activate'} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
-                          {ch.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                        </button>
-                        <button onClick={() => handleDelete(ch)} title="Remove" className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <ChannelCard
+                    key={ch.id}
+                    channel={ch}
+                    meta={meta}
+                    credential={cred}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                  />
                 );
               })}
             </div>
