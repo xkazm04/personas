@@ -1783,16 +1783,10 @@ pub async fn run_execution(
     // Deliver message to persona_messages if execution produced output but the AI
     // did NOT already send a structured report via the emit_message protocol tool.
     // When a protocol UserMessage exists, it IS the report — the raw dump is redundant.
-    // Also skip if the execution was already marked terminal in the DB (e.g. after an
-    // app restart where the engine process survived — avoids orphaned messages).
+    // The INSERT is conditional on the execution NOT already being terminal in the DB,
+    // checked atomically to avoid a race with cancel/timeout handlers.
     let protocol_messages_sent = stream_messages_dispatched.load(std::sync::atomic::Ordering::Relaxed);
-    let already_terminal = {
-        use crate::db::repos::execution::executions as exec_repo;
-        exec_repo::get_by_id(&pool, &execution_id)
-            .map(|e| matches!(e.status.as_str(), "completed" | "failed" | "cancelled"))
-            .unwrap_or(false)
-    };
-    if success && !assistant_text.is_empty() && protocol_messages_sent == 0 && !already_terminal && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
+    if success && !assistant_text.is_empty() && protocol_messages_sent == 0 && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
         // Generate a descriptive title: use the first heading, first sentence,
         // or persona name + date range as fallback instead of generic "Execution output"
         let title = {

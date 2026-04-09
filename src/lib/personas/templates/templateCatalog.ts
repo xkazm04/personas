@@ -1,12 +1,13 @@
 /**
  * Template Catalog -- single source of truth for all template JSON files.
  *
- * Uses Vite glob import to eagerly load every JSON under scripts/templates/,
- * excluding debug directories. Also registers all built-in template IDs
- * for origin verification.
+ * Uses Vite glob import to LAZILY load every JSON under scripts/templates/,
+ * excluding debug directories. Templates are loaded on first access via
+ * getTemplateCatalog(), not at module init. This defers ~3.7MB of JS
+ * parsing from the critical startup path.
  *
  * Two-layer integrity verification:
- *   1. Client-side: fast synchronous check at module init (defense layer 1)
+ *   1. Client-side: fast check at first load (defense layer 1)
  *   2. Backend (Rust): authoritative async check against checksums embedded
  *      in the native binary, which is much harder to tamper with (defense layer 2)
  */
@@ -18,16 +19,15 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-catalog');
 
-// Lazy glob: templates are loaded on first access to TEMPLATE_CATALOG,
-// not at module init. This defers ~50MB of JSON parsing until needed.
+// Lazy glob: each entry is an async loader function, NOT the resolved module.
+// The actual JSON is only fetched + parsed when the loader is called.
 const moduleLoaders = import.meta.glob<TemplateCatalogEntry>(
   [
     '../../../../scripts/templates/**/*.json',
     '!../../../../scripts/templates/_*/**',
   ],
-  { eager: true, import: 'default' },
+  { import: 'default' },
 );
-const modules = moduleLoaders;
 
 function templatePathFromModulePath(modulePath: string): string {
   const marker = '/scripts/templates/';
@@ -36,43 +36,63 @@ function templatePathFromModulePath(modulePath: string): string {
   return modulePath.slice(idx + marker.length);
 }
 
-// -- Layer 1: Client-side verification (synchronous, immediate) ----------
-// NOTE: canonicalContent is NOT stored — it was 50MB+ of duplicated JSON strings.
-// It's regenerated on-demand in verifyTemplatesWithBackend() (runs once, async).
+// ---------------------------------------------------------------------------
+// Lazy loading + verification
+// ---------------------------------------------------------------------------
 
 interface VerifiedEntry {
   template: TemplateCatalogEntry;
   relPath: string;
 }
 
-const verified: VerifiedEntry[] = [];
+let _cached: VerifiedEntry[] | null = null;
+let _loading: Promise<VerifiedEntry[]> | null = null;
 
-for (const [modulePath, template] of Object.entries(modules)) {
-  if ((template as unknown as Record<string, unknown>).is_published === false) continue;
+async function loadAndVerify(): Promise<VerifiedEntry[]> {
+  const modules = await Promise.all(
+    Object.entries(moduleLoaders).map(async ([modulePath, loader]) => {
+      const template = await loader();
+      return { modulePath, template };
+    }),
+  );
 
-  const relPath = templatePathFromModulePath(modulePath);
-  const expectedChecksum = TEMPLATE_CHECKSUMS[relPath];
+  const verified: VerifiedEntry[] = [];
+  for (const { modulePath, template } of modules) {
+    if ((template as unknown as Record<string, unknown>).is_published === false) continue;
 
-  if (!expectedChecksum) {
-    logger.warn('Missing checksum for built-in template, skipping', { relPath });
-    continue;
+    const relPath = templatePathFromModulePath(modulePath);
+    const expectedChecksum = TEMPLATE_CHECKSUMS[relPath];
+
+    if (!expectedChecksum) {
+      logger.warn('Missing checksum for built-in template, skipping', { relPath });
+      continue;
+    }
+
+    const canonicalContent = JSON.stringify(template);
+    const actualChecksum = computeContentHashSync(canonicalContent);
+    if (actualChecksum !== expectedChecksum) {
+      logger.warn('Integrity mismatch for built-in template, skipping', { relPath, expectedChecksum, actualChecksum });
+      continue;
+    }
+    verified.push({ template, relPath });
   }
 
-  const canonicalContent = JSON.stringify(template);
-  const actualChecksum = computeContentHashSync(canonicalContent);
-  if (actualChecksum !== expectedChecksum) {
-    logger.warn('Integrity mismatch for built-in template, skipping', { relPath, expectedChecksum, actualChecksum });
-    continue;
-  }
-  // Don't store canonicalContent — regenerate on demand to save ~50MB heap
-  verified.push({ template, relPath });
+  // Register all catalog templates as verified built-ins
+  registerBuiltinTemplates(verified.map((v) => v.template.id));
+
+  return verified;
 }
 
-/** Every verified template in the catalog. */
-export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = verified.map((v) => v.template);
-
-// Register all catalog templates as verified built-ins
-registerBuiltinTemplates(TEMPLATE_CATALOG.map((t) => t.id));
+/**
+ * Load and verify templates on demand. Cached after first call.
+ * All consumers should use this instead of the sync TEMPLATE_CATALOG export.
+ */
+export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
+  if (_cached) return _cached.map((v) => v.template);
+  if (!_loading) _loading = loadAndVerify();
+  _cached = await _loading;
+  return _cached.map((v) => v.template);
+}
 
 // -- Layer 2: Backend verification (async, authoritative) ----------------
 
@@ -93,18 +113,13 @@ interface BackendIntegrityResult {
 
 /**
  * Asynchronously verify all client-side-passed templates against the
- * Rust backend's embedded checksum manifest. This runs after initial
- * catalog load and flags any discrepancies between the frontend bundle's
- * checksums and the authoritative backend manifest.
- *
- * If any template fails backend verification, it is logged with a
- * security warning. The template is NOT removed from the catalog at
- * this stage (to avoid breaking the UI), but the warning provides
- * visibility for security monitoring.
+ * Rust backend's embedded checksum manifest.
  */
 export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResult | null> {
   try {
-    // Regenerate canonical content on demand (not cached — saves ~50MB heap)
+    await getTemplateCatalog();
+    const verified = _cached!;
+
     const entries = verified.map((v) => ({
       path: v.relPath,
       content: JSON.stringify(v.template),
@@ -129,7 +144,6 @@ export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResu
 
     return result;
   } catch (err) {
-    // Backend verification is defense-in-depth; don't break the app if unavailable
     logger.warn('Backend integrity verification unavailable', { err });
     return null;
   }

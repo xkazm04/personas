@@ -162,5 +162,5 @@ export function stopMonitor(): void {
   stop: stopMonitor,
 };
 
-// Auto-start
-startMonitor();
+// Auto-start only in dev mode — zero overhead in production
+if (import.meta.env.DEV) startMonitor();

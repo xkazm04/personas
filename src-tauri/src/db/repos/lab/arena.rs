@@ -93,8 +93,8 @@ pub fn create_result(
                  output_preview, tool_calls_expected, tool_calls_actual,
                  tool_accuracy_score, output_quality_score, protocol_compliance,
                  input_tokens, output_tokens, cost_usd, duration_ms,
-                 rationale, suggestions, error_message, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
+                 rationale, suggestions, error_message, eval_method, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
              RETURNING *",
             params![
                 id,
@@ -116,6 +116,7 @@ pub fn create_result(
                 input.base.rationale,
                 input.base.suggestions,
                 input.base.error_message,
+                input.base.eval_method,
                 now,
             ],
             row_to_result,

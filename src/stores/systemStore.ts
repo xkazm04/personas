@@ -19,6 +19,7 @@ import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
 import { createArtistSlice } from "./slices/system/artistSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import { createResearchLabSlice } from "./slices/system/researchLabSlice";
+import { createTwinSlice } from "./slices/system/twinSlice";
 import { TIER_RANK, DEFAULT_TIER } from "@/lib/constants/uiModes";
 
 /** Migrate legacy viewMode values ('simple'|'full'|'dev') persisted before the tier rename. */
@@ -42,6 +43,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createArtistSlice(...a),
       ...createObsidianBrainSlice(...a),
       ...createResearchLabSlice(...a),
+      ...createTwinSlice(...a),
     }),
     {
       name: "persona-ui-system",
@@ -65,6 +67,7 @@ export const useSystemStore = create<SystemStore>()(
         artistFolder: state.artistFolder,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
+        twinTab: state.twinTab,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

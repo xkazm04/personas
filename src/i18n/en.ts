@@ -414,9 +414,10 @@ export const en = {
     appearance: "Appearance",
     notifications: "Notifications",
     engine: "Engine",
-    // "BYOM" = Bring Your Own Model
-    byom: "Custom Models",
+    byom: "Model Providers",
     data: "Data",
+    quality_gates: "Content Filters",
+    config_resolution: "Agent Configuration",
     admin: "Admin",
 
     // Agent sidebar sub-nav
@@ -7226,6 +7227,7 @@ export const en = {
   // -------------------------------------------------------------------
   settings: {
     title: "Settings",
+    settings_saved: "Saved",
 
     // -- Account ----------------------------------------------------------
     account: {

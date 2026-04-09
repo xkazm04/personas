@@ -1,3 +1,4 @@
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { CX, CY, iconChar } from '../../libs/visualizationHelpers';
 import type { ProcessingInfo } from '../../libs/visualizationHelpers';
 import { NODE_R } from './EventBusTypes';
@@ -47,10 +48,14 @@ export function InnerNodeGroup({
   processingSet: Map<string, ProcessingInfo>;
   hasTraffic: boolean;
 }) {
+  const { shouldAnimate } = useMotion();
+  const r = 3.5;
+  const pr = r + 1.2;
+  const circ = 2 * Math.PI * pr;
+
   return (
     <>
       {nodes.map((node, i) => {
-        const r = 3.5;
         const proc = processingSet.get(node.id);
         const hex = Array.from({ length: 6 }, (_, j) => {
           const a = (j * 60 - 30) * (Math.PI / 180);
@@ -73,12 +78,47 @@ export function InnerNodeGroup({
             </text>
             {proc && (
               <g>
-                <circle cx={node.x} cy={node.y} r={r + 1.2} fill="none" stroke={`${proc.color}25`} strokeWidth="0.4" />
+                <defs>
+                  <filter id={`proc-glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="1">
+                      {shouldAnimate && (
+                        <animate attributeName="stdDeviation" values="1;2.5;1" dur="2s" repeatCount="indefinite" />
+                      )}
+                    </feGaussianBlur>
+                  </filter>
+                </defs>
+                {/* Background track */}
+                <circle cx={node.x} cy={node.y} r={pr} fill="none" stroke={`${proc.color}25`} strokeWidth="0.4" />
+                {/* Glow halo layer */}
+                <circle
+                  cx={node.x} cy={node.y} r={pr}
+                  fill="none" stroke={proc.color} strokeWidth="0.6" strokeLinecap="round"
+                  strokeDasharray={`${circ * 0.75} ${circ}`}
+                  filter={`url(#proc-glow-${i})`}
+                  opacity={0.4}
+                  transform={`rotate(-90 ${node.x} ${node.y})`}
+                >
+                  {shouldAnimate && (
+                    <animateTransform attributeName="transform" type="rotate"
+                      from={`-90 ${node.x} ${node.y}`} to={`270 ${node.x} ${node.y}`}
+                      dur="2s" repeatCount="indefinite" />
+                  )}
+                </circle>
+                {/* Main processing arc */}
                 <circle className="animate-fade-in"
-                  cx={node.x} cy={node.y} r={r + 1.2}
+                  cx={node.x} cy={node.y} r={pr}
                   fill="none" stroke={proc.color} strokeWidth="0.5" strokeLinecap="round"
-                  style={{ strokeDasharray: 2 * Math.PI * (r + 1.2), transformOrigin: `${node.x}px ${node.y}px`, transform: 'rotate(-90deg)' }}
-                />
+                  strokeDasharray={`${circ * 0.75} ${circ}`}
+                  transform={`rotate(-90 ${node.x} ${node.y})`}
+                >
+                  {shouldAnimate ? (
+                    <animateTransform attributeName="transform" type="rotate"
+                      from={`-90 ${node.x} ${node.y}`} to={`270 ${node.x} ${node.y}`}
+                      dur="2s" repeatCount="indefinite" />
+                  ) : (
+                    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" />
+                  )}
+                </circle>
               </g>
             )}
           </g>

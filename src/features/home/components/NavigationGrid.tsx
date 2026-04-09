@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
 
 export interface NavCard {
@@ -27,15 +28,16 @@ interface NavigationGridProps {
 function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: number; cardT: { label: string; description: string }; onCardClick: (id: string) => void }) {
   const [hovered, setHovered] = useState(false);
   const CustomIcon = SIDEBAR_ICONS[card.id];
+  const { shouldAnimate, staggerDelay } = useMotion();
 
   return (
     <motion.button
       key={card.id}
       data-testid={`home-card-${card.id}`}
-      initial={{ opacity: 0, y: 24 }}
+      initial={shouldAnimate ? { opacity: 0, y: 24 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 + i * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -6, transition: { duration: 0.25 } }}
+      transition={shouldAnimate ? { delay: 0.15 + i * staggerDelay, duration: 0.45, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+      whileHover={shouldAnimate ? { y: -6, transition: { duration: 0.25 } } : {}}
       onClick={() => onCardClick(card.id)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

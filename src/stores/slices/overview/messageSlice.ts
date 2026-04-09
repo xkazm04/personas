@@ -88,13 +88,23 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
     const prevReadAt = msg.read_at;
 
     // Optimistically mark as read and add to pending set
+    const readAt = new Date().toISOString();
+    const markRead = (m: PersonaMessage) =>
+      m.id === id ? { ...m, is_read: true, read_at: readAt } : m;
+
     set((state) => {
       const nextPending = new Set(state._pendingReadIds);
       nextPending.add(id);
+      // Propagate read status into threadReplies cache
+      const nextThreadReplies = new Map(state.threadReplies);
+      for (const [threadId, replies] of nextThreadReplies) {
+        if (replies.some((r) => r.id === id)) {
+          nextThreadReplies.set(threadId, replies.map(markRead));
+        }
+      }
       return {
-        messages: state.messages.map((m) =>
-          m.id === id ? { ...m, is_read: true, read_at: new Date().toISOString() } : m,
-        ),
+        messages: state.messages.map(markRead),
+        threadReplies: nextThreadReplies,
         _pendingReadIds: nextPending,
         unreadMessageCount: Math.max(0, state.unreadMessageCount - 1),
       };
@@ -110,13 +120,21 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
     } catch (err) {
       logger.warn("markMessageAsRead failed, recovering state", { messageId: id, error: String(err) });
       // Rollback: remove from pending set and restore the message
+      const rollback = (m: PersonaMessage) =>
+        m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m;
       set((state) => {
         const nextPending = new Set(state._pendingReadIds);
         nextPending.delete(id);
+        // Rollback threadReplies cache too
+        const nextThreadReplies = new Map(state.threadReplies);
+        for (const [threadId, replies] of nextThreadReplies) {
+          if (replies.some((r) => r.id === id)) {
+            nextThreadReplies.set(threadId, replies.map(rollback));
+          }
+        }
         return {
-          messages: state.messages.map((m) =>
-            m.id === id ? { ...m, is_read: false, read_at: prevReadAt ?? null } : m,
-          ),
+          messages: state.messages.map(rollback),
+          threadReplies: nextThreadReplies,
           _pendingReadIds: nextPending,
           unreadMessageCount: state.unreadMessageCount + 1,
         };
@@ -128,17 +146,24 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
   markAllMessagesAsRead: async (personaId?) => {
     try {
       await markAllMessagesRead(personaId);
+      const readAt = new Date().toISOString();
+      const shouldMark = (m: PersonaMessage) => !personaId || m.persona_id === personaId;
       set((state) => {
-        const updatedMessages = state.messages.map((m) => {
-          if (!personaId || m.persona_id === personaId) {
-            return { ...m, is_read: true, read_at: new Date().toISOString() };
+        const updatedMessages = state.messages.map((m) =>
+          shouldMark(m) ? { ...m, is_read: true, read_at: readAt } : m,
+        );
+        // Propagate read status into threadReplies cache
+        const nextThreadReplies = new Map(state.threadReplies);
+        for (const [threadId, replies] of nextThreadReplies) {
+          if (replies.some((r) => shouldMark(r) && !r.is_read)) {
+            nextThreadReplies.set(
+              threadId,
+              replies.map((r) => (shouldMark(r) ? { ...r, is_read: true, read_at: readAt } : r)),
+            );
           }
-          return m;
-        });
-        // Recompute from the in-memory list; preserves unread from other personas
-        // when a personaId filter is used. When marking all (no personaId), this is 0.
+        }
         const unreadMessageCount = updatedMessages.filter((m) => !m.is_read).length;
-        return { messages: updatedMessages, unreadMessageCount };
+        return { messages: updatedMessages, threadReplies: nextThreadReplies, unreadMessageCount };
       });
       // Fetch authoritative count in case the loaded list is a partial page
       await get().fetchUnreadMessageCount();
@@ -150,10 +175,44 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
   deleteMessage: async (id) => {
     try {
       await deleteMessage(id);
-      set((state) => ({
-        messages: state.messages.filter((m) => m.id !== id),
-        messagesTotal: Math.max(0, state.messagesTotal - 1),
-      }));
+      set((state) => {
+        // Remove from threadReplies cache so ghost messages don't appear
+        const nextThreadReplies = new Map(state.threadReplies);
+        for (const [threadId, replies] of nextThreadReplies) {
+          const filtered = replies.filter((m) => m.id !== id);
+          if (filtered.length !== replies.length) {
+            if (filtered.length === 0) {
+              nextThreadReplies.delete(threadId);
+            } else {
+              nextThreadReplies.set(threadId, filtered);
+            }
+          }
+        }
+        // Update thread summaries: decrement reply_count, remove if thread root was deleted
+        const nextThreadSummaries = state.threadSummaries
+          .filter((ts) => ts.threadId !== id)
+          .map((ts) => {
+            const cachedReplies = nextThreadReplies.get(ts.threadId);
+            if (cachedReplies) {
+              return { ...ts, replyCount: cachedReplies.length };
+            }
+            return ts;
+          });
+        // Evict orphaned delivery summary for the deleted message
+        const nextDeliverySummaries = new Map(state.deliverySummaries);
+        nextDeliverySummaries.delete(id);
+
+        return {
+          messages: state.messages.filter((m) => m.id !== id),
+          messagesTotal: Math.max(0, state.messagesTotal - 1),
+          deliverySummaries: nextDeliverySummaries,
+          threadReplies: nextThreadReplies,
+          threadSummaries: nextThreadSummaries,
+          threadCount: nextThreadSummaries.length !== state.threadSummaries.length
+            ? Math.max(0, state.threadCount - 1)
+            : state.threadCount,
+        };
+      });
     } catch (err) {
       reportError(err, "Failed to delete message", set);
     }

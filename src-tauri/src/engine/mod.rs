@@ -4,9 +4,11 @@ pub mod build_session;
 pub mod events;
 pub mod event_registry;
 pub mod config_merge;
+#[cfg(feature = "p2p")]
 pub mod identity;
 pub mod bundle;
 pub mod enclave;
+#[cfg(feature = "p2p")]
 pub mod p2p;
 pub mod background;
 pub mod bus;
@@ -95,8 +97,11 @@ pub mod output_assertions;
 pub mod genome;
 pub mod evolution;
 pub mod chunker;
+#[cfg(feature = "ml")]
 pub mod embedder;
+#[cfg(feature = "ml")]
 pub mod vector_store;
+#[cfg(feature = "ml")]
 pub mod kb_ingest;
 pub mod api_proxy;
 pub mod discovery;

@@ -10,6 +10,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { ImplementationLog } from './ImplementationLog';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
 import { CrossProjectMetadataModal } from './CrossProjectMetadataModal';
@@ -611,6 +612,7 @@ export default function ProjectManagerPage() {
         subtitle={t.plugins.dev_tools.projects_subtitle}
         actions={
           <div className="flex items-center gap-2">
+            <LifecycleProjectPicker />
             <Button
               variant="accent"
               accentColor="violet"

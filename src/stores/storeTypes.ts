@@ -41,6 +41,7 @@ import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ArtistSlice } from "./slices/system/artistSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
+import type { TwinSlice } from "./slices/system/twinSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
@@ -230,5 +231,6 @@ export type SystemStore = CoreState &
   AmbientContextSlice &
   ArtistSlice &
   ObsidianBrainSlice &
-  ResearchLabSlice;
+  ResearchLabSlice &
+  TwinSlice;
 

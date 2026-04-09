@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { computeAdoptionReadiness, readinessTier } from '../../shared/adoptionReadiness';
-import { computeDifficulty, computeSetupLevel, DIFFICULTY_META, SETUP_META } from '../../shared/templateComplexity';
+import { computeDifficulty, computeSetupLevel, estimateSetupMinutes, DIFFICULTY_META, SETUP_META } from '../../shared/templateComplexity';
 import { verifyTemplate, detectTemplateOrigin, deriveTrustLevel, getSandboxPolicy } from '@/lib/templates/templateVerification';
 import { getCachedDesignResult, getCachedLightFields, getCachedVerification, getCachedReadinessScore } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -79,10 +79,11 @@ export function useTemplateCardData(
     return identity.length > 200 ? identity.slice(0, 200) + '...' : identity;
   }, [designResult]);
 
-  const difficulty = useMemo(() => computeDifficulty(review), [review.connectors_used, review.use_case_flows, review.trigger_types]);
+  const difficulty = useMemo(() => computeDifficulty(review), [review.connectors_used, review.use_case_flows, review.trigger_types, review.design_result]);
   const difficultyMeta = DIFFICULTY_META[difficulty];
-  const setupLevel = useMemo(() => computeSetupLevel(review), [review.connectors_used, review.trigger_types]);
+  const setupLevel = useMemo(() => computeSetupLevel(review), [review.connectors_used, review.trigger_types, review.design_result]);
   const setupMeta = SETUP_META[setupLevel];
+  const setupMinutes = useMemo(() => estimateSetupMinutes(review), [review.connectors_used, review.trigger_types, review.design_result]);
 
   return {
     connectors,
@@ -99,5 +100,6 @@ export function useTemplateCardData(
     difficultyMeta,
     setupLevel,
     setupMeta,
+    setupMinutes,
   };
 }

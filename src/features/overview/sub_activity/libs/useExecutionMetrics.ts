@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
+import { computePeriodTrends } from '@/features/overview/utils/computeTrends';
 import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
 import { fmtDate } from './executionMetricsHelpers';
 
@@ -82,6 +83,11 @@ export function useExecutionMetrics() {
     return mergePreviousPeriod(chartData, effectiveDays, ['cost', 'completed', 'failed', 'successRate', 'p50', 'p95', 'p99']);
   }, [compareEnabled, chartData, effectiveDays]);
 
+  const trends = useMemo(
+    () => computePeriodTrends(chartData, effectiveDays, compareEnabled),
+    [chartData, effectiveDays, compareEnabled],
+  );
+
   const anomalyDates = useMemo(
     () => new Set(data?.cost_anomalies.map((a) => fmtDate(a.date)) ?? []),
     [data],
@@ -101,6 +107,6 @@ export function useExecutionMetrics() {
     compareEnabled, setCompareEnabled,
     activeRangeLabel,
     chartData, comparedChartData, personaCostData, personaNames,
-    anomalyDates, overallSuccessRatePct,
+    anomalyDates, overallSuccessRatePct, trends,
   };
 }

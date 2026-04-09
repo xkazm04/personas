@@ -1094,6 +1094,15 @@ input[type="number"] {
   animation: draw-check 0.3s ease forwards;
 }
 
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 6px hsl(var(--primary) / 0); }
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
 .animate-confidence-shimmer {
   animation: confidence-shimmer 2s ease-in-out infinite;
 }

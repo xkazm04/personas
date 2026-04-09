@@ -19,9 +19,20 @@ export function pivotToolUsageOverTime(toolUsageOverTime: ToolUsageOverTimePoint
     entry[row.tool_name] = (entry[row.tool_name] || 0) + row.invocations;
   }
 
+  const allToolNames = Array.from(names);
+
+  // Zero-fill: ensure every date has an entry for every tool so Recharts
+  // stacked AreaChart never sees undefined keys (which cause NaN tooltips
+  // and visual jumps).
+  for (const entry of dateMap.values()) {
+    for (const name of allToolNames) {
+      if (!(name in entry)) entry[name] = 0;
+    }
+  }
+
   const sortedDates = Array.from(dateMap.keys()).sort();
   return {
     areaData: sortedDates.map((date) => ({ date, ...dateMap.get(date) })),
-    allToolNames: Array.from(names),
+    allToolNames,
   };
 }

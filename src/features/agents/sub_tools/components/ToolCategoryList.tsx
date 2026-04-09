@@ -15,7 +15,6 @@ interface ToolCategoryListProps {
   credentialLabel: (credType: string) => string;
   usageByTool: Map<string, number>;
   impactDataMap: Map<string, ToolImpactData>;
-  justToggledId: string | null;
   isSearching: boolean;
   searchQuery: string;
   assignedCount: number;
@@ -28,7 +27,7 @@ interface ToolCategoryListProps {
 
 export function ToolCategoryList({
   viewMode, filteredTools, connectorGroups, assignedToolIds,
-  credentialTypeSet, credentialLabel, usageByTool, impactDataMap, justToggledId,
+  credentialTypeSet, credentialLabel, usageByTool, impactDataMap,
   isSearching, assignedCount, onClearSearch, onBrowseTools, onToggleTool, onBulkToggle, onAddCredential,
 }: ToolCategoryListProps) {
   const { t } = useTranslation();
@@ -68,7 +67,6 @@ export function ToolCategoryList({
                 tool={tool}
                 isAssigned={isAssigned}
                 missingCredential={!!missingCredential}
-                justToggledId={justToggledId}
                 credentialLabel={credentialLabel}
                 credentialTypeSet={credentialTypeSet}
                 usageByTool={usageByTool}
@@ -95,7 +93,6 @@ export function ToolCategoryList({
             assignedToolIds={assignedToolIds}
             credentialTypeSet={credentialTypeSet}
             credentialLabel={credentialLabel}
-            justToggledId={justToggledId}
             usageByTool={usageByTool}
             impactDataMap={impactDataMap}
             onToggleTool={onToggleTool}

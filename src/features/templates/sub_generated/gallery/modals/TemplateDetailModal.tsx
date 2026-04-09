@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
   X,
   Download,
@@ -11,6 +12,7 @@ import {
   Eye,
   Layers,
   FileCode,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,6 +22,8 @@ import { DesignConnectorGrid } from '@/features/shared/components/display/Design
 import { BaseModal } from '../../shared/BaseModal';
 import { TabTransition } from '../../shared/TabTransition';
 import { PersonaMatrix } from '../matrix/PersonaMatrix';
+import { computeDifficulty, estimateSetupMinutes, DIFFICULTY_META } from '../../shared/templateComplexity';
+import { useTemplatesTranslation } from '@/features/templates/i18n/useTemplatesTranslation';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
@@ -58,8 +62,44 @@ export function TemplateDetailModal({
 }: TemplateDetailModalProps) {
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
+  const { t: tpl } = useTemplatesTranslation();
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const TAB_CONFIG = useTabConfig();
+
+  const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const keys = TAB_CONFIG.map(t => t.key);
+    const idx = keys.indexOf(activeTab);
+    let next: number | null = null;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = (idx + 1) % keys.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = (idx - 1 + keys.length) % keys.length;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = keys.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    e.preventDefault();
+    const nextTab = keys[next]!;
+    setActiveTab(nextTab);
+    const target = e.currentTarget.querySelector<HTMLElement>(`[data-tab="${nextTab}"]`);
+    target?.focus();
+  }, [activeTab]);
+
+  const difficulty = useMemo(() => review ? computeDifficulty(review) : null, [review]);
+  const difficultyMeta = difficulty ? DIFFICULTY_META[difficulty] : null;
+  const setupMinutes = useMemo(() => review ? estimateSetupMinutes(review) : null, [review]);
 
   if (!isOpen || !review) return null;
 
@@ -96,7 +136,7 @@ export function TemplateDetailModal({
               <h2 id="template-detail-title" className="text-xl font-semibold text-foreground tracking-tight">
                 {review.test_case_name}
               </h2>
-              <p className="text-sm text-muted-foreground/60 mt-1.5 line-clamp-2 max-w-3xl leading-relaxed">
+              <p className="text-sm text-foreground mt-1.5 line-clamp-2 max-w-3xl leading-relaxed">
                 {review.instruction}
               </p>
               <div className="flex items-center gap-3 mt-3">
@@ -108,6 +148,22 @@ export function TemplateDetailModal({
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
                     <Download className="w-3.5 h-3.5" />
                     {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
+                  </span>
+                )}
+                {difficultyMeta && difficulty && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg border ${difficultyMeta.bgClass}`}
+                    title={`${tpl.complexity[difficulty]}${setupMinutes ? ` · ${tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
+                  >
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    {tpl.complexity[difficulty]}
+                    {setupMinutes != null && (
+                      <>
+                        <span className="opacity-50">·</span>
+                        <Clock className="w-3.5 h-3.5" />
+                        {tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}
+                      </>
+                    )}
                   </span>
                 )}
                 {!isSimple && review.had_references && (
@@ -125,13 +181,24 @@ export function TemplateDetailModal({
         </div>
 
         {/* Tabs with accent underline */}
-        <div className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20">
+        <div
+          role="tablist"
+          aria-label="Template details"
+          onKeyDown={handleTabKeyDown}
+          className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20"
+        >
           {TAB_CONFIG.map((tab) => {
             const TabIcon = tab.icon;
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
+                role="tab"
+                id={`tab-${tab.key}`}
+                aria-selected={isActive}
+                aria-controls={`tabpanel-${tab.key}`}
+                tabIndex={isActive ? 0 : -1}
+                data-tab={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors rounded-t-lg ${
                   isActive
@@ -151,7 +218,12 @@ export function TemplateDetailModal({
 
         {/* Content — min-h-0 lets flex-1 shrink below intrinsic content size
             on small viewports so overflow-y-auto actually takes effect */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
+        <div
+          role="tabpanel"
+          id={`tabpanel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+          className="flex-1 min-h-0 overflow-y-auto px-8 py-8"
+        >
           <TabTransition tabKey={activeTab}>
             {activeTab === 'overview' && (
               <OverviewTab
@@ -172,7 +244,7 @@ export function TemplateDetailModal({
               </div>
             )}
             {!designResult && (
-              <div className="flex flex-col items-center justify-center py-20 text-sm text-muted-foreground/60 gap-3">
+              <div className="flex flex-col items-center justify-center py-20 text-sm text-foreground gap-3">
                 <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-muted-foreground/40" />
                 </div>

@@ -6,7 +6,6 @@ import type { PersonaToolDefinition } from '@/lib/types/types';
 
 /**
  * Tool toggle, undo, bulk, and add-credential actions.
- * Manages the justToggledId flash and undo toast UI state.
  */
 export function useToolSelectorActions(
   personaId: string,
@@ -21,7 +20,6 @@ export function useToolSelectorActions(
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
 
-  const [justToggledId, setJustToggledId] = useState<string | null>(null);
   const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -43,15 +41,11 @@ export function useToolSelectorActions(
     } else {
       await assignTool(personaId, toolId);
     }
-    setJustToggledId(toolId);
-    setTimeout(() => setJustToggledId(null), 600);
   }, [clearUndoToast, removeTool, assignTool, personaId]);
 
   const handleUndo = useCallback(async () => {
     if (!undoToast) return;
     await assignTool(personaId, undoToast.toolId);
-    setJustToggledId(undoToast.toolId);
-    setTimeout(() => setJustToggledId(null), 600);
     clearUndoToast();
   }, [undoToast, assignTool, personaId, clearUndoToast]);
 
@@ -75,7 +69,6 @@ export function useToolSelectorActions(
   }, [setSidebarSection, navigate]);
 
   return {
-    justToggledId,
     undoToast,
     handleToggleTool,
     handleUndo,

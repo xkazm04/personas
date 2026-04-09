@@ -13,7 +13,6 @@ export const ToolCard = memo(function ToolCard({
   tool,
   isAssigned,
   missingCredential,
-  justToggledId,
   credentialLabel,
   credentialTypeSet,
   usageByTool,
@@ -24,7 +23,6 @@ export const ToolCard = memo(function ToolCard({
   tool: ToolDef;
   isAssigned: boolean;
   missingCredential: boolean;
-  justToggledId: string | null;
   credentialLabel: (credType: string) => string;
   credentialTypeSet: Set<string>;
   usageByTool: Map<string, number>;
@@ -60,7 +58,6 @@ export const ToolCard = memo(function ToolCard({
           toolName={tool.name}
           checked={isAssigned}
           disabled={missingCredential}
-          justToggled={justToggledId === tool.id}
           size="md"
           onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
         />

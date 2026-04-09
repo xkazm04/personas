@@ -2264,6 +2264,7 @@ fn row_to_competition(row: &Row) -> rusqlite::Result<DevCompetition> {
         status: row.get("status")?,
         winner_task_id: row.get("winner_task_id")?,
         winner_insight: row.get::<_, Option<String>>("winner_insight").ok().flatten(),
+        baseline_json: row.get::<_, Option<String>>("baseline_json").ok().flatten(),
         reviewer_notes: row.get("reviewer_notes")?,
         created_at: row.get("created_at")?,
         resolved_at: row.get("resolved_at")?,

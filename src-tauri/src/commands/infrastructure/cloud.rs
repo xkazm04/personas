@@ -553,7 +553,8 @@ pub async fn cloud_execute_persona(
 
     let input_value: Option<serde_json::Value> = input_data
         .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok());
+        .map(|s| serde_json::from_str(s).map_err(|e| AppError::Validation(format!("Invalid JSON input: {e}"))))
+        .transpose()?;
 
     let prompt = engine::prompt::assemble_prompt(
         &persona,

@@ -75,6 +75,34 @@ export const staggerItem: Variants = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Dashboard stagger variants
+// 50ms stagger, 300ms ease-out entrance, translate-y-2 (8px) slide-up
+// ---------------------------------------------------------------------------
+
+/** Dashboard stagger container -- 50ms delay between children. */
+export const dashboardContainer: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.05 },
+  },
+};
+
+/** Dashboard stagger item -- fade+slide entrance (300ms ease-out). */
+export const dashboardItem: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    transition: { duration: 0.15, ease: 'easeOut' },
+  },
+};
+
 export function useTemplateMotion() {
   const { shouldAnimate } = useMotion();
 

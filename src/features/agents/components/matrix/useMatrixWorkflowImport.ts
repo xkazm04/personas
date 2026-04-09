@@ -11,6 +11,7 @@ import { parseWorkflowFile, type WorkflowParseResult } from "@/lib/personas/pars
 import { isSupportedFile } from "@/lib/personas/parsers/workflowDetector";
 import { useAgentStore } from "@/stores/agentStore";
 
+// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 interface UseMatrixWorkflowImportReturn {

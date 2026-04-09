@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine } from 'lucide-react';
-import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
+import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
@@ -24,9 +24,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   'project-management': 'PM',
 };
 
-function deriveCategories(): string[] {
+function deriveCategories(catalog: TemplateCatalogEntry[]): string[] {
   const counts = new Map<string, number>();
-  for (const t of TEMPLATE_CATALOG) {
+  for (const t of catalog) {
     for (const c of t.category) {
       counts.set(c, (counts.get(c) ?? 0) + 1);
     }
@@ -35,8 +35,6 @@ function deriveCategories(): string[] {
     .sort((a, b) => b[1] - a[1])
     .map(([cat]) => cat);
 }
-
-const FILTER_CATEGORIES = deriveCategories();
 
 /** Derive agent-icon alias from template categories. */
 function templateAgentIcon(template: TemplateCatalogEntry): string {
@@ -55,13 +53,22 @@ interface TemplatePickerStepProps {
 export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [catalog, setCatalog] = useState<TemplateCatalogEntry[]>([]);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    getTemplateCatalog().then((entries) => {
+      setCatalog(entries);
+      setFilterCategories(deriveCategories(entries));
+    });
+  }, []);
 
   const filteredTemplates = useMemo(
     () =>
       activeFilter === 'all'
-        ? TEMPLATE_CATALOG
-        : TEMPLATE_CATALOG.filter((t) => t.category.includes(activeFilter)),
-    [activeFilter],
+        ? catalog
+        : catalog.filter((t) => t.category.includes(activeFilter)),
+    [activeFilter, catalog],
   );
 
   return (
@@ -98,7 +105,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             )}
             <span className="relative z-10">All</span>
           </button>
-          {FILTER_CATEGORIES.map((cat) => (
+          {filterCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}

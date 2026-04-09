@@ -136,6 +136,7 @@ impl Capability for DbQueryCapability {
             &input.query_text,
             self.user_db.as_ref(),
             input.allow_mutation,
+            false,
         )
         .await
     }

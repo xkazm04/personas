@@ -6,13 +6,18 @@ export interface InputField {
   options?: string[];
 }
 
-export function parseInputSchema(schema: string | null): InputField[] {
-  if (!schema) return [];
+export interface InputFieldResult {
+  fields: InputField[];
+  parseError: string | null;
+}
+
+export function parseInputSchema(schema: string | null): InputFieldResult {
+  if (!schema) return { fields: [], parseError: null };
   try {
     const parsed = JSON.parse(schema);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    return { fields: Array.isArray(parsed) ? parsed : [], parseError: null };
+  } catch (e) {
+    return { fields: [], parseError: e instanceof Error ? e.message : String(e) };
   }
 }
 

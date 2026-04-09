@@ -147,6 +147,28 @@ export const TOOLS_BTN_COMPACT = 'px-2 py-1' as const;
 /** Inner section spacing for stacked content within a panel */
 export const TOOLS_INNER_SPACE = 'space-y-2' as const;
 
+// -- Disabled & Locked State Tokens ---------------------------------------
+// Unified visual language for non-interactive states.
+// DISABLED: standard opacity for buttons/inputs (≈ 0.38 Material guideline)
+// LOCKED:   overlay approach for cards requiring prerequisite completion
+// INACTIVE_BORDER: border for non-interactive / disabled elements
+
+/** Standard disabled opacity — ≈ Material 0.38, rounded to Tailwind `opacity-40`. */
+export const STATE_DISABLED_OPACITY = 'disabled:opacity-40' as const;
+
+/** Locked-card styles — overlay approach avoids compounded opacity illegibility.
+ *  `container`:  cursor only (no opacity dimming — the overlay handles the visual).
+ *  `overlay`:    semi-transparent background applied on an absolute-positioned element.
+ *  `icon`:       lock-icon color within the overlay — full contrast, not muted. */
+export const STATE_LOCKED = {
+  container: 'cursor-not-allowed',
+  overlay: 'bg-background/60',
+  icon: 'text-muted-foreground',
+} as const;
+
+/** Border for inactive / disabled elements — alias for BORDER_SUBTLE. */
+export const STATE_INACTIVE_BORDER = BORDER_SUBTLE;
+
 // -- Simple mode tokens -------------------------------------------------
 
 export type SimpleStatus = 'good' | 'warning' | 'problem';

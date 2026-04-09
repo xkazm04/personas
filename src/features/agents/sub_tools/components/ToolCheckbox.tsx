@@ -3,14 +3,12 @@ export function ToolCheckbox({
   toolName,
   checked,
   disabled,
-  justToggled: _justToggled,
   size,
   onToggle,
 }: {
   toolName: string;
   checked: boolean;
   disabled: boolean;
-  justToggled: boolean;
   size: 'sm' | 'md';
   onToggle: () => void;
 }) {

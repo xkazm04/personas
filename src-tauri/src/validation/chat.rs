@@ -29,6 +29,27 @@ pub fn validate_content(value: &str) -> Vec<ValidationError> {
     errors
 }
 
+/// Allowed chat-message roles (defence-in-depth — `ChatRole` enum already
+/// enforces this at the serde boundary, but the validation layer should be
+/// self-contained).
+const ALLOWED_ROLES: &[&str] = &["user", "assistant", "system", "tool"];
+
+pub fn validate_role(value: &str) -> Vec<ValidationError> {
+    if !ALLOWED_ROLES.contains(&value) {
+        vec![ValidationError::new(
+            "role",
+            "allowed_values",
+            format!(
+                "Chat role must be one of: {}; got '{}'",
+                ALLOWED_ROLES.join(", "),
+                value
+            ),
+        )]
+    } else {
+        vec![]
+    }
+}
+
 pub fn validate_metadata(value: &str) -> Vec<ValidationError> {
     if value.len() > MAX_METADATA_BYTES {
         vec![ValidationError::new(
@@ -73,13 +94,8 @@ pub fn rules() -> Vec<ValidationRule> {
             "chat",
             "role",
             "allowed_values",
-            "Must be one of: user, assistant, system, tool",
+            format!("Must be one of: {}", ALLOWED_ROLES.join(", ")),
         )
-        .with_allowed(vec![
-            "user".into(),
-            "assistant".into(),
-            "system".into(),
-            "tool".into(),
-        ]),
+        .with_allowed(ALLOWED_ROLES.iter().map(|s| (*s).into()).collect()),
     ]
 }

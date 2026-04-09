@@ -97,6 +97,7 @@ pub struct LabResultBase {
     pub rationale: Option<String>,
     pub suggestions: Option<String>,
     pub error_message: Option<String>,
+    pub eval_method: Option<String>,
     pub created_at: String,
 }
 
@@ -119,6 +120,7 @@ pub struct CreateLabResultBaseInput {
     pub error_message: Option<String>,
     pub rationale: Option<String>,
     pub suggestions: Option<String>,
+    pub eval_method: Option<String>,
 }
 
 /// Helper to read shared base fields from a SQL row.
@@ -141,6 +143,7 @@ pub fn row_to_lab_result_base(row: &rusqlite::Row) -> rusqlite::Result<LabResult
         rationale: row.get("rationale")?,
         suggestions: row.get("suggestions")?,
         error_message: row.get("error_message")?,
+        eval_method: row.get("eval_method").unwrap_or(None),
         created_at: row.get("created_at")?,
     })
 }

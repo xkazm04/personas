@@ -70,6 +70,46 @@ pub struct EvolutionCycleSummary {
     pub incumbent_fitness: Option<f64>,
     pub promoted: bool,
     pub promoted_persona_id: Option<String>,
+    /// Whether all status updates succeeded during the cycle.
+    /// `false` means the frontend may have shown stale status at some point.
+    pub status_reliable: bool,
+}
+
+// =============================================================================
+// Retry helpers for status updates
+// =============================================================================
+
+/// Try a status-update DB write, retrying once on failure.
+/// Returns `true` if the write eventually succeeded.
+fn try_status_update(
+    pool: &DbPool,
+    cycle_id: &str,
+    status: EvolutionCycleStatus,
+    error: Option<&str>,
+) -> bool {
+    match evolution_repo::update_cycle_status(pool, cycle_id, status, error) {
+        Ok(()) => true,
+        Err(first_err) => {
+            tracing::warn!(
+                cycle_id = %cycle_id,
+                status = %status.as_str(),
+                error = %first_err,
+                "Status update failed, retrying once",
+            );
+            match evolution_repo::update_cycle_status(pool, cycle_id, status, error) {
+                Ok(()) => true,
+                Err(retry_err) => {
+                    tracing::warn!(
+                        cycle_id = %cycle_id,
+                        status = %status.as_str(),
+                        error = %retry_err,
+                        "Status update retry also failed — frontend may show stale status",
+                    );
+                    false
+                }
+            }
+        }
+    }
 }
 
 // =============================================================================
@@ -88,15 +128,11 @@ pub async fn run_evolution_cycle(
     cycle_id: String,
 ) {
     let persona_id = policy.persona_id.clone();
+    let mut status_reliable = true;
 
     // Phase 1: Breeding
-    if let Err(e) = evolution_repo::update_cycle_status(
-        &pool,
-        &cycle_id,
-        EvolutionCycleStatus::Breeding,
-        None,
-    ) {
-        tracing::error!(cycle_id = %cycle_id, error = %e, "Failed to update cycle to breeding");
+    if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Breeding, None) {
+        tracing::error!(cycle_id = %cycle_id, "Failed to set breeding status even after retry");
         return;
     }
 
@@ -104,12 +140,13 @@ pub async fn run_evolution_cycle(
     let persona = match persona_repo::get_by_id(&pool, &persona_id) {
         Ok(p) => p,
         Err(e) => {
-            let _ = evolution_repo::update_cycle_status(
-                &pool,
-                &cycle_id,
-                EvolutionCycleStatus::Failed,
+            if !try_status_update(
+                &pool, &cycle_id, EvolutionCycleStatus::Failed,
                 Some(&format!("Failed to load persona: {e}")),
-            );
+            ) {
+                status_reliable = false;
+            }
+            let _ = status_reliable; // consumed below; silence unused warning on early return
             return;
         }
     };
@@ -145,17 +182,18 @@ pub async fn run_evolution_cycle(
         }
     }
 
-    // Update variant count so frontend shows progress
-    let _ = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32);
+    // Update variant count so frontend shows progress (retry once on failure)
+    if let Err(e) = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32) {
+        tracing::warn!(cycle_id = %cycle_id, error = %e, "Variant count update failed, retrying");
+        if let Err(retry_err) = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32) {
+            tracing::warn!(cycle_id = %cycle_id, error = %retry_err, "Variant count retry also failed");
+            status_reliable = false;
+        }
+    }
 
     // Phase 2: Evaluating
-    if let Err(e) = evolution_repo::update_cycle_status(
-        &pool,
-        &cycle_id,
-        EvolutionCycleStatus::Evaluating,
-        None,
-    ) {
-        tracing::error!(cycle_id = %cycle_id, error = %e, "Failed to update cycle to evaluating");
+    if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Evaluating, None) {
+        tracing::error!(cycle_id = %cycle_id, "Failed to set evaluating status even after retry");
         return;
     }
 
@@ -169,17 +207,23 @@ pub async fn run_evolution_cycle(
     let scenarios = match generate_scenarios(&persona, &tools, None, None).await {
         Ok(s) if !s.is_empty() => s,
         Ok(_) => {
-            let _ = evolution_repo::update_cycle_status(
+            if !try_status_update(
                 &pool, &cycle_id, EvolutionCycleStatus::Failed,
                 Some("No test scenarios generated for evaluation"),
-            );
+            ) {
+                status_reliable = false;
+            }
+            let _ = status_reliable;
             return;
         }
         Err(e) => {
-            let _ = evolution_repo::update_cycle_status(
+            if !try_status_update(
                 &pool, &cycle_id, EvolutionCycleStatus::Failed,
                 Some(&format!("Scenario generation failed: {e}")),
-            );
+            ) {
+                status_reliable = false;
+            }
+            let _ = status_reliable;
             return;
         }
     };
@@ -225,13 +269,8 @@ pub async fn run_evolution_cycle(
     }
 
     // Phase 3: Promoting
-    if let Err(e) = evolution_repo::update_cycle_status(
-        &pool,
-        &cycle_id,
-        EvolutionCycleStatus::Promoting,
-        None,
-    ) {
-        tracing::error!(cycle_id = %cycle_id, error = %e, "Failed to update cycle to promoting");
+    if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Promoting, None) {
+        tracing::error!(cycle_id = %cycle_id, "Failed to set promoting status even after retry");
         return;
     }
 
@@ -287,17 +326,29 @@ pub async fn run_evolution_cycle(
         incumbent_fitness: Some(incumbent_fitness.overall),
         promoted,
         promoted_persona_id: if promoted { Some(persona_id.clone()) } else { None },
+        status_reliable,
     };
 
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();
-    let _ = evolution_repo::complete_cycle(
-        &pool,
-        &cycle_id,
-        promoted,
+    // complete_cycle is critical — retry once on failure
+    if let Err(e) = evolution_repo::complete_cycle(
+        &pool, &cycle_id, promoted,
         best_variant_idx.map(|_| best_variant_score),
-        incumbent_fitness.overall,
-        &summary_json,
-    );
+        incumbent_fitness.overall, &summary_json,
+    ) {
+        tracing::warn!(cycle_id = %cycle_id, error = %e, "complete_cycle failed, retrying");
+        if let Err(retry_err) = evolution_repo::complete_cycle(
+            &pool, &cycle_id, promoted,
+            best_variant_idx.map(|_| best_variant_score),
+            incumbent_fitness.overall, &summary_json,
+        ) {
+            tracing::error!(
+                cycle_id = %cycle_id,
+                error = %retry_err,
+                "complete_cycle retry also failed — cycle will appear stuck in DB",
+            );
+        }
+    }
 }
 
 // =============================================================================

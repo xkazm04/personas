@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: '#3b82f6' },
@@ -53,6 +54,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 }
 
 export function AlertHistoryPanel() {
+  const { t: ot } = useOverviewTranslation();
   const {
     alertHistory, dismissAlert, clearAlertHistory,
   } = useOverviewStore(useShallow((s) => ({
@@ -85,7 +87,7 @@ export function AlertHistoryPanel() {
       </div>
 
       {alertHistory.length === 0 && (
-        <EmptyState variant="alerts" />
+        <EmptyState variant="alerts" heading={ot.emptyState.alerts_title} description={ot.emptyState.alerts_subtitle} />
       )}
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">

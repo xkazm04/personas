@@ -309,16 +309,22 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
                 // Spawn child outside the timeout so we can kill it if the
                 // deadline fires. Dropping a tokio::process::Child without
                 // calling kill() orphans the process on both Unix and Windows.
-                let mut child = match Command::new(&bin_path)
-                    .args(&args)
+                let mut cmd = Command::new(&bin_path);
+                cmd.args(&args)
                     .stdout(std::process::Stdio::piped())
                     .stderr(std::process::Stdio::piped())
                     // Clear env to prevent credential leaks to the subprocess.
                     // Re-add only PATH (needed for child subprocesses) and
                     // HOME/USERPROFILE (needed by many CLIs for config dirs).
                     .env_clear()
-                    .envs(sanitized_env())
-                    .spawn()
+                    .envs(sanitized_env());
+                // Prevent empty console windows flashing on Windows
+                #[cfg(windows)]
+                {
+                    use std::os::windows::process::CommandExt;
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                }
+                let mut child = match cmd.spawn()
                 {
                     Ok(c) => c,
                     Err(_) => return None,

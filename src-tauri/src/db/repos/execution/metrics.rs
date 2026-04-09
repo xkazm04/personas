@@ -18,7 +18,7 @@ use crate::error::AppError;
 // Row mappers
 // ============================================================================
 
-fn row_to_prompt_version(row: &Row) -> rusqlite::Result<PersonaPromptVersion> {
+pub(crate) fn row_to_prompt_version(row: &Row) -> rusqlite::Result<PersonaPromptVersion> {
     Ok(PersonaPromptVersion {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,

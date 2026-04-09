@@ -71,6 +71,8 @@ export function useSidebarLabels() {
       ['engine', sb.engine],
       ['byom', sb.byom],
       ['portability', sb.data],
+      ['quality-gates', sb.quality_gates],
+      ['config', sb.config_resolution],
       ['network', sb.network],
       ['admin', sb.admin],
 

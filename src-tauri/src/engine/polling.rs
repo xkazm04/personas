@@ -51,14 +51,15 @@ fn record_mark_failure(trigger_id: &str) {
     let ttl = Duration::from_secs(BACKOFF_TTL_SECS);
     map.retain(|_, e| now.duration_since(e.last_updated) < ttl);
 
-    // LRU-style cap: if still over limit, remove the oldest entries
+    // LRU-style cap: if still over limit, batch-evict oldest 10%
     if map.len() >= MAX_BACKOFF_ENTRIES {
-        if let Some(oldest_key) = map
-            .iter()
-            .min_by_key(|(_, e)| e.last_updated)
-            .map(|(k, _)| k.clone())
-        {
-            map.remove(&oldest_key);
+        let to_remove = (map.len() / 10).max(1);
+        let mut keys_by_age: Vec<_> = map.iter()
+            .map(|(k, e)| (k.clone(), e.last_updated))
+            .collect();
+        keys_by_age.sort_by_key(|(_, ts)| *ts);
+        for (key, _) in keys_by_age.into_iter().take(to_remove) {
+            map.remove(&key);
         }
     }
 

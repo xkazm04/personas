@@ -687,7 +687,7 @@ pub fn run() {
 
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
-                user_db: user_db_pool,
+                user_db: user_db_pool.clone(),
                 engine: engine.clone(),
                 scheduler: scheduler.clone(),
                 process_registry: Arc::new(ActiveProcessRegistry::new()),
@@ -742,6 +742,29 @@ pub fn run() {
                 pool.clone(),
             );
             st.checkpoint("cdc_drain_task");
+
+            // Periodic WAL checkpoint — prevents unbounded WAL growth.
+            // Without this the WAL file grows indefinitely (observed 82 MB+)
+            // consuming disk and slowing down reads.
+            {
+                let wal_pool = pool.clone();
+                let wal_user_pool = user_db_pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    // Wait for initial boot to settle
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    loop {
+                        for (name, p) in [("personas.db", &wal_pool), ("personas_data.db", &wal_user_pool)] {
+                            if let Ok(conn) = p.get() {
+                                match conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);") {
+                                    Ok(_) => tracing::debug!("WAL checkpoint completed for {}", name),
+                                    Err(e) => tracing::warn!("WAL checkpoint failed for {}: {}", name, e),
+                                }
+                            }
+                        }
+                        tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                    }
+                });
+            }
 
             // Test automation HTTP server
             {
@@ -1893,6 +1916,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_refresh_competition_slot,
             commands::infrastructure::dev_tools::dev_tools_get_competition_slot_diff,
             commands::infrastructure::dev_tools::dev_tools_get_strategy_leaderboard,
+            commands::infrastructure::dev_tools::dev_tools_switch_to_worktree,
+            commands::infrastructure::dev_tools::dev_tools_delete_competition,
+            commands::infrastructure::dev_tools::dev_tools_start_slot_server,
+            commands::infrastructure::dev_tools::dev_tools_stop_slot_server,
             // Dev Tools -- Implementation Pipeline (Direction 3)
             commands::infrastructure::dev_tools::dev_tools_create_branch,
             commands::infrastructure::dev_tools::dev_tools_apply_diff,
@@ -1903,6 +1930,37 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_portfolio_health,
             commands::infrastructure::dev_tools::dev_tools_get_tech_radar,
             commands::infrastructure::dev_tools::dev_tools_get_risk_matrix,
+            // Twin plugin -- profile CRUD (P0)
+            commands::infrastructure::twin::twin_list_profiles,
+            commands::infrastructure::twin::twin_get_profile,
+            commands::infrastructure::twin::twin_get_active_profile,
+            commands::infrastructure::twin::twin_create_profile,
+            commands::infrastructure::twin::twin_update_profile,
+            commands::infrastructure::twin::twin_delete_profile,
+            commands::infrastructure::twin::twin_set_active_profile,
+            // Twin plugin -- tone CRUD (P1)
+            commands::infrastructure::twin::twin_list_tones,
+            commands::infrastructure::twin::twin_get_tone,
+            commands::infrastructure::twin::twin_upsert_tone,
+            commands::infrastructure::twin::twin_delete_tone,
+            // Twin plugin -- knowledge base + memory + comms (P2)
+            commands::infrastructure::twin::twin_bind_knowledge_base,
+            commands::infrastructure::twin::twin_unbind_knowledge_base,
+            commands::infrastructure::twin::twin_list_pending_memories,
+            commands::infrastructure::twin::twin_review_memory,
+            commands::infrastructure::twin::twin_list_communications,
+            commands::infrastructure::twin::twin_record_interaction,
+            // Twin plugin -- voice profiles (P3)
+            commands::infrastructure::twin::twin_get_voice_profile,
+            commands::infrastructure::twin::twin_upsert_voice_profile,
+            commands::infrastructure::twin::twin_delete_voice_profile,
+            // Twin plugin -- channels (P4)
+            commands::infrastructure::twin::twin_list_channels,
+            commands::infrastructure::twin::twin_create_channel,
+            commands::infrastructure::twin::twin_update_channel,
+            commands::infrastructure::twin::twin_delete_channel,
+            // Twin plugin -- AI bio generation
+            commands::infrastructure::twin::twin_generate_bio,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

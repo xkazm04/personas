@@ -3,6 +3,7 @@ import { FlaskConical, Trophy, Target, FileText, Shield } from 'lucide-react';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
+import { ExportReportButton } from '../shared/ExportReportButton';
 import { ArenaResultsView } from './ArenaResultsView';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
@@ -131,7 +132,10 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
           }
           footerActions={
             activeRun.status === 'completed' ? (
-              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="arena" />
+              <>
+                <ExportReportButton mode="arena" run={activeRun} results={resultsMap[activeRun.id] ?? []} />
+                <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="arena" />
+              </>
             ) : undefined
           }
         >

@@ -11,7 +11,6 @@ export function GroupedToolRow({
   tool,
   isAssigned,
   missingCredential,
-  justToggledId,
   usageByTool,
   impactData,
   onToggle,
@@ -19,7 +18,6 @@ export function GroupedToolRow({
   tool: ToolDef;
   isAssigned: boolean;
   missingCredential: boolean;
-  justToggledId: string | null;
   usageByTool: Map<string, number>;
   impactData?: ToolImpactData;
   onToggle: (id: string, name: string, assigned: boolean) => void;
@@ -50,7 +48,6 @@ export function GroupedToolRow({
           toolName={tool.name}
           checked={isAssigned}
           disabled={missingCredential}
-          justToggled={justToggledId === tool.id}
           size="sm"
           onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
         />

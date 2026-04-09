@@ -129,7 +129,51 @@ For every changed `.ts`/`.tsx` file, evaluate against ALL of the following.
 - [ ] **Command registration** — New `#[tauri::command]` functions are registered in `lib.rs` `invoke_handler`.
 - [ ] **Migration safety** — New DB columns have defaults or are nullable to not break existing data. Destructive migrations (DROP, column removal) flagged as HIGH RISK.
 
-## Step 6: Produce the Review
+## Step 6: 5-Axis Review
+
+Score the changes across **five independent axes**. Each axis gets a verdict
+(`PASS` / `FLAG` / `FAIL`) and its own findings list. This structure ensures
+no category is skipped even when one axis dominates.
+
+### Axis 1: Correctness
+*Does the code do what it claims to do?*
+- Logic errors, off-by-one, wrong condition branches
+- Missing edge cases (null, empty, boundary values)
+- Incorrect types or serialization mismatches (Rust ↔ TS)
+- Race conditions, stale closures, missing abort controllers
+
+### Axis 2: Readability & Simplicity
+*Would another developer understand this quickly?*
+- Component/function size (200-line hard limit for React)
+- Naming clarity (handlers, hooks, constants)
+- Unnecessary complexity (nested ternaries, deep callbacks)
+- Import organization and module boundary clarity
+
+### Axis 3: Architecture Conformance
+*Do the changes fit the existing system design?*
+- Correct store slice boundary (Zustand)
+- Correct IPC/command pattern (invoke → api wrapper → store action)
+- Correct layer separation (engine vs plugin, core vs dev-tools)
+- No cross-slice state duplication, no bypassed abstractions
+- Migration safety (new columns nullable/defaulted)
+
+### Axis 4: Security
+*Are there new attack surfaces or weakened defenses?*
+- unwrap/expect on user input (Rust)
+- SQL injection, path traversal, command injection
+- Secret leakage in logs or error messages
+- Missing auth checks on new commands
+- XSS vectors in rendered content (React)
+
+### Axis 5: Performance
+*Will this degrade speed, memory, or bundle size?*
+- N+1 queries, unbounded collections
+- Mutex hold duration, unnecessary clones
+- Missing useMemo/useCallback on expensive paths
+- Bundle impact of new dependencies
+- Unnecessary re-renders from overly broad selectors
+
+## Step 7: Produce the Review
 
 Output a structured review with this exact format:
 
@@ -138,29 +182,40 @@ Output a structured review with this exact format:
 
 ### Verdict: APPROVE | APPROVE WITH NOTES | REQUEST CHANGES
 
+### 5-Axis Scorecard
+| Axis                    | Verdict | Findings |
+|-------------------------|---------|----------|
+| 1. Correctness          | PASS    | 0        |
+| 2. Readability          | FLAG    | 2        |
+| 3. Architecture         | PASS    | 0        |
+| 4. Security             | FAIL    | 1        |
+| 5. Performance          | FLAG    | 1        |
+
 ### Critical (must fix before merge)
-- `src-tauri/src/commands/foo.rs:42` — unwrap() on user-provided input; use `?` or `.ok_or(AppError::...)?`
-- `src/features/agents/components/BigComponent.tsx` — 347 lines; extract <SubSection> (lines 180-260) and useFilterLogic hook (lines 45-95)
+- [Security] `src-tauri/src/commands/foo.rs:42` — unwrap() on user-provided input; use `?` or `.ok_or(AppError::...)?`
+- [Readability] `src/features/agents/components/BigComponent.tsx` — 347 lines; extract <SubSection> (lines 180-260) and useFilterLogic hook (lines 45-95)
 
 ### Warnings (should fix)
-- `src/stores/slices/agents/fooSlice.ts:78` — missing error state reset on retry
-- `src-tauri/src/db/repos/core/bar.rs:15` — N+1: loop calls get_persona inside get_all_groups
+- [Performance] `src-tauri/src/db/repos/core/bar.rs:15` — N+1: loop calls get_persona inside get_all_groups
+- [Readability] `src/stores/slices/agents/fooSlice.ts:78` — missing error state reset on retry
 
 ### Nits (optional improvements)
-- `src/features/agents/components/Foo.tsx:12` — unused import `useState`
-- `src-tauri/src/engine/baz.rs:99` — `clone()` avoidable with reference
+- [Correctness] `src/features/agents/components/Foo.tsx:12` — unused import `useState`
+- [Performance] `src-tauri/src/engine/baz.rs:99` — `clone()` avoidable with reference
 
 ### Summary
 - Files reviewed: N
 - Issues: X critical, Y warnings, Z nits
+- Worst axis: Security (FAIL)
 - Lines added/removed: +A/-B
 ```
 
 Rules:
 - Every finding MUST include a file path and line number
+- Every finding MUST be tagged with its axis `[Security]`, `[Correctness]`, etc.
 - Every finding MUST include a concrete fix suggestion, not just "fix this"
 - Group findings by severity, then by file
-- If you find zero issues, say so explicitly — don't invent problems
+- If you find zero issues on an axis, mark it PASS — don't invent problems
 - Do NOT suggest adding comments, docstrings, or type annotations to unchanged code
 - Do NOT suggest refactors beyond the 200-line enforcement
 - Be direct and specific, not vague
