@@ -38,3 +38,21 @@ An external "Twins" commit landed during implementation, which absorbed Tasks 9-
 - External commits during pipeline runs can absorb staged changes — always verify git state before committing
 - Pre-execution UX is a natural follow-up to post-execution UX (Run #1). The two goals together create a complete trust flow.
 - Readiness checks that exist but gate the wrong action are a common pattern — always check what the gate actually blocks, not just that it exists
+
+## Run #3 — 2026-04-09
+
+**Mode:** stabilize
+**Health scan:** 0 TS errors, 644/675 tests (31 failures)
+**Selected goal:** Fix 31 failing tests
+**Source:** health-scan
+**Confidence at selection:** high
+**Quality score:** 95/100
+**User verdict:** pending
+
+**Reasoning:**
+User explicitly requested test fixes after Run #2. Two root causes: (1) invokeWithTimeout wrapper always injects Headers object but API mock tests expected undefined; (2) matrixBuildSlice multi-session refactor requires createBuildSession before events can update state. Fixed 26/31, remaining 5 in other test files.
+
+**Lessons for future ranking:**
+- Test failures from refactors (not bugs) are quick wins: diagnostic takes longer than the fix
+- setState-based test setup breaks when the store moves to a session/map architecture — always use the store's own actions for setup
+- Running targeted test files (`vitest run <file>`) is much faster than full suite for iteration
