@@ -8,6 +8,7 @@ import {
   Timer,
   Terminal,
   PinOff,
+  Wrench,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -219,19 +220,27 @@ export default function ExecutionMiniPlayer() {
         {isSimple && isExecuting && (
           <div className="px-3 py-3">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-sm text-foreground/80">
+              <span className={`text-sm ${error ? 'text-red-400' : 'text-foreground/80'}`}>
                 {error ? 'Something went wrong' : stageProgress.label}
               </span>
-              {!error && (
-                <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
-                  {Math.round(stageProgress.fraction * 100)}%
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {executionSummary.toolCalls.length > 0 && !error && (
+                  <span className="text-xs text-green-400/70 font-mono tabular-nums flex items-center gap-1">
+                    <Wrench className="w-2.5 h-2.5" />
+                    {executionSummary.toolCalls.length}
+                  </span>
+                )}
+                {!error && (
+                  <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+                    {Math.round(stageProgress.fraction * 100)}%
+                  </span>
+                )}
+              </div>
             </div>
             <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out bg-blue-400"
-                style={{ width: `${stageProgress.fraction * 100}%` }}
+                className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-red-400' : 'bg-blue-400'}`}
+                style={{ width: error ? '100%' : `${stageProgress.fraction * 100}%` }}
               />
             </div>
           </div>
@@ -247,11 +256,17 @@ export default function ExecutionMiniPlayer() {
         {/* Simple mode: fallback when no trace data available */}
         {isSimple && !isExecuting && traceEntries.length === 0 && (
           <div className="px-3 py-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-foreground/80">
-                {error ? 'Failed' : 'Complete'}
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`w-2 h-2 rounded-full ${error ? 'bg-red-400' : 'bg-emerald-400'}`} />
+              <span className={`text-sm font-medium ${error ? 'text-red-400' : 'text-emerald-400'}`}>
+                {error ? 'Execution failed' : 'Execution complete'}
               </span>
             </div>
+            {error && (
+              <p className="text-xs text-muted-foreground/70 ml-4">
+                {typeof error === 'string' ? error : 'An unexpected error occurred. Try running the agent again.'}
+              </p>
+            )}
             <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden mt-2">
               <div
                 className={`h-full rounded-full ${error ? 'bg-red-400' : 'bg-emerald-400'}`}
