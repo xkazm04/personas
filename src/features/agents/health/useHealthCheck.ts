@@ -15,6 +15,13 @@ interface ConfigWarning {
   description: string;
 }
 
+const VALID_SEVERITIES: ReadonlySet<DryRunIssue['severity']> = new Set(['error', 'warning', 'info']);
+
+function validateSeverity(value: string): DryRunIssue['severity'] {
+  const lower = value.toLowerCase() as DryRunIssue['severity'];
+  return VALID_SEVERITIES.has(lower) ? lower : 'warning';
+}
+
 // -- Scoring helpers --------------------------------------------------
 
 export function computeHealthScore(issues: DryRunIssue[]): HealthScore {
@@ -210,7 +217,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
           for (const w of configWarnings) {
             dryRunResult.issues.push({
               id: `cfg_${w.id}`,
-              severity: w.severity as DryRunIssue['severity'],
+              severity: validateSeverity(w.severity),
               description: w.description,
               proposal: null,
               resolved: false,

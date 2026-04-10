@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowDown } from 'lucide-react';
+import { Send, ArrowDown, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
 import { SessionSidebar } from './SessionSidebar';
-import { OpsLaunchpad } from './OpsLaunchpad';
+import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
+import { useExperimentBridge } from './hooks/useExperimentBridge';
 
 // ── Main Chat Tab ───────────────────────────────────────────────────────
 
@@ -28,6 +29,7 @@ export function ChatTab() {
 
   const personaId = selectedPersona?.id ?? '';
   const { textLines: streamTextLines } = useExecutionStream(personaId);
+  const { pendingExperiments } = useExperimentBridge();
 
   // Restore session on mount
   useEffect(() => {
@@ -102,7 +104,7 @@ export function ChatTab() {
           data-testid="chat-messages"
         >
           {showPresets ? (
-            <OpsLaunchpad personaName={selectedPersona.name} onSend={(p) => { void handleSend(p); }} />
+            <AdvisoryLaunchpad personaName={selectedPersona.name} onSend={(p) => { void handleSend(p); }} />
           ) : (
             <div className="max-w-3xl mx-auto px-6 py-4 space-y-5">
               {messages.map((msg) => <ChatBubble key={msg.id} message={msg} />)}
@@ -122,6 +124,16 @@ export function ChatTab() {
             >
               <ArrowDown className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* Pending experiments indicator */}
+        {pendingExperiments.length > 0 && (
+          <div className="border-t border-violet-500/15 bg-violet-500/5 px-6 py-2" data-testid="chat-experiments-pending">
+            <div className="max-w-3xl mx-auto flex items-center gap-2 text-xs text-violet-400/70">
+              <FlaskConical className="w-3.5 h-3.5 animate-pulse" />
+              <span>{pendingExperiments.length} experiment{pendingExperiments.length > 1 ? 's' : ''} running — results will appear here when ready</span>
+            </div>
           </div>
         )}
 

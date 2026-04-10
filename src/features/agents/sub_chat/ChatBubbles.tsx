@@ -78,12 +78,21 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
 
 // ── Assistant Content Renderer ───────────────────────────────────────────
 
-function AssistantContent({ content }: { content: string }) {
-  const cleaned = content
+/** Filter out advisory operation JSON lines from displayed content. */
+function stripOperationLines(text: string): string {
+  return text
     .split('\n')
-    .filter((line) => !line.trim().startsWith('{"op"'))
+    .filter((line) => {
+      const t = line.trim();
+      // Filter JSON operation lines emitted by the advisory assistant
+      return !t.startsWith('{"op"') && !t.startsWith('{"op":');
+    })
     .join('\n')
     .trim();
+}
+
+function AssistantContent({ content }: { content: string }) {
+  const cleaned = stripOperationLines(content);
 
   if (!cleaned) return <p className="text-muted-foreground/50 italic">Processing...</p>;
 
@@ -97,7 +106,10 @@ function AssistantContent({ content }: { content: string }) {
 // ── Streaming Bubble ────────────────────────────────────────────────────
 
 export function StreamingBubble({ textLines }: { textLines: string[] }) {
-  const cleanLines = textLines.filter((l) => !l.trim().startsWith('{"op"'));
+  const cleanLines = textLines.filter((l) => {
+    const t = l.trim();
+    return !t.startsWith('{"op"') && !t.startsWith('{"op":');
+  });
   const hasContent = cleanLines.some((l) => l.trim().length > 0);
 
   return (

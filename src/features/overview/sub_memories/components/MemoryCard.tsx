@@ -5,17 +5,25 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 
+// -- Importance colors (Tailwind palette values, centralized for theme consistency) --
+const IMPORTANCE_COLORS = {
+  low: 'oklch(0.765 0.177 163.22)',      // emerald-400
+  medium: 'oklch(0.828 0.189 84.43)',     // amber-400
+  high: 'oklch(0.712 0.194 13.43)',       // rose-400
+} as const;
+
 // -- Importance bar (1-5 scale, matching API's IMPORTANCE_MAX) -----------------
-function getImportanceColor(value: number): string {
-  if (value <= 2) return 'rgb(52, 211, 153)';   // emerald-400
-  if (value <= 3) return 'rgb(251, 191, 36)';    // amber-400
-  return 'rgb(251, 113, 133)';                    // rose-400
+export function getImportanceColor(value: number): string {
+  if (value <= 2) return IMPORTANCE_COLORS.low;
+  if (value <= 3) return IMPORTANCE_COLORS.medium;
+  return IMPORTANCE_COLORS.high;
 }
 
-function getImportanceGradient(value: number): string {
-  if (value <= 2) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
-  if (value <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
-  return 'linear-gradient(90deg, rgb(251, 191, 36), rgb(251, 113, 133))';
+export function getImportanceGradient(value: number): string {
+  const { low, medium, high } = IMPORTANCE_COLORS;
+  if (value <= 2) return `linear-gradient(90deg, ${low}, ${low})`;
+  if (value <= 3) return `linear-gradient(90deg, ${low}, ${medium})`;
+  return `linear-gradient(90deg, ${medium}, ${high})`;
 }
 
 export function ImportanceBar({ value }: { value: number }) {

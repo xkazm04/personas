@@ -5,7 +5,8 @@ const logger = createLogger('template-gallery');
 import { useSystemStore } from "@/stores/systemStore";
 import { useTemplateGallery } from '@/hooks/design/template/useTemplateGallery';
 import { TemplateSearchBar } from '../search/TemplateSearchBar';
-import { ADOPT_CONTEXT_KEY } from '../../adoption/hooks/useAdoptReducer';
+/** localStorage key for persisted adoption context (legacy wizard) */
+const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 import { useBackgroundRebuild } from '@/hooks/design/core/useBackgroundRebuild';
 import { useBackgroundPreview } from '@/hooks/design/core/useBackgroundPreview';
 import { useModalStack } from '../modals/useModalStack';

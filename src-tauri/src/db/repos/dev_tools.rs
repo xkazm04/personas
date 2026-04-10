@@ -730,6 +730,28 @@ pub fn delete_context_group(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Delete all contexts, groups, and group relationships for a project.
+/// Used before a rescan to start with a clean slate.
+pub fn clear_project_context_map(pool: &DbPool, project_id: &str) -> Result<(usize, usize), AppError> {
+    timed_query!("dev_context_groups", "dev_context_groups::clear_project_context_map", {
+        let conn = pool.get()?;
+        let ctx_rows = conn.execute(
+            "DELETE FROM dev_contexts WHERE project_id = ?1",
+            params![project_id],
+        )?;
+        let rel_rows = conn.execute(
+            "DELETE FROM dev_context_group_relationships WHERE project_id = ?1",
+            params![project_id],
+        );
+        let _ = rel_rows; // ok if table is empty
+        let grp_rows = conn.execute(
+            "DELETE FROM dev_context_groups WHERE project_id = ?1",
+            params![project_id],
+        )?;
+        Ok((grp_rows, ctx_rows))
+    })
+}
+
 pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
     timed_query!("dev_context_groups", "dev_context_groups::reorder_context_groups", {
         let conn = pool.get()?;
@@ -2304,16 +2326,18 @@ pub fn list_competitions_by_project(
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 AND status = ?2 ORDER BY created_at DESC",
             )?;
-            stmt.query_map(params![project_id, s], row_to_competition)?
+            let result = stmt.query_map(params![project_id, s], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
+                .map_err(AppError::Database)?;
+            result
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 ORDER BY created_at DESC",
             )?;
-            stmt.query_map(params![project_id], row_to_competition)?
+            let result = stmt.query_map(params![project_id], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
+                .map_err(AppError::Database)?;
+            result
         };
         Ok(rows)
     })

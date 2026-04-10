@@ -37,9 +37,13 @@ export function TriggerConfig() {
     );
   }
 
-  const handleCreateTrigger = async (triggerType: string, config: Record<string, unknown>) => {
-    await ops.create(triggerType, config);
-    setShowAddForm(false);
+  const handleCreateTrigger = async (triggerType: string, config: Record<string, unknown>): Promise<string | undefined> => {
+    const result = await ops.create(triggerType, config);
+    if (result.ok) {
+      setShowAddForm(false);
+      return undefined;
+    }
+    return result.error;
   };
 
   const handleToggleEnabled = async (triggerId: string, currentEnabled: boolean) => {

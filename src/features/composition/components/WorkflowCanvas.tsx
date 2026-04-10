@@ -16,6 +16,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { WorkflowNode, WorkflowNodeKind } from '@/lib/types/compositionTypes';
 import { topologicalSort } from '@/features/composition/libs/dagUtils';
 import WorkflowPersonaNode from './nodes/WorkflowPersonaNode';
@@ -117,7 +118,10 @@ export default function WorkflowCanvas() {
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!workflow || !connection.source || !connection.target) return;
-      if (connection.source === connection.target) return;
+      if (connection.source === connection.target) {
+        useToastStore.getState().addToast('Cannot connect: self-loops are not allowed', 'error');
+        return;
+      }
 
       // Check if adding this edge would create a cycle
       const testEdges = [...workflow.edges, {
@@ -126,7 +130,10 @@ export default function WorkflowCanvas() {
         target: connection.target,
       }];
       const { hasCycle } = topologicalSort(workflow.nodes, testEdges);
-      if (hasCycle) return; // Reject cyclic edge
+      if (hasCycle) {
+        useToastStore.getState().addToast('Cannot connect: would create a cycle', 'error');
+        return;
+      }
 
       const newEdge = {
         id: crypto.randomUUID(),

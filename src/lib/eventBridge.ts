@@ -11,7 +11,7 @@
 
 import { type UnlistenFn } from "@tauri-apps/api/event";
 import { EventName, typedListen } from "@/lib/eventRegistry";
-import { AUTH_LOGIN_EVENT, useAuthStore } from "@/stores/authStore";
+import { AUTH_LOGIN_EVENT, clearLoginTimeout, useAuthStore } from "@/stores/authStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -58,6 +58,9 @@ const registry: EventRegistration[] = [
       const unlisten = await typedListen(
         EventName.AUTH_STATE_CHANGED,
         (payload) => {
+          // Clear login timeout immediately on any auth state event to
+          // prevent the 120s fallback from firing after a successful OAuth.
+          if (payload.is_authenticated) clearLoginTimeout();
           if (debounceTimer !== null) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             debounceTimer = null;

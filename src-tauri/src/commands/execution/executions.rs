@@ -171,7 +171,7 @@ pub async fn execute_persona(
     }
 
     // 6. Parse input data — try JSON first, fall back to wrapping plain text
-    let input_json: Option<serde_json::Value> = input_data
+    let mut input_json: Option<serde_json::Value> = input_data
         .as_deref()
         .filter(|s| !s.trim().is_empty())
         .map(|s| {
@@ -180,6 +180,20 @@ pub async fn execute_persona(
                 serde_json::json!({ "user_input": s })
             })
         });
+
+    // 6b. Advisory mode: enrich input with diagnostic context from DB
+    let is_advisory = input_json
+        .as_ref()
+        .and_then(|v| v.get("_advisory").or_else(|| v.get("_ops")))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if is_advisory {
+        if let Some(ref mut json) = input_json {
+            let ctx = build_advisory_context(&state.db, &persona_id);
+            json.as_object_mut()
+                .map(|obj| obj.insert("_advisory_context".into(), ctx));
+        }
+    }
 
     // 7. Check session pool for warm session reuse (if no explicit continuation)
     let continuation = if continuation.is_some() {
@@ -495,4 +509,146 @@ pub fn preview_execution(
         monthly_spend,
         budget_limit,
     ))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Advisory context builder — enriches chat input with diagnostic data from DB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Build a JSON object with diagnostic context for the advisory assistant.
+/// Called when `_advisory` (or legacy `_ops`) flag is present in chat input.
+/// Each section is best-effort — failures are silently omitted so the advisory
+/// prompt still works with partial context.
+fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_json::Value {
+    use crate::db::repos::execution::{
+        assertions as assertion_repo,
+        executions as exec_repo,
+        knowledge as knowledge_repo,
+        metrics as metrics_repo,
+    };
+    use crate::db::repos::core::memories as memory_repo;
+
+    let mut ctx = serde_json::Map::new();
+
+    // 1. Execution metrics summary (last 30 days)
+    if let Ok(metrics) = metrics_repo::get_summary(pool, Some(30), Some(persona_id)) {
+        let total = metrics.total_executions;
+        let success_rate = if total > 0 {
+            (metrics.successful_executions as f64 / total as f64 * 100.0).round()
+        } else {
+            0.0
+        };
+        ctx.insert("execution_metrics".into(), serde_json::json!({
+            "period_days": 30,
+            "total": total,
+            "successful": metrics.successful_executions,
+            "failed": metrics.failed_executions,
+            "success_rate_pct": success_rate,
+            "total_cost_usd": (metrics.total_cost_usd * 10000.0).round() / 10000.0,
+        }));
+    }
+
+    // 2. Recent executions (last 10) — status, duration, cost, error summaries
+    if let Ok(recent) = exec_repo::get_by_persona_id(pool, persona_id, Some(10)) {
+        let exec_summaries: Vec<serde_json::Value> = recent.iter().map(|e| {
+            let mut obj = serde_json::json!({
+                "status": e.status,
+                "started_at": e.started_at,
+                "cost_usd": (e.cost_usd * 10000.0).round() / 10000.0,
+            });
+            if let Some(dur) = e.duration_ms {
+                obj["duration_ms"] = serde_json::json!(dur);
+            }
+            if let Some(ref err) = e.error_message {
+                // Truncate error to keep context compact
+                let truncated = if err.len() > 200 { &err[..200] } else { err.as_str() };
+                obj["error"] = serde_json::json!(truncated);
+            }
+            obj
+        }).collect();
+        ctx.insert("recent_executions".into(), serde_json::json!(exec_summaries));
+    }
+
+    // 3. Consecutive failure streak
+    if let Ok(streak) = exec_repo::get_consecutive_failure_count(pool, persona_id) {
+        if streak > 0 {
+            ctx.insert("consecutive_failures".into(), serde_json::json!(streak));
+        }
+    }
+
+    // 4. Knowledge graph summary
+    if let Ok(kg) = knowledge_repo::get_summary(pool, Some(persona_id)) {
+        let mut kg_obj = serde_json::json!({
+            "total_entries": kg.total_entries,
+            "tool_sequences": kg.tool_sequence_count,
+            "failure_patterns": kg.failure_pattern_count,
+            "model_performance": kg.model_performance_count,
+            "annotations": kg.annotation_count,
+        });
+        // Include top patterns with confidence
+        if !kg.top_patterns.is_empty() {
+            let patterns: Vec<serde_json::Value> = kg.top_patterns.iter().take(5).map(|p| {
+                serde_json::json!({
+                    "type": p.knowledge_type,
+                    "key": p.pattern_key,
+                    "confidence": (p.confidence * 100.0).round() / 100.0,
+                    "successes": p.success_count,
+                    "failures": p.failure_count,
+                })
+            }).collect();
+            kg_obj["top_patterns"] = serde_json::json!(patterns);
+        }
+        ctx.insert("knowledge_graph".into(), kg_obj);
+    }
+
+    // 5. Assertions summary — pass/fail counts per rule
+    if let Ok(assertions) = assertion_repo::list_by_persona(pool, persona_id) {
+        if !assertions.is_empty() {
+            let assertion_summaries: Vec<serde_json::Value> = assertions.iter().map(|a| {
+                let total = a.pass_count + a.fail_count;
+                let pass_rate = if total > 0 {
+                    (a.pass_count as f64 / total as f64 * 100.0).round()
+                } else {
+                    0.0
+                };
+                serde_json::json!({
+                    "name": a.name,
+                    "type": a.assertion_type,
+                    "severity": a.severity,
+                    "enabled": a.enabled,
+                    "pass_count": a.pass_count,
+                    "fail_count": a.fail_count,
+                    "pass_rate_pct": pass_rate,
+                })
+            }).collect();
+            ctx.insert("assertions".into(), serde_json::json!(assertion_summaries));
+        }
+    }
+
+    // 6. Memory summary — counts by tier and category
+    if let Ok(memories) = memory_repo::get_by_persona(pool, persona_id, Some(50)) {
+        if !memories.is_empty() {
+            let mut core_count = 0u32;
+            let mut active_count = 0u32;
+            let mut archive_count = 0u32;
+            let mut by_category: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+            for m in &memories {
+                match m.tier.as_str() {
+                    "core" => core_count += 1,
+                    "active" => active_count += 1,
+                    _ => archive_count += 1,
+                }
+                *by_category.entry(m.category.clone()).or_default() += 1;
+            }
+            ctx.insert("memory_state".into(), serde_json::json!({
+                "total": memories.len(),
+                "core": core_count,
+                "active": active_count,
+                "archive": archive_count,
+                "by_category": by_category,
+            }));
+        }
+    }
+
+    serde_json::Value::Object(ctx)
 }

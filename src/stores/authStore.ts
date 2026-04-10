@@ -111,7 +111,7 @@ export const AUTH_LOGIN_EVENT = "personas:auth-login";
 
 let loginTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-function clearLoginTimeout() {
+export function clearLoginTimeout() {
   if (loginTimeoutId !== null) {
     clearTimeout(loginTimeoutId);
     loginTimeoutId = null;

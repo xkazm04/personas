@@ -1,7 +1,10 @@
 import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import { ADOPT_STEP_META } from '../../adoption/hooks/useAdoptReducer';
+/** Label map for legacy adoption wizard steps shown in draft resume banners. */
+const ADOPT_STEP_LABELS: Record<string, string> = {
+  choose: 'Choose', connect: 'Connect', tune: 'Tune', build: 'Build', create: 'Create',
+};
 
 interface BackgroundBannersProps {
   /** Whether the template adoption is active in the store */
@@ -80,7 +83,7 @@ export function BackgroundBanners({
                   Draft: {adoptionDraft.templateName}
                 </span>
                 <span className="text-sm text-muted-foreground/80">
-                  Step: {ADOPT_STEP_META[adoptionDraft.step].label} -- click to resume
+                  Step: {ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step} -- click to resume
                 </span>
               </div>
             </button>

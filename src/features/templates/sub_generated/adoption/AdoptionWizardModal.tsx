@@ -1,5 +1,4 @@
 import { X, Grid3X3 } from 'lucide-react';
-import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { MatrixAdoptionView } from './MatrixAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
@@ -8,8 +7,6 @@ interface AdoptionWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   review: PersonaDesignReview | null;
-  credentials: CredentialMetadata[];
-  connectorDefinitions: ConnectorDefinition[];
   onPersonaCreated: () => void;
 }
 

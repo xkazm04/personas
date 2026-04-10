@@ -22,7 +22,7 @@ import { buildTriggerConfig } from './configs/buildTriggerConfig';
 
 export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
-  onCreateTrigger: (triggerType: string, config: Record<string, unknown>) => Promise<void>;
+  onCreateTrigger: (triggerType: string, config: Record<string, unknown>) => Promise<string | undefined>;
   onCancel: () => void;
 }
 
@@ -139,7 +139,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     });
     if (!result.ok) { setValidationError(result.error); return; }
     setValidationError(null);
-    await onCreateTrigger(triggerType, result.config);
+    const createError = await onCreateTrigger(triggerType, result.config);
+    if (createError) {
+      setValidationError(createError);
+    }
   };
 
   return (
@@ -186,6 +189,12 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       {triggerType === 'clipboard' && <ClipboardConfig clipboardContentType={clipboardContentType} setClipboardContentType={setClipboardContentType} clipboardPattern={clipboardPattern} setClipboardPattern={setClipboardPattern} clipboardInterval={clipboardInterval} setClipboardInterval={setClipboardInterval} />}
       {triggerType === 'app_focus' && <AppFocusConfig appNames={appNames} setAppNames={setAppNames} titlePattern={titlePattern} setTitlePattern={setTitlePattern} appFocusInterval={appFocusInterval} setAppFocusInterval={setAppFocusInterval} />}
       {triggerType === 'composite' && <CompositeConfig compositeConditions={compositeConditions} setCompositeConditions={setCompositeConditions} compositeOperator={compositeOperator} setCompositeOperator={setCompositeOperator} windowSeconds={windowSeconds} setWindowSeconds={setWindowSeconds} validationError={validationError} setValidationError={setValidationError} />}
+
+      {validationError && (
+        <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+          {validationError}
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">Cancel</button>

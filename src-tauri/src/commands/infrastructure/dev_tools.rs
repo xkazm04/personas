@@ -2632,9 +2632,10 @@ fn apply_winner_insight_to_dev_clone_memory(
     use crate::db::repos::core::personas as persona_repo;
     use crate::db::repos::core::memories as mem_repo;
     use crate::db::models::CreatePersonaMemoryInput;
+    use crate::db::models::Json;
 
     // Find a persona whose name contains "dev clone" (case-insensitive)
-    let personas = persona_repo::list_personas(pool)?;
+    let personas = persona_repo::get_all(pool)?;
     let dev_clone = personas.iter().find(|p| {
         let name = p.name.to_lowercase();
         name.contains("dev clone") || name.contains("dev-clone")
@@ -2660,11 +2661,11 @@ fn apply_winner_insight_to_dev_clone_memory(
             content,
             category: Some("learned".to_string()),
             importance: Some(7),
-            tags: Some(vec![
+            tags: Some(Json(vec![
                 "competition".to_string(),
                 "winner".to_string(),
                 winning_strategy.to_lowercase(),
-            ]),
+            ])),
         },
     );
 

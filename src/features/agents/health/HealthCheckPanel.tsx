@@ -11,6 +11,7 @@ import {
 import { Button } from '@/features/shared/components/buttons';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
+import { useToastStore } from '@/stores/toastStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
@@ -225,6 +226,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
 function HealthWatchToggle() {
   const persona = useAgentStore((s) => s.selectedPersona);
+  const addToast = useToastStore((s) => s.addToast);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -240,13 +242,19 @@ function HealthWatchToggle() {
     if (!persona) return;
     setLoading(true);
     try {
-      await managementFetch(`/api/settings/health-watch/${persona.id}`, {
+      const r = await managementFetch(`/api/settings/health-watch/${persona.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled, interval_hours: 6, error_threshold: 30 }),
       });
-      setEnabled(!enabled);
-    } catch { /* silent */ }
+      if (r.ok) {
+        setEnabled(!enabled);
+      } else {
+        addToast('Failed to update health watch setting', 'error');
+      }
+    } catch {
+      addToast('Failed to update health watch setting', 'error');
+    }
     setLoading(false);
   };
 

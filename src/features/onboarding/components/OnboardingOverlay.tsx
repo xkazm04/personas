@@ -22,8 +22,6 @@ export default function OnboardingOverlay() {
     onboardingSelectedReviewId,
     onboardingCreatedPersonaId,
     dismissOnboarding,
-    credentials,
-    connectorDefinitions,
     templates,
     isLoadingTemplates,
     showAdoptionWizard,
@@ -52,8 +50,6 @@ export default function OnboardingOverlay() {
         isOpen
         onClose={handleAdoptionClose}
         review={selectedReview}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
         onPersonaCreated={handleAdoptionComplete}
       />
     );

@@ -5,7 +5,8 @@
  */
 import { useEffect, useRef } from 'react';
 import { getTemplateAdoptSnapshot } from '@/api/templates/templateAdopt';
-import { ADOPT_CONTEXT_KEY } from '../../adoption/hooks/useAdoptReducer';
+/** localStorage key for persisted adoption context (legacy wizard) */
+const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 
 const POLL_INTERVAL_MS = 5_000;

@@ -124,12 +124,19 @@ export default function NotificationSettings() {
     }
   }, [setting.value]);
 
+  // Ref tracks latest prefs synchronously so rapid toggles before re-render
+  // don't lose intermediate changes (stale-closure + batched-setState race).
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
+
   const toggle = useCallback(
     (key: keyof NotificationPrefs) => {
-      const next = { ...prefs, [key]: !prefs[key] };
+      const current = prefsRef.current;
+      const next = { ...current, [key]: !current[key] };
+      prefsRef.current = next;
       setting.setValue(JSON.stringify(next));
     },
-    [prefs, setting],
+    [setting],
   );
 
   if (!setting.loaded) return null;

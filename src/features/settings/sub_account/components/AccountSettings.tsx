@@ -19,6 +19,7 @@ export default function AccountSettings() {
   const setViewMode = useSystemStore((s) => s.setViewMode);
 
   const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
+  const [telemetryChanged, setTelemetryChanged] = useState(false);
   const clearError = () => useAuthStore.setState({ error: null });
 
   return (
@@ -76,15 +77,22 @@ export default function AccountSettings() {
               <p className="text-sm font-medium text-foreground/85">Send anonymous telemetry</p>
               <p className="text-xs text-muted-foreground/50 mt-0.5">
                 {telemetryOn
-                  ? 'Crash reports and usage analytics are active. Restart the app for changes to take full effect.'
-                  : 'Telemetry is disabled. No data is sent to Sentry. Restart the app for changes to take full effect.'}
+                  ? 'Crash reports and usage analytics are active.'
+                  : 'Telemetry is disabled. No data is sent to Sentry.'}
               </p>
+              {telemetryChanged && (
+                <p className="text-xs text-amber-400/80 mt-1.5 flex items-center gap-1.5">
+                  <RefreshCw className="w-3 h-3" />
+                  Restart the app for this change to take effect
+                </p>
+              )}
             </div>
             <button
               onClick={() => {
                 const next = !telemetryOn;
                 setTelemetryEnabled(next);
                 setTelemetryOn(next);
+                setTelemetryChanged(true);
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full shrink-0 transition-colors ${
                 telemetryOn ? 'bg-emerald-500/70' : 'bg-secondary/60 border border-primary/15'

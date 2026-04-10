@@ -2,13 +2,11 @@ import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab } from "@/lib/types/types";
-import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
-
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
 export interface AdoptionDraft {
   reviewId: string;
   templateName: string;
-  step: AdoptWizardStep;
+  step: string;
   connectorSwaps: Record<string, string>;
   connectorCredentialMap: Record<string, string>;
   variableValues: Record<string, string>;

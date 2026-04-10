@@ -75,6 +75,7 @@ export default function QualityGateSettings() {
   const [config, setConfig] = useState<QualityGateConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,13 +93,19 @@ export default function QualityGateSettings() {
   useEffect(() => { void load(); }, [load]);
 
   const handleReset = useCallback(async () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      setTimeout(() => setConfirmReset(false), 3000);
+      return;
+    }
+    setConfirmReset(false);
     try {
       const cfg = await resetQualityGateConfig();
       setConfig(cfg);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, []);
+  }, [confirmReset]);
 
   const totalRules = config
     ? config.memoryRules.length + config.reviewRules.length + config.memoryRejectCategories.length
@@ -161,10 +168,23 @@ export default function QualityGateSettings() {
               </span>
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 transition-colors"
+                className={`flex items-center gap-1.5 text-[11px] transition-colors ${
+                  confirmReset
+                    ? 'text-red-400 hover:text-red-300'
+                    : 'text-white/40 hover:text-white/70'
+                }`}
               >
-                <RotateCcw size={12} />
-                Reset to defaults
+                {confirmReset ? (
+                  <>
+                    <AlertTriangle size={12} />
+                    Confirm reset?
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={12} />
+                    Reset to defaults
+                  </>
+                )}
               </button>
             </div>
           </div>

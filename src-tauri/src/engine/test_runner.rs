@@ -294,14 +294,15 @@ pub async fn run_test(
         // Batch-write all results for this scenario in a single transaction
         if let Err(e) = repo::batch_create_results(&pool, &batch_inputs) {
             let msg = format!("Failed to persist test results: {e}");
+            let now = chrono::Utc::now().to_rfc3339();
             let _ = repo::update_run_status(
                 &pool,
                 &run_id,
                 LabRunStatus::Failed,
                 Some(scenario_count as i32),
                 None,
-                None,
                 Some(msg.as_str()),
+                Some(&now),
             );
             let _ = app.emit(
                 event_name::TEST_RUN_STATUS,

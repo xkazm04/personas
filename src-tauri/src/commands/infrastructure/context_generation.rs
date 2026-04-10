@@ -497,19 +497,43 @@ async fn run_context_generation(
     root_path: &str,
     existing_summary: Option<&str>,
 ) -> Result<ContextGenSummary, AppError> {
-    let mode_label = if existing_summary.is_some() {
-        "Rescanning"
-    } else {
-        "Scanning"
-    };
+    let is_rescan = existing_summary.is_some();
+    if is_rescan {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            "[Milestone] Rescan: clearing old context map...".to_string(),
+        );
+        match repo::clear_project_context_map(pool, project_id) {
+            Ok((grp, ctx)) => {
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    format!("[Milestone] Cleared {grp} groups, {ctx} contexts. Regenerating fresh..."),
+                );
+            }
+            Err(e) => {
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    format!("[Warn] Failed to clear old context map: {e}. Continuing anyway..."),
+                );
+            }
+        }
+    }
+
+    let mode_label = if is_rescan { "Rescanning" } else { "Scanning" };
     CONTEXT_GEN_JOBS.emit_line(
         app,
         scan_id,
         format!("[Milestone] {mode_label} codebase: {project_name}..."),
     );
 
+    // Always generate fresh — on rescan we cleared old data above, so no
+    // existing_summary needed. This avoids the "Ungrouped" problem where the
+    // LLM tries to reference existing group/context IDs that are gone.
     let prompt_text =
-        build_context_generation_prompt(project_id, project_name, root_path, existing_summary);
+        build_context_generation_prompt(project_id, project_name, root_path, None);
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());

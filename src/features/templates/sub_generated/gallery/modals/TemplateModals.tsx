@@ -21,8 +21,10 @@ export interface CredentialModalTarget {
 
 interface TemplateModalsProps {
   modals: ModalStackActions<TemplateModal>;
-  credentials: CredentialMetadata[];
-  connectorDefinitions: ConnectorDefinition[];
+  /** @deprecated Kept for caller compatibility — no longer used internally */
+  credentials?: CredentialMetadata[];
+  /** @deprecated Kept for caller compatibility — no longer used internally */
+  connectorDefinitions?: ConnectorDefinition[];
   onDeleteReview: (id: string) => Promise<void>;
   onPersonaCreated: () => void;
   onViewFlows: (review: PersonaDesignReview) => void;
@@ -37,8 +39,6 @@ interface TemplateModalsProps {
 
 export function TemplateModals({
   modals,
-  credentials,
-  connectorDefinitions,
   onDeleteReview,
   onPersonaCreated,
   onViewFlows,
@@ -77,8 +77,6 @@ export function TemplateModals({
         isOpen={modals.isOpen('adopt')}
         onClose={() => modals.close('adopt')}
         review={modals.find('adopt')?.review ?? null}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
         onPersonaCreated={onPersonaCreated}
       />
 

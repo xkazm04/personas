@@ -11,7 +11,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DesignQuestion } from '@/lib/types/designTypes';
 import type { CellBuildStatus, BuildQuestion, BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
-import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
+import type { RequiredConnector } from '@/lib/types/designTypes';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
 import { MatrixCommandCenter } from './MatrixCommandCenter';

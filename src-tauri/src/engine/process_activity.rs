@@ -30,5 +30,7 @@ impl ProcessActivityEvent {
 
 pub fn emit_process_activity(app: &AppHandle, domain: &str, action: &str, run_id: Option<&str>, label: Option<&str>) {
     let event = ProcessActivityEvent::new(domain, action, run_id, label);
-    let _ = app.emit(super::event_registry::event_name::PROCESS_ACTIVITY, event);
+    if let Err(e) = app.emit(super::event_registry::event_name::PROCESS_ACTIVITY, event) {
+        tracing::warn!(domain, action, ?run_id, "Failed to emit process activity event: {e}");
+    }
 }

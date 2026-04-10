@@ -42,6 +42,13 @@ export const useAgentStore = create<AgentStore>()(
         activeChatSessionId: state.activeChatSessionId,
         chatMode: state.chatMode,
       }),
+      // Migrate persisted 'ops' chatMode to 'advisory' (renamed in advisory hub refactor)
+      merge: (persisted, current) => {
+        const p = persisted as Partial<typeof current> | undefined;
+        const rawMode = p?.chatMode as string | undefined;
+        const chatMode = (rawMode === 'ops' || rawMode === 'advisory') ? 'advisory' as const : (rawMode === 'agent' ? 'agent' as const : current.chatMode);
+        return { ...current, ...p, chatMode };
+      },
     },
   ),
 );

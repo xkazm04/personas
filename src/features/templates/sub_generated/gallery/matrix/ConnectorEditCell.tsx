@@ -12,7 +12,7 @@ import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/di
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
+import type { RequiredConnector } from '@/lib/types/designTypes';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 

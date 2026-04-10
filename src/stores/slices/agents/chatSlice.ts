@@ -18,7 +18,7 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 /** Active chat execution listener cleanup functions */
 let chatExecCleanup: (() => void) | null = null;
 
-export type ChatMode = 'ops' | 'agent';
+export type ChatMode = 'advisory' | 'agent';
 
 export interface ChatSlice {
   // State
@@ -64,7 +64,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   chatMessages: [],
   activeChatSessionId: null,
   chatStreaming: false,
-  chatMode: 'ops' as ChatMode,
+  chatMode: 'advisory' as ChatMode,
   chatSessionContext: null,
 
   setChatMode: (mode) => {
@@ -143,16 +143,18 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
 
     // 3. Determine if we can --resume an existing Claude session
     const claudeSessionId = get().chatSessionContext?.claudeSessionId;
-    const isOps = get().chatMode === 'ops';
+    const isAdvisory = get().chatMode === 'advisory';
 
     let conversationInput: string;
     let continuation: Continuation | undefined;
 
     if (claudeSessionId && !isFirstMessage) {
       // Follow-up message: use --resume to continue the Claude session natively.
-      // Only send the new message as input — Claude already has full context.
+      // On resume, do NOT re-inject _advisory flag — the resumed session already has
+      // the full advisory prompt + diagnostic context from turn 1. Re-injecting would
+      // cause the LLM to restart its analysis instead of continuing the conversation.
       conversationInput = JSON.stringify({
-        ...(isOps ? { _ops: true } : { _chat: true }),
+        _chat: true,
         latest_message: content,
       });
       continuation = { type: "SessionResume", value: claudeSessionId };
@@ -162,7 +164,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         (m) => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content}`,
       );
       conversationInput = JSON.stringify({
-        ...(isOps ? { _ops: true } : { _chat: true }),
+        ...(isAdvisory ? { _advisory: true } : { _chat: true }),
         conversation: contextLines.join("\n\n"),
         latest_message: content,
       });
@@ -242,10 +244,10 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         ...(capturedClaudeSessionId ? { claudeSessionId: capturedClaudeSessionId } : {}),
       }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
 
-      // Ops mode: extract and dispatch operations from assistant output
-      if (get().chatMode === 'ops') {
+      // Advisory mode: extract and dispatch operations from assistant output
+      if (get().chatMode === 'advisory') {
         const { extractOperations, dispatchOperations, formatResults } = await import(
-          "@/features/agents/sub_chat/libs/chatOpsDispatch"
+          "@/features/agents/sub_chat/libs/chatAdvisoryDispatch"
         );
         const ops = extractOperations(fullResponse);
         if (ops.length > 0) {
@@ -261,6 +263,33 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
             set((s) => ({
               chatMessages: [...s.chatMessages, resultMsg].slice(-MAX_CHAT_MESSAGES),
             }));
+          }
+
+          // Track any experiments started from advisory chat
+          const experiments = results.filter((r) => r.experimentRunId);
+          if (experiments.length > 0) {
+            // Load current working memory, append experiments, save
+            const ctx = get().chatSessionContext;
+            const existingWm = ctx?.workingMemory;
+            let wmData: { experiments?: Array<{ runId: string; mode: string; hypothesis: string; startedAt: string; sessionId: string; personaId: string }> } = {};
+            try { if (existingWm) wmData = JSON.parse(existingWm); } catch {/* fresh */}
+            if (!Array.isArray(wmData.experiments)) wmData.experiments = [];
+            for (const exp of experiments) {
+              const opMatch = ops.find((o) => o.op === exp.op);
+              wmData.experiments.push({
+                runId: exp.experimentRunId!,
+                mode: exp.op === "start_arena" ? "arena" : exp.op === "start_matrix" ? "matrix" : "eval",
+                hypothesis: (typeof opMatch?.instruction === "string" ? opMatch.instruction : typeof opMatch?.hypothesis === "string" ? opMatch.hypothesis : exp.summary).slice(0, 200),
+                startedAt: new Date().toISOString(),
+                sessionId,
+                personaId,
+              });
+            }
+            saveChatSessionContext({
+              sessionId,
+              personaId,
+              workingMemory: JSON.stringify(wmData),
+            }).then((updatedCtx) => set({ chatSessionContext: updatedCtx })).catch(() => {/* best effort */});
           }
         }
       }
@@ -301,7 +330,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           activeChatSessionId: latest.sessionId,
           chatMessages: messages.slice(-MAX_CHAT_MESSAGES),
           chatSessionContext: latestCtx,
-          chatMode: (latestCtx?.chatMode === 'agent' ? 'agent' : 'ops') as ChatMode,
+          chatMode: (latestCtx?.chatMode === 'agent' ? 'agent' : 'advisory') as ChatMode,
         });
       }
     } catch {

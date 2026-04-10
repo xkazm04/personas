@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   GitBranch, Zap, CheckCircle2, XCircle, AlertCircle,
-  RefreshCw, Bot, Target, ArrowRight, ClipboardCheck,
+  RefreshCw, Bot, Target, ClipboardCheck,
   Brain, Play, Clock, Download, FolderKanban,
   ShieldCheck, Sparkles,
 } from 'lucide-react';
