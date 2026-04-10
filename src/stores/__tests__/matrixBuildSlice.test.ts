@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useAgentStore } from "../agentStore";
 
+/** Helper: create + activate a build session so event handlers have a target. */
+function ensureSession(sessionId = "s1", personaId = "p-1") {
+  useAgentStore.getState().createBuildSession(personaId, sessionId);
+}
+
 describe("matrixBuildSlice", () => {
   beforeEach(() => {
     // Reset slice to initial state between tests
@@ -51,6 +56,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleBuildCellUpdate", () => {
     it("sets cell status from event", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildCellUpdate({
         type: "cell_update",
         session_id: "s1",
@@ -63,6 +69,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("merges without clobbering other cells", () => {
+      ensureSession("s1");
       const { handleBuildCellUpdate } = useAgentStore.getState();
       handleBuildCellUpdate({
         type: "cell_update",
@@ -87,6 +94,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleBuildQuestion", () => {
     it("pushes question to buildPendingQuestions and marks cell as highlighted", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -108,6 +116,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("stores question with null options", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -121,6 +130,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("supports multiple simultaneous questions", () => {
+      ensureSession("s1");
       const handle = useAgentStore.getState().handleBuildQuestion;
       handle({
         type: "question",
@@ -148,6 +158,7 @@ describe("matrixBuildSlice", () => {
 
   describe("clearBuildQuestion", () => {
     it("removes question by cellKey from the array", () => {
+      ensureSession("s1");
       // Setup: two pending questions
       const handle = useAgentStore.getState().handleBuildQuestion;
       handle({
@@ -174,6 +185,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("results in empty array when last question is cleared", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -189,6 +201,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("does not change phase when clearing (let session_status events handle that)", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -206,6 +219,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("is a no-op for non-matching cellKey", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -222,6 +236,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleBuildProgress", () => {
     it("updates progress when percent is provided", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildProgress({
         type: "progress",
         session_id: "s1",
@@ -234,7 +249,11 @@ describe("matrixBuildSlice", () => {
     });
 
     it("does not change progress when percent is null", () => {
-      useAgentStore.setState({ buildProgress: 25 });
+      ensureSession("s1");
+      // Set progress via a progress event so the session state is updated
+      useAgentStore.getState().handleBuildProgress({
+        type: "progress", session_id: "s1", dimension: null, message: "setup", percent: 25,
+      });
       useAgentStore.getState().handleBuildProgress({
         type: "progress",
         session_id: "s1",
@@ -247,6 +266,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("appends message to output lines", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildProgress({
         type: "progress",
         session_id: "s1",
@@ -269,9 +289,10 @@ describe("matrixBuildSlice", () => {
     });
 
     it("caps output lines at 500", () => {
-      // Pre-fill with 499 lines
-      useAgentStore.setState({
-        buildOutputLines: Array.from({ length: 499 }, (_, i) => `Line ${i}`),
+      ensureSession("s1");
+      // Pre-fill with 499 lines via patchActiveSession so the session map is updated
+      useAgentStore.getState().patchActiveSession({
+        outputLines: Array.from({ length: 499 }, (_, i) => `Line ${i}`),
       });
 
       // Add 3 more lines (should cap at 500, dropping oldest)
@@ -290,6 +311,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleBuildError", () => {
     it("sets error message and phase to failed", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildError({
         type: "error",
         session_id: "s1",
@@ -306,6 +328,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleBuildSessionStatus", () => {
     it("updates phase and calculates progress from counts", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
         session_id: "s1",
@@ -320,6 +343,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("handles zero total count without dividing by zero", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
         session_id: "s1",
@@ -332,6 +356,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("sets buildPhase to testing from session_status event", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
         session_id: "s1",
@@ -344,6 +369,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("sets buildPhase to test_complete from session_status event", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
         session_id: "s1",
@@ -356,6 +382,7 @@ describe("matrixBuildSlice", () => {
     });
 
     it("sets buildPhase to promoted from session_status event", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleBuildSessionStatus({
         type: "session_status",
         session_id: "s1",
@@ -370,6 +397,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleStartTest", () => {
     it("sets buildPhase to testing and stores testId", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleStartTest("test-run-1");
 
       const s = useAgentStore.getState();
@@ -378,11 +406,12 @@ describe("matrixBuildSlice", () => {
     });
 
     it("clears previous test state when starting new test", () => {
-      // Set up previous test state
-      useAgentStore.setState({
-        buildTestPassed: true,
-        buildTestOutputLines: ["old output"],
-        buildTestError: "old error",
+      ensureSession("s1");
+      // Set up previous test state via patchActiveSession so session map is updated
+      useAgentStore.getState().patchActiveSession({
+        testPassed: true,
+        testOutputLines: ["old output"],
+        testError: "old error",
       });
 
       useAgentStore.getState().handleStartTest("test-run-2");
@@ -397,6 +426,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleTestComplete", () => {
     it("sets testPassed=true, stores output preview, transitions to test_complete", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleStartTest("test-run-1");
       useAgentStore.getState().handleTestComplete(true, "All 5 tests passed");
 
@@ -409,6 +439,7 @@ describe("matrixBuildSlice", () => {
 
   describe("handleTestFailed", () => {
     it("sets testPassed=false, stores error, transitions to test_complete", () => {
+      ensureSession("s1");
       useAgentStore.getState().handleStartTest("test-run-1");
       useAgentStore.getState().handleTestFailed("Assertion failed: expected 200 got 500");
 
@@ -421,13 +452,14 @@ describe("matrixBuildSlice", () => {
 
   describe("handleRejectTest", () => {
     it("resets buildPhase to draft_ready and clears test state", () => {
-      // Set up a test_complete state
-      useAgentStore.setState({
-        buildPhase: "test_complete",
-        buildTestId: "test-run-1",
-        buildTestPassed: false,
-        buildTestOutputLines: ["Test output"],
-        buildTestError: "Some error",
+      ensureSession("s1");
+      // Set up a test_complete state via patchActiveSession so session map is updated
+      useAgentStore.getState().patchActiveSession({
+        phase: "test_complete",
+        testId: "test-run-1",
+        testPassed: false,
+        testOutputLines: ["Test output"],
+        testError: "Some error",
       });
 
       useAgentStore.getState().handleRejectTest();
@@ -443,16 +475,16 @@ describe("matrixBuildSlice", () => {
 
   describe("resetBuildSession", () => {
     it("resets all fields to initial state", () => {
-      // First dirty the state
-      useAgentStore.setState({
-        buildSessionId: "s1",
-        buildPhase: "resolving",
-        buildCellStates: { connectors: "resolved" },
-        buildPendingQuestions: [{ cellKey: "x", question: "?", options: null }],
-        buildProgress: 75,
-        buildOutputLines: ["line1", "line2"],
-        buildError: "some error",
-        buildDraft: { ir: true },
+      // Create a session and dirty the state via patchActiveSession
+      ensureSession("s1");
+      useAgentStore.getState().patchActiveSession({
+        phase: "resolving",
+        cellStates: { connectors: "resolved" },
+        pendingQuestions: [{ cellKey: "x", question: "?", options: null }],
+        progress: 75,
+        outputLines: ["line1", "line2"],
+        error: "some error",
+        draft: { ir: true },
       });
 
       useAgentStore.getState().resetBuildSession();
@@ -469,11 +501,12 @@ describe("matrixBuildSlice", () => {
     });
 
     it("also resets all test lifecycle fields", () => {
-      useAgentStore.setState({
-        buildTestId: "test-run-1",
-        buildTestPassed: true,
-        buildTestOutputLines: ["test output"],
-        buildTestError: "test error",
+      ensureSession("s1");
+      useAgentStore.getState().patchActiveSession({
+        testId: "test-run-1",
+        testPassed: true,
+        testOutputLines: ["test output"],
+        testError: "test error",
       });
 
       useAgentStore.getState().resetBuildSession();
