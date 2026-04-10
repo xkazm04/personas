@@ -51,7 +51,14 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
 
   const displayed = showAll ? timeline : timeline.slice(0, 30);
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="flex items-center justify-center py-6">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+        <div className="w-3.5 h-3.5 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
+        Loading audit timeline...
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-3">

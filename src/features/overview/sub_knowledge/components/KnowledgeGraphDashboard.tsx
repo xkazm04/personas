@@ -246,7 +246,12 @@ export default function KnowledgeGraphDashboard() {
               </div>
             </div>
           ) : loading ? (
-            null
+            <div className="flex-1 flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <RefreshCw className="w-5 h-5 text-muted-foreground/40 animate-spin" />
+                <p className="text-sm text-muted-foreground/60">Loading knowledge patterns...</p>
+              </div>
+            </div>
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <EmptyState

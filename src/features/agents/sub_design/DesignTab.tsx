@@ -19,8 +19,8 @@ export function DesignTab() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <p className="text-sm">Select an agent to start design analysis</p>
       </div>
     );
   }
