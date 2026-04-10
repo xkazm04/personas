@@ -23,7 +23,7 @@ export const BADGE_VARIANTS = {
   orange:   'bg-orange-500/10 border-orange-500/20 text-orange-400',
   yellow:   'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
   sky:      'bg-sky-500/10 border-sky-500/20 text-sky-400',
-  neutral:  'bg-white/10 border-white/20 text-white/80',
+  neutral:  'bg-secondary/40 border-border/50 text-muted-foreground',
 } as const;
 
 export type BadgeVariant = keyof typeof BADGE_VARIANTS;
@@ -41,7 +41,7 @@ export const BADGE_HOVER: Record<BadgeVariant, string> = {
   orange:   'hover:bg-orange-500/15 hover:border-orange-500/30',
   yellow:   'hover:bg-yellow-500/15 hover:border-yellow-500/30',
   sky:      'hover:bg-sky-500/15 hover:border-sky-500/30',
-  neutral:  'hover:bg-white/15 hover:border-white/30',
+  neutral:  'hover:bg-secondary/60 hover:border-border/70',
 };
 
 /** Decomposed token record for cases that need individual class strings. */
@@ -57,7 +57,7 @@ export const BADGE_TOKENS: Record<BadgeVariant, { bg: string; border: string; te
   orange:   { bg: 'bg-orange-500/10',  border: 'border-orange-500/20',  text: 'text-orange-400' },
   yellow:   { bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20',  text: 'text-yellow-400' },
   sky:      { bg: 'bg-sky-500/10',     border: 'border-sky-500/20',     text: 'text-sky-400' },
-  neutral:  { bg: 'bg-white/10',       border: 'border-white/20',       text: 'text-white/80' },
+  neutral:  { bg: 'bg-secondary/40',   border: 'border-border/50',      text: 'text-muted-foreground' },
 };
 
 // ---------------------------------------------------------------------------
