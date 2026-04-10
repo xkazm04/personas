@@ -86,6 +86,7 @@ export default function MemoriesPage() {
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleListKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (memories.length === 0) return;
@@ -97,12 +98,25 @@ export default function MemoriesPage() {
       setFocusedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < memories.length) {
       e.preventDefault();
-      setSelectedMemory(memories[focusedIndex]!);
+      if (pendingDeleteId === memories[focusedIndex]!.id) {
+        deleteMemory(pendingDeleteId);
+        setPendingDeleteId(null);
+      } else {
+        setSelectedMemory(memories[focusedIndex]!);
+      }
     } else if (e.key === 'Delete' && focusedIndex >= 0 && focusedIndex < memories.length) {
       e.preventDefault();
-      deleteMemory(memories[focusedIndex]!.id);
+      const memId = memories[focusedIndex]!.id;
+      if (pendingDeleteId === memId) {
+        deleteMemory(memId);
+        setPendingDeleteId(null);
+      } else {
+        setPendingDeleteId(memId);
+      }
+    } else if (e.key === 'Escape') {
+      setPendingDeleteId(null);
     }
-  }, [memories, focusedIndex, deleteMemory]);
+  }, [memories, focusedIndex, deleteMemory, pendingDeleteId]);
 
   const handleReview = useCallback(async () => {
     setIsReviewing(true); setReviewResult(null); setReviewError(null);
@@ -277,7 +291,7 @@ export default function MemoriesPage() {
                       const persona = personaMap.get(memory.persona_id);
                       const isFocused = virtualRow.index === focusedIndex;
                       return (
-                        <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''}>
+                        <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={`${isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''} ${pendingDeleteId === memory.id ? 'bg-red-500/10' : ''}`}>
                           <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
                         </div>
                       );

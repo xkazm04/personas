@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Plus, Trash2, MessageSquare } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 
@@ -15,6 +16,7 @@ export function SessionSidebar({
   const sessionContext = useAgentStore((s) => s.chatSessionContext);
   const fetchMessages = useAgentStore((s) => s.fetchChatMessages);
   const clearSession = useAgentStore((s) => s.clearChatSession);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   return (
     <div className="w-[28rem] border-r border-primary/[0.08] flex flex-col h-full bg-secondary/[0.02]" data-testid="chat-sidebar">
@@ -59,13 +61,27 @@ export function SessionSidebar({
               {s.messageCount > 0 && (
                 <span className="text-[11px] text-muted-foreground/40 flex-shrink-0">{s.messageCount}</span>
               )}
-              <button
-                data-testid={`chat-session-delete-${s.sessionId}`}
-                onClick={(e) => { e.stopPropagation(); clearSession(personaId, s.sessionId); }}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {confirmDeleteId === s.sessionId ? (
+                <button
+                  data-testid={`chat-session-confirm-delete-${s.sessionId}`}
+                  onClick={(e) => { e.stopPropagation(); clearSession(personaId, s.sessionId); setConfirmDeleteId(null); }}
+                  onBlur={() => setConfirmDeleteId(null)}
+                  className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-all flex-shrink-0"
+                  aria-label="Confirm delete conversation"
+                  autoFocus
+                >
+                  Delete?
+                </button>
+              ) : (
+                <button
+                  data-testid={`chat-session-delete-${s.sessionId}`}
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(s.sessionId); }}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
+                  aria-label="Delete conversation"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           );
         })}
