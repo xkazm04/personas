@@ -114,13 +114,14 @@ describe("SchemaManagerModal", () => {
       />,
     );
 
-    // Find the close button (the one with X icon)
+    // The close button is in the header, after the Pencil (rename) button.
+    // Both have SVGs, so find all buttons and pick the one with the X icon
+    // by matching the p-2 class on the close button (Pencil uses p-0.5).
     const buttons = screen.getAllByRole("button");
-    const closeButton = buttons.find((b) => b.querySelector("svg"));
-    if (closeButton) {
-      fireEvent.click(closeButton);
-      expect(handleClose).toHaveBeenCalledTimes(1);
-    }
+    const closeButton = buttons.find((b) => b.classList.contains("p-2"));
+    expect(closeButton).toBeTruthy();
+    fireEvent.click(closeButton!);
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
   it("switches tabs on click", () => {
