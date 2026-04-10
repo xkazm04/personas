@@ -1392,8 +1392,9 @@ input[type="number"] {
   --brand-amber: #555555;
   --brand-rose: #2a2a2a;
   --btn-primary: #222222;
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(0, 0, 0, 0.04);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --focus-ring-color: rgba(26, 26, 26, 0.5);
   --status-success: #3a3a3a;
   --status-warning: #555555;
   --status-error: #2a2a2a;
@@ -1401,10 +1402,10 @@ input[type="number"] {
   --status-pending: #555555;
   --status-processing: #333333;
   --status-neutral: #555555;
-  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
-  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
-  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.14), 0 16px 32px rgba(0, 0, 0, 0.1);
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.10);
+  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 32px rgba(0, 0, 0, 0.12);
   --chart-grid-stroke: rgba(0, 0, 0, 0.12);
   --chart-axis-fill: rgba(17, 17, 17, 0.6);
 }
@@ -2176,6 +2177,27 @@ input[type="number"] {
   color: #65a30d;
 }
 
+[data-theme^="light"] .text-zinc-300,
+[data-theme^="light"] .text-zinc-400 {
+  color: #52525b;
+}
+
+[data-theme^="light"] .text-yellow-300,
+[data-theme^="light"] .text-yellow-400 {
+  color: #ca8a04;
+}
+
+/* News: monochrome zinc and yellow */
+[data-theme="light-news"] .text-zinc-300,
+[data-theme="light-news"] .text-zinc-400 {
+  color: #3f3f46;
+}
+
+[data-theme="light-news"] .text-yellow-300,
+[data-theme="light-news"] .text-yellow-400 {
+  color: #3d3d3d;
+}
+
 /* -- Light: Pastel Text Opacity Variants --
    text-*-300/60 and text-*-400/70 etc. are used in badge sub-labels and
    secondary text within colored pills. The base overrides above catch the
@@ -2856,6 +2878,73 @@ input[type="number"] {
 [data-theme^="light"] .placeholder\:text-muted-foreground\/60::placeholder {
   color: var(--muted-foreground);
   opacity: 0.70;
+}
+
+/* -- Light: Zebra Striping & Hover State Fixes --
+   bg-white/[0.015] and hover:bg-white/[0.02-0.05] are invisible on light
+   backgrounds (~90% lightness). Swap white→black with boosted opacity.     */
+
+[data-theme^="light"] .bg-white\/\[0\.015\] {
+  background-color: rgba(0, 0, 0, 0.035);
+}
+
+[data-theme^="light"] .hover\:bg-white\/\[0\.02\]:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme^="light"] .hover\:bg-white\/\[0\.03\]:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme^="light"] .hover\:bg-white\/\[0\.04\]:hover {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme^="light"] .hover\:bg-white\/\[0\.05\]:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* bg-white/10 and variants used in badges and overlays */
+[data-theme^="light"] .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme^="light"] .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme^="light"] .hover\:bg-white\/15:hover {
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+/* border-white variants used in badges */
+[data-theme^="light"] .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme^="light"] .hover\:border-white\/30:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* text-white opacity variants used in neutral badges and labels */
+[data-theme^="light"] .text-white\/80 {
+  color: var(--foreground);
+  opacity: 0.85;
+}
+
+[data-theme^="light"] .text-white\/70 {
+  color: var(--foreground);
+  opacity: 0.78;
+}
+
+[data-theme^="light"] .text-white\/40 {
+  color: var(--foreground);
+  opacity: 0.55;
+}
+
+[data-theme^="light"] .text-white\/30 {
+  color: var(--foreground);
+  opacity: 0.45;
 }
 
 /* -- Light: Gradient Background Fixes --
