@@ -38,6 +38,37 @@ export default function Sidebar() {
   }, [toggleCollapsed]);
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile drawer on Escape + focus trap
+  useEffect(() => {
+    if (!IS_MOBILE || !mobileDrawerOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileDrawerOpen(false);
+        return;
+      }
+      if (e.key === 'Tab' && mobileDrawerRef.current) {
+        const focusable = mobileDrawerRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    // Focus the drawer on open
+    mobileDrawerRef.current?.focus();
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileDrawerOpen]);
 
   const { sidebarSection, settingsTab } = useSystemStore(
     useShallow((s) => ({ sidebarSection: s.sidebarSection, settingsTab: s.settingsTab }))
@@ -153,9 +184,14 @@ export default function Sidebar() {
               onClick={() => setMobileDrawerOpen(false)}
             />
           )}
-          <div className={
+          <div
+            ref={IS_MOBILE ? mobileDrawerRef : undefined}
+            tabIndex={IS_MOBILE ? -1 : undefined}
+            role={IS_MOBILE ? 'dialog' : undefined}
+            aria-label={IS_MOBILE ? 'Navigation drawer' : undefined}
+            className={
             IS_MOBILE
-              ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-elevation-4'
+              ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-elevation-4 focus:outline-none'
               : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
