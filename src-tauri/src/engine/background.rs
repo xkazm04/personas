@@ -1014,7 +1014,7 @@ pub(crate) fn synthesize_trigger_fired_payload(
 
 /// Same as `trigger_scheduler_tick` but returns the number of triggers fired.
 /// Used by the startup overdue sweep to know how many were recovered.
-pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
+pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
     let now = chrono::Utc::now();
     let now_str = now.to_rfc3339();
     let mut fired: u32 = 0;
