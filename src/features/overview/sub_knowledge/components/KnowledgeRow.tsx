@@ -35,6 +35,8 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
         type="button"
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 w-full text-left"
+        title={open ? 'Collapse details' : 'Expand details'}
+        aria-expanded={open}
       >
         <motion.div
           animate={{ rotate: open ? 90 : 0 }}

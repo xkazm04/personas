@@ -61,6 +61,8 @@ export function SavedViewsDropdown({
           <button
             onClick={(e) => { e.stopPropagation(); onDeleteView(view.id); }}
             className="p-0.5 rounded hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
+            title="Delete saved view"
+            aria-label={`Delete view ${view.name}`}
           >
             <X className="w-3 h-3" />
           </button>
@@ -87,6 +89,8 @@ export function SavedViewsDropdown({
           <button
             onClick={() => { setSaveDialogOpen(false); setSaveName(''); }}
             className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/50"
+            title="Cancel"
+            aria-label="Cancel saving view"
           >
             <X className="w-3 h-3" />
           </button>

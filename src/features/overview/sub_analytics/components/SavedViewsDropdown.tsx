@@ -156,7 +156,7 @@ export function SavedViewsDropdown({
               <button onClick={handleSave} disabled={!newViewName.trim()} title={!newViewName.trim() ? 'Enter a view name to save' : 'Save view'} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
                 <Check className="w-4 h-4" />
               </button>
-              <button onClick={() => setIsSaving(false)} className="p-1.5 text-muted-foreground hover:bg-secondary rounded">
+              <button onClick={() => setIsSaving(false)} className="p-1.5 text-muted-foreground hover:bg-secondary rounded" title="Cancel" aria-label="Cancel saving view">
                 <X className="w-4 h-4" />
               </button>
             </div>
