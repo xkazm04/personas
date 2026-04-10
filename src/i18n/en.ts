@@ -1092,6 +1092,10 @@ export const en = {
       in_window: "in window",
     },
     observability: {
+      title: "Observability",
+      subtitle: "Monitor execution health, costs, and anomalies across your agents",
+      alert_rules: "Alert Rules",
+      refresh_metrics: "Refresh metrics",
       persona_disabled: "Agent auto-paused",
       auto_resolved: "This issue was automatically resolved",
       mark_resolved: "Mark as Resolved",
