@@ -125,7 +125,7 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'adopt' && !showAdoptionWizard && (
               <div className="flex flex-col items-center py-8 gap-4">
                 <LoadingSpinner size="xl" className="text-violet-400" />
-                <p className="typo-body text-muted-foreground/70">Opening adoption wizard...</p>
+                <p className="typo-body text-muted-foreground/70">Setting up your agent...</p>
               </div>
             )}
 
@@ -163,6 +163,7 @@ export default function OnboardingOverlay() {
             <button
               onClick={handleNextFromDiscover}
               disabled={isScanning}
+              title={isScanning ? 'Scanning your desktop apps...' : undefined}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue
@@ -174,9 +175,10 @@ export default function OnboardingOverlay() {
             <button
               onClick={handleNextFromPick}
               disabled={!onboardingSelectedReviewId || templates.length === 0}
+              title={!onboardingSelectedReviewId ? 'Select a template first' : undefined}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Adopt Template
+              Set Up Agent
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

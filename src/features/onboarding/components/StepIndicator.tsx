@@ -13,7 +13,7 @@ export const STEPS: { key: OnboardingStep; label: string; icon: typeof FlaskConi
   { key: 'appearance', label: 'Look & Feel', icon: Palette },
   { key: 'discover', label: 'Desktop', icon: Monitor },
   { key: 'pick-template', label: 'Pick Template', icon: FlaskConical },
-  { key: 'adopt', label: 'Adopt Agent', icon: Download },
+  { key: 'adopt', label: 'Set Up Agent', icon: Download },
   { key: 'execute', label: 'First Run', icon: Play },
 ];
 

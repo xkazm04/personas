@@ -18,16 +18,16 @@ const APP_ICONS: Record<string, string> = {
 function riskBadge(hasHighRisk: boolean) {
   if (hasHighRisk) {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-amber-400/80">
+      <span className="flex items-center gap-1 text-[11px] text-amber-400/80" title="This app can run commands on your system — review before allowing">
         <AlertTriangle className="w-3 h-3" />
-        Requires approval
+        Review recommended
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-[11px] text-emerald-400/80">
+    <span className="flex items-center gap-1 text-[11px] text-emerald-400/80" title="Read-only access, safe to allow">
       <ShieldCheck className="w-3 h-3" />
-      Low risk
+      Safe to allow
     </span>
   );
 }
@@ -64,7 +64,7 @@ export function DesktopDiscoveryStep({
         <Monitor className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
         <p className="typo-body text-muted-foreground/70">No supported desktop apps detected.</p>
         <p className="typo-body text-muted-foreground/50 mt-1">
-          You can set up desktop bridges later from the Connectors tab.
+          You can connect desktop apps later from the Connections section.
         </p>
       </div>
     );
@@ -77,7 +77,7 @@ export function DesktopDiscoveryStep({
           Your desktop environment
         </h3>
         <p className="typo-body text-muted-foreground/70">
-          We found these apps on your machine. Approve them now so agents can use desktop bridges right away.
+          We found these apps on your machine. Allow access so your agents can interact with them directly.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-2.5">
