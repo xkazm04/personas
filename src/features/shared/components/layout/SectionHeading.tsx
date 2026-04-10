@@ -18,7 +18,7 @@ export function SectionHeading({ title, icon, action, children, className = '', 
   if (children !== undefined && children !== null) {
     const Tag = as ?? 'h3';
     return (
-      <Tag className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${className}`}>
+      <Tag className={`text-sm font-medium text-foreground uppercase tracking-wider ${className}`}>
         {children}
       </Tag>
     );
@@ -29,8 +29,8 @@ export function SectionHeading({ title, icon, action, children, className = '', 
 
   const heading = (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {icon && <span className="w-4 h-4 text-muted-foreground/70 shrink-0 [&>svg]:w-4 [&>svg]:h-4">{icon}</span>}
-      <Tag className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{title}</Tag>
+      {icon && <span className="w-4 h-4 text-foreground shrink-0 [&>svg]:w-4 [&>svg]:h-4">{icon}</span>}
+      <Tag className="text-sm font-mono text-foreground uppercase tracking-wider">{title}</Tag>
     </div>
   );
 

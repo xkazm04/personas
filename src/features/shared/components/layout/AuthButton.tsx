@@ -37,7 +37,7 @@ export default function AuthButton() {
         disabled={isLoading}
         icon={
           <Globe
-            className={`w-5 h-5 transition-colors text-muted-foreground/90 group-hover:text-primary ${
+            className={`w-5 h-5 transition-colors text-foreground group-hover:text-primary ${
               isLoading ? "animate-pulse" : ""
             }`}
           />
@@ -86,7 +86,7 @@ export default function AuthButton() {
                 {user?.display_name ?? user?.email}
               </div>
               {user?.display_name && (
-                <div className="typo-body text-muted-foreground/90 truncate mt-0.5">
+                <div className="typo-body text-foreground truncate mt-0.5">
                   {user.email}
                 </div>
               )}

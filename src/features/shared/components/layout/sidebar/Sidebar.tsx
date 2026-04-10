@@ -195,7 +195,7 @@ export default function Sidebar() {
               : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-              <h2 className="typo-label text-muted-foreground/90">
+              <h2 className="typo-label text-foreground/90">
                 {labelOf(sidebarSection, sections.find((s) => s.id === sidebarSection)?.label ?? t.sidebar.overview)}
               </h2>
             </div>

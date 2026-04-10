@@ -31,7 +31,7 @@ export default function ProcessActivityIndicator() {
           width={22}
           height={22}
           strokeWidth={1.5}
-          className={isActive ? "text-primary" : "text-muted-foreground/40"}
+          className={isActive ? "text-primary" : "text-foreground"}
         />
         {count > 0 && (
           <span className="absolute top-2 right-1.5 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-primary/20 text-primary shadow-elevation-1">

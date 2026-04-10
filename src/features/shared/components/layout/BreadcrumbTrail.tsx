@@ -18,7 +18,7 @@ function Segment({ segment, isCurrent }: { segment: BreadcrumbSegment; isCurrent
     <button
       type="button"
       onClick={segment.onClick}
-      className="typo-caption text-muted-foreground/60 hover:text-foreground/80 transition-colors cursor-pointer truncate max-w-[140px] focus-ring rounded-sm"
+      className="typo-caption text-foreground hover:text-foreground transition-colors cursor-pointer truncate max-w-[140px] focus-ring rounded-sm"
     >
       {segment.label}
     </button>
@@ -27,7 +27,7 @@ function Segment({ segment, isCurrent }: { segment: BreadcrumbSegment; isCurrent
 
 /** Chevron separator between breadcrumb segments. */
 function Separator() {
-  return <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />;
+  return <ChevronRight className="w-3.5 h-3.5 text-foreground shrink-0" />;
 }
 
 /** Dropdown for collapsed middle segments on narrow viewports. */
@@ -49,7 +49,7 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="typo-caption text-muted-foreground/60 hover:text-foreground/80 transition-colors cursor-pointer p-0.5 rounded-sm focus-ring"
+        className="typo-caption text-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded-sm focus-ring"
         aria-label="Show hidden breadcrumbs"
         aria-expanded={open}
       >
@@ -65,7 +65,7 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
                 seg.onClick?.();
                 setOpen(false);
               }}
-              className="block w-full text-left px-3 py-1.5 typo-caption text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="block w-full text-left px-3 py-1.5 typo-caption text-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               {seg.label}
             </button>

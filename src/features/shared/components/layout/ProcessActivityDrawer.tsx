@@ -44,7 +44,7 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
   if (status === "failed") {
     return <span className="text-red-400 shrink-0 text-xs">{"\u2717"}</span>;
   }
-  return <span className="text-muted-foreground shrink-0 text-xs">{"\u2014"}</span>;
+  return <span className="text-foreground shrink-0 text-xs">{"\u2014"}</span>;
 }
 
 function statusLabel(status: ActiveProcess["status"], queuePosition?: number): string {
@@ -94,16 +94,16 @@ function ProcessRow({
           <div className="typo-body truncate">
             {process.label ?? process.domain}
             {process.runId && (
-              <span className="typo-caption text-muted-foreground/50 ml-1">
+              <span className="typo-caption text-foreground ml-1">
                 ({process.runId.slice(0, 8)})
               </span>
             )}
           </div>
           {process.lastEvent && (
-            <div className="typo-caption text-muted-foreground truncate">{process.lastEvent}</div>
+            <div className="typo-caption text-foreground truncate">{process.lastEvent}</div>
           )}
         </div>
-        <div className="typo-caption text-muted-foreground/60 shrink-0 text-right">
+        <div className="typo-caption text-foreground shrink-0 text-right">
           {process.status === "running"
             ? elapsedStr(process.startedAt)
             : statusLabel(process.status, process.queuePosition)}
@@ -117,7 +117,7 @@ function ProcessRow({
         <div className="bg-background/50 border-t border-primary/5">
           <ReasoningTrace entries={entries} isLive={isLive} startTime={process.startedAt} />
           {process.costUsd > 0 && (
-            <div className="px-3 pb-2 typo-caption text-muted-foreground/50">
+            <div className="px-3 pb-2 typo-caption text-foreground">
               {process.toolCallCount} tool calls &middot; ${process.costUsd.toFixed(4)}
             </div>
           )}
@@ -190,7 +190,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           <div className="flex items-center gap-1">
             {(actionEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0) && (
               <button
-                className="px-2 py-1 rounded text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/10 transition-colors"
+                className="px-2 py-1 rounded text-[10px] text-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
                 onClick={() => useOverviewStore.getState().clearNonActive()}
                 title="Clear completed and queued items"
               >
@@ -210,7 +210,7 @@ function DrawerContent({ onClose }: DrawerProps) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {!hasContent && (
-            <div className="flex items-center justify-center h-full typo-caption text-muted-foreground/50">
+            <div className="flex items-center justify-center h-full typo-caption text-foreground">
               No active or recent processes
             </div>
           )}
@@ -218,7 +218,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {/* Action required section (input_required, draft_ready) */}
           {actionEntries.length > 0 && (
             <div>
-              <div className="px-3 pt-3 pb-1 typo-caption text-orange-400/70 uppercase tracking-wide">
+              <div className="px-3 pt-3 pb-1 typo-caption text-orange-400 uppercase tracking-wide">
                 Action Required ({actionEntries.length})
               </div>
               {actionEntries.map(([key, proc]) => (
@@ -230,7 +230,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {/* Active (running) section */}
           {runningEntries.length > 0 && (
             <div>
-              <div className="px-3 pt-3 pb-1 typo-caption text-muted-foreground/60 uppercase tracking-wide">
+              <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
                 Active ({runningEntries.length})
               </div>
               {runningEntries.map(([key, proc]) => (
@@ -242,7 +242,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {/* Queued section */}
           {queuedEntries.length > 0 && (
             <div>
-              <div className="px-3 pt-3 pb-1 typo-caption text-muted-foreground/60 uppercase tracking-wide">
+              <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
                 Queued ({queuedEntries.length})
               </div>
               {queuedEntries.map(([key, proc]) => (
@@ -254,7 +254,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {/* Recent section */}
           {recentProcesses.length > 0 && (
             <div>
-              <div className="px-3 pt-3 pb-1 typo-caption text-muted-foreground/60 uppercase tracking-wide">
+              <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
                 Recent
               </div>
               {recentProcesses.map((proc, i) => (

@@ -163,7 +163,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
               <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <Key className="w-5 h-5 text-emerald-400/60" />
               </div>
-              <p className="typo-body text-muted-foreground/80">No credentials yet</p>
+              <p className="typo-body text-foreground/90">No credentials yet</p>
               <Button
                 variant="accent"
                 accentColor="violet"
@@ -265,8 +265,8 @@ function SchedulesSidebarNav() {
     <div className="flex flex-col h-full">
       <div className="px-3 py-3 border-b border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="typo-label text-muted-foreground/50">Schedules</span>
-          <span className="text-[10px] font-mono text-muted-foreground/30">{cronAgents.length} total</span>
+          <span className="typo-label text-foreground/90">Schedules</span>
+          <span className="text-[10px] font-mono text-foreground/90">{cronAgents.length} total</span>
         </div>
       </div>
       <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
@@ -282,7 +282,7 @@ function SchedulesSidebarNav() {
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
           All personas
-          <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">{scheduledPersonas.length}</span>
+          <span className="ml-auto text-[10px] font-mono text-foreground/90">{scheduledPersonas.length}</span>
         </button>
 
         {/* Divider */}
@@ -304,15 +304,15 @@ function SchedulesSidebarNav() {
           >
             <PersonaIcon icon={p.icon} color={p.color} />
             <span className="truncate text-[13px] min-w-0">{p.name}</span>
-            <span className="ml-auto text-[10px] font-mono text-muted-foreground/35 tabular-nums">{p.scheduleCount}</span>
+            <span className="ml-auto text-[10px] font-mono text-foreground/90 tabular-nums">{p.scheduleCount}</span>
           </button>
         ))}
 
         {/* Empty state */}
         {scheduledPersonas.length === 0 && (
           <div className="text-center py-10 space-y-2">
-            <CalendarClock className="w-8 h-8 mx-auto text-muted-foreground/20" />
-            <p className="text-[12px] text-muted-foreground/40">No agents with schedules</p>
+            <CalendarClock className="w-8 h-8 mx-auto text-foreground/90" />
+            <p className="text-[12px] text-foreground/90">No agents with schedules</p>
           </div>
         )}
       </div>
@@ -388,7 +388,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
       {/* Header */}
       <div className="px-3 py-3 border-b border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="typo-label text-muted-foreground/50">Agents</span>
+          <span className="typo-label text-foreground/90">Agents</span>
           <button
             onClick={onCreatePersona}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
@@ -413,7 +413,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
         >
           <List className="w-4 h-4 flex-shrink-0" />
           All Agents
-          <span className="ml-auto text-[11px] text-muted-foreground/40">{personas.length}</span>
+          <span className="ml-auto text-[11px] text-foreground/90">{personas.length}</span>
         </button>
 
         {/* Active draft builds — one row per session in the buildSessions map.
@@ -473,7 +473,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                     className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} />
-                    <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
+                    <span className="text-foreground/90 truncate text-[13px] min-w-0">{p.name}</span>
                     <span
                       role="button"
                       tabIndex={0}
@@ -543,7 +543,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                         title="Add to favorites"
                         aria-label="Add to favorites"
                       >
-                        <Star className="w-3 h-3 text-muted-foreground/40" aria-hidden="true" />
+                        <Star className="w-3 h-3 text-foreground/90" aria-hidden="true" />
                       </span>
                     </button>
                   );
@@ -697,10 +697,10 @@ function PluginsSidebarNav() {
                 </div>
                 {activeProject && (
                   <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-0.5">Active Project</p>
-                    <p className="typo-caption text-foreground/70 truncate">{activeProject.name}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-foreground/90 font-medium mb-0.5">Active Project</p>
+                    <p className="typo-caption text-foreground truncate">{activeProject.name}</p>
                     {activeProject.root_path && (
-                      <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
+                      <p className="text-[10px] text-foreground/90 truncate mt-0.5">{activeProject.root_path}</p>
                     )}
                   </div>
                 )}

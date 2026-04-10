@@ -266,7 +266,7 @@ export default function SidebarLevel1({
                 </span>
               )}
               {isDisabled && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-foreground/90 whitespace-nowrap">
                   {t.sidebar.soon_badge}
                 </span>
               )}
@@ -284,7 +284,7 @@ export default function SidebarLevel1({
 
         {!collapsed && appVersion && (
           <div className="pb-1 pt-1">
-            <span className="typo-code text-muted-foreground/80 block text-center">
+            <span className="typo-code text-foreground/90 block text-center">
               v{appVersion}
             </span>
           </div>

@@ -90,7 +90,7 @@ export function SectionCard(props: SectionCardProps) {
         {title && (
           <div className="mb-2">
             <h3 className="typo-heading text-foreground/90">{title}</h3>
-            {subtitle && <p className="typo-body text-muted-foreground/70">{subtitle}</p>}
+            {subtitle && <p className="typo-body text-foreground">{subtitle}</p>}
           </div>
         )}
         {children}
@@ -164,12 +164,12 @@ function CollapsibleBody({
           transition={{ duration: 0.15 }}
           className="flex-shrink-0"
         >
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/65" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         </motion.span>
         <div className="flex-1 min-w-0">
           <h3 className="typo-heading text-foreground/90 truncate">{title}</h3>
           {subtitle && (
-            <p className="typo-body text-muted-foreground/70 truncate">{subtitle}</p>
+            <p className="typo-body text-foreground truncate">{subtitle}</p>
           )}
         </div>
       </button>

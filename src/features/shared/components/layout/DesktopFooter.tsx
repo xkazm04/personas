@@ -49,10 +49,11 @@ function AccountFooterIcon() {
         data-testid="footer-account"
         className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors group ${
           isAuthenticated
-            ? 'text-emerald-400/80 hover:bg-emerald-500/10'
-            : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50'
+            ? 'text-emerald-400 hover:bg-emerald-500/10'
+            : 'text-foreground hover:text-foreground hover:bg-secondary/50'
         } ${isLoading ? 'animate-pulse' : ''}`}
         title={isAuthenticated ? (user?.display_name ?? user?.email ?? t.chrome.signed_in) : t.chrome.sign_in_google}
+        aria-label={isAuthenticated ? (user?.display_name ?? user?.email ?? t.chrome.signed_in) : t.chrome.sign_in_google}
       >
         {isAuthenticated && user?.avatar_url ? (
           <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full border border-emerald-500/30" />
@@ -76,11 +77,11 @@ function AccountFooterIcon() {
           >
             <div className="px-2 py-1.5 mb-1 border-b border-primary/10">
               <p className="typo-caption text-foreground/90 truncate">{user?.display_name ?? 'User'}</p>
-              {user?.email && <p className="text-[10px] text-muted-foreground/70 truncate">{user.email}</p>}
+              {user?.email && <p className="text-[10px] text-foreground truncate">{user.email}</p>}
             </div>
             <button
               onClick={() => { logout(); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption text-foreground/80 hover:bg-primary/5 transition-colors"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption text-foreground hover:bg-primary/5 transition-colors"
             >
               <LogOut className="w-3 h-3" />
               {t.chrome.sign_out}
@@ -118,8 +119,9 @@ function ThemeFooterIcon() {
       <button
         onClick={() => setOpen((o) => !o)}
         data-testid="footer-theme"
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors group"
+        className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors group"
         title={`Theme: ${currentTheme?.label ?? 'Default'}`}
+        aria-label={`Theme: ${currentTheme?.label ?? 'Default'}`}
       >
         <div className="relative">
           <Palette className="w-5 h-5" />
@@ -136,7 +138,7 @@ function ThemeFooterIcon() {
             className="animate-fade-slide-in absolute bottom-full left-0 mb-2 w-[220px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3 z-50"
           >
             {/* Dark themes */}
-            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">{tTheme.chrome.dark}</p>
+            <p className="text-[10px] font-mono uppercase tracking-wider text-foreground mb-2">{tTheme.chrome.dark}</p>
             <div className="grid grid-cols-4 gap-2 mb-3">
               {THEMES.filter((t) => !t.isLight).map((t) => {
                 const isActive = themeId === t.id;
@@ -157,7 +159,7 @@ function ThemeFooterIcon() {
                       {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
                     </span>
                     <span className={`text-[9px] leading-tight truncate w-full text-center ${
-                      isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'
+                      isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
                     }`}>
                       {t.label}
                     </span>
@@ -168,7 +170,7 @@ function ThemeFooterIcon() {
 
             {/* Light themes */}
             <div className="border-t border-primary/10 pt-2">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">{tTheme.chrome.light}</p>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-foreground mb-2">{tTheme.chrome.light}</p>
               <div className="grid grid-cols-4 gap-2">
                 {THEMES.filter((t) => t.isLight).map((t) => {
                   const isActive = themeId === t.id;
@@ -189,7 +191,7 @@ function ThemeFooterIcon() {
                         {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
                       </span>
                       <span className={`text-[9px] leading-tight truncate w-full text-center ${
-                        isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'
+                        isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
                       }`}>
                         {t.label}
                       </span>
@@ -229,6 +231,7 @@ function NetworkFooterIcon() {
           : 'text-amber-400/60 bg-amber-500/5 ring-1 ring-amber-500/20 hover:bg-amber-500/10'
       }`}
       title={tNet.chrome.network_settings}
+      aria-label={tNet.chrome.network_settings}
     >
       <Share2 className="w-5 h-5" />
     </button>
@@ -264,8 +267,9 @@ function CollapseFooterIcon() {
     <button
       onClick={handleClick}
       data-testid="footer-collapse"
-      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+      className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
       title={collapsed ? tCollapse.chrome.expand_sidebar : tCollapse.chrome.collapse_sidebar}
+      aria-label={collapsed ? tCollapse.chrome.expand_sidebar : tCollapse.chrome.collapse_sidebar}
     >
       {collapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
     </button>

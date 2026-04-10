@@ -16,10 +16,10 @@ function relativeTs(ts: number, base: number): string {
 
 function ExpandableText({ text, maxLen = 120 }: { text: string; maxLen?: number }) {
   const [expanded, setExpanded] = useState(false);
-  if (text.length <= maxLen) return <span className="text-muted-foreground">{text}</span>;
+  if (text.length <= maxLen) return <span className="text-foreground">{text}</span>;
   return (
     <span
-      className="text-muted-foreground cursor-pointer hover:text-foreground"
+      className="text-foreground cursor-pointer hover:text-foreground"
       onClick={() => setExpanded((v) => !v)}
     >
       {expanded ? text : `${text.slice(0, maxLen)}...`}
@@ -37,12 +37,12 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <span className="text-blue-400 shrink-0">{"\u25CF"}</span>
           <div className="min-w-0 flex-1">
             <span className="typo-caption font-medium">System Init</span>
-            <span className="typo-caption text-muted-foreground ml-2">{entry.model}</span>
+            <span className="typo-caption text-foreground ml-2">{entry.model}</span>
             {entry.sessionId != null && (
-              <span className="typo-caption text-muted-foreground/60 ml-1">({String(entry.sessionId).slice(0, 8)})</span>
+              <span className="typo-caption text-foreground ml-1">({String(entry.sessionId).slice(0, 8)})</span>
             )}
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -56,7 +56,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
               <ExpandableText text={entry.content.split("\n")[0] ?? ""} />
             </div>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -70,7 +70,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
               <ExpandableText text={entry.inputPreview} maxLen={80} />
             </div>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -84,7 +84,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
               <ExpandableText text={entry.contentPreview} maxLen={80} />
             </div>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -92,11 +92,11 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
       if (entry.silence < 10_000) return null;
       return (
         <div className="flex items-center gap-2 py-0.5 opacity-50">
-          <span className="text-muted-foreground shrink-0">{"\u2022"}</span>
-          <span className="typo-caption text-muted-foreground">
+          <span className="text-foreground shrink-0">{"\u2022"}</span>
+          <span className="typo-caption text-foreground">
             Elapsed {Math.round(entry.elapsed / 1000)}s (silent {Math.round(entry.silence / 1000)}s)
           </span>
-          <span className="typo-caption text-muted-foreground/50 ml-auto shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground ml-auto shrink-0">{ts}</span>
         </div>
       );
 
@@ -106,13 +106,13 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <span className="text-green-400 shrink-0">{"\u25CF"}</span>
           <div className="min-w-0 flex-1 typo-caption">
             <span className="font-medium">Complete</span>
-            <span className="text-muted-foreground ml-2">
+            <span className="text-foreground ml-2">
               {(entry.durationMs / 1000).toFixed(1)}s
               {entry.cost != null && ` \u00B7 $${entry.cost.toFixed(4)}`}
               {entry.tokens != null && ` \u00B7 ${entry.tokens} tokens`}
             </span>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -122,9 +122,9 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <span className="text-red-400 shrink-0">{"\u2717"}</span>
           <div className="min-w-0 flex-1 typo-caption">
             <span className="font-medium text-red-400">Error</span>
-            <span className="text-red-400/80 ml-2">{entry.message}</span>
+            <span className="text-red-400 ml-2">{entry.message}</span>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
   }
@@ -152,7 +152,7 @@ export default function ReasoningTrace({ entries, isLive, startTime }: Reasoning
 
   if (entries.length === 0) {
     return (
-      <div className="px-3 py-4 typo-caption text-muted-foreground/60 text-center">
+      <div className="px-3 py-4 typo-caption text-foreground text-center">
         Waiting for execution events...
       </div>
     );
