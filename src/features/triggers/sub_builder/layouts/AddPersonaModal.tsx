@@ -133,7 +133,18 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {grouped.length === 0 && (
             <div className="text-center py-8 text-xs text-muted-foreground/50">
-              {search ? 'No matching personas found' : 'All personas are already connected'}
+              {search ? (
+                <div className="flex flex-col items-center gap-2">
+                  <span>No matching personas found</span>
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              ) : 'All personas are already connected'}
             </div>
           )}
 

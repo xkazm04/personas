@@ -204,9 +204,20 @@ export function CloudHistoryPanel() {
 
       {/* Execution table */}
       {executions.length === 0 ? (
-        <p className="text-sm text-muted-foreground/90 py-8 text-center">
-          {isLoading ? 'Loading execution history...' : 'No executions found for the selected filters.'}
-        </p>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground/90">
+            {isLoading ? 'Loading execution history...' : 'No executions found for the selected filters.'}
+          </p>
+          {!isLoading && (filterPersona || filterStatus) && (
+            <button
+              type="button"
+              onClick={() => { setFilterPersona(''); setFilterStatus(''); }}
+              className="mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       ) : (
         <div className="space-y-1">
           <SectionHeading className="text-xs mb-2">Execution History ({executions.length})</SectionHeading>
