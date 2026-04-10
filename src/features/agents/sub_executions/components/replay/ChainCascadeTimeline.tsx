@@ -10,7 +10,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import { getChainTrace } from '@/api/agents/executions';
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import { formatDuration } from '@/lib/utils/formatters';
 
 interface ChainCascadeTimelineProps {
@@ -46,7 +46,7 @@ export function ChainCascadeTimeline({
       .then((traces) => {
         if (!cancelled) setChainTraces(traces);
       })
-      .catch(silentCatch("ChainCascadeTimeline:fetchChainTrace"))
+      .catch(toastCatch("ChainCascadeTimeline:fetchChainTrace", "Failed to load chain trace"))
       .finally(() => {
         if (!cancelled) setLoading(false);
       });

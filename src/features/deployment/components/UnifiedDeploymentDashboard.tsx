@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
 import { compareValues } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
@@ -44,9 +44,9 @@ export function UnifiedDeploymentDashboard() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (cloudConfig?.is_connected) cloudFetchDeployments().catch(silentCatch("DeploymentDashboard:fetchCloudDeployments"));
+    if (cloudConfig?.is_connected) cloudFetchDeployments().catch(toastCatch("DeploymentDashboard:fetchCloudDeployments", "Failed to fetch cloud deployments"));
     if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
-      gitlabFetchAgents(gitlabSelectedProjectId).catch(silentCatch("DeploymentDashboard:fetchGitlabAgents"));
+      gitlabFetchAgents(gitlabSelectedProjectId).catch(toastCatch("DeploymentDashboard:fetchGitlabAgents", "Failed to fetch GitLab agents"));
     }
   }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
 

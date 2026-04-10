@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react";
 import { log } from "./log";
+import { useToastStore } from "@/stores/toastStore";
 
 /** Extract a human-readable message from any error shape (Error, Tauri { error }, or unknown). */
 function extractMessage(err: unknown): string {
@@ -32,6 +33,29 @@ export function silentCatch(context: string): (err: unknown) => void {
  *
  * Usage:  somePromise.catch(silentCatchNull("theater:getTrace"))
  */
+/**
+ * Like silentCatch but also shows an error toast to the user.
+ * Use for operations where the user expects feedback (data fetches, actions).
+ *
+ * Usage:  somePromise.catch(toastCatch("DeploymentDashboard:fetchDeployments"))
+ */
+export function toastCatch(context: string, customMessage?: string): (err: unknown) => void {
+  return (err: unknown) => {
+    const msg = extractMessage(err);
+    log.warn("toastCatch", `${context} failed`, { error: msg });
+    Sentry.addBreadcrumb({
+      category: "toastCatch",
+      message: `${context} failed: ${msg}`,
+      level: "warning",
+    });
+    useToastStore.getState().addToast(
+      customMessage || `Failed to load data. ${msg}`,
+      'error',
+      5000,
+    );
+  };
+}
+
 export function silentCatchNull(context: string): (err: unknown) => null {
   return (err: unknown) => {
     const msg = extractMessage(err);
