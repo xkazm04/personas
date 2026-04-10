@@ -85,9 +85,9 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, 
               </span>
             )}
           </span>
-          <p className="text-sm text-muted-foreground/70 mt-0.5">{tldr}</p>
+          <p className="text-sm text-foreground mt-0.5">{tldr}</p>
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+        {open ? <ChevronUp className="w-4 h-4 text-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-foreground shrink-0" />}
       </button>
       {open && (
           <div
@@ -95,7 +95,7 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, 
           >
             <ul className="px-4 pb-3 space-y-1.5">
               {items.map((item, i) => (
-                <li key={i} className="typo-body text-muted-foreground/80 flex items-start gap-2">
+                <li key={i} className="typo-body text-foreground flex items-start gap-2">
                   <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
                   {item}
                 </li>
@@ -143,7 +143,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             </div>
             <div>
               <h2 id="first-use-consent-title" className="typo-heading-lg text-foreground">{c.title}</h2>
-              <p className="typo-body text-muted-foreground/70">
+              <p className="typo-body text-foreground">
                 {isVersionBump
                   ? "We've updated our disclosures. Please review the changes before continuing."
                   : c.subtitle}
@@ -154,14 +154,14 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          <p className="typo-body text-muted-foreground/80 mb-4">
+          <p className="typo-body text-foreground mb-4">
             {c.intro}
           </p>
 
           {/* Important warnings -- above accordion sections */}
           <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-            <div className="typo-body text-muted-foreground/80 space-y-1.5">
+            <div className="typo-body text-foreground space-y-1.5">
               <p><span className="font-medium text-amber-400/90">{c.important}</span></p>
               <ul className="space-y-1 list-disc list-inside">
                 <li>{c.notice_responsibility}</li>
@@ -270,7 +270,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
               onChange={e => setTelemetryChecked(e.target.checked)}
               className="mt-0.5 w-4 h-4 rounded border-primary/30 accent-blue-500"
             />
-            <span className="typo-body text-muted-foreground/80">
+            <span className="typo-body text-foreground">
               {c.checkbox_telemetry}
             </span>
           </label>
@@ -282,7 +282,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             href="https://github.com/anthropics/personas-desktop"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-foreground hover:text-foreground transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             {c.source_link}

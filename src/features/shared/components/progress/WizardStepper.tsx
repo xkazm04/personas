@@ -66,7 +66,7 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
       </div>
 
       {/* Active step label below */}
-      <span className="typo-heading text-muted-foreground/70">
+      <span className="typo-heading text-foreground">
         {steps[currentIndex]?.label}
       </span>
     </div>

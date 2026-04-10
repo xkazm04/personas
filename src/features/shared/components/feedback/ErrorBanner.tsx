@@ -33,7 +33,7 @@ export function ErrorBanner({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-muted-foreground/80 hover:text-foreground/90 bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Go back

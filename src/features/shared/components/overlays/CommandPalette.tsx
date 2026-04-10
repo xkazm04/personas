@@ -89,7 +89,7 @@ export default function CommandPalette() {
   }, [groups]);
 
   const botIcon = <Bot className="w-4 h-4" />;
-  const powerIcon = <Power className="w-4 h-4 text-muted-foreground/40" />;
+  const powerIcon = <Power className="w-4 h-4 text-foreground" />;
   const keyIcon = <Key className="w-4 h-4" />;
   const flaskIcon = <FlaskConical className="w-4 h-4" />;
   const workflowIcon = <Workflow className="w-4 h-4" />;
@@ -344,7 +344,7 @@ export default function CommandPalette() {
           >
             {!editingPersona && (
               <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
-                <Search className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                <Search className="w-4 h-4 text-foreground shrink-0" />
                 <input
                   ref={inputRef}
                   value={query}
@@ -354,7 +354,7 @@ export default function CommandPalette() {
                   className="flex-1 bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 outline-none"
                   spellCheck={false}
                 />
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/50 bg-secondary/50 border border-primary/10 rounded">
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-foreground bg-secondary/50 border border-primary/10 rounded">
                   ESC
                 </kbd>
               </div>
@@ -376,7 +376,7 @@ export default function CommandPalette() {
                   listRef={listRef}
                 />
 
-                <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-muted-foreground/60">
+                <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-foreground">
                   <span className="flex items-center gap-1">
                     <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
                     navigate

@@ -38,7 +38,7 @@ export function DirectoryPickerInput({
   return (
     <div className={`flex items-center gap-2 max-w-lg ${className ?? ''}`}>
       <div className="relative flex-1">
-        <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 pointer-events-none" />
+        <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground pointer-events-none" />
         <input
           type="text"
           value={value}
@@ -51,7 +51,7 @@ export function DirectoryPickerInput({
         type="button"
         onClick={handleBrowse}
         disabled={browsing}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground/70 hover:border-primary/25 hover:text-foreground transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground hover:border-primary/25 hover:text-foreground transition-all disabled:opacity-50"
       >
         {browsing ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

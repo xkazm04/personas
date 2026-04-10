@@ -31,7 +31,7 @@ export function GlossaryTooltip({ term, definition }: GlossaryTooltipProps) {
 
   return (
     <Tooltip content={text} placement="top" delay={200}>
-      <span className="inline-flex items-center ml-0.5 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors cursor-help">
+      <span className="inline-flex items-center ml-0.5 text-foreground/90 hover:text-foreground transition-colors cursor-help">
         <HelpCircle className="w-3 h-3" />
       </span>
     </Tooltip>

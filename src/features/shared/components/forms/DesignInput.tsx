@@ -188,7 +188,7 @@ export function DesignInput({
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             icon={<Paperclip className="w-3.5 h-3.5" />}
-            className="text-muted-foreground/80 hover:text-foreground/95"
+            className="text-foreground hover:text-foreground"
             title="Attach file (API spec, schema, MCP config)"
           >
             Attach
@@ -209,7 +209,7 @@ export function DesignInput({
             icon={<Link className="w-3.5 h-3.5" />}
             className={showReferences
               ? 'text-indigo-400 bg-indigo-500/10'
-              : 'text-muted-foreground/80 hover:text-foreground/95'
+              : 'text-foreground hover:text-foreground'
             }
             title="Add reference URLs or connection strings"
           >
@@ -218,7 +218,7 @@ export function DesignInput({
 
           <span className="ml-auto flex items-center gap-2">
             {(designContext?.files?.length ?? 0) > 0 && (
-              <span className="typo-body text-muted-foreground/80">
+              <span className="typo-body text-foreground">
                 {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
               </span>
             )}
@@ -228,7 +228,7 @@ export function DesignInput({
           </span>
         </div>
       </div>
-      <p className="typo-body text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="typo-body text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
 
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (

@@ -39,14 +39,14 @@ export function CommandPaletteResults({
     <div className="relative">
       <div ref={listRef} className="max-h-[50vh] overflow-y-auto py-1">
         {sections.length === 0 && (
-          <div className="px-4 py-8 text-center typo-body text-muted-foreground/50">
+          <div className="px-4 py-8 text-center typo-body text-foreground">
             No results found
           </div>
         )}
 
         {sections.map(section => (
           <div key={section.kind}>
-            <div className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            <div className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-foreground">
               {section.label}
             </div>
             {section.items.map(item => {
@@ -69,7 +69,7 @@ export function CommandPaletteResults({
                 </span>
                 <span className="flex-1 truncate typo-body">{item.label}</span>
                 {item.description && (
-                  <span className="typo-caption text-muted-foreground/60 truncate max-w-[140px]">
+                  <span className="typo-caption text-foreground truncate max-w-[140px]">
                     {item.description}
                   </span>
                 )}

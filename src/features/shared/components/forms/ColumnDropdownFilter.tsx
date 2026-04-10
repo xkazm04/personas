@@ -58,12 +58,12 @@ export function ColumnDropdownFilter({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onChange(allValue); setOpen(false); }}
-            className="p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70"
+            className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
           >
             <X className="w-3 h-3" />
           </button>
         ) : (
-          <Filter className="w-3 h-3 text-muted-foreground/40" />
+          <Filter className="w-3 h-3 text-foreground" />
         )}
       </button>
 

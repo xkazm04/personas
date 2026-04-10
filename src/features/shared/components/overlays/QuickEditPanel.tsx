@@ -62,12 +62,12 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
       <div className="flex items-center gap-2">
         <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" className="shrink-0" frameSize={"lg"} />
         <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
-        <span className="typo-caption text-muted-foreground/60">Quick Edit</span>
+        <span className="typo-caption text-foreground">Quick Edit</span>
       </div>
 
       {/* Description */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+        <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">
           Description
         </label>
         <textarea
@@ -82,7 +82,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
 
       {/* Model */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+        <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">
           Model
         </label>
         <input
@@ -95,7 +95,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-1">
-        <span className="typo-caption text-muted-foreground/50">
+        <span className="typo-caption text-foreground">
           <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">Ctrl+Enter</kbd>
           {' '}save
           <span className="mx-2">·</span>
@@ -105,7 +105,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-muted-foreground/70 hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground hover:bg-secondary/40 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
             Cancel

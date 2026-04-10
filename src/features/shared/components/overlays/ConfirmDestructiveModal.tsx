@@ -91,7 +91,7 @@ function ModalContent({ config, onClose, onConfirm }: {
           <h3 id="confirm-destructive-title" className="text-sm font-semibold text-foreground/90">
             {config.title}
           </h3>
-          <p className="text-sm text-muted-foreground/90 mt-1">{config.message}</p>
+          <p className="text-sm text-foreground mt-1">{config.message}</p>
         </div>
       </div>
 
@@ -100,8 +100,8 @@ function ModalContent({ config, onClose, onConfirm }: {
         <div className="bg-secondary/40 border border-primary/10 rounded-xl p-3 space-y-2">
           {config.details.map((d) => (
             <div key={d.label} className="flex items-center justify-between">
-              <span className="text-sm font-mono uppercase text-muted-foreground/80">{d.label}</span>
-              <span className="text-sm text-foreground/80 truncate ml-3 max-w-[200px]">{d.value}</span>
+              <span className="text-sm font-mono uppercase text-foreground">{d.label}</span>
+              <span className="text-sm text-foreground truncate ml-3 max-w-[200px]">{d.value}</span>
             </div>
           ))}
         </div>
@@ -123,8 +123,8 @@ function ModalContent({ config, onClose, onConfirm }: {
       {/* Type-to-confirm */}
       {needsTyping && (
         <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground/70">
-            Type <span className="font-semibold text-foreground/80">{config.requireTypedConfirmation}</span> to confirm
+          <p className="text-xs text-foreground">
+            Type <span className="font-semibold text-foreground">{config.requireTypedConfirmation}</span> to confirm
           </p>
           <input
             type="text"
@@ -141,7 +141,7 @@ function ModalContent({ config, onClose, onConfirm }: {
       <div className="flex items-center justify-end gap-2 pt-1">
         <button
           onClick={handleClose}
-          className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>

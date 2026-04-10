@@ -108,7 +108,7 @@ export function EstimatedProgressBar({
           />
         ))}
       </div>
-      <div className="flex justify-between typo-body text-muted-foreground/60">
+      <div className="flex justify-between typo-body text-foreground">
         <span>{elapsedInt}s elapsed</span>
         {isRunning && !isOvertime && (
           <span>~{remaining}s remaining</span>

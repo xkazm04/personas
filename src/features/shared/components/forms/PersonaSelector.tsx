@@ -79,11 +79,11 @@ export function PersonaSelector({
           </>
         ) : (
           <>
-            <Bot className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
-            <span className="text-sm text-muted-foreground/50 flex-1 text-left">{showAll ? 'All Personas' : placeholder}</span>
+            <Bot className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+            <span className="text-sm text-foreground flex-1 text-left">{showAll ? 'All Personas' : placeholder}</span>
           </>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown */}
@@ -93,17 +93,17 @@ export function PersonaSelector({
           {sorted.length > 5 && (
             <div className="px-2.5 pt-2.5 pb-1.5">
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-primary/10 bg-secondary/20">
-                <Search className="w-3 h-3 text-muted-foreground/40" />
+                <Search className="w-3 h-3 text-foreground" />
                 <input
                   ref={searchRef}
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search..."
-                  className="flex-1 bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
                 />
                 {search && (
-                  <button type="button" onClick={() => setSearch('')} className="text-muted-foreground/30 hover:text-muted-foreground/60">
+                  <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
                     <X className="w-3 h-3" />
                   </button>
                 )}
@@ -121,7 +121,7 @@ export function PersonaSelector({
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-foreground/90' : 'text-muted-foreground/60 hover:bg-secondary/30'
                   }`}
               >
-                <Bot className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
                 <span className="text-sm font-medium flex-1">All Personas</span>
                 {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
               </button>
@@ -142,7 +142,7 @@ export function PersonaSelector({
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium truncate block">{p.name}</span>
                     {p.description && (
-                      <span className="text-[11px] text-muted-foreground/40 truncate block">{p.description.slice(0, 60)}</span>
+                      <span className="text-[11px] text-foreground truncate block">{p.description.slice(0, 60)}</span>
                     )}
                   </div>
                   {isActive && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
@@ -151,7 +151,7 @@ export function PersonaSelector({
             })}
 
             {filtered.length === 0 && search && (
-              <div className="px-3 py-4 text-xs text-muted-foreground/40 text-center">No personas matching &quot;{search}&quot;</div>
+              <div className="px-3 py-4 text-xs text-foreground text-center">No personas matching &quot;{search}&quot;</div>
             )}
           </div>
         </div>

@@ -27,7 +27,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
     <div className="space-y-3">
       {/* Agent Icons */}
       <div>
-        <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1.5">Agent Icons</div>
+        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Agent Icons</div>
         <div className={`flex flex-wrap ${s.gap}`}>
           {AGENT_ICONS.map((entry) => {
             const iconValue = toAgentIconValue(entry.id);
@@ -55,7 +55,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
       {/* Connector Icons */}
       {connectorsWithIcon.length > 0 && (
         <div>
-          <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1.5">Connectors</div>
+          <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Connectors</div>
           <div className={`flex flex-wrap ${s.gap}`}>
             {connectorsWithIcon.map((c) => {
               const isSelected = value === c.icon_url;
@@ -81,7 +81,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
 
       {/* Emoji Presets */}
       <div>
-        <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1.5">Emoji</div>
+        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Emoji</div>
         <div className={`flex flex-wrap ${s.gap}`}>
           {EMOJI_PRESETS.map((emoji) => {
             const isSelected = value === emoji;
@@ -104,7 +104,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
             <button
               type="button"
               onClick={() => onChange('')}
-              className={`${s.btn} rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground hover:border-primary/30 transition-all`}
+              className={`${s.btn} rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/30 transition-all`}
               title="Clear icon"
             >
               <X className="w-3.5 h-3.5" />

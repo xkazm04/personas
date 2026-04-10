@@ -11,7 +11,7 @@ interface TypeSelectorProps {
 export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSelectorProps) {
   return (
     <div className="bg-secondary/60 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-2">
-      <p className="typo-body text-muted-foreground/80">
+      <p className="typo-body text-foreground">
         Classify <span className="font-medium text-foreground/90">{pendingFile.name}</span>:
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -30,7 +30,7 @@ export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSele
         })}
         <button
           onClick={onCancel}
-          className="px-2.5 py-1 typo-body text-muted-foreground/80 hover:text-muted-foreground transition-colors"
+          className="px-2.5 py-1 typo-body text-foreground hover:text-foreground transition-colors"
         >
           Cancel
         </button>
@@ -56,12 +56,12 @@ export function AttachedFilesRow({ files, onRemove }: AttachedFilesRowProps) {
             key={`${file.name}-${index}`}
             className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 typo-body group"
           >
-            <Icon className="w-3 h-3 text-muted-foreground/90" />
+            <Icon className="w-3 h-3 text-foreground" />
             <span className="text-foreground/90 max-w-[120px] truncate">{file.name}</span>
-            <span className="text-muted-foreground/80">{FILE_TYPE_LABELS[file.type]}</span>
+            <span className="text-foreground">{FILE_TYPE_LABELS[file.type]}</span>
             <button
               onClick={() => onRemove(index)}
-              className="ml-0.5 text-muted-foreground/80 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              className="ml-0.5 text-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
               title="Remove file"
             >
               <X className="w-3 h-3" />
@@ -82,7 +82,7 @@ interface ReferencesTextareaProps {
 export function ReferencesTextarea({ references, onChange, disabled }: ReferencesTextareaProps) {
   return (
     <div className="space-y-1">
-      <label className="typo-body text-muted-foreground/90 px-1">References</label>
+      <label className="typo-body text-foreground px-1">References</label>
       <textarea
         value={references.join('\n')}
         onChange={(e) => onChange(e.target.value)}

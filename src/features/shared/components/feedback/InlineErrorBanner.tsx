@@ -59,8 +59,8 @@ export function InlineErrorBanner({
 
   return (
     <div
-      role="alert"
-      aria-live="assertive"
+      role={severity === 'error' ? 'alert' : 'status'}
+      aria-live={severity === 'error' ? 'assertive' : 'polite'}
       className={`rounded-xl border ${tokens.border} ${tokens.bg} ${compact ? 'px-3 py-2' : 'px-4 py-3'} ${className}`}
     >
       <div className="flex items-start gap-3">

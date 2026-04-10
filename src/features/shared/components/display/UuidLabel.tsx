@@ -23,16 +23,16 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
     <span className="inline-flex items-center gap-1 group/uuid relative">
       <Tooltip content={value}>
         <span
-          className={`${label ? '' : 'font-mono '}text-foreground/80 cursor-default`}
+          className={`${label ? '' : 'font-mono '}text-foreground cursor-default`}
         >
           {display}
-          {!label && <span className="text-foreground/30">&hellip;</span>}
+          {!label && <span className="text-foreground/90">&hellip;</span>}
         </span>
       </Tooltip>
       <Tooltip content="Copy full ID">
         <button
           onClick={handleCopy}
-          className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-muted-foreground/80 hover:text-foreground/95"
+          className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-foreground hover:text-foreground"
         >
           {copied ? (
             <Check className="w-3 h-3 text-emerald-400" />

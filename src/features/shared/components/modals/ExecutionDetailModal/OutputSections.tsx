@@ -36,9 +36,9 @@ export function FlowSteps({ flow }: { flow: NonNullable<ParsedOutput['executionF
         const statusColor = status === 'completed' ? 'text-emerald-400' : status === 'failed' ? 'text-red-400' : 'text-muted-foreground/50';
         return (
           <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-secondary/10">
-            <span className="text-sm font-mono text-muted-foreground/40 w-5 text-right">{String(s.step ?? i + 1)}</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
-            <span className="text-sm text-foreground/80 flex-1">{String(s.action ?? '').replace(/_/g, ' ')}</span>
+            <span className="text-sm font-mono text-foreground w-5 text-right">{String(s.step ?? i + 1)}</span>
+            <ChevronRight className="w-3 h-3 text-foreground" />
+            <span className="text-sm text-foreground flex-1">{String(s.action ?? '').replace(/_/g, ' ')}</span>
             <span className={`text-sm font-medium ${statusColor}`}>{status}</span>
           </div>
         );
@@ -63,15 +63,15 @@ export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] })
               }`}>{String(r.severity)}</span>
             )}
           </div>
-          {typeof r.description === 'string' && <p className="text-sm text-foreground/70 leading-relaxed">{r.description}</p>}
+          {typeof r.description === 'string' && <p className="text-sm text-foreground leading-relaxed">{r.description}</p>}
           {typeof r.context_data === 'string' && (
-            <div className="px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-muted-foreground/60">{r.context_data}</div>
+            <div className="px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-foreground">{r.context_data}</div>
           )}
           {Array.isArray(r.suggested_actions) && r.suggested_actions.length > 0 && (
             <div className="space-y-1 pt-1">
-              <span className="text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider">Suggested Actions</span>
+              <span className="text-sm font-semibold text-foreground uppercase tracking-wider">Suggested Actions</span>
               {(r.suggested_actions as string[]).map((a, j) => (
-                <div key={j} className="flex items-start gap-2 text-sm text-foreground/70">
+                <div key={j} className="flex items-start gap-2 text-sm text-foreground">
                   <span className="text-primary/40 mt-0.5">&#8226;</span><span>{a}</span>
                 </div>
               ))}
@@ -92,10 +92,10 @@ export function MemoriesList({ memories }: { memories: Record<string, unknown>[]
             <Brain className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
               {typeof m.title === 'string' && <div className="text-sm font-medium text-foreground/85 mb-1">{m.title}</div>}
-              <div className="text-sm text-foreground/70">{String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}</div>
+              <div className="text-sm text-foreground">{String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}</div>
               <div className="flex items-center gap-2 mt-1.5">
                 {typeof m.category === 'string' && <span className="text-sm px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400/80">{m.category}</span>}
-                {typeof m.importance === 'number' && <span className="text-sm text-muted-foreground/40">importance: {m.importance}/10</span>}
+                {typeof m.importance === 'number' && <span className="text-sm text-foreground">importance: {m.importance}/10</span>}
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export function EventsList({ events }: { events: Record<string, unknown>[] }) {
             <span className="text-sm font-medium text-amber-400/80">{String(e.type ?? e.event_type ?? 'event')}</span>
           </div>
           {typeof e.data === 'object' && e.data && (
-            <div className="mt-2 px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-muted-foreground/50 whitespace-pre-wrap">
+            <div className="mt-2 px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-foreground whitespace-pre-wrap">
               {JSON.stringify(e.data, null, 2)}
             </div>
           )}
@@ -132,14 +132,14 @@ export function KnowledgeSection({ annotation }: { annotation: Record<string, un
         <BookOpen className="w-4 h-4 text-emerald-400" />
         <span className="text-sm font-semibold text-foreground/85">Knowledge Insight</span>
         {typeof annotation.confidence === 'number' && (
-          <span className="text-sm text-muted-foreground/40 ml-auto">{Math.round(annotation.confidence * 100)}% confidence</span>
+          <span className="text-sm text-foreground ml-auto">{Math.round(annotation.confidence * 100)}% confidence</span>
         )}
       </div>
       {typeof annotation.scope === 'string' && (
         <span className="inline-block text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80 font-mono">{annotation.scope}</span>
       )}
       {typeof annotation.note === 'string' && (
-        <p className="text-sm text-foreground/70 leading-relaxed">{annotation.note}</p>
+        <p className="text-sm text-foreground leading-relaxed">{annotation.note}</p>
       )}
     </div>
   );
@@ -157,10 +157,10 @@ export function OutcomeSection({ data }: { data: Record<string, unknown> }) {
           oa.accomplished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>{oa.accomplished ? 'Accomplished' : 'Not Accomplished'}</span>
       </div>
-      {typeof oa.summary === 'string' && <p className="text-sm text-foreground/70 leading-relaxed">{oa.summary}</p>}
+      {typeof oa.summary === 'string' && <p className="text-sm text-foreground leading-relaxed">{oa.summary}</p>}
       {Array.isArray(oa.blockers) && oa.blockers.length > 0 && (
         <div className="space-y-1">
-          <span className="text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider">Blockers</span>
+          <span className="text-sm font-semibold text-foreground uppercase tracking-wider">Blockers</span>
           {(oa.blockers as string[]).map((b, i) => (
             <div key={i} className="flex items-start gap-2 text-sm text-red-400/80">
               <span className="mt-0.5">&#8226;</span><span>{b}</span>

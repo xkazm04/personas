@@ -67,7 +67,7 @@ export function PersonaSelectorModal({
           <span className="text-sm text-foreground/85 truncate flex-1 text-left">
             {selected ? selected.name : showAll ? 'All Personas' : placeholder}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         </button>
       )}
 
@@ -83,23 +83,23 @@ export function PersonaSelectorModal({
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 id="persona-selector-modal" className="text-sm font-semibold text-foreground/70 uppercase tracking-wider">Select Persona</h3>
-            <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors">
+            <h3 id="persona-selector-modal" className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Persona</h3>
+            <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20">
-            <Search className="w-3.5 h-3.5 text-muted-foreground/40" />
+            <Search className="w-3.5 h-3.5 text-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="flex-1 bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
               autoFocus
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="text-muted-foreground/30 hover:text-muted-foreground/60">
+              <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -145,7 +145,7 @@ export function PersonaSelectorModal({
           </div>
 
           {filtered.length === 0 && search && (
-            <div className="py-6 text-center text-sm text-muted-foreground/40">No personas matching &ldquo;{search}&rdquo;</div>
+            <div className="py-6 text-center text-sm text-foreground">No personas matching &ldquo;{search}&rdquo;</div>
           )}
         </div>
       </BaseModal>

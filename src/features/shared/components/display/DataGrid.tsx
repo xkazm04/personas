@@ -142,7 +142,7 @@ export function DataGrid<T>({
     return (
       <div className={`flex flex-col items-center justify-center py-12 ${className ?? ''}`}>
         <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
-        <span className="typo-body text-muted-foreground/70">{loadingLabel}</span>
+        <span className="typo-body text-foreground">{loadingLabel}</span>
       </div>
     );
   }
@@ -215,7 +215,7 @@ export function DataGrid<T>({
                 key={col.key}
                 type="button"
                 onClick={() => onSort(col.key)}
-                className={`px-4 py-2.5 typo-label text-foreground/80 flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
+                className={`px-4 py-2.5 typo-label text-foreground flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
                   col.align === 'right' ? 'justify-end' : ''
                 }`}
                 aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
@@ -230,7 +230,7 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`px-4 py-2.5 flex items-center typo-label text-foreground/80 ${
+              className={`px-4 py-2.5 flex items-center typo-label text-foreground ${
                 col.align === 'right' ? 'justify-end' : ''
               }`}
             >
@@ -244,11 +244,11 @@ export function DataGrid<T>({
       {data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-            <Icon className="w-5 h-5 text-muted-foreground/40" />
+            <Icon className="w-5 h-5 text-foreground/90" />
           </div>
-          <p className="typo-heading text-foreground/70">{emptyTitle}</p>
+          <p className="typo-heading text-foreground">{emptyTitle}</p>
           {emptyDescription && (
-            <p className="typo-body text-muted-foreground/50 mt-1 max-w-xs">{emptyDescription}</p>
+            <p className="typo-body text-foreground mt-1 max-w-xs">{emptyDescription}</p>
           )}
         </div>
       ) : (
@@ -295,7 +295,7 @@ export function DataGrid<T>({
           {/* Left: page-size selector + item range */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="typo-code text-foreground/50 text-[11px]">Rows</span>
+              <span className="typo-code text-foreground/90 text-[11px]">Rows</span>
               <select
                 value={effectivePageSize}
                 onChange={(e) => {
@@ -304,14 +304,16 @@ export function DataGrid<T>({
                   setPage(1);
                   onPageSizeChange?.(newSize);
                 }}
-                className="typo-code text-[11px] bg-secondary/30 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground/80 hover:bg-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer appearance-auto"
+                data-testid="page-size-select"
+                aria-label="Rows per page"
+                className="typo-code text-[11px] bg-secondary/30 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground hover:bg-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer appearance-auto"
               >
                 {pageSizeOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
             </div>
-            <span className="typo-code text-foreground/60 text-[11px]">
+            <span className="typo-code text-foreground/90 text-[11px]">
               Showing {Math.min((page - 1) * effectivePageSize + 1, data.length)}–{Math.min(page * effectivePageSize, data.length)} of {data.length} items
             </span>
           </div>
@@ -321,7 +323,7 @@ export function DataGrid<T>({
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page <= 1}
-              className="p-1 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -348,7 +350,7 @@ export function DataGrid<T>({
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page >= totalPages}
-              className="p-1 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

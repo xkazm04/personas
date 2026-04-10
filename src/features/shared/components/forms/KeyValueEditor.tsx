@@ -122,7 +122,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
             type="button"
             onClick={switchToSimple}
             disabled={!canSwitchToSimple}
-            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <List className="w-3 h-3" />
             Simple mode
@@ -131,7 +131,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
           <button
             type="button"
             onClick={switchToAdvanced}
-            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-foreground hover:text-foreground transition-colors"
           >
             <Code className="w-3 h-3" />
             Advanced (JSON)
@@ -169,7 +169,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                   <button
                     type="button"
                     onClick={() => removeRow(i)}
-                    className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-red-400/80 hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 rounded-lg text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -183,7 +183,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
           <button
             type="button"
             onClick={addRow}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 border border-dashed border-primary/15 hover:border-primary/30 rounded-lg transition-colors w-full justify-center"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption text-foreground hover:text-foreground border border-dashed border-primary/15 hover:border-primary/30 rounded-lg transition-colors w-full justify-center"
           >
             <Plus className="w-3 h-3" />
             Add field

@@ -209,15 +209,15 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
                 {friendlySeverity(toast.severity)}
               </span>
             </div>
-            <span className="typo-body text-muted-foreground/90 mt-0.5 block">
+            <span className="typo-body text-foreground mt-0.5 block">
               {toast.personaName}
             </span>
           </div>
-          <span className="typo-caption text-muted-foreground/50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
+          <span className="typo-caption text-foreground tabular-nums flex-shrink-0">{elapsedLabel}</span>
           <button
             onClick={() => onDismiss(toast.id)}
             aria-label="Dismiss notification"
-            className="text-muted-foreground/80 hover:text-foreground/95 transition-colors flex-shrink-0"
+            className="text-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -225,7 +225,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
         {/* Suggested fix */}
         {toast.suggestedFix && (
-          <p className="typo-body text-muted-foreground/80 leading-relaxed line-clamp-2 pl-6.5">
+          <p className="typo-body text-foreground leading-relaxed line-clamp-2 pl-6.5">
             {toast.suggestedFix}
           </p>
         )}
@@ -285,7 +285,7 @@ export function ToastContainer() {
       {/* Overflow counter */}
       {overflowCount > 0 && (
         <div
-          className="animate-fade-slide-in pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-muted-foreground/70"
+          className="animate-fade-slide-in pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-foreground"
         >
           +{overflowCount} more
         </div>

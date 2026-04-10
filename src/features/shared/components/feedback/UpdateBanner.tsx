@@ -23,7 +23,7 @@ export default function UpdateBanner() {
             </span>
 
             {updateInfo.body && (
-              <span className="text-muted-foreground truncate">
+              <span className="text-foreground truncate">
                 {updateInfo.body.slice(0, 120)}
                 {updateInfo.body.length > 120 ? "..." : ""}
               </span>
@@ -39,7 +39,7 @@ export default function UpdateBanner() {
               </button>
               <button
                 onClick={dismissUpdate}
-                className="p-1 rounded hover:bg-accent/10 text-muted-foreground transition-colors"
+                className="p-1 rounded hover:bg-accent/10 text-foreground transition-colors"
                 aria-label={t.common.dismiss}
               >
                 <svg

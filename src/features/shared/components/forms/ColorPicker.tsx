@@ -69,7 +69,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
           <button
             type="button"
             onClick={() => onChange('#8b5cf6')}
-            className="p-1.5 rounded-lg border border-dashed border-primary/20 text-muted-foreground/80 hover:text-muted-foreground hover:border-primary/30 transition-all"
+            className="p-1.5 rounded-lg border border-dashed border-primary/20 text-foreground hover:text-foreground hover:border-primary/30 transition-all"
             title="Reset to default"
           >
             <X className="w-3.5 h-3.5" />

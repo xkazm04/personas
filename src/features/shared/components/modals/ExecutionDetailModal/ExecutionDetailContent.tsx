@@ -24,7 +24,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
     navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
   };
   return (
-    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40 transition-colors" title="Copy">
+    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors" title="Copy">
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       {label && <span>{copied ? 'Copied' : label}</span>}
     </button>
@@ -90,8 +90,8 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
             <RefreshCw className="w-2.5 h-2.5" /> Retry #{execution.retry_count}
           </span>
         )}
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/50"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/50"><Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}</span>
+        <span className="flex items-center gap-1 text-sm text-foreground"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
+        <span className="flex items-center gap-1 text-sm text-foreground"><Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}</span>
         <div className="ml-auto flex items-center gap-2">
           <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
             <Shield className="w-3 h-3" /> {showRaw ? 'Raw' : 'Masked'}
@@ -121,7 +121,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
                   <button key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-muted-foreground/60 hover:bg-secondary/30'}`}>
                     <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? def?.color ?? '' : ''}`} />
                     <span className="text-sm font-medium truncate">{sec.label}</span>
-                    {sec.count != null && <span className="ml-auto text-sm text-muted-foreground/40">{sec.count}</span>}
+                    {sec.count != null && <span className="ml-auto text-sm text-foreground">{sec.count}</span>}
                   </button>
                 );
               })}

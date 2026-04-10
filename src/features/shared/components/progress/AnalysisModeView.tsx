@@ -38,11 +38,11 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
       >
         <div className="flex items-center gap-2.5">
           {showTerminal ? (
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/90" />
+            <ChevronDown className="w-3.5 h-3.5 text-foreground" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/90" />
+            <ChevronRight className="w-3.5 h-3.5 text-foreground" />
           )}
-          <span className="typo-code text-muted-foreground/90">
+          <span className="typo-code text-foreground">
             {isRunning ? (
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
@@ -53,7 +53,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
             )}
           </span>
         </div>
-        <span className="typo-code text-muted-foreground/80">{lines.length} lines</span>
+        <span className="typo-code text-foreground">{lines.length} lines</span>
       </button>
 
       {showTerminal && (

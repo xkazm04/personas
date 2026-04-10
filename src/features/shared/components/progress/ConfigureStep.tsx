@@ -27,10 +27,10 @@ export function ConfigureStep({
         >
           <Loader2 className="w-8 h-8 text-violet-400/60" />
         </div>
-        <p className="typo-body text-muted-foreground/80">{loadingText}</p>
+        <p className="typo-body text-foreground">{loadingText}</p>
         <button
           onClick={onSkip}
-          className="flex items-center gap-2 typo-body text-muted-foreground/80 hover:text-muted-foreground transition-colors mt-2"
+          className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors mt-2"
         >
           <SkipForward className="w-3.5 h-3.5" />
           Skip configuration
@@ -42,9 +42,9 @@ export function ConfigureStep({
   if (!questions || questions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Settings2 className="w-8 h-8 text-muted-foreground/80" />
-        <p className="typo-body text-muted-foreground/90">No configuration questions needed.</p>
-        <p className="typo-body text-muted-foreground/80">Click next to proceed with the transform.</p>
+        <Settings2 className="w-8 h-8 text-foreground" />
+        <p className="typo-body text-foreground">No configuration questions needed.</p>
+        <p className="typo-body text-foreground">Click next to proceed with the transform.</p>
       </div>
     );
   }
@@ -53,14 +53,14 @@ export function ConfigureStep({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="typo-heading text-foreground/80">Configure Transform</p>
-          <p className="typo-body text-muted-foreground/90 mt-0.5">
+          <p className="typo-heading text-foreground">Configure Transform</p>
+          <p className="typo-body text-foreground mt-0.5">
             Answer these questions to customize the persona generation.
           </p>
         </div>
         <button
           onClick={onSkip}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-muted-foreground/80 hover:text-muted-foreground border border-primary/10 rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-muted-foreground border border-primary/10 rounded-xl transition-colors"
         >
           <SkipForward className="w-3 h-3" />
           Skip
@@ -78,7 +78,7 @@ export function ConfigureStep({
             </label>
 
             {q.context && (
-              <p className="typo-body text-muted-foreground/80 mb-2 leading-relaxed">
+              <p className="typo-body text-foreground mb-2 leading-relaxed">
                 {q.context}
               </p>
             )}
@@ -103,7 +103,7 @@ export function ConfigureStep({
                 value={userAnswers[q.id] ?? q.default ?? ''}
                 onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                 placeholder={q.default ?? 'Type your answer...'}
-                className="w-full px-3 py-2 typo-body rounded-xl border border-primary/15 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
+                className="w-full px-3 py-2 typo-body rounded-xl border border-primary/15 bg-background/40 text-foreground placeholder-foreground/90"
               />
             )}
 
@@ -118,7 +118,7 @@ export function ConfigureStep({
                       className={`px-4 py-1.5 typo-body rounded-xl border transition-colors ${
                         isSelected
                           ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
-                          : 'text-muted-foreground/90 border-primary/10 hover:bg-secondary/30'
+                          : 'text-foreground border-primary/10 hover:bg-secondary/30'
                       }`}
                     >
                       {opt}

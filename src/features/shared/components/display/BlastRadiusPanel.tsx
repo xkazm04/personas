@@ -25,7 +25,7 @@ interface BlastRadiusPanelProps {
 export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 typo-body text-muted-foreground/70">
+      <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
         <LoadingSpinner size="sm" />
         <span>Checking impact...</span>
       </div>
@@ -34,7 +34,7 @@ export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
 
   if (items.length === 0) {
     return (
-      <div className="px-3 py-2 typo-body text-muted-foreground/60">
+      <div className="px-3 py-2 typo-body text-foreground">
         No dependent resources found. Safe to delete.
       </div>
     );
@@ -52,7 +52,7 @@ export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
           return (
             <li key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
               <Icon className="w-3.5 h-3.5 text-amber-400/70 mt-0.5 shrink-0" />
-              <span className="typo-body text-foreground/70">{item.description}</span>
+              <span className="typo-body text-foreground">{item.description}</span>
             </li>
           );
         })}

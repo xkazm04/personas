@@ -150,7 +150,7 @@ function FilterableSelect({
           {selectedOption?.label ?? placeholder}
         </span>
       </button>
-      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`} />
+      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`} />
 
       {/* Dropdown -- portalled to body to escape grid/overflow constraints */}
       {open && dropdownPos && createPortal(
@@ -167,7 +167,7 @@ function FilterableSelect({
         >
           {/* Search */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/15 bg-secondary/30">
-            <Search className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+            <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -181,7 +181,7 @@ function FilterableSelect({
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 && (
-              <div className="px-3 py-2.5 typo-body text-muted-foreground/50">No matches</div>
+              <div className="px-3 py-2.5 typo-body text-foreground">No matches</div>
             )}
             {filtered.map((opt, idx) => {
               const isSelected = opt.value === value;
@@ -195,7 +195,7 @@ function FilterableSelect({
                     idx < filtered.length - 1 ? 'border-b border-primary/[0.06]' : '',
                     isSelected
                       ? 'bg-primary/10 text-foreground border-l-2 border-l-primary'
-                      : 'text-foreground/80 hover:bg-primary/10 hover:text-foreground',
+                      : 'text-foreground hover:bg-primary/10 hover:text-foreground',
                   ].join(' ')}
                 >
                   <span className="w-4 flex-shrink-0">
@@ -259,7 +259,7 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
         >
           {children}
         </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none" />
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
       </div>
     );
   },

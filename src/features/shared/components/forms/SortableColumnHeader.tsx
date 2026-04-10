@@ -28,7 +28,7 @@ export function SortableColumnHeader({ label, direction, onToggle, align = 'left
       ) : direction === 'desc' ? (
         <ArrowDown className="w-3 h-3" />
       ) : (
-        <ArrowUpDown className="w-3 h-3 text-muted-foreground/40" />
+        <ArrowUpDown className="w-3 h-3 text-foreground" />
       )}
     </button>
   );

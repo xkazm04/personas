@@ -41,7 +41,7 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
             style={{ backgroundColor: value }}
           />
         ) : (
-          <Palette className="w-4 h-4 text-muted-foreground/60" />
+          <Palette className="w-4 h-4 text-foreground" />
         )}
       </button>
 

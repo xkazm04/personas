@@ -35,7 +35,7 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors focus-ring rounded-sm"
+        className="text-foreground hover:text-foreground transition-colors focus-ring rounded-sm"
         aria-label="Field info"
       >
         <Info className="w-3.5 h-3.5" />
@@ -47,16 +47,16 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
             above ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           } left-1/2 -translate-x-1/2`}
         >
-          <p className="text-foreground/80">{text}</p>
+          <p className="text-foreground">{text}</p>
           {range && (
-            <p className="mt-1 text-muted-foreground/70">
-              <span className="font-semibold text-foreground/60">Range:</span> {range}
+            <p className="mt-1 text-foreground">
+              <span className="font-semibold text-foreground/90">Range:</span> {range}
             </p>
           )}
           {example && (
-            <p className="mt-0.5 text-muted-foreground/70">
-              <span className="font-semibold text-foreground/60">Example:</span>{' '}
-              <code className="px-1 py-0.5 rounded bg-secondary/50 text-foreground/70 font-mono">{example}</code>
+            <p className="mt-0.5 text-foreground">
+              <span className="font-semibold text-foreground/90">Example:</span>{' '}
+              <code className="px-1 py-0.5 rounded bg-secondary/50 text-foreground font-mono">{example}</code>
             </p>
           )}
           {/* Arrow */}

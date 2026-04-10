@@ -99,7 +99,7 @@ export function FilterBar<T extends string = string>({
       {trailing}
 
       {summary && (
-        <span className="ml-auto typo-code text-muted-foreground/80">
+        <span className="ml-auto typo-code text-foreground">
           {summary}
         </span>
       )}

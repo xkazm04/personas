@@ -105,13 +105,13 @@ export function FormField({
 
   return (
     <div ref={shakeRef} className={`space-y-1.5 ${className ?? ''}`}>
-      <label htmlFor={fieldId} className="typo-heading text-foreground/80">
+      <label htmlFor={fieldId} className="typo-heading text-foreground">
         {label}
         {required && <span className="text-red-400 ml-1">*</span>}
         {showSpinner && (
           <Loader2
             aria-hidden="true"
-            className="ml-1.5 inline-block w-3.5 h-3.5 animate-spin text-muted-foreground/60 align-text-bottom"
+            className="ml-1.5 inline-block w-3.5 h-3.5 animate-spin text-foreground align-text-bottom"
           />
         )}
         {showCheck && (
@@ -121,7 +121,7 @@ export function FormField({
         )}
       </label>
 
-      {hint && <p className="typo-body text-muted-foreground/80">{hint}</p>}
+      {hint && <p className="typo-body text-foreground">{hint}</p>}
 
       {typeof children === 'function' ? children(inputProps) : children}
 
@@ -135,7 +135,7 @@ export function FormField({
             {error}
           </p>
         ) : helpText ? (
-          <p id={helpId} className="typo-body text-muted-foreground/60">
+          <p id={helpId} className="typo-body text-foreground">
             {helpText}
           </p>
         ) : null}

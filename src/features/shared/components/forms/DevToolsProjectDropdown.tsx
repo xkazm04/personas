@@ -90,9 +90,9 @@ export function DevToolsProjectDropdown({
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <FolderGit2 className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+            <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
             {loading ? (
-              <span className="flex items-center gap-2 text-muted-foreground/50">
+              <span className="flex items-center gap-2 text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Loading projects...
               </span>
@@ -102,17 +102,17 @@ export function DevToolsProjectDropdown({
               <div className="min-w-0">
                 <span className="font-medium">{selected.name}</span>
                 {selected.root_path && (
-                  <span className="text-muted-foreground/40 ml-2 text-xs truncate">
+                  <span className="text-foreground ml-2 text-xs truncate">
                     {selected.root_path}
                   </span>
                 )}
               </div>
             ) : (
-              <span className="text-muted-foreground/40">{placeholder}</span>
+              <span className="text-foreground">{placeholder}</span>
             )}
           </div>
           <ChevronDown
-            className={`w-4 h-4 text-muted-foreground/40 flex-shrink-0 transition-transform ${
+            className={`w-4 h-4 text-foreground flex-shrink-0 transition-transform ${
               isOpen ? 'rotate-180' : ''
             }`}
           />
@@ -122,25 +122,25 @@ export function DevToolsProjectDropdown({
       {({ close, focusIndex }) => (
         <div className="w-full bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden">
           {loading ? (
-            <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground/50">
+            <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
               Loading...
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
               <p className="text-sm text-rose-400/80 mb-1">Failed to load projects</p>
-              <p className="text-xs text-muted-foreground/40">{error}</p>
+              <p className="text-xs text-foreground">{error}</p>
             </div>
           ) : projects.length === 0 ? (
             <div className="px-5 py-6 text-center">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Wrench className="w-5 h-5 text-primary/60" />
               </div>
-              <p className="text-sm font-medium text-foreground/70 mb-1">No projects found</p>
-              <p className="text-xs text-muted-foreground/50 mb-3">
+              <p className="text-sm font-medium text-foreground mb-1">No projects found</p>
+              <p className="text-xs text-foreground mb-3">
                 Add a codebase project in Dev Tools first, then return here to select it.
               </p>
-              <p className="text-xs text-muted-foreground/35">
+              <p className="text-xs text-foreground">
                 Navigate to <span className="font-medium text-primary/70">Plugins &rarr; Dev Tools</span> to create a project.
               </p>
             </div>
@@ -165,19 +165,19 @@ export function DevToolsProjectDropdown({
                           : 'hover:bg-secondary/40'
                     }`}
                   >
-                    <FolderGit2 className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                    <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground/90 truncate">
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {project.root_path && (
-                          <span className="text-xs text-muted-foreground/40 truncate">
+                          <span className="text-xs text-foreground truncate">
                             {project.root_path}
                           </span>
                         )}
                         {project.tech_stack && (
-                          <span className="text-[10px] text-muted-foreground/35 bg-secondary/50 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
                             {project.tech_stack}
                           </span>
                         )}

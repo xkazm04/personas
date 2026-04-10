@@ -58,19 +58,19 @@ export function TransformModeView({
             >
               <div className="flex items-center gap-2.5">
                 {showTerminal ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
+                  <ChevronDown className="w-3.5 h-3.5 text-foreground" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />
+                  <ChevronRight className="w-3.5 h-3.5 text-foreground" />
                 )}
-                <span className="typo-code text-muted-foreground/80">
+                <span className="typo-code text-foreground">
                   {showTerminal ? 'Hide' : 'Show'} CLI output
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 {runId && (
-                  <span className="typo-code text-muted-foreground/80">{runId.slice(0, 8)}</span>
+                  <span className="typo-code text-foreground">{runId.slice(0, 8)}</span>
                 )}
-                <span className="typo-code text-muted-foreground/80">{lines.length} lines</span>
+                <span className="typo-code text-foreground">{lines.length} lines</span>
               </div>
             </button>
 

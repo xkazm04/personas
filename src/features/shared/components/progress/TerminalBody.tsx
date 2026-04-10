@@ -49,7 +49,7 @@ export function TerminalBody({ lines }: TerminalBodyProps) {
   return (
     <>
       {lines.length === 0 ? (
-        <div className="p-4 text-muted-foreground/80 text-center typo-body">No output yet...</div>
+        <div className="p-4 text-foreground text-center typo-body">No output yet...</div>
       ) : (
         <div className="p-3">
           {lines.map((line, index) => {
@@ -57,7 +57,7 @@ export function TerminalBody({ lines }: TerminalBodyProps) {
             const colors = LINE_STYLES[style];
             return (
               <div key={index} className="flex items-start gap-2 py-px">
-                <span className="text-muted-foreground/20 select-none flex-shrink-0 w-8 text-right">
+                <span className="text-foreground/90 select-none flex-shrink-0 w-8 text-right">
                   {(index + 1).toString().padStart(3, ' ')}
                 </span>
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px] ${colors.dot}`} />

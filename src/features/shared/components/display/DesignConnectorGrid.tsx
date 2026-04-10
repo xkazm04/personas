@@ -45,7 +45,7 @@ function channelIcon(type: string) {
   }
 }
 
-const SECTION_LABEL = 'typo-heading uppercase tracking-wider text-muted-foreground/90 flex items-center gap-2';
+const SECTION_LABEL = 'typo-heading uppercase tracking-wider text-foreground flex items-center gap-2';
 
 // ============================================================================
 // Section 1: Connectors & Tools
@@ -99,10 +99,10 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
+                    <Wrench className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
-                <span className="typo-heading text-foreground/80 truncate flex-1">
+                <span className="typo-heading text-foreground truncate flex-1">
                   {isGeneral ? 'General Tools' : meta.label}
                 </span>
               </div>
@@ -139,19 +139,19 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         Events & Triggers
-        <span className="typo-body text-muted-foreground/80 ml-1">What activates this persona</span>
+        <span className="typo-body text-foreground ml-1">What activates this persona</span>
       </div>
 
       <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
         {triggers.length > 0 && (
           <div className="p-3.5 space-y-2">
-            <span className="typo-code uppercase tracking-wider text-muted-foreground/80">Triggers</span>
+            <span className="typo-code uppercase tracking-wider text-foreground">Triggers</span>
             {triggers.map((trigger, idx) => (
               <div key={idx} className="flex items-start gap-2.5 py-1">
                 <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground/90 capitalize block">{trigger.trigger_type}</span>
-                  <span className="typo-body text-muted-foreground/80 leading-snug block">{trigger.description}</span>
+                  <span className="typo-body text-foreground leading-snug block">{trigger.description}</span>
                 </div>
               </div>
             ))}
@@ -160,7 +160,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
 
         {subscriptions.length > 0 && (
           <div className="p-3.5 space-y-2">
-            <span className="typo-code uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
+            <span className="typo-code uppercase tracking-wider text-foreground flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
               Event Subscriptions
             </span>
@@ -169,7 +169,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
                 <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground/90 block">{sub.event_type}</span>
-                  <span className="typo-body text-muted-foreground/80 leading-snug block">{sub.description}</span>
+                  <span className="typo-body text-foreground leading-snug block">{sub.description}</span>
                 </div>
               </div>
             ))}
@@ -194,7 +194,7 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         Messages & Notifications
-        <span className="typo-body text-muted-foreground/80 ml-1">How this persona communicates</span>
+        <span className="typo-body text-foreground ml-1">How this persona communicates</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -205,10 +205,10 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
                 {channelIcon(channel.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <span className="typo-heading text-foreground/80 capitalize block">{channel.type}</span>
-                <span className="typo-body text-muted-foreground/80 leading-snug block mt-0.5">{channel.description}</span>
+                <span className="typo-heading text-foreground capitalize block">{channel.type}</span>
+                <span className="typo-body text-foreground leading-snug block mt-0.5">{channel.description}</span>
                 {channel.required_connector && (
-                  <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-muted-foreground/90 border border-primary/10">
+                  <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-foreground border border-primary/10">
                     <Plug className="w-2.5 h-2.5" />
                     Requires {channel.required_connector}
                   </span>

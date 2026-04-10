@@ -55,11 +55,11 @@ export function TransformStatusPanels({
           <div className="flex-1 min-w-0">
             <p
                 key={transformPhase?.label ?? 'processing'}
-                className="animate-fade-slide-in typo-heading text-foreground/80"
+                className="animate-fade-slide-in typo-heading text-foreground"
               >
                 {transformPhase?.label ?? 'Starting transformation...'}
               </p>
-            <p className="typo-body text-muted-foreground/80 mt-0.5">
+            <p className="typo-body text-foreground mt-0.5">
               {transformPhase ? `Step ${transformPhase.step} of ${transformPhase.total}` : 'Starting...'}
             </p>
 
@@ -69,7 +69,7 @@ export function TransformStatusPanels({
               />
             </div>
 
-            <p className="typo-body text-muted-foreground/90 mt-2">
+            <p className="typo-body text-foreground mt-2">
               You can continue working -- we'll notify you when the draft is ready.
             </p>
           </div>
@@ -99,7 +99,7 @@ export function TransformStatusPanels({
         </div>
         <div>
           <p className="typo-heading text-emerald-400">Draft generated successfully</p>
-          <p className="typo-body text-muted-foreground/80 mt-0.5">
+          <p className="typo-body text-foreground mt-0.5">
             Your persona draft is ready for review and editing.
           </p>
         </div>
@@ -136,11 +136,11 @@ export function TransformStatusPanels({
   return (
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
-        <Sparkles className="w-6 h-6 text-muted-foreground/80" />
+        <Sparkles className="w-6 h-6 text-foreground" />
       </div>
       <div>
-        <p className="typo-body text-muted-foreground/90">Waiting to start transformation...</p>
-        <p className="typo-body text-muted-foreground/80 mt-0.5">
+        <p className="typo-body text-foreground">Waiting to start transformation...</p>
+        <p className="typo-body text-foreground mt-0.5">
           Click "Generate Persona Draft" to begin.
         </p>
       </div>

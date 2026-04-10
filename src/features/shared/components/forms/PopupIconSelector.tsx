@@ -57,7 +57,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
             <span className="text-lg leading-none">{value}</span>
           )
         ) : (
-          <Smile className="w-4 h-4 text-muted-foreground/60" />
+          <Smile className="w-4 h-4 text-foreground" />
         )}
       </button>
 

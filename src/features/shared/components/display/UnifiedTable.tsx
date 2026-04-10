@@ -98,7 +98,7 @@ function ColumnHeader<T>({
 
   return (
     <div className={`flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
-      <span className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">{col.label}</span>
+      <span className="text-sm font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
 
       {/* Sort icon */}
       {col.sortable && (
@@ -154,11 +154,11 @@ function ColumnHeader<T>({
                 onChange={(e) => col.onSearchChange!(e.target.value)}
                 placeholder={`Search...`}
                 autoFocus
-                className="w-24 px-2 py-0.5 rounded-lg text-sm bg-secondary/30 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 outline-none focus-visible:border-primary/25"
+                className="w-24 px-2 py-0.5 rounded-lg text-sm bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/90 outline-none focus-visible:border-primary/25"
               />
               <button
                 onClick={() => { col.onSearchChange!(''); setShowSearch(false); }}
-                className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground/60"
+                className="p-0.5 text-foreground/90 hover:text-foreground"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -231,7 +231,7 @@ export function UnifiedTable<T>({
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
 
   if (isLoading) {
-    return <div className="py-8 text-center text-muted-foreground/50 text-sm">Loading...</div>;
+    return <div className="py-8 text-center text-foreground text-sm">Loading...</div>;
   }
 
   return (
@@ -248,8 +248,8 @@ export function UnifiedTable<T>({
 
       {sortedData.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-sm text-muted-foreground/40">{emptyTitle}</p>
-          {emptyDescription && <p className="text-sm text-muted-foreground/30 mt-1">{emptyDescription}</p>}
+          <p className="text-sm text-foreground">{emptyTitle}</p>
+          {emptyDescription && <p className="text-sm text-foreground/90 mt-1">{emptyDescription}</p>}
         </div>
       ) : null}
 

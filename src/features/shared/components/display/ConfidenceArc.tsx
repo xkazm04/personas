@@ -101,7 +101,7 @@ export function ConfidenceArc({ value, width = 24, height = 14, showLabel = fals
         <AnimatedCounter
           value={pct}
           formatFn={(v) => `${Math.round(v)}%`}
-          className="text-[9px] font-mono text-muted-foreground/70 leading-none mt-0.5"
+          className="text-[9px] font-mono text-foreground leading-none mt-0.5"
         />
       )}
     </div>
