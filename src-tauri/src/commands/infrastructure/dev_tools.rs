@@ -2551,7 +2551,8 @@ fn compute_slot_diff(
     // Use whichever diff is larger (more informative).
     // If Claude committed, branch_diff has the changes.
     // If Claude didn't commit, uncommitted_diff has the working-tree changes.
-    let diff_text = if branch_diff.len() >= uncommitted_diff.len() {
+    let use_branch_diff = branch_diff.len() >= uncommitted_diff.len();
+    let diff_text = if use_branch_diff {
         branch_diff
     } else {
         uncommitted_diff
@@ -2579,7 +2580,7 @@ fn compute_slot_diff(
     let diff_hash = format!("{:x}", hasher.finalize());
 
     // Compute stats — use numstat for the same source we picked
-    let numstat_args = if branch_diff.len() >= uncommitted_diff.len() {
+    let numstat_args = if use_branch_diff {
         // Branch diff — run from project root
         let out = std::process::Command::new("git")
             .args(["diff", "--numstat"])

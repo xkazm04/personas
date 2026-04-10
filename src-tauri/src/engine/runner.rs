@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, LazyLock};
-use super::events::{ExecutionEventEmitter, emit_to};
+use super::events::emit_to;
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
-// TauriEmitter import removed — emitter is passed as Arc<dyn ExecutionEventEmitter>
 use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 
 /// Per-credential mutex pool to prevent concurrent OAuth token refreshes from
@@ -15,9 +14,6 @@ use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 /// (every 32 acquisitions, threshold 8 entries).
 static CREDENTIAL_REFRESH_LOCKS: LazyLock<KeyedResourcePool<String, Arc<Mutex<()>>>> =
     LazyLock::new(|| KeyedResourcePool::new(32, 8));
-
-/// Once-per-session CLI version check. Populated on first execution, never re-checked.
-static CLI_VERSION_CHECKED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
 
 /// Acquire a per-credential refresh lock. The returned [`PoolHandle`] holds a
 /// clone of the `Arc<Mutex<()>>` and decrements the active-user count when
@@ -27,7 +23,6 @@ fn credential_refresh_lock(credential_id: &str) -> PoolHandle<String, Arc<Mutex<
 }
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
-use crate::db::repos::communication::manual_reviews as review_repo;
 use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::executions as exec_repo;
@@ -323,17 +318,25 @@ pub async fn run_execution(
         let final_trace = trace.finalize(None, None, None, Some(msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
 
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {msg}"),
-            });
-        emit_to(&*emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
+            },
+        );
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_STATUS,
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(msg.clone()),
                 duration_ms: Some(duration_ms),
                 cost_usd: None,
-            });
+            },
+        );
 
         let _ = exec_repo::update_status(
             &pool,
@@ -356,19 +359,26 @@ pub async fn run_execution(
         };
     }
 
-    // Append proxy connection vars so the CLI subprocess can route credential-
-    // authenticated HTTP calls through the management API proxy instead of using
-    // raw secret env vars.  Secrets stay server-side; only credential IDs are
-    // exposed to the process environment.
-    cred_env.push(("PERSONAS_PROXY_URL".to_string(), "http://127.0.0.1:9420/api/proxy".to_string()));
-    if let Ok(api_key) = crate::engine::management_api::get_or_create_system_api_key(&pool) {
-        cred_env.push(("PERSONAS_PROXY_KEY".to_string(), api_key));
-    }
-
     let cred_env_clone = cred_env.clone();
 
     // Load engine kind once and reuse for both config snapshot and provider selection
-    let engine_kind = provider::load_engine_kind_notified(&pool, &*emitter);
+    let engine_kind = {
+        let raw = crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::CLI_ENGINE)
+            .ok()
+            .flatten();
+        match raw {
+            Some(ref s) if s.parse::<provider::EngineKind>().is_err() => {
+                let kind = provider::EngineKind::from_setting(s);
+                emit_to(&*emitter, event_name::ENGINE_FALLBACK, &serde_json::json!({
+                    "requested": s,
+                    "actual": kind.as_setting(),
+                }));
+                kind
+            }
+            Some(ref s) => provider::EngineKind::from_setting(s),
+            None => provider::EngineKind::ClaudeCode,
+        }
+    };
 
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
@@ -524,52 +534,6 @@ pub async fn run_execution(
         prompt_text // skip for session resumes -- context already loaded
     };
 
-    // Inject recent manual review decisions from prior runs so the persona
-    // can see what the user approved/rejected/commented on. This closes the
-    // feedback loop between execution → review → next execution.
-    let prompt_text = if !is_session_resume {
-        match review_repo::get_recent_resolved(&pool, &persona.id, 30, 20) {
-            Ok(reviews) if !reviews.is_empty() => {
-                let mut review_section = String::from(
-                    "\n\n## Previous Manual Review Decisions\n\n\
-                     The following items were reviewed by the user in previous runs. \
-                     Use these decisions to inform your current analysis.\n\n"
-                );
-                for r in &reviews {
-                    let status_label = match r.status.as_str() {
-                        "approved" => "APPROVED",
-                        "rejected" => "REJECTED",
-                        "resolved" => "RESOLVED",
-                        _ => "UNKNOWN",
-                    };
-                    review_section.push_str(&format!(
-                        "- **{}** [{}]: {}{}",
-                        r.title,
-                        status_label,
-                        r.description.as_deref().unwrap_or(""),
-                        r.reviewer_notes
-                            .as_ref()
-                            .map(|n| format!(" — User note: \"{n}\""))
-                            .unwrap_or_default()
-                    ));
-                    review_section.push('\n');
-                }
-                logger.log(&format!(
-                    "[REVIEW-FEEDBACK] Injected {} review decisions for persona {}",
-                    reviews.len(), persona.id
-                ));
-                format!("{prompt_text}{review_section}")
-            }
-            Ok(_) => prompt_text,
-            Err(e) => {
-                logger.log(&format!("[REVIEW-FEEDBACK] Failed to load reviews: {e}"));
-                prompt_text
-            }
-        }
-    } else {
-        prompt_text
-    };
-
     trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");
@@ -681,67 +645,11 @@ pub async fn run_execution(
     let execution_config = execution_config;
     let execution_config_json = serde_json::to_string(&execution_config).ok();
 
-    // ── Native Ollama path ─────────────────────────────────────────────
-    // When provider is "ollama", bypass the CLI spawn entirely and call
-    // Ollama's HTTP API directly. Local models cannot handle Claude Code's
-    // tool-use protocol, so we use a simpler prompt format.
-    if model_profile.as_ref().and_then(|p| p.provider.as_deref()) == Some(super::types::providers::OLLAMA) {
-        trace.end_span_ok(&spawn_engine_stage);
-
-        let result = super::ollama::execute_native(
-            &*emitter,
-            &pool,
-            &execution_id,
-            &persona,
-            model_profile.as_ref().unwrap(),
-            &prompt_text,
-            &cancelled,
-        ).await;
-
-        super::process_activity::emit_process_activity_via(
-            &*emitter,
-            "execution",
-            if result.success { "completed" } else { "failed" },
-            Some(&execution_id),
-            Some(&persona.name),
-        );
-
-        return result;
-    }
-
     let failover_chain = failover::build_failover_chain_with_policy(
         primary_engine,
         model_profile.as_ref(),
         &policy_decision,
     );
-
-    // Once-per-session CLI version check: warn (don't block) if the installed
-    // CLI is below the provider's recommended minimum version.
-    {
-        let emitter_for_version = emitter.clone();
-        let primary_provider = provider::resolve_provider(primary_engine);
-        CLI_VERSION_CHECKED.get_or_init(|| {
-            if let Some(minimum) = primary_provider.minimum_version() {
-                let binary = primary_provider.binary_candidates().first().copied().unwrap_or("claude");
-                let minimum = minimum.to_string();
-                let binary = binary.to_string();
-                tokio::spawn(async move {
-                    match provider::check_cli_version(&binary, &minimum).await {
-                        Ok(version) => {
-                            tracing::info!(cli_version = %version, minimum = %minimum, "CLI version check passed");
-                        }
-                        Err(warning) => {
-                            tracing::warn!("{}", warning);
-                            emit_to(&*emitter_for_version, event_name::CLI_VERSION_WARNING, &serde_json::json!({
-                                    "message": warning,
-                                    "minimum": minimum,
-                                }));
-                        }
-                    }
-                });
-            }
-        });
-    }
 
     // Resolve provider + build CLI args + spawn, trying each failover candidate
     let mut last_spawn_error: Option<String> = None;
@@ -830,10 +738,28 @@ pub async fn run_execution(
                     "[FAILOVER] Trying {} after previous provider failed",
                     candidate.label,
                 ));
-                emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+                emit_to(
+                    &*emitter,
+                    event_name::EXECUTION_OUTPUT,
+                    &ExecutionOutputEvent {
                         execution_id: execution_id.clone(),
                         line: format!("[FAILOVER] Trying {}...", candidate.label),
-                    });
+                    },
+                );
+            }
+
+            // Guard: reject args that still contain the Codex prompt sentinel.
+            // This catches any execution path that forgot to call
+            // build_execution_args_with_prompt() for a PositionalArg provider.
+            if cli_args.args.iter().any(|a| a == crate::engine::provider::codex::PROMPT_PLACEHOLDER) {
+                let error_msg = format!(
+                    "{}: prompt placeholder was not replaced — aborting to avoid an empty-prompt CLI invocation",
+                    cli_provider.engine_name()
+                );
+                tracing::error!("{}", error_msg);
+                logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
+                last_spawn_error = Some(error_msg);
+                continue;
             }
 
             // Early cancellation check: if the user cancelled during arg
@@ -844,13 +770,17 @@ pub async fn run_execution(
                 trace.end_span_error(&spawn_engine_stage, "Cancelled before spawn");
                 logger.close();
 
-                super::process_activity::emit_process_activity_via(&*emitter, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+                emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
                 let duration_ms = start_time.elapsed().as_millis() as u64;
-                emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+                emit_to(
+                    &*emitter,
+                    event_name::EXECUTION_OUTPUT,
+                    &ExecutionOutputEvent {
                         execution_id: execution_id.clone(),
                         line: "[CANCELLED] Execution cancelled before CLI spawn".into(),
-                    });
+                    },
+                );
 
                 return ExecutionResult {
                     success: false,
@@ -903,19 +833,27 @@ pub async fn run_execution(
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 
-        super::process_activity::emit_process_activity_via(&*emitter, "execution", "failed", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "failed", Some(&execution_id), Some(&persona.name)));
 
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {error_msg}"),
-            });
-        emit_to(&*emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
+            },
+        );
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_STATUS,
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
                 duration_ms: Some(start_time.elapsed().as_millis() as u64),
                 cost_usd: None,
-            });
+            },
+        );
 
         let _ = exec_repo::update_status(
             &pool,
@@ -955,13 +893,17 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        super::process_activity::emit_process_activity_via(&*emitter, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled during spawn".into(),
-            });
+            },
+        );
 
         let _ = exec_repo::update_status(
             &pool,
@@ -984,7 +926,7 @@ pub async fn run_execution(
     }
 
     // Emit process activity: execution started
-    super::process_activity::emit_process_activity_via(&*emitter, "execution", "started", Some(&execution_id), Some(&persona.name));
+    emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "started", Some(&execution_id), Some(&persona.name)));
 
     // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
@@ -1024,13 +966,17 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        super::process_activity::emit_process_activity_via(&*emitter, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled before prompt delivery".into(),
-            });
+            },
+        );
 
         return ExecutionResult {
             success: false,
@@ -1064,13 +1010,17 @@ pub async fn run_execution(
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        emit_to(&*emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_STATUS,
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
                 duration_ms: Some(duration_ms),
                 cost_usd: None,
-            });
+            },
+        );
         return ExecutionResult {
             success: false,
             error: Some(error_msg),
@@ -1185,10 +1135,14 @@ pub async fn run_execution(
                                 if !output_truncated {
                                     output_truncated = true;
                                     logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
-                                    emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+                                    emit_to(
+                                        &*emitter,
+                                        event_name::EXECUTION_OUTPUT,
+                                        &ExecutionOutputEvent {
                                             execution_id: exec_id_for_stream.clone(),
                                             line: "[output truncated -- 10MB limit exceeded]".to_string(),
-                                        });
+                                        },
+                                    );
                                 }
                                 continue;
                             }
@@ -1203,10 +1157,14 @@ pub async fn run_execution(
 
                             // Emit user-facing output to frontend
                             if let Some(ref display_text) = display {
-                                emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+                                emit_to(
+                                    &*emitter,
+                                    event_name::EXECUTION_OUTPUT,
+                                    &ExecutionOutputEvent {
                                         execution_id: exec_id_for_stream.clone(),
                                         line: display_text.clone(),
-                                    });
+                                    },
+                                );
                             }
 
                             // Update metrics from result lines
@@ -1379,17 +1337,24 @@ pub async fn run_execution(
 
                                 // Emit file change event if this is a file operation
                                 if let Some(file_change) = parser::extract_file_change(tool_name, input_preview) {
-                                    emit_to(&*emitter, event_name::EXECUTION_FILE_CHANGE, &serde_json::json!({
+                                    emit_to(
+                                        &*emitter,
+                                        event_name::EXECUTION_FILE_CHANGE,
+                                        &serde_json::json!({
                                             "execution_id": exec_id_for_stream,
                                             "path": file_change.path,
                                             "change_type": file_change.change_type,
-                                        }));
-                                    emit_to(&*emitter, event_name::EXECUTION_EVENT,
+                                        }),
+                                    );
+                                    emit_to(
+                                        &*emitter,
+                                        event_name::EXECUTION_EVENT,
                                         &StructuredExecutionEvent::FileChange {
                                             execution_id: exec_id_for_stream.clone(),
                                             path: file_change.path.clone(),
                                             change_type: format!("{:?}", file_change.change_type).to_lowercase(),
-                                        });
+                                        },
+                                    );
                                 }
                             }
 
@@ -1501,18 +1466,25 @@ pub async fn run_execution(
                 _ = heartbeat_interval.tick() => {
                     let elapsed_ms = start_time.elapsed().as_millis() as u64;
                     let silence_ms = last_activity.elapsed().as_millis() as u64;
-                    emit_to(&*emitter, event_name::EXECUTION_HEARTBEAT, &HeartbeatEvent {
+                    emit_to(
+                        &*emitter,
+                        event_name::EXECUTION_HEARTBEAT,
+                        &HeartbeatEvent {
                             execution_id: exec_id_for_stream.clone(),
                             elapsed_ms,
                             silence_ms,
-                        });
+                        },
+                    );
                     // Also emit on structured channel
-                    emit_to(&*emitter, event_name::EXECUTION_EVENT,
+                    emit_to(
+                        &*emitter,
+                        event_name::EXECUTION_EVENT,
                         &StructuredExecutionEvent::Heartbeat {
                             execution_id: exec_id_for_stream.clone(),
                             elapsed_ms,
                             silence_ms,
-                        });
+                        },
+                    );
                 }
             }
         }
@@ -1545,10 +1517,14 @@ pub async fn run_execution(
     let stderr_text = stderr_handle.await.unwrap_or_default();
     if !stderr_text.is_empty() {
         logger.log(&format!("[STDERR] {}", stderr_text.trim()));
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {}", stderr_text.trim()),
-            });
+            },
+        );
     }
 
     // Check timeout
@@ -1556,10 +1532,14 @@ pub async fn run_execution(
     if timed_out {
         logger.log("[TIMEOUT] Execution timed out, killing process");
         driver.kill().await;
-        emit_to(&*emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[TIMEOUT] Execution timed out after {}s", timeout_ms / 1000),
-            });
+            },
+        );
     }
 
     // Wait for process to exit (after timeout kill, if applicable)
@@ -1768,17 +1748,21 @@ pub async fn run_execution(
     // Emit process activity: final outcome
     {
         let action = if success { "completed" } else { "failed" };
-        super::process_activity::emit_process_activity_via(&*emitter, "execution", action, Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", action, Some(&execution_id), Some(&persona.name)));
     }
 
     // Emit final status
-    emit_to(&*emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
+    emit_to(
+        &*emitter,
+        event_name::EXECUTION_STATUS,
+        &ExecutionStatusEvent {
             execution_id: execution_id.clone(),
             status: final_status,
             error: error.clone(),
             duration_ms: Some(duration_ms),
             cost_usd: Some(metrics.cost_usd),
-        });
+        },
+    );
 
     // Deliver message to persona_messages if execution produced output but the AI
     // did NOT already send a structured report via the emit_message protocol tool.
@@ -1807,30 +1791,17 @@ pub async fn run_execution(
         };
         let msg_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        match pool.get() {
-            Ok(conn) => {
-                if let Err(e) = conn.execute(
-                    "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6)",
-                    rusqlite::params![msg_id, persona.id, execution_id, title, content, now],
-                ) {
-                    tracing::warn!(
-                        execution_id = %execution_id,
-                        persona_id = %persona.id,
-                        error = %e,
-                        "Failed to persist execution message to DB",
-                    );
-                }
-            }
-            Err(e) => {
-                tracing::warn!(
-                    execution_id = %execution_id,
-                    persona_id = %persona.id,
-                    error = %e,
-                    "Failed to acquire DB connection for execution message",
-                );
-            }
-        }
+        let _ = pool.get().map(|conn| {
+            conn.execute(
+                "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
+                 SELECT ?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM persona_executions WHERE id = ?3
+                     AND status IN ('completed', 'failed', 'cancelled')
+                 )",
+                rusqlite::params![msg_id, persona.id, execution_id, title, content, now],
+            ).ok();
+        });
     }
 
     ExecutionResult {
@@ -2311,15 +2282,37 @@ pub(crate) async fn inject_credential(
         "token_type", "expiry_date", "expires_in",
     ];
 
-    // Credential proxy routing: inject credential ID instead of raw secrets.
-    // The CLI subprocess calls the local proxy at $PERSONAS_PROXY_URL/<credential_id>
-    // which injects auth headers server-side — secrets never enter the process env.
-    let id_key = format!("PERSONAS_CRED_{}_ID", prefix);
-    env_vars.push((id_key.clone(), cred.id.clone()));
-    hints.push(format!(
-        "`{}` = `{}` (from {} credential '{}')",
-        id_key, cred.id, connector_label, cred.name
-    ));
+    for (field_key, field_val) in &fields {
+        if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
+            continue;
+        }
+        let raw_key = format!("{}_{}", prefix, field_key);
+        let env_key = match sanitize_env_name(&raw_key) {
+            Some(k) => k,
+            None => continue,
+        };
+        env_vars.push((env_key.clone(), field_val.clone()));
+        hints.push(format!(
+            "`{}` (from {} credential '{}')",
+            env_key, connector_label, cred.name
+        ));
+    }
+
+    // Add well-known aliases for Google connectors so the CLI finds credentials
+    // regardless of whether it looks for GMAIL_ACCESS_TOKEN or GOOGLE_ACCESS_TOKEN.
+    let is_google_family = connector_name.starts_with("google")
+        || connector_name == "gmail"
+        || connector_name == "google_calendar"
+        || connector_name == "google_drive"
+        || connector_name == "google_sheets";
+    if is_google_family && prefix != "GOOGLE" {
+        if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
+            env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
+        }
+        if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
+            env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
+        }
+    }
 
     let _ = cred_repo::record_usage(pool, &cred.id);
     let _ = audit_log::insert(
