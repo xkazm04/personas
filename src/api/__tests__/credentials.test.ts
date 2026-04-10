@@ -32,7 +32,7 @@ describe("api/vault/credentials", () => {
     mockInvoke("list_credentials", []);
     const result = await listCredentials();
     expect(result).toEqual([]);
-    expect(mockedInvoke).toHaveBeenCalledWith("list_credentials", undefined, undefined);
+    expect(mockedInvoke).toHaveBeenCalledWith("list_credentials", undefined, expect.objectContaining({ headers: expect.any(Headers) }));
   });
 
   it("createCredential calls create_credential", async () => {
