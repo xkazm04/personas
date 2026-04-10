@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, LazyLock};
-use tauri::{AppHandle, Emitter};
+use super::events::emit_to;
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
@@ -102,7 +102,7 @@ pub(crate) fn sanitize_env_name(name: &str) -> Option<String> {
 /// available provider/model in the failover chain is tried automatically.
 #[allow(clippy::too_many_arguments)]
 pub async fn run_execution(
-    app: AppHandle,
+    emitter: Arc<dyn super::events::ExecutionEventEmitter>,
     pool: DbPool,
     execution_id: String,
     persona: Persona,
@@ -318,16 +318,18 @@ pub async fn run_execution(
         let final_trace = trace.finalize(None, None, None, Some(msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
 
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {msg}"),
             },
         );
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(msg.clone()),
@@ -360,7 +362,23 @@ pub async fn run_execution(
     let cred_env_clone = cred_env.clone();
 
     // Load engine kind once and reuse for both config snapshot and provider selection
-    let engine_kind = provider::load_engine_kind_notified(&pool, &app);
+    let engine_kind = {
+        let raw = crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::CLI_ENGINE)
+            .ok()
+            .flatten();
+        match raw {
+            Some(ref s) if s.parse::<provider::EngineKind>().is_err() => {
+                let kind = provider::EngineKind::from_setting(s);
+                emit_to(&*emitter, event_name::ENGINE_FALLBACK, &serde_json::json!({
+                    "requested": s,
+                    "actual": kind.as_setting(),
+                }));
+                kind
+            }
+            Some(ref s) => provider::EngineKind::from_setting(s),
+            None => provider::EngineKind::ClaudeCode,
+        }
+    };
 
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
@@ -720,9 +738,10 @@ pub async fn run_execution(
                     "[FAILOVER] Trying {} after previous provider failed",
                     candidate.label,
                 ));
-                let _ = app.emit(
+                emit_to(
+                    &*emitter,
                     event_name::EXECUTION_OUTPUT,
-                    ExecutionOutputEvent {
+                    &ExecutionOutputEvent {
                         execution_id: execution_id.clone(),
                         line: format!("[FAILOVER] Trying {}...", candidate.label),
                     },
@@ -751,12 +770,13 @@ pub async fn run_execution(
                 trace.end_span_error(&spawn_engine_stage, "Cancelled before spawn");
                 logger.close();
 
-                super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+                emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
                 let duration_ms = start_time.elapsed().as_millis() as u64;
-                let _ = app.emit(
+                emit_to(
+                    &*emitter,
                     event_name::EXECUTION_OUTPUT,
-                    ExecutionOutputEvent {
+                    &ExecutionOutputEvent {
                         execution_id: execution_id.clone(),
                         line: "[CANCELLED] Execution cancelled before CLI spawn".into(),
                     },
@@ -790,10 +810,10 @@ pub async fn run_execution(
                     // Record failure in circuit breaker and emit transition events
                     let transitions = circuit_breaker.record_failure(candidate.engine_kind);
                     for transition in &transitions {
-                        let _ = app.emit(event_name::CIRCUIT_BREAKER_TRANSITION, transition);
+                        emit_to(&*emitter, event_name::CIRCUIT_BREAKER_TRANSITION, transition);
                     }
                     if transitions.iter().any(|t| t.provider == "global") {
-                        let _ = app.emit(event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, circuit_breaker.get_status());
+                        emit_to(&*emitter, event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, &circuit_breaker.get_status());
                     }
                     logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
                     last_spawn_error = Some(error_msg);
@@ -813,18 +833,20 @@ pub async fn run_execution(
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 
-        super::process_activity::emit_process_activity(&app, "execution", "failed", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "failed", Some(&execution_id), Some(&persona.name)));
 
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {error_msg}"),
             },
         );
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
@@ -871,12 +893,13 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled during spawn".into(),
             },
@@ -903,7 +926,7 @@ pub async fn run_execution(
     }
 
     // Emit process activity: execution started
-    super::process_activity::emit_process_activity(&app, "execution", "started", Some(&execution_id), Some(&persona.name));
+    emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "started", Some(&execution_id), Some(&persona.name)));
 
     // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
@@ -943,12 +966,13 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled before prompt delivery".into(),
             },
@@ -986,9 +1010,10 @@ pub async fn run_execution(
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
@@ -1110,9 +1135,10 @@ pub async fn run_execution(
                                 if !output_truncated {
                                     output_truncated = true;
                                     logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
-                                    let _ = app.emit(
+                                    emit_to(
+                                        &*emitter,
                                         event_name::EXECUTION_OUTPUT,
-                                        ExecutionOutputEvent {
+                                        &ExecutionOutputEvent {
                                             execution_id: exec_id_for_stream.clone(),
                                             line: "[output truncated -- 10MB limit exceeded]".to_string(),
                                         },
@@ -1131,9 +1157,10 @@ pub async fn run_execution(
 
                             // Emit user-facing output to frontend
                             if let Some(ref display_text) = display {
-                                let _ = app.emit(
+                                emit_to(
+                                    &*emitter,
                                     event_name::EXECUTION_OUTPUT,
-                                    ExecutionOutputEvent {
+                                    &ExecutionOutputEvent {
                                         execution_id: exec_id_for_stream.clone(),
                                         line: display_text.clone(),
                                     },
@@ -1211,7 +1238,7 @@ pub async fn run_execution(
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {
-                                let _ = app.emit(event_name::EXECUTION_EVENT, &event);
+                                emit_to(&*emitter, event_name::EXECUTION_EVENT, &event);
                             }
 
                             // Track tool usage and build tool steps for inspector
@@ -1260,7 +1287,7 @@ pub async fn run_execution(
                                             }
                                             let notif_ref = notif_channels_for_stream.as_deref();
                                             let mut dispatch_ctx = super::dispatch::DispatchContext::new(
-                                                &app,
+                                                &*emitter,
                                                 &pool_for_stream,
                                                 &exec_id_for_stream,
                                                 &persona_id_for_stream,
@@ -1291,7 +1318,7 @@ pub async fn run_execution(
                                 );
                                 // Emit live trace span event to frontend
                                 if let Some(span_data) = trace.get_span(&tool_span_id) {
-                                    let _ = app.emit(event_name::EXECUTION_TRACE_SPAN, TraceSpanEvent {
+                                    emit_to(&*emitter, event_name::EXECUTION_TRACE_SPAN, &TraceSpanEvent {
                                         execution_id: exec_id_for_stream.clone(),
                                         span: span_data,
                                         event_type: "start".to_string(),
@@ -1310,15 +1337,17 @@ pub async fn run_execution(
 
                                 // Emit file change event if this is a file operation
                                 if let Some(file_change) = parser::extract_file_change(tool_name, input_preview) {
-                                    let _ = app.emit(
+                                    emit_to(
+                                        &*emitter,
                                         event_name::EXECUTION_FILE_CHANGE,
-                                        serde_json::json!({
+                                        &serde_json::json!({
                                             "execution_id": exec_id_for_stream,
                                             "path": file_change.path,
                                             "change_type": file_change.change_type,
                                         }),
                                     );
-                                    let _ = app.emit(
+                                    emit_to(
+                                        &*emitter,
                                         event_name::EXECUTION_EVENT,
                                         &StructuredExecutionEvent::FileChange {
                                             execution_id: exec_id_for_stream.clone(),
@@ -1358,7 +1387,7 @@ pub async fn run_execution(
                                     trace.end_span_ok(&span_id);
                                     // Emit live trace span end event
                                     if let Some(span_data) = trace.get_span(&span_id) {
-                                        let _ = app.emit(event_name::EXECUTION_TRACE_SPAN, TraceSpanEvent {
+                                        emit_to(&*emitter, event_name::EXECUTION_TRACE_SPAN, &TraceSpanEvent {
                                             execution_id: exec_id_for_stream.clone(),
                                             span: span_data,
                                             event_type: "end".to_string(),
@@ -1396,7 +1425,7 @@ pub async fn run_execution(
                                             None,
                                         );
                                         let mut dispatch_ctx = super::dispatch::DispatchContext::new(
-                                            &app,
+                                            &*emitter,
                                             &pool_for_stream,
                                             &exec_id_for_stream,
                                             &persona_id_for_stream,
@@ -1437,16 +1466,18 @@ pub async fn run_execution(
                 _ = heartbeat_interval.tick() => {
                     let elapsed_ms = start_time.elapsed().as_millis() as u64;
                     let silence_ms = last_activity.elapsed().as_millis() as u64;
-                    let _ = app.emit(
+                    emit_to(
+                        &*emitter,
                         event_name::EXECUTION_HEARTBEAT,
-                        HeartbeatEvent {
+                        &HeartbeatEvent {
                             execution_id: exec_id_for_stream.clone(),
                             elapsed_ms,
                             silence_ms,
                         },
                     );
                     // Also emit on structured channel
-                    let _ = app.emit(
+                    emit_to(
+                        &*emitter,
                         event_name::EXECUTION_EVENT,
                         &StructuredExecutionEvent::Heartbeat {
                             execution_id: exec_id_for_stream.clone(),
@@ -1486,9 +1517,10 @@ pub async fn run_execution(
     let stderr_text = stderr_handle.await.unwrap_or_default();
     if !stderr_text.is_empty() {
         logger.log(&format!("[STDERR] {}", stderr_text.trim()));
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {}", stderr_text.trim()),
             },
@@ -1500,9 +1532,10 @@ pub async fn run_execution(
     if timed_out {
         logger.log("[TIMEOUT] Execution timed out, killing process");
         driver.kill().await;
-        let _ = app.emit(
+        emit_to(
+            &*emitter,
             event_name::EXECUTION_OUTPUT,
-            ExecutionOutputEvent {
+            &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[TIMEOUT] Execution timed out after {}s", timeout_ms / 1000),
             },
@@ -1542,7 +1575,7 @@ pub async fn run_execution(
         if need_events || need_memories {
             let notif_ref = persona.notification_channels.as_deref();
             let mut dispatch_ctx = super::dispatch::DispatchContext::new(
-                &app,
+                &*emitter,
                 &pool,
                 &execution_id,
                 &persona.id,
@@ -1662,10 +1695,10 @@ pub async fn run_execution(
         if failover::classify_error(err).is_some() {
             let transitions = circuit_breaker.record_failure(active_engine_kind);
             for transition in &transitions {
-                let _ = app.emit(event_name::CIRCUIT_BREAKER_TRANSITION, transition);
+                emit_to(&*emitter, event_name::CIRCUIT_BREAKER_TRANSITION, transition);
             }
             if transitions.iter().any(|t| t.provider == "global") {
-                let _ = app.emit(event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, circuit_breaker.get_status());
+                emit_to(&*emitter, event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, &circuit_breaker.get_status());
             }
         }
     } else {
@@ -1710,18 +1743,19 @@ pub async fn run_execution(
         tracing::warn!(execution_id = %execution_id, "Failed to save execution trace: {}", e);
     }
     // Emit the complete trace to frontend
-    let _ = app.emit(event_name::EXECUTION_TRACE, &final_trace);
+    emit_to(&*emitter, event_name::EXECUTION_TRACE, &final_trace);
 
     // Emit process activity: final outcome
     {
         let action = if success { "completed" } else { "failed" };
-        super::process_activity::emit_process_activity(&app, "execution", action, Some(&execution_id), Some(&persona.name));
+        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", action, Some(&execution_id), Some(&persona.name)));
     }
 
     // Emit final status
-    let _ = app.emit(
+    emit_to(
+        &*emitter,
         event_name::EXECUTION_STATUS,
-        ExecutionStatusEvent {
+        &ExecutionStatusEvent {
             execution_id: execution_id.clone(),
             status: final_status,
             error: error.clone(),

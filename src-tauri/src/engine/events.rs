@@ -103,6 +103,20 @@ impl ExecutionEventEmitter for NoOpEmitter {
     }
 }
 
+/// Serialize a typed payload and emit through a trait object.
+///
+/// This is the workhorse helper for call sites that hold
+/// `Arc<dyn ExecutionEventEmitter>` or `&dyn ExecutionEventEmitter`
+/// (where the generic `emit()` method is not callable due to the
+/// `Self: Sized` bound).
+///
+/// ```ignore
+/// emit_to(&*emitter, event_name::EXECUTION_STATUS, &status_event);
+/// ```
+pub fn emit_to<P: Serialize>(emitter: &dyn ExecutionEventEmitter, event: &str, payload: &P) {
+    emitter.emit_json(event, serde_json::to_value(payload).unwrap_or(serde_json::Value::Null));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
