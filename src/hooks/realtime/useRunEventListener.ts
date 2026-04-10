@@ -99,6 +99,5 @@ export function useRunEventListener<T extends RunStatusPayload = RunStatusPayloa
     // bindings should be memoized by callers (e.g. via useMemo) to avoid
     // listener churn. We use bindings directly so the effect re-subscribes
     // only when the memoized array changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bindings]);
+  }, [bindings]); // bindings is memoized by callers — intentionally sparse deps
 }

@@ -35,6 +35,7 @@ const snapshots: Snapshot[] = [];
 let timerId: ReturnType<typeof setInterval> | null = null;
 
 function getHeapMB(): number {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chrome-only performance.memory API
   const m = (performance as any).memory;
   return m ? Math.round(m.usedJSHeapSize / 1048576) : -1;
 }
@@ -120,10 +121,11 @@ function tick(): void {
       console.error(alertMsg);
       // Write to Rust log
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tauri internal API not typed
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
           level: 'error', message: alertMsg + '\n' + summary
         });
-      } catch {}
+      } catch { /* best-effort IPC */ }
     }
   }
 
@@ -137,7 +139,7 @@ function tick(): void {
       alerts,
       history: snapshots.slice(-5),
     }));
-  } catch {}
+  } catch { /* best-effort persistence */ }
 }
 
 export function startMonitor(): void {
@@ -152,6 +154,7 @@ export function stopMonitor(): void {
 }
 
 // Expose on window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- debug console API
 (window as any).__STORE_MONITOR__ = {
   get snapshots() { return [...snapshots]; },
   get stores() { return Object.fromEntries(storeUpdates); },

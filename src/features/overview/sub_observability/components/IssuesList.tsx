@@ -17,7 +17,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (issues.length === 0) return;
-      let nextIndex = focusedIndex;
+      let nextIndex: number;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         nextIndex = focusedIndex < issues.length - 1 ? focusedIndex + 1 : 0;

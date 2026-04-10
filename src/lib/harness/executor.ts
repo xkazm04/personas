@@ -3,7 +3,7 @@
    Spawns Claude Code sessions for each area and parses structured results.
    ============================================================================== */
 
-import { execSync, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type {
@@ -280,6 +280,5 @@ export function appendAgentsMd(statePath: string, learnings: string[]): void {
   const date = new Date().toISOString().slice(0, 10);
   const existing = existsSync(path) ? readFileSync(path, 'utf-8') : '# Harness Learnings\n\n';
   const newContent = learnings.map((l) => `- [${date}] ${l}`).join('\n');
-  const { writeFileSync } = require('fs');
   writeFileSync(path, existing + '\n' + newContent + '\n', 'utf-8');
 }

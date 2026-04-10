@@ -40,7 +40,7 @@ export const PERSONAS_GATES: VerificationGate[] = [
 
 export function typographyAuditGate(scope: string[]): VerificationGate {
   // Count raw text-size classes in .tsx files (should be 0)
-  const scopeArgs = scope.map((s) => `--include="${s}/**/*.tsx"`).join(' ');
+  const _scopeArgs = scope.map((s) => `--include="${s}/**/*.tsx"`).join(' ');
   return {
     name: 'typography-audit',
     type: 'custom',

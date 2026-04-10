@@ -12,14 +12,12 @@ import type {
   HarnessGuide,
   HarnessOrchestrator,
   HarnessPlan,
-  ModuleArea,
-  ParsedAreaResult,
   ProgressEntry,
   ScenarioDefinition,
 } from './types';
 import { buildPlan, pickNextArea, updatePlanStats } from './plan-builder';
 import { executeArea, parseAreaResult, readAgentsMd, appendAgentsMd } from './executor';
-import { verify, PERSONAS_GATES } from './verifier';
+import { verify } from './verifier';
 import {
   createEmptyGuide,
   appendGuideStep,

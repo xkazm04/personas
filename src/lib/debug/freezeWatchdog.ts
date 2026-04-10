@@ -89,13 +89,14 @@ export function startWatchdog(): void {
           prev.push({ ...msg, report });
           if (prev.length > 10) prev.shift();
           localStorage.setItem('__watchdog_freezes', JSON.stringify(prev));
-        } catch {}
+        } catch { /* best-effort persistence */ }
         // Try IPC to Rust (may fail if thread is blocked)
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tauri internal API not typed
           (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
             level: 'error', message: report
           });
-        } catch {}
+        } catch { /* best-effort IPC */ }
       }
       if (msg.type === 'freeze_recovered') {
         console.warn(`[WATCHDOG] Thread recovered after ${msg.duration}ms`);
@@ -105,6 +106,7 @@ export function startWatchdog(): void {
     // Send heartbeats from main thread
     heartbeatTimer = setInterval(() => {
       if (!worker) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Chrome-only performance.memory API
       const mem = (performance as any).memory;
       worker.postMessage({
         type: 'heartbeat',

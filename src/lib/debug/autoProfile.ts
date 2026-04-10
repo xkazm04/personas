@@ -44,10 +44,11 @@ channel.port1.onmessage = () => {
     if (microCount > 1000 || promiseThenCount > 500) {
       console.error(`[MICROTASK STORM] ${report}`);
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tauri internal API not typed
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
           level: 'error', message: report
         });
-      } catch {}
+      } catch { /* best-effort logging */ }
     }
     // Persist to localStorage
     try {
@@ -58,7 +59,7 @@ channel.port1.onmessage = () => {
         messageChannelFires,
         elapsedMs: Math.round(elapsed),
       }));
-    } catch {}
+    } catch { /* best-effort persistence */ }
     microCount = 0;
     promiseThenCount = 0;
     messageChannelFires = 0;
@@ -69,6 +70,7 @@ channel.port1.onmessage = () => {
 channel.port2.postMessage(null);
 
 // Expose for console debugging
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- debug console API
 (window as any).__AUTO_PROFILE__ = {
   get micro() { return microCount; },
   get promises() { return promiseThenCount; },
