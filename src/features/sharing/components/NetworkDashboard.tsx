@@ -14,13 +14,13 @@ import type {
 } from '@/api/network/discovery';
 
 function healthColor(health: ConnectionHealth | null): string {
-  if (!health || health.connectedCount === 0) return 'rgb(156 163 175)'; // gray
-  if (health.missedPingCount > 0) return 'rgb(239 68 68)'; // red
+  if (!health || health.connectedCount === 0) return 'var(--muted-foreground)';
+  if (health.missedPingCount > 0) return 'var(--status-error)';
   const avg = health.avgLatencyMs;
-  if (avg === null) return 'rgb(156 163 175)'; // no data yet
-  if (avg < 100) return 'rgb(52 211 153)'; // green
-  if (avg <= 500) return 'rgb(251 191 36)'; // amber
-  return 'rgb(239 68 68)'; // red
+  if (avg === null) return 'var(--muted-foreground)';
+  if (avg < 100) return 'var(--status-success)';
+  if (avg <= 500) return 'var(--status-warning)';
+  return 'var(--status-error)';
 }
 
 function healthLabel(health: ConnectionHealth | null): string | null {

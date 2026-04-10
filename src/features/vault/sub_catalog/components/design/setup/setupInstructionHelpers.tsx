@@ -101,7 +101,7 @@ export function ProgressRingBadge({
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" style={{ stopColor: 'var(--color-primary)', stopOpacity: 0.6 }} />
-            <stop offset="100%" style={{ stopColor: 'rgb(16 185 129)', stopOpacity: 0.6 }} />
+            <stop offset="100%" style={{ stopColor: 'var(--status-success)', stopOpacity: 0.6 }} />
           </linearGradient>
         </defs>
       </svg>

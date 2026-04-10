@@ -103,19 +103,19 @@ export function DeploymentHealthSparkline({ daily }: DeploymentHealthSparklinePr
     <div className="flex items-center gap-2">
       <MiniSparkline
         values={successRates}
-        color="rgb(52 211 153)"
+        color="var(--status-success)"
         label="Success rate"
         formatValue={(v) => `${v.toFixed(0)}%`}
       />
       <MiniSparkline
         values={volumes}
-        color="rgb(96 165 250)"
+        color="var(--status-info)"
         label="Volume"
         formatValue={(v) => `${v}`}
       />
       <MiniSparkline
         values={errorCounts}
-        color="rgb(248 113 113)"
+        color="var(--status-error)"
         label="Errors"
         formatValue={(v) => `${v}`}
       />

@@ -23,10 +23,10 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
       : 100
     : 0;
   const railGradient = hasErrors
-    ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(239 68 68 / 0.6))'
+    ? `linear-gradient(to bottom, color-mix(in srgb, var(--status-info) 60%, transparent), color-mix(in srgb, var(--status-error) 60%, transparent))`
     : isLive
-      ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(245 158 11 / 0.6))'
-      : 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(16 185 129 / 0.6))';
+      ? `linear-gradient(to bottom, color-mix(in srgb, var(--status-info) 60%, transparent), color-mix(in srgb, var(--status-warning) 60%, transparent))`
+      : `linear-gradient(to bottom, color-mix(in srgb, var(--status-info) 60%, transparent), color-mix(in srgb, var(--status-success) 60%, transparent))`;
 
   return (
     <div className="space-y-6">

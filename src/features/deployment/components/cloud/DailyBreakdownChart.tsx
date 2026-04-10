@@ -11,13 +11,13 @@ export interface DailyPoint {
 const CHART_H = 100;
 const BAR_GAP = 2;
 const LABEL_H = 16;
-const COST_LINE_COLOR = 'rgb(129 140 248)'; // indigo-400
+const COST_LINE_COLOR = 'var(--primary)';
 
 function successColor(rate: number | null): string {
-  if (rate == null) return 'rgb(148 163 184)'; // slate-400
-  if (rate >= 0.9) return 'rgb(52 211 153)';   // emerald-400
-  if (rate >= 0.7) return 'rgb(251 191 36)';   // amber-400
-  return 'rgb(248 113 113)';                    // red-400
+  if (rate == null) return 'var(--muted-foreground)';
+  if (rate >= 0.9) return 'var(--status-success)';
+  if (rate >= 0.7) return 'var(--status-warning)';
+  return 'var(--status-error)';
 }
 
 function formatShortDate(iso: string): string {
@@ -67,7 +67,7 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
         <span className="text-[11px] font-medium text-muted-foreground/70">Daily Executions</span>
         <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: 'rgb(52 211 153)' }} />
+            <span className="inline-block w-2 h-2 rounded-sm" style={{ background: 'var(--status-success)' }} />
             Runs
           </span>
           <span className="flex items-center gap-1">

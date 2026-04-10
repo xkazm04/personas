@@ -35,7 +35,7 @@ export function CostSparkline({ costs }: { costs: number[] }) {
       <polyline
         points={points.join(' ')}
         fill="none"
-        stroke="rgb(161 161 170)" // zinc-400
+        stroke="var(--muted-foreground)"
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -45,7 +45,7 @@ export function CostSparkline({ costs }: { costs: number[] }) {
           cx={lastX.toFixed(1)}
           cy={lastY.toFixed(1)}
           r="2"
-          fill="rgb(251 191 36)" // amber-400
+          fill="var(--status-warning)"
         />
       )}
     </svg>
