@@ -51,6 +51,17 @@
 - [2026-04-10] Mobile sidebar (IS_MOBILE) now has focus trap + Escape handler + backdrop click dismiss. Pattern can be reused for other mobile drawers
 - [2026-04-10] Many views return `null` during loading instead of showing a spinner — always return a visual loading indicator. Use `LoadingSpinner` from `src/features/shared/components/feedback/LoadingSpinner.tsx` or inline spinner pattern
 
+## Light Theme System
+
+- [2026-04-10] 3 light themes: `light` (warm beige #e9e6df), `light-ice` (cool blue #e8eff6), `light-news` (newspaper gray #e0ded9). All ~90% lightness
+- [2026-04-10] `[data-theme^="light"]` CSS selectors target all light themes at once. Prefer this over individual theme selectors unless News needs monochrome override
+- [2026-04-10] `bg-white/[0.015]` zebra striping is invisible on light themes — CSS now overrides to `rgba(0,0,0,0.035)`. Do NOT use `bg-white/*` for subtle backgrounds; use `bg-primary/*` or `bg-secondary/*` which adapt per theme
+- [2026-04-10] `hover:bg-white/[0.02-0.05]` hover states invisible on light — CSS now overrides. Same rule: never use white-based opacity for hover on semantic surfaces
+- [2026-04-10] Text color light overrides exist for: violet, emerald, cyan, amber, sky, rose, red, indigo, pink, teal, blue, purple, orange, slate, green, fuchsia, lime, zinc, yellow, gray. If using a NEW Tailwind color, add a `[data-theme^="light"]` override in globals.css
+- [2026-04-10] `text-white/*` is dark-theme-only. Use `text-foreground/*` or `text-muted-foreground/*` for theme-safe text. CSS now overrides text-white/30-80 to foreground-based colors on light themes as a safety net
+- [2026-04-10] Badge.tsx neutral variant now uses `bg-secondary/40 border-border/50 text-muted-foreground` instead of white-based — safe on all themes
+- [2026-04-10] light-news `--accent: #555555` makes focus rings near-invisible. Fixed with explicit `--focus-ring-color: rgba(26,26,26,0.5)`. light-news also has stronger shadow-elevation values and darker glass-bg
+
 ## Build & Tooling
 
 - [2026-04-02] TypeScript check: `npx tsc --noEmit` (tsc not on PATH directly on Windows)
