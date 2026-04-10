@@ -6,13 +6,7 @@ import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-
-// -- Interactive Importance Bar (clickable, 1-5 scale) -------------------------
-function getBarGradient(val: number): string {
-  if (val <= 2) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
-  if (val <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
-  return 'linear-gradient(90deg, rgb(251, 191, 36), rgb(251, 113, 133))';
-}
+import { getImportanceGradient } from './MemoryCard';
 
 function InteractiveImportanceBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const maxScale = 5;
@@ -47,7 +41,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
       >
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-200"
-          style={{ width: `${pct}%`, background: getBarGradient(value) }}
+          style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
         />
       </div>
       <span className="text-sm text-muted-foreground/90 tabular-nums min-w-[24px]">({value}/{maxScale})</span>
