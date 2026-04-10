@@ -51,6 +51,9 @@ export function Listbox({
         e.preventDefault();
         onSelectFocused?.(focusIndex);
         setOpen(false);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
       }
     };
     document.addEventListener('keydown', handleKey);

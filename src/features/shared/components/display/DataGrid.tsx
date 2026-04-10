@@ -215,9 +215,10 @@ export function DataGrid<T>({
                 key={col.key}
                 type="button"
                 onClick={() => onSort(col.key)}
-                className={`px-4 py-2.5 typo-label text-foreground/80 flex items-center gap-1 hover:text-foreground transition-colors ${
+                className={`px-4 py-2.5 typo-label text-foreground/80 flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
                   col.align === 'right' ? 'justify-end' : ''
                 }`}
+                aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
               >
                 {col.label}
                 <SortIcon className={`w-3 h-3 ${isSorted ? 'text-foreground' : 'text-foreground/40'}`} />
