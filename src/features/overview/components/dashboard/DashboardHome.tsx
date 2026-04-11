@@ -17,6 +17,7 @@ import { DashboardEmptyState } from './DashboardEmptyState';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import RemoteControlCard from '@/features/overview/components/dashboard/cards/RemoteControlCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
+import { TopPerformersWidget } from './widgets/TopPerformersWidget';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
@@ -160,6 +161,7 @@ export default function DashboardHome() {
           <ResumeSetupCard />
           <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
           <FleetOptimizationCard />
+          <TopPerformersWidget />
 
           {isEmptyDashboard ? (
             <DashboardEmptyState />
