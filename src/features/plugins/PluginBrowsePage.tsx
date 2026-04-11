@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Puzzle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PluginDef {
   id: PluginTab;
@@ -14,55 +15,16 @@ interface PluginDef {
   activeBorder: string;
 }
 
-const PLUGINS: PluginDef[] = [
-  {
-    id: 'artist',
-    label: 'Artist',
-    description: 'Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.',
-    icon: Palette,
-    color: 'text-rose-400',
-    activeBg: 'bg-rose-500/10',
-    activeBorder: 'border-rose-500/20',
-  },
-  {
-    id: 'dev-tools',
-    label: 'Dev Tools',
-    description: 'Project management, context mapping, idea scanning, triage, and task runner utilities.',
-    icon: Wrench,
-    color: 'text-amber-400',
-    activeBg: 'bg-amber-500/10',
-    activeBorder: 'border-amber-500/20',
-  },
-  {
-    id: 'doc-signing',
-    label: 'Doc Signing',
-    description: 'Sign and verify documents with digital signatures directly from your workspace.',
-    icon: FileSignature,
-    color: 'text-blue-400',
-    activeBg: 'bg-blue-500/10',
-    activeBorder: 'border-blue-500/20',
-  },
-  {
-    id: 'obsidian-brain',
-    label: 'Obsidian Brain',
-    description: 'Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.',
-    icon: Brain,
-    color: 'text-violet-400',
-    activeBg: 'bg-violet-500/10',
-    activeBorder: 'border-violet-500/20',
-  },
-  {
-    id: 'ocr',
-    label: 'OCR',
-    description: 'Extract text from images and PDFs using Gemini Vision or Claude multimodal.',
-    icon: ScanLine,
-    color: 'text-cyan-400',
-    activeBg: 'bg-cyan-500/10',
-    activeBorder: 'border-cyan-500/20',
-  },
-];
-
 export default function PluginBrowsePage() {
+  const { t } = useTranslation();
+
+  const PLUGINS: PluginDef[] = [
+    { id: 'artist', label: t.plugins.artist_label, description: t.plugins.artist_desc, icon: Palette, color: 'text-rose-400', activeBg: 'bg-rose-500/10', activeBorder: 'border-rose-500/20' },
+    { id: 'dev-tools', label: t.plugins.dev_tools_label, description: t.plugins.dev_tools_desc, icon: Wrench, color: 'text-amber-400', activeBg: 'bg-amber-500/10', activeBorder: 'border-amber-500/20' },
+    { id: 'doc-signing', label: t.plugins.doc_signing_label, description: t.plugins.doc_signing_desc, icon: FileSignature, color: 'text-blue-400', activeBg: 'bg-blue-500/10', activeBorder: 'border-blue-500/20' },
+    { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
+    { id: 'ocr', label: t.plugins.ocr_label, description: t.plugins.ocr_desc, icon: ScanLine, color: 'text-cyan-400', activeBg: 'bg-cyan-500/10', activeBorder: 'border-cyan-500/20' },
+  ];
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);
 
@@ -71,8 +33,8 @@ export default function PluginBrowsePage() {
       <ContentHeader
         icon={<Puzzle className="w-5 h-5 text-primary/80" />}
         iconColor="primary"
-        title="Plugins"
-        subtitle="Extend your workspace with plugins. Toggle to show or hide from the sidebar."
+        title={t.plugins.title}
+        subtitle={t.plugins.subtitle}
       />
 
       <ContentBody centered>

@@ -5,8 +5,10 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { GalleryMode } from '../types';
 import Gallery2D from './Gallery2D';
 import Gallery3D from './Gallery3D';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function GalleryPage() {
+  const { t } = useTranslation();
   const galleryMode = useSystemStore((s) => s.galleryMode);
   const setGalleryMode = useSystemStore((s) => s.setGalleryMode);
   const artistFolder = useSystemStore((s) => s.artistFolder);
@@ -38,8 +40,8 @@ export default function GalleryPage() {
   const toggleSort = () => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
 
   const modes: { id: GalleryMode; label: string; icon: typeof Image }[] = [
-    { id: '2d', label: '2D Images', icon: Image },
-    { id: '3d', label: '3D Models', icon: Box },
+    { id: '2d', label: t.plugins.artist.mode_2d, icon: Image },
+    { id: '3d', label: t.plugins.artist.mode_3d, icon: Box },
   ];
 
   return (

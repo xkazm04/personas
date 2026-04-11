@@ -16,6 +16,7 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -104,6 +105,7 @@ function finalizeContextScan(args: ContextScanFinalize, clearLines: () => void) 
 // ---------------------------------------------------------------------------
 
 export default function ContextMapPage() {
+  const { t } = useTranslation();
   const { fetchContextMap, createContextGroup, scanCodebase } = useDevToolsActions();
 
   const storeGroups = useSystemStore((s) => s.contextGroups);
@@ -297,12 +299,12 @@ export default function ContextMapPage() {
       <ContentHeader
         icon={<Map className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Context Map"
-        subtitle="Scan codebases into business-feature contexts"
+        title={t.plugins.dev_tools.context_map_title}
+        subtitle={t.plugins.dev_tools.context_map_subtitle}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>Group</Button>
-            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>Scan Codebase</Button>
+            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>{t.plugins.dev_tools.group}</Button>
+            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
           </div>
         }
       />

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
+  Zap, Layers, Building2,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -14,6 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
 import { SelfHealingPanel } from './SelfHealingPanel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,6 +35,7 @@ interface RunnerTask {
   goalId?: string;
   output?: string;
   createdAt: string;
+  depth: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +86,12 @@ function StatusBadge({ status }: { status: TaskStatus }) {
 // Task Creation Modal
 // ---------------------------------------------------------------------------
 
+const DEPTH_OPTIONS = [
+  { value: 'quick', label: 'Quick', icon: Zap, description: 'Execute directly, minimal planning', color: 'emerald' },
+  { value: 'campaign', label: 'Campaign', icon: Layers, description: 'Break into subtasks, multiple deliverables', color: 'amber' },
+  { value: 'deep_build', label: 'Deep Build', icon: Building2, description: 'Full research, planning, and implementation', color: 'violet' },
+] as const;
+
 function TaskModal({
   open,
   onClose,
@@ -90,19 +99,22 @@ function TaskModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { title: string; description: string; goalId?: string }) => void;
+  onCreate: (data: { title: string; description: string; goalId?: string; depth?: string }) => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [goalId, setGoalId] = useState('');
+  const [depth, setDepth] = useState<string>('quick');
   const { shouldAnimate: _shouldAnimate } = useMotion();
 
   const handleSubmit = () => {
     if (!title.trim()) return;
-    onCreate({ title: title.trim(), description: description.trim(), goalId: goalId.trim() || undefined });
+    onCreate({ title: title.trim(), description: description.trim(), goalId: goalId.trim() || undefined, depth });
     setTitle('');
     setDescription('');
     setGoalId('');
+    setDepth('quick');
     onClose();
   };
 
@@ -118,7 +130,7 @@ function TaskModal({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-foreground/90">New Task</h2>
+            <h2 className="text-base font-semibold text-foreground/90">{t.plugins.dev_tools.new_task}</h2>
             <Button variant="ghost" size="icon-sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
@@ -144,6 +156,33 @@ function TaskModal({
                 className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
               />
             </div>
+
+            {/* Task depth selector */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Task Depth</label>
+              <div className="grid grid-cols-3 gap-2">
+                {DEPTH_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const selected = depth === opt.value;
+                  const ring = selected ? `ring-2 ring-${opt.color}-500/40 border-${opt.color}-500/40` : 'border-primary/10 hover:border-primary/20';
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setDepth(opt.value)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border bg-secondary/30 transition-all ${ring}`}
+                    >
+                      <Icon className={`w-4 h-4 ${selected ? `text-${opt.color}-400` : 'text-muted-foreground/60'}`} />
+                      <span className={`text-xs font-medium ${selected ? 'text-foreground' : 'text-muted-foreground/70'}`}>{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground/50 mt-1.5">
+                {DEPTH_OPTIONS.find((o) => o.value === depth)?.description}
+              </p>
+            </div>
+
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
                 Goal Link <span className="text-muted-foreground/40">(optional)</span>
@@ -204,7 +243,18 @@ function TaskCard({
         <StatusBadge status={task.status} />
 
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-foreground/80 truncate">{task.title}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-medium text-foreground/80 truncate">{task.title}</h4>
+            {task.depth && task.depth !== 'quick' && (
+              <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${
+                task.depth === 'campaign'
+                  ? 'text-amber-400 border-amber-500/25 bg-amber-500/10'
+                  : 'text-violet-400 border-violet-500/25 bg-violet-500/10'
+              }`}>
+                {task.depth === 'campaign' ? 'Campaign' : 'Deep Build'}
+              </span>
+            )}
+          </div>
           {task.source && (
             <p className="text-[10px] text-muted-foreground/40 mt-0.5">Source: {task.source}</p>
           )}
@@ -239,6 +289,15 @@ function TaskCard({
         )}
       </div>
 
+      {/* Last-exchange preview (collapsed) */}
+      {!expanded && outputLines.length > 0 && (
+        <div className="px-4 pb-2 -mt-1">
+          <p className="text-[10px] text-foreground/50 truncate leading-relaxed font-mono">
+            {outputLines[outputLines.length - 1]}
+          </p>
+        </div>
+      )}
+
       {/* Expanded output */}
       {expanded && hasOutput && (
           <div
@@ -268,6 +327,7 @@ function TaskCard({
 // ---------------------------------------------------------------------------
 
 export default function TaskRunnerPage() {
+  const { t } = useTranslation();
   const { createTask, batchFromAcceptedIdeas: batchFromAccepted, startBatch, cancelAllTasks: cancelAll } = useDevToolsActions();
 
   const storeTasks = useSystemStore((s) => s.tasks);
@@ -290,6 +350,7 @@ export default function TaskRunnerPage() {
     goalId: t.goal_id ?? undefined,
     output: undefined,
     createdAt: t.created_at,
+    depth: t.depth ?? 'quick',
   }));
 
   // Fetch tasks on mount and when project changes
@@ -340,7 +401,7 @@ export default function TaskRunnerPage() {
     ? tasks.reduce((acc, t) => acc + t.progress, 0) / totalCount
     : 0;
 
-  const handleCreateTask = useCallback((data: { title: string; description: string; goalId?: string }) => {
+  const handleCreateTask = useCallback((data: { title: string; description: string; goalId?: string; depth?: string }) => {
     createTask(data);
   }, [createTask]);
 
@@ -349,8 +410,8 @@ export default function TaskRunnerPage() {
       <ContentHeader
         icon={<Play className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Task Runner"
-        subtitle="Batch execution queue for accepted tasks"
+        title={t.plugins.dev_tools.task_runner_title}
+        subtitle={t.plugins.dev_tools.task_runner_subtitle}
         actions={
           <div className="flex items-center gap-2">
             <Button

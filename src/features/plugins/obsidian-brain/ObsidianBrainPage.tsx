@@ -4,20 +4,22 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import type { ObsidianBrainTab } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const SyncPanel = lazy(() => import('./sub_sync/SyncPanel'));
 const BrowsePanel = lazy(() => import('./sub_browse/BrowsePanel'));
 const CloudSyncPanel = lazy(() => import('./sub_cloud/CloudSyncPanel'));
 
-const tabs: { id: ObsidianBrainTab; label: string; icon: typeof Brain }[] = [
-  { id: 'setup', label: 'Setup', icon: Settings },
-  { id: 'sync', label: 'Sync', icon: RefreshCw },
-  { id: 'browse', label: 'Browse Vault', icon: FolderOpen },
-  { id: 'cloud', label: 'Cloud', icon: Cloud },
-];
-
 export default function ObsidianBrainPage() {
+  const { t } = useTranslation();
+
+  const tabs: { id: ObsidianBrainTab; label: string; icon: typeof Brain }[] = [
+    { id: 'setup', label: t.plugins.obsidian_brain.tab_setup, icon: Settings },
+    { id: 'sync', label: t.plugins.obsidian_brain.tab_sync, icon: RefreshCw },
+    { id: 'browse', label: t.plugins.obsidian_brain.tab_browse, icon: FolderOpen },
+    { id: 'cloud', label: t.plugins.obsidian_brain.tab_cloud, icon: Cloud },
+  ];
   const obsidianBrainTab = useSystemStore((s) => s.obsidianBrainTab);
   const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
   const pendingConflicts = useSystemStore((s) => s.obsidianPendingConflicts);
@@ -27,8 +29,8 @@ export default function ObsidianBrainPage() {
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Obsidian Brain"
-        subtitle="Bidirectional sync between your Obsidian vault and Personas"
+        title={t.plugins.obsidian_brain.title}
+        subtitle={t.plugins.obsidian_brain.subtitle}
         actions={
           <div className="flex items-center gap-1">
             {tabs.map((t) => {

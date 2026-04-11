@@ -8,6 +8,7 @@ import { useCreativeSession } from '../hooks/useCreativeSession';
 import { useCreativeConnectors } from '../hooks/useCreativeConnectors';
 import { useSystemStore } from '@/stores/systemStore';
 import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function CreativeStudioPanel() {
   const { status, checking, installing, check, installMcp } = useBlenderMcp();
@@ -72,6 +73,7 @@ function EnvironmentStatus({
   onInstall: () => void;
   connectors: ConnectorInfoType[];
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(!status);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
@@ -93,7 +95,7 @@ function EnvironmentStatus({
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <h3 className="typo-heading text-foreground">Environment Status</h3>
+          <h3 className="typo-heading text-foreground">{t.plugins.artist.env_status}</h3>
           {status && !expanded && (
             <div className="flex items-center gap-1.5 ml-2">
               {status.installed && <StatusDot ok />}
@@ -220,6 +222,7 @@ function CreativeSessionChat({
   blenderReady: boolean;
   connectors: ConnectorInfoType[];
 }) {
+  const { t } = useTranslation();
   const { running, output, sendPrompt, cancel, clear } = useCreativeSession();
   const [prompt, setPrompt] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -253,7 +256,7 @@ function CreativeSessionChat({
       <div className="flex items-center justify-between px-5 py-3 border-b border-primary/5">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-rose-400" />
-          <h3 className="typo-heading text-foreground">Creative Session</h3>
+          <h3 className="typo-heading text-foreground">{t.plugins.artist.creative_session}</h3>
           {running && (
             <span className="flex items-center gap-1 text-[10px] text-emerald-400 ml-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -272,7 +275,7 @@ function CreativeSessionChat({
             </span>
           ))}
           {availableTools.length === 0 && (
-            <span className="text-[10px] text-amber-400">No tools connected</span>
+            <span className="text-[10px] text-amber-400">{t.plugins.artist.no_tools_connected}</span>
           )}
           {output.length > 0 && (
             <button

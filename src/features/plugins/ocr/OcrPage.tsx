@@ -15,17 +15,19 @@ import {
   type OcrDocument,
   type OcrResult,
 } from '@/api/ocr';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Tab = 'extract' | 'compare' | 'history';
 type Provider = 'gemini' | 'claude';
 
 export default function OcrPage() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('extract');
 
   const tabs: { id: Tab; label: string; icon: typeof ScanLine }[] = [
-    { id: 'extract', label: 'Extract', icon: ScanLine },
-    { id: 'compare', label: 'Compare', icon: Columns2 },
-    { id: 'history', label: 'History', icon: History },
+    { id: 'extract', label: t.plugins.ocr.tab_extract, icon: ScanLine },
+    { id: 'compare', label: t.plugins.ocr.tab_compare, icon: Columns2 },
+    { id: 'history', label: t.plugins.ocr.tab_history, icon: History },
   ];
 
   return (
@@ -33,8 +35,8 @@ export default function OcrPage() {
       <ContentHeader
         icon={<ScanLine className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="OCR"
-        subtitle="Extract and compare text from images and documents"
+        title={t.plugins.ocr.title}
+        subtitle={t.plugins.ocr.subtitle}
         actions={
           <div className="flex items-center gap-1">
             {tabs.map((t) => {

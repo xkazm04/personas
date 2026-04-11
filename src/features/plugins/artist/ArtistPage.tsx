@@ -1,18 +1,22 @@
 import { lazy, Suspense } from 'react';
-import { Palette, Wand2, Image } from 'lucide-react';
+import { Palette, Wand2, Image, Film } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { ArtistTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CreativeStudioPanel = lazy(() => import('./sub_blender/CreativeStudioPanel'));
 const GalleryPage = lazy(() => import('./sub_gallery/GalleryPage'));
-
-const tabs: { id: ArtistTab; label: string; icon: typeof Palette }[] = [
-  { id: 'blender', label: 'Creative Studio', icon: Wand2 },
-  { id: 'gallery', label: 'Gallery', icon: Image },
-];
+const MediaStudioPage = lazy(() => import('./sub_media_studio/MediaStudioPage'));
 
 export default function ArtistPage() {
+  const { t } = useTranslation();
+
+  const tabs: { id: ArtistTab; label: string; icon: typeof Palette }[] = [
+    { id: 'blender', label: t.plugins.artist.tab_creative_studio, icon: Wand2 },
+    { id: 'gallery', label: t.plugins.artist.tab_gallery, icon: Image },
+    { id: 'media-studio', label: t.plugins.artist.tab_media_studio, icon: Film },
+  ];
   const artistTab = useSystemStore((s) => s.artistTab);
   const setArtistTab = useSystemStore((s) => s.setArtistTab);
 
@@ -21,8 +25,8 @@ export default function ArtistPage() {
       <ContentHeader
         icon={<Palette className="w-5 h-5 text-rose-400" />}
         iconColor="red"
-        title="Artist"
-        subtitle="Generate 3D models, create images, and manage creative assets"
+        title={t.plugins.artist.title}
+        subtitle={t.plugins.artist.subtitle}
         actions={
           <div className="flex items-center gap-1">
             {tabs.map((t) => {
@@ -51,6 +55,7 @@ export default function ArtistPage() {
           <Suspense fallback={null}>
             {artistTab === 'blender' && <CreativeStudioPanel />}
             {artistTab === 'gallery' && <GalleryPage />}
+            {artistTab === 'media-studio' && <MediaStudioPage />}
           </Suspense>
         </div>
       </ContentBody>

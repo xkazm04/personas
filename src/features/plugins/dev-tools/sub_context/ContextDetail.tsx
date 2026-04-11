@@ -1,8 +1,10 @@
 import { X, File, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import type { ContextItem } from './contextMapTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in w-80 flex-shrink-0 border-l border-primary/10 pl-5 overflow-y-auto"
@@ -32,7 +34,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
 
       {ctx.keywords.length > 0 && (
         <div className="mb-4">
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">Keywords</h4>
+          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">{t.plugins.dev_tools.keywords}</h4>
           <div className="flex flex-wrap gap-1.5">
             {ctx.keywords.map((kw) => (
               <span key={kw} className="px-2 py-0.5 text-[10px] bg-primary/5 border border-primary/10 rounded-full text-muted-foreground/60">
@@ -45,7 +47,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
 
       {ctx.entryPoints.length > 0 && (
         <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">Entry Points</h4>
+          <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">{t.plugins.dev_tools.entry_points}</h4>
           <div className="space-y-1">
             {ctx.entryPoints.map((ep) => (
               <div key={ep} className="flex items-center gap-1.5 text-xs text-muted-foreground/60 py-0.5">

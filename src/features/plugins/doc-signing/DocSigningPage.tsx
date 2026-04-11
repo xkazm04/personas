@@ -19,16 +19,18 @@ import {
 } from '@/api/signing';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Tab = 'sign' | 'verify' | 'history';
 
-const DOC_TABS: { id: Tab; label: string }[] = [
-  { id: 'sign', label: 'Sign' },
-  { id: 'verify', label: 'Verify' },
-  { id: 'history', label: 'History' },
-];
-
 export default function DocSigningPage() {
+  const { t } = useTranslation();
+
+  const DOC_TABS: { id: Tab; label: string }[] = [
+    { id: 'sign', label: t.plugins.doc_signing.tab_sign },
+    { id: 'verify', label: t.plugins.doc_signing.tab_verify },
+    { id: 'history', label: t.plugins.doc_signing.tab_history },
+  ];
   const [tab, setTab] = useState<Tab>('sign');
 
   return (
@@ -36,8 +38,8 @@ export default function DocSigningPage() {
       <ContentHeader
         icon={<FileSignature className="w-5 h-5 text-rose-400" />}
         iconColor="red"
-        title="Document Signing"
-        subtitle="Ed25519 digital signatures with portable sidecar verification"
+        title={t.plugins.doc_signing.title}
+        subtitle={t.plugins.doc_signing.subtitle}
       >
         <PanelTabBar
           tabs={DOC_TABS}

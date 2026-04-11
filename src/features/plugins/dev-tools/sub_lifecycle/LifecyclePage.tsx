@@ -3,7 +3,7 @@ import {
   GitBranch, Zap, CheckCircle2, XCircle, AlertCircle,
   RefreshCw, Bot, Target, ClipboardCheck,
   Brain, Play, Clock, Download, FolderKanban,
-  ShieldCheck, Sparkles,
+  ShieldCheck, Sparkles, LayoutGrid, Network,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -14,10 +14,12 @@ import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import GoalConstellation from './GoalConstellation';
+import GoalKanban from './GoalKanban';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { useDevCloneAdoption } from './useDevCloneAdoption';
 import { CompetitionPanel } from './CompetitionPanel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Flow step definitions
@@ -170,6 +172,7 @@ function PrereqRow({
 // ---------------------------------------------------------------------------
 
 export default function LifecyclePage() {
+  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
@@ -182,6 +185,7 @@ export default function LifecyclePage() {
   const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
   const [loading, setLoading] = useState(true);
   const [configuring, setConfiguring] = useState(false);
+  const [goalView, setGoalView] = useState<'kanban' | 'constellation'>('kanban');
 
   // Discover dev-clone persona and its triggers
   const refresh = useCallback(async () => {
@@ -392,8 +396,8 @@ export default function LifecyclePage() {
       <ContentHeader
         icon={<GitBranch className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Dev Lifecycle"
-        subtitle="Autonomous development flow: scan → goals → review → build → learn"
+        title={t.plugins.dev_tools.lifecycle_title}
+        subtitle={t.plugins.dev_tools.lifecycle_subtitle}
         actions={
           <div className="flex items-center gap-2">
             <LifecycleProjectPicker />
@@ -424,7 +428,7 @@ export default function LifecyclePage() {
                 onClick={handleAutoSetup}
                 loading={configuring}
                 disabled={!devClone}
-                disabledReason={!devClone ? 'Adopt Dev Clone first' : undefined}
+                disabledReason={!devClone ? t.plugins.dev_tools.adopt_first : undefined}
               >
                 Auto-Setup
               </Button>
@@ -547,31 +551,66 @@ export default function LifecyclePage() {
               })}
             </div>
 
-            {/* Trigger details */}
+            {/* Scheduled tasks & triggers dashboard */}
             {triggers.length > 0 && (
               <div className="space-y-2">
                 <h3 className="typo-caption text-foreground uppercase tracking-wider">
-                  Active Triggers ({triggers.length})
+                  Scheduled Tasks & Triggers ({triggers.length})
                 </h3>
                 <div className="border border-primary/15 rounded-card overflow-hidden">
                   {triggers.map((t) => {
-                    let configLabel = t.trigger_type;
+                    let cronExpr: string | null = null;
+                    let eventType: string | null = null;
                     try {
                       const cfg = JSON.parse(t.config ?? '{}');
-                      if (cfg.listen_event_type) configLabel = cfg.listen_event_type;
-                      else if (cfg.cron) configLabel = `cron: ${cfg.cron}`;
+                      if (cfg.cron) {
+                        cronExpr = cfg.cron;
+                      } else if (cfg.listen_event_type) {
+                        eventType = cfg.listen_event_type;
+                      }
                     } catch { /* use default */ }
+
+                    const isSchedule = t.trigger_type === 'schedule';
+
                     return (
                       <div key={t.id} className="flex items-center gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0">
-                        <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                        <span className="typo-body text-foreground flex-1">{t.trigger_type}</span>
-                        <span className="typo-code text-foreground">{configLabel}</span>
+                        <div className={`w-7 h-7 rounded-interactive flex items-center justify-center shrink-0 ${
+                          isSchedule
+                            ? 'bg-blue-500/15 border border-blue-500/25'
+                            : 'bg-amber-500/10 border border-amber-500/20'
+                        }`}>
+                          {isSchedule ? (
+                            <Clock className="w-3.5 h-3.5 text-blue-400" />
+                          ) : (
+                            <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="typo-body text-foreground block truncate">
+                            {isSchedule ? 'Scheduled Task' : eventType ?? t.trigger_type}
+                          </span>
+                          {cronExpr && (
+                            <span className="text-[10px] font-mono text-foreground/50">{cronExpr}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          {t.last_triggered_at && (
+                            <span className="text-[10px] text-muted-foreground/40">
+                              Last: {new Date(t.last_triggered_at).toLocaleDateString()}
+                            </span>
+                          )}
+                          {t.next_trigger_at && (
+                            <span className="text-[10px] text-blue-400/50">
+                              Next: {new Date(t.next_trigger_at).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
                         <span className={`rounded-full px-2 py-0.5 typo-caption font-medium border ${
                           t.enabled
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
                             : 'bg-red-500/15 text-red-400 border-red-500/25'
                         }`}>
-                          {t.enabled ? 'enabled' : 'disabled'}
+                          {t.enabled ? 'active' : 'paused'}
                         </span>
                       </div>
                     );
@@ -580,30 +619,57 @@ export default function LifecyclePage() {
               </div>
             )}
 
-            {/* Goal Constellation */}
+            {/* Goals — kanban or constellation view */}
             {goals.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="typo-caption text-foreground uppercase tracking-wider">
-                    Goal Constellation
+                    {goalView === 'kanban' ? 'Goal Board' : 'Goal Constellation'}
                   </h3>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={async () => {
-                      if (!activeProjectId) return;
-                      try {
-                        const result = await obsidianBrainPushGoals(activeProjectId);
-                        addToast(`Goals synced to Obsidian: ${result.created} created, ${result.updated} updated`, 'success');
-                      } catch {
-                        addToast('Obsidian sync failed — configure vault in Obsidian Brain plugin first', 'error');
-                      }
-                    }}
-                  >
-                    Sync to Obsidian
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {/* View toggle */}
+                    <div className="flex items-center rounded-lg border border-primary/10 overflow-hidden">
+                      <button
+                        onClick={() => setGoalView('kanban')}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                          goalView === 'kanban'
+                            ? 'bg-primary/10 text-foreground'
+                            : 'text-muted-foreground/50 hover:text-foreground/70'
+                        }`}
+                      >
+                        <LayoutGrid className="w-3 h-3" />
+                        Board
+                      </button>
+                      <button
+                        onClick={() => setGoalView('constellation')}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                          goalView === 'constellation'
+                            ? 'bg-primary/10 text-foreground'
+                            : 'text-muted-foreground/50 hover:text-foreground/70'
+                        }`}
+                      >
+                        <Network className="w-3 h-3" />
+                        Graph
+                      </button>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={async () => {
+                        if (!activeProjectId) return;
+                        try {
+                          const result = await obsidianBrainPushGoals(activeProjectId);
+                          addToast(`Goals synced to Obsidian: ${result.created} created, ${result.updated} updated`, 'success');
+                        } catch {
+                          addToast('Obsidian sync failed — configure vault in Obsidian Brain plugin first', 'error');
+                        }
+                      }}
+                    >
+                      Sync to Obsidian
+                    </Button>
+                  </div>
                 </div>
-                <GoalConstellation />
+                {goalView === 'kanban' ? <GoalKanban /> : <GoalConstellation />}
               </div>
             )}
 

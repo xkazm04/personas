@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Square, Terminal } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function ScanOverlay({
   scanning,
@@ -12,6 +13,7 @@ export default function ScanOverlay({
   lines: string[];
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,8 +34,8 @@ export default function ScanOverlay({
               <LoadingSpinner size="lg" className="text-amber-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground/90">Scanning Codebase</h3>
-              <p className="text-[10px] text-muted-foreground/50">Claude is analyzing your codebase...</p>
+              <h3 className="text-sm font-semibold text-foreground/90">{t.plugins.dev_tools.scanning_codebase}</h3>
+              <p className="text-[10px] text-muted-foreground/50">{t.plugins.dev_tools.analyzing_codebase}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onCancel} title="Cancel scan">
@@ -47,7 +49,7 @@ export default function ScanOverlay({
           className="bg-black/40 border border-primary/10 rounded-xl p-3 h-56 overflow-y-auto font-mono text-[11px] leading-relaxed"
         >
           {lines.length === 0 ? (
-            <p className="text-muted-foreground/30">Waiting for output...</p>
+            <p className="text-muted-foreground/30">{t.plugins.dev_tools.waiting_for_output}</p>
           ) : (
             lines.map((line, i) => (
               <div

@@ -6,6 +6,7 @@ import type { ContextGroup } from './contextMapTypes';
 import { colorDot } from './GroupColorPicker';
 import GroupColorPicker from './GroupColorPicker';
 import ContextCard from './ContextCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GroupListProps {
   groups: ContextGroup[];
@@ -21,6 +22,7 @@ export default function GroupList({
   groups, selectedCtxId, onSelectCtx,
   showNewGroup, onShowNewGroup, onCreateGroup, onScan,
 }: GroupListProps) {
+  const { t } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupColor, setNewGroupColor] = useState('amber');
@@ -50,7 +52,7 @@ export default function GroupList({
             <div className="border border-primary/10 rounded-xl p-4 bg-primary/5 space-y-3">
               <div className="flex items-center gap-2">
                 <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-ring" autoFocus />
-                <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreate}>Create</Button>
+                <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreate}>{t.plugins.dev_tools.create}</Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => onShowNewGroup(false)}><X className="w-3.5 h-3.5" /></Button>
               </div>
               <GroupColorPicker selectedColor={newGroupColor} onChange={setNewGroupColor} />
@@ -63,11 +65,11 @@ export default function GroupList({
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
             <FolderTree className="w-7 h-7 text-amber-400/50" />
           </div>
-          <p className="text-sm text-muted-foreground/60 mb-1">No context groups yet</p>
-          <p className="text-xs text-muted-foreground/40 mb-4">Scan your codebase or create groups manually</p>
+          <p className="text-sm text-muted-foreground/60 mb-1">{t.plugins.dev_tools.no_context_groups}</p>
+          <p className="text-xs text-muted-foreground/40 mb-4">{t.plugins.dev_tools.scan_or_create}</p>
           <div className="flex justify-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onShowNewGroup(true)}>Add Group</Button>
-            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>Scan Codebase</Button>
+            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onShowNewGroup(true)}>{t.plugins.dev_tools.add_group}</Button>
+            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>{t.plugins.dev_tools.scan_codebase}</Button>
           </div>
         </div>
       ) : (
@@ -87,7 +89,7 @@ export default function GroupList({
                     <div className="animate-fade-slide-in overflow-hidden">
                       <div className="px-4 pb-4 pt-1">
                         {group.contexts.length === 0 ? (
-                          <p className="text-xs text-muted-foreground/40 py-3 text-center">No contexts in this group yet</p>
+                          <p className="text-xs text-muted-foreground/40 py-3 text-center">{t.plugins.dev_tools.no_contexts_in_group}</p>
                         ) : (
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                             {group.contexts.map((ctx) => (

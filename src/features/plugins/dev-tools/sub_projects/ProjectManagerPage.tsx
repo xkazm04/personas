@@ -13,6 +13,7 @@ import { useContextScanBackground } from '../hooks/useContextScanBackground';
 import { ImplementationLog } from './ImplementationLog';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
 import { CrossProjectMetadataModal } from './CrossProjectMetadataModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types – thin view-models mapped from store bindings
@@ -613,6 +614,7 @@ function ProjectRowMenu({ projectId, projectName, onEdit }: { projectId: string;
 // ---------------------------------------------------------------------------
 
 export default function ProjectManagerPage() {
+  const { t } = useTranslation();
   // Store bindings
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const storeProjects = useSystemStore((s) => s.projects);
@@ -720,8 +722,8 @@ export default function ProjectManagerPage() {
       <ContentHeader
         icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Projects"
-        subtitle="Manage local development projects and goals"
+        title={t.plugins.dev_tools.projects_title}
+        subtitle={t.plugins.dev_tools.projects_subtitle}
         actions={
           <div className="flex items-center gap-2">
             <Button

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, AlertCircle, ThumbsUp, BarChart3, MessageSquare, Search, Circle, Plus } from 'lucide-react';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SIGNAL_ICONS: Record<string, { icon: typeof Circle; color: string }> = {
   task_completed: { icon: CheckCircle2, color: 'text-emerald-400' },
@@ -26,6 +27,7 @@ interface ImplementationLogProps {
 }
 
 export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps) {
+  const { t } = useTranslation();
   const [noteText, setNoteText] = useState('');
 
   const handleAddNote = () => {
@@ -51,7 +53,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
-          placeholder="Add a note..."
+          placeholder={t.plugins.dev_tools.add_note_placeholder}
           className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
@@ -65,7 +67,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
 
       {/* Timeline */}
       {sorted.length === 0 ? (
-        <p className="text-xs text-muted-foreground/40 italic py-4 text-center">No activity yet</p>
+        <p className="text-xs text-muted-foreground/40 italic py-4 text-center">{t.plugins.dev_tools.no_activity}</p>
       ) : (
         <div className="space-y-1 max-h-64 overflow-y-auto">
           {sorted.map((signal) => {
