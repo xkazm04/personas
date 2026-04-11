@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
 import { Clock, Calendar, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2 } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
@@ -54,7 +55,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
     setIsRerunning(true); setRerunResult(null);
     try {
       let inputData: object | undefined;
-      if (execution.input_data) { try { inputData = JSON.parse(execution.input_data); } catch { /* empty */ } }
+      if (execution.input_data) { inputData = parseJsonOrDefault(execution.input_data, undefined); }
       const newId = await executePersona(execution.persona_id, inputData);
       setRerunResult(newId ? 'success' : 'error');
       if (newId) fetchExecutions(execution.persona_id);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
   Settings, Plus, Power, Play, ToggleLeft, Copy, Puzzle,
@@ -282,7 +283,7 @@ export default function CommandPalette() {
     if (updates.model !== undefined) {
       const existing = editingPersona?.model_profile;
       let profile: Record<string, unknown> = {};
-      if (existing) { try { profile = JSON.parse(existing); } catch { /* keep empty */ } }
+      if (existing) { profile = parseJsonOrDefault<Record<string, unknown>>(existing, {}); }
       profile.model = updates.model || null;
       partial.model_profile = JSON.stringify(profile);
     }

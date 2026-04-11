@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
@@ -171,8 +172,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
   const ScopeIcon = scopeConfig.icon;
   const scopeColors = COLOR_MAP[scopeConfig.color] ?? COLOR_MAP.violet!;
 
-  let patternData: Record<string, unknown> = {};
-  try { patternData = JSON.parse(entry.pattern_data); } catch { /* intentional */ }
+  const patternData = parseJsonOrDefault<Record<string, unknown>>(entry.pattern_data, {});
   const recentResults = Array.isArray(patternData.recentResults)
     ? (patternData.recentResults as unknown[]).filter((v): v is boolean => typeof v === 'boolean').slice(-10)
     : [];

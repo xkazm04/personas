@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
 import { Clock, Calendar, RotateCw, RefreshCw, Search, ListTree, Activity, Zap, Shield, Play, Loader2, Check, AlertTriangle } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
@@ -33,7 +34,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     try {
       let inputData: object | undefined;
       if (execution.input_data) {
-        try { inputData = JSON.parse(execution.input_data); } catch { /* empty */ }
+        inputData = parseJsonOrDefault(execution.input_data, undefined);
       }
       const newId = await executePersona(execution.persona_id, inputData);
       if (newId) {

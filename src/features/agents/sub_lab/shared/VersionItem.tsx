@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import {
   RotateCcw, ChevronDown, ChevronRight,
   Shield, Archive, Beaker, Clock, AlertTriangle, XCircle, Star, StarOff,
@@ -94,7 +95,8 @@ export function VersionItem({
             <span className="text-[10px] text-muted-foreground/50 font-mono">{version.icon}</span>
           )}
           {version.resolved_cells && (() => {
-            try { const rc = JSON.parse(version.resolved_cells); return <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span>; } catch { return null; }
+            const rc = parseJsonOrDefault<Record<string, unknown> | null>(version.resolved_cells, null);
+            return rc ? <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span> : null;
           })()}
           {isBaseline && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
