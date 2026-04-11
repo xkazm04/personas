@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   RotateCcw, ChevronDown, ChevronRight,
-  Shield, Archive, Beaker, Clock, AlertTriangle, XCircle,
+  Shield, Archive, Beaker, Clock, AlertTriangle, XCircle, Star, StarOff,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
@@ -14,11 +14,14 @@ interface VersionItemProps {
   isSelected: boolean;
   isCompareA: boolean;
   isCompareB: boolean;
+  isBaseline: boolean;
   onSelect: () => void;
   onTag: (tag: string) => void;
   onRollback: () => void;
   onSetCompareA: () => void;
   onSetCompareB: () => void;
+  onPinBaseline: () => void;
+  onUnpinBaseline: () => void;
   activeAction: VersionAction;
   actionError: string | null;
   onDismissError: () => void;
@@ -29,11 +32,14 @@ export function VersionItem({
   isSelected,
   isCompareA,
   isCompareB,
+  isBaseline,
   onSelect,
   onTag,
   onRollback,
   onSetCompareA,
   onSetCompareB,
+  onPinBaseline,
+  onUnpinBaseline,
   activeAction,
   actionError,
   onDismissError,
@@ -90,6 +96,12 @@ export function VersionItem({
           {version.resolved_cells && (() => {
             try { const rc = JSON.parse(version.resolved_cells); return <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span>; } catch { return null; }
           })()}
+          {isBaseline && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+              <Star className="w-2.5 h-2.5" />
+              baseline
+            </span>
+          )}
           {isCompareA && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-blue-500/20 text-blue-400">A</span>}
           {isCompareB && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-violet-500/20 text-violet-400">B</span>}
           <span className="ml-auto text-sm text-muted-foreground/60 flex items-center gap-1">
@@ -175,6 +187,25 @@ export function VersionItem({
                 'Rollback to this',
                 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
                 `version-rollback-${version.version_number}`,
+              )}
+              {!isBaseline ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPinBaseline(); }}
+                  data-testid={`version-pin-baseline-${version.version_number}`}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer"
+                >
+                  <Star className="w-3 h-3" />
+                  Pin as Baseline
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUnpinBaseline(); }}
+                  data-testid={`version-unpin-baseline-${version.version_number}`}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 cursor-pointer"
+                >
+                  <StarOff className="w-3 h-3" />
+                  Unpin Baseline
+                </button>
               )}
             </div>
 

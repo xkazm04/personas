@@ -18,6 +18,10 @@ export function VersionsPanel() {
   const fetchHealthRate = useAgentStore((s) => s.fetchHealthRate);
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const setAbPreselect = useAgentStore((s) => s.setAbPreselect);
+  const baselinePin = useAgentStore((s) => s.baselinePin);
+  const pinBaseline = useAgentStore((s) => s.pinBaseline);
+  const unpinBaseline = useAgentStore((s) => s.unpinBaseline);
+  const loadBaseline = useAgentStore((s) => s.loadBaseline);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compareAId, setCompareAId] = useState<string | null>(null);
@@ -34,8 +38,9 @@ export function VersionsPanel() {
       setLoading(true);
       fetchVersions(personaId).finally(() => setLoading(false));
       fetchHealthRate(personaId);
+      loadBaseline(personaId);
     }
-  }, [personaId, fetchVersions, fetchHealthRate]);
+  }, [personaId, fetchVersions, fetchHealthRate, loadBaseline]);
 
   const compareA = useMemo(
     () => promptVersions.find((v) => v.id === compareAId) ?? null,
@@ -112,11 +117,14 @@ export function VersionsPanel() {
                 isSelected={selectedId === v.id}
                 isCompareA={compareAId === v.id}
                 isCompareB={compareBId === v.id}
+                isBaseline={baselinePin?.versionId === v.id}
                 onSelect={() => setSelectedId(selectedId === v.id ? null : v.id)}
                 onTag={(tag) => void handleTag(v.id, tag)}
                 onRollback={() => void handleRollback(v.id)}
                 onSetCompareA={() => setCompareAId(compareAId === v.id ? null : v.id)}
                 onSetCompareB={() => setCompareBId(compareBId === v.id ? null : v.id)}
+                onPinBaseline={() => personaId && pinBaseline(personaId, v.id, v.version_number, '')}
+                onUnpinBaseline={() => personaId && unpinBaseline(personaId)}
                 activeAction={activeActions[v.id] ?? null}
                 actionError={actionErrors[v.id] ?? null}
                 onDismissError={() => setActionErrors((p) => ({ ...p, [v.id]: null }))}
