@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,8 +96,11 @@ export function DeploymentHealthSparkline({ daily }: DeploymentHealthSparklinePr
     return { successRates: sr, volumes: vol, errorCounts: errs };
   }, [daily]);
 
+  const { t } = useTranslation();
+  const dt = t.deployment.dashboard;
+
   if (daily.length === 0) {
-    return <span className="text-[10px] text-muted-foreground/40">No data</span>;
+    return <span className="text-[10px] text-muted-foreground/40">{dt.no_data}</span>;
   }
 
   return (
@@ -104,19 +108,19 @@ export function DeploymentHealthSparkline({ daily }: DeploymentHealthSparklinePr
       <MiniSparkline
         values={successRates}
         color="var(--status-success)"
-        label="Success rate"
+        label={dt.success_rate}
         formatValue={(v) => `${v.toFixed(0)}%`}
       />
       <MiniSparkline
         values={volumes}
         color="var(--status-info)"
-        label="Volume"
+        label={dt.volume}
         formatValue={(v) => `${v}`}
       />
       <MiniSparkline
         values={errorCounts}
         color="var(--status-error)"
-        label="Errors"
+        label={dt.errors}
         formatValue={(v) => `${v}`}
       />
     </div>

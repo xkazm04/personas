@@ -9,6 +9,7 @@ import { DeploymentHealthSparkline } from './DeploymentHealthSparkline';
 import type { HealthDataPoint } from './DeploymentHealthSparkline';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TestResult } from '../hooks/useDeploymentTest';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TestStateMap {
   [deploymentId: string]: { running: boolean; result: TestResult | null };
@@ -53,6 +54,8 @@ export function DeploymentTable({
   onToggleSelect,
   onToggleSelectAll,
 }: DeploymentTableProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.dashboard;
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
   return (
@@ -68,14 +71,14 @@ export function DeploymentTable({
               className="w-3.5 h-3.5 rounded border-primary/30 bg-secondary/30 accent-primary cursor-pointer"
             />
           </th>
-          <SortHeader label="Name" sortKey="name" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <SortHeader label="Target" sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <SortHeader label="Status" sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <SortHeader label="Invocations" sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Health (7d)</th>
-          <SortHeader label="Last Activity" sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <SortHeader label="Created" sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Actions</th>
+          <SortHeader label={dt.col_name} sortKey="name" current={sortKey} dir={sortDir} onToggle={toggleSort} />
+          <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
+          <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
+          <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
+          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.col_health}</th>
+          <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
+          <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
+          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
@@ -120,7 +123,7 @@ export function DeploymentTable({
                   return health ? (
                     <DeploymentHealthSparkline daily={health} />
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/40">{row.target === 'cloud' ? 'Loading...' : '-'}</span>
+                    <span className="text-[10px] text-muted-foreground/40">{row.target === 'cloud' ? t.common.loading : '-'}</span>
                   );
                 })()}
               </td>
@@ -135,7 +138,7 @@ export function DeploymentTable({
                   {row.personaId && row.status === 'active' && onTest && (
                     <button
                       type="button"
-                      title="Test deployment"
+                      title={dt.test_deployment}
                       onClick={() => onTest(row.id, row.personaId!)}
                       disabled={isBusy || testState?.running}
                       className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-blue-400
@@ -172,7 +175,7 @@ export function DeploymentTable({
                   )}
                   {row._cloud && row.status === 'active' && (
                     <ActionButton
-                      title="Pause"
+                      title={dt.action_pause}
                       icon={Pause}
                       hoverColor="hover:text-amber-400 hover:bg-amber-500/10"
                       busy={isBusy}
@@ -181,7 +184,7 @@ export function DeploymentTable({
                   )}
                   {row._cloud && row.status === 'paused' && (
                     <ActionButton
-                      title="Resume"
+                      title={dt.action_resume}
                       icon={Play}
                       hoverColor="hover:text-emerald-400 hover:bg-emerald-500/10"
                       busy={isBusy}
@@ -190,7 +193,7 @@ export function DeploymentTable({
                   )}
                   {row._cloud && (
                     <ActionButton
-                      title="Undeploy"
+                      title={dt.action_undeploy}
                       icon={Trash2}
                       hoverColor="hover:text-red-400 hover:bg-red-500/10"
                       busy={isBusy}
@@ -199,7 +202,7 @@ export function DeploymentTable({
                   )}
                   {row._gitlab && row._gitlabProjectId && (
                     <ActionButton
-                      title="Undeploy"
+                      title={dt.action_undeploy}
                       icon={Trash2}
                       hoverColor="hover:text-red-400 hover:bg-red-500/10"
                       busy={isBusy}
@@ -211,7 +214,7 @@ export function DeploymentTable({
                       href={sanitizeExternalUrl(row.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={row.target === 'gitlab' ? 'Open in GitLab' : 'Open endpoint'}
+                      title={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}
                       className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />

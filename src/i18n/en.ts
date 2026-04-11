@@ -3733,6 +3733,26 @@ export const en = {
     project_thesis: "Research question or thesis",
     project_domain: "Domain",
     project_scope: "Scope constraints",
+    // Obsidian vault picker label on project form
+    obsidian_vault: "Obsidian vault",
+    // Placeholder shown when no vault is linked
+    obsidian_vault_hint: "Link an Obsidian vault to sync experiments and findings",
+    // Button to select a vault folder via native dialog
+    select_vault: "Select vault",
+    // Badge shown when vault is connected
+    vault_connected: "Vault connected",
+    // Button to sync experiments to Obsidian vault
+    sync_to_obsidian: "Sync to Obsidian",
+    // Button label while sync is in progress
+    syncing: "Syncing...",
+    // Toast after successful sync
+    sync_complete: "Synced to Obsidian",
+    // Ingest button for KB ingestion on source cards
+    ingest_to_kb: "Ingest to KB",
+    // Label for daily note sync
+    daily_note_sync: "Daily note sync",
+    // Status label for sources being ingested
+    source_indexed: "Indexed",
 
     // Project status tokens
     status_scoping: "Scoping",

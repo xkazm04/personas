@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { ICON_STYLES } from './iconStyles';
 import { ICONS, type IconMode } from './iconData';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function IconShowcase() {
   const [mode, setMode] = useState<IconMode>('custom');
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const ic = t.home.icon_showcase;
 
   return (
     <div className="space-y-6 w-full max-w-xl mx-auto">
@@ -21,7 +24,7 @@ export default function IconShowcase() {
             onClick={() => setMode('lucide')}
             className={mode === 'lucide' ? 'shadow-elevation-1' : ''}
           >
-            Lucide (Library)
+            {ic.lucide_tab}
           </Button>
           <Button
             variant={mode === 'custom' ? 'primary' : 'ghost'}
@@ -29,7 +32,7 @@ export default function IconShowcase() {
             onClick={() => setMode('custom')}
             className={mode === 'custom' ? 'shadow-elevation-1' : ''}
           >
-            Personas (Animated)
+            {ic.personas_tab}
           </Button>
         </div>
       </div>
@@ -71,8 +74,8 @@ export default function IconShowcase() {
 
       <p className="text-[11px] text-muted-foreground/40 font-mono text-center">
         {mode === 'lucide'
-          ? 'lucide-react · generic icon library · static'
-          : '9 custom icons · neural/circuit motifs · CSS-animated · theme-adaptive'}
+          ? ic.lucide_footer
+          : ic.personas_footer}
       </p>
     </div>
   );

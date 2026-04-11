@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("peer-list");
 
@@ -38,6 +39,8 @@ export function PeerList() {
   const [connectingPeers, setConnectingPeers] = useState<Set<string>>(new Set());
   const [selectedPeerId, setSelectedPeerId] = useState<string | null>(null);
   const [lastScannedAt, setLastScannedAt] = useState<number | null>(null);
+  const { t } = useTranslation();
+  const st = t.sharing;
 
   const trustedPeerIds = useMemo(() => new Set(trustedPeers.map((p) => p.peer_id)), [trustedPeers]);
 
@@ -94,7 +97,7 @@ export function PeerList() {
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Users className="w-4 h-4" />
-          Discovered Peers
+          {st.discovered_peers}
         </h3>
         <div className="flex flex-col items-end gap-0.5">
           <button
@@ -103,7 +106,7 @@ export function PeerList() {
             className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Refresh
+            {st.refresh}
           </button>
           {lastScannedLabel && (
             <span className="text-[10px] text-muted-foreground/50">
@@ -161,6 +164,8 @@ export function PeerList() {
 
 /** Persistent radar animation shown when no peers are discovered. */
 function RadarEmptyState() {
+  const { t: _t } = useTranslation();
+  const st = _t.sharing;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -233,10 +238,10 @@ function RadarEmptyState() {
       />
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
         <Wifi className="w-3.5 h-3.5 text-emerald-400/50" />
-        Scanning local network&hellip;
+        {st.scanning_network}
       </div>
       <span className="text-[11px] text-muted-foreground/40 text-center max-w-[260px]">
-        Other Personas instances on the same LAN will appear here automatically.
+        {st.lan_hint}
       </span>
     </div>
   );
@@ -244,6 +249,8 @@ function RadarEmptyState() {
 
 /** Skeleton loader that simulates a network scan with radar-sweep animation. */
 function PeerScanSkeleton() {
+  const { t: _t } = useTranslation();
+  const _st = _t.sharing;
   return (
     <div className="relative flex flex-col items-center gap-3 py-6">
       {/* Central Wi-Fi icon with ping ring */}
@@ -251,7 +258,7 @@ function PeerScanSkeleton() {
         <Wifi className="w-6 h-6 text-emerald-400/60" />
         <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
       </div>
-      <span className="text-xs text-muted-foreground/70 mb-2">Scanning local network...</span>
+      <span className="text-xs text-muted-foreground/70 mb-2">{_st.scanning_network}</span>
 
       {/* Skeleton PeerCard placeholders */}
       <div className="w-full space-y-2">

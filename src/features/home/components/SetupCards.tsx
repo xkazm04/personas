@@ -6,6 +6,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
 /*  Role definitions                                                    */
@@ -98,12 +99,14 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
 function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (role: string) => void }) {
   const isDark = useIsDarkTheme();
   const { isStarter: isSimple } = useTier();
+  const { t } = useTranslation();
+  const ss = t.home.setup_stepper;
   const visibleRoles = isSimple ? ROLES.filter((r) => r.id === 'office-rat') : ROLES;
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">{isSimple ? 'Your profile' : 'Choose your role'}</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">{isSimple ? 'We\'ve set up the app for everyday office use.' : 'We\'ll tailor the experience to match how you work.'}</p>
+        <h3 className="typo-heading-lg text-foreground">{isSimple ? ss.your_profile : ss.choose_role}</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">{isSimple ? ss.simple_hint : ss.tailor_hint}</p>
       </div>
       <div className={`grid gap-4 ${isSimple ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-3'}`}>
         {visibleRoles.map((role) => {
@@ -171,12 +174,15 @@ function ToolStep({
   const roleDef = ROLES.find((r) => r.label === role);
   const tools = roleDef?.tools ?? [];
 
+  const { t } = useTranslation();
+  const ss = t.home.setup_stepper;
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">Pick your favorite tool</h3>
+        <h3 className="typo-heading-lg text-foreground">{ss.pick_tool}</h3>
         <p className="typo-body text-muted-foreground/60 mt-1">
-          This will be your first connector integration.
+          {ss.tool_hint}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-4">
@@ -234,24 +240,26 @@ function ToolStep({
 /* ------------------------------------------------------------------ */
 
 function GoalStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t, tx } = useTranslation();
+  const ss = t.home.setup_stepper;
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">What do you want to automate?</h3>
+        <h3 className="typo-heading-lg text-foreground">{ss.automate_title}</h3>
         <p className="typo-body text-muted-foreground/60 mt-1">
-          Describe your first automation goal — we'll help you set it up.
+          {ss.automate_hint}
         </p>
       </div>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g. Automatically sync new Jira tickets to a Slack channel..."
+        placeholder={ss.automate_placeholder}
         rows={5}
         className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
         <span className="typo-body text-muted-foreground/50">
-          {value.trim().length < 10 ? `Min 10 characters (${value.trim().length}/10)` : 'Ready to save'}
+          {value.trim().length < 10 ? tx(ss.min_chars, { current: value.trim().length }) : ss.ready_to_save}
         </span>
       </div>
     </div>
@@ -273,6 +281,8 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   const [step, setStep] = useState(initialStep);
   const [goalDraft, setGoalDraft] = useState(setupGoal ?? '');
   const [direction, setDirection] = useState(1);
+  const { t } = useTranslation();
+  const ss = t.home.setup_stepper;
 
   const completed = {
     role: setupRole !== null,
@@ -346,14 +356,14 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back
+            {ss.back}
           </button>
           <button
             onClick={goNext}
             disabled={!canNext}
             className="flex items-center gap-1.5 px-5 py-2 rounded-xl typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {step === 2 ? 'Finish' : 'Next'}
+            {step === 2 ? ss.finish : ss.next}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
@@ -432,6 +442,8 @@ function SetupCardItem({
   onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const { t } = useTranslation();
+  const setup = t.home.setup;
   const completed = value !== null;
   const displayTitle = card.id === 'role' && value ? value : card.defaultTitle;
 
@@ -506,8 +518,8 @@ function SetupCardItem({
         <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">
           {locked
             ? card.id === 'tool'
-              ? 'Select a role first to unlock tool options.'
-              : 'Select a tool first to set your goal.'
+              ? setup.select_role_first
+              : setup.select_tool_first
             : card.description}
         </p>
       </div>

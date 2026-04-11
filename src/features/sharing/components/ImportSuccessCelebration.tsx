@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CONFETTI_COLORS = ['#34d399', '#06b6d4', '#10b981', '#22d3ee', '#6ee7b7', '#67e8f9'];
 
@@ -110,6 +111,8 @@ function PackageUnwrapSvg() {
 }
 
 export function ImportSuccessCelebration({ importResult }: { importResult: { imported: number; skipped: number; errors: string[] } }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
@@ -129,10 +132,10 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
       <PackageUnwrapSvg />
       <div className="text-center space-y-1">
         <div className="text-sm font-medium text-emerald-400">
-          Import Complete
+          {st.import_complete}
         </div>
         <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>{importResult.imported} resource{importResult.imported !== 1 ? 's' : ''} imported</p>
+          <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
           {importResult.skipped > 0 && (
             <p>{importResult.skipped} skipped (conflicts)</p>
           )}

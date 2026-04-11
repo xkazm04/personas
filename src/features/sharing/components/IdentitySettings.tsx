@@ -4,6 +4,7 @@ import { TrustVerifiedIcon, TrustUnknownIcon, TrustRevokedIcon } from './Network
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { InlineConfirm } from './InlineConfirm';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
@@ -24,6 +25,8 @@ export default function IdentitySettings() {
   const [importInput, setImportInput] = useState('');
   const [importNotes, setImportNotes] = useState('');
   const [showImportForm, setShowImportForm] = useState(false);
+  const { t } = useTranslation();
+  const st = t.sharing;
 
   useEffect(() => {
     fetchLocalIdentity();
@@ -93,14 +96,14 @@ export default function IdentitySettings() {
       <section>
         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <Fingerprint className="w-4 h-4" />
-          Your Identity
+          {st.your_identity}
         </h3>
         <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
           {localIdentity ? (
             <>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">Peer ID</div>
+                  <div className="text-xs text-muted-foreground">{st.peer_id_label}</div>
                   <div className="text-sm font-mono text-foreground/80">
                     {truncatePeerId(localIdentity.peer_id)}
                   </div>
@@ -110,12 +113,12 @@ export default function IdentitySettings() {
                   className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied' : 'Copy Identity Card'}
+                  {copied ? t.common.copied : st.copy_identity_card}
                 </button>
               </div>
 
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Display Name</div>
+                <div className="text-xs text-muted-foreground mb-1">{st.display_name_label}</div>
                 {editingName ? (
                   <div className="flex gap-2">
                     <input
@@ -126,8 +129,8 @@ export default function IdentitySettings() {
                       maxLength={64}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} className="px-2 py-1 text-xs rounded-lg bg-primary text-white hover:bg-primary/90">Save</button>
-                    <button onClick={() => setEditingName(false)} className="px-2 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50">Cancel</button>
+                    <button onClick={handleSaveName} className="px-2 py-1 text-xs rounded-lg bg-primary text-white hover:bg-primary/90">{st.save}</button>
+                    <button onClick={() => setEditingName(false)} className="px-2 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50">{st.cancel}</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -136,7 +139,7 @@ export default function IdentitySettings() {
                       onClick={() => { setNameInput(localIdentity.display_name); setEditingName(true); }}
                       className="text-xs text-muted-foreground hover:text-foreground underline"
                     >
-                      Edit
+                      {st.edit}
                     </button>
                   </div>
                 )}
@@ -147,7 +150,7 @@ export default function IdentitySettings() {
               </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">Loading identity...</div>
+            <div className="text-sm text-muted-foreground">{st.loading_identity}</div>
           )}
         </div>
       </section>
@@ -155,30 +158,30 @@ export default function IdentitySettings() {
       {/* Trusted Peers */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Trusted Peers</h3>
+          <h3 className="text-sm font-semibold text-foreground">{st.trusted_peers}</h3>
           <button
             onClick={() => setShowImportForm(!showImportForm)}
             className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            Add Peer
+            {st.add_peer}
           </button>
         </div>
 
         {showImportForm && (
           <div className="rounded-xl border border-border bg-secondary/20 p-4 mb-3 space-y-2">
-            <label className="text-xs text-muted-foreground">Paste identity card</label>
+            <label className="text-xs text-muted-foreground">{st.paste_identity_card}</label>
             <textarea
               value={importInput}
               onChange={(e) => setImportInput(e.target.value)}
-              placeholder="Paste the base64 identity card here..."
+              placeholder={st.paste_card_placeholder}
               className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus-ring font-mono resize-none"
               rows={3}
             />
             <input
               value={importNotes}
               onChange={(e) => setImportNotes(e.target.value)}
-              placeholder="Notes (optional)"
+              placeholder={st.notes_placeholder}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
             />
             <div className="flex gap-2 pt-1">
@@ -187,13 +190,13 @@ export default function IdentitySettings() {
                 disabled={!importInput.trim()}
                 className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add Trusted Peer
+                {st.add_trusted_peer}
               </button>
               <button
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
                 className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
               >
-                Cancel
+                {st.cancel}
               </button>
             </div>
           </div>
@@ -201,7 +204,7 @@ export default function IdentitySettings() {
 
         {trustedPeers.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            No trusted peers yet. Share your identity card with others to get started.
+            {st.no_trusted_peers}
           </div>
         ) : (
           <div className="space-y-2">

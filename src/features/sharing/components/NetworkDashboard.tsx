@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { usePolling } from '@/hooks/utility/timing/usePolling';
+import { useTranslation } from '@/i18n/useTranslation';
 import type {
   ConnectionHealth,
   MessagingMetrics,
@@ -237,6 +238,8 @@ export function NetworkDashboard() {
   // a staleness-detection fallback only.
   usePolling(fetchNetworkSnapshot, { interval: 30_000, enabled: true });
 
+  const { t } = useTranslation();
+  const st = t.sharing;
   const isRunning = networkStatus?.is_running ?? false;
   const color = healthColor(health);
   const label = healthLabel(health);
@@ -245,7 +248,7 @@ export function NetworkDashboard() {
     <section>
       <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
         <Radio className="w-4 h-4" />
-        Network Status
+        {st.network_status}
       </h3>
       {networkError && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
@@ -260,14 +263,14 @@ export function NetworkDashboard() {
             <Wifi className="w-4 h-4 text-emerald-400/50" />
             <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
           </div>
-          Checking network status...
+          {st.checking_network}
         </div>
       ) : (
         <div className="space-y-2">
           {/* Stat cards grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Status card */}
-            <StatCard label="Status">
+            <StatCard label={st.stat_status}>
               <div className="flex items-center gap-2">
                 {isRunning ? (
                   <div className="relative w-4 h-4 flex-shrink-0">
@@ -278,13 +281,13 @@ export function NetworkDashboard() {
                   <WifiOff className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 )}
                 <span className={isRunning ? 'text-emerald-400' : 'text-muted-foreground'}>
-                  {isRunning ? 'Online' : 'Offline'}
+                  {isRunning ? st.status_online : st.status_offline}
                 </span>
               </div>
             </StatCard>
 
             {/* Port card */}
-            <StatCard label="Port">
+            <StatCard label={st.stat_port}>
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <span className="font-mono">
@@ -296,7 +299,7 @@ export function NetworkDashboard() {
             </StatCard>
 
             {/* Discovered peers card */}
-            <StatCard label="Discovered">
+            <StatCard label={st.stat_discovered}>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <span>{isRunning ? networkStatus.discovered_peer_count : 0}</span>
@@ -304,7 +307,7 @@ export function NetworkDashboard() {
             </StatCard>
 
             {/* Connected peers card */}
-            <StatCard label="Connected">
+            <StatCard label={st.stat_connected}>
               <div className="flex items-center gap-2">
                 {/* Health pulse ring */}
                 <div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">

@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PeerCardProps {
   peer: DiscoveredPeer;
@@ -30,6 +31,8 @@ export const PeerCard = memo(function PeerCard({
   onSelect,
   connecting,
 }: PeerCardProps) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
   const dotColor = STATE_DOT[state] ?? STATE_DOT.Disconnected;
   const isConnected = state === 'Connected';
@@ -87,7 +90,7 @@ export const PeerCard = memo(function PeerCard({
         ) : isConnected ? (
           <button
             onClick={() => onDisconnect(peer.peer_id)}
-            title="Disconnect"
+            title={st.disconnect}
             className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
@@ -95,7 +98,7 @@ export const PeerCard = memo(function PeerCard({
         ) : (
           <button
             onClick={() => onConnect(peer.peer_id)}
-            title="Connect"
+            title={st.connect}
             className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-emerald-500 transition-colors"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
@@ -103,7 +106,7 @@ export const PeerCard = memo(function PeerCard({
         )}
         <button
           onClick={() => onSelect(peer.peer_id)}
-          title="View details"
+          title={st.view_details}
           className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronRight className="w-3.5 h-3.5" />

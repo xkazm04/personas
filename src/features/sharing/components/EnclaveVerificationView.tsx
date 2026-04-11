@@ -1,7 +1,10 @@
 import { ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react';
 import type { EnclaveVerifyResult } from '@/api/network/enclave';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResult }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const allValid = result.signatureValid && result.contentIntact;
 
   return (
@@ -38,28 +41,28 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-red-500/10 text-red-400'
           }`}>
-            {result.signatureValid ? 'Signature valid' : 'Invalid signature'}
+            {result.signatureValid ? st.signature_valid : st.invalid_signature}
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             result.contentIntact
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-red-500/10 text-red-400'
           }`}>
-            {result.contentIntact ? 'Content intact' : 'Content tampered'}
+            {result.contentIntact ? st.content_intact : st.content_tampered}
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             result.creatorTrusted
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-amber-500/10 text-amber-400'
           }`}>
-            {result.creatorTrusted ? 'Trusted creator' : 'Unknown creator'}
+            {result.creatorTrusted ? st.trusted_creator : st.unknown_creator}
           </span>
         </div>
       </div>
 
       {/* Creator identity */}
       <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-1.5">
-        <div className="text-xs text-muted-foreground font-medium">Creator Identity</div>
+        <div className="text-xs text-muted-foreground font-medium">{st.creator_identity}</div>
         <div className="text-[10px] text-muted-foreground font-mono">
           {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
         </div>
@@ -67,24 +70,24 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
 
       {/* Policy details */}
       <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2">
-        <div className="text-xs text-muted-foreground font-medium">Execution Policy</div>
+        <div className="text-xs text-muted-foreground font-medium">{st.execution_policy}</div>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span className="text-muted-foreground">Max cost:</span>{' '}
+            <span className="text-muted-foreground">{st.max_cost_label}</span>{' '}
             <span className="text-foreground">${result.policy.maxCostUsd.toFixed(2)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Max turns:</span>{' '}
+            <span className="text-muted-foreground">{st.max_turns_label}</span>{' '}
             <span className="text-foreground">{result.policy.maxTurns}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Persistence:</span>{' '}
-            <span className="text-foreground">{result.policy.allowPersistence ? 'Allowed' : 'Denied'}</span>
+            <span className="text-muted-foreground">{st.persistence_label}</span>{' '}
+            <span className="text-foreground">{result.policy.allowPersistence ? st.persistence_allowed : st.persistence_denied}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Capabilities:</span>{' '}
+            <span className="text-muted-foreground">{st.capabilities_label}</span>{' '}
             <span className="text-foreground">
-              {result.policy.requiredCapabilities.length || 'None'}
+              {result.policy.requiredCapabilities.length || st.capabilities_none}
             </span>
           </div>
         </div>

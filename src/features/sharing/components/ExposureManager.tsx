@@ -11,6 +11,7 @@ import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("exposure-manager");
 
@@ -104,6 +105,8 @@ function AddExposureForm({
   onCancel: () => void;
 }) {
   const personas = useAgentStore((s) => s.personas);
+  const { t } = useTranslation();
+  const st = t.sharing;
   const [resourceType, setResourceType] = useState<ResourceType>('persona');
   const [resourceId, setResourceId] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('read');
@@ -131,7 +134,7 @@ function AddExposureForm({
     <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Resource Type</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{st.resource_type_label}</label>
           <select
             value={resourceType}
             onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
@@ -143,7 +146,7 @@ function AddExposureForm({
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Access Level</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{st.access_level_label}</label>
           <select
             value={accessLevel}
             onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
@@ -157,14 +160,14 @@ function AddExposureForm({
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Resource</label>
+        <label className="text-xs text-muted-foreground mb-1 block">{st.resource_label}</label>
         {resourceType === 'persona' ? (
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
             className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           >
-            <option value="">Select a persona...</option>
+            <option value="">{st.select_persona_placeholder}</option>
             {personas.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -173,18 +176,18 @@ function AddExposureForm({
           <input
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
-            placeholder="Resource ID"
+            placeholder={st.resource_id_placeholder}
             className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           />
         )}
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Tags (comma-separated, optional)</label>
+        <label className="text-xs text-muted-foreground mb-1 block">{st.tags_label}</label>
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          placeholder="e.g. automation, devops"
+          placeholder={st.tags_placeholder}
           className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
         />
       </div>
@@ -195,13 +198,13 @@ function AddExposureForm({
           disabled={!resourceId}
           className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Expose Resource
+          {st.expose_resource}
         </button>
         <button
           onClick={onCancel}
           className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
         >
-          Cancel
+          {st.cancel}
         </button>
       </div>
     </div>
@@ -216,6 +219,8 @@ export default function ExposureManager() {
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
 
+  const { t } = useTranslation();
+  const st = t.sharing;
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -251,8 +256,8 @@ export default function ExposureManager() {
       <ContentHeader
         icon={<Share2 className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="Network & Sharing"
-        subtitle="Manage your identity, trusted peers, and shared resources"
+        title={st.network_sharing_title}
+        subtitle={st.network_sharing_subtitle}
       />
 
       <ContentBody centered>
@@ -268,14 +273,14 @@ export default function ExposureManager() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Package className="w-4 h-4" />
-                Exposed Resources
+                {st.exposed_resources}
               </h3>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
                 className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Expose Resource
+                {st.expose_resource}
               </button>
             </div>
 
@@ -292,11 +297,11 @@ export default function ExposureManager() {
             {loading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
                 <LoadingSpinner />
-                Loading exposed resources...
+                {st.loading_exposed}
               </div>
             ) : exposedResources.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                No resources exposed yet. Expose personas or other resources to include them in bundles for sharing.
+                {st.no_resources_hint}
               </div>
             ) : (
               <div className="space-y-2">

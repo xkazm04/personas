@@ -11,6 +11,7 @@ import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnecte
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/network/discovery';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PeerDetailDrawerProps {
   peer: DiscoveredPeer;
@@ -35,6 +36,8 @@ export function PeerDetailDrawer({
   const addToast = useToastStore((s) => s.addToast);
 
   const drawerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  const st = t.sharing;
 
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
@@ -182,7 +185,7 @@ export function PeerDetailDrawer({
                 className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <NodeDisconnectedIcon className="w-3.5 h-3.5" />
-                Disconnect
+                {st.disconnect}
               </button>
             ) : (
               <button
@@ -190,36 +193,36 @@ export function PeerDetailDrawer({
                 className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
                 <NodeConnectedIcon className="w-3.5 h-3.5" />
-                Connect
+                {st.connect}
               </button>
             )}
           </div>
 
           {/* Peer info */}
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Peer Info</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{st.peer_info}</h4>
             <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Trust</span>
+                <span className="text-muted-foreground">{st.trust_label}</span>
                 <span className={isTrusted ? 'text-emerald-400' : 'text-muted-foreground'}>
-                  {isTrusted ? 'Trusted' : 'Unknown'}
+                  {isTrusted ? st.trusted : st.unknown}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">First seen</span>
+                <span className="text-muted-foreground">{st.first_seen}</span>
                 <span className="text-foreground/80">
                   {new Date(peer.first_seen_at).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Last seen</span>
+                <span className="text-muted-foreground">{st.last_seen}</span>
                 <span className="text-foreground/80">
                   {new Date(peer.last_seen_at).toLocaleString()}
                 </span>
               </div>
               {addresses.length > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Address</span>
+                  <span className="text-muted-foreground">{st.address}</span>
                   <span className="text-foreground/80 font-mono text-xs">
                     {addresses[0]}
                   </span>
@@ -243,7 +246,7 @@ export function PeerDetailDrawer({
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
-                  Shared Resources
+                  {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
                     <span className="text-[10px] font-normal text-muted-foreground/60">
                       {syncProgress?.resourceCount ?? manifest.length} synced
@@ -256,7 +259,7 @@ export function PeerDetailDrawer({
                 <button
                   onClick={handleSync}
                   disabled={syncing}
-                  title="Sync manifest"
+                  title={st.sync_manifest}
                   className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {syncing ? (
@@ -269,7 +272,7 @@ export function PeerDetailDrawer({
 
               {manifest.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  No shared resources. Sync the manifest to check.
+                  {st.no_shared_resources}
                 </div>
               ) : (
                 <div className="space-y-1.5">

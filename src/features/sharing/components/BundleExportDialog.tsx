@@ -11,6 +11,7 @@ import type { EnclavePolicy } from '@/api/network/enclave';
 import type { Persona } from '@/lib/bindings/Persona';
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("bundle-export");
 
@@ -32,6 +33,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const personas = useAgentStore((s) => s.personas);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
+  const { t, tx } = useTranslation();
+  const st = t.sharing;
   const [mode, setMode] = useState<ExportMode>('bundle');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
@@ -187,12 +190,12 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             ) : (
               <Package className="w-4.5 h-4.5 text-cyan-400" />
             )}
-            {mode === 'enclave' ? 'Seal Enclave' : 'Export Bundle'}
+            {mode === 'enclave' ? st.seal_enclave_title : st.export_title}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             {mode === 'enclave'
-              ? 'Create a cryptographically sealed persona enclave with execution constraints.'
-              : 'Select exposed resources to include in the signed .persona bundle.'}
+              ? st.seal_enclave_subtitle
+              : st.export_subtitle}
           </p>
         </div>
 
@@ -207,7 +210,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             }`}
           >
             <Package className="w-3.5 h-3.5" />
-            Bundle
+            {st.mode_bundle}
           </button>
           <button
             onClick={() => setMode('enclave')}
@@ -218,21 +221,21 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             }`}
           >
             <Lock className="w-3.5 h-3.5" />
-            Enclave
+            {st.mode_enclave}
           </button>
         </div>
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
             <LoadingSpinner />
-            Loading...
+            {t.common.loading}
           </div>
         ) : mode === 'bundle' ? (
           /* Bundle mode */
           exposedResources.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
-              No resources are exposed. Expose resources first in the Network settings.
+              {st.no_resources_exposed}
             </div>
           ) : (
             <>
@@ -241,10 +244,10 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                   onClick={toggleAll}
                   className="text-xs text-primary hover:text-primary/80 transition-colors"
                 >
-                  {selected.size === exposedResources.length ? 'Deselect all' : 'Select all'}
+                  {selected.size === exposedResources.length ? st.deselect_all : st.select_all}
                 </button>
                 <span className="text-xs text-muted-foreground">
-                  {selected.size} of {exposedResources.length} selected
+                  {tx(st.selected_of_total, { selected: selected.size, total: exposedResources.length })}
                 </span>
               </div>
 
@@ -280,7 +283,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             onClick={onClose}
             className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
           >
-            Cancel
+            {st.cancel}
           </button>
           {mode === 'bundle' ? (
             <>
@@ -291,7 +294,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 title="Generate a one-time share link (expires in 24h)"
               >
                 {creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
-                {creatingLink ? 'Creating...' : linkCopied ? 'Link Copied!' : 'Share Link'}
+                {creatingLink ? st.creating_link : linkCopied ? st.link_copied : st.share_link}
               </button>
               <button
                 onClick={handleCopyToClipboard}
@@ -300,7 +303,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 title="Copy bundle as base64 to clipboard (max 256 KB)"
               >
                 {copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Clipboard className="w-3.5 h-3.5" />}
-                {copying ? 'Copying...' : copied ? 'Copied!' : 'Copy to Clipboard'}
+                {copying ? st.copying : copied ? st.copied : st.copy_to_clipboard}
               </button>
               <button
                 onClick={handleExportBundle}
@@ -308,7 +311,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
-                {exporting ? 'Exporting...' : 'Export to File'}
+                {exporting ? st.exporting : st.export_to_file}
               </button>
             </>
           ) : (
@@ -318,7 +321,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
-              {exporting ? 'Sealing...' : 'Seal Enclave'}
+              {exporting ? st.sealing : st.seal_enclave_btn}
             </button>
           )}
         </div>
@@ -348,26 +351,27 @@ function EnclaveConfigPanel({
   allowPersistence: boolean;
   onAllowPersistenceChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   return (
     <div className="space-y-3">
       {/* Info banner */}
       <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-2.5 flex items-start gap-2">
         <Shield className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
         <span className="text-xs text-violet-300/90">
-          Enclaves are cryptographically sealed and signed with your identity.
-          The recipient can verify authenticity but cannot modify the persona or extract credentials.
+          {st.enclave_info}
         </span>
       </div>
 
       {/* Persona selector */}
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Persona</label>
+        <label className="text-xs text-muted-foreground mb-1 block">{st.label_persona}</label>
         <select
           value={selectedPersonaId}
           onChange={(e) => onSelectPersona(e.target.value)}
           className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
         >
-          <option value="">Select a persona...</option>
+          <option value="">{st.select_persona_placeholder}</option>
           {personas.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -379,7 +383,7 @@ function EnclaveConfigPanel({
       {/* Policy configuration */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Max cost (USD)</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{st.label_max_cost}</label>
           <input
             type="number"
             min="0.01"
@@ -390,7 +394,7 @@ function EnclaveConfigPanel({
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Max turns</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{st.label_max_turns}</label>
           <input
             type="number"
             min="1"
@@ -409,7 +413,7 @@ function EnclaveConfigPanel({
           onChange={(e) => onAllowPersistenceChange(e.target.checked)}
           className="rounded border-border"
         />
-        Allow enclave to persist data on host
+        {st.label_allow_persistence}
       </label>
     </div>
   );

@@ -12,6 +12,7 @@ import { ImportSuccessCelebration } from './ImportSuccessCelebration';
 import { BundlePreviewContent } from './BundlePreviewContent';
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("bundle-import");
 
@@ -33,6 +34,8 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
   const importFromShareLink = useSystemStore((s) => s.importFromShareLink);
   const verifyEnclave = useSystemStore((s) => s.verifyEnclave);
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  const st = t.sharing;
 
   const [phase, setPhase] = useState<Phase>('pick');
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -120,7 +123,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
     try {
       const text = await navigator.clipboard.readText();
       if (!text || text.trim().length === 0) {
-        setError('Clipboard is empty');
+        setError(st.clipboard_empty);
         return;
       }
 
@@ -205,12 +208,12 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
             ) : (
               <Download className="w-4.5 h-4.5 text-emerald-400" />
             )}
-            {isEnclave ? 'Verify Enclave' : 'Import Bundle'}
+            {isEnclave ? st.verify_enclave_title : st.import_title}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             {isEnclave
-              ? 'Verify a sealed persona enclave from a trusted creator.'
-              : 'Import a signed .persona bundle from a trusted peer.'}
+              ? st.verify_enclave_subtitle
+              : st.import_subtitle}
           </p>
         </div>
 
@@ -233,14 +236,14 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                   onClick={handlePickFile}
                   className="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90"
                 >
-                  Choose file
+                  {st.choose_file}
                 </button>
                 <button
                   onClick={handlePasteFromClipboard}
                   className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
                   <ClipboardPaste className="w-4 h-4" />
-                  Paste from Clipboard
+                  {st.paste_from_clipboard}
                 </button>
               </div>
               <div className="flex items-center gap-1.5 mt-2 w-full max-w-xs mx-auto">
@@ -251,7 +254,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                     value={shareLinkInput}
                     onChange={(e) => setShareLinkInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleImportShareLink(); }}
-                    placeholder="Paste share link or personas:// URL..."
+                    placeholder={st.share_link_placeholder}
                     className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border border-border bg-background focus-ring"
                   />
                 </div>
@@ -260,11 +263,11 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                   disabled={!shareLinkInput.trim()}
                   className="px-3 py-1.5 text-xs rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
-                  Open
+                  {st.open}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Choose a file, paste clipboard data, or use a share link (personas:// deep link) from another Personas instance.
+                {st.import_pick_hint}
               </p>
             </div>
           </div>
@@ -277,7 +280,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
           <div className="overflow-hidden">
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
               <LoadingSpinner />
-              {isEnclave ? 'Verifying enclave...' : 'Verifying bundle...'}
+              {isEnclave ? st.verifying_enclave : st.verifying_bundle}
             </div>
           </div>
         </div>
@@ -321,7 +324,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
           <div className="overflow-hidden">
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
               <LoadingSpinner />
-              Importing resources...
+              {st.importing_resources}
             </div>
           </div>
         </div>
@@ -341,7 +344,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
             onClick={handleClose}
             className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
           >
-            {phase === 'done' || isEnclave ? 'Close' : 'Cancel'}
+            {phase === 'done' || isEnclave ? st.close : st.cancel}
           </button>
           {phase === 'preview' && !isEnclave && preview && (
             preview.signature_valid ? (
@@ -350,7 +353,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                 className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
-                Import
+                {st.import_btn}
               </button>
             ) : (
               <button
@@ -359,7 +362,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                 className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <ShieldOff className="w-3.5 h-3.5" />
-                Import Anyway
+                {st.import_anyway}
               </button>
             )
           )}

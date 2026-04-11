@@ -14,6 +14,7 @@ import { DeploymentFilters } from './DeploymentFilters';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function UnifiedDeploymentDashboard() {
   const personaName = usePersonaNameMap();
@@ -42,6 +43,8 @@ export function UnifiedDeploymentDashboard() {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { t, tx } = useTranslation();
+  const dt = t.deployment.dashboard;
 
   useEffect(() => {
     if (cloudConfig?.is_connected) cloudFetchDeployments().catch(toastCatch("DeploymentDashboard:fetchCloudDeployments", "Failed to fetch cloud deployments"));
@@ -155,8 +158,8 @@ export function UnifiedDeploymentDashboard() {
       <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-lg font-semibold text-foreground/90">Deployments</h1>
-            <p className="text-sm text-muted-foreground/60 mt-0.5">All deployments across Cloud and GitLab</p>
+            <h1 className="text-lg font-semibold text-foreground/90">{dt.title}</h1>
+            <p className="text-sm text-muted-foreground/60 mt-0.5">{dt.subtitle}</p>
           </div>
           <button
             onClick={handleRefresh}
@@ -164,15 +167,15 @@ export function UnifiedDeploymentDashboard() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {dt.refresh}
           </button>
         </div>
         <div className="grid grid-cols-5 3xl:grid-cols-10 gap-3">
-          <SummaryCard icon={Activity} label="Total" value={unified.length} />
-          <SummaryCard icon={CheckCircle2} label="Active" value={activeCount} color="text-emerald-400" />
-          <SummaryCard icon={PauseCircle} label="Paused" value={pausedCount} color="text-amber-400" />
-          <SummaryCard icon={Cloud} label="Cloud" value={totalCloud} color="text-blue-400" connected={cloudConnected} />
-          <SummaryCard icon={GitBranch} label="GitLab" value={totalGitlab} color="text-orange-400" connected={gitlabConnected} />
+          <SummaryCard icon={Activity} label={dt.total} value={unified.length} />
+          <SummaryCard icon={CheckCircle2} label={dt.active} value={activeCount} color="text-emerald-400" />
+          <SummaryCard icon={PauseCircle} label={dt.paused} value={pausedCount} color="text-amber-400" />
+          <SummaryCard icon={Cloud} label={dt.cloud} value={totalCloud} color="text-blue-400" connected={cloudConnected} />
+          <SummaryCard icon={GitBranch} label={dt.gitlab} value={totalGitlab} color="text-orange-400" connected={gitlabConnected} />
         </div>
         <DeploymentFilters
           search={search} onSearchChange={setSearch}
@@ -188,9 +191,9 @@ export function UnifiedDeploymentDashboard() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
               <Cloud className="w-7 h-7 text-primary/60" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">No deployment targets connected</p>
+            <p className="text-sm font-medium text-foreground/80">{dt.no_targets_title}</p>
             <p className="text-sm text-muted-foreground/60 mt-1 max-w-xs">
-              Connect to Cloud Execution or GitLab in the respective tabs to see deployments here.
+              {dt.no_targets_hint}
             </p>
           </div>
         ) : displayRows.length === 0 ? (
@@ -199,12 +202,12 @@ export function UnifiedDeploymentDashboard() {
               <Activity className="w-7 h-7 text-muted-foreground/40" />
             </div>
             <p className="text-sm font-medium text-foreground/80">
-              {search || targetFilter !== 'all' || statusFilter !== 'all' ? 'No deployments match filters' : 'No deployments yet'}
+              {search || targetFilter !== 'all' || statusFilter !== 'all' ? dt.no_match_filters : dt.no_deployments}
             </p>
             <p className="text-sm text-muted-foreground/60 mt-1">
               {search || targetFilter !== 'all' || statusFilter !== 'all'
-                ? 'Try adjusting your search or filters.'
-                : 'Deploy personas from the Cloud or GitLab tabs.'}
+                ? dt.adjust_filters
+                : dt.deploy_hint}
             </p>
           </div>
         ) : (
@@ -237,8 +240,8 @@ export function UnifiedDeploymentDashboard() {
       {/* Footer stats */}
       {displayRows.length > 0 && (
         <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between text-xs text-muted-foreground/60 flex-shrink-0">
-          <span>Showing {displayRows.length} of {unified.length} deployment{unified.length !== 1 ? 's' : ''}</span>
-          <span>Total invocations: <span className="text-foreground/80 font-medium">{totalInvocations.toLocaleString()}</span></span>
+          <span>{tx(dt.showing_of, { showing: displayRows.length, total: unified.length, plural: unified.length !== 1 ? 's' : '' })}</span>
+          <span>{dt.total_invocations} <span className="text-foreground/80 font-medium">{totalInvocations.toLocaleString()}</span></span>
         </div>
       )}
     </div>

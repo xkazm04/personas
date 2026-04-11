@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Activity, Brain, Wrench, FileText, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,14 +28,14 @@ interface Props {
 // Stage config
 // ---------------------------------------------------------------------------
 
-const STAGE_CONFIG: Record<string, { icon: typeof Activity; label: string; color: string }> = {
-  initializing: { icon: Loader2, label: 'Initializing', color: 'text-blue-400' },
-  thinking: { icon: Brain, label: 'Thinking', color: 'text-violet-400' },
-  tool_calling: { icon: Wrench, label: 'Tool Call', color: 'text-amber-400' },
-  tool_result: { icon: FileText, label: 'Processing Result', color: 'text-cyan-400' },
-  generating: { icon: Activity, label: 'Generating', color: 'text-indigo-400' },
-  completed: { icon: CheckCircle2, label: 'Completed', color: 'text-emerald-400' },
-  failed: { icon: XCircle, label: 'Failed', color: 'text-red-400' },
+const STAGE_ICONS: Record<string, { icon: typeof Activity; labelKey: string; color: string }> = {
+  initializing: { icon: Loader2, labelKey: 'stage_initializing', color: 'text-blue-400' },
+  thinking: { icon: Brain, labelKey: 'stage_thinking', color: 'text-violet-400' },
+  tool_calling: { icon: Wrench, labelKey: 'stage_tool_calling', color: 'text-amber-400' },
+  tool_result: { icon: FileText, labelKey: 'stage_processing_result', color: 'text-cyan-400' },
+  generating: { icon: Activity, labelKey: 'stage_generating', color: 'text-indigo-400' },
+  completed: { icon: CheckCircle2, labelKey: 'stage_completed', color: 'text-emerald-400' },
+  failed: { icon: XCircle, labelKey: 'stage_failed', color: 'text-red-400' },
 };
 
 const STAGES_ORDER = ['initializing', 'thinking', 'tool_calling', 'generating', 'completed'];
@@ -58,10 +59,15 @@ export function ExecutionProgressBar({ executionId }: Props) {
     return () => { unlisten.then((fn) => fn()); };
   }, [executionId]);
 
+  const { t, tx } = useTranslation();
+  const dt = t.deployment.dashboard;
+
   if (!executionId || !progress) return null;
 
-  const config = STAGE_CONFIG[progress.stage] ?? STAGE_CONFIG.thinking!;
-  const Icon = config!.icon;
+  const stageEntry = STAGE_ICONS[progress.stage] ?? STAGE_ICONS.thinking!;
+  const Icon = stageEntry!.icon;
+  const stageLabel = (dt as Record<string, string>)[stageEntry!.labelKey] ?? progress.stage;
+  const stageColor = stageEntry!.color;
   const isAnimated = !['completed', 'failed'].includes(progress.stage);
 
   return (
@@ -88,9 +94,9 @@ export function ExecutionProgressBar({ executionId }: Props) {
       {/* Current stage info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${config!.color} ${isAnimated ? 'animate-pulse' : ''}`} />
-          <span className={`text-sm font-medium ${config!.color}`}>
-            {config!.label}
+          <Icon className={`w-4 h-4 ${stageColor} ${isAnimated ? 'animate-pulse' : ''}`} />
+          <span className={`text-sm font-medium ${stageColor}`}>
+            {stageLabel}
             {progress.activeTool && (
               <span className="text-muted-foreground/70 font-normal">: {progress.activeTool}</span>
             )}
@@ -99,7 +105,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
           {progress.toolCallsCompleted > 0 && (
-            <span>{progress.toolCallsCompleted} tool calls</span>
+            <span>{tx(dt.tool_calls, { count: progress.toolCallsCompleted })}</span>
           )}
           {progress.percentEstimate != null && (
             <span>{progress.percentEstimate}%</span>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface InlineConfirmProps {
   message: string;
@@ -10,6 +11,8 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
   const [open, setOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  const st = t.sharing;
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +44,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
               onClick={() => setOpen(false)}
               className="px-2 py-1 text-[11px] rounded-md border border-border hover:bg-secondary/50 text-muted-foreground"
             >
-              Cancel
+              {st.cancel}
             </button>
             <button
               onClick={() => {
@@ -50,7 +53,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
               }}
               className="px-2 py-1 text-[11px] rounded-md bg-red-500/90 text-white hover:bg-red-500"
             >
-              Confirm
+              {st.confirm}
             </button>
           </div>
         </div>

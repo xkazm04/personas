@@ -8,6 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { TOUR_REGISTRY } from '@/stores/slices/system/tourSlice';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Tour icons & colors -----------------------------------------------
 
@@ -212,10 +213,10 @@ const TRICKS: Trick[] = [
 
 // -- Category definitions -----------------------------------------------
 
-const CATEGORIES: { key: Trick['category']; label: string; icon: typeof Sparkles; color: string }[] = [
-  { key: 'agent-craft', label: 'Agent Craft', icon: Sparkles, color: 'text-violet-400' },
-  { key: 'observability', label: 'Observability & Events', icon: BarChart3, color: 'text-blue-400' },
-  { key: 'platform', label: 'Platform & Setup', icon: Wrench, color: 'text-emerald-400' },
+const CATEGORIES: { key: Trick['category']; labelKey: 'cat_agent_craft' | 'cat_observability' | 'cat_platform'; icon: typeof Sparkles; color: string }[] = [
+  { key: 'agent-craft', labelKey: 'cat_agent_craft', icon: Sparkles, color: 'text-violet-400' },
+  { key: 'observability', labelKey: 'cat_observability', icon: BarChart3, color: 'text-blue-400' },
+  { key: 'platform', labelKey: 'cat_platform', icon: Wrench, color: 'text-emerald-400' },
 ];
 
 // -- Component ----------------------------------------------------------
@@ -224,14 +225,16 @@ export default function HomeLearning() {
   const tourCompletionMap = useSystemStore((s) => s.tourCompletionMap);
   const startTour = useSystemStore((s) => s.startTour);
   const [activeTrick, setActiveTrick] = useState<Trick | null>(null);
+  const { t, tx } = useTranslation();
+  const ht = t.home.learning;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<GraduationCap className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
-        title="Learning Center"
-        subtitle="Guided tours and quick tricks to master Personas"
+        title={ht.title}
+        subtitle={ht.subtitle}
       />
       <ContentBody centered>
       {/* 2-column layout */}
@@ -240,9 +243,9 @@ export default function HomeLearning() {
         <div className="w-1/2 flex-shrink-0 space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
             <Compass className="w-4 h-4 text-indigo-400" />
-            <h3 className="typo-heading text-foreground/80">Guided Tours</h3>
+            <h3 className="typo-heading text-foreground/80">{ht.guided_tours}</h3>
             <span className="text-[11px] text-muted-foreground/40 ml-auto">
-              {Object.values(tourCompletionMap).filter(Boolean).length}/{TOUR_REGISTRY.length} completed
+              {tx(ht.tours_completed, { completed: Object.values(tourCompletionMap).filter(Boolean).length, total: TOUR_REGISTRY.length })}
             </span>
           </div>
 
@@ -264,13 +267,13 @@ export default function HomeLearning() {
                     </div>
                     <div>
                       <h4 className="typo-heading text-foreground/80">{tour.title}</h4>
-                      <span className="text-[11px] text-muted-foreground/50">{tour.steps.length} steps</span>
+                      <span className="text-[11px] text-muted-foreground/50">{tx(ht.steps_count, { count: tour.steps.length })}</span>
                     </div>
                   </div>
                   {isCompleted && (
                     <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
                       <Check className="w-2.5 h-2.5" />
-                      Done
+                      {ht.done}
                     </span>
                   )}
                 </div>
@@ -280,7 +283,7 @@ export default function HomeLearning() {
                   data-testid={`learning-start-${tour.id}`}
                   className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-xl ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}
                 >
-                  {isCompleted ? <><RotateCcw className="w-3.5 h-3.5" /> Restart</> : <><Play className="w-3.5 h-3.5" /> Start Tour</>}
+                  {isCompleted ? <><RotateCcw className="w-3.5 h-3.5" /> {ht.restart}</> : <><Play className="w-3.5 h-3.5" /> {ht.start_tour}</>}
                 </button>
               </div>
             );
@@ -294,8 +297,8 @@ export default function HomeLearning() {
         <div className="w-1/2 min-w-0 space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <h3 className="typo-heading text-foreground/80">Tricks & Tips</h3>
-            <span className="text-[11px] text-muted-foreground/40 ml-auto">{TRICKS.length} guides</span>
+            <h3 className="typo-heading text-foreground/80">{ht.tricks_tips}</h3>
+            <span className="text-[11px] text-muted-foreground/40 ml-auto">{tx(ht.guides_count, { count: TRICKS.length })}</span>
           </div>
 
           {CATEGORIES.map((cat) => {
@@ -305,7 +308,7 @@ export default function HomeLearning() {
                 {/* Category header */}
                 <div className="flex items-center gap-2 pl-1">
                   <cat.icon className={`w-3.5 h-3.5 ${cat.color}`} />
-                  <span className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider">{cat.label}</span>
+                  <span className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider">{ht[cat.labelKey]}</span>
                   <div className="flex-1 h-px bg-primary/5 ml-1" />
                 </div>
 
@@ -344,6 +347,8 @@ export default function HomeLearning() {
 // -- Trick Modal --------------------------------------------------------
 
 function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
+  const { t } = useTranslation();
+  const ht = t.home.learning;
   return (
     <BaseModal isOpen onClose={onClose} titleId={`trick-modal-${trick.id}`} maxWidthClass="max-w-3xl" portal>
       <div className="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]">
@@ -380,7 +385,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
 
           {/* Steps */}
           <div className="space-y-2">
-            <span className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider">How to use</span>
+            <span className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider">{ht.how_to_use}</span>
             <div className="space-y-2 pl-0.5">
               {trick.steps.map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
@@ -399,7 +404,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
           {trick.proTip && (
             <div className="rounded-xl bg-amber-500/5 border border-amber-500/15 px-4 py-3">
               <p className="text-sm text-amber-300/70 leading-relaxed">
-                <span className="font-semibold text-amber-400">Pro tip: </span>{trick.proTip}
+                <span className="font-semibold text-amber-400">{ht.pro_tip}</span>{trick.proTip}
               </p>
             </div>
           )}

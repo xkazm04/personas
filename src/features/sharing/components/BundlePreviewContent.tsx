@@ -1,6 +1,7 @@
 import { ShieldCheck, ShieldOff } from 'lucide-react';
 import type { BundleImportPreview, BundleResourcePreview } from '@/api/network/bundle';
 import { NetworkAccessScopeBadge } from './NetworkAccessScopeBadge';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function BundlePreviewContent({
   preview,
@@ -19,6 +20,8 @@ export function BundlePreviewContent({
   dangerConfirmed: boolean;
   setDangerConfirmed: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const hasConflicts = preview.resources.some((r) => r.conflict);
 
   return (
@@ -49,17 +52,17 @@ export function BundlePreviewContent({
               : 'bg-red-500/10 text-red-400'
           }`}>
             {preview.signature_valid
-              ? 'Signature verified'
+              ? st.signature_verified
               : preview.signer_trusted
-                ? 'Signature mismatch'
-                : 'Unverified signature'}
+                ? st.signature_mismatch
+                : st.unverified_signature}
           </span>
           <span className={`px-1.5 py-0.5 rounded-full ${
             preview.signer_trusted
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-amber-500/10 text-amber-400'
           }`}>
-            {preview.signer_trusted ? 'Trusted peer' : 'Unknown peer'}
+            {preview.signer_trusted ? st.trusted_peer : st.unknown_peer}
           </span>
         </div>
       </div>
@@ -73,10 +76,9 @@ export function BundlePreviewContent({
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-red-400 space-y-1">
-              <p className="font-medium">Signature does not match the trusted key for this peer.</p>
+              <p className="font-medium">{st.danger_trusted_title}</p>
               <p className="text-red-400/80">
-                The bundle claims to be from a known peer but the signature verification failed.
-                This could indicate tampering. Only proceed if you are certain the source is safe.
+                {st.danger_trusted_body}
               </p>
             </div>
           </div>
@@ -87,7 +89,7 @@ export function BundlePreviewContent({
               onChange={(e) => setDangerConfirmed(e.target.checked)}
               className="rounded border-red-500/40"
             />
-            I understand the risks and want to import this bundle
+            {st.danger_trusted_confirm}
           </label>
         </div>
       )}
@@ -98,11 +100,9 @@ export function BundlePreviewContent({
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-red-400 space-y-1">
-              <p className="font-medium">This bundle is from an unknown signer and cannot be verified.</p>
+              <p className="font-medium">{st.danger_unknown_title}</p>
               <p className="text-red-400/80">
-                The signer is not in your trusted peers list, so the signature cannot be checked
-                against a known key. Add the sender as a trusted peer first, or proceed only if you
-                fully trust the source.
+                {st.danger_unknown_body}
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ export function BundlePreviewContent({
               onChange={(e) => setDangerConfirmed(e.target.checked)}
               className="rounded border-red-500/40"
             />
-            I understand the risks and want to import this unverified bundle
+            {st.danger_unknown_confirm}
           </label>
         </div>
       )}
@@ -121,7 +121,7 @@ export function BundlePreviewContent({
       {/* Resources list */}
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">
-          {preview.resources.length} resource{preview.resources.length !== 1 ? 's' : ''} in bundle
+          {preview.resources.length} {preview.resources.length !== 1 ? 'resources' : 'resource'} in bundle
         </div>
         <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
           {preview.resources.map((resource) => (
@@ -133,7 +133,7 @@ export function BundlePreviewContent({
       {/* Conflict options */}
       {hasConflicts && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-          <div className="text-xs text-amber-400 font-medium">Naming conflicts detected</div>
+          <div className="text-xs text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
             <input
               type="checkbox"
@@ -141,15 +141,15 @@ export function BundlePreviewContent({
               onChange={(e) => setSkipConflicts(e.target.checked)}
               className="rounded border-border"
             />
-            Skip conflicting resources
+            {st.skip_conflicting}
           </label>
           {!skipConflicts && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Rename prefix</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{st.rename_prefix_label}</label>
               <input
                 value={renamePrefix}
                 onChange={(e) => setRenamePrefix(e.target.value)}
-                placeholder="e.g. imported-"
+                placeholder={st.rename_prefix_placeholder}
                 className="w-full px-2 py-1 text-xs rounded-lg border border-border bg-background focus-ring"
               />
             </div>
@@ -161,6 +161,8 @@ export function BundlePreviewContent({
 }
 
 function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) {
+  const { t: _t } = useTranslation();
+  const st = _t.sharing;
   return (
     <div className={`rounded-lg border p-2 flex items-center gap-2 ${
       resource.conflict
@@ -177,7 +179,7 @@ function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) 
       </div>
       {resource.conflict && (
         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 flex-shrink-0">
-          conflict
+          {st.conflict}
         </span>
       )}
     </div>
