@@ -27,7 +27,29 @@ const labLifecycle = createRunLifecycle('isLabRunning', 'labProgress');
 const RUN_HISTORY_LIMIT = 20;
 const MAX_CACHED_RUN_RESULTS = 10;
 
-export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions" | "breed" | "evolve";
+export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions" | "breed" | "evolve" | "regression";
+
+// -- Baseline Pinning (localStorage persistence) ----------------------
+
+const BASELINE_STORAGE_KEY = 'dac-lab-baselines';
+
+export interface BaselinePin {
+  versionId: string;
+  versionNumber: number;
+  runId: string;
+  pinnedAt: string;
+}
+
+function loadBaselines(): Record<string, BaselinePin> {
+  try {
+    const raw = localStorage.getItem(BASELINE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveBaselines(baselines: Record<string, BaselinePin>) {
+  localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baselines));
+}
 
 export interface LabRunProgress {
   runId?: string;
@@ -233,6 +255,12 @@ export interface LabSlice {
 
   // Active progress hydration (restores progress after page refresh)
   hydrateActiveProgress: (personaId: string) => Promise<void>;
+
+  // Baseline Pinning (regression testing)
+  baselinePin: BaselinePin | null;
+  pinBaseline: (personaId: string, versionId: string, versionNumber: number, runId: string) => void;
+  unpinBaseline: (personaId: string) => void;
+  loadBaseline: (personaId: string) => void;
 }
 
 // -- Slice Creator ------------------------------------------------
@@ -458,6 +486,28 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       } catch (err) {
         reportError(err, "Failed to hydrate active lab progress", set, { action: "lab.hydrateActiveProgress" });
       }
+    },
+
+    // Baseline Pinning
+    baselinePin: null,
+    pinBaseline: (personaId, versionId, versionNumber, runId) => {
+      const pin: BaselinePin = { versionId, versionNumber, runId, pinnedAt: new Date().toISOString() };
+      const all = loadBaselines();
+      all[personaId] = pin;
+      saveBaselines(all);
+      set({ baselinePin: pin });
+      logger.info(`Pinned baseline for ${personaId}: v${versionNumber} (run ${runId})`);
+    },
+    unpinBaseline: (personaId) => {
+      const all = loadBaselines();
+      delete all[personaId];
+      saveBaselines(all);
+      set({ baselinePin: null });
+      logger.info(`Unpinned baseline for ${personaId}`);
+    },
+    loadBaseline: (personaId) => {
+      const all = loadBaselines();
+      set({ baselinePin: all[personaId] ?? null });
     },
   };
 };
