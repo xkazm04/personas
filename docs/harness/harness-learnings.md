@@ -72,3 +72,18 @@
 - [2026-04-02] React 19, Zustand 5, Framer Motion 12
 - [2026-04-02] State management: Zustand with slice pattern in `src/stores/slices/`
 - [2026-04-02] The app uses Tauri v2 APIs — imports from `@tauri-apps/api/*` and `@tauri-apps/plugin-*`
+
+## Composition / Workflow System
+
+- [2026-04-11] Multi-agent workflow feature lives at `src/features/composition/` — ReactFlow canvas, DAG execution, NL composer. Now wired into sidebar as "Workflows" section
+- [2026-04-11] Composition store is `compositionSlice` in `src/stores/slices/pipeline/compositionSlice.ts` — uses localStorage (`__personas_workflows` key), NOT SQLite. Migration to Tauri backend DB is a future task
+- [2026-04-11] `compile_workflow` Tauri command converts NL descriptions → team blueprints → workflow DAGs (calls Rust backend)
+- [2026-04-11] Workflow execution walks topological order, executing persona nodes via `agentStore.executePersona()` with polling (500ms, 5min timeout). Tracks cost/tokens per node
+- [2026-04-11] Custom sidebar icons are in `SidebarIcons.tsx` — each section has a hand-crafted animated SVG using `pi-breathe`, `pi-pulse`, `pi-flow`, `pi-scan` CSS animation classes
+
+## Open follow-ups (from Run #1, 2026-04-11)
+
+- Migrate composition workflows from localStorage to SQLite backend table (compositionSlice currently uses `localStorage.getItem('__personas_workflows')`)
+- Add workflow items to the CommandPalette (currently only automation items from vaultStore are surfaced; composition workflows are not)
+- Add workflow execution history to the Overview > Activity section
+- Consider i18n of the WorkflowList and WorkflowCanvas UI text (currently hardcoded English)
