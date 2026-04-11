@@ -217,7 +217,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['account', 'engine', 'byom', 'network', 'quality-gates', 'config', 'admin']) : undefined}
+          devItems={isDev ? new Set(['account', 'engine', 'network', 'quality-gates', 'config', 'admin']) : undefined}
         />
       );
 
