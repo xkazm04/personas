@@ -1,5 +1,4 @@
 pub mod claude;
-pub mod codex;
 
 use crate::db::DbPool;
 use crate::db::models::Persona;
@@ -30,7 +29,6 @@ pub enum PromptDelivery {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EngineKind {
     ClaudeCode,
-    CodexCli,
 }
 
 impl EngineKind {
@@ -39,7 +37,7 @@ impl EngineKind {
     /// **Compile-time safety**: [`Self::assert_all_covered`] ensures this array
     /// covers every variant. If you add a variant to the enum, the compiler will
     /// force you to update this array (and `as_setting` / `FromStr`).
-    pub const ALL: [EngineKind; 2] = [EngineKind::ClaudeCode, EngineKind::CodexCli];
+    pub const ALL: [EngineKind; 1] = [EngineKind::ClaudeCode];
 
     /// Compile-time exhaustiveness guard for [`Self::ALL`].
     ///
@@ -55,9 +53,6 @@ impl EngineKind {
         while i < Self::ALL.len() {
             match Self::ALL[i] {
                 EngineKind::ClaudeCode => {}
-                EngineKind::CodexCli => {}
-                // ↑ NO wildcard: adding a variant without a branch here is a
-                //   compile error.
             }
             i += 1;
         }
@@ -81,7 +76,6 @@ impl EngineKind {
     pub fn as_setting(&self) -> &'static str {
         match self {
             EngineKind::ClaudeCode => "claude_code",
-            EngineKind::CodexCli => "codex_cli",
         }
     }
 
@@ -101,7 +95,8 @@ impl std::str::FromStr for EngineKind {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "claude_code" => Ok(EngineKind::ClaudeCode),
-            "codex_cli" => Ok(EngineKind::CodexCli),
+            // Legacy: treat "codex_cli" as ClaudeCode for backwards compat with stored settings
+            "codex_cli" => Ok(EngineKind::ClaudeCode),
             other => Err(format!("unknown engine kind '{}'", other)),
         }
     }
@@ -153,6 +148,12 @@ pub trait CliProvider: Send + Sync {
     /// Apply provider-specific environment overrides (API keys, base URLs).
     fn apply_provider_env(&self, cli_args: &mut CliArgs, profile: &ModelProfile);
 
+    /// Minimum required CLI version, or `None` to skip the version check.
+    /// Returned as a dot-separated version string (e.g., "2.1.101").
+    fn minimum_version(&self) -> Option<&str> {
+        None
+    }
+
     /// Build CLI arguments for a fresh execution with prompt text embedded
     /// (used by providers with PositionalArg or Flag delivery).
     fn build_execution_args_with_prompt(
@@ -184,7 +185,6 @@ pub trait CliProvider: Send + Sync {
 pub fn resolve_provider(kind: EngineKind) -> Box<dyn CliProvider> {
     match kind {
         EngineKind::ClaudeCode => Box::new(claude::ClaudeProvider),
-        EngineKind::CodexCli => Box::new(codex::CodexProvider),
     }
 }
 
@@ -224,6 +224,119 @@ pub fn load_engine_kind_notified(pool: &DbPool, app: &tauri::AppHandle) -> Engin
         }
         Some(ref s) => EngineKind::from_setting(s),
         None => EngineKind::ClaudeCode,
+    }
+}
+
+// =============================================================================
+// CLI version check
+// =============================================================================
+
+/// Parse a version string like "2.1.101" into a comparable tuple of numbers.
+/// Returns `None` if parsing fails.
+fn parse_version_tuple(version: &str) -> Option<Vec<u64>> {
+    let parts: Vec<u64> = version
+        .split('.')
+        .filter_map(|p| p.parse().ok())
+        .collect();
+    if parts.len() >= 2 {
+        Some(parts)
+    } else {
+        None
+    }
+}
+
+/// Compare two dot-separated version strings numerically.
+/// Returns true if `actual` >= `minimum`.
+pub fn version_gte(actual: &str, minimum: &str) -> bool {
+    let Some(a) = parse_version_tuple(actual) else {
+        return false;
+    };
+    let Some(m) = parse_version_tuple(minimum) else {
+        return true; // can't parse minimum — don't block
+    };
+    for i in 0..a.len().max(m.len()) {
+        let av = a.get(i).copied().unwrap_or(0);
+        let mv = m.get(i).copied().unwrap_or(0);
+        if av > mv {
+            return true;
+        }
+        if av < mv {
+            return false;
+        }
+    }
+    true // equal
+}
+
+/// Extract the version number from `claude --version` output.
+///
+/// Handles common formats:
+/// - "claude v2.1.101"
+/// - "claude-code 2.1.98"
+/// - "2.1.101"
+pub fn extract_version(output: &str) -> Option<String> {
+    let line = output.lines().next()?.trim();
+    // Try to find a version-like pattern: digits.digits[.digits...]
+    for token in line.split_whitespace() {
+        let clean = token.trim_start_matches('v');
+        if clean.contains('.') && clean.chars().next().map_or(false, |c| c.is_ascii_digit()) {
+            return Some(clean.to_string());
+        }
+    }
+    None
+}
+
+/// Run `<binary> --version` with a timeout, parse the version, compare against
+/// the provider's minimum. Returns `Ok(version_string)` if OK or no version
+/// could be determined, `Err(warning_message)` if below minimum.
+pub async fn check_cli_version(
+    binary_path: &str,
+    minimum: &str,
+) -> Result<String, String> {
+    let mut cmd = tokio::process::Command::new(binary_path);
+    cmd.arg("--version");
+
+    #[cfg(target_os = "windows")]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = match tokio::time::timeout(
+        std::time::Duration::from_secs(2),
+        cmd.output(),
+    )
+    .await
+    {
+        Ok(Ok(out)) => out,
+        Ok(Err(e)) => {
+            tracing::debug!(binary = binary_path, error = %e, "Failed to run --version");
+            return Ok("unknown".to_string());
+        }
+        Err(_) => {
+            tracing::debug!(binary = binary_path, "CLI --version timed out");
+            return Ok("unknown".to_string());
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let Some(version) = extract_version(&stdout) else {
+        tracing::debug!(
+            binary = binary_path,
+            output = %stdout.chars().take(200).collect::<String>(),
+            "Could not parse CLI version from --version output"
+        );
+        return Ok("unknown".to_string());
+    };
+
+    if version_gte(&version, minimum) {
+        Ok(version)
+    } else {
+        Err(format!(
+            "CLI version {version} is below the recommended minimum {minimum}. \
+             Please update your Claude Code CLI to avoid known issues \
+             (UTF-8 corruption, permission bugs, timeout failures)."
+        ))
     }
 }
 
@@ -282,4 +395,70 @@ mod tests {
             );
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Version parsing & comparison
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn version_gte_equal() {
+        assert!(version_gte("2.1.101", "2.1.101"));
+    }
+
+    #[test]
+    fn version_gte_newer() {
+        assert!(version_gte("2.2.0", "2.1.101"));
+        assert!(version_gte("3.0.0", "2.1.101"));
+        assert!(version_gte("2.1.102", "2.1.101"));
+    }
+
+    #[test]
+    fn version_gte_older() {
+        assert!(!version_gte("2.1.92", "2.1.101"));
+        assert!(!version_gte("2.0.200", "2.1.101"));
+        assert!(!version_gte("1.9.999", "2.1.101"));
+    }
+
+    #[test]
+    fn version_gte_two_part() {
+        assert!(version_gte("2.2", "2.1.101"));
+        assert!(!version_gte("2.1", "2.1.101"));
+    }
+
+    #[test]
+    fn extract_version_prefixed() {
+        assert_eq!(
+            extract_version("claude v2.1.101"),
+            Some("2.1.101".to_string())
+        );
+    }
+
+    #[test]
+    fn extract_version_bare() {
+        assert_eq!(
+            extract_version("2.1.98"),
+            Some("2.1.98".to_string())
+        );
+    }
+
+    #[test]
+    fn extract_version_with_name() {
+        assert_eq!(
+            extract_version("claude-code 2.1.92"),
+            Some("2.1.92".to_string())
+        );
+    }
+
+    #[test]
+    fn extract_version_garbage() {
+        assert_eq!(extract_version("not a version"), None);
+        assert_eq!(extract_version(""), None);
+    }
+
+    #[test]
+    fn claude_provider_has_minimum_version() {
+        let provider = resolve_provider(EngineKind::ClaudeCode);
+        assert!(provider.minimum_version().is_some());
+    }
+
 }

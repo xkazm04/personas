@@ -847,20 +847,6 @@ pub async fn run_execution(
                 );
             }
 
-            // Guard: reject args that still contain the Codex prompt sentinel.
-            // This catches any execution path that forgot to call
-            // build_execution_args_with_prompt() for a PositionalArg provider.
-            if cli_args.args.iter().any(|a| a == crate::engine::provider::codex::PROMPT_PLACEHOLDER) {
-                let error_msg = format!(
-                    "{}: prompt placeholder was not replaced — aborting to avoid an empty-prompt CLI invocation",
-                    cli_provider.engine_name()
-                );
-                tracing::error!("{}", error_msg);
-                logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
-                last_spawn_error = Some(error_msg);
-                continue;
-            }
-
             // Early cancellation check: if the user cancelled during arg
             // building or failover iteration, skip spawning entirely to avoid
             // starting a process that will be immediately killed.
