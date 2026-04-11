@@ -341,27 +341,39 @@ pub fn assemble_prompt(
          - NOT available: Python (not on PATH), pip, jq\n\
          - ALWAYS use `curl` for HTTP API calls -- never write Python or Node.js scripts for simple API calls\n\
          - For JSON parsing, use `node -e` with inline JavaScript (one-liners) or pipe through `node -p`\n\
-         - Credentials are pre-injected as environment variables -- access them with `$ENV_VAR_NAME` in curl commands\n\n"
+         - For authenticated API calls, use the credential proxy (see below) -- do NOT look for secret env vars\n\n"
     );
     #[cfg(not(windows))]
     prompt.push_str(
         "- Platform: Linux/macOS\n\
          - Available: `curl`, `node`, `npx`, `git`, `bash`\n\
          - PREFER `curl` for HTTP API calls -- avoid writing scripts when a single curl command works\n\
-         - Credentials are pre-injected as environment variables -- access them with `$ENV_VAR_NAME` in curl commands\n\n"
+         - For authenticated API calls, use the credential proxy (see below) -- do NOT look for secret env vars\n\n"
     );
 
-    // Available Credentials (as environment variables)
+    // Available Credentials (via proxy)
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
-            prompt.push_str("## Available Credentials (as environment variables)\n");
-            prompt.push_str("These env vars are ALREADY SET in your shell -- use them directly in curl commands:\n");
+            prompt.push_str("## Available Credentials (via secure proxy)\n");
+            prompt.push_str("Authenticated API calls are routed through a local credential proxy.\n");
+            prompt.push_str("Credential secrets are NOT in your environment -- use the proxy endpoint instead.\n\n");
+            prompt.push_str("Credential IDs available:\n");
             for hint in hints {
                 prompt.push_str(&format!("- {hint}\n"));
             }
             prompt.push_str(
-                "\nExample: `curl -H \"Authorization: Bearer $GOOGLE_ACCESS_TOKEN\" https://api.example.com`\n\
-                 IMPORTANT: Do NOT check if env vars exist -- they are pre-configured. Just use them.\n\n",
+                "\n### How to use the proxy\n\
+                 Send a POST request to `$PERSONAS_PROXY_URL/<credential_id>` with a JSON body:\n\
+                 ```\n\
+                 curl -s -X POST \"$PERSONAS_PROXY_URL/<credential_id>\" \\\n\
+                   -H \"Authorization: Bearer $PERSONAS_PROXY_KEY\" \\\n\
+                   -H \"Content-Type: application/json\" \\\n\
+                   -d '{\"method\":\"GET\",\"path\":\"/your/api/endpoint\",\"headers\":{},\"body\":null}'\n\
+                 ```\n\
+                 The proxy resolves the credential's base URL, injects auth headers, enforces rate limits,\n\
+                 and returns `{\"success\":true,\"data\":{\"status\":200,\"body\":\"...\",\"headers\":{...}}}`.\n\n\
+                 IMPORTANT: `$PERSONAS_PROXY_URL` and `$PERSONAS_PROXY_KEY` are pre-set. Just use them.\n\
+                 IMPORTANT: Do NOT attempt to read or echo credential secrets -- they are not in your environment.\n\n",
             );
         }
     }
@@ -741,59 +753,16 @@ fn base_cli_setup() -> (String, Vec<String>) {
 
 /// Apply provider-specific environment overrides and removals to a CliArgs.
 /// Reused by build_cli_args and test_runner.
+///
+/// Note: Ollama, LiteLLM, and Custom provider paths were removed — Claude Code
+/// CLI only supports Anthropic models. See harness-learnings Run #4 for details.
 pub fn apply_provider_env(cli_args: &mut CliArgs, profile: &ModelProfile) {
     match profile.provider.as_deref() {
-        Some(providers::OLLAMA) => {
-            if let Some(ref base_url) = profile.base_url {
-                cli_args
-                    .env_overrides
-                    .push(("OLLAMA_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = profile.auth_token {
-                if !auth_token.is_empty() {
-                    cli_args
-                        .env_overrides
-                        .push(("OLLAMA_API_KEY".to_string(), auth_token.clone()));
-                }
-            }
-            cli_args
-                .env_removals
-                .push("ANTHROPIC_API_KEY".to_string());
-        }
-        Some(providers::LITELLM) => {
-            if let Some(ref base_url) = profile.base_url {
-                cli_args
-                    .env_overrides
-                    .push(("ANTHROPIC_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = profile.auth_token {
-                if !auth_token.is_empty() {
-                    cli_args
-                        .env_overrides
-                        .push(("ANTHROPIC_AUTH_TOKEN".to_string(), auth_token.clone()));
-                }
-            }
-            cli_args
-                .env_removals
-                .push("ANTHROPIC_API_KEY".to_string());
-        }
-        Some(providers::CUSTOM) => {
-            if let Some(ref base_url) = profile.base_url {
-                cli_args
-                    .env_overrides
-                    .push(("OPENAI_BASE_URL".to_string(), base_url.clone()));
-            }
-            if let Some(ref auth_token) = profile.auth_token {
-                cli_args
-                    .env_overrides
-                    .push(("OPENAI_API_KEY".to_string(), auth_token.clone()));
-            }
-            cli_args
-                .env_removals
-                .push("ANTHROPIC_API_KEY".to_string());
-        }
         _ => {
-            // Default provider (anthropic) -- no special env needed
+            // Default provider (anthropic) -- no special env needed.
+            // Claude Code CLI validates model names against Anthropic's list
+            // and does not support OLLAMA_BASE_URL, OPENAI_BASE_URL, etc.
+            let _ = (cli_args, profile);
         }
     }
 }
@@ -841,6 +810,10 @@ pub fn build_cli_args(
         "stream-json".to_string(),
         "--verbose".to_string(),
         "--dangerously-skip-permissions".to_string(),
+        // Strip CLI's own dynamic system-prompt sections (git status, cwd, etc.)
+        // that are irrelevant to persona executions. Enables cross-user prompt
+        // caching on the API side for lower cost. Requires CLI ≥ 2.1.98.
+        "--exclude-dynamic-system-prompt-sections".to_string(),
     ]);
 
     // Effort level — explicit so personas behavior is deterministic across
@@ -902,6 +875,20 @@ pub fn build_cli_args(
     cli_args.env_removals.push("CLAUDECODE".to_string());
     cli_args.env_removals.push("CLAUDE_CODE".to_string());
 
+    // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
+    // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
+    // to give the CLI time to surface the timeout error cleanly before the
+    // process is killed. Floor at 10s to avoid misconfigured tiny values.
+    // Requires CLI ≥ 2.1.101 (which first honored API_TIMEOUT_MS).
+    if let Some(p) = persona {
+        if p.timeout_ms > 0 {
+            let api_ms = (p.timeout_ms as u64).saturating_sub(5_000).max(10_000);
+            cli_args
+                .env_overrides
+                .push(("API_TIMEOUT_MS".to_string(), api_ms.to_string()));
+        }
+    }
+
     cli_args
 }
 
@@ -919,6 +906,7 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
         "stream-json".to_string(),
         "--verbose".to_string(),
         "--dangerously-skip-permissions".to_string(),
+        "--exclude-dynamic-system-prompt-sections".to_string(),
     ]);
 
     // Pin effort on resume too — keeps continued sessions on the same effort
@@ -950,7 +938,8 @@ pub fn assemble_resume_prompt(
 
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
-            prompt.push_str("## Available Credentials\n");
+            prompt.push_str("## Available Credentials (via proxy)\n");
+            prompt.push_str("Use the credential proxy as described earlier. Credential IDs:\n");
             for hint in hints {
                 prompt.push_str(&format!("- {hint}\n"));
             }
@@ -1531,12 +1520,18 @@ You MUST use the following protocols during EVERY execution. This is mandatory �
    Each decision object must have `id` (unique), `label` (short display text), and optionally `description` and `category`.
    Skip this protocol entirely if the execution completed normally with no items requiring human decision-making.
 
-6. **execution_flow** — Declare the steps you took:
+6. **propose_improvement** — ONLY if you have evidence-based suggestions for improving your own instructions or strategy. The improvement is routed to the Lab module for user review — it is NOT applied automatically. Maximum one proposal per execution.
+   ```json
+   {"propose_improvement": {"section": "instructions", "rationale": "Why this change improves performance", "current_excerpt": "The current text being replaced", "proposed_replacement": "The new text", "confidence": 0.78, "evidence": "Specific data points supporting the change"}}
+   ```
+   Rules: only propose changes to `instructions`, `toolGuidance`, or `errorHandling` sections — NEVER `identity`. Confidence must reflect actual data (>= 0.7 requires 3+ data points). Only emit when you have accumulated enough review feedback or execution history to justify the change.
+
+7. **execution_flow** — Declare the steps you took:
    ```json
    {"execution_flow": {"flows": [{"step": 1, "action": "research", "status": "completed"}, {"step": 2, "action": "analyze", "status": "completed"}, {"step": 3, "action": "report", "status": "completed"}]}}
    ```
 
-7. **outcome_assessment** — ALWAYS end with this (already required above):
+8. **outcome_assessment** — ALWAYS end with this (already required above):
    ```json
    {"outcome_assessment": {"accomplished": true, "summary": "Brief description of what was achieved"}}
    ```
@@ -1933,6 +1928,9 @@ mod tests {
         assert!(args
             .args
             .contains(&"--dangerously-skip-permissions".to_string()));
+        assert!(args
+            .args
+            .contains(&"--exclude-dynamic-system-prompt-sections".to_string()));
 
         // Effort is locked to medium by default to avoid the CLI 2.1.94
         // tier-dependent default drift.
@@ -2030,6 +2028,64 @@ mod tests {
         // No persona-specific flags
         assert!(!args.args.contains(&"--max-budget-usd".to_string()));
         assert!(!args.args.contains(&"--max-turns".to_string()));
+        // No API_TIMEOUT_MS without a persona
+        assert!(
+            !args.env_overrides.iter().any(|(k, _)| k == "API_TIMEOUT_MS"),
+            "API_TIMEOUT_MS should not be set without a persona"
+        );
+    }
+
+    #[test]
+    fn test_cli_args_api_timeout_from_persona() {
+        let mut persona = test_persona();
+        persona.timeout_ms = 60_000; // 60 seconds
+
+        let args = build_cli_args(Some(&persona), None);
+
+        let timeout_env = args
+            .env_overrides
+            .iter()
+            .find(|(k, _)| k == "API_TIMEOUT_MS");
+        assert!(timeout_env.is_some(), "API_TIMEOUT_MS should be set");
+        // 60000 - 5000 = 55000
+        assert_eq!(timeout_env.unwrap().1, "55000");
+    }
+
+    #[test]
+    fn test_cli_args_api_timeout_floor() {
+        let mut persona = test_persona();
+        persona.timeout_ms = 8_000; // below 10s + 5s buffer
+
+        let args = build_cli_args(Some(&persona), None);
+
+        let timeout_env = args
+            .env_overrides
+            .iter()
+            .find(|(k, _)| k == "API_TIMEOUT_MS");
+        assert!(timeout_env.is_some());
+        // 8000 - 5000 = 3000, but floored to 10000
+        assert_eq!(timeout_env.unwrap().1, "10000");
+    }
+
+    #[test]
+    fn test_cli_args_api_timeout_zero_skipped() {
+        let mut persona = test_persona();
+        persona.timeout_ms = 0;
+
+        let args = build_cli_args(Some(&persona), None);
+
+        assert!(
+            !args.env_overrides.iter().any(|(k, _)| k == "API_TIMEOUT_MS"),
+            "API_TIMEOUT_MS should not be set when timeout_ms is 0"
+        );
+    }
+
+    #[test]
+    fn test_resume_cli_args_has_exclude_dynamic() {
+        let args = build_resume_cli_args("sess-1");
+        assert!(args
+            .args
+            .contains(&"--exclude-dynamic-system-prompt-sections".to_string()));
     }
 
     #[test]
