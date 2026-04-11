@@ -236,3 +236,11 @@
 - InlineDiffPreview only shows section-level changes (which sections changed + word counts) — doesn't show the actual text diff inline. Users need to switch to list view for full DiffViewer. Consider adding an "expand full diff" option per section
 - No integration with the regression testing panel — timeline entries don't show whether a regression check was run against that version. The `baselinePin` is shown but not linked to regression results
 - Timeline animations use `framer-motion` (already a dependency) — entrance animation has a staggered delay per entry. May need `layout` animations for smooth expand/collapse if performance becomes an issue with many versions
+
+## Agent Editor Quick Stats
+
+- [2026-04-11] `QuickStatsBar` at `src/features/agents/sub_editor/components/QuickStatsBar.tsx` — compact stat chips below the agent header: success rate, health grade, avg latency, cost/run, last run time
+- [2026-04-11] `useQuickStats` hook at `src/features/agents/sub_editor/hooks/useQuickStats.ts` — fetches last 10 executions via `listExecutions`, reads health signal from `overviewStore.healthSignals`
+- [2026-04-11] Rendered via ContentHeader's `children` slot in PersonaEditorHeader — no layout component changes needed
+- [2026-04-11] Stats are computed client-side from 10 most recent executions — lightweight, no new API calls to Rust backend
+- [2026-04-11] Color-coded: emerald (>=80% success / healthy), amber (>=50% / degraded), red (<50% / unhealthy)
