@@ -2438,6 +2438,95 @@ export const en = {
     cancelled: "Cancelled",
     error: "Error",
   },
+
+  // -------------------------------------------------------------------
+  //  STATUS TOKENS -- machine tokens from the Rust backend mapped to
+  //  human-readable labels. Used by tokenLabel() in tokenMaps.ts.
+  //  Keep values short (1-2 words) for badges and status pills.
+  // -------------------------------------------------------------------
+  status_tokens: {
+    // Execution status (mirrors execution_status above for token-based access)
+    execution: {
+      queued: "Queued",
+      running: "Running",
+      completed: "Completed",
+      failed: "Failed",
+      cancelled: "Cancelled",
+      error: "Error",
+    },
+    // Event processing status
+    event: {
+      pending: "Pending",
+      processing: "Processing",
+      processed: "Processed",
+      failed: "Failed",
+      retrying: "Retrying",
+    },
+    // Automation run status
+    automation: {
+      pending: "Pending",
+      running: "Running",
+      completed: "Completed",
+      failed: "Failed",
+      timeout: "Timed Out",
+    },
+    // Severity levels (healing issues, alerts, errors)
+    severity: {
+      info: "Info",
+      low: "Low",
+      medium: "Medium",
+      high: "High",
+      critical: "Critical",
+    },
+    // Message / task priority
+    priority: {
+      low: "Low",
+      normal: "Normal",
+      high: "High",
+      urgent: "Urgent",
+    },
+    // Healing issue status
+    healing_status: {
+      open: "Open",
+      auto_fixed: "Auto-Fixed",
+      acknowledged: "Acknowledged",
+      resolved: "Resolved",
+    },
+    // Healing issue category
+    healing_category: {
+      config: "Configuration",
+      auth: "Authentication",
+      network: "Network",
+      timeout: "Timeout",
+      quota: "Quota",
+    },
+    // Credential connector status
+    connector_status: {
+      ready: "Ready",
+      untested: "Untested",
+      failed: "Failed",
+      no_credential: "No Credential",
+      testing: "Testing",
+    },
+    // Test run status
+    test: {
+      generating: "Generating",
+      running: "Running",
+      completed: "Completed",
+      failed: "Failed",
+      pending: "Pending",
+    },
+    // Dev goal / task status
+    dev: {
+      open: "Open",
+      in_progress: "In Progress",
+      completed: "Completed",
+      blocked: "Blocked",
+      queued: "Queued",
+      running: "Running",
+      failed: "Failed",
+    },
+  },
 };
 
 export type Translations = typeof en;
