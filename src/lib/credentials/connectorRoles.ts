@@ -1,8 +1,66 @@
+import type { Translations } from '@/i18n/en';
+
 /** Functional role grouping for connector interchangeability */
 export interface ConnectorRole {
   role: string;
+  /** i18n key inside `connector_roles` — resolve via `resolveRoleLabel()` or `t.connector_roles[role]`. */
+  labelKey: string;
+  /** Pre-resolved English label (kept for backward compatibility). */
   label: string;
   members: string[];
+}
+
+// English defaults used both as `label` fallback and to seed the i18n bundle.
+const ROLE_LABELS: Record<string, string> = {
+  chat_messaging: 'Chat & Messaging',
+  email_delivery: 'Email Delivery',
+  sms: 'SMS',
+  source_control: 'Source Control',
+  ci_cd: 'CI/CD',
+  project_tracking: 'Project Tracking',
+  knowledge_base: 'Knowledge Base',
+  design: 'Design',
+  feature_flags: 'Feature Flags',
+  hosting: 'Hosting & Deploy',
+  cloud_infra: 'Cloud Infrastructure',
+  database: 'Database',
+  cloud_storage: 'Cloud Storage',
+  error_monitoring: 'Error Monitoring',
+  incident_management: 'Incident Management',
+  uptime_monitoring: 'Uptime Monitoring',
+  security_scanning: 'Security Scanning',
+  analytics: 'Product Analytics',
+  spreadsheet: 'Spreadsheets',
+  crm: 'CRM',
+  support_ticketing: 'Support Ticketing',
+  social_media: 'Social Media',
+  cms: 'CMS',
+  search_engine: 'Search Engine',
+  video_comms: 'Video & Comms',
+  payment_processing: 'Payment Processing',
+  accounting: 'Accounting',
+  banking_fintech: 'Banking & Fintech',
+  market_data: 'Market Data',
+  e_commerce: 'E-Commerce',
+  scheduling: 'Scheduling',
+  form_survey: 'Forms & Surveys',
+  notifications: 'Notifications',
+  auth_identity: 'Auth & Identity',
+  ai_platform: 'AI Platform',
+  advertising: 'Advertising',
+  e_signature: 'E-Signature',
+  hr_recruiting: 'HR & Recruiting',
+  tool_gateway: 'Tool Gateway',
+  code_editor: 'Code Editor',
+  container_runtime: 'Container Runtime',
+  shell: 'Shell / Terminal',
+  note_taking: 'Note Taking',
+  browser_automation: 'Browser Automation',
+};
+
+/** Helper to build a ConnectorRole entry with both labelKey and fallback label. */
+function role(key: string, members: string[]): ConnectorRole {
+  return { role: key, labelKey: key, label: ROLE_LABELS[key] ?? key, members };
 }
 
 /**
@@ -12,80 +70,127 @@ export interface ConnectorRole {
  */
 export const CONNECTOR_ROLES: ConnectorRole[] = [
   // -- Communication ---------------------------------------------
-  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'microsoft_teams', 'gmail', 'microsoft_outlook', 'personas_messages'] },
-  { role: 'email_delivery',      label: 'Email Delivery',       members: ['sendgrid', 'resend', 'mailchimp'] },
-  { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
+  role('chat_messaging',      ['slack', 'discord', 'telegram', 'microsoft_teams', 'gmail', 'microsoft_outlook', 'personas_messages']),
+  role('email_delivery',      ['sendgrid', 'resend', 'mailchimp']),
+  role('sms',                 ['twilio_sms', 'twilio']),
 
   // -- Development -----------------------------------------------
-  { role: 'source_control',      label: 'Source Control',       members: ['github', 'gitlab', 'azure_devops'] },
-  { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab', 'azure_devops'] },
-  { role: 'project_tracking',    label: 'Project Tracking',     members: ['jira', 'linear', 'clickup', 'monday_com', 'monday', 'asana', 'trello', 'todoist'] },
-  { role: 'knowledge_base',      label: 'Knowledge Base',       members: ['confluence', 'airtable', 'coda'] },
-  { role: 'design',              label: 'Design',               members: ['figma', 'canva', 'penpot'] },
-  { role: 'feature_flags',       label: 'Feature Flags',        members: ['launchdarkly', 'posthog'] },
+  role('source_control',      ['github', 'gitlab', 'azure_devops']),
+  role('ci_cd',               ['circleci', 'gitlab', 'azure_devops']),
+  role('project_tracking',    ['jira', 'linear', 'clickup', 'monday_com', 'monday', 'asana', 'trello', 'todoist']),
+  role('knowledge_base',      ['confluence', 'airtable', 'coda']),
+  role('design',              ['figma', 'canva', 'penpot']),
+  role('feature_flags',       ['launchdarkly', 'posthog']),
 
   // -- Infrastructure --------------------------------------------
-  { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
-  { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase', 'kubernetes'] },
-  { role: 'database',            label: 'Database',             members: ['personas_database', 'personas_vector_db', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion', 'google_sheets'] },
-  { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox', 'onedrive', 'sharepoint', 'aws_s3', 'cloudflare_r2', 'backblaze_b2'] },
+  role('hosting',             ['vercel', 'netlify', 'cloudflare']),
+  role('cloud_infra',         ['aws', 'firebase', 'kubernetes']),
+  role('database',            ['personas_database', 'personas_vector_db', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion', 'google_sheets']),
+  role('cloud_storage',       ['dropbox', 'onedrive', 'sharepoint', 'aws_s3', 'cloudflare_r2', 'backblaze_b2']),
 
   // -- Monitoring & Security -------------------------------------
-  { role: 'error_monitoring',    label: 'Error Monitoring',     members: ['sentry', 'betterstack'] },
-  { role: 'incident_management', label: 'Incident Management',  members: ['pagerduty', 'datadog'] },
-  { role: 'uptime_monitoring',   label: 'Uptime Monitoring',    members: ['uptime_robot', 'betterstack'] },
-  { role: 'security_scanning',   label: 'Security Scanning',    members: ['snyk'] },
+  role('error_monitoring',    ['sentry', 'betterstack']),
+  role('incident_management', ['pagerduty', 'datadog']),
+  role('uptime_monitoring',   ['uptime_robot', 'betterstack']),
+  role('security_scanning',   ['snyk']),
 
   // -- Analytics & Data ------------------------------------------
-  { role: 'analytics',           label: 'Product Analytics',    members: ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment'] },
-  { role: 'spreadsheet',         label: 'Spreadsheets',         members: ['google_sheets', 'microsoft_excel', 'airtable'] },
+  role('analytics',           ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment']),
+  role('spreadsheet',         ['google_sheets', 'microsoft_excel', 'airtable']),
 
   // -- Customer-Facing -------------------------------------------
-  { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom', 'pipedrive', 'attio'] },
-  { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom', 'crisp'] },
-  { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'reddit', 'twitter'] },
+  role('crm',                 ['hubspot', 'intercom', 'pipedrive', 'attio']),
+  role('support_ticketing',   ['zendesk', 'freshdesk', 'intercom', 'crisp']),
+  role('social_media',        ['buffer', 'linkedin', 'reddit', 'twitter']),
 
   // -- Content & CMS ---------------------------------------------
-  { role: 'cms',                 label: 'CMS',                  members: ['wordpress', 'webflow', 'contentful'] },
-  { role: 'search_engine',       label: 'Search Engine',        members: ['algolia'] },
-  { role: 'video_comms',         label: 'Video & Comms',        members: ['loom'] },
+  role('cms',                 ['wordpress', 'webflow', 'contentful']),
+  role('search_engine',       ['algolia']),
+  role('video_comms',         ['loom']),
 
   // -- Finance & Commerce ----------------------------------------
-  { role: 'payment_processing',  label: 'Payment Processing',   members: ['stripe', 'paddle'] },
-  { role: 'accounting',          label: 'Accounting',           members: ['quickbooks', 'xero'] },
-  { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid', 'ramp'] },
-  { role: 'market_data',         label: 'Market Data',          members: ['alpha_vantage'] },
-  { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy'] },
+  role('payment_processing',  ['stripe', 'paddle']),
+  role('accounting',          ['quickbooks', 'xero']),
+  role('banking_fintech',     ['plaid', 'ramp']),
+  role('market_data',         ['alpha_vantage']),
+  role('e_commerce',          ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy']),
 
   // -- Scheduling & Forms ----------------------------------------
-  { role: 'scheduling',          label: 'Scheduling',           members: ['calendly', 'cal_com', 'google_calendar', 'microsoft_calendar'] },
-  { role: 'form_survey',         label: 'Forms & Surveys',      members: ['typeform', 'tally', 'formbricks'] },
-  { role: 'notifications',       label: 'Notifications',        members: ['novu', 'knock', 'ntfy'] },
+  role('scheduling',          ['calendly', 'cal_com', 'google_calendar', 'microsoft_calendar']),
+  role('form_survey',         ['typeform', 'tally', 'formbricks']),
+  role('notifications',       ['novu', 'knock', 'ntfy']),
 
   // -- Specialty -------------------------------------------------
-  { role: 'auth_identity',       label: 'Auth & Identity',      members: ['clerk'] },
-  { role: 'ai_platform',         label: 'AI Platform',          members: ['openai', 'leonardo_ai', 'elevenlabs'] },
-  { role: 'advertising',         label: 'Advertising',          members: ['google_ads'] },
-  { role: 'e_signature',         label: 'E-Signature',          members: ['docusign'] },
-  { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },
+  role('auth_identity',       ['clerk']),
+  role('ai_platform',         ['openai', 'leonardo_ai', 'elevenlabs']),
+  role('advertising',         ['google_ads']),
+  role('e_signature',         ['docusign']),
+  role('hr_recruiting',       ['greenhouse']),
 
   // -- Integration Hubs ------------------------------------------
-  { role: 'tool_gateway',        label: 'Tool Gateway',         members: ['mcp_gateway', 'arcade'] },
+  role('tool_gateway',        ['mcp_gateway', 'arcade']),
 
   // -- Desktop Apps --------------------------------------------
-  { role: 'code_editor',         label: 'Code Editor',          members: ['desktop_vscode'] },
-  { role: 'container_runtime',   label: 'Container Runtime',    members: ['desktop_docker'] },
-  { role: 'shell',               label: 'Shell / Terminal',     members: ['desktop_terminal'] },
-  { role: 'note_taking',         label: 'Note Taking',          members: ['desktop_obsidian', 'obsidian'] },
-  { role: 'browser_automation',  label: 'Browser Automation',   members: ['desktop_browser'] },
+  role('code_editor',         ['desktop_vscode']),
+  role('container_runtime',   ['desktop_docker']),
+  role('shell',               ['desktop_terminal']),
+  role('note_taking',         ['desktop_obsidian', 'obsidian']),
+  role('browser_automation',  ['desktop_browser']),
 ];
+
+/**
+ * Resolve a connector role label using the active translation bundle.
+ * Falls back to the English default when no bundle is provided.
+ */
+export function resolveRoleLabel(r: ConnectorRole, t?: Translations): string {
+  const section = t?.connector_roles as Record<string, string> | undefined;
+  return section?.[r.labelKey] ?? r.label;
+}
 
 // -- Purpose groups: architectural-level categorisation of roles --------
 
 export interface PurposeGroup {
   purpose: string;
+  /** i18n key inside `connector_roles` (prefixed with `purpose_`) — resolve via `resolvePurposeLabel()`. */
+  labelKey: string;
+  /** Pre-resolved English label (kept for backward compatibility). */
   label: string;
   roles: string[];
+}
+
+// English defaults for purpose group labels.
+const PURPOSE_LABELS: Record<string, string> = {
+  messaging: 'Messaging',
+  email: 'Email / SMS',
+  notifications: 'Notifications',
+  devops: 'DevOps / CI-CD',
+  'project-mgmt': 'Project Mgmt',
+  productivity: 'Productivity',
+  design: 'Design',
+  cloud: 'Cloud',
+  database: 'Database',
+  storage: 'Storage',
+  monitoring: 'Monitoring',
+  analytics: 'Analytics',
+  crm: 'CRM',
+  support: 'Support',
+  social: 'Social',
+  cms: 'CMS',
+  finance: 'Finance',
+  ecommerce: 'E-Commerce',
+  scheduling: 'Scheduling',
+  forms: 'Forms',
+  ai: 'AI',
+};
+
+/** Convert a purpose key to the i18n key used in `connector_roles`. */
+function purposeI18nKey(purpose: string): string {
+  return `purpose_${purpose.replace('-', '_')}`;
+}
+
+/** Helper to build a PurposeGroup entry with both labelKey and fallback label. */
+function purposeGroup(purpose: string, roles: string[]): PurposeGroup {
+  return { purpose, labelKey: purposeI18nKey(purpose), label: PURPOSE_LABELS[purpose] ?? purpose, roles };
 }
 
 /**
@@ -93,28 +198,37 @@ export interface PurposeGroup {
  * The `purpose` field uses the same keys as arch components for easy cross-referencing.
  */
 export const PURPOSE_GROUPS: PurposeGroup[] = [
-  { purpose: 'messaging',      label: 'Messaging',           roles: ['chat_messaging'] },
-  { purpose: 'email',          label: 'Email / SMS',         roles: ['email_delivery', 'sms'] },
-  { purpose: 'notifications',  label: 'Notifications',       roles: ['notifications'] },
-  { purpose: 'devops',         label: 'DevOps / CI-CD',      roles: ['source_control', 'ci_cd', 'feature_flags', 'auth_identity', 'code_editor', 'container_runtime', 'shell', 'browser_automation'] },
-  { purpose: 'project-mgmt',   label: 'Project Mgmt',        roles: ['project_tracking'] },
-  { purpose: 'productivity',   label: 'Productivity',         roles: ['knowledge_base', 'search_engine', 'video_comms', 'note_taking', 'e_signature'] },
-  { purpose: 'design',         label: 'Design',              roles: ['design'] },
-  { purpose: 'cloud',          label: 'Cloud',               roles: ['hosting', 'cloud_infra'] },
-  { purpose: 'database',       label: 'Database',            roles: ['database', 'spreadsheet'] },
-  { purpose: 'storage',        label: 'Storage',             roles: ['cloud_storage'] },
-  { purpose: 'monitoring',     label: 'Monitoring',          roles: ['error_monitoring', 'incident_management', 'uptime_monitoring', 'security_scanning'] },
-  { purpose: 'analytics',      label: 'Analytics',           roles: ['analytics'] },
-  { purpose: 'crm',            label: 'CRM',                 roles: ['crm', 'hr_recruiting'] },
-  { purpose: 'support',        label: 'Support',             roles: ['support_ticketing'] },
-  { purpose: 'social',         label: 'Social',              roles: ['social_media', 'advertising'] },
-  { purpose: 'cms',            label: 'CMS',                 roles: ['cms'] },
-  { purpose: 'finance',        label: 'Finance',             roles: ['payment_processing', 'accounting', 'banking_fintech', 'market_data'] },
-  { purpose: 'ecommerce',      label: 'E-Commerce',          roles: ['e_commerce'] },
-  { purpose: 'scheduling',     label: 'Scheduling',          roles: ['scheduling'] },
-  { purpose: 'forms',          label: 'Forms',               roles: ['form_survey'] },
-  { purpose: 'ai',             label: 'AI',                  roles: ['ai_platform'] },
+  purposeGroup('messaging',      ['chat_messaging']),
+  purposeGroup('email',          ['email_delivery', 'sms']),
+  purposeGroup('notifications',  ['notifications']),
+  purposeGroup('devops',         ['source_control', 'ci_cd', 'feature_flags', 'auth_identity', 'code_editor', 'container_runtime', 'shell', 'browser_automation']),
+  purposeGroup('project-mgmt',   ['project_tracking']),
+  purposeGroup('productivity',   ['knowledge_base', 'search_engine', 'video_comms', 'note_taking', 'e_signature']),
+  purposeGroup('design',         ['design']),
+  purposeGroup('cloud',          ['hosting', 'cloud_infra']),
+  purposeGroup('database',       ['database', 'spreadsheet']),
+  purposeGroup('storage',        ['cloud_storage']),
+  purposeGroup('monitoring',     ['error_monitoring', 'incident_management', 'uptime_monitoring', 'security_scanning']),
+  purposeGroup('analytics',      ['analytics']),
+  purposeGroup('crm',            ['crm', 'hr_recruiting']),
+  purposeGroup('support',        ['support_ticketing']),
+  purposeGroup('social',         ['social_media', 'advertising']),
+  purposeGroup('cms',            ['cms']),
+  purposeGroup('finance',        ['payment_processing', 'accounting', 'banking_fintech', 'market_data']),
+  purposeGroup('ecommerce',      ['e_commerce']),
+  purposeGroup('scheduling',     ['scheduling']),
+  purposeGroup('forms',          ['form_survey']),
+  purposeGroup('ai',             ['ai_platform']),
 ];
+
+/**
+ * Resolve a purpose group label using the active translation bundle.
+ * Falls back to the English default when no bundle is provided.
+ */
+export function resolvePurposeLabel(pg: PurposeGroup, t?: Translations): string {
+  const section = t?.connector_roles as Record<string, string> | undefined;
+  return section?.[pg.labelKey] ?? pg.label;
+}
 
 // Pre-computed lookup: connector name -> purpose key
 const _connectorPurposeMap = new Map<string, string>();
@@ -163,6 +277,9 @@ export function hasAlternatives(name: string): boolean {
 /** Architecture component descriptor for the adoption wizard */
 export interface ArchitectureComponent {
   role: string;
+  /** i18n key inside `connector_roles`. */
+  labelKey: string;
+  /** Pre-resolved English label (kept for backward compatibility). */
   label: string;
   members: string[];
   recommended: string;
@@ -172,5 +289,5 @@ export interface ArchitectureComponent {
 export function getArchitectureComponent(connectorName: string): ArchitectureComponent | undefined {
   const role = getRoleForConnector(connectorName);
   if (!role) return undefined;
-  return { role: role.role, label: role.label, members: role.members, recommended: connectorName };
+  return { role: role.role, labelKey: role.labelKey, label: role.label, members: role.members, recommended: connectorName };
 }

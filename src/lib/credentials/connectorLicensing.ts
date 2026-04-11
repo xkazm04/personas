@@ -1,3 +1,5 @@
+import type { Translations } from '@/i18n/en';
+
 /**
  * Connector license tier classification.
  *
@@ -8,6 +10,9 @@
 export type LicenseTier = 'personal' | 'paid' | 'enterprise';
 
 export interface LicenseTierMeta {
+  /** i18n key inside `connector_licensing` — resolve via `resolveTierLabel()` or `t.connector_licensing[tier]`. */
+  labelKey: string;
+  /** Pre-resolved English label (kept for backward compatibility). */
   label: string;
   color: string;
   bgClass: string;
@@ -17,6 +22,7 @@ export interface LicenseTierMeta {
 
 export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
   personal: {
+    labelKey: 'personal',
     label: 'Personal',
     color: '#22c55e',
     bgClass: 'bg-emerald-500/10',
@@ -24,6 +30,7 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
     borderClass: 'border-emerald-500/20',
   },
   paid: {
+    labelKey: 'paid',
     label: 'Paid',
     color: '#f59e0b',
     bgClass: 'bg-amber-500/10',
@@ -31,6 +38,7 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
     borderClass: 'border-amber-500/20',
   },
   enterprise: {
+    labelKey: 'enterprise',
     label: 'Enterprise',
     color: '#a855f7',
     bgClass: 'bg-purple-500/10',
@@ -38,6 +46,15 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
     borderClass: 'border-purple-500/20',
   },
 };
+
+/**
+ * Resolve a license tier label using the active translation bundle.
+ * Falls back to the English default when no bundle is provided.
+ */
+export function resolveTierLabel(tier: LicenseTier, t?: Translations): string {
+  const section = t?.connector_licensing as Record<string, string> | undefined;
+  return section?.[tier] ?? LICENSE_TIER_META[tier].label;
+}
 
 /**
  * Explicit license tier overrides per connector name.
