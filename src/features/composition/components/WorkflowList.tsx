@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, GitBranch, Trash2, ToggleLeft, ToggleRight, Sparkles, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, GitBranch, Trash2, ToggleLeft, ToggleRight, Sparkles, ChevronDown, ChevronRight, AlertTriangle, ArrowRight, Bot, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { usePipelineStore } from '@/stores/pipelineStore';
 
@@ -112,12 +112,59 @@ export default function WorkflowList() {
 
       {/* List */}
       {workflows.length === 0 ? (
-        <div className="text-center py-16">
-          <GitBranch className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No workflows yet.</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            Create your first workflow to orchestrate multiple personas.
-          </p>
+        <div className="py-8">
+          {/* Visual DAG illustration */}
+          <div className="flex items-center justify-center gap-3 mb-6 text-muted-foreground/30">
+            <div className="w-10 h-10 rounded-lg border border-blue-500/25 bg-blue-500/10 flex items-center justify-center">
+              <ArrowDownToLine className="w-4 h-4 text-blue-400/60" />
+            </div>
+            <ArrowRight className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-indigo-400/60" />
+            </div>
+            <ArrowRight className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-indigo-400/60" />
+            </div>
+            <ArrowRight className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-lg border border-emerald-500/25 bg-emerald-500/10 flex items-center justify-center">
+              <ArrowUpFromLine className="w-4 h-4 text-emerald-400/60" />
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <h2 className="text-base font-semibold text-foreground mb-2">Chain your agents into pipelines</h2>
+            <p className="text-sm text-muted-foreground/70 max-w-md mx-auto">
+              Build multi-agent workflows where each persona processes data and passes its output to the next.
+              Connect agents into DAG pipelines for complex automation.
+            </p>
+          </div>
+
+          {/* Quick-start hints */}
+          <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+            <button
+              onClick={() => setComposeOpen(true)}
+              className="flex items-start gap-3 p-3 rounded-xl border border-violet-500/15 bg-violet-500/5 hover:bg-violet-500/10 transition-colors text-left"
+            >
+              <Sparkles className="w-4 h-4 text-violet-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <div className="text-xs font-semibold text-foreground/90">Describe in plain English</div>
+                <div className="text-[11px] text-muted-foreground/60 mt-0.5">AI composes the pipeline topology for you</div>
+              </div>
+            </button>
+            <button
+              onClick={() => {
+                createWorkflow('My First Workflow');
+              }}
+              className="flex items-start gap-3 p-3 rounded-xl border border-primary/15 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+            >
+              <Plus className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <div className="text-xs font-semibold text-foreground/90">Build manually</div>
+                <div className="text-[11px] text-muted-foreground/60 mt-0.5">Drag and connect agent nodes on a canvas</div>
+              </div>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
