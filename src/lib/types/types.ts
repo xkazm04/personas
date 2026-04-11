@@ -231,11 +231,11 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 export type SidebarSection = "home" | "overview" | "personas" | "workflows" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "chat" | "assertions";
-export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability";
+export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "quality-gates";
-export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills";
+export type DevToolsTab = "overview" | "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills";
 export type AgentTab = "all" | "create" | "team" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr" | "artist" | "obsidian-brain";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "cloud";

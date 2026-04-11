@@ -18,6 +18,7 @@ const KnowledgeHub = lazyRetry(() => import('@/features/overview/components/dash
 const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
 
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
+const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
@@ -39,6 +40,7 @@ function OverviewContent() {
         overviewTab === 'sla' ? <SLADashboard /> :
 
         overviewTab === 'health' ? <PersonaHealthDashboard /> :
+        overviewTab === 'leaderboard' ? <LeaderboardPage /> :
         <DashboardWithSubtabs />}
       </Suspense>
       </ErrorBoundary>

@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap, BookOpen,
+  GraduationCap, BookOpen, Trophy,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -67,6 +67,7 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
 
   { id: 'health', icon: Heart, label: 'Health' },
+  { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
 ];
 
 export const credentialItems: SubNavItem[] = [
@@ -95,6 +96,7 @@ export const templateItems: SubNavItem[] = [
 ];
 
 export const devToolsItems: SubNavItem[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
   { id: 'context-map', label: 'Context Map', icon: Map },
