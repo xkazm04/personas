@@ -46,8 +46,8 @@ export interface TriggerCategoryMeta {
 export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
   {
     id: 'pull',
-    label: 'Watch',
-    description: 'Poll for changes on an interval',
+    label: 'Watch',             // i18n: triggers.category_pull
+    description: 'Poll for changes on an interval', // i18n: triggers.category_pull_desc
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/20',
@@ -55,8 +55,8 @@ export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
   },
   {
     id: 'push',
-    label: 'Listen',
-    description: 'Receive external signals',
+    label: 'Listen',            // i18n: triggers.category_push
+    description: 'Receive external signals', // i18n: triggers.category_push_desc
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/20',
@@ -64,8 +64,8 @@ export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
   },
   {
     id: 'compose',
-    label: 'Combine',
-    description: 'Chain or compose triggers',
+    label: 'Combine',           // i18n: triggers.category_compose
+    description: 'Chain or compose triggers', // i18n: triggers.category_compose_desc
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/20',
@@ -98,17 +98,40 @@ export interface TriggerTypeOption {
 }
 
 export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = [
-  { type: 'manual', label: 'Manual', description: 'Run on demand' },
-  { type: 'schedule', label: 'Schedule', description: 'Run on a timer or cron' },
-  { type: 'polling', label: 'Polling', description: 'Check an endpoint' },
-  { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },
-  { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },
-  { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },
-  { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },
-  { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },
-  { type: 'chain', label: 'Chain', description: 'Trigger after another agent completes' },
-  { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },
+  { type: 'manual', label: 'Manual', description: 'Run on demand' },                              // i18n: triggers.type_manual / triggers.desc_manual
+  { type: 'schedule', label: 'Schedule', description: 'Run on a timer or cron' },                  // i18n: triggers.type_schedule / triggers.desc_schedule
+  { type: 'polling', label: 'Polling', description: 'Check an endpoint' },                        // i18n: triggers.type_polling / triggers.desc_polling
+  { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },                    // i18n: triggers.type_webhook / triggers.desc_webhook
+  { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },   // i18n: triggers.type_event_listener / triggers.desc_event_listener
+  { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },   // i18n: triggers.type_file_watcher / triggers.desc_file_watcher
+  { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },           // i18n: triggers.type_clipboard / triggers.desc_clipboard
+  { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },           // i18n: triggers.type_app_focus / triggers.desc_app_focus
+  { type: 'chain', label: 'Chain', description: 'Trigger after another agent completes' },        // i18n: triggers.type_chain / triggers.desc_chain
+  { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },    // i18n: triggers.type_composite / triggers.desc_composite
 ];
+
+// -- i18n key helpers ---------------------------------------------------
+
+/** Map trigger type to i18n key for label. Usage: t[triggerTypeI18nKey(type)] */
+export const TRIGGER_TYPE_I18N: Record<string, { label: string; desc: string }> = {
+  manual:         { label: 'triggers.type_manual',         desc: 'triggers.desc_manual' },
+  schedule:       { label: 'triggers.type_schedule',       desc: 'triggers.desc_schedule' },
+  polling:        { label: 'triggers.type_polling',        desc: 'triggers.desc_polling' },
+  webhook:        { label: 'triggers.type_webhook',        desc: 'triggers.desc_webhook' },
+  event_listener: { label: 'triggers.type_event_listener', desc: 'triggers.desc_event_listener' },
+  file_watcher:   { label: 'triggers.type_file_watcher',   desc: 'triggers.desc_file_watcher' },
+  clipboard:      { label: 'triggers.type_clipboard',      desc: 'triggers.desc_clipboard' },
+  app_focus:      { label: 'triggers.type_app_focus',      desc: 'triggers.desc_app_focus' },
+  chain:          { label: 'triggers.type_chain',          desc: 'triggers.desc_chain' },
+  composite:      { label: 'triggers.type_composite',      desc: 'triggers.desc_composite' },
+};
+
+/** Map trigger category ID to i18n key for label/description. */
+export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string }> = {
+  pull:    { label: 'triggers.category_pull',    desc: 'triggers.category_pull_desc' },
+  push:    { label: 'triggers.category_push',    desc: 'triggers.category_push_desc' },
+  compose: { label: 'triggers.category_compose', desc: 'triggers.category_compose_desc' },
+};
 
 // -- Webhook URL configuration ----------------------------------------
 
@@ -241,9 +264,9 @@ export const DEFAULT_RATE_LIMIT: TriggerRateLimitConfig = {
 };
 
 export const RATE_LIMIT_WINDOW_OPTIONS = [
-  { label: 'Per minute', value: 60 },
-  { label: 'Per 5 minutes', value: 300 },
-  { label: 'Per hour', value: 3600 },
+  { label: 'Per minute', value: 60 },       // i18n: triggers.rate_per_minute
+  { label: 'Per 5 minutes', value: 300 },   // i18n: triggers.rate_per_5_minutes
+  { label: 'Per hour', value: 3600 },       // i18n: triggers.rate_per_hour
 ] as const;
 
 /** Extract rate_limit from a raw config object, falling back to defaults. */
@@ -279,8 +302,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   // File watcher templates
   {
     id: 'fw-error-logs',
-    label: 'Auto-analyze error logs',
-    description: 'Triggers when new .log files appear or change in a folder',
+    label: 'Auto-analyze error logs',                                         // i18n: triggers.tpl_fw_error_logs
+    description: 'Triggers when new .log files appear or change in a folder', // i18n: triggers.tpl_fw_error_logs_desc
     triggerType: 'file_watcher',
     config: {
       watch_paths: [''],
@@ -291,8 +314,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   },
   {
     id: 'fw-csv-data',
-    label: 'Process new CSV files',
-    description: 'Triggers when CSV files are added or modified',
+    label: 'Process new CSV files',                             // i18n: triggers.tpl_fw_csv_data
+    description: 'Triggers when CSV files are added or modified', // i18n: triggers.tpl_fw_csv_data_desc
     triggerType: 'file_watcher',
     config: {
       watch_paths: [''],
@@ -303,8 +326,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   },
   {
     id: 'fw-config-changes',
-    label: 'Watch config file changes',
-    description: 'Triggers on changes to JSON, YAML, or TOML config files',
+    label: 'Watch config file changes',                                            // i18n: triggers.tpl_fw_config_changes
+    description: 'Triggers on changes to JSON, YAML, or TOML config files',        // i18n: triggers.tpl_fw_config_changes_desc
     triggerType: 'file_watcher',
     config: {
       watch_paths: [''],
@@ -316,8 +339,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   // Clipboard templates
   {
     id: 'cb-url-summarize',
-    label: 'Auto-summarize copied URLs',
-    description: 'Triggers when you copy a URL to your clipboard',
+    label: 'Auto-summarize copied URLs',                                // i18n: triggers.tpl_cb_url_summarize
+    description: 'Triggers when you copy a URL to your clipboard',      // i18n: triggers.tpl_cb_url_summarize_desc
     triggerType: 'clipboard',
     config: {
       content_type: 'text',
@@ -327,8 +350,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   },
   {
     id: 'cb-error-message',
-    label: 'Auto-diagnose error messages',
-    description: 'Triggers when you copy text containing errors or exceptions',
+    label: 'Auto-diagnose error messages',                                            // i18n: triggers.tpl_cb_error_message
+    description: 'Triggers when you copy text containing errors or exceptions',       // i18n: triggers.tpl_cb_error_message_desc
     triggerType: 'clipboard',
     config: {
       content_type: 'text',
@@ -338,8 +361,8 @@ export const TRIGGER_TEMPLATES: TriggerTemplate[] = [
   },
   {
     id: 'cb-code-snippet',
-    label: 'Auto-format code snippets',
-    description: 'Triggers when you copy code-like text (function definitions, imports)',
+    label: 'Auto-format code snippets',                                                    // i18n: triggers.tpl_cb_code_snippet
+    description: 'Triggers when you copy code-like text (function definitions, imports)',   // i18n: triggers.tpl_cb_code_snippet_desc
     triggerType: 'clipboard',
     config: {
       content_type: 'text',

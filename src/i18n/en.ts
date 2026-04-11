@@ -1635,6 +1635,7 @@ export const en = {
     quick_templates: "Quick Templates",
 
     // Trigger type display labels (shown in trigger rows and summaries)
+    type_manual: "Manual",
     type_schedule: "Schedule",
     type_webhook: "Webhook",
     type_polling: "Auto-Check",
@@ -1642,7 +1643,47 @@ export const en = {
     type_file_watcher: "File Watcher",
     type_clipboard: "Clipboard",
     type_app_focus: "App Focus",
+    type_chain: "Chain",
     type_composite: "Combined",
+
+    // Trigger type descriptions (triggerConstants.ts add-trigger form)
+    desc_manual: "Run on demand",
+    desc_schedule: "Run on a timer or cron",
+    desc_polling: "Check an endpoint",
+    desc_webhook: "HTTP webhook listener",
+    desc_event_listener: "React to internal events",
+    desc_file_watcher: "React to file system changes",
+    desc_clipboard: "React to clipboard changes",
+    desc_app_focus: "React to app focus changes",
+    desc_chain: "Trigger after another agent completes",
+    desc_composite: "Multiple conditions + time window",
+
+    // Trigger category labels (triggerConstants.ts category taxonomy)
+    category_pull: "Watch",
+    category_push: "Listen",
+    category_compose: "Combine",
+    category_pull_desc: "Poll for changes on an interval",
+    category_push_desc: "Receive external signals",
+    category_compose_desc: "Chain or compose triggers",
+
+    // Rate limit window labels
+    rate_per_minute: "Per minute",
+    rate_per_5_minutes: "Per 5 minutes",
+    rate_per_hour: "Per hour",
+
+    // Trigger template labels (triggerConstants.ts)
+    tpl_fw_error_logs: "Auto-analyze error logs",
+    tpl_fw_error_logs_desc: "Triggers when new .log files appear or change in a folder",
+    tpl_fw_csv_data: "Process new CSV files",
+    tpl_fw_csv_data_desc: "Triggers when CSV files are added or modified",
+    tpl_fw_config_changes: "Watch config file changes",
+    tpl_fw_config_changes_desc: "Triggers on changes to JSON, YAML, or TOML config files",
+    tpl_cb_url_summarize: "Auto-summarize copied URLs",
+    tpl_cb_url_summarize_desc: "Triggers when you copy a URL to your clipboard",
+    tpl_cb_error_message: "Auto-diagnose error messages",
+    tpl_cb_error_message_desc: "Triggers when you copy text containing errors or exceptions",
+    tpl_cb_code_snippet: "Auto-format code snippets",
+    tpl_cb_code_snippet_desc: "Triggers when you copy code-like text (function definitions, imports)",
 
     // Trigger status summary (collapsed row config badges)
     webhook_listener: "webhook listener",

@@ -57,10 +57,19 @@ export const TIER_CYCLE: readonly Tier[] =
 /** Default tier for fresh installs. */
 export const DEFAULT_TIER: Tier = TIERS.TEAM;
 
-/** Human-readable labels for the runtime-visible tiers. */
+/**
+ * Human-readable labels for the runtime-visible tiers.
+ * Hardcoded strings are fallbacks — prefer i18n keys via `getTierLabel()` below.
+ */
 export const TIER_LABELS: Partial<Record<Tier, { label: string; desc: string }>> = {
   [TIERS.STARTER]: { label: 'Simple', desc: 'Core features for everyday use' },
   [TIERS.TEAM]:    { label: 'Power',  desc: 'Full feature set' },
+};
+
+/** i18n key map for tier labels. Use with `t.tiers[key]` in components. */
+export const TIER_I18N_KEYS: Partial<Record<Tier, { label: string; desc: string }>> = {
+  [TIERS.STARTER]: { label: 'tiers.starter_label', desc: 'tiers.starter_desc' },
+  [TIERS.TEAM]:    { label: 'tiers.team_label',    desc: 'tiers.team_desc' },
 };
 
 // ---------------------------------------------------------------------------

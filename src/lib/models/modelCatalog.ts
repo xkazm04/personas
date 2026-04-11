@@ -13,10 +13,17 @@ export interface ModelOption {
 }
 
 export const ANTHROPIC_MODELS: ModelOption[] = [
-  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku' },
-  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet' },
-  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus' },
+  { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku' },    // i18n: models.haiku
+  { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet' }, // i18n: models.sonnet
+  { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus' },       // i18n: models.opus
 ];
+
+/** i18n key map for Anthropic model labels. Use with `t.models[key]` in components. */
+export const MODEL_I18N_KEYS: Record<string, string> = {
+  haiku: 'models.haiku',
+  sonnet: 'models.sonnet',
+  opus: 'models.opus',
+};
 
 export const OLLAMA_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
   id: p.value,

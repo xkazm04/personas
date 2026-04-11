@@ -16,17 +16,17 @@ export type { AlertRule } from "@/lib/bindings/AlertRule";
 export type { FiredAlert } from "@/lib/bindings/FiredAlert";
 
 export const ALERT_METRIC_OPTIONS: { value: AlertMetric; label: string; unit: string }[] = [
-  { value: 'error_rate', label: 'Error Rate', unit: '%' },
-  { value: 'success_rate', label: 'Success Rate', unit: '%' },
-  { value: 'cost', label: 'Total Cost', unit: '$' },
-  { value: 'cost_spike', label: 'Cost vs. Average', unit: 'x' },
-  { value: 'executions', label: 'Executions', unit: '' },
+  { value: 'error_rate', label: 'Error Rate', unit: '%' },       // i18n: resolve via t.alerts.metric_error_rate in components
+  { value: 'success_rate', label: 'Success Rate', unit: '%' },   // i18n: resolve via t.alerts.metric_success_rate in components
+  { value: 'cost', label: 'Total Cost', unit: '$' },             // i18n: resolve via t.alerts.metric_cost in components
+  { value: 'cost_spike', label: 'Cost vs. Average', unit: 'x' }, // i18n: resolve via t.alerts.metric_cost_spike in components
+  { value: 'executions', label: 'Executions', unit: '' },        // i18n: resolve via t.alerts.metric_executions in components
 ];
 
 export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; color: string }[] = [
-  { value: 'info', label: 'Info', color: '#3b82f6' },
-  { value: 'warning', label: 'Warning', color: '#f59e0b' },
-  { value: 'critical', label: 'Critical', color: '#ef4444' },
+  { value: 'info', label: 'Info', color: '#3b82f6' },         // i18n: resolve via t.alerts.severity_info in components
+  { value: 'warning', label: 'Warning', color: '#f59e0b' },   // i18n: resolve via t.alerts.severity_warning in components
+  { value: 'critical', label: 'Critical', color: '#ef4444' }, // i18n: resolve via t.alerts.severity_critical in components
 ];
 
 export const MAX_ALERT_HISTORY = 200;
@@ -196,7 +196,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       set((state) => ({ alertRules: [created, ...state.alertRules] }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to create alert rule: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to create alert rule: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_create_rule in components
     }
   },
 
@@ -218,7 +218,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to update alert rule: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to update alert rule: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_update_rule in components
     }
   },
 
@@ -232,7 +232,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to delete alert rule: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to delete alert rule: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_delete_rule in components
     }
   },
 
@@ -249,7 +249,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to toggle alert rule: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to toggle alert rule: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_toggle_rule in components
     }
   },
 
@@ -261,7 +261,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to dismiss alert: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to dismiss alert: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_dismiss in components
     }
   },
 
@@ -271,7 +271,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       set({ alertHistory: [], pendingSyncAlertIds: new Set<string>() });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Failed to clear alert history: ${msg}`, 'error');
+      useToastStore.getState().addToast(`Failed to clear alert history: ${msg}`, 'error'); // i18n: resolve via t.alerts.error_clear_history in components
     }
   },
 
