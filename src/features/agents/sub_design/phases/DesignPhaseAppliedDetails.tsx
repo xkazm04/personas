@@ -3,6 +3,7 @@ import { Key, Zap, Play, FileText, ChevronRight, type LucideIcon } from 'lucide-
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useSystemStore } from "@/stores/systemStore";
 import type { AgentIR } from '@/lib/types/designTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NextStep {
   id: string;
@@ -19,6 +20,7 @@ interface DesignPhaseAppliedDetailsProps {
 }
 
 export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseAppliedDetailsProps) {
+  const { t } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
@@ -40,27 +42,27 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
     const steps: NextStep[] = [];
     if ((result?.suggested_connectors?.length ?? 0) > 0) {
       steps.push({
-        id: 'credentials', icon: Key, title: 'Configure Credentials',
-        description: 'Connect the services your agent needs', color: '#22c55e',
+        id: 'credentials', icon: Key, title: t.agents.design.configure_credentials,
+        description: t.agents.design.configure_credentials_desc, color: '#22c55e',
         action: () => { onReset(); setSidebarSection('credentials'); },
       });
     }
     if ((result?.suggested_triggers?.length ?? 0) > 0) {
       steps.push({
-        id: 'triggers', icon: Zap, title: 'Set Up Triggers',
-        description: 'Configure when your agent should run', color: '#f59e0b',
+        id: 'triggers', icon: Zap, title: t.agents.design.set_up_triggers,
+        description: t.agents.design.set_up_triggers_desc, color: '#f59e0b',
         action: () => { onReset(); setEditorTab('connectors'); },
       });
     }
     steps.push({
-      id: 'test', icon: Play, title: 'Run Test Execution',
-      description: 'Verify your agent works as expected', color: '#6366f1',
+      id: 'test', icon: Play, title: t.agents.design.run_test_execution,
+      description: t.agents.design.run_test_execution_desc, color: '#6366f1',
       action: () => { onReset(); setEditorTab('use-cases'); },
     });
     if (result?.full_prompt_markdown) {
       steps.push({
-        id: 'prompt', icon: FileText, title: 'Review Prompt',
-        description: 'Fine-tune the generated prompt', color: '#06b6d4',
+        id: 'prompt', icon: FileText, title: t.agents.design.review_prompt,
+        description: t.agents.design.review_prompt_desc, color: '#06b6d4',
         action: () => { onReset(); setEditorTab('prompt'); },
       });
     }
@@ -91,7 +93,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
         className="animate-fade-slide-in w-full max-w-sm"
       >
         <p className="text-sm font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
-          Next steps
+          {t.agents.design.next_steps}
         </p>
         <div className="space-y-1.5">
           {nextSteps.map((step, _i) => {

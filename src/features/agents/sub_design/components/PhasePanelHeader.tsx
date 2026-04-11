@@ -1,5 +1,6 @@
 import { Sparkles, Wand2, FlaskConical } from 'lucide-react';
 import type { DesignInputMode } from '../libs/useDesignTabState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface InputModeToggleProps {
   inputMode: DesignInputMode;
@@ -7,6 +8,7 @@ interface InputModeToggleProps {
 }
 
 export function InputModeToggle({ inputMode, onInputModeChange }: InputModeToggleProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
       <button
@@ -18,7 +20,7 @@ export function InputModeToggle({ inputMode, onInputModeChange }: InputModeToggl
         }`}
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Design
+        {t.agents.design.mode_design}
       </button>
       <button
         onClick={() => onInputModeChange('intent')}
@@ -29,7 +31,7 @@ export function InputModeToggle({ inputMode, onInputModeChange }: InputModeToggl
         }`}
       >
         <Wand2 className="w-3.5 h-3.5" />
-        Intent Compiler
+        {t.agents.design.mode_intent}
       </button>
       <button
         onClick={() => onInputModeChange('example')}
@@ -40,7 +42,7 @@ export function InputModeToggle({ inputMode, onInputModeChange }: InputModeToggl
         }`}
       >
         <FlaskConical className="w-3.5 h-3.5" />
-        Show by Example
+        {t.agents.design.mode_example}
       </button>
     </div>
   );
@@ -53,10 +55,11 @@ interface AnalyzeButtonProps {
 }
 
 export function AnalyzeButton({ disabled, onClick, variant }: AnalyzeButtonProps) {
+  const { t } = useTranslation();
   const configs = {
-    design: { gradient: 'from-primary to-accent', shadow: 'shadow-primary/20 hover:shadow-primary/30', icon: <Sparkles className="w-4 h-4" />, label: 'Analyze & Build' },
-    intent: { gradient: 'from-violet-500 to-fuchsia-500', shadow: 'shadow-violet-500/20 hover:shadow-violet-500/30', icon: <Wand2 className="w-4 h-4" />, label: 'Compile Intent' },
-    example: { gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20 hover:shadow-emerald-500/30', icon: <FlaskConical className="w-4 h-4" />, label: 'Compile from Examples' },
+    design: { gradient: 'from-primary to-accent', shadow: 'shadow-primary/20 hover:shadow-primary/30', icon: <Sparkles className="w-4 h-4" />, label: t.agents.design.analyze_build },
+    intent: { gradient: 'from-violet-500 to-fuchsia-500', shadow: 'shadow-violet-500/20 hover:shadow-violet-500/30', icon: <Wand2 className="w-4 h-4" />, label: t.agents.design.compile_intent },
+    example: { gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20 hover:shadow-emerald-500/30', icon: <FlaskConical className="w-4 h-4" />, label: t.agents.design.compile_from_examples },
   };
   const cfg = configs[variant];
 

@@ -4,6 +4,7 @@ import { STAGE_META } from '@/lib/execution/pipeline';
 import { AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { STAGE_COLORS } from './stageColors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Waterfall Bar
@@ -22,6 +23,7 @@ export function StageBar({
   onToggle: () => void;
   hasSubSpans: boolean;
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const stageKey = entry.span_type as PipelineStage;
   const config = STAGE_COLORS[stageKey];
@@ -79,7 +81,7 @@ export function StageBar({
               <p className="typo-body text-muted-foreground/60 mb-1">{meta.boundary}</p>
               <div className="flex items-center gap-3 typo-body">
                 <span className="font-mono text-foreground/70">{formatDuration(durationMs)}</span>
-                <span className="text-muted-foreground/50">offset: {formatDuration(offsetMs)}</span>
+                <span className="text-muted-foreground/50">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
               </div>
               {entry.metadata && Object.keys(entry.metadata).length > 0 && (
                 <div className="mt-1 space-y-0.5">

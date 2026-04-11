@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { SCHEDULE_PRESETS } from '../../libs/scheduleHelpers';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { DayTimeGrid } from './DayTimeGrid';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ANIM = { initial: { opacity: 0, y: -4 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -4 }, transition: { duration: 0.15 } };
 
@@ -71,6 +72,7 @@ interface CronPanelProps {
 }
 
 export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoading }: CronPanelProps) {
+  const { t } = useTranslation();
   return (
     <div key="cron" {...ANIM} className="animate-fade-in space-y-2">
       <div className="flex items-center gap-2">
@@ -78,7 +80,7 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
           type="text"
           value={cronExpression}
           onChange={(e) => onCronChange(e.target.value)}
-          placeholder="* * * * *  (min hour dom mon dow)"
+          placeholder={t.agents.use_cases.cron_placeholder}
           className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
             cronPreview && !cronPreview.valid
               ? 'border-red-500/30 ring-1 ring-red-500/20 focus-visible:ring-red-500/30'
@@ -88,7 +90,7 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
         {cronLoading && <LoadingSpinner className="text-amber-400/60 flex-shrink-0" />}
       </div>
       <div className="flex gap-3 text-sm text-muted-foreground/60 font-mono px-0.5">
-        <span>min</span><span>hour</span><span>day</span><span>month</span><span>weekday</span>
+        <span>{t.agents.use_cases.cron_field_min}</span><span>{t.agents.use_cases.cron_field_hour}</span><span>{t.agents.use_cases.cron_field_day}</span><span>{t.agents.use_cases.cron_field_month}</span><span>{t.agents.use_cases.cron_field_weekday}</span>
       </div>
       {cronPreview && !cronPreview.valid && (
         <p className="text-sm text-red-400/80">{cronPreview.error}</p>

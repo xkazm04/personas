@@ -5,6 +5,7 @@ import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function GroupedToolRow({
   tool,
@@ -23,6 +24,7 @@ export function GroupedToolRow({
   impactData?: ToolImpactData;
   onToggle: (id: string, name: string, assigned: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { isStarter: isSimple } = useTier();
   const usageCount = usageByTool.get(tool.name) ?? 0;
@@ -68,7 +70,7 @@ export function GroupedToolRow({
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
             className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-sm text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
-            title={expanded ? 'Hide impact' : 'Show impact'}
+            title={expanded ? t.agents.lab.hide_impact : t.agents.lab.show_impact}
           >
             <span>
               <ChevronDown className="animate-fade-in w-3 h-3" />

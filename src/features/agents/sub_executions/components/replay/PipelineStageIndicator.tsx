@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CheckCircle2, Circle, Loader2, AlertCircle } from 'lucide-react';
 import { PIPELINE_STAGES, STAGE_META, type PipelineStage } from '@/lib/execution/pipeline';
 import { STAGE_COLORS } from '../../libs/waterfallHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PipelineStageIndicatorProps {
   /** Current scrub position in ms. */
@@ -89,6 +90,7 @@ export function PipelineStageIndicator({
   isFailed,
   errorStage,
 }: PipelineStageIndicatorProps) {
+  const { t, tx } = useTranslation();
   const activeStage = useMemo(
     () => currentStageAt(currentMs, stageBoundaries),
     [currentMs, stageBoundaries],
@@ -176,7 +178,7 @@ export function PipelineStageIndicator({
                 <p className="typo-body text-muted-foreground/60">{meta.boundary}</p>
                 {isActive && boundary && (
                   <p className="typo-code text-muted-foreground/50 mt-0.5">
-                    {Math.round(currentMs - boundary.startMs)}ms into stage
+                    {tx(t.agents.executions.ms_into_stage, { ms: Math.round(currentMs - boundary.startMs) })}
                   </p>
                 )}
               </div>

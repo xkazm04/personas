@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Play, Square } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface LabActionButtonsProps {
   isRunning: boolean;
@@ -18,13 +19,15 @@ interface LabActionButtonsProps {
 
 export function LabActionButtons({
   isRunning, onStart, onCancel, disabled, disabledReason = '',
-  runLabel, cancelLabel = 'Cancel', runIcon, runClassName, cancelTestId, runTestId,
+  runLabel, cancelLabel, runIcon, runClassName, cancelTestId, runTestId,
 }: LabActionButtonsProps) {
+  const { t } = useTranslation();
+  const resolvedCancelLabel = cancelLabel ?? t.agents.lab.cancel_default;
   if (isRunning) {
     return (
       <button data-testid={cancelTestId} onClick={onCancel}
         className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20">
-        <Square className="w-4 h-4" />{cancelLabel}
+        <Square className="w-4 h-4" />{resolvedCancelLabel}
       </button>
     );
   }

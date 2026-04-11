@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { ToolCallStep } from './stageColors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Sub-span bar (tool calls within stream_output)
@@ -17,6 +18,7 @@ export function SubSpanBar({
   totalDurationMs: number;
   pipelineStartMs: number;
 }) {
+  const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const stepOffsetInParent = step.started_at_ms;
   const stepDuration = step.duration_ms ?? 0;
@@ -35,7 +37,7 @@ export function SubSpanBar({
       <div className="flex items-center gap-1.5 min-w-0 pl-8">
         <span className="w-4 flex-shrink-0" />
         <span className="inline-flex px-1.5 py-0.5 typo-code uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
-          Tool
+          {t.agents.executions.tool_type_badge}
         </span>
         <span className="typo-code text-foreground/70 truncate">{step.tool_name}</span>
       </div>
@@ -59,11 +61,11 @@ export function SubSpanBar({
             <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>
             <div className="flex items-center gap-3 typo-body">
               <span className="font-mono text-foreground/70">{formatDuration(stepDuration)}</span>
-              <span className="text-muted-foreground/50">step #{step.step_index}</span>
+              <span className="text-muted-foreground/50">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
             </div>
             {step.input_preview && (
               <p className="typo-body text-muted-foreground/50 mt-1 max-w-[200px] truncate">
-                in: {step.input_preview}
+                {t.agents.executions.input_preview_prefix} {step.input_preview}
               </p>
             )}
           </div>

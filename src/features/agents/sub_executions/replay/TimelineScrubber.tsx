@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatMs } from './ReplayHelpers';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Timeline scrub bar with tool step markers. */
 export function TimelineScrubber({
@@ -21,6 +22,7 @@ export function TimelineScrubber({
   onScrub: (ms: number) => void;
   onSetForkPoint: (idx: number | null) => void;
 }) {
+  const { t, tx } = useTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
 
   const handlePointerDown = useCallback(
@@ -66,7 +68,7 @@ export function TimelineScrubber({
           return (
             <Tooltip
               key={s.step_index}
-              content={`Step ${s.step_index + 1}: ${s.tool_name}`}
+              content={tx(t.agents.executions.step_tooltip, { step: s.step_index + 1, name: s.tool_name })}
               placement="bottom"
             >
               <div

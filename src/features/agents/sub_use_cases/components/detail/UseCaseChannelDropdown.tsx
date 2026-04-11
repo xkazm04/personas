@@ -2,6 +2,7 @@ import { Bell, ChevronDown, Check } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import { CHANNEL_TYPES, channelSummary } from '../../libs/useCaseDetailHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseChannelDropdownProps {
   channels: NotificationChannel[];
@@ -9,9 +10,10 @@ interface UseCaseChannelDropdownProps {
 }
 
 export function UseCaseChannelDropdown({ channels, onToggle }: UseCaseChannelDropdownProps) {
+  const { t } = useTranslation();
   return (
     <Listbox
-      ariaLabel="Select notification channels"
+      ariaLabel={t.agents.use_cases.select_channels_label}
       className="min-w-[150px]"
       renderTrigger={({ isOpen, toggle }) => (
         <button

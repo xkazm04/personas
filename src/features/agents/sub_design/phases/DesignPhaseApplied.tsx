@@ -3,6 +3,7 @@ import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { FailedOperation } from '@/hooks/design/credential/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignPhaseAppliedProps {
   result: AgentIR | null;
@@ -13,6 +14,7 @@ interface DesignPhaseAppliedProps {
 }
 
 export function DesignPhaseApplied({ result, warnings = [], failedOperations = [], onRetryFailed, onReset }: DesignPhaseAppliedProps) {
+  const { t, tx } = useTranslation();
   const hasFailures = failedOperations.length > 0;
   const hasWarnings = warnings.length > 0 || hasFailures;
   const [retrying, setRetrying] = useState(false);
@@ -59,7 +61,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
         className="animate-fade-slide-in text-center"
       >
         <h3 className={`text-base font-semibold ${hasWarnings ? 'text-amber-400' : 'text-emerald-400'}`}>
-          {hasWarnings ? `Applied with ${warnings.length} warning${warnings.length !== 1 ? 's' : ''}` : 'Agent configured!'}
+          {hasWarnings ? tx(warnings.length === 1 ? t.agents.design.applied_with_warnings_one : t.agents.design.applied_with_warnings_other, { count: warnings.length }) : t.agents.design.agent_configured}
         </h3>
         {result?.summary && (
           <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs mx-auto line-clamp-2">
@@ -74,7 +76,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           className="animate-fade-slide-in w-full max-w-sm px-3 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
         >
           <p className="text-xs font-medium text-amber-400 mb-2">
-            {failedOperations.length} operation{failedOperations.length !== 1 ? 's' : ''} failed
+            {tx(failedOperations.length === 1 ? t.agents.design.operations_failed_one : t.agents.design.operations_failed_other, { count: failedOperations.length })}
           </p>
           <ul className="space-y-1.5 mb-3">
             {failedOperations.map((op, i) => (
@@ -97,7 +99,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
-              {retrying ? 'Retrying...' : `Retry ${failedOperations.length} failed`}
+              {retrying ? t.agents.design.retrying : tx(t.agents.design.retry_failed, { count: failedOperations.length })}
             </button>
           )}
         </div>
@@ -127,7 +129,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
         onClick={onReset}
         className="animate-fade-slide-in mt-1 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
       >
-        Close
+        {t.common.close}
       </button>
     </div>
   );

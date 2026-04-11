@@ -6,8 +6,10 @@ import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/d
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { toastCatch } from "@/lib/silentCatch";
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function AgentCredentialDemands() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const { totalDemands, fulfilledCount, unfulfilledCount, reusableCount, demands } = useUnfulfilledCredentials();
@@ -47,12 +49,12 @@ export function AgentCredentialDemands() {
         <Key className="w-4 h-4 text-violet-400/70 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-violet-400/80">
-            {unfulfilledCount} credential{unfulfilledCount !== 1 ? 's' : ''} needed
+            {tx(t.agents.connectors.dm_needed, { count: unfulfilledCount })}
           </p>
           <p className="text-xs text-violet-400/50 mt-0.5">
-            {fulfilledCount}/{totalDemands} connector{totalDemands !== 1 ? 's' : ''} fulfilled
+            {tx(t.agents.connectors.dm_fulfilled, { fulfilled: fulfilledCount, total: totalDemands })}
             {reusableCount > 0 && (
-              <span> &middot; {reusableCount} can reuse existing credentials</span>
+              <span> &middot; {tx(t.agents.connectors.dm_reuse_hint, { count: reusableCount })}</span>
             )}
           </p>
         </div>
@@ -105,6 +107,7 @@ function DemandCard({
   onToggleLinking: () => void;
   onReuse: (credentialId: string) => void;
 }) {
+  const { t, tx } = useTranslation();
   const hasReusable = demand.matchingCredentials.length > 0;
 
   return (
@@ -125,7 +128,7 @@ function DemandCard({
             <AlertTriangle className="w-3 h-3 text-amber-400/60" />
           </div>
           <p className="text-xs text-muted-foreground/50 truncate">
-            Required by tools &middot; no credential linked
+            {t.agents.connectors.dm_required_by}
           </p>
         </div>
 
@@ -142,7 +145,7 @@ function DemandCard({
               }`}
             >
               <ArrowRight className="w-3 h-3" />
-              Reuse ({demand.matchingCredentials.length})
+              {tx(t.agents.connectors.dm_reuse, { count: demand.matchingCredentials.length })}
             </button>
           )}
           <button
@@ -151,7 +154,7 @@ function DemandCard({
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
-            Create
+            {t.agents.connectors.dm_create}
           </button>
         </div>
       </div>
@@ -163,7 +166,7 @@ function DemandCard({
           >
             <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
               <p className="text-xs text-muted-foreground/50 mb-1.5">
-                Link an existing credential:
+                {t.agents.connectors.dm_link_existing}
               </p>
               {demand.matchingCredentials.map((cred) => (
                 <button
