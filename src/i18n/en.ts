@@ -88,7 +88,6 @@ export const en = {
     triggers: "Triggers",
     connectors: "Connectors",
     add: "Add",
-    none: "None",
     test: "Test",
 
     // Column/field headers used in tables and forms
@@ -2577,13 +2576,14 @@ export const en = {
       min_completeness: "Add more detail to reach 40% completeness",
     },
 
+    // NOTE: model_config and use_cases subsections live earlier in this
+    // agents section (search for "model_config:" and "use_cases:" above).
+    // Duplicate blocks that were here have been removed.
+
     // -----------------------------------------------------------------
-    //  MODEL CONFIG -- model selector, comparison, budget, credentials
+    //  EDITOR -- editor layout, tab bar, banners, header, stats
     // -----------------------------------------------------------------
-    model_config: {
-      // ModelSelector header
-      model_and_provider: "Model & Provider",
-      unsaved_changes: "Unsaved changes",
+    editor_ui: {
 
       // BudgetControls
       max_budget_label: "Max Budget (USD)",

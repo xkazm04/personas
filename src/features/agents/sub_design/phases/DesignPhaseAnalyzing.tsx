@@ -1,4 +1,5 @@
 import { Pencil, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { CompilationStepper } from './CompilationStepper';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -11,6 +12,7 @@ interface DesignPhaseAnalyzingProps {
 }
 
 export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResult, onCancel }: DesignPhaseAnalyzingProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="analyzing"
@@ -19,7 +21,7 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
       {savedDesignResult && (
         <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
           <Pencil className="w-3 h-3 shrink-0" />
-          <span>Updating design...</span>
+          <span>{t.agents.design.updating_design}</span>
         </div>
       )}
       <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/90 border border-primary/20">
@@ -35,7 +37,7 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
         className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
       >
         <X className="w-3.5 h-3.5" />
-        Cancel
+        {t.common.cancel}
       </button>
     </div>
   );

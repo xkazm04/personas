@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Activity } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getNotificationDeliveryStats } from '@/api/system/system';
 import { typedListen } from '@/lib/eventRegistry';
 import { EventName } from '@/lib/eventRegistry';
@@ -18,8 +19,8 @@ function getHealthColor(stats: ChannelDeliveryStats): string {
   return 'text-emerald-400';
 }
 
-function formatStats(stats: ChannelDeliveryStats): string {
-  if (stats.attempted === 0) return 'No deliveries yet';
+function formatStats(stats: ChannelDeliveryStats, noDeliveries: string): string {
+  if (stats.attempted === 0) return noDeliveries;
   const rate = stats.attempted > 0 ? ((stats.succeeded / stats.attempted) * 100).toFixed(0) : '0';
   const parts = [`${rate}% success (${stats.succeeded}/${stats.attempted})`];
   if (stats.avgLatencyMs > 0) parts.push(`avg ${stats.avgLatencyMs.toFixed(0)}ms`);
@@ -28,6 +29,7 @@ function formatStats(stats: ChannelDeliveryStats): string {
 }
 
 export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Record<string, ChannelDeliveryStats> | null>(null);
 
   useEffect(() => {
@@ -56,12 +58,12 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
     <div className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-secondary/30 border border-border/40">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Activity className="w-3 h-3" />
-        Delivery Health
+        {t.agents.connectors.ch_delivery_health}
       </div>
-      {activeStats.map(({ type: t, stats: s }) => (
-        <div key={t} className={`flex items-center gap-2 text-xs ${getHealthColor(s)}`}>
-          <span className="font-medium capitalize w-16">{t}</span>
-          <span className="text-muted-foreground">{formatStats(s)}</span>
+      {activeStats.map(({ type: chType, stats: s }) => (
+        <div key={chType} className={`flex items-center gap-2 text-xs ${getHealthColor(s)}`}>
+          <span className="font-medium capitalize w-16">{chType}</span>
+          <span className="text-muted-foreground">{formatStats(s, t.agents.connectors.ch_no_deliveries)}</span>
         </div>
       ))}
     </div>

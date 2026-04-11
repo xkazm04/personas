@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Radio, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
@@ -15,6 +16,7 @@ interface SubscriptionRowProps {
 export function SubscriptionRow({
   sub, confirmingDeleteId, onToggle, onDelete, onConfirmDelete,
 }: SubscriptionRowProps) {
+  const { t, tx } = useTranslation();
   return (
     <SectionCard
       size="sm"
@@ -24,13 +26,13 @@ export function SubscriptionRow({
       <div className="flex-1 min-w-0">
         <span className="text-sm font-medium text-foreground/80 block truncate">{sub.event_type}</span>
         {sub.source_filter && (
-          <span className="text-sm text-muted-foreground/80 block truncate">filter: {sub.source_filter}</span>
+          <span className="text-sm text-muted-foreground/80 block truncate">{tx(t.agents.connectors.sub_filter, { filter: sub.source_filter })}</span>
         )}
       </div>
       <AccessibleToggle
         checked={sub.enabled}
         onChange={() => onToggle(sub)}
-        label={`Enable ${sub.event_type} subscription`}
+        label={tx(t.agents.connectors.ch_enable, { type: sub.event_type })}
         size="sm"
       />
       <button
@@ -50,7 +52,7 @@ export function SubscriptionRow({
               key="confirm"
               className="animate-fade-slide-in text-sm font-semibold text-red-400"
             >
-              Confirm?
+              {t.agents.connectors.sub_confirm}
             </span>
           ) : (
             <span key="trash">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Zap, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCard } from './AutomationCard';
@@ -17,6 +18,7 @@ interface AutomationsSectionProps {
 }
 
 export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSectionProps) {
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(automations.length > 0);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
@@ -91,7 +93,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   const activeCount = automations.filter((a) => a.deploymentStatus === 'active').length;
 
   const sectionLabel = automations.length === 0
-    ? 'Automations'
+    ? t.agents.connectors.auto_title
     : `${automations.length} automation${automations.length !== 1 ? 's' : ''}`;
 
   return (
@@ -109,7 +111,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             <>
               {activeCount > 0 && (
                 <span className="text-sm font-normal text-brand-emerald/70">
-                  {activeCount} active
+                  {tx(t.agents.connectors.auto_active, { count: activeCount })}
                 </span>
               )}
               {!expanded && preview && (
@@ -125,7 +127,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm font-medium rounded-lg border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}
             >
               <Plus className="w-3 h-3" />
-              Add
+              {t.common.add}
             </button>
           }
         />
@@ -163,7 +165,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                   className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>Add automation from n8n, Zapier, or GitHub Actions</span>
+                  <span>{t.agents.connectors.auto_add_from_platforms}</span>
                 </button>
               )}
             </div>
@@ -184,9 +186,9 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <h3 id="delete-automation-dialog" className="text-sm font-semibold text-foreground/90">Delete Automation</h3>
+                <h3 id="delete-automation-dialog" className="text-sm font-semibold text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
                 <p className="text-sm text-muted-foreground/90 mt-1">
-                  Permanently delete <span className="font-medium">{deleteTarget.name}</span>.
+                  {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
               </div>
             </div>
@@ -198,13 +200,13 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 onClick={() => setDeleteTarget(null)}
                 className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
               <button
                 onClick={handleConfirmDelete}
                 className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
-                Delete
+                {t.common.delete}
               </button>
             </div>
           </div>

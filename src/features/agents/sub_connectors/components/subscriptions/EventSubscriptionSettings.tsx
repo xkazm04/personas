@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Radio, Plus, RotateCw } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createSubscription, deleteSubscription, listSubscriptions, updateSubscription } from "@/api/overview/events";
 
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -18,6 +19,7 @@ interface EventSubscriptionSettingsProps {
 }
 
 export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettingsProps) {
+  const { t, tx } = useTranslation();
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -72,15 +74,15 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
 
   return (
     <SectionCard size="lg" blur>
-      <SectionHeader className="mb-6" icon={<Radio className="w-3.5 h-3.5" />} label="Event Subscriptions"
-        trailing={<span className="text-sm text-muted-foreground/80">{activeCount} active</span>} />
+      <SectionHeader className="mb-6" icon={<Radio className="w-3.5 h-3.5" />} label={t.agents.connectors.sub_title}
+        trailing={<span className="text-sm text-muted-foreground/80">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>} />
       <div className="space-y-3">
         {error && <div role="alert" className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
         {loadError && (
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
             <p className="flex-1 text-sm text-red-400/80">{loadError}</p>
             <button onClick={retryLoad} className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
-              <RotateCw className="w-3 h-3" /> Retry
+              <RotateCw className="w-3 h-3" /> {t.common.retry}
             </button>
           </div>
         )}
@@ -100,7 +102,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
             ) : (
               <button onClick={() => setShowAddForm(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-ring">
-                <Plus className="w-4 h-4" /> Add Subscription
+                <Plus className="w-4 h-4" /> {t.agents.connectors.sub_add}
               </button>
             )}
           </>

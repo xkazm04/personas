@@ -1,4 +1,5 @@
 import { Trash2, ArrowRight, FileInput, FileOutput } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ExamplePair } from '../wizard/ExamplePairCollector';
 
 interface PairItemProps {
@@ -12,6 +13,7 @@ interface PairItemProps {
 }
 
 export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse, onRemove, onUpdate }: PairItemProps) {
+  const { t, tx } = useTranslation();
   const hasContent = pair.input.trim() || pair.output.trim();
   const preview = hasContent
     ? (pair.input.trim().slice(0, 40) || '(no input)') + ' -> ' + (pair.output.trim().slice(0, 40) || '(no output)')
@@ -24,10 +26,10 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onToggleCollapse(pair.id)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
-          <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">Example {index + 1}</span>
+          <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">{tx(t.agents.design.example_n, { index: index + 1 })}</span>
           {isCollapsed && preview && <span className="text-xs text-muted-foreground/50 truncate ml-1">{preview}</span>}
         </button>
-        <button onClick={() => onRemove(pair.id)} disabled={disabled} className="p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" title="Remove example">
+        <button onClick={() => onRemove(pair.id)} disabled={disabled} className="p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" title={t.agents.design.remove_example}>
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
@@ -37,13 +39,13 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
           <div className="space-y-1">
             <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
               <FileInput className="w-3 h-3" />
-              Input -- what the agent receives
+              {t.agents.design.input_label}
             </label>
             <textarea
               value={pair.input}
               onChange={(e) => onUpdate(pair.id, 'input', e.target.value)}
               disabled={disabled}
-              placeholder={'Paste a real input...\n\ne.g. an email body, a Slack message, an incoming request, a CSV row'}
+              placeholder={t.agents.design.input_placeholder}
               rows={4}
               className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />
@@ -54,13 +56,13 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
           <div className="space-y-1">
             <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
               <FileOutput className="w-3 h-3" />
-              Output -- what you want the agent to produce
+              {t.agents.design.output_label}
             </label>
             <textarea
               value={pair.output}
               onChange={(e) => onUpdate(pair.id, 'output', e.target.value)}
               disabled={disabled}
-              placeholder={'Describe or paste the desired output...\n\ne.g. "Create a Jira ticket with title from subject, priority P2, assigned to backend team"'}
+              placeholder={t.agents.design.output_placeholder}
               rows={4}
               className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />

@@ -1,4 +1,5 @@
 import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -11,6 +12,7 @@ interface LinkPickerProps {
 }
 
 export function LinkPicker({ isLinking, status, credentials, onLinkCredential }: LinkPickerProps) {
+  const { t } = useTranslation();
   const matchingCreds = credentials.filter((c) => c.service_type === status.name);
   const otherCreds = credentials.filter((c) => c.service_type !== status.name);
 
@@ -22,7 +24,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
           <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">Best match</p>
+                <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
@@ -38,7 +40,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">Other credentials</p>
+                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
@@ -68,13 +70,14 @@ interface SwapPickerProps {
 }
 
 export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose }: SwapPickerProps) {
+  const { t } = useTranslation();
   return (
     <>
       {swapOpen && alternatives.length > 0 && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
           <div className="mt-3 border border-sky-500/20 rounded-lg bg-background/40">
-            <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">Swap to alternative</p>
+            <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">{t.agents.connectors.st_swap_alt}</p>
             {alternatives.map((alt) => (
               <button key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-sky-500/10 transition-colors border-b border-sky-500/5 last:border-0">

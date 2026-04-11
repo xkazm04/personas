@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -40,6 +41,7 @@ export function NotificationChannelCard({
   onConfigChange,
   onCredentialChange,
 }: NotificationChannelCardProps) {
+  const { t, tx } = useTranslation();
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
 
@@ -71,7 +73,7 @@ export function NotificationChannelCard({
         <AccessibleToggle
           checked={enabled}
           onChange={onToggleEnabled}
-          label={`Enable ${type} notifications`}
+          label={tx(t.agents.connectors.ch_enable, { type })}
           size="sm"
         />
         <button
@@ -101,16 +103,16 @@ export function NotificationChannelCard({
 
       {/* Credential picker */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">Credential</label>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.connectors.ch_credential}</label>
         <CredentialPicker
           credentials={matchingCredentials}
           selectedId={credentialId}
           onChange={onCredentialChange}
         />
         {credentialId ? (
-          <span className="text-sm text-emerald-400/70 mt-0.5 block">Connected</span>
+          <span className="text-sm text-emerald-400/70 mt-0.5 block">{t.agents.connectors.ch_connected}</span>
         ) : (
-          <span className="text-sm text-amber-400/70 mt-0.5 block">Credential needed</span>
+          <span className="text-sm text-amber-400/70 mt-0.5 block">{t.agents.connectors.ch_cred_needed}</span>
         )}
       </div>
 
@@ -128,13 +130,13 @@ export function NotificationChannelCard({
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {testStatus === 'sending' ? (
-            <><LoadingSpinner size="sm" /> Sending...</>
+            <><LoadingSpinner size="sm" /> {t.agents.connectors.ch_sending}</>
           ) : testStatus === 'success' ? (
-            <><CheckCircle2 className="w-3.5 h-3.5" /> Delivered</>
+            <><CheckCircle2 className="w-3.5 h-3.5" /> {t.agents.connectors.ch_delivered}</>
           ) : testStatus === 'error' ? (
-            <><AlertCircle className="w-3.5 h-3.5" /> Failed</>
+            <><AlertCircle className="w-3.5 h-3.5" /> {t.agents.connectors.ch_failed}</>
           ) : (
-            <><Send className="w-3.5 h-3.5" /> Test Notification</>
+            <><Send className="w-3.5 h-3.5" /> {t.agents.connectors.ch_test}</>
           )}
         </button>
         {testStatus === 'error' && testError && (

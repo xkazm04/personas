@@ -1,4 +1,5 @@
 import { Sparkles, Wand2, FlaskConical } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DesignInput } from '@/features/shared/components/forms/DesignInput';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { DesignPhasePanelSaved } from './DesignPhasePanelSaved';
@@ -51,6 +52,7 @@ export function DesignPhasePanel({
   examplePairs = [],
   onExamplePairsChange,
 }: DesignPhasePanelProps) {
+  const { t } = useTranslation();
   const hasExamples = examplePairs.some((p) => p.input.trim() || p.output.trim());
 
   return (
@@ -84,7 +86,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Design
+                {t.agents.design.mode_design}
               </button>
               <button
                 onClick={() => onInputModeChange('intent')}
@@ -95,7 +97,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <Wand2 className="w-3.5 h-3.5" />
-                Intent Compiler
+                {t.agents.design.mode_intent}
               </button>
               <button
                 onClick={() => onInputModeChange('example')}
@@ -106,7 +108,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <FlaskConical className="w-3.5 h-3.5" />
-                Show by Example
+                {t.agents.design.mode_example}
               </button>
             </div>
           )}
@@ -123,7 +125,7 @@ export function DesignPhasePanel({
               <textarea
                 value={instruction}
                 onChange={(e) => onInstructionChange(e.target.value)}
-                placeholder="Optional: add context or constraints (e.g. &quot;always prioritize P1 tickets&quot;, &quot;post to #alerts channel&quot;)"
+                placeholder={t.agents.design.example_context_placeholder}
                 className="w-full min-h-[60px] max-h-[120px] bg-background/50 border border-emerald-500/10 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                 disabled={phase !== 'idle'}
               />
@@ -138,7 +140,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <FlaskConical className="w-4 h-4" />
-                Compile from Examples
+                {t.agents.design.compile_from_examples}
               </button>
             </>
           ) : intentMode ? (
@@ -148,7 +150,7 @@ export function DesignPhasePanel({
                 <textarea
                   value={instruction}
                   onChange={(e) => onInstructionChange(e.target.value)}
-                  placeholder="Describe what you want this agent to do in plain language...&#10;&#10;e.g. &quot;Monitor our Stripe account for failed payments over $100 and notify the finance team on Slack with a summary&quot;"
+                  placeholder={t.agents.design.intent_placeholder}
                   className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-xl px-3 py-2.5 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/40 transition-all placeholder-muted-foreground/30"
                   disabled={phase !== 'idle'}
                   onKeyDown={(e) => {
@@ -158,9 +160,9 @@ export function DesignPhasePanel({
                     }
                   }}
                 />
-                <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+                <p className="text-sm text-muted-foreground/60 px-1">{t.agents.design.intent_submit_hint}</p>
                 <p className="text-sm text-muted-foreground/50 px-1">
-                  The compiler will generate a complete configuration: prompt, tools, triggers, use cases, model recommendation, and test scenarios.
+                  {t.agents.design.intent_detail}
                 </p>
               </div>
               <button
@@ -173,7 +175,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <Wand2 className="w-4 h-4" />
-                Compile Intent
+                {t.agents.design.compile_intent}
               </button>
             </>
           ) : (
@@ -197,7 +199,7 @@ export function DesignPhasePanel({
                 }`}
               >
                 <Sparkles className="w-4 h-4" />
-                Analyze &amp; Build
+                {t.agents.design.analyze_build}
               </button>
             </>
           )}

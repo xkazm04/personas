@@ -1,4 +1,5 @@
 import { Bell, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { NotificationChannelCard } from './NotificationChannelCard';
@@ -52,14 +53,16 @@ export function ChannelList({
     return credentials.filter(c => c.service_type === connectorName);
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-3">
       {/* In-App (always present, read-only) */}
       <div className={`flex items-center gap-3 p-2.5 bg-secondary/30 border ${TOOLS_BORDER} rounded-xl`}>
         <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/80 flex-1">In-App Messages</span>
+        <span className="text-sm font-medium text-foreground/80 flex-1">{t.agents.connectors.ch_in_app}</span>
         <span className="flex items-center gap-1 text-sm text-emerald-400/80">
-          <Check className="w-3 h-3" /> Always active
+          <Check className="w-3 h-3" /> {t.agents.connectors.ch_always_active}
         </span>
       </div>
 

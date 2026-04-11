@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, Radio } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -8,6 +9,7 @@ import { UseCaseSubscriptions } from '@/features/agents/sub_use_cases/components
 import { useSubscriptionManager } from '../../libs/subscriptionLifecycle';
 
 export function UseCaseSubscriptionsSection() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   const manager = useSubscriptionManager(selectedPersona);
@@ -22,17 +24,17 @@ export function UseCaseSubscriptionsSection() {
     <div className="space-y-3">
       <SectionHeader
         icon={<Radio className="w-3.5 h-3.5" />}
-        label="Triggers & Subscriptions"
+        label={t.agents.connectors.sub_triggers_title}
         badge={(
           <>
             {manager.totalActive > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                {manager.totalActive} active
+                {tx(t.agents.connectors.sub_active, { count: manager.totalActive })}
               </span>
             )}
             {manager.totalSuggested > 0 && manager.totalActive === 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                {manager.totalSuggested} suggested
+                {tx(t.agents.connectors.sub_suggested, { count: manager.totalSuggested })}
               </span>
             )}
           </>
@@ -62,10 +64,10 @@ export function UseCaseSubscriptionsSection() {
                 <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                 <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{uc.title}</span>
                 {activeCount > 0 && (
-                  <span className="text-sm text-cyan-400/70">{activeCount} active</span>
+                  <span className="text-sm text-cyan-400/70">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>
                 )}
                 {activeCount === 0 && suggestedCount > 0 && (
-                  <span className="text-sm text-amber-400/70">{suggestedCount} suggested</span>
+                  <span className="text-sm text-amber-400/70">{tx(t.agents.connectors.sub_suggested, { count: suggestedCount })}</span>
                 )}
               </button>
 

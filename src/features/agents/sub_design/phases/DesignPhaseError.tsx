@@ -1,4 +1,6 @@
 import { AlertCircle, RotateCcw, ArrowLeft } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+
 interface DesignPhaseErrorProps {
   error: string | null;
   onRetry: () => void;
@@ -6,6 +8,7 @@ interface DesignPhaseErrorProps {
 }
 
 export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="error"
@@ -23,7 +26,7 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
       <div
         className="animate-fade-slide-in text-center"
       >
-        <h3 className="text-base font-semibold text-red-400">Design analysis failed</h3>
+        <h3 className="text-base font-semibold text-red-400">{t.agents.design.design_failed}</h3>
         {error && (
           <p className="text-sm text-muted-foreground/70 mt-1.5 max-w-xs mx-auto">
             {error}
@@ -39,14 +42,14 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          Retry
+          {t.common.retry}
         </button>
         <button
           onClick={onReset}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back
+          {t.common.back}
         </button>
       </div>
     </div>

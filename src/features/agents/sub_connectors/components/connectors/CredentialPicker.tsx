@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Hash, Send, Mail, Bell, Check, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -23,6 +24,7 @@ export function CredentialPicker({
   selectedId,
   onChange,
 }: CredentialPickerProps) {
+  const { t } = useTranslation();
   const selected = creds.find((c) => c.id === selectedId);
 
   const handleSelectFocused = useCallback((index: number) => {
@@ -32,7 +34,7 @@ export function CredentialPicker({
 
   return (
     <Listbox
-      ariaLabel="Select credential"
+      ariaLabel={t.agents.connectors.cp_select_label}
       itemCount={creds.length + 1}
       onSelectFocused={handleSelectFocused}
       renderTrigger={({ isOpen, toggle }) => (
@@ -50,7 +52,7 @@ export function CredentialPicker({
               <span className="text-sm text-muted-foreground/80">{selected.service_type}</span>
             </>
           ) : (
-            <span className="flex-1 text-left text-muted-foreground/80">Select credential...</span>
+            <span className="flex-1 text-left text-muted-foreground/80">{t.agents.connectors.cp_select}</span>
           )}
           <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
@@ -67,7 +69,7 @@ export function CredentialPicker({
             } ${!selectedId ? 'text-foreground/80' : 'text-muted-foreground/90'}`}
           >
             <span className="text-muted-foreground/80">&mdash;</span>
-            <span>None</span>
+            <span>{t.common.none}</span>
           </button>
           {creds.map((cred, i) => (
             <button
@@ -86,7 +88,7 @@ export function CredentialPicker({
             </button>
           ))}
           {creds.length === 0 && (
-            <div className="px-3 py-2 text-sm text-muted-foreground/80">No credentials available</div>
+            <div className="px-3 py-2 text-sm text-muted-foreground/80">{t.agents.connectors.cp_no_creds}</div>
           )}
         </>
       )}

@@ -1,16 +1,10 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DesignPhase } from '@/lib/types/designTypes';
 
-const STAGES = [
-  { key: 'input', label: 'Input' },
-  { key: 'analyzing', label: 'Analyzing' },
-  { key: 'question', label: 'Question' },
-  { key: 'review', label: 'Review' },
-  { key: 'applied', label: 'Applied' },
-  { key: 'error', label: 'Error' },
-] as const;
+const STAGE_KEYS = ['input', 'analyzing', 'question', 'review', 'applied', 'error'] as const;
 
-type StageKey = (typeof STAGES)[number]['key'];
+type StageKey = (typeof STAGE_KEYS)[number];
 
 /** Map the internal DesignPhase values to visible stage keys */
 function phaseToStageIndex(phase: DesignPhase): number {
@@ -25,7 +19,7 @@ function phaseToStageIndex(phase: DesignPhase): number {
     error: 'error',
   } satisfies Record<DesignPhase, StageKey>;
   const key = map[phase];
-  return STAGES.findIndex((s) => s.key === key);
+  return STAGE_KEYS.indexOf(key);
 }
 
 interface PhaseIndicatorProps {
@@ -33,7 +27,17 @@ interface PhaseIndicatorProps {
 }
 
 export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
+  const { t } = useTranslation();
   const activeIndex = phaseToStageIndex(phase);
+
+  const STAGE_LABEL_MAP: Record<StageKey, string> = {
+    input: t.agents.design.stage_input,
+    analyzing: t.agents.design.stage_analyzing,
+    question: t.agents.design.stage_question,
+    review: t.agents.design.stage_review,
+    applied: t.agents.design.stage_applied,
+    error: t.agents.design.stage_error,
+  };
 
   const isError = phase === 'error';
 
@@ -44,17 +48,17 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
     <div
       className="flex items-center gap-1 px-1 py-1"
       role="progressbar"
-      aria-label="Design phase progress"
+      aria-label={t.agents.design.phase_progress_label}
       aria-valuemin={1}
-      aria-valuemax={STAGES.length}
+      aria-valuemax={STAGE_KEYS.length}
       aria-valuenow={activeIndex + 1}
     >
-      {STAGES.map((stage, i) => {
+      {STAGE_KEYS.map((stageKey, i) => {
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
 
         return (
-          <div key={stage.key} className="flex items-center gap-1 flex-1 last:flex-initial">
+          <div key={stageKey} className="flex items-center gap-1 flex-1 last:flex-initial">
             {/* Dot + label group */}
             <div className="flex items-center gap-1.5 min-w-0">
               <div className="relative flex items-center justify-center">
@@ -102,12 +106,12 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                       : 'text-muted-foreground/80'
                 }`}
               >
-                {stage.label}
+                {STAGE_LABEL_MAP[stageKey]}
               </span>
             </div>
 
             {/* Connector line (not after last item) */}
-            {i < STAGES.length - 1 && (
+            {i < STAGE_KEYS.length - 1 && (
               <div className="flex-1 h-px mx-1 min-w-3">
                 <div
                   className={`h-full rounded-full transition-colors duration-300 ${

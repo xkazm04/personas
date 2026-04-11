@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Filter } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface FilterOption {
   value: string;
@@ -40,6 +41,7 @@ export function PersonaOverviewFilterHeader({
   onChange,
   alignRight = false,
 }: FilterHeaderProps) {
+  const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -79,7 +81,7 @@ export function PersonaOverviewFilterHeader({
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : `Filter by ${label.toLowerCase()}`}
+        title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() })}
         className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-md text-md font-semibold uppercase tracking-wider transition-colors ${
           isFiltered
             ? 'text-primary bg-primary/8 hover:bg-primary/12'

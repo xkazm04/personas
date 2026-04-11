@@ -1,4 +1,5 @@
 import { Bell, Plus, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 
@@ -14,11 +15,12 @@ interface AddChannelButtonProps {
 }
 
 export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChannelButtonProps) {
-  const available = channelTypes.filter(t => !existingTypes.has(t.type));
+  const { t } = useTranslation();
+  const available = channelTypes.filter(ct => !existingTypes.has(ct.type));
 
   return (
     <Listbox
-      ariaLabel="Add notification channel"
+      ariaLabel={t.agents.connectors.ch_add}
       renderTrigger={({ isOpen, toggle }) => (
         <button
           onClick={toggle}
@@ -27,27 +29,27 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
           className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
         >
           <Plus className="w-4 h-4" />
-          Add Channel
+          {t.agents.connectors.ch_add}
           <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
       )}
     >
       {({ close }) => (
         <>
-          {available.map((t) => (
+          {available.map((ct) => (
             <button
-              key={t.type}
-              onClick={() => { onAdd(t.type); close(); }}
+              key={ct.type}
+              onClick={() => { onAdd(ct.type); close(); }}
               role="option"
               aria-selected={false}
               className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground/80 transition-colors"
             >
               <Bell className="w-4 h-4 text-muted-foreground/90" />
-              {t.label}
+              {ct.label}
             </button>
           ))}
           {available.length === 0 && (
-            <div className="px-4 py-2.5 text-sm text-muted-foreground/90">All channel types added</div>
+            <div className="px-4 py-2.5 text-sm text-muted-foreground/90">{t.agents.connectors.ch_all_added}</div>
           )}
         </>
       )}

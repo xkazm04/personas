@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MessageSquare, Clock, Trash2, ChevronDown, ChevronRight, User, Bot, CheckCircle2, X, ArrowRight, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DesignConversation, DesignConversationMessage } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
@@ -38,6 +39,7 @@ export function ConversationCard({
 }: {
   conversation: DesignConversation; isActive: boolean; onResume: () => void; onDelete: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const messages = parseConversationMessages(conversation.messages) ?? [];
   const messageCount = messages.length;
@@ -53,11 +55,11 @@ export function ConversationCard({
           {isCompleted && <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />}
         </button>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-sm text-muted-foreground/60 tabular-nums">{messageCount} msg{messageCount !== 1 ? 's' : ''}</span>
+          <span className="text-sm text-muted-foreground/60 tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
           <span className="text-sm text-muted-foreground/40">·</span>
           <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
           {!isActive && conversation.status === 'active' && (
-            <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>Resume</button>
+            <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
           )}
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
         </div>
@@ -74,10 +76,11 @@ export function ConversationCard({
 }
 
 export function DriftNotificationCard({ event, onDismiss }: { event: DesignDriftEvent; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const meta = DRIFT_KIND_META[event.kind];
   return (
     <div className={`animate-fade-slide-in group relative rounded-lg border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
-      <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all" title="Dismiss"><X className="w-2.5 h-2.5" /></button>
+      <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
         <div className="min-w-0 flex-1 space-y-0.5">

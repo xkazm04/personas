@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Key, Wrench, Zap, ArrowRight, Shield, X, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DepGraph, DepNode, DepNodeKind, DepBlastRadius } from '../../libs/dependencyGraph';
 import { analyzeDepBlastRadius } from '../../libs/dependencyGraph';
 
@@ -13,16 +14,10 @@ const KIND_ICONS: Record<DepNodeKind, typeof Key> = {
   automation: Zap,
 };
 
-const KIND_LABELS: Record<DepNodeKind, string> = {
-  credential: 'Credentials',
-  tool: 'Tools',
-  automation: 'Automations',
-};
-
 const SEVERITY_STYLES = {
-  low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', label: 'Low Risk' },
-  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', label: 'Medium Risk' },
-  high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', label: 'High Risk' },
+  low: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+  high: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -71,7 +66,7 @@ function GraphNodeChip({
         <span className="text-xs text-muted-foreground/50">{edgeCount} dep{edgeCount !== 1 ? 's' : ''}</span>
       )}
       {brokenCount > 0 && (
-        <span className="text-xs text-red-400/70">{brokenCount} broken</span>
+        <span className="text-xs text-red-400/70">{brokenCount}</span>
       )}
       <HealthIndicator healthy={node.healthy} />
     </button>
@@ -79,7 +74,11 @@ function GraphNodeChip({
 }
 
 function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => void }) {
+  const { t, tx } = useTranslation();
   const sev = SEVERITY_STYLES[blast.severity];
+  const sevLabel = blast.severity === 'low' ? t.agents.connectors.dg_low_risk
+    : blast.severity === 'medium' ? t.agents.connectors.dg_medium_risk
+    : t.agents.connectors.dg_high_risk;
   return (
     <div
       className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
@@ -87,7 +86,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/85">Blast Radius</span>
+          <span className="text-sm font-medium text-foreground/85">{t.agents.connectors.dg_blast_radius}</span>
         </div>
         <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
           <X className="w-3.5 h-3.5 text-muted-foreground/50" />
@@ -101,23 +100,23 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
             <HealthIndicator healthy={blast.healthy} />
           </div>
           <span className={`px-2 py-0.5 text-xs font-medium rounded-lg border ${sev.bg} ${sev.text} ${sev.border}`}>
-            {sev.label}
+            {sevLabel}
           </span>
         </div>
 
         <div className="text-xs text-muted-foreground/70 leading-relaxed">
           {blast.severity === 'high' ? (
-            <span>If this credential expires or goes offline, <strong className="text-red-400">{blast.affectedTools.length + blast.affectedAutomations.length} capabilities</strong> will break.</span>
+            <span>{tx(t.agents.connectors.dg_high_blast, { count: blast.affectedTools.length + blast.affectedAutomations.length })}</span>
           ) : blast.severity === 'medium' ? (
-            <span><strong className="text-amber-400">{blast.affectedTools.length + blast.affectedAutomations.length} capability</strong>{blast.affectedTools.length + blast.affectedAutomations.length !== 1 ? 'ies' : ''} depend{blast.affectedTools.length + blast.affectedAutomations.length === 1 ? 's' : ''} on this credential.</span>
+            <span>{tx(t.agents.connectors.dg_medium_blast, { count: blast.affectedTools.length + blast.affectedAutomations.length })}</span>
           ) : (
-            <span>No tools or automations depend on this credential.</span>
+            <span>{t.agents.connectors.dg_low_blast}</span>
           )}
         </div>
 
         {blast.affectedTools.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">Affected Tools</div>
+            <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{t.agents.connectors.dg_affected_tools}</div>
             <div className="space-y-1">
               {blast.affectedTools.map((t) => (
                 <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
@@ -131,7 +130,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
 
         {blast.affectedAutomations.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">Affected Automations</div>
+            <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{t.agents.connectors.dg_affected_auto}</div>
             <div className="space-y-1">
               {blast.affectedAutomations.map((a) => (
                 <div key={a.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
@@ -156,6 +155,14 @@ interface DependencyGraphPanelProps {
 }
 
 export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
+  const { t, tx } = useTranslation();
+
+  const KIND_LABELS: Record<DepNodeKind, string> = {
+    credential: t.common.connectors,
+    tool: t.common.tools,
+    automation: t.agents.connectors.auto_title,
+  };
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<DepNodeKind | 'all'>('all');
 
@@ -219,7 +226,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
   if (graph.nodes.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground/50 text-sm">
-        No dependencies to display.
+        {t.agents.connectors.dg_no_deps}
       </div>
     );
   }
@@ -252,7 +259,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
         {brokenEdges.length > 0 && (
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-red-500/8 border-red-500/20 text-xs text-red-400">
             <AlertTriangle className="w-3 h-3" />
-            <span>{brokenEdges.length} broken</span>
+            <span>{tx(t.agents.connectors.dg_broken, { count: brokenEdges.length })}</span>
           </div>
         )}
       </div>
@@ -296,7 +303,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                 className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
-                  <span className="text-sm font-medium text-foreground/85">Dependencies</span>
+                  <span className="text-sm font-medium text-foreground/85">{t.agents.connectors.dg_dependencies}</span>
                   <button type="button" onClick={() => setSelectedNodeId(null)} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
                     <X className="w-3.5 h-3.5 text-muted-foreground/50" />
                   </button>
@@ -332,7 +339,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
               >
                 <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
                 <p className="text-xs text-muted-foreground/50">
-                  Select a credential to see what breaks when it expires
+                  {t.agents.connectors.dg_select_cred}
                 </p>
               </div>
             )}
@@ -341,7 +348,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
           {filteredEdges.length > 0 && (
             <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
               <div className="text-xs font-medium text-muted-foreground/60 mb-2">
-                Relationships ({filteredEdges.length})
+                {tx(t.agents.connectors.dg_relationships, { count: filteredEdges.length })}
               </div>
               <div className="space-y-1 max-h-[180px] overflow-y-auto">
                 {filteredEdges.slice(0, 20).map((edge) => {
@@ -363,7 +370,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                   );
                 })}
                 {filteredEdges.length > 20 && (
-                  <div className="text-xs text-muted-foreground/50 pt-1">+{filteredEdges.length - 20} more</div>
+                  <div className="text-xs text-muted-foreground/50 pt-1">{tx(t.agents.connectors.dg_more, { count: filteredEdges.length - 20 })}</div>
                 )}
               </div>
             </div>

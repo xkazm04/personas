@@ -1,4 +1,5 @@
 import { Pencil } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -27,6 +28,7 @@ export function DesignPhasePanelSaved({
   onInstructionChange,
   onStartAnalysis,
 }: DesignPhasePanelSavedProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Read-only overview of saved design */}
@@ -54,13 +56,13 @@ export function DesignPhasePanelSaved({
       <div className="pt-2 border-t border-primary/10 space-y-2">
         <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
           <Pencil className="w-3 h-3 shrink-0" />
-          <span>Current configuration will be preserved. Describe what to change.</span>
+          <span>{t.agents.design.current_config_preserved}</span>
         </div>
         <div className="flex items-end gap-2">
           <textarea
             value={instruction}
             onChange={(e) => onInstructionChange(e.target.value)}
-            placeholder="Describe changes to this design..."
+            placeholder={t.agents.design.describe_changes_placeholder}
             className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -79,10 +81,10 @@ export function DesignPhasePanelSaved({
             }`}
           >
             <Pencil className="w-3.5 h-3.5" />
-            Update Design
+            {t.agents.design.update_design}
           </button>
         </div>
-        <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+        <p className="text-sm text-muted-foreground/60 px-1">{t.agents.design.enter_submit_hint}</p>
       </div>
     </>
   );

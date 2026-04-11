@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
@@ -21,6 +22,7 @@ interface NotificationChannelSettingsProps {
 }
 
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
+  const { t } = useTranslation();
   const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
@@ -122,7 +124,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
   return (
     <div className={`bg-secondary/40 backdrop-blur-sm border ${TOOLS_BORDER} rounded-xl p-4`}>
-      <SectionHeader className="mb-6" icon={<Bell className="w-3.5 h-3.5" />} label="Notification Channels" />
+      <SectionHeader className="mb-6" icon={<Bell className="w-3.5 h-3.5" />} label={t.agents.connectors.ch_title} />
       <ChannelList
         channels={effectiveChannels} credentials={credentials} connectorDefinitions={connectorDefinitions}
         validationErrors={validationErrors} existingTypes={existingTypes}
@@ -132,9 +134,9 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       />
       {!isDraftMode && isDirty && (
         <button onClick={handleSave} disabled={isSaving}
-          title={isSaving ? 'Saving channels...' : undefined}
+          title={isSaving ? t.agents.connectors.ch_saving : undefined}
           className="flex items-center gap-2 px-4 py-2 mt-3 rounded-xl font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
-          {isSaving ? 'Saving...' : 'Save Channels'}
+          {isSaving ? t.agents.connectors.ch_saving : t.agents.connectors.ch_save}
         </button>
       )}
       {saveError && (

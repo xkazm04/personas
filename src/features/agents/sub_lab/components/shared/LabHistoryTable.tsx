@@ -1,4 +1,5 @@
 import { Trash2, Clock } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { LabEmptyState } from './LabEmptyState';
 
@@ -32,6 +33,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
   emptySubtitle,
   title,
 }: LabHistoryTableProps<TRun>) {
+  const { t } = useTranslation();
   if (runs.length === 0) {
     return (
       <div className="space-y-3">
@@ -61,8 +63,8 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                   {col.label}
                 </th>
               ))}
-              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[140px]">Status</th>
-              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[150px]">Time</th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[140px]">{t.common.status}</th>
+              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[150px]">{t.agents.lab.col_time}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -92,8 +94,8 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
                     className="p-1 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-colors"
-                    title="Delete run"
-                    aria-label="Delete run"
+                    title={t.agents.lab.delete_run}
+                    aria-label={t.agents.lab.delete_run}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

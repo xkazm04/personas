@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, ArrowRight, FileInput, FileOutput } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 export interface ExamplePair {
   id: string;
   input: string;
@@ -40,11 +41,13 @@ export function ExamplePairCollector({
     });
   }, []);
 
+  const { t, tx } = useTranslation();
+
   return (
     <div className={`space-y-3 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground/70 leading-relaxed max-w-[80%]">
-          Paste a real input (email, incoming request, message) and show the output you want. The compiler reverse-engineers the full agent configuration from your examples.
+          {t.agents.design.example_instructions}
         </p>
         <button
           onClick={addPair}
@@ -52,7 +55,7 @@ export function ExamplePairCollector({
           className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
         >
           <Plus className="w-3 h-3" />
-          Add
+          {t.common.add}
         </button>
       </div>
 
@@ -75,7 +78,7 @@ export function ExamplePairCollector({
                   className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
                 >
                   <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">
-                    Example {index + 1}
+                    {tx(t.agents.design.example_n, { index: index + 1 })}
                   </span>
                   {isCollapsed && preview && (
                     <span className="text-xs text-muted-foreground/50 truncate ml-1">
@@ -87,7 +90,7 @@ export function ExamplePairCollector({
                   onClick={() => removePair(pair.id)}
                   disabled={disabled}
                   className="p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors"
-                  title="Remove example"
+                  title={t.agents.design.remove_example}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -100,13 +103,13 @@ export function ExamplePairCollector({
                   <div className="space-y-1">
                     <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
                       <FileInput className="w-3 h-3" />
-                      Input -- what the agent receives
+                      {t.agents.design.input_label}
                     </label>
                     <textarea
                       value={pair.input}
                       onChange={(e) => updatePair(pair.id, 'input', e.target.value)}
                       disabled={disabled}
-                      placeholder={'Paste a real input...\n\ne.g. an email body, a Slack message, an incoming request, a CSV row'}
+                      placeholder={t.agents.design.input_placeholder}
                       rows={4}
                       className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
@@ -121,13 +124,13 @@ export function ExamplePairCollector({
                   <div className="space-y-1">
                     <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
                       <FileOutput className="w-3 h-3" />
-                      Output -- what you want the agent to produce
+                      {t.agents.design.output_label}
                     </label>
                     <textarea
                       value={pair.output}
                       onChange={(e) => updatePair(pair.id, 'output', e.target.value)}
                       disabled={disabled}
-                      placeholder={'Describe or paste the desired output...\n\ne.g. "Create a Jira ticket with title from subject, priority P2, assigned to backend team"'}
+                      placeholder={t.agents.design.output_placeholder}
                       rows={4}
                       className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
@@ -150,7 +153,7 @@ export function ExamplePairCollector({
             <FileOutput className="w-4 h-4" />
           </div>
           <span className="text-sm text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">
-            Add your first input {'->'} output example
+            {t.agents.design.add_first_example}
           </span>
         </button>
       )}

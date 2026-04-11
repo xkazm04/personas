@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Wrench, ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
 
@@ -9,6 +10,7 @@ interface ToolsSectionProps {
 }
 
 export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
+  const { t, tx } = useTranslation();
   const [toolsExpanded, setToolsExpanded] = useState(true);
   const [showRunner, setShowRunner] = useState(false);
 
@@ -30,7 +32,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
         )}
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span className="text-sm font-medium text-muted-foreground/80">
-          {tools.length} tool{tools.length !== 1 ? 's' : ''} configured
+          {tx(t.agents.connectors.ts_configured, { count: tools.length })}
         </span>
         {!toolsExpanded && tools.length > 0 && (
           <span className="text-sm text-muted-foreground/60 truncate flex-1">
@@ -72,7 +74,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
                       >
                         <Play className="w-3 h-3" />
-                        {showRunner ? 'Hide Tool Runner' : `Try Tools (${invocableTools.length})`}
+                        {showRunner ? t.agents.connectors.ts_hide_runner : tx(t.agents.connectors.ts_try_tools, { count: invocableTools.length })}
                       </button>
 
                       {showRunner && (
@@ -86,7 +88,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                   )}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground/60">No tools configured.</p>
+                <p className="text-sm text-muted-foreground/60">{t.agents.connectors.ts_no_tools}</p>
               )}
             </div>
           </div>

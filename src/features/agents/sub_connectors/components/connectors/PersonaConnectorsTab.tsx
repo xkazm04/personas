@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Network, List } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -23,6 +24,7 @@ interface PersonaConnectorsTabProps {
 }
 
 export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectorsTabProps) {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const {
     statuses, tools, requiredCredTypes, credentials,
@@ -82,7 +84,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   useEffect(() => { onMissingCountChange?.(unlinked); }, [unlinked, onMissingCountChange]);
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">No persona selected</div>;
+    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">{t.agents.connectors.ct_no_persona}</div>;
   }
 
   const hasGraphContent = dependencyGraph.nodes.length > 0;
@@ -94,7 +96,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       {/* Connector icons row */}
       {connectorNames.length > 0 && (
         <div className="flex items-center gap-3 px-1">
-          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Connectors</span>
+          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
           <div className="flex items-center gap-1.5">
             {connectorNames.map((name) => {
               const meta = getConnectorMeta(name);
@@ -115,7 +117,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             type="button"
             onClick={() => setViewMode('list')}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
-            title="List view"
+            title={t.agents.connectors.ct_list_view}
           >
             <List className="w-4 h-4" />
           </button>
@@ -123,7 +125,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             type="button"
             onClick={() => setViewMode('graph')}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
-            title="Dependency graph"
+            title={t.agents.connectors.ct_graph_view}
           >
             <Network className="w-4 h-4" />
           </button>

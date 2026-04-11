@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { STATUS_CONFIG, getStatusKey } from '../../libs/connectorTypes';
@@ -35,6 +36,7 @@ export function ConnectorStatusCard({
   onLinkCredential, onAddCredential, onClearLinkError,
   roleLabel, alternatives, onSwap,
 }: ConnectorStatusCardProps) {
+  const { t, tx } = useTranslation();
   const [swapOpen, setSwapOpen] = useState(false);
   const statusKey = getStatusKey(status);
   const config = STATUS_CONFIG[statusKey];
@@ -59,19 +61,19 @@ export function ConnectorStatusCard({
               <span>{config.label}</span>
             </span>
           </div>
-          {status.credentialName && <p className="text-sm text-muted-foreground/80 mt-0.5">Credential: {status.credentialName}</p>}
+          {status.credentialName && <p className="text-sm text-muted-foreground/80 mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {alternatives && alternatives.length > 0 && onSwap && (
             <button onClick={() => setSwapOpen((o) => !o)}
               className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-xl border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-muted-foreground/60 hover:bg-secondary/50 hover:text-foreground/80'}`}
-              title="Swap to alternative connector"><ArrowLeftRight className="w-3 h-3" /></button>
+              title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
             <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
               <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} Test
+                {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.st_test}
               </button>
             </Tooltip>
           ) : (
@@ -79,12 +81,12 @@ export function ConnectorStatusCard({
               {credentials.length > 0 && (
                 <button onClick={() => onToggleLinking(isLinking ? null : status.name)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'}`}>
-                  <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> Link Existing
+                  <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> {t.agents.connectors.st_link_existing}
                 </button>
               )}
               <button onClick={() => onAddCredential(status.name)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors">
-                <Plus className="w-3 h-3" /> Add New
+                <Plus className="w-3 h-3" /> {t.agents.connectors.st_add_new}
               </button>
             </>
           )}
