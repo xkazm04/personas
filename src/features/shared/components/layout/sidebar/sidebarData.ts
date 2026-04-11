@@ -30,12 +30,12 @@ export interface SectionDef {
 
 export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
-  { id: 'overview', icon: BarChart3, label: 'Overview', minTier: TIERS.TEAM },
+  { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'workflows', icon: GitBranch, label: 'Workflows', minTier: TIERS.TEAM },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
-  { id: 'design-reviews', icon: FlaskConical, label: 'Templates', minTier: TIERS.TEAM },
+  { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'plugins', icon: Puzzle, label: 'Plugins', minTier: TIERS.TEAM },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
@@ -73,7 +73,7 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
 export const credentialItems: SubNavItem[] = [
   { id: 'credentials', label: 'Credentials', icon: Key },
   { id: 'databases', label: 'Databases', icon: Database, minTier: TIERS.TEAM },
-  { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
+  { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
   { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
 ];
@@ -104,6 +104,16 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
   { id: 'skills', label: 'Skills', icon: BookOpen },
+];
+
+export const researchLabItems: SubNavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'literature', label: 'Literature', icon: BookOpen },
+  { id: 'hypotheses', label: 'Hypotheses', icon: Lightbulb },
+  { id: 'experiments', label: 'Experiments', icon: FlaskConical },
+  { id: 'findings', label: 'Findings', icon: Cpu },
+  { id: 'reports', label: 'Reports', icon: Archive },
 ];
 
 export const cloudItems: SubNavItem[] = [

@@ -81,8 +81,10 @@ export const MOBILE_SECTIONS = new Set<string>([
 /** Sidebar sections available in Simple mode (non-technical users). */
 export const SIMPLE_SECTIONS = new Set<string>([
   'home',
+  'overview',
   'personas',
   'credentials',
+  'design-reviews',
   'settings',
 ]);
 
