@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bookmark, Check, Plus, Trash2, X, ChevronDown, Sparkles } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViewsByType, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
@@ -210,12 +211,12 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                     if (e.key === 'Escape') setIsSaving(false);
                   }}
                 />
-                <button type="button" onClick={handleSave} disabled={!newViewName.trim()} className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded disabled:opacity-40">
+                <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason="Enter a view name" className="text-emerald-500 hover:bg-emerald-500/10">
                   <Check className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" onClick={() => setIsSaving(false)} className="p-1 text-muted-foreground hover:bg-secondary rounded">
+                </Button>
+                <Button variant="ghost" size="icon-sm" onClick={() => setIsSaving(false)}>
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ) : (
               <button
@@ -271,14 +272,14 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                       }`}>
                         {view.name}
                       </span>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost" size="icon-sm"
                         onClick={(e) => handleDelete(view.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded transition-all flex-shrink-0"
+                        className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                         title="Delete view"
                       >
                         <Trash2 className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </>
