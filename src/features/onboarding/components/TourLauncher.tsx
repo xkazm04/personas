@@ -2,6 +2,7 @@ import { Map } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
 import { getActiveTourSteps, type TourId } from "@/stores/slices/system/tourSlice";
 import { useTier } from "@/hooks/utility/interaction/useTier";
+import { useTranslation } from '@/i18n/useTranslation';
 
 function TourProgressArc({ completed, total }: { completed: number; total: number }) {
   const radius = 7;
@@ -38,6 +39,7 @@ function TourProgressArc({ completed, total }: { completed: number; total: numbe
 }
 
 export default function TourLauncher() {
+  const { t, tx } = useTranslation();
   const tourCompleted = useSystemStore((s) => s.tourCompleted);
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourActive = useSystemStore((s) => s.tourActive);
@@ -75,12 +77,12 @@ export default function TourLauncher() {
       {hasProgress ? (
         <>
           <TourProgressArc completed={completedCount} total={totalSteps} />
-          Resume Tour ({completedCount}/{totalSteps})
+          {tx(t.onboarding.resume_tour, { completed: completedCount, total: totalSteps })}
         </>
       ) : (
         <>
           <Map className="w-3.5 h-3.5" />
-          Start Tour
+          {t.onboarding.start_tour}
         </>
       )}
     </button>

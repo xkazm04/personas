@@ -7,6 +7,7 @@ import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { DimensionRadial } from '@/features/templates/sub_generated/shared/DimensionRadial';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function TemplatePickerStep({
   templates,
@@ -19,11 +20,13 @@ export function TemplatePickerStep({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t, tx } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <LoadingSpinner size="xl" className="text-violet-400" />
-        <span className="ml-3 typo-body text-muted-foreground/80">Loading templates...</span>
+        <span className="ml-3 typo-body text-muted-foreground/80">{t.onboarding.loading_templates}</span>
       </div>
     );
   }
@@ -32,8 +35,8 @@ export function TemplatePickerStep({
     return (
       <div className="text-center py-16">
         <FlaskConical className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="typo-body text-muted-foreground/70">No starter templates found.</p>
-        <p className="typo-body text-muted-foreground/50 mt-1">Generate templates first from the Templates section.</p>
+        <p className="typo-body text-muted-foreground/70">{t.onboarding.no_templates}</p>
+        <p className="typo-body text-muted-foreground/50 mt-1">{t.onboarding.no_templates_hint}</p>
       </div>
     );
   }
@@ -41,8 +44,8 @@ export function TemplatePickerStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="typo-heading-lg text-foreground/90 mb-1">Pick a starter template</h3>
-        <p className="typo-body text-muted-foreground/70">Choose one of these popular templates to create your first agent.</p>
+        <h3 className="typo-heading-lg text-foreground/90 mb-1">{t.onboarding.pick_template_heading}</h3>
+        <p className="typo-body text-muted-foreground/70">{t.onboarding.pick_template_description}</p>
       </div>
       <div className="grid grid-cols-1 gap-3">
         {templates.map((review) => {
@@ -76,7 +79,7 @@ export function TemplatePickerStep({
                   {connectors.length > 0 && (
                     <p className="typo-body text-muted-foreground/50 mt-1.5">
                       {connectors.slice(0, 4).join(', ')}
-                      {connectors.length > 4 && ` +${connectors.length - 4} more`}
+                      {connectors.length > 4 && ` ${tx(t.onboarding.more_connectors, { count: connectors.length - 4 })}`}
                     </p>
                   )}
                 </div>

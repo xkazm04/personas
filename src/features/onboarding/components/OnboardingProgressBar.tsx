@@ -2,23 +2,25 @@ import { Sparkles, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
-
-const STEP_LABELS: Record<OnboardingStep, string> = {
-  'appearance': 'Look & feel',
-  'discover': 'Detect desktop apps',
-  'pick-template': 'Pick template',
-  'adopt': 'Adopt agent',
-  'execute': 'First run',
-};
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STEP_ORDER: OnboardingStep[] = ['appearance', 'discover', 'pick-template', 'adopt', 'execute'];
 
 export default function OnboardingProgressBar() {
+  const { t } = useTranslation();
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
   const onboardingStep = useSystemStore((s) => s.onboardingStep);
   const onboardingStepCompleted = useSystemStore((s) => s.onboardingStepCompleted);
   const personas = useAgentStore((s) => s.personas);
+
+  const STEP_LABELS: Record<OnboardingStep, string> = {
+    'appearance': t.onboarding.progress_appearance,
+    'discover': t.onboarding.progress_discover,
+    'pick-template': t.onboarding.progress_pick_template,
+    'adopt': t.onboarding.progress_adopt,
+    'execute': t.onboarding.progress_execute,
+  };
 
   // Don't show if onboarding is completed or if user already has personas
   if (onboardingCompleted || personas.length > 0) return null;
@@ -36,7 +38,7 @@ export default function OnboardingProgressBar() {
         {/* Header */}
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-          <span className="typo-heading text-violet-300">Getting Started</span>
+          <span className="typo-heading text-violet-300">{t.onboarding.getting_started}</span>
           <span className="ml-auto typo-body text-violet-400/60">{completedCount}/{STEP_ORDER.length}</span>
         </div>
 

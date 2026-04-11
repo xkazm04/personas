@@ -9,6 +9,7 @@ import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlic
 import type { SidebarSection, EventBusTab } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DEFAULT_PANEL_WIDTH = 440;
 
@@ -26,6 +27,7 @@ export default function GuidedTour() {
   const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
   const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
 
+  const { t, tx } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
 
   const tourDef = getTourById(tourId);
@@ -137,14 +139,14 @@ export default function GuidedTour() {
             </div>
             <div>
               <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
-              <p className="text-[11px] text-muted-foreground/80">Step {currentIndex + 1} of {visibleSteps.length}</p>
+              <p className="text-[11px] text-muted-foreground/80">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title="Minimize" data-testid="tour-panel-minimize">
+            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} data-testid="tour-panel-minimize">
               <ChevronRight className="w-3.5 h-3.5" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title="End tour" data-testid="tour-panel-dismiss">
+            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} data-testid="tour-panel-dismiss">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>

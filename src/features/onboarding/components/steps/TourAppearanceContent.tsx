@@ -1,8 +1,10 @@
 import { Check, Sun, Type } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, TextScale, BrightnessLevel } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function TourAppearanceContent() {
+  const { t } = useTranslation();
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
@@ -21,12 +23,12 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">Text Size</span>
+          <span className="text-sm font-medium text-foreground/80">{t.onboarding.text_size_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {TEXT_SCALES.map((scale) => {
             const isActive = textScale === scale.id;
-            const sizeClass = scale.id === 'default' ? 'text-sm' : scale.id === 'large' ? 'text-base' : 'text-lg';
+            const sizeClass = scale.id === 'large' ? 'text-base' : scale.id === 'larger' ? 'text-lg' : 'text-xl';
             return (
               <button
                 key={scale.id}
@@ -51,7 +53,7 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Sun className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">Brightness</span>
+          <span className="text-sm font-medium text-foreground/80">{t.onboarding.brightness_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {brightnessLevels.map((level, i) => {
@@ -81,7 +83,7 @@ export default function TourAppearanceContent() {
 
       {/* Dark themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">Dark Themes</span>
+        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.dark_themes}</span>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))' }}>
           {darkThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -113,7 +115,7 @@ export default function TourAppearanceContent() {
 
       {/* Light themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">Light Themes</span>
+        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.light_themes}</span>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))' }}>
           {lightThemes.map((t) => {
             const isActive = themeId === t.id;

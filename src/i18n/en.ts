@@ -80,6 +80,7 @@ export const en = {
     clear: "Clear",
     send: "Send",
     apply: "Apply",
+    confirm: "Confirm",
 
     // Column/field headers used in tables and forms
     actions: "Actions",
@@ -553,6 +554,62 @@ export const en = {
         label: "Settings",
         description: "Your account, how the app looks, notification preferences, and advanced options",
       },
+      plugins: {
+        label: "Plugins",
+        description: "Extend your agents with third-party plugins and custom extensions",
+      },
+    },
+    // -- HomeLearning --
+    learning: {
+      title: "Learning Center",
+      subtitle: "Guided tours and quick tricks to master Personas",
+      guided_tours: "Guided Tours",
+      // {completed}/{total}
+      tours_completed: "{completed}/{total} completed",
+      done: "Done",
+      restart: "Restart",
+      start_tour: "Start Tour",
+      // {count} steps
+      steps_count: "{count} steps",
+      tricks_tips: "Tricks & Tips",
+      // {count} guides
+      guides_count: "{count} guides",
+      how_to_use: "How to use",
+      pro_tip: "Pro tip: ",
+      // Category labels
+      cat_agent_craft: "Agent Craft",
+      cat_observability: "Observability & Events",
+      cat_platform: "Platform & Setup",
+    },
+    // -- SetupCards --
+    setup_stepper: {
+      your_profile: "Your profile",
+      choose_role: "Choose your role",
+      tailor_hint: "We'll tailor the experience to match how you work.",
+      simple_hint: "We've set up the app for everyday office use.",
+      pick_tool: "Pick your favorite tool",
+      tool_hint: "This will be your first connector integration.",
+      automate_title: "What do you want to automate?",
+      automate_hint: "Describe your first automation goal -- we'll help you set it up.",
+      automate_placeholder: "e.g. Automatically sync new Jira tickets to a Slack channel...",
+      // {current}/{min}
+      min_chars: "Min 10 characters ({current}/10)",
+      ready_to_save: "Ready to save",
+      back: "Back",
+      next: "Next",
+      finish: "Finish",
+    },
+    // -- WelcomeLayout --
+    welcome_layout: {
+      get_started: "Get Started",
+      language: "Language",
+    },
+    // -- IconShowcase --
+    icon_showcase: {
+      lucide_tab: "Lucide (Library)",
+      personas_tab: "Personas (Animated)",
+      lucide_footer: "lucide-react -- generic icon library -- static",
+      personas_footer: "9 custom icons -- neural/circuit motifs -- CSS-animated -- theme-adaptive",
     },
   },
 
@@ -1181,6 +1238,269 @@ export const en = {
       loading: "Loading triggers...",
       empty: "No cloud triggers yet. Create one to schedule automated runs.",
     },
+
+    // -- Unified Deployment Dashboard --
+    dashboard: {
+      title: "Deployments",
+      subtitle: "All deployments across Cloud and GitLab",
+      refresh: "Refresh",
+      // Summary card labels
+      total: "Total",
+      active: "Active",
+      paused: "Paused",
+      cloud: "Cloud",
+      gitlab: "GitLab",
+      // Table column headers
+      col_name: "Name",
+      col_target: "Target",
+      col_status: "Status",
+      col_invocations: "Invocations",
+      col_health: "Health (7d)",
+      col_last_activity: "Last Activity",
+      col_created: "Created",
+      col_actions: "Actions",
+      // Empty states
+      no_targets_title: "No deployment targets connected",
+      no_targets_hint: "Connect to Cloud Execution or GitLab in the respective tabs to see deployments here.",
+      no_match_filters: "No deployments match filters",
+      no_deployments: "No deployments yet",
+      adjust_filters: "Try adjusting your search or filters.",
+      deploy_hint: "Deploy personas from the Cloud or GitLab tabs.",
+      // Footer -- {showing}, {total}
+      showing_of: "Showing {showing} of {total} deployment{plural}",
+      total_invocations: "Total invocations:",
+      // Filter
+      search_placeholder: "Search deployments...",
+      filter: "Filter",
+      filter_target: "Target",
+      filter_status: "Status",
+      filter_all: "All",
+      // Bulk actions -- {count}
+      bulk_selected: "{count} selected",
+      bulk_pause: "Pause ({count})",
+      bulk_resume: "Resume ({count})",
+      bulk_delete_confirm: "Delete {count}?",
+      bulk_delete: "Delete ({count})",
+      clear_selection: "Clear selection",
+      // Test
+      test_deployment: "Test deployment",
+      // Action titles
+      action_pause: "Pause",
+      action_resume: "Resume",
+      action_undeploy: "Undeploy",
+      open_gitlab: "Open in GitLab",
+      open_endpoint: "Open endpoint",
+      // Health sparkline labels
+      no_data: "No data",
+      success_rate: "Success rate",
+      volume: "Volume",
+      errors: "Errors",
+      // Execution progress stage labels
+      stage_initializing: "Initializing",
+      stage_thinking: "Thinking",
+      stage_tool_calling: "Tool Call",
+      stage_processing_result: "Processing Result",
+      stage_generating: "Generating",
+      stage_completed: "Completed",
+      stage_failed: "Failed",
+      tool_calls: "{count} tool calls",
+    },
+  },
+
+  // -------------------------------------------------------------------
+  //  SHARING -- network, bundles, enclaves, peers, identity
+  // -------------------------------------------------------------------
+  sharing: {
+    // -- BundleExportDialog --
+    export_title: "Export Bundle",
+    export_subtitle: "Select exposed resources to include in the signed .persona bundle.",
+    seal_enclave_title: "Seal Enclave",
+    seal_enclave_subtitle: "Create a cryptographically sealed persona enclave with execution constraints.",
+    mode_bundle: "Bundle",
+    mode_enclave: "Enclave",
+    no_resources_exposed: "No resources are exposed. Expose resources first in the Network settings.",
+    select_all: "Select all",
+    deselect_all: "Deselect all",
+    // {selected}, {total} count of resources
+    selected_of_total: "{selected} of {total} selected",
+    cancel: "Cancel",
+    share_link: "Share Link",
+    creating_link: "Creating...",
+    link_copied: "Link Copied!",
+    copy_to_clipboard: "Copy to Clipboard",
+    copying: "Copying...",
+    copied: "Copied!",
+    export_to_file: "Export to File",
+    exporting: "Exporting...",
+    seal_enclave_btn: "Seal Enclave",
+    sealing: "Sealing...",
+    // Enclave config panel
+    enclave_info: "Enclaves are cryptographically sealed and signed with your identity. The recipient can verify authenticity but cannot modify the persona or extract credentials.",
+    label_persona: "Persona",
+    select_persona_placeholder: "Select a persona...",
+    label_max_cost: "Max cost (USD)",
+    label_max_turns: "Max turns",
+    label_allow_persistence: "Allow enclave to persist data on host",
+
+    // -- BundleImportDialog --
+    import_title: "Import Bundle",
+    import_subtitle: "Import a signed .persona bundle from a trusted peer.",
+    verify_enclave_title: "Verify Enclave",
+    verify_enclave_subtitle: "Verify a sealed persona enclave from a trusted creator.",
+    choose_file: "Choose file",
+    paste_from_clipboard: "Paste from Clipboard",
+    share_link_placeholder: "Paste share link or personas:// URL...",
+    open: "Open",
+    import_pick_hint: "Choose a file, paste clipboard data, or use a share link (personas:// deep link) from another Personas instance.",
+    verifying_enclave: "Verifying enclave...",
+    verifying_bundle: "Verifying bundle...",
+    importing_resources: "Importing resources...",
+    close: "Close",
+    import_btn: "Import",
+    import_anyway: "Import Anyway",
+    clipboard_empty: "Clipboard is empty",
+
+    // -- BundlePreviewContent --
+    signature_verified: "Signature verified",
+    signature_mismatch: "Signature mismatch",
+    unverified_signature: "Unverified signature",
+    trusted_peer: "Trusted peer",
+    unknown_peer: "Unknown peer",
+    // {count} resources
+    resources_in_bundle: "{count} resource{plural} in bundle",
+    conflict: "conflict",
+    naming_conflicts_detected: "Naming conflicts detected",
+    skip_conflicting: "Skip conflicting resources",
+    rename_prefix_label: "Rename prefix",
+    rename_prefix_placeholder: "e.g. imported-",
+    danger_trusted_title: "Signature does not match the trusted key for this peer.",
+    danger_trusted_body: "The bundle claims to be from a known peer but the signature verification failed. This could indicate tampering. Only proceed if you are certain the source is safe.",
+    danger_trusted_confirm: "I understand the risks and want to import this bundle",
+    danger_unknown_title: "This bundle is from an unknown signer and cannot be verified.",
+    danger_unknown_body: "The signer is not in your trusted peers list, so the signature cannot be checked against a known key. Add the sender as a trusted peer first, or proceed only if you fully trust the source.",
+    danger_unknown_confirm: "I understand the risks and want to import this unverified bundle",
+
+    // -- EnclaveVerificationView --
+    signature_valid: "Signature valid",
+    invalid_signature: "Invalid signature",
+    content_intact: "Content intact",
+    content_tampered: "Content tampered",
+    trusted_creator: "Trusted creator",
+    unknown_creator: "Unknown creator",
+    creator_identity: "Creator Identity",
+    execution_policy: "Execution Policy",
+    max_cost_label: "Max cost:",
+    max_turns_label: "Max turns:",
+    persistence_label: "Persistence:",
+    persistence_allowed: "Allowed",
+    persistence_denied: "Denied",
+    capabilities_label: "Capabilities:",
+    capabilities_none: "None",
+
+    // -- ExposureManager --
+    network_sharing_title: "Network & Sharing",
+    network_sharing_subtitle: "Manage your identity, trusted peers, and shared resources",
+    exposed_resources: "Exposed Resources",
+    expose_resource: "Expose Resource",
+    loading_exposed: "Loading exposed resources...",
+    no_resources_hint: "No resources exposed yet. Expose personas or other resources to include them in bundles for sharing.",
+    // AddExposureForm
+    resource_type_label: "Resource Type",
+    access_level_label: "Access Level",
+    resource_label: "Resource",
+    resource_id_placeholder: "Resource ID",
+    tags_label: "Tags (comma-separated, optional)",
+    tags_placeholder: "e.g. automation, devops",
+    // {count} fields exposed
+    fields_exposed: "{count} field{plural} exposed",
+
+    // -- IdentitySettings --
+    your_identity: "Your Identity",
+    peer_id_label: "Peer ID",
+    copy_identity_card: "Copy Identity Card",
+    display_name_label: "Display Name",
+    save: "Save",
+    edit: "Edit",
+    loading_identity: "Loading identity...",
+    trusted_peers: "Trusted Peers",
+    add_peer: "Add Peer",
+    paste_identity_card: "Paste identity card",
+    paste_card_placeholder: "Paste the base64 identity card here...",
+    notes_placeholder: "Notes (optional)",
+    add_trusted_peer: "Add Trusted Peer",
+    no_trusted_peers: "No trusted peers yet. Share your identity card with others to get started.",
+
+    // -- ImportSuccessCelebration --
+    import_complete: "Import Complete",
+    // {count} resources
+    resources_imported: "{count} resource{plural} imported",
+    // {count} skipped
+    skipped_conflicts: "{count} skipped (conflicts)",
+
+    // -- InlineConfirm --
+    confirm: "Confirm",
+
+    // -- NetworkAccessScopeBadge --
+    scope_none_label: "No Network Access",
+    scope_none_desc: "This persona does not require external network access.",
+    scope_restricted_label: "Known Domains Only",
+    scope_restricted_desc: "This persona accesses specific external services.",
+    scope_unrestricted_label: "Unrestricted Access",
+    scope_unrestricted_desc: "This persona may access any external endpoint.",
+    domains: "Domains",
+    integrations: "Integrations",
+    api_endpoints: "API Endpoints",
+
+    // -- NetworkDashboard --
+    network_status: "Network Status",
+    checking_network: "Checking network status...",
+    status_online: "Online",
+    status_offline: "Offline",
+    stat_status: "Status",
+    stat_port: "Port",
+    stat_discovered: "Discovered",
+    stat_connected: "Connected",
+
+    // -- PeerCard --
+    disconnect: "Disconnect",
+    connect: "Connect",
+    view_details: "View details",
+
+    // -- PeerDetailDrawer --
+    peer_info: "Peer Info",
+    trust_label: "Trust",
+    trusted: "Trusted",
+    unknown: "Unknown",
+    first_seen: "First seen",
+    last_seen: "Last seen",
+    address: "Address",
+    shared_resources: "Shared Resources",
+    sync_manifest: "Sync manifest",
+    no_shared_resources: "No shared resources. Sync the manifest to check.",
+
+    // -- PeerList --
+    discovered_peers: "Discovered Peers",
+    refresh: "Refresh",
+    scanning_network: "Scanning local network...",
+    lan_hint: "Other Personas instances on the same LAN will appear here automatically.",
+
+    // -- Network metrics --
+    message_throughput: "Message Throughput",
+    sent: "Sent",
+    received: "Received",
+    dropped_buffer_full: "Dropped (buffer full)",
+    rate_limited: "Rate limited",
+    connection_lifecycle: "Connection Lifecycle",
+    attempts: "Attempts",
+    established: "Established",
+    avg_connect_time: "Avg connect time",
+    disconnects: "Disconnects",
+    rejected_capacity: "Rejected (capacity)",
+    manifest_sync: "Manifest Sync",
+    sync_rounds: "Sync rounds",
+    success_fail: "Success / Fail",
+    avg_sync_duration: "Avg sync duration",
+    entries_received: "Entries received",
   },
 
   // -------------------------------------------------------------------
@@ -2039,6 +2359,7 @@ export const en = {
   settings: {
     title: "Settings",
 
+    // -- Account ----------------------------------------------------------
     account: {
       title: "Account",
       subtitle: "Manage your sign-in and profile",
@@ -2046,21 +2367,74 @@ export const en = {
       sign_out: "Sign out",
       sign_in_prompt: "Sign in to sync your data across devices",
       sign_in_google: "Sign in with Google",
+      dismiss: "Dismiss",
+      waiting_sign_in: "Waiting for sign-in...",
+      complete_sign_in: "Complete sign-in in the popup window",
+      cancel: "Cancel",
+      // Telemetry section
+      telemetry_title: "Troubleshooting Telemetry",
+      telemetry_description: "When enabled, anonymous crash reports and feature usage analytics are sent to help identify and fix bugs. No personal data, credentials, or execution content is ever included.",
+      telemetry_toggle: "Send anonymous telemetry",
+      telemetry_on: "Crash reports and usage analytics are active.",
+      telemetry_off: "Telemetry is disabled. No data is sent to Sentry.",
+      telemetry_restart: "Restart the app for this change to take effect",
     },
 
+    // -- Appearance -------------------------------------------------------
     appearance: {
+      title: "Appearance",
       subtitle: "Customize how the app looks",
       dark: "Dark",
       light: "Light",
       text_size: "Text Size",
+      interface_mode: "Interface Mode",
+      interface_mode_hint: "Simple mode shows only core features. Power mode unlocks the full interface.",
+      theming: "Theming",
+      default_tab: "Default",
+      custom_tab: "Custom",
+      timezone: "Timezone",
+      timezone_hint: "Controls how schedule times and cron expressions are displayed throughout the app.",
+      brightness: "Brightness",
+      brightness_hint: "Adjust screen brightness if the app feels too dark on your display.",
+      // Custom theme creator
+      custom_theme: "Custom Theme",
+      custom_theme_active: "Active",
+      custom_theme_hint: "Choose a primary color to auto-derive all others, or override individual colors for full control.",
+      base_mode: "Base Mode",
+      theme_name: "Theme Name",
+      colors: "Colors",
+      background_gradient: "Background gradient",
+      end_color: "End Color",
+      angle: "Angle",
+      preview: "Preview",
+      save_apply: "Save & Apply",
+      applied: "Applied",
+      reset: "Reset",
+      enter_theme_name: "Enter a theme name",
+      // Translation contributor
+      language_translations: "Language & Translations",
+      translation_keys: "{count} translation keys",
+      translation_coverage: "{covered} of {total} keys ({pct}%)",
+      coverage_full: "Full",
+      coverage_hint: "Translation coverage -- click to export",
+      contribute_title: "Contribute translations",
+      contribute_hint: "Help translate Personas into your language. Export a language file above, translate the values, and submit via GitHub.",
+      contribute_github: "Contribute on GitHub",
     },
 
+    // -- Notifications ----------------------------------------------------
     notifications: {
-      // Severity level descriptions (shown in notification settings)
-      // "Circuit breaker tripped" = an agent was auto-disabled due to repeated failures
-      severity_critical: "Agent auto-paused due to repeated failures, required tools not found",
-      severity_high: "Login errors, usage limits reached, timeout retries exhausted",
-      severity_medium: "Speed limits, timeouts with retries remaining (usually fixes itself)",
+      title: "Notifications",
+      subtitle: "Control which healing alerts trigger notifications",
+      // Severity level names
+      severity_critical_label: "Critical",
+      severity_high_label: "High",
+      severity_medium_label: "Medium",
+      severity_low_label: "Low",
+      // Severity level descriptions
+      severity_critical: "Circuit breaker tripped, CLI not found",
+      severity_high: "Credential errors, session limits, repeated timeouts",
+      severity_medium: "Rate limits, first timeouts (auto-fixable)",
       severity_low: "Informational issues",
       // Weekly digest toggle
       weekly_digest: "Weekly Health Digest",
@@ -2068,16 +2442,19 @@ export const en = {
       digest_description: "Weekly notification summarizing health issues across all agents with a total health score",
       // Healing alerts section
       healing_alerts_hint: "Control which auto-fix alerts trigger notifications",
-      healing_severity: "Auto-Fix Alert Level",
+      healing_severity: "Healing Alert Severity",
       // Explanation of how desktop notifications work
       notification_hint: "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
     },
 
+    // -- Engine -----------------------------------------------------------
     engine: {
-      loading_capabilities: "Loading AI capabilities...",
-      detecting_providers: "Finding installed AI providers...",
-      subtitle: "Choose which AI provider handles each type of task",
-      capability_map: "Task Assignment Map",
+      title: "Engine",
+      loading_capabilities: "Loading engine capabilities...",
+      detecting_providers: "Detecting installed providers...",
+      subtitle: "Configure which CLI providers handle each operation",
+      capability_map: "Operation Capability Map",
+      operation: "Operation",
       reset_defaults: "Reset to defaults",
       // Provider status labels
       provider_installed: "installed",
@@ -2088,8 +2465,258 @@ export const en = {
       legend_unsupported: "Unsupported (locked)",
       legend_not_installed: "Not installed",
       // Explanation of how defaults were determined
-      defaults_heading: "How Defaults Were Chosen",
-      defaults_description: "The default assignments are based on thorough testing of each AI provider. Changing a provider for a task it wasn't tested for may cause errors. Claude Code is the only provider that works with all task types.",
+      defaults_heading: "Defaults from Integration Tests",
+      defaults_description: "The default map is derived from Round 9 business-level integration tests that validate each provider against the exact JSON schemas the backend parses. Enabling a provider for an operation it failed may cause unparseable responses. Claude Code is the only provider that passed all operations at 100%.",
+    },
+
+    // -- Ambient Context --------------------------------------------------
+    ambient: {
+      title: "Ambient Context Fusion",
+      description: "Ambient context captures clipboard, file changes, and app focus signals to give personas awareness of your desktop workflow.",
+      events_broadcast: "{count} events broadcast",
+      subscribers: "{count} subscriber",
+      subscribers_plural: "{count} subscribers",
+      live_context: "Live Context Window",
+      total_signals: "{count} total signals",
+      no_signals: "No recent signals captured",
+      sensory_policy: "Sensory Policy",
+      reset_defaults: "Reset to defaults",
+      clipboard: "Clipboard",
+      file_changes: "File Changes",
+      app_focus: "App Focus",
+      focus_filter: "Focus App Filter",
+      focus_filter_hint: "Only capture signals when these apps are in focus. Empty = capture from any app.",
+      focus_filter_placeholder: "e.g. Code.exe",
+      add: "Add",
+      context_rules: "Context Rules",
+      add_rule: "Add Rule",
+      context_rules_hint: "Define patterns that trigger proactive persona actions when desktop context matches.",
+      rule_name_placeholder: "Rule name (e.g. \"Crash debug helper\")",
+      match_sources: "Match sources (empty = all)",
+      summary_contains_placeholder: "Summary contains (e.g. \"error\", \"Code.exe\")",
+      file_glob_placeholder: "File glob (e.g. *.rs)",
+      app_filter_placeholder: "App filter (e.g. Code.exe)",
+      action: "Action",
+      action_trigger: "Trigger Execution",
+      action_emit: "Emit Event",
+      action_log: "Log Only",
+      cooldown: "Cooldown (sec)",
+      cancel: "Cancel",
+      create_rule: "Create Rule",
+      no_rules: "No context rules defined",
+      all_sources: "all sources",
+    },
+
+    // -- BYOM (Bring Your Own Model) --------------------------------------
+    byom: {
+      title: "Bring Your Own Model",
+      subtitle: "Configure approved providers, compliance restrictions, and cost-optimized routing",
+      loading: "Loading...",
+      unsaved_changes: "Unsaved changes",
+      reset: "Reset",
+      save_policy: "Save Policy",
+      fix_errors: "Fix all errors before saving",
+      // Policy corruption
+      policy_corrupted: "BYOM Policy Corrupted",
+      policy_corrupted_desc: "The stored policy JSON could not be parsed. All provider restrictions are currently inactive and executions are blocked. Reset the policy to restore normal operation.",
+      reset_policy: "Reset Policy",
+      // Enable toggle
+      policy_enforcement: "BYOM Policy Enforcement",
+      policy_enforcement_desc: "When enabled, provider selection follows your configured rules",
+      // Section tabs
+      tab_providers: "Providers",
+      tab_keys: "API Keys",
+      tab_routing: "Cost Routing",
+      tab_compliance: "Compliance",
+      tab_audit: "Audit Log",
+      // Provider list
+      allowed_providers: "Allowed Providers",
+      allowed_providers_hint: "Select which providers your organization approves. Leave empty to allow all.",
+      allowed: "Allowed",
+      blocked_providers: "Blocked Providers",
+      blocked_providers_hint: "Explicitly block specific providers. Takes precedence over allowed list.",
+      blocked: "Blocked",
+      provider_usage: "Provider Usage",
+      usage_trends: "30-day trends",
+      executions: "Executions",
+      cost: "Cost",
+      avg_duration: "Avg Duration",
+      failovers: "{count} failovers",
+      no_trend_data: "No trend data",
+      test_connection: "Test Connection",
+      testing: "Testing...",
+      reachable: "Reachable",
+      unreachable: "Unreachable",
+      // API key management
+      api_key_title: "API Key Management",
+      api_key_hint: "Configure API keys and endpoints for custom model providers. Keys are stored encrypted in the local database.",
+      verify: "Verify",
+      remove_key: "Remove key",
+      save: "Save",
+      stored: "Stored",
+      error: "Error",
+      // Routing rules
+      routing_title: "Cost-Optimized Routing Rules",
+      routing_hint: "Route tasks to specific providers/models based on complexity level",
+      routing_empty: "No routing rules configured. Add rules to optimize cost by task complexity.",
+      add_rule: "Add Rule",
+      rule_name_placeholder: "Rule name",
+      complexity: "Complexity",
+      provider: "Provider",
+      model_optional: "Model (optional)",
+      // Compliance rules
+      compliance_title: "Compliance-Driven Restrictions",
+      compliance_hint: "Restrict providers for specific workflow types (e.g., HIPAA, SOC2)",
+      compliance_empty: "No compliance rules configured. Add rules to restrict providers for sensitive workflows.",
+      compliance_name_placeholder: "Rule name (e.g., HIPAA)",
+      workflow_tags: "Workflow Tags (comma-separated)",
+      workflow_tags_placeholder: "hipaa, healthcare, pii",
+      allowed_providers_label: "Allowed Providers",
+      // Audit log
+      audit_title: "Provider Audit Log",
+      audit_hint: "Compliance trail showing which provider handled each execution",
+      audit_empty: "No audit entries yet. Entries are recorded automatically for every execution.",
+      audit_provider: "Provider",
+      audit_model: "Model",
+      audit_persona: "Persona",
+      audit_status: "Status",
+      audit_cost: "Cost",
+      audit_time: "Time",
+      failover: "failover",
+    },
+
+    // -- Admin ------------------------------------------------------------
+    admin: {
+      title: "Admin",
+      subtitle: "Development tools and testing utilities",
+      // Guided tour section
+      guided_tour: "Guided Tour",
+      tour_hint: "Force-start or reset the onboarding tour for e2e testing",
+      tour_active: "Active",
+      tour_completed: "Completed",
+      tour_dismissed: "Dismissed",
+      tour_not_started: "Not started",
+      progress: "Progress",
+      steps: "steps",
+      current_step: "Current Step",
+      step_status: "Step Status",
+      force_start: "Force Start Tour",
+      confirm_reset: "Confirm Reset",
+      reset_state: "Reset State",
+      force_complete: "Force Complete",
+      force_dismiss: "Force Dismiss",
+      // User consent section
+      user_consent: "User Consent",
+      consent_hint: "Reset the first-use consent modal to test onboarding",
+      consent_accepted: "Accepted",
+      consent_not_accepted: "Not accepted",
+      storage_key: "Storage Key",
+      reset_consent: "Reset Consent",
+      reload_modal: "Reload to Show Modal",
+    },
+
+    // -- Data Portability -------------------------------------------------
+    portability: {
+      title: "Data Portability",
+      subtitle: "Export, import, and migrate your workspace data",
+      workspace_overview: "Workspace Overview",
+      loading_stats: "Loading workspace stats...",
+      stats_error: "Failed to load workspace statistics.",
+      error_label: "Error",
+      // Stat card labels
+      personas: "Personas",
+      teams: "Teams",
+      tools: "Tools",
+      groups: "Groups",
+      credentials: "Credentials",
+      memories: "Memories",
+      test_suites: "Test Suites",
+      // Export section
+      export_import_title: "Workspace Export & Import",
+      export_import_hint: "Export your workspace to a portable ZIP archive containing personas, teams, credentials, and related data. Choose exactly what to include. Import restores from a previously exported archive -- imported items are created as new entities (disabled by default).",
+      exporting: "Exporting...",
+      exported: "Exported!",
+      export_workspace: "Export Workspace",
+      import_workspace: "Import Workspace",
+      import_label: "Import",
+      imported: "Imported!",
+      cancel: "Cancel",
+      passphrase_optional: "Passphrase (optional)",
+      import_complete: "Import Complete",
+      warnings: "Warnings:",
+      // Export selection modal
+      export_title: "Export Workspace",
+      export_subtitle: "Choose what to include in your export",
+      close: "Close",
+      loading_data: "Loading workspace data...",
+      select_all: "Select All",
+      deselect_all: "Deselect All",
+      items_selected: "{selected} of {total} items selected",
+      of_selected: "{count} of {total} selected",
+      encrypt_passphrase: "Encrypt credentials with passphrase",
+      optional: "(optional)",
+      passphrase_placeholder: "Passphrase (min 8 characters)",
+      passphrase_too_short: "Passphrase must be at least 8 characters",
+      passphrase_note: "If set, credential secrets will be included in the export and protected with AES-256 encryption.",
+      auto_included_note: "Groups, tools, memories, and test suites linked to selected personas are automatically included.",
+      no_passphrase_note: " Credential secrets are not included unless a passphrase is set above.",
+      export_all: "Export All",
+      export_items: "Export {count} Item",
+      export_items_plural: "Export {count} Items",
+      // Credential portability
+      credential_vault: "Credential Vault",
+      credential_vault_hint: "Workspace exports do not include credential secrets. Use this section to export and import your vault with password-protected AES-256 encryption.",
+      export_credentials: "Export Credentials",
+      import_credentials: "Import Credentials",
+      passphrase_min: "Passphrase (min 8 chars)",
+      passphrase_label: "Passphrase",
+      export: "Export",
+      credentials_exist: "{count} credential already exist",
+      credentials_exist_plural: "{count} credentials already exist",
+      conflict_hint: "Choose how to handle each conflict:",
+      skip: "Skip",
+      keep_both: "Keep Both",
+      replace: "Replace",
+      import_with_resolutions: "Import with Resolutions",
+      cred_import_complete: "Credential Import Complete",
+      cred_imported: "{count} imported",
+      cred_skipped: ", {count} skipped",
+      cred_replaced: ", {count} replaced",
+    },
+
+    // -- Config Resolution ------------------------------------------------
+    config: {
+      title: "Config Resolution",
+      subtitle: "Shows which tier (agent / workspace / global) supplies each setting per persona",
+      refresh: "Refresh",
+      agent_level: "Agent-level",
+      workspace_level: "Workspace",
+      global_level: "Global",
+      not_set: "Not set",
+      overrides_inherited: "Overrides inherited",
+      agent: "Agent",
+      loading_agents: "Loading agents...",
+      no_agents: "No agents found",
+    },
+
+    // -- Quality Gates ----------------------------------------------------
+    quality_gates: {
+      title: "Quality Gates",
+      loading: "Loading...",
+      error_loading: "Error loading config",
+      active_rules: "{count} active filter rules",
+      loading_config: "Loading quality gate configuration...",
+      description: "Quality gates filter AI-generated memories and reviews during execution dispatch. Patterns are matched as substrings against the combined title and content of each submission. When a pattern matches, the configured action is applied. These rules prevent operational noise (credential errors, stack traces, empty workspace reports) from polluting your knowledge base.",
+      memory_filters: "Memory Filters",
+      memory_filters_desc: "Applied to AgentMemory submissions. Blocks operational failures and credential leaks from being stored as persona memories.",
+      review_filters: "Review Filters",
+      review_filters_desc: "Applied to ManualReview submissions. Filters infrastructure errors so only genuine business decisions reach the review queue.",
+      rejected_categories: "Rejected categories",
+      rules_count: "{count} rule",
+      rules_count_plural: "{count} rules",
+      reset_defaults: "Reset to defaults",
+      confirm_reset: "Confirm reset?",
+      rules_hint: "Rules are loaded from the database on each dispatch. Changes take effect immediately.",
     },
   },
 
@@ -2258,6 +2885,141 @@ export const en = {
     risk_review_tooltip: "This app can run commands on your system — review before allowing",
     risk_safe: "Safe to allow",
     risk_safe_tooltip: "Read-only access, safe to allow",
+
+    // -- AppearanceStep --
+    // Heading and description for the preference-setup step
+    appearance_heading: "Set up your preferences",
+    appearance_description: "Configure language, text size, and theme. You can change these anytime in Settings.",
+    // Labels for the language, text size, and brightness sub-sections
+    language_label: "Language",
+    text_size_label: "Text Size",
+    dark_label: "Dark",
+    light_label: "Light",
+    brightness_label: "Brightness",
+    brightness_hint: "If the app feels too dark on your monitor, increase brightness.",
+
+    // -- DesktopDiscoveryStep --
+    scanning_desktop: "Scanning your desktop...",
+    approved: "Approved",
+    approve: "Approve",
+
+    // -- ExecutionStep --
+    run_first_agent: "Run your first agent",
+    // {name} = the agent name
+    execute_description: "Execute {name} and see real-time output.",
+    agent_ready_hint: "Your agent is ready. Click below to start the first execution and see it in action.",
+    run_agent: "Run Agent",
+    execution_completed: "Execution completed successfully",
+    executing: "Executing...",
+    agent_output: "Agent Output",
+    waiting_for_output: "Waiting for output...",
+    execution_failed: "Failed to start execution",
+
+    // -- TemplatePickerStep --
+    loading_templates: "Loading templates...",
+    no_templates: "No starter templates found.",
+    no_templates_hint: "Generate templates first from the Templates section.",
+    pick_template_heading: "Pick a starter template",
+    pick_template_description: "Choose one of these popular templates to create your first agent.",
+    // Connector overflow indicator; {count} = number of additional connectors
+    more_connectors: "+{count} more",
+
+    // -- OnboardingProgressBar --
+    getting_started: "Getting Started",
+    // Progress bar step labels
+    progress_appearance: "Look & feel",
+    progress_discover: "Detect desktop apps",
+    progress_pick_template: "Pick template",
+    progress_adopt: "Adopt agent",
+    progress_execute: "First run",
+
+    // -- GuidedTour --
+    // {current} = current step number, {total} = total steps
+    tour_step_of: "Step {current} of {total}",
+    minimize: "Minimize",
+    end_tour: "End tour",
+
+    // -- TourPanelBody --
+    back: "Back",
+    complete_tour: "Complete Tour",
+    tour_loading: "Loading...",
+    tour_skip: "Skip",
+    // GenericStepContent
+    what_to_explore: "What to explore",
+    auto_complete_hint: "Spend a moment exploring — this step will complete automatically, or click Skip to continue.",
+
+    // -- TourLauncher --
+    // {completed} = completed count, {total} = total steps
+    resume_tour: "Resume Tour ({completed}/{total})",
+    start_tour: "Start Tour",
+
+    // -- CredentialsTourContent --
+    connector_count_stat: "200+ Built-in Connectors",
+    connector_count_hint: "Pre-configured with auth fields and health checks",
+    categories_label: "Categories",
+    // {count} = number of categories browsed
+    browsed_progress: "Browsed {count}/2",
+    connection_types_label: "Connection Types",
+    // Connection type labels and descriptions
+    conn_api_key: "API Key / Token",
+    conn_api_key_desc: "Standard authentication — paste your key and go.",
+    conn_oauth: "OAuth 2.0",
+    conn_oauth_desc: "Secure authorization flow — click to authorize, no secrets to manage.",
+    conn_mcp: "MCP Protocol",
+    conn_mcp_desc: "Model Context Protocol — connect AI tools via stdio or SSE transport.",
+    conn_desktop: "Desktop Bridge",
+    conn_desktop_desc: "Integrate directly with local apps — VS Code, Terminal, Docker.",
+    connect_once: "Connect once, use across all agents",
+    connect_once_hint: "Credentials are shared across your entire agent fleet. Set up a Slack connection once and every agent can use it.",
+
+    // -- PersonaCreationCoach --
+    describe_intent: "Describe what your agent should do. Be specific about the task, data sources, and desired output.",
+    example_intents_label: "Example intents",
+    intent_field_hint: "Type your intent in the field on the right, then click the launch button.",
+    analyzing_hint: "The AI is analyzing your intent and may ask clarifying questions to refine the agent design.",
+    // {count} = number of pending questions
+    questions_waiting_one: "{count} question waiting",
+    questions_waiting_other: "{count} questions waiting",
+    answer_questions_hint: "Answer them in the matrix to shape your agent's design.",
+    answers_help_hint: "Your answers help the AI choose the right connectors, triggers, and policies.",
+    matrix_heading: "The 8-dimension agent matrix:",
+    // {pct} = completeness percentage
+    matrix_completeness: "{pct}% complete",
+    // Matrix dimension labels
+    dim_use_cases: "Use Cases",
+    dim_use_cases_desc: "What workflows your agent handles",
+    dim_connectors: "Connectors",
+    dim_connectors_desc: "External services it integrates with",
+    dim_triggers: "Triggers",
+    dim_triggers_desc: "How and when it activates",
+    dim_human_review: "Human Review",
+    dim_human_review_desc: "When it needs your approval",
+    dim_messages: "Messages",
+    dim_messages_desc: "How it notifies you of results",
+    dim_memory: "Memory",
+    dim_memory_desc: "Conversation persistence across runs",
+    dim_error_handling: "Error Handling",
+    dim_error_handling_desc: "Fallback strategies on failures",
+    dim_events: "Events",
+    dim_events_desc: "Event subscriptions it listens to",
+    // Test/promote
+    all_tests_passed: "All tests passed!",
+    promote_hint: "Your agent has been verified. Click \"Promote\" to make it production-ready.",
+    some_tests_failed: "Some tests failed",
+    refine_hint: "You can refine the agent and re-test, or skip this step for now.",
+    testing_description: "Testing validates that your agent's tools work correctly with real APIs.",
+    what_testing_checks: "What testing checks:",
+    test_check_api: "Each tool connects to its target API",
+    test_check_creds: "Credentials are valid and have correct permissions",
+    test_check_format: "Response formats match expectations",
+    run_test_hint: "Click \"Run Test\" in the matrix to verify, then promote to production.",
+    agent_promoted: "Agent promoted!",
+    agent_promoted_hint: "Your first agent is live. The tour is almost complete!",
+    skip_build: "Skip build for now",
+
+    // -- TourAppearanceContent --
+    dark_themes: "Dark Themes",
+    light_themes: "Light Themes",
   },
 
   // -------------------------------------------------------------------

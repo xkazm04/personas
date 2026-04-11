@@ -11,8 +11,9 @@ import { AppearanceStep } from './AppearanceStep';
 import { DesktopDiscoveryStep } from './DesktopDiscoveryStep';
 import { TemplatePickerStep } from './TemplatePickerStep';
 import { ExecutionStep } from './ExecutionStep';
-import { StepIndicator, STEPS } from './StepIndicator';
+import { StepIndicator, useSteps } from './StepIndicator';
 import { useOnboardingState } from './useOnboardingState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function OnboardingOverlay() {
   const {
@@ -41,6 +42,8 @@ export default function OnboardingOverlay() {
     handleExecutionComplete,
     handleFinish,
   } = useOnboardingState();
+  const { t } = useTranslation();
+  const steps = useSteps();
 
   if (!onboardingActive) return null;
 
@@ -71,15 +74,15 @@ export default function OnboardingOverlay() {
           </div>
           <div>
             <h2 id="onboarding-overlay-title" className="typo-heading text-foreground/90">
-              Get Started
+              {t.onboarding.title}
             </h2>
-            <p className="typo-body text-muted-foreground/70">Create and run your first agent</p>
+            <p className="typo-body text-muted-foreground/70">{t.onboarding.subtitle}</p>
           </div>
         </div>
         <button
           onClick={dismissOnboarding}
           className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
-          title="Skip onboarding"
+          title={t.onboarding.skip_tooltip}
         >
           <X className="w-4 h-4" />
         </button>
@@ -88,7 +91,7 @@ export default function OnboardingOverlay() {
       {/* Step indicator */}
       <div className="px-6 py-3 border-b border-primary/5 flex-shrink-0">
         <StepIndicator
-          steps={STEPS}
+          steps={steps}
           currentStep={onboardingStep}
           completedSteps={onboardingStepCompleted}
         />
@@ -125,7 +128,7 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'adopt' && !showAdoptionWizard && (
               <div className="flex flex-col items-center py-8 gap-4">
                 <LoadingSpinner size="xl" className="text-violet-400" />
-                <p className="typo-body text-muted-foreground/70">Setting up your agent...</p>
+                <p className="typo-body text-muted-foreground/70">{t.onboarding.opening_wizard}</p>
               </div>
             )}
 
@@ -145,7 +148,7 @@ export default function OnboardingOverlay() {
           onClick={dismissOnboarding}
           className="px-4 py-2 typo-heading rounded-xl border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 transition-colors"
         >
-          Skip
+          {t.onboarding.skip_button}
         </button>
 
         <div className="flex items-center gap-2">
@@ -154,7 +157,7 @@ export default function OnboardingOverlay() {
               onClick={handleNextFromAppearance}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
             >
-              Continue
+              {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -163,10 +166,10 @@ export default function OnboardingOverlay() {
             <button
               onClick={handleNextFromDiscover}
               disabled={isScanning}
-              title={isScanning ? 'Scanning your desktop apps...' : undefined}
+              title={isScanning ? t.onboarding.scanning_tooltip : undefined}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Continue
+              {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -175,10 +178,10 @@ export default function OnboardingOverlay() {
             <button
               onClick={handleNextFromPick}
               disabled={!onboardingSelectedReviewId || templates.length === 0}
-              title={!onboardingSelectedReviewId ? 'Select a template first' : undefined}
+              title={!onboardingSelectedReviewId ? t.onboarding.select_template_tooltip : undefined}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Set Up Agent
+              {t.onboarding.adopt_button}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -189,7 +192,7 @@ export default function OnboardingOverlay() {
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >
               <Check className="w-4 h-4" />
-              Done
+              {t.onboarding.done_button}
             </button>
           )}
         </div>

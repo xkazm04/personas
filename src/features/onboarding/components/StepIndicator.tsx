@@ -8,7 +8,21 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
+/** Step metadata with i18n-aware labels. Call `useSteps()` inside a component. */
+export function useSteps() {
+  const { t } = useTranslation();
+  return [
+    { key: 'appearance' as OnboardingStep, label: t.onboarding.step_appearance, icon: Palette },
+    { key: 'discover' as OnboardingStep, label: t.onboarding.step_discover, icon: Monitor },
+    { key: 'pick-template' as OnboardingStep, label: t.onboarding.step_pick_template, icon: FlaskConical },
+    { key: 'adopt' as OnboardingStep, label: t.onboarding.step_adopt, icon: Download },
+    { key: 'execute' as OnboardingStep, label: t.onboarding.step_execute, icon: Play },
+  ];
+}
+
+/** @deprecated Use `useSteps()` for i18n support. Kept for backward-compatible imports. */
 export const STEPS: { key: OnboardingStep; label: string; icon: typeof FlaskConical }[] = [
   { key: 'appearance', label: 'Look & Feel', icon: Palette },
   { key: 'discover', label: 'Desktop', icon: Monitor },

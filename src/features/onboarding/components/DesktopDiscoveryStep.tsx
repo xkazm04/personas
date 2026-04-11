@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredApp } from '@/api/system/desktop';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const APP_ICONS: Record<string, string> = {
   desktop_vscode: 'VS Code',
@@ -15,19 +16,19 @@ const APP_ICONS: Record<string, string> = {
   desktop_browser: 'Browser',
 };
 
-function riskBadge(hasHighRisk: boolean) {
+function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip: string; safe: string; safeTooltip: string }) {
   if (hasHighRisk) {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-amber-400/80" title="This app can run commands on your system — review before allowing">
+      <span className="flex items-center gap-1 text-[11px] text-amber-400/80" title={labels.reviewTooltip}>
         <AlertTriangle className="w-3 h-3" />
-        Review recommended
+        {labels.review}
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-[11px] text-emerald-400/80" title="Read-only access, safe to allow">
+    <span className="flex items-center gap-1 text-[11px] text-emerald-400/80" title={labels.safeTooltip}>
       <ShieldCheck className="w-3 h-3" />
-      Safe to allow
+      {labels.safe}
     </span>
   );
 }
@@ -47,11 +48,20 @@ export function DesktopDiscoveryStep({
   approvingApp: string | null;
   onApprove: (connectorName: string) => void;
 }) {
+  const { t } = useTranslation();
+
+  const riskLabels = {
+    review: t.onboarding.risk_review,
+    reviewTooltip: t.onboarding.risk_review_tooltip,
+    safe: t.onboarding.risk_safe,
+    safeTooltip: t.onboarding.risk_safe_tooltip,
+  };
+
   if (isScanning) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <LoadingSpinner size="xl" className="text-violet-400" />
-        <span className="typo-body text-muted-foreground/80">Scanning your desktop...</span>
+        <span className="typo-body text-muted-foreground/80">{t.onboarding.scanning_desktop}</span>
       </div>
     );
   }
@@ -62,9 +72,9 @@ export function DesktopDiscoveryStep({
     return (
       <div className="text-center py-16">
         <Monitor className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="typo-body text-muted-foreground/70">No supported desktop apps detected.</p>
+        <p className="typo-body text-muted-foreground/70">{t.onboarding.desktop_empty}</p>
         <p className="typo-body text-muted-foreground/50 mt-1">
-          You can connect desktop apps later from the Connections section.
+          {t.onboarding.desktop_empty_hint}
         </p>
       </div>
     );
@@ -74,10 +84,10 @@ export function DesktopDiscoveryStep({
     <div className="space-y-4">
       <div>
         <h3 className="typo-heading-lg text-foreground/90 mb-1">
-          Your desktop environment
+          {t.onboarding.desktop_title}
         </h3>
         <p className="typo-body text-muted-foreground/70">
-          We found these apps on your machine. Allow access so your agents can interact with them directly.
+          {t.onboarding.desktop_description}
         </p>
       </div>
       <div className="grid grid-cols-1 gap-2.5">
@@ -112,7 +122,7 @@ export function DesktopDiscoveryStep({
                   {app.version && (
                     <span className="text-[11px] text-muted-foreground/50">v{app.version}</span>
                   )}
-                  {riskBadge(hasHighRisk)}
+                  {riskBadge(hasHighRisk, riskLabels)}
                 </div>
               </div>
 
@@ -130,12 +140,12 @@ export function DesktopDiscoveryStep({
                 {isApproved ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    Approved
+                    {t.onboarding.approved}
                   </>
                 ) : isApproving ? (
                   <LoadingSpinner size="sm" />
                 ) : (
-                  'Approve'
+                  t.onboarding.approve
                 )}
               </button>
             </div>

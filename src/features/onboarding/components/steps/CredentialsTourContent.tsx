@@ -1,5 +1,6 @@
 import { Check, Key, Globe, Laptop, Plug, Shield, Zap } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const FEATURED_CATEGORIES = [
   { id: 'ai', label: 'AI', icon: Zap, color: '#6C3AEF' },
@@ -13,37 +14,18 @@ const FEATURED_CATEGORIES = [
 ];
 
 const CONNECTION_TYPES = [
-  {
-    type: 'api-key',
-    label: 'API Key / Token',
-    description: 'Standard authentication — paste your key and go.',
-    icon: Key,
-  },
-  {
-    type: 'oauth',
-    label: 'OAuth 2.0',
-    description: 'Secure authorization flow — click to authorize, no secrets to manage.',
-    icon: Shield,
-  },
-  {
-    type: 'mcp',
-    label: 'MCP Protocol',
-    description: 'Model Context Protocol — connect AI tools via stdio or SSE transport.',
-    icon: Plug,
-  },
-  {
-    type: 'desktop',
-    label: 'Desktop Bridge',
-    description: 'Integrate directly with local apps — VS Code, Terminal, Docker.',
-    icon: Laptop,
-  },
-];
+  { type: 'api-key', labelKey: 'conn_api_key', descKey: 'conn_api_key_desc', icon: Key },
+  { type: 'oauth', labelKey: 'conn_oauth', descKey: 'conn_oauth_desc', icon: Shield },
+  { type: 'mcp', labelKey: 'conn_mcp', descKey: 'conn_mcp_desc', icon: Plug },
+  { type: 'desktop', labelKey: 'conn_desktop', descKey: 'conn_desktop_desc', icon: Laptop },
+] as const;
 
 interface Props {
   subStepIndex: number;
 }
 
 export default function CredentialsTourContent({ subStepIndex }: Props) {
+  const { t, tx } = useTranslation();
   const recordInteraction = useSystemStore((s) => s.recordCredentialInteraction);
   const interactions = useSystemStore((s) => s.tourCredentialInteractions);
   const browsedCount = interactions.categoriesBrowsed.length;
@@ -56,17 +38,17 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
           <Key className="w-5 h-5 text-amber-400" />
         </div>
         <div>
-          <p className="typo-heading text-foreground/90" data-testid="tour-cred-stat-count">200+ Built-in Connectors</p>
-          <p className="text-[11px] text-muted-foreground/60">Pre-configured with auth fields and health checks</p>
+          <p className="typo-heading text-foreground/90" data-testid="tour-cred-stat-count">{t.onboarding.connector_count_stat}</p>
+          <p className="text-[11px] text-muted-foreground/60">{t.onboarding.connector_count_hint}</p>
         </div>
       </div>
 
       {/* Category grid */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground/80">Categories</span>
+          <span className="text-sm font-medium text-foreground/80">{t.onboarding.categories_label}</span>
           <span className="text-[11px] text-muted-foreground/50" data-testid="tour-cred-progress">
-            Browsed {browsedCount}/2
+            {tx(t.onboarding.browsed_progress, { count: browsedCount })}
             {browsedCount >= 2 && <Check className="inline w-3 h-3 text-emerald-400 ml-1" />}
           </span>
         </div>
@@ -100,7 +82,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Connection types */}
       <div className="space-y-2">
-        <span className="text-sm font-medium text-foreground/80">Connection Types</span>
+        <span className="text-sm font-medium text-foreground/80">{t.onboarding.connection_types_label}</span>
         <div className="space-y-1.5">
           {CONNECTION_TYPES.map((ct) => (
             <div
@@ -116,8 +98,8 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
                 <ct.icon className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground/80">{ct.label}</p>
-                <p className="text-[11px] text-muted-foreground/50 leading-relaxed">{ct.description}</p>
+                <p className="text-sm font-medium text-foreground/80">{t.onboarding[ct.labelKey]}</p>
+                <p className="text-[11px] text-muted-foreground/50 leading-relaxed">{t.onboarding[ct.descKey]}</p>
               </div>
             </div>
           ))}
@@ -126,9 +108,9 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Benefits callout */}
       <div className="rounded-xl bg-amber-500/5 border border-amber-500/15 p-3">
-        <p className="text-sm text-amber-300/80 font-medium">Connect once, use across all agents</p>
+        <p className="text-sm text-amber-300/80 font-medium">{t.onboarding.connect_once}</p>
         <p className="text-[11px] text-muted-foreground/50 mt-1">
-          Credentials are shared across your entire agent fleet. Set up a Slack connection once and every agent can use it.
+          {t.onboarding.connect_once_hint}
         </p>
       </div>
     </div>
