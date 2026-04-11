@@ -1,4 +1,5 @@
 import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
@@ -18,7 +19,13 @@ interface ApiExplorerTabProps {
 export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTabProps) {
   const state = useApiExplorerState(credentialId, catalogEndpoints);
 
-  if (state.loading) return null;
+  if (state.loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading API explorer" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

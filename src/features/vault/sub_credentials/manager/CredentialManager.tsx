@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 import { ReauthBanner } from '@/features/vault/sub_credentials/components/card/banners/ReauthBanner';
@@ -33,7 +34,13 @@ export function CredentialManager() {
     breadcrumbs,
   } = state;
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading credentials" />
+      </div>
+    );
+  }
 
   return (
     <ContentBox data-testid="credential-manager">

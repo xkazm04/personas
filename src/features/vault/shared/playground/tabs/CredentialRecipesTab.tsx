@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Sparkles } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -111,7 +112,13 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
     setError(null);
   }, [generator]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading recipes" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

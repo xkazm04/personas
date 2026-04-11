@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Activity, Users, Clock, Shield, AlertTriangle, Link2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('credential-intelligence');
@@ -59,7 +60,13 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
     return () => { cancelled = true; };
   }, [credentialId]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading intelligence data" />
+      </div>
+    );
+  }
 
   const hasActivity = stats && stats.total_accesses > 0;
   const unusedDays = stats?.last_accessed_at
