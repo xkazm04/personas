@@ -1,5 +1,6 @@
 import { Wand2, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Streaming Log Panel --------------------------------------------
 
@@ -11,6 +12,7 @@ interface StreamingLogPanelProps {
 }
 
 export function StreamingLogPanel({ outputLines, isGenerating, error, onDismiss }: StreamingLogPanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="relative max-h-48 overflow-y-auto rounded-xl bg-background/50 border border-primary/10 p-3 font-mono text-sm text-muted-foreground/60 leading-relaxed">
       {/* Dismiss button (only when not actively generating) */}
@@ -30,13 +32,13 @@ export function StreamingLogPanel({ outputLines, isGenerating, error, onDismiss 
       {isGenerating && (
         <div className="flex items-center gap-1.5 mt-1 text-primary/60">
           <LoadingSpinner size="xs" />
-          <span>Processing...</span>
+          <span>{t.agents.builder_action.processing}</span>
         </div>
       )}
       {/* Inline error after log lines */}
       {error && !isGenerating && (
         <div className="mt-2 pt-2 border-t border-red-400/20 text-red-400/80">
-          Something went wrong. Please try again.
+          {t.agents.builder_action.error_retry}
         </div>
       )}
     </div>
@@ -62,6 +64,7 @@ export function BuilderActionBar({
   onContinue,
   onCancel,
 }: BuilderActionBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-3">
       {onCancel ? (
@@ -70,7 +73,7 @@ export function BuilderActionBar({
           onClick={onCancel}
           className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground/80 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       ) : (
         <div />
@@ -88,7 +91,7 @@ export function BuilderActionBar({
             ) : (
               <Wand2 className="w-3.5 h-3.5" />
             )}
-            {isGenerating ? 'Enhancing...' : 'Enhance with AI'}
+            {isGenerating ? t.agents.builder_action.enhancing : t.agents.builder_action.enhance_with_ai}
           </button>
         )}
         <div className="flex flex-col items-end">
@@ -102,13 +105,13 @@ export function BuilderActionBar({
                 : 'bg-secondary/50 text-muted-foreground/50 cursor-not-allowed'
             }`}
           >
-            Continue
+            {t.common.continue}
           </button>
           {!hasIntent && (
             <p
               className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5"
             >
-              Describe what your agent should do
+              {t.agents.builder_action.describe_agent}
             </p>
           )}
         </div>

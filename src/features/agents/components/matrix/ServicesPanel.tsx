@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Check, Table2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { HealthyConnector } from './useHealthyConnectors';
 import { listDbSchemaTables } from '@/api/vault/database/dbSchema';
@@ -23,6 +24,7 @@ export function ServicesPanel({
   connectorTables,
   onTableSelect,
 }: ServicesPanelProps) {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState('all');
   const [tablePopoverFor, setTablePopoverFor] = useState<string | null>(null);
   const [tables, setTables] = useState<DbSchemaTable[]>([]);
@@ -57,7 +59,7 @@ export function ServicesPanel({
   if (connectors.length === 0) {
     return (
       <p className="text-xs text-muted-foreground/40 px-1 py-2">
-        No connectors with healthy API keys found. Add credentials in the Vault first.
+        {t.agents.services_panel.no_connectors}
       </p>
     );
   }
@@ -75,7 +77,7 @@ export function ServicesPanel({
               : 'text-muted-foreground/40 hover:text-muted-foreground/60'
           }`}
         >
-          All
+          {t.common.all}
         </button>
         {categories.map((cat) => (
           <button
@@ -133,7 +135,7 @@ export function ServicesPanel({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setTablePopoverFor(c.name); }}
                   className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center hover:bg-blue-500/30 transition-colors"
-                  title="Select table"
+                  title={t.agents.services_panel.select_table}
                 >
                   <Table2 className="w-2.5 h-2.5 text-blue-400" />
                 </button>

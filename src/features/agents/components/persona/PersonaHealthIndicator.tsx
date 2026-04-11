@@ -1,5 +1,6 @@
 import { Check, Minus, X } from 'lucide-react';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
+import { useTranslation } from '@/i18n/useTranslation';
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
@@ -25,6 +26,7 @@ interface PersonaHealthIndicatorProps {
 }
 
 export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicatorProps) {
+  const { t, tx } = useTranslation();
   const healthStatus = (health?.status ?? 'dormant') as HealthLevel;
   const ringClass = HEALTH_RING_CLASS[healthStatus] ?? HEALTH_RING_CLASS.dormant;
   const statuses = health?.recentStatuses;
@@ -62,7 +64,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
               aria-label={`Run ${si + 1}: ${s}`}
             />
           ))}
-          <span className="text-sm text-muted-foreground/90 ml-1">last {statuses.length}</span>
+          <span className="text-sm text-muted-foreground/90 ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
         </div>
       )}
     </div>

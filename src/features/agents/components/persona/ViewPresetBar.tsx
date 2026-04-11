@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bookmark, Check, Plus, Trash2, X, ChevronDown, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViewsByType, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
@@ -64,6 +65,7 @@ interface ViewPresetBarProps {
 }
 
 export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarProps) {
+  const { t } = useTranslation();
   const [views, setViews] = useState<SavedView[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -161,7 +163,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
   const activeLabel = activeViewId
     ? (SMART_PRESETS.find((p) => p.id === activeViewId)?.name
       ?? views.find((v) => v.id === activeViewId)?.name
-      ?? 'Custom View')
+      ?? t.agents.view_presets.custom_view)
     : null;
 
   return (
@@ -170,12 +172,12 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
       {!isDefault && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/8 border border-primary/15 text-md text-primary/80">
           {activeLabel && <span className="font-medium">{activeLabel}</span>}
-          {!activeLabel && <span className="font-medium">Custom filters</span>}
+          {!activeLabel && <span className="font-medium">{t.agents.view_presets.custom_filters}</span>}
           <button
             type="button"
             onClick={handleReset}
             className="ml-1 p-0.5 rounded hover:bg-primary/15 transition-colors"
-            title="Reset to defaults"
+            title={t.agents.view_presets.reset_defaults}
           >
             <X className="w-3 h-3" />
           </button>
@@ -190,7 +192,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-md font-medium border border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground transition-all"
         >
           <Bookmark className="w-3.5 h-3.5" />
-          Views
+          {t.agents.view_presets.views}
           <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
@@ -202,7 +204,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                 <input
                   autoFocus
                   type="text"
-                  placeholder="View name..."
+                  placeholder={t.agents.view_presets.view_name_placeholder}
                   className="flex-1 bg-transparent border border-primary/20 rounded-lg px-2 py-1 text-md focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
                   value={newViewName}
                   onChange={(e) => setNewViewName(e.target.value)}
@@ -211,7 +213,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                     if (e.key === 'Escape') setIsSaving(false);
                   }}
                 />
-                <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason="Enter a view name" className="text-emerald-500 hover:bg-emerald-500/10">
+                <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason={t.agents.view_presets.enter_view_name} className="text-emerald-500 hover:bg-emerald-500/10">
                   <Check className="w-3.5 h-3.5" />
                 </Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => setIsSaving(false)}>
@@ -225,7 +227,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                 className="w-full flex items-center gap-2 px-3 py-2 text-md text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Save Current View
+                {t.agents.view_presets.save_current}
               </button>
             )}
 
@@ -233,7 +235,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
               {/* Smart presets */}
               <div className="px-3 py-1 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                Smart Presets
+                {t.agents.view_presets.smart_presets}
               </div>
               {SMART_PRESETS.map((preset) => (
                 <button
@@ -255,7 +257,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
               {views.length > 0 && (
                 <>
                   <div className="px-3 py-1 mt-1.5 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold border-t border-primary/10 pt-2">
-                    Your Views
+                    {t.agents.view_presets.your_views}
                   </div>
                   {views.map((view) => (
                     <div
@@ -276,7 +278,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                         variant="ghost" size="icon-sm"
                         onClick={(e) => handleDelete(view.id, e)}
                         className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                        title="Delete view"
+                        title={t.agents.view_presets.delete_view}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>

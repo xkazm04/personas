@@ -3,6 +3,7 @@ import { MessageSquare, Send, Mail, X, Bell } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 
 interface ChannelPickerProps {
@@ -31,13 +32,14 @@ interface ChannelOption {
 }
 
 export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
+  const { t } = useTranslation();
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
 
   // Build channel options from communication-type credentials + in-app default
   const channelOptions = useMemo<ChannelOption[]>(() => {
     const options: ChannelOption[] = [
-      { type: 'in-app' as NotificationChannelType, label: 'In-app Messaging' },
+      { type: 'in-app' as NotificationChannelType, label: t.agents.channel_picker.in_app_messaging },
     ];
 
     // Collect communication connectors that have saved credentials
@@ -149,7 +151,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
             {channel.credential_id
               ? credentials.find((c) => c.id === channel.credential_id)?.name ?? channel.type
               : channel.type === ('in-app' as string)
-                ? 'In-app Messaging'
+                ? t.agents.channel_picker.in_app_messaging
                 : channel.type}
           </span>
           <div className="flex-1" />
@@ -165,7 +167,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
 
       {channelOptions.length <= 1 && (
         <p className="text-sm text-muted-foreground/60 italic">
-          Save communication credentials (Slack, Email, etc.) in the Vault to see them here.
+          {t.agents.channel_picker.vault_hint}
         </p>
       )}
     </div>

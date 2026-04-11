@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { PreviewSection } from './PreviewSection';
 
 import type { useDesignAnalysis } from '@/hooks/design/core/useDesignAnalysis';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type DesignAnalysis = ReturnType<typeof useDesignAnalysis>;
 
@@ -36,6 +37,7 @@ export function PreviewPanel({
   setPreviewExpanded,
   onActivate,
 }: PreviewPanelProps) {
+  const { t } = useTranslation();
   const result = design.result;
   if (!result) return null;
 
@@ -53,7 +55,7 @@ export function PreviewPanel({
               ? <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
               : <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
             }
-            <span className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider">Preview</span>
+            <span className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider">{t.agents.design_preview.preview}</span>
           </button>
 
           {previewExpanded && (
@@ -61,7 +63,7 @@ export function PreviewPanel({
               className="animate-fade-slide-in space-y-2.5"
             >
               {/* Identity */}
-              <PreviewSection icon={Bot} label="Identity">
+              <PreviewSection icon={Bot} label={t.agents.design_preview.identity}>
                 <p className="text-sm text-foreground/70 truncate">
                   {result.structured_prompt?.identity
                     ? result.structured_prompt.identity.slice(0, 80) + (result.structured_prompt.identity.length > 80 ? '...' : '')
@@ -70,7 +72,7 @@ export function PreviewPanel({
               </PreviewSection>
 
               {/* Prompt */}
-              <PreviewSection icon={FileText} label="Prompt">
+              <PreviewSection icon={FileText} label={t.agents.design_preview.prompt}>
                 <p className="text-sm text-foreground/70">
                   {result.full_prompt_markdown
                     ? `${result.full_prompt_markdown.split('\n').length} lines`
@@ -79,7 +81,7 @@ export function PreviewPanel({
               </PreviewSection>
 
               {/* Tools */}
-              <PreviewSection icon={Wrench} label="Tools" count={(result.suggested_tools ?? []).length}>
+              <PreviewSection icon={Wrench} label={t.agents.design_preview.tools} count={(result.suggested_tools ?? []).length}>
                 {(result.suggested_tools ?? []).length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {(result.suggested_tools ?? []).slice(0, 5).map((t) => (
@@ -94,31 +96,31 @@ export function PreviewPanel({
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground/60">None yet</p>
+                  <p className="text-sm text-muted-foreground/60">{t.agents.design_preview.none_yet}</p>
                 )}
               </PreviewSection>
 
               {/* Triggers */}
-              <PreviewSection icon={Zap} label="Triggers" count={(result.suggested_triggers ?? []).length}>
+              <PreviewSection icon={Zap} label={t.agents.design_preview.triggers} count={(result.suggested_triggers ?? []).length}>
                 {(result.suggested_triggers ?? []).length > 0 ? (
                   <div className="space-y-0.5">
-                    {(result.suggested_triggers ?? []).map((t, i) => (
+                    {(result.suggested_triggers ?? []).map((tr, i) => (
                       <div key={i} className="flex items-center gap-1.5">
                         <Clock className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
                         <span className="text-sm text-foreground/60 truncate">
-                          {t.description || t.trigger_type}
+                          {tr.description || tr.trigger_type}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground/60">None yet</p>
+                  <p className="text-sm text-muted-foreground/60">{t.agents.design_preview.none_yet}</p>
                 )}
               </PreviewSection>
 
               {/* Subscriptions */}
               {(result.suggested_event_subscriptions ?? []).length > 0 && (
-                <PreviewSection icon={Bell} label="Subscriptions" count={result.suggested_event_subscriptions!.length}>
+                <PreviewSection icon={Bell} label={t.agents.design_preview.subscriptions} count={result.suggested_event_subscriptions!.length}>
                   <div className="space-y-0.5">
                     {result.suggested_event_subscriptions!.map((s, i) => (
                       <div key={i} className="flex items-center gap-1.5">
@@ -162,13 +164,13 @@ export function PreviewPanel({
             ) : (
               <Sparkles className="w-3.5 h-3.5" />
             )}
-            {isActivating ? 'Activating...' : completeness >= 80 ? 'Activate Agent' : 'Create Agent'}
+            {isActivating ? t.agents.design_preview.activating : completeness >= 80 ? t.agents.design_preview.activate_agent : t.agents.design_preview.create_agent}
           </button>
           {completeness < 40 && !isActivating && !isThinking && (
             <p
               className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5 text-center"
             >
-              Add more detail to reach 40% completeness
+              {t.agents.design_preview.min_completeness}
             </p>
           )}
         </div>

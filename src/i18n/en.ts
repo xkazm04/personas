@@ -81,6 +81,12 @@ export const en = {
     send: "Send",
     apply: "Apply",
     confirm: "Confirm",
+    done: "Done",
+    swap: "Swap",
+    draft: "Draft",
+    tools: "Tools",
+    triggers: "Triggers",
+    connectors: "Connectors",
 
     // Column/field headers used in tables and forms
     actions: "Actions",
@@ -2152,6 +2158,7 @@ export const en = {
     overview_columns: {
       persona: "Persona",
       connectors: "Connectors",
+      status: "Status",
       trust: "Trust",
       triggers: "Triggers",
       last_run: "Last Run",
@@ -2290,206 +2297,6 @@ export const en = {
       delete_drafts_message: "{count} draft agent(s) will be permanently removed.",
     },
 
-    // -----------------------------------------------------------------
-    //  PICKER -- assign modal, credential coverage, role card, selectors
-    // -----------------------------------------------------------------
-    picker: {
-      assign_to: "Assign to {role}",
-      saved_credentials: "Saved Credentials ({count})",
-      all_connectors_tab: "All Connectors ({count})",
-      search_credentials: "Search credentials...",
-      search_connectors: "Search connectors...",
-      no_saved_credentials: "No saved credentials yet",
-      no_credentials_match: "No credentials match your search",
-      vault_hint: "Save credentials in the Vault, or use the Connectors tab",
-      no_connectors_match: "No connectors match your search",
-      credentials_coverage: "{matched}/{total} credentials",
-      no_credential: "No credential",
-      edit_tables: "edit",
-      select_tables_btn: "select tables",
-      assign_btn: "Assign",
-      no_connectors_available: "No connectors available",
-      search_connectors_short: "Search connectors...",
-      selected_count: "{count} selected",
-      no_connectors_match_search: "No connectors match \"{search}\"",
-      in_app_messaging: "In-app Messaging",
-      channel_vault_hint: "Save communication credentials (Slack, Email, etc.) in the Vault to see them here.",
-      select_tables_title: "Select Tables",
-      choose_tables_to_watch: "{label} -- choose tables to watch",
-      tables_selected_one: "{count} table selected",
-      tables_selected_other: "{count} tables selected",
-      no_tables_selected: "No tables selected -- agent watches all",
-      skip: "Skip",
-      done: "Done",
-      error_handling: "Error Handling",
-      manual_review: "Manual Review",
-    },
-
-    // -----------------------------------------------------------------
-    //  TRIGGER -- popover labels
-    // -----------------------------------------------------------------
-    trigger: {
-      trigger_label: "Trigger",
-      clear_override: "Clear override",
-    },
-
-    // -----------------------------------------------------------------
-    //  USE CASE -- builder and card
-    // -----------------------------------------------------------------
-    use_case: {
-      add_use_case: "Add use case",
-      title_placeholder: "Use case title \u2014 e.g. Handle refund requests, Summarize daily tickets",
-      description_placeholder: "Describe the steps \u2014 e.g. When a refund request arrives, verify the order, check policy, and send approval or denial",
-    },
-
-    // -----------------------------------------------------------------
-    //  BUILDER -- action components, preview, dry run, identity
-    // -----------------------------------------------------------------
-    builder: {
-      processing: "Processing...",
-      error_try_again: "Something went wrong. Please try again.",
-      cancel: "Cancel",
-      enhancing: "Enhancing...",
-      enhance_with_ai: "Enhance with AI",
-      continue_btn: "Continue",
-      describe_agent: "Describe what your agent should do",
-      preview: "Preview",
-      start_building_preview: "Start building to see a preview",
-      intent: "Intent",
-      use_cases_label: "Use Cases",
-      none_yet: "None yet",
-      components_label: "Components",
-      credentials_covered: "Credentials: {matched}/{total} covered",
-      none: "None",
-      schedule: "Schedule",
-      manual_only: "Manual only",
-      errors_label: "Errors",
-      review_label: "Review",
-      status_ready: "Ready",
-      status_blocked: "Blocked",
-      status_partial: "Partial",
-      issues_remaining_one: "{count} issue remaining",
-      issues_remaining_other: "{count} issues remaining",
-      capabilities: "Capabilities",
-      issues_label: "Issues",
-      apply_fix: "Apply Fix: {label}",
-      manual_action_needed: "Manual action needed",
-      no_issues_found: "No issues found. Your agent configuration looks good.",
-      agent_name_placeholder: "Agent Name",
-      description_fallback: "Description",
-    },
-
-    // -----------------------------------------------------------------
-    //  MATRIX -- build review, connectors cell, dimension edit, etc.
-    // -----------------------------------------------------------------
-    matrix: {
-      draft_agent: "Draft Agent",
-      tools: "Tools",
-      triggers: "Triggers",
-      connectors: "Connectors",
-      agent_name_check: "Agent name",
-      all_dimensions: "All 8 dimensions",
-      prompt_generated: "Prompt generated",
-      connectors_ready: "Connectors ready",
-      promote_agent: "Promote Agent",
-      testing_status: "Testing...",
-      test_agent: "Test Agent",
-      linked: "Linked",
-      add_in_keys: "Add in Keys",
-      link: "Link",
-      no_credential_found: "No {name} credential found. Add one in Keys to continue.",
-      swap_to: "Swap to:",
-      recalculating: "Recalculating...",
-      recalculate_dimensions: "Recalculate Dimensions",
-      rebuilding_connector: "Rebuilding with new connector...",
-      add_item: "Add item...",
-      add_connector: "Add connector...",
-      add_trigger: "Add trigger...",
-      add_review_rule: "Add review rule...",
-      add_task: "Add task...",
-      add_notification: "Add notification channel...",
-      add_memory_item: "Add memory item...",
-      add_error_strategy: "Add error strategy...",
-      replace: "Replace",
-      replace_connector: "Replace: {name}",
-      pick_credential: "Pick one of your connected credentials",
-      no_connected_credentials: "No connected credentials yet",
-      add_credentials_hint: "Add credentials in the Keys module first.",
-      open_keys: "Open Keys",
-      add_credential_in_keys: "Add credential in Keys",
-      health_healthy: "healthy",
-      health_check_failed: "check failed",
-      health_not_tested: "not tested",
-      connectors_need_credentials: "Some connectors need healthy credentials before this dimension can be finalized",
-      approval_required: "Approval Required",
-      fully_automated: "Fully Automated",
-      cron_label: "Cron:",
-      every_label: "Every:",
-      edit_label: "Edit",
-      done_label: "Done",
-      quick_setup: "Quick Setup",
-      start_conditions: "Start Conditions",
-      apps_services: "Apps & Services",
-      time_schedule: "Time Schedule",
-      event_triggers: "Event Triggers",
-      source_agent: "Source Agent",
-      events_from: "Events from {name}",
-      select_agent: "Select an agent",
-      loading_events: "Loading events...",
-      no_event_subscriptions: "No event subscriptions found",
-      choose_agent_events: "Choose an agent to see its events",
-      no_agents_available: "No agents available",
-      no_stored_credentials: "No stored credentials",
-      best_match: "Best match",
-      other: "Other",
-      frequency: "Frequency",
-      days_label: "Days",
-      day_of_month: "Day of Month",
-      time_label: "Time",
-      no_healthy_connectors: "No connectors with healthy API keys found. Add credentials in the Vault first.",
-      all_category: "All",
-      select_table_btn: "Select table",
-      agent_configuration: "Agent Configuration",
-      or_type_custom: "Or type a custom answer",
-      type_answer: "Type your answer...",
-      submit: "Submit",
-      press_to_select: "Press 1-{count} to select instantly",
-      select_table_title: "Select Table",
-      search_tables: "Search tables...",
-      loading_tables: "Loading tables...",
-      no_tables_found: "No tables found for this connector",
-      clear_selection: "Clear selection",
-      no_tables_matching: "No tables matching \"{search}\"",
-      new_agent_fallback: "New Agent",
-      failed_create_draft: "Failed to create draft agent.",
-      dismiss: "Dismiss",
-      drop_workflow: "Drop a workflow file here",
-      supported_formats: "n8n, Zapier, Make, or GitHub Actions (.json, .yaml)",
-      build_workflow_hint: "Press Build to transform this workflow into a persona agent.",
-      paste_json_placeholder: "Paste your workflow JSON here...",
-      parse: "Parse",
-      or_paste_json: "Or paste JSON directly",
-      swap_alternative: "Swap to alternative",
-    },
-
-    // -----------------------------------------------------------------
-    //  ONBOARDING -- checklist, template step, config popup
-    // -----------------------------------------------------------------
-    onboarding: {
-      setup_complete: "Setup {score}% complete",
-      steps_done: "{completed}/{total} steps done",
-      dismiss_checklist: "Dismiss checklist",
-      choose_template: "Choose a Template",
-      template_subtitle: "Pick a template to pre-fill your agent, or start from scratch.",
-      start_from_scratch: "Start from scratch",
-      could_not_load: "Could not load saved values -- you may need to re-enter them.",
-      saving: "Saving\u2026",
-      fill_one_field: "Fill in at least one field to save",
-    },
-
-    // -----------------------------------------------------------------
-    //  PERSONA LIST -- overview page, cards, cells, batch bar, etc.
-    // -----------------------------------------------------------------
     persona_list: {
       all_personas: "All Personas",
       delete_drafts_btn: "Delete Drafts ({count})",
@@ -2519,9 +2326,6 @@ export const en = {
       no_connectors_configured: "No connectors configured",
     },
 
-    // -----------------------------------------------------------------
-    //  DESIGN PREVIEW -- preview panel
-    // -----------------------------------------------------------------
     design_preview: {
       preview: "Preview",
       identity: "Identity",

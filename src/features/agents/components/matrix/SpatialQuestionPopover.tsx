@@ -11,6 +11,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { HelpCircle, Send, X, Hash } from "lucide-react";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DIMENSION_LABELS: Record<string, string> = {
   "use-cases": "Tasks",
@@ -52,6 +53,7 @@ function QuestionModal({
   onAnswer: (cellKey: string, answer: string) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [freeText, setFreeText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ function QuestionModal({
                 {dimensionLabel}
               </h3>
               <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">
-                Agent Configuration
+                {t.agents.spatial_question.agent_configuration}
               </p>
             </div>
           </div>
@@ -155,7 +157,7 @@ function QuestionModal({
               ))}
               <p className="text-[10px] text-muted-foreground/35 mt-1 flex items-center gap-1.5">
                 <Hash className="w-3 h-3" />
-                Press 1-{options.length} to select instantly
+                {tx(t.agents.spatial_question.press_to_select, { count: options.length })}
               </p>
             </div>
           )}
@@ -166,7 +168,7 @@ function QuestionModal({
               <div className="flex items-center gap-2 mb-1">
                 <div className="flex-1 h-px bg-primary/8" />
                 <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider font-medium">
-                  Or type a custom answer
+                  {t.agents.spatial_question.or_custom_answer}
                 </span>
                 <div className="flex-1 h-px bg-primary/8" />
               </div>
@@ -181,7 +183,7 @@ function QuestionModal({
                   handleFreeTextSubmit();
                 }
               }}
-              placeholder="Type your answer..."
+              placeholder={t.agents.spatial_question.type_answer}
               rows={2}
               className="w-full resize-none rounded-xl border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground/25 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
               data-testid="freetext-input"
@@ -194,7 +196,7 @@ function QuestionModal({
               data-testid="submit-button"
             >
               <Send className="w-3.5 h-3.5" />
-              Submit
+              {t.agents.spatial_question.submit}
             </button>
           </div>
         </div>

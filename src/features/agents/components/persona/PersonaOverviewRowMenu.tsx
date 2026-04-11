@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal, Settings, Trash2 } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RowActionMenuProps {
   persona: Persona;
@@ -14,6 +15,7 @@ interface RowActionMenuProps {
  * sticky header / overflow context. Closes on outside-click and on action.
  */
 export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionMenuProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,7 +53,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
           e.stopPropagation();
           setOpen(!open);
         }}
-        title="More actions"
+        title={t.agents.persona_list.more_actions}
         className="p-1 rounded-md hover:bg-secondary/40 text-muted-foreground/40 hover:text-muted-foreground/80 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
@@ -73,7 +75,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
               className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-foreground/70 hover:bg-secondary/40 transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
-              Settings
+              {t.agents.persona_list.settings}
             </button>
             <button
               type="button"
@@ -85,7 +87,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
               className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-red-400/80 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Delete
+              {t.agents.persona_list.batch_delete}
             </button>
           </div>,
           document.body,

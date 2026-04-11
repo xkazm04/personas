@@ -2,6 +2,7 @@ import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { Sparkles } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BuilderState } from './builder/types';
 import { deriveNameFromState } from './identityHelpers';
 
@@ -15,12 +16,13 @@ interface IdentityPreviewCardProps {
 }
 
 export function IdentityPreviewCard({ name, description, icon, color, summary, builderState }: IdentityPreviewCardProps) {
+  const { t } = useTranslation();
   const filledUseCases = builderState.useCases.filter((uc) => uc.title.trim());
 
   return (
     <div className="bg-secondary/30 border border-primary/10 rounded-xl p-4 space-y-4">
       <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground/60">
-        Preview
+        {t.agents.builder_preview.title}
       </p>
 
       {/* Card preview */}
@@ -41,10 +43,10 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
         )}
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground/85 truncate">
-            {name.trim() || deriveNameFromState(builderState) || 'Agent Name'}
+            {name.trim() || deriveNameFromState(builderState) || t.agents.identity_preview.agent_name_placeholder}
           </p>
           <p className="text-sm text-muted-foreground/60 truncate">
-            {description.trim() || 'Description'}
+            {description.trim() || t.agents.identity_preview.description_placeholder}
           </p>
         </div>
       </div>
@@ -61,7 +63,7 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
       {filledUseCases.length > 0 && (
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
-            Use Cases
+            {t.agents.builder_preview.use_cases}
           </p>
           <ul className="space-y-1">
             {filledUseCases.slice(0, 5).map((uc) => (
@@ -78,7 +80,7 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
       {builderState.components.length > 0 && (
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/55 mb-1.5">
-            Components
+            {t.agents.builder_preview.components}
           </p>
           <div className="flex flex-wrap gap-1">
             {builderState.components.map((comp) => (
@@ -95,17 +97,17 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
         <div className="space-y-1">
           {builderState.globalTrigger && (
             <p className="text-sm text-foreground/60">
-              <span className="text-muted-foreground/55">Schedule:</span> {builderState.globalTrigger.label}
+              <span className="text-muted-foreground/55">{t.agents.builder_preview.schedule}:</span> {builderState.globalTrigger.label}
             </p>
           )}
           {builderState.errorStrategy !== 'halt' && (
             <p className="text-sm text-foreground/60">
-              <span className="text-muted-foreground/55">Errors:</span> {builderState.errorStrategy}
+              <span className="text-muted-foreground/55">{t.agents.builder_preview.errors}:</span> {builderState.errorStrategy}
             </p>
           )}
           {builderState.reviewPolicy !== 'never' && (
             <p className="text-sm text-foreground/60">
-              <span className="text-muted-foreground/55">Review:</span> {builderState.reviewPolicy}
+              <span className="text-muted-foreground/55">{t.agents.builder_preview.review}:</span> {builderState.reviewPolicy}
             </p>
           )}
         </div>

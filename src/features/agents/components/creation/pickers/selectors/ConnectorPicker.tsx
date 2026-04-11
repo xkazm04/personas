@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Plug } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectorPickerProps {
   selected: string[];
@@ -9,6 +10,7 @@ interface ConnectorPickerProps {
 }
 
 export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
+  const { t, tx } = useTranslation();
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
@@ -38,7 +40,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
     return (
       <div className="text-center py-4 text-sm text-muted-foreground/50">
         <Plug className="w-4 h-4 mx-auto mb-1.5 opacity-50" />
-        No connectors available
+        {t.agents.connector_picker.no_connectors}
       </div>
     );
   }
@@ -52,7 +54,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search connectors..."
+          placeholder={t.agents.connector_picker.search}
           className="w-full pl-8 pr-3 py-1.5 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
         />
       </div>
@@ -60,7 +62,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
       {/* Selected count */}
       {selected.length > 0 && (
         <p className="text-sm text-primary/70">
-          {selected.length} selected
+          {tx(t.agents.filters.selected, { count: selected.length })}
         </p>
       )}
 
@@ -96,7 +98,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
         ))}
 
         {grouped.length === 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-2">No connectors match "{search}"</p>
+          <p className="text-sm text-muted-foreground/60 text-center py-2">{tx(t.agents.connector_picker.no_match, { search })}</p>
         )}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Clock, Hand, Webhook, X } from 'lucide-react';
 import type { TriggerPreset } from '../../steps/builder/types';
 import { TRIGGER_PRESETS } from '../../steps/builder/types';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export const triggerIcons: Record<string, typeof Clock> = {
   manual: Hand,
@@ -17,6 +18,7 @@ export function TriggerPopover({
   value: TriggerPreset | null;
   onChange: (preset: TriggerPreset | null) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { isStarter: isSimple } = useTier();
@@ -55,7 +57,7 @@ export function TriggerPopover({
             className="animate-fade-slide-in absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-elevation-3 p-2 min-w-[180px]"
           >
             <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider px-1.5 mb-1">
-              Trigger
+              {t.agents.trigger_popover.trigger}
             </p>
             {presets.map((preset) => {
               const PresetIcon = triggerIcons[preset.type] ?? Clock;
@@ -89,7 +91,7 @@ export function TriggerPopover({
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg text-muted-foreground/65 hover:bg-secondary/40 mt-0.5 border-t border-primary/20 pt-1.5"
               >
                 <X className="w-3 h-3 shrink-0" />
-                Clear override
+                {t.agents.trigger_popover.clear_override}
               </button>
             )}
           </div>

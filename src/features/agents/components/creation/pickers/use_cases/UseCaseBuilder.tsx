@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   DndContext,
@@ -23,6 +24,7 @@ interface UseCaseBuilderProps {
 }
 
 export function UseCaseBuilder({ useCases, onAdd, onUpdate, onRemove, onReorder }: UseCaseBuilderProps) {
+  const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -96,7 +98,7 @@ export function UseCaseBuilder({ useCases, onAdd, onUpdate, onRemove, onReorder 
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-muted-foreground/70 border border-dashed border-primary/20 rounded-xl hover:bg-secondary/30 hover:text-foreground/80 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add use case
+        {t.agents.use_case.add}
       </button>
     </div>
   );

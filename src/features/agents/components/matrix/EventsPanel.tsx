@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Check, Radio } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useAgentStore } from '@/stores/agentStore';
 import { getPersonaDetail } from '@/api/agents/personas';
@@ -15,6 +16,7 @@ export function EventsPanel({
   selectedEvents,
   onToggleEvent,
 }: EventsPanelProps) {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
@@ -52,7 +54,7 @@ export function EventsPanel({
     <div className="flex gap-6 px-1">
       {/* Persona selector (left) */}
       <div className="flex flex-col gap-2 min-w-[160px]">
-        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Source Agent</span>
+        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.events_panel.source_agent}</span>
         <div className="flex flex-col gap-1 overflow-y-auto">
           {personas.filter((p) => p.enabled).map((p) => (
             <button
@@ -72,7 +74,7 @@ export function EventsPanel({
             </button>
           ))}
           {personas.filter((p) => p.enabled).length === 0 && (
-            <p className="text-xs text-muted-foreground/40 py-2">No agents available</p>
+            <p className="text-xs text-muted-foreground/40 py-2">{t.agents.events_panel.no_agents}</p>
           )}
         </div>
       </div>
@@ -80,13 +82,13 @@ export function EventsPanel({
       {/* Event triggers (right) */}
       <div className="flex-1 flex flex-col gap-2">
         <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
-          {selectedPersona ? `Events from ${selectedPersona.name}` : 'Select an agent'}
+          {selectedPersona ? tx(t.agents.events_panel.events_from, { name: selectedPersona.name }) : t.agents.events_panel.select_agent}
         </span>
         {loading ? (
-          <p className="text-xs text-muted-foreground/40 py-2 animate-pulse">Loading events...</p>
+          <p className="text-xs text-muted-foreground/40 py-2 animate-pulse">{t.agents.events_panel.loading_events}</p>
         ) : designEvents.length === 0 && triggers.length === 0 ? (
           <p className="text-xs text-muted-foreground/40 py-2">
-            {selectedPersonaId ? 'No event subscriptions found' : 'Choose an agent to see its events'}
+            {selectedPersonaId ? t.agents.events_panel.no_subscriptions : t.agents.events_panel.choose_agent}
           </p>
         ) : (
           <div className="flex flex-col gap-1 overflow-y-auto">

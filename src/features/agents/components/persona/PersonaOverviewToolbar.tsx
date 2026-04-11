@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Search, Star, X } from 'lucide-react';
 import { HEALTH_STYLES } from './PersonaOverviewBadges';
 import type { AgentListViewConfig } from './ViewPresetBar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STATUS_LABELS: Record<string, string> = {
   enabled: 'Active',
@@ -35,6 +36,7 @@ export function PersonaOverviewToolbar({
   view,
   onViewChange,
 }: PersonaOverviewToolbarProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // "/" anywhere → focus search (skip when user is already typing in a field)
@@ -100,14 +102,14 @@ export function PersonaOverviewToolbar({
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search personas…"
+          placeholder={t.agents.persona_list.search_personas}
           className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-lg text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
         />
         {search ? (
           <button
             type="button"
             onClick={() => onSearchChange('')}
-            title="Clear search"
+            title={t.agents.persona_list.clear_search}
             className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground/50 hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <X className="w-3 h-3" />
@@ -123,7 +125,7 @@ export function PersonaOverviewToolbar({
       <button
         type="button"
         onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
-        title={view.favoriteOnly ? 'Show all personas' : 'Show only favorites'}
+        title={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-md font-medium border transition-all ${
           view.favoriteOnly
             ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
@@ -131,7 +133,7 @@ export function PersonaOverviewToolbar({
         }`}
       >
         <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />
-        Favorites
+        {t.agents.persona_list.favorites}
       </button>
 
       {/* Active filter chips */}

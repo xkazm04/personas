@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { getPersonaBlastRadius } from '@/api/agents/personas';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
 
@@ -28,6 +29,7 @@ export function usePersonaActions({
   selectPersona,
   isDraft,
 }: UsePersonaActionsArgs) {
+  const { t, tx } = useTranslation();
   const { modal, confirm } = useConfirmDestructive();
 
   const handleDelete = useCallback(
@@ -35,8 +37,8 @@ export function usePersonaActions({
       const persona = personas.find((p) => p.id === id);
       if (!persona) return;
       confirm({
-        title: 'Delete Agent',
-        message: 'This agent and all its configuration will be permanently removed.',
+        title: t.agents.overview_actions.delete_agent,
+        message: t.agents.overview_actions.delete_agent_message,
         details: [{ label: 'Name', value: persona.name }],
         blastRadiusFetcher: () => getPersonaBlastRadius(id),
         requireTypedConfirmation: persona.name,
@@ -62,8 +64,8 @@ export function usePersonaActions({
     const ids = [...selectedIds];
     const count = ids.length;
     confirm({
-      title: `Delete ${count} Agent${count > 1 ? 's' : ''}`,
-      message: `${count} agent${count > 1 ? 's' : ''} and all their configuration will be permanently removed.`,
+      title: tx(t.agents.overview_actions.delete_agents, { count }),
+      message: tx(t.agents.overview_actions.delete_agents_message, { count }),
       onConfirm: async () => {
         setSelectedIds(new Set());
         for (const id of ids) {
@@ -86,8 +88,8 @@ export function usePersonaActions({
     if (draftIds.length === 0) return;
     const count = draftIds.length;
     confirm({
-      title: `Delete ${count} Draft${count > 1 ? 's' : ''}`,
-      message: `${count} draft agent${count > 1 ? 's' : ''} will be permanently removed.`,
+      title: tx(t.agents.overview_actions.delete_drafts, { count }),
+      message: tx(t.agents.overview_actions.delete_drafts_message, { count }),
       onConfirm: async () => {
         for (const id of draftIds) {
           try {

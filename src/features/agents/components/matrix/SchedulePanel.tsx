@@ -1,4 +1,5 @@
 import { type Frequency, DAYS, MONTH_DAYS, INPUT_CLS } from './quickConfigTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SchedulePanelProps {
   frequency: Frequency | null;
@@ -17,6 +18,7 @@ export function SchedulePanel({
   monthDay, setMonthDay,
   time, setTime,
 }: SchedulePanelProps) {
+  const { t } = useTranslation();
   const toggleDay = (day: string) => {
     setDays(days.includes(day) ? days.filter((d) => d !== day) : [...days, day]);
   };
@@ -26,7 +28,7 @@ export function SchedulePanel({
       <div className="flex flex-wrap items-end gap-6">
         {/* Frequency */}
         <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Frequency</span>
+          <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.frequency}</span>
           <div className="flex items-center gap-1 p-0.5 rounded-lg bg-secondary/20 h-9">
             {(['daily', 'weekly', 'monthly'] as const).map((f) => (
               <button
@@ -48,7 +50,7 @@ export function SchedulePanel({
         {/* Day selection (weekly) */}
         {frequency === 'weekly' && (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Days</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.days}</span>
             <div className="flex items-center gap-1 h-9">
               {DAYS.map((day) => (
                 <button
@@ -71,7 +73,7 @@ export function SchedulePanel({
         {/* Day of month (monthly) */}
         {frequency === 'monthly' && (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Day of Month</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.day_of_month}</span>
             <select
               value={monthDay}
               onChange={(e) => setMonthDay(Number(e.target.value))}
@@ -87,7 +89,7 @@ export function SchedulePanel({
         {/* Time picker */}
         {frequency && (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Time</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.time}</span>
             <input
               type="time"
               value={time}

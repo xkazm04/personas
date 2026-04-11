@@ -4,6 +4,7 @@ import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMet
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { HealthyConnector } from './useHealthyConnectors';
 import type { DbSchemaTable } from '@/lib/bindings/DbSchemaTable';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TablePickerModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface TablePickerModalProps {
 export function TablePickerModal({
   isOpen, connectorName, connectors, tables, loading, selectedTable, onSelect, onClose,
 }: TablePickerModalProps) {
+  const { t, tx } = useTranslation();
   const [search, setSearch] = useState('');
   const conn = connectorName ? connectors.find((c) => c.name === connectorName) : null;
 
@@ -44,7 +46,7 @@ export function TablePickerModal({
           )}
           <div>
             <h2 id="table-picker-title" className="text-sm font-semibold text-foreground/90">
-              Select Table
+              {t.agents.table_picker.title}
             </h2>
             <p className="text-xs text-muted-foreground/50">{conn?.meta.label ?? connectorName}</p>
           </div>
@@ -63,7 +65,7 @@ export function TablePickerModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tables..."
+              placeholder={t.agents.table_picker.search}
               className="flex-1 bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
               autoFocus
             />
@@ -74,9 +76,9 @@ export function TablePickerModal({
       {/* Table list */}
       <div className="px-5 py-3 max-h-[50vh] overflow-y-auto">
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground/40">Loading tables...</div>
+          <div className="py-8 text-center text-xs text-muted-foreground/40">{t.agents.table_picker.loading}</div>
         ) : tables.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground/40">No tables found for this connector</div>
+          <div className="py-8 text-center text-xs text-muted-foreground/40">{t.agents.table_picker.no_tables}</div>
         ) : (
           <div className="space-y-0.5">
             {selectedTable && (
@@ -85,7 +87,7 @@ export function TablePickerModal({
                 onClick={() => onSelect(null)}
                 className="w-full text-left px-3 py-2 rounded-lg text-xs text-muted-foreground/50 hover:bg-secondary/30 transition-colors italic"
               >
-                Clear selection
+                {t.agents.table_picker.clear_selection}
               </button>
             )}
             {filtered.map((t) => (
@@ -107,7 +109,7 @@ export function TablePickerModal({
               </button>
             ))}
             {filtered.length === 0 && search && (
-              <div className="py-4 text-center text-xs text-muted-foreground/40">No tables matching &quot;{search}&quot;</div>
+              <div className="py-4 text-center text-xs text-muted-foreground/40">{tx(t.agents.table_picker.no_match, { search })}</div>
             )}
           </div>
         )}

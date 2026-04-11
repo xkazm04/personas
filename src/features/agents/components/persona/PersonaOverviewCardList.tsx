@@ -7,14 +7,15 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
 import { PersonaOverviewRowMenu } from './PersonaOverviewRowMenu';
+import { useTranslation } from '@/i18n/useTranslation';
 
-async function copyDescription(text: string) {
+async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
   try {
     await navigator.clipboard.writeText(text);
-    addToast('Description copied to clipboard', 'success');
+    addToast(t.description_copied, 'success');
   } catch {
-    addToast('Failed to copy description', 'error');
+    addToast(t.copy_failed, 'error');
   }
 }
 
@@ -44,6 +45,7 @@ interface PersonaOverviewCardListProps {
  *  - row action menu
  */
 export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
+  const { t } = useTranslation();
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     onDelete, onEdit, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap,
@@ -55,7 +57,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
         <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
           <Inbox className="w-5 h-5 text-muted-foreground/40" />
         </div>
-        <p className="typo-heading text-foreground/70">No personas match</p>
+        <p className="typo-heading text-foreground/70">{t.agents.persona_list.no_personas_match}</p>
       </div>
     );
   }
@@ -113,9 +115,9 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      void copyDescription(p.description!);
+                      void copyDescription(p.description!, t.agents.persona_list);
                     }}
-                    title="Click to copy"
+                    title={t.agents.persona_list.click_to_copy}
                     className="text-md text-muted-foreground/70 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-muted-foreground transition-colors"
                   >
                     {p.description}
@@ -166,7 +168,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
               </div>
             ) : (
               <div className="flex items-center gap-1.5 px-3 pb-3 text-md text-muted-foreground/40">
-                <Plug className="w-3.5 h-3.5" /> No connectors
+                <Plug className="w-3.5 h-3.5" /> {t.agents.persona_list.no_connectors}
               </div>
             )}
 
@@ -175,7 +177,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
               <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{triggerCounts[p.id] ?? 0}</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {lastRun ? formatRelativeTime(lastRun) : 'Never'}
+                {lastRun ? formatRelativeTime(lastRun) : t.agents.persona_list.never}
               </span>
               {p.created_at && (
                 <span className="flex items-center gap-1">

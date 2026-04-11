@@ -5,6 +5,7 @@
  * Designed to fit within the constrained space of a matrix cell.
  */
 import { Star } from "lucide-react";
+import { useTranslation } from '@/i18n/useTranslation';
 interface CredentialItem {
   id: string;
   name: string;
@@ -22,6 +23,7 @@ export function MatrixCredentialPicker({
   otherCreds,
   onSelect,
 }: MatrixCredentialPickerProps) {
+  const { t } = useTranslation();
   const allEmpty = matchingCreds.length === 0 && otherCreds.length === 0;
 
   return (
@@ -31,14 +33,14 @@ export function MatrixCredentialPicker({
         <div className="mt-1 max-h-32 overflow-y-auto rounded-lg border border-primary/10 bg-background/40 backdrop-blur-sm">
           {allEmpty && (
             <div className="px-2.5 py-2 text-[11px] text-muted-foreground/60 text-center">
-              No stored credentials
+              {t.agents.matrix_cred_picker.no_stored}
             </div>
           )}
 
           {matchingCreds.length > 0 && (
             <div>
               <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
-                Best match
+                {t.agents.matrix_cred_picker.best_match}
               </div>
               {matchingCreds.map((cred) => (
                 <button

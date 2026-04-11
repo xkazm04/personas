@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Calendar, Clock, Zap } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -30,26 +31,29 @@ interface UsePersonaColumnsArgs {
   allConnectorNames: string[];
 }
 
-const STATUS_FILTER_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All Statuses' },
-  { value: 'enabled', label: 'Active only' },
-  { value: 'disabled', label: 'Disabled only' },
-  { value: 'building', label: 'Building / Drafts' },
-];
-
-const HEALTH_FILTER_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All Health' },
-  { value: 'healthy', label: HEALTH_STYLES.healthy!.label },
-  { value: 'degraded', label: HEALTH_STYLES.degraded!.label },
-  { value: 'failing', label: HEALTH_STYLES.failing!.label },
-];
+// Moved inside the hook to access translation keys
 
 export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<Persona>[] {
+  const { t } = useTranslation();
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     onDelete, onEdit, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
     connectorNamesMap, allConnectorNames,
   } = args;
+
+  const STATUS_FILTER_OPTIONS: FilterOption[] = [
+    { value: 'all', label: t.agents.overview_columns.all_statuses },
+    { value: 'enabled', label: t.agents.overview_columns.active_only },
+    { value: 'disabled', label: t.agents.overview_columns.disabled_only },
+    { value: 'building', label: t.agents.overview_columns.building_drafts },
+  ];
+
+  const HEALTH_FILTER_OPTIONS: FilterOption[] = [
+    { value: 'all', label: t.agents.overview_columns.all_health },
+    { value: 'healthy', label: HEALTH_STYLES.healthy!.label },
+    { value: 'degraded', label: HEALTH_STYLES.degraded!.label },
+    { value: 'failing', label: HEALTH_STYLES.failing!.label },
+  ];
 
   const connectorOptions = useMemo<FilterOption[]>(
     () => [
@@ -74,11 +78,11 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         ),
       },
       {
-        key: 'name', label: 'Persona', width: 'minmax(240px, 1.6fr)', sortable: true,
+        key: 'name', label: t.agents.persona_list.col_persona, width: 'minmax(240px, 1.6fr)', sortable: true,
         render: (p) => <NameCell persona={p} onClick={onRowClick} />,
       },
       {
-        key: 'connectors', label: 'Connectors', width: 'minmax(120px, 0.8fr)',
+        key: 'connectors', label: t.common.connectors, width: 'minmax(120px, 0.8fr)',
         filterComponent: (
           <PersonaOverviewFilterHeader
             label="Connectors"
@@ -90,7 +94,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         render: (p) => <ConnectorsCell persona={p} connectorNamesMap={connectorNamesMap} />,
       },
       {
-        key: 'status', label: 'Status', width: 'minmax(120px, 0.9fr)',
+        key: 'status', label: t.agents.overview_columns.status, width: 'minmax(120px, 0.9fr)',
         filterComponent: (
           <PersonaOverviewFilterHeader
             label="Status"
@@ -105,7 +109,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             : <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} />,
       },
       {
-        key: 'trust', label: 'Trust', width: 'minmax(140px, 1fr)', sortable: true,
+        key: 'trust', label: t.agents.overview_columns.trust, width: 'minmax(140px, 1fr)', sortable: true,
         filterComponent: (
           <PersonaOverviewFilterHeader
             label="Trust"
@@ -120,7 +124,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             : <TrustScoreBar score={p.trust_score ?? 0} />,
       },
       {
-        key: 'triggers', label: 'Triggers', width: '90px', sortable: true, align: 'right',
+        key: 'triggers', label: t.common.triggers, width: '90px', sortable: true, align: 'right',
         render: (p) => (
           <Tooltip content={`${triggerCounts[p.id] ?? 0} active trigger(s)`}>
             <span className="flex items-center justify-end gap-1 text-md text-foreground">
@@ -131,10 +135,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         ),
       },
       {
-        key: 'lastRun', label: 'Last Run', width: '120px', sortable: true, align: 'right',
+        key: 'lastRun', label: t.agents.overview_columns.last_run, width: '120px', sortable: true, align: 'right',
         render: (p) => {
           const lastRun = lastRunMap[p.id];
-          if (!lastRun) return <span className="text-md text-foreground/30">Never</span>;
+          if (!lastRun) return <span className="text-md text-foreground/30">{t.agents.persona_list.never}</span>;
           return (
             <Tooltip content={new Date(lastRun).toLocaleString()}>
               <span className="flex items-center justify-end gap-1 text-md text-foreground cursor-help">

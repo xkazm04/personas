@@ -1,5 +1,6 @@
 import { type Dispatch } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, Wrench } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DryRunResult, DryRunIssue } from './builder/types';
 import type { BuilderAction } from './builder/builderReducer';
 import { FEASIBILITY_COLORS, SEVERITY_STYLES } from '@/lib/utils/designTokens';
@@ -21,6 +22,7 @@ interface IssueCardProps {
 }
 
 function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
+  const { t, tx } = useTranslation();
   const style = SEVERITY_STYLES[issue.severity];
   const Icon = SEVERITY_ICONS[issue.severity];
 
@@ -58,11 +60,11 @@ function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
               className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
             >
               <Wrench className="w-3 h-3" />
-              Apply Fix: {issue.proposal.label}
+              {tx(t.agents.dry_run.apply_fix, { label: issue.proposal.label })}
             </button>
           ) : (
             <p className="mt-1.5 text-sm text-muted-foreground/50 italic">
-              Manual action needed
+              {t.agents.dry_run.manual_action_needed}
             </p>
           )}
         </div>
@@ -80,6 +82,7 @@ interface DryRunPanelProps {
 }
 
 export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelProps) {
+  const { t, tx } = useTranslation();
   const statusTokens = (FEASIBILITY_COLORS[result.status] ?? FEASIBILITY_COLORS['partial'])!;
 
   const StatusIcon = result.status === 'ready'
@@ -89,10 +92,10 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
       : AlertTriangle;
 
   const statusLabel = result.status === 'ready'
-    ? 'Ready'
+    ? t.agents.dry_run.ready
     : result.status === 'blocked'
-      ? 'Blocked'
-      : 'Partial';
+      ? t.agents.dry_run.blocked
+      : t.agents.dry_run.partial;
 
   const remainingIssues = result.issues.filter((i) => !i.resolved).length;
 
@@ -106,7 +109,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
         </div>
         {remainingIssues > 0 && (
           <span className="text-sm text-muted-foreground/60">
-            {remainingIssues} issue{remainingIssues !== 1 ? 's' : ''} remaining
+            {tx(remainingIssues === 1 ? t.agents.dry_run.issues_remaining_one : t.agents.dry_run.issues_remaining_other, { count: remainingIssues })}
           </span>
         )}
       </div>
@@ -115,7 +118,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
       {result.capabilities.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">
-            Capabilities
+            {t.agents.dry_run.capabilities}
           </p>
           <div className="space-y-1">
             {result.capabilities.map((cap, i) => (
@@ -132,7 +135,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
       {result.issues.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">
-            Issues
+            {t.agents.dry_run.issues}
           </p>
           <div className="space-y-2">
             {result.issues.map((issue) => (
@@ -150,7 +153,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
       {/* All clear */}
       {result.issues.length === 0 && result.capabilities.length > 0 && (
         <p className="text-sm text-emerald-400/70">
-          No issues found. Your agent configuration looks good.
+          {t.agents.dry_run.no_issues}
         </p>
       )}
     </div>

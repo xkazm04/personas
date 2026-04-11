@@ -3,6 +3,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 import { TableSelector } from '@/features/shared/components/forms/TableSelector';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BuilderComponent } from '../../steps/builder/types';
 
 // -- Table Selector Modal -----------------------------------------------------
@@ -16,6 +17,7 @@ export function TableSelectorModal({
   onSetWatchedTables: (componentId: string, tables: string[]) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const { tables, loading, error, fetchTables } = useTableIntrospection({
     credentialId: component.credentialId!,
     serviceType: component.connectorName,
@@ -42,10 +44,10 @@ export function TableSelectorModal({
           </div>
           <div>
             <h3 id="table-selector-title" className="text-sm font-semibold text-foreground/90">
-              Select Tables
+              {t.agents.table_selector.title}
             </h3>
             <p className="text-sm text-muted-foreground/65">
-              {meta.label} -- choose tables to watch
+              {tx(t.agents.table_selector.subtitle, { label: meta.label })}
             </p>
           </div>
         </div>
@@ -71,8 +73,8 @@ export function TableSelectorModal({
       <div className="flex items-center justify-between px-4 py-3 border-t border-primary/10">
         <p className="text-sm text-muted-foreground/50">
           {count > 0
-            ? `${count} table${count !== 1 ? 's' : ''} selected`
-            : 'No tables selected -- agent watches all'}
+            ? tx(count === 1 ? t.agents.table_selector.tables_selected_one : t.agents.table_selector.tables_selected_other, { count })
+            : t.agents.table_selector.no_tables_selected}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -80,14 +82,14 @@ export function TableSelectorModal({
             onClick={onClose}
             className="px-4 py-1.5 text-sm font-medium rounded-xl text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
           >
-            Skip
+            {t.common.skip}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-1.5 text-sm font-semibold rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
           >
-            Done
+            {t.common.done}
           </button>
         </div>
       </div>

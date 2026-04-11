@@ -1,9 +1,11 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BuilderComponent } from '../steps/builder/types';
 import { computeCredentialCoverage } from '../steps/builder/builderReducer';
 
 // -- Credential Coverage Bar --------------------------------------------------
 
 export function CredentialCoverageBar({ components }: { components: BuilderComponent[] }) {
+  const { t, tx } = useTranslation();
   const coverage = computeCredentialCoverage(components);
   if (coverage.total === 0) return null;
 
@@ -17,7 +19,7 @@ export function CredentialCoverageBar({ components }: { components: BuilderCompo
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
       <span className={`text-sm font-medium ${textColor} shrink-0`}>
-        {coverage.matched}/{coverage.total} credentials
+        {tx(t.agents.credential_coverage, { matched: coverage.matched, total: coverage.total })}
       </span>
     </div>
   );

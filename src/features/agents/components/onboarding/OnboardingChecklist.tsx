@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle2, Circle, ChevronDown, ChevronRight, X, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useOnboardingChecklist } from './useOnboardingChecklist';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Progress Ring (SVG) ----------------------------------------------
 
@@ -77,6 +78,7 @@ function setDismissed(ids: Set<string>) {
 }
 
 export function OnboardingBanner({ personaId }: { personaId: string }) {
+  const { t, tx } = useTranslation();
   const checklist = useOnboardingChecklist(personaId);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const [dismissed, setDismissedState] = useState(() => getDismissed().has(personaId));
@@ -104,11 +106,11 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-violet-400" />
             <span className="text-sm font-semibold text-foreground/90">
-              Setup {checklist.score}% complete
+              {tx(t.agents.onboarding.setup_complete, { score: checklist.score })}
             </span>
           </div>
           <span className="text-sm text-muted-foreground/50">
-            {checklist.completed}/{checklist.total} steps done
+            {tx(t.agents.onboarding.steps_done, { completed: checklist.completed, total: checklist.total })}
           </span>
         </div>
         <button
@@ -120,7 +122,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
         <button
           onClick={handleDismiss}
           className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/40 transition-colors"
-          title="Dismiss checklist"
+          title={t.agents.onboarding.dismiss_checklist}
         >
           <X className="w-3.5 h-3.5" />
         </button>

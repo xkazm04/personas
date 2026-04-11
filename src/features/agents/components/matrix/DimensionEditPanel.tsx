@@ -19,6 +19,7 @@ import { BaseModal } from "@/lib/ui/BaseModal";
 import { ThemedConnectorIcon } from "@/features/shared/components/display/ConnectorMeta";
 import { CompositeHealthDot } from "@/features/vault/sub_credentials/components/card/badges/CompositeHealthDot";
 import type { CredentialMetadata, ConnectorDefinition } from "@/lib/types/types";
+import { useTranslation } from '@/i18n/useTranslation';
 import { healthFromMetadata, getConnectorStatus, checkConnectorsHealth } from './dimensionEditHelpers';
 
 // Re-export for external consumers
@@ -36,7 +37,7 @@ interface SimpleListEditorProps {
   readOnly?: boolean;
 }
 
-function SimpleListEditor({ items, onItemsChange, placeholder = "Add item...", readOnly }: SimpleListEditorProps) {
+function SimpleListEditor({ items, onItemsChange, placeholder, readOnly }: SimpleListEditorProps) {
   const [newItem, setNewItem] = useState("");
 
   const handleAdd = () => {
@@ -158,10 +159,12 @@ function CredentialPickerCard({
 // ---------------------------------------------------------------------------
 
 function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
+
   connectorName: string;
   onSelect: (newServiceType: string) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const credentials = useVaultStore((s) => s.credentials) ?? [];
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions) ?? [];
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -191,9 +194,9 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="min-w-0">
             <h2 id="dimension-swap-credential-title" className="text-sm font-semibold text-foreground/90 truncate">
-              Replace: {connectorName}
+              {tx(t.agents.dimension_edit.replace_connector, { name: connectorName })}
             </h2>
-            <p className="text-[11px] text-muted-foreground/60 mt-0.5">Pick one of your connected credentials</p>
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
           </div>
           <button
             type="button"
@@ -209,15 +212,15 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
           {connectedCredentials.length === 0 ? (
             <div className="text-center py-10">
               <Key className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-foreground">No connected credentials yet</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">Add credentials in the Keys module first.</p>
+              <p className="text-sm text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
+              <p className="text-[11px] text-muted-foreground/60 mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
               <button
                 type="button"
                 onClick={() => { setSidebarSection('credentials'); onClose(); }}
                 className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
-                Open Keys
+                {t.agents.dimension_edit.open_keys}
               </button>
             </div>
           ) : (
@@ -256,6 +259,7 @@ function ConnectorCards({ connectors, onSwap }: {
   connectors: ConnectorCardData[];
   onSwap?: (oldName: string, newName: string) => void;
 }) {
+  const { t } = useTranslation();
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
   const credentials = useVaultStore((s) => s.credentials) ?? [];
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -269,7 +273,7 @@ function ConnectorCards({ connectors, onSwap }: {
       {!allHealthy && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/8 border border-amber-500/15 text-[10px] text-amber-400/80">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-          Some connectors need healthy credentials before this dimension can be finalized
+          {t.agents.dimension_edit.credential_warning}
         </div>
       )}
 
@@ -299,7 +303,7 @@ function ConnectorCards({ connectors, onSwap }: {
                 onClick={() => setSwapTarget(c.name)}
               >
                 <ArrowLeftRight className="w-3 h-3" />
-                Replace
+                {t.agents.dimension_edit.replace}
               </button>
             </div>
 
@@ -313,9 +317,9 @@ function ConnectorCards({ connectors, onSwap }: {
                 }`}>
                   <Check className="w-2.5 h-2.5" />
                   {status.credName}
-                  {status.healthy === true && " — healthy"}
-                  {status.healthy === false && " — check failed"}
-                  {status.healthy === null && " — not tested"}
+                  {status.healthy === true && ` \u2014 ${t.agents.dimension_edit.healthy}`}
+                  {status.healthy === false && ` \u2014 ${t.agents.dimension_edit.check_failed}`}
+                  {status.healthy === null && ` \u2014 ${t.agents.dimension_edit.not_tested}`}
                 </span>
               ) : (
                 <button
@@ -324,7 +328,7 @@ function ConnectorCards({ connectors, onSwap }: {
                   onClick={() => setSidebarSection("credentials")}
                 >
                   <KeyRound className="w-2.5 h-2.5" />
-                  <span>Add credential in Keys</span>
+                  <span>{t.agents.dimension_edit.add_credential_in_keys}</span>
                   <ExternalLink className="w-2 h-2" />
                 </button>
               )}
@@ -375,25 +379,26 @@ function TriggerCards({ triggers, onConfigChange }: {
   triggers: TriggerCardData[];
   onConfigChange?: (index: number, config: Record<string, string>) => void;
 }) {
+  const { t } = useTranslation();
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
   return (
     <div className="space-y-1.5 w-full">
-      {triggers.map((t, i) => {
-        const Icon = TRIGGER_ICONS[t.trigger_type] ?? Activity;
-        const colorClass = TRIGGER_COLORS[t.trigger_type] ?? "text-foreground/50 bg-secondary/20 border-secondary/30";
+      {triggers.map((tr, i) => {
+        const Icon = TRIGGER_ICONS[tr.trigger_type] ?? Activity;
+        const colorClass = TRIGGER_COLORS[tr.trigger_type] ?? "text-foreground/50 bg-secondary/20 border-secondary/30";
         const isEditing = editingIdx === i;
-        const hasCron = t.config?.cron;
-        const hasInterval = t.config?.interval;
+        const hasCron = tr.config?.cron;
+        const hasInterval = tr.config?.interval;
 
         return (
           <div key={i} className={`rounded-lg border p-2 ${colorClass}`}>
             <div className="flex items-center gap-2">
               <Icon className="w-3.5 h-3.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-[12px] font-medium capitalize">{t.trigger_type}</span>
-                {t.description && (
-                  <p className="text-[10px] opacity-70 truncate">{t.description}</p>
+                <span className="text-[12px] font-medium capitalize">{tr.trigger_type}</span>
+                {tr.description && (
+                  <p className="text-[10px] opacity-70 truncate">{tr.description}</p>
                 )}
               </div>
               {(hasCron || hasInterval) && onConfigChange && (
@@ -402,14 +407,14 @@ function TriggerCards({ triggers, onConfigChange }: {
                   className="text-[10px] opacity-50 hover:opacity-100 transition-opacity"
                   onClick={() => setEditingIdx(isEditing ? null : i)}
                 >
-                  {isEditing ? "Done" : "Edit"}
+                  {isEditing ? t.agents.dimension_edit.done : t.common.edit}
                 </button>
               )}
             </div>
 
             {/* Config summary */}
             {hasCron && !isEditing && (
-              <p className="mt-1 pl-[22px] text-[10px] opacity-60 font-mono">{t.config!.cron}</p>
+              <p className="mt-1 pl-[22px] text-[10px] opacity-60 font-mono">{tr.config!.cron}</p>
             )}
 
             {/* Inline config editor */}
@@ -417,23 +422,23 @@ function TriggerCards({ triggers, onConfigChange }: {
               <div className="mt-1.5 pl-[22px] space-y-1">
                 {hasCron && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] opacity-50 w-12">Cron:</span>
+                    <span className="text-[10px] opacity-50 w-12">{t.agents.dimension_edit.cron_label}</span>
                     <input
                       type="text"
-                      defaultValue={t.config!.cron}
+                      defaultValue={tr.config!.cron}
                       className="flex-1 px-1.5 py-0.5 rounded border border-current/20 bg-transparent text-[10px] font-mono focus:outline-none"
-                      onBlur={(e) => onConfigChange?.(i, { ...t.config, cron: e.target.value })}
+                      onBlur={(e) => onConfigChange?.(i, { ...tr.config, cron: e.target.value })}
                     />
                   </div>
                 )}
                 {hasInterval && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] opacity-50 w-12">Every:</span>
+                    <span className="text-[10px] opacity-50 w-12">{t.agents.dimension_edit.every_label}</span>
                     <input
                       type="text"
-                      defaultValue={t.config!.interval}
+                      defaultValue={tr.config!.interval}
                       className="flex-1 px-1.5 py-0.5 rounded border border-current/20 bg-transparent text-[10px] focus:outline-none"
-                      onBlur={(e) => onConfigChange?.(i, { ...t.config, interval: e.target.value })}
+                      onBlur={(e) => onConfigChange?.(i, { ...tr.config, interval: e.target.value })}
                     />
                   </div>
                 )}
@@ -454,6 +459,7 @@ function ReviewToggle({ items, onItemsChange }: {
   items: string[];
   onItemsChange: (items: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const hasApproval = items.some(
     (item) => item.toLowerCase().includes("required") && !item.toLowerCase().includes("not required"),
   );
@@ -481,9 +487,9 @@ function ReviewToggle({ items, onItemsChange }: {
         }`}
       >
         <span className={`w-2.5 h-2.5 rounded-full ${hasApproval ? "bg-rose-400" : "bg-emerald-400"}`} />
-        {hasApproval ? "Approval Required" : "Fully Automated"}
+        {hasApproval ? t.agents.dimension_edit.approval_required : t.agents.dimension_edit.fully_automated}
       </button>
-      <SimpleListEditor cellKey="human-review" items={items} onItemsChange={onItemsChange} placeholder="Add review rule..." />
+      <SimpleListEditor cellKey="human-review" items={items} onItemsChange={onItemsChange} placeholder={t.agents.dimension_edit.add_review_rule} />
     </div>
   );
 }
@@ -498,6 +504,7 @@ interface DimensionEditPanelProps {
 }
 
 export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps) {
+  const { t } = useTranslation();
   const cellData = useAgentStore((s) => s.buildCellData[cellKey]);
   const items = cellData?.items ?? [];
   const raw = cellData?.raw;
@@ -519,7 +526,7 @@ export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps
       : [];
 
     if (connectors.length === 0) {
-      return <SimpleListEditor cellKey={cellKey} items={items} onItemsChange={updateItems} placeholder="Add connector..." />;
+      return <SimpleListEditor cellKey={cellKey} items={items} onItemsChange={updateItems} placeholder={t.agents.dimension_edit.add_connector} />;
     }
 
     return (
@@ -558,7 +565,7 @@ export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps
       : [];
 
     if (triggers.length === 0) {
-      return <SimpleListEditor cellKey={cellKey} items={items} onItemsChange={updateItems} placeholder="Add trigger..." />;
+      return <SimpleListEditor cellKey={cellKey} items={items} onItemsChange={updateItems} placeholder={t.agents.dimension_edit.add_trigger} />;
     }
 
     return (
@@ -593,10 +600,10 @@ export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps
 
   // Default: simple list editor (tasks, messages, memory, errors)
   const placeholders: Record<string, string> = {
-    "use-cases": "Add task...",
-    messages: "Add notification channel...",
-    memory: "Add memory item...",
-    "error-handling": "Add error strategy...",
+    "use-cases": t.agents.dimension_edit.add_task,
+    messages: t.agents.dimension_edit.add_channel,
+    memory: t.agents.dimension_edit.add_memory,
+    "error-handling": t.agents.dimension_edit.add_error_strategy,
   };
 
   return (
@@ -604,7 +611,7 @@ export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps
       cellKey={cellKey}
       items={items}
       onItemsChange={updateItems}
-      placeholder={placeholders[cellKey] ?? "Add item..."}
+      placeholder={placeholders[cellKey] ?? t.agents.dimension_edit.add_item}
     />
   );
 }

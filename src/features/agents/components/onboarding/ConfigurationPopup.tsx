@@ -3,6 +3,7 @@ import { Key } from 'lucide-react';
 import { getAppSetting, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("configuration-popup");
 
@@ -50,6 +51,7 @@ export function ConfigurationPopup({
   onClose,
   onSaved,
 }: ConfigurationPopupProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((f) => [f.key, '']))
   );
@@ -127,7 +129,7 @@ export function ConfigurationPopup({
         <div className="px-4 py-4 space-y-3">
           {loadError && (
             <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-              Could not load saved values — you may need to re-enter them.
+              {t.agents.config_popup.load_error}
             </p>
           )}
           {fields.map((field) => (
@@ -161,21 +163,21 @@ export function ConfigurationPopup({
               onClick={onClose}
               className="px-3 py-1.5 text-sm font-medium rounded-xl text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
               className={`px-3 py-1.5 text-sm font-medium rounded-xl ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              {saving ? 'Saving\u2026' : saveLabel}
+              {saving ? t.common.saving : saveLabel}
             </button>
           </div>
           {!hasAnyValue && !saving && loaded && (
             <p
               className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5 text-right"
             >
-              Fill in at least one field to save
+              {t.agents.config_popup.fill_hint}
             </p>
           )}
         </div>

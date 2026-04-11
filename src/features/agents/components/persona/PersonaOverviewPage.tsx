@@ -17,10 +17,12 @@ import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
 import { useIsMobile } from './PersonaOverviewResponsive';
 import type { Persona } from '@/lib/bindings/Persona';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DRAFT_PROMPT = 'You are a helpful AI assistant.';
 
 export default function PersonaOverviewPage() {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
@@ -117,7 +119,7 @@ export default function PersonaOverviewPage() {
       <ContentHeader
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="All Personas"
+        title={t.agents.persona_list.all_personas}
         subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} persona${personas.length !== 1 ? 's' : ''}`}
         actions={
           <div className="flex items-center gap-3 flex-wrap justify-end">
@@ -133,7 +135,7 @@ export default function PersonaOverviewPage() {
                 icon={<Trash2 className="w-3.5 h-3.5" />}
                 onClick={handleDeleteDrafts}
               >
-                Delete Drafts ({draftIds.length})
+                {tx(t.agents.persona_list.delete_drafts_btn, { count: draftIds.length })}
               </Button>
             )}
             <ViewPresetBar currentConfig={view} onApplyConfig={setView} />

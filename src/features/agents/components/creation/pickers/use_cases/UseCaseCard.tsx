@@ -1,5 +1,6 @@
 import { Trash2, GripVertical } from 'lucide-react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BuilderUseCase } from '../../steps/builder/types';
 import { TriggerPopover } from '../triggers/TriggerPopover';
 
@@ -20,6 +21,7 @@ export function UseCaseCardContent({
   dragHandleProps,
   isDragging,
 }: UseCaseCardContentProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={`border border-primary/20 rounded-xl bg-secondary/20 ${
@@ -40,7 +42,7 @@ export function UseCaseCardContent({
           type="text"
           value={useCase.title}
           onChange={(e) => onUpdate({ title: e.target.value })}
-          placeholder="Use case title — e.g. Handle refund requests, Summarize daily tickets"
+          placeholder={t.agents.use_case.title_placeholder}
           className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder-muted-foreground/40 focus-visible:outline-none"
         />
         <button
@@ -63,7 +65,7 @@ export function UseCaseCardContent({
         <textarea
           value={useCase.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
-          placeholder="Describe the steps — e.g. When a refund request arrives, verify the order, check policy, and send approval or denial"
+          placeholder={t.agents.use_case.description_placeholder}
           rows={1}
           className="flex-1 min-w-0 px-2 py-1.5 bg-secondary/30 border border-primary/10 rounded-lg text-sm text-foreground placeholder-muted-foreground/40 focus-ring resize-none"
         />

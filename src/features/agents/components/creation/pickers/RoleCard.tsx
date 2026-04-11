@@ -1,5 +1,6 @@
 import { Plus, X, Key, Table2 } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 import type { BuilderComponent, ComponentRole } from '../steps/builder/types';
@@ -41,6 +42,7 @@ export function RoleCard({
   onRemove: (id: string) => void;
   onOpenTableSelector?: (componentId: string) => void;
 }) {
+  const { t } = useTranslation();
   const credentials = useVaultStore((s) => s.credentials);
   const Icon = roleIcons[role];
 
@@ -80,7 +82,7 @@ export function RoleCard({
                     <Key className="w-3 h-3 text-primary/40 shrink-0" />
                   ) : !BUILTIN_CONNECTORS.has(comp.connectorName) ? (
                     <span className="text-sm font-medium text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded shrink-0">
-                      No credential
+                      {t.agents.role_card.no_credential}
                     </span>
                   ) : null}
                   <button
@@ -119,7 +121,7 @@ export function RoleCard({
                         className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium text-muted-foreground/50 hover:text-amber-400/80 hover:bg-amber-500/8 rounded transition-colors"
                       >
                         <Table2 className="w-2 h-2" />
-                        {comp.watchedTables?.length ? 'edit' : 'select tables'}
+                        {comp.watchedTables?.length ? t.agents.role_card.edit_tables : t.agents.role_card.select_tables}
                       </button>
                     )}
                   </div>
@@ -137,7 +139,7 @@ export function RoleCard({
           className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-sm font-medium text-muted-foreground/65 border border-dashed border-primary/20 rounded-lg hover:bg-background/40 hover:text-foreground/80 transition-colors"
         >
           <Plus className="w-3 h-3" />
-          Assign
+          {t.agents.role_card.assign}
         </button>
       </div>
     </div>

@@ -17,6 +17,7 @@ import { answerBuildQuestion } from "@/api/agents/buildSession";
 import { MatrixCredentialPicker } from "./MatrixCredentialPicker";
 import type { DraftConnector } from "./useMatrixCredentialGap";
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("connectors-cell");
@@ -26,6 +27,7 @@ interface ConnectorsCellContentProps {
 }
 
 export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps) {
+  const { t, tx } = useTranslation();
   const [expandedConnector, setExpandedConnector] = useState<string | null>(null);
   const [swappingConnector, setSwappingConnector] = useState<string | null>(null);
   const buildConnectorLinks = useAgentStore((s) => s.buildConnectorLinks);
@@ -191,7 +193,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
                     setSwappingConnector(isSwapping ? null : connector.name);
                     setExpandedConnector(null);
                   }}
-                  title="Swap to alternative"
+                  title={t.common.swap}
                 >
                   <ArrowLeftRight className="w-3 h-3" />
                 </button>
@@ -204,7 +206,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
                   healthStatus === false ? "text-amber-400/70" :
                   "text-amber-400/70"
                 }`}>
-                  {matchedCred ? matchedCred.name : 'Linked'}
+                  {matchedCred ? matchedCred.name : t.agents.connectors_cell.linked}
                   {healthStatus === false && " ⚠"}
                 </span>
               ) : credentialMissing ? (
@@ -217,7 +219,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
                   }}
                 >
                   <KeyRound className="w-3 h-3" />
-                  <span>Add in Keys</span>
+                  <span>{t.agents.connectors_cell.add_in_keys}</span>
                   <ExternalLink className="w-2.5 h-2.5" />
                 </button>
               ) : hasAnyCreds ? (
@@ -231,7 +233,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
                   }}
                 >
                   <Link2 className="w-3 h-3" />
-                  <span>Link</span>
+                  <span>{t.agents.connectors_cell.link}</span>
                   <ChevronDown
                     className={`w-3 h-3 transition-transform duration-150 ${
                       isExpanded ? "rotate-180" : ""
@@ -244,7 +246,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
             {/* Missing credential warning */}
             {credentialMissing && (
               <p className="text-[10px] text-red-400/50 pl-4 leading-tight">
-                No {connector.name} credential found. Add one in Keys to continue.
+                {tx(t.agents.connectors_cell.no_credential_found, { name: connector.name })}
               </p>
             )}
 
@@ -264,7 +266,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
             {/* Alternative connector picker */}
             {isSwapping && connAlts.length > 0 && (
               <div className="ml-4 mt-1 space-y-0.5">
-                <p className="text-[10px] text-foreground/40 mb-1">Swap to:</p>
+                <p className="text-[10px] text-foreground/40 mb-1">{t.agents.connectors_cell.swap_to}</p>
                 {connAlts.map((alt) => (
                   <button
                     key={alt}
@@ -295,7 +297,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
           className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`w-3 h-3 ${recalculating ? 'animate-spin' : ''}`} />
-          {recalculating ? 'Recalculating...' : 'Recalculate Dimensions'}
+          {recalculating ? t.agents.connectors_cell.recalculating : t.agents.connectors_cell.recalculate_dimensions}
         </button>
       )}
 
@@ -303,7 +305,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
       {recalculating && !hasChanges && (
         <div className="mt-1 flex items-center gap-1.5 text-[10px] text-primary/60">
           <RefreshCw className="w-3 h-3 animate-spin" />
-          <span>Rebuilding with new connector...</span>
+          <span>{t.agents.connectors_cell.rebuilding}</span>
         </div>
       )}
     </div>

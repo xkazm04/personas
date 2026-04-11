@@ -3,6 +3,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import { getTrustTier } from '@/lib/personas/personaThresholds';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* -- Health style map (also exported so filter dropdowns can stay in sync) -- */
 
@@ -46,17 +47,18 @@ export function StatusBadge({
   health?: PersonaHealth;
   isDraft: boolean;
 }) {
+  const { t } = useTranslation();
   if (isDraft) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
-        Draft
+        {t.agents.persona_list.badge_draft}
       </span>
     );
   }
   if (!enabled) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
-        Disabled
+        {t.agents.persona_list.badge_disabled}
       </span>
     );
   }
@@ -75,10 +77,11 @@ export function StatusBadge({
 /* -- Building badge --------------------------------------------------- */
 
 export function BuildingBadge() {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15">
       <LoadingSpinner size="xs" />
-      Building
+      {t.agents.persona_list.badge_building}
     </span>
   );
 }

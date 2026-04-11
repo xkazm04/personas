@@ -5,6 +5,7 @@ import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All',
@@ -52,6 +53,7 @@ interface TemplatePickerStepProps {
 }
 
 export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const filteredTemplates = useMemo(
@@ -71,9 +73,9 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
       className="flex flex-col gap-6 max-w-lg 2xl:max-w-2xl 3xl:max-w-3xl 4xl:max-w-4xl w-full px-6"
     >
       <div>
-        <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>
+        <h2 className="text-lg font-semibold text-foreground/90">{t.agents.template_picker.title}</h2>
         <p className="text-sm text-muted-foreground/90 mt-1">
-          Pick a template to pre-fill your agent, or start from scratch.
+          {t.agents.template_picker.subtitle}
         </p>
       </div>
 
@@ -160,7 +162,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             onClick={onCancel}
             className="px-4 py-2.5 text-sm text-muted-foreground/60 hover:text-muted-foreground transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         ) : (
           <div />
@@ -170,7 +172,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
           className="px-4 py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors flex items-center gap-1.5"
         >
           <PenLine className="w-3.5 h-3.5" />
-          Start from scratch
+          {t.agents.template_picker.start_from_scratch}
         </button>
       </div>
     </motion.div>

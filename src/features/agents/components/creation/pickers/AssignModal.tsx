@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { TabTransition } from '@/features/templates/sub_generated/shared/TabTransition';
 import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ComponentRole } from '../steps/builder/types';
 import { COMPONENT_ROLES } from '../steps/builder/types';
 import { roleIcons, roleColors, roleIconColors } from './selectors/componentPickerConstants';
@@ -23,6 +24,7 @@ export function AssignModal({
   onAssign: (connectorName: string, credentialId: string | null) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
@@ -74,7 +76,7 @@ export function AssignModal({
             </div>
             <div>
               <h3 id="assign-modal-title" className="text-sm font-semibold text-foreground/90">
-                Assign to {roleDef?.label}
+                {tx(t.agents.assign.assign_to, { role: roleDef?.label ?? '' })}
               </h3>
               <p className="text-sm text-muted-foreground/65">{roleDef?.description}</p>
             </div>
@@ -85,8 +87,8 @@ export function AssignModal({
         {/* Tabs */}
         <div className="flex border-b border-primary/10 px-4">
           {([
-            { id: 'credentials' as const, label: `Saved Credentials (${credentials.length})` },
-            { id: 'connectors' as const, label: `All Connectors (${connectorDefinitions.length})` },
+            { id: 'credentials' as const, label: tx(t.agents.assign.saved_credentials, { count: credentials.length }) },
+            { id: 'connectors' as const, label: tx(t.agents.assign.all_connectors, { count: connectorDefinitions.length }) },
           ]).map((t) => (
             <button
               key={t.id}
@@ -116,7 +118,7 @@ export function AssignModal({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === 'credentials' ? 'Search credentials...' : 'Search connectors...'}
+            placeholder={tab === 'credentials' ? t.agents.assign.search_credentials : t.agents.assign.search_connectors}
             autoFocus
             className="w-full pl-7 pr-3 py-2 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
@@ -131,11 +133,11 @@ export function AssignModal({
                   <Key className="w-5 h-5 mx-auto mb-2 text-muted-foreground/50" />
                   <p className="text-sm text-muted-foreground/65">
                     {credentials.length === 0
-                      ? 'No saved credentials yet'
-                      : 'No credentials match your search'}
+                      ? t.agents.assign.no_saved_credentials
+                      : t.agents.assign.no_credentials_match}
                   </p>
                   <p className="text-sm text-muted-foreground/50 mt-1">
-                    Save credentials in the Vault, or use the Connectors tab
+                    {t.agents.assign.vault_hint}
                   </p>
                 </div>
               ) : (
@@ -164,7 +166,7 @@ export function AssignModal({
             ) : (
               groupedConnectors.length === 0 ? (
                 <p className="text-sm text-muted-foreground/60 text-center py-8">
-                  No connectors match your search
+                  {t.agents.assign.no_connectors_match}
                 </p>
               ) : (
                 <div className="space-y-3 pt-1">

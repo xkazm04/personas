@@ -1,5 +1,6 @@
 import { ShieldAlert, UserCheck } from 'lucide-react';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ERROR_STRATEGIES, REVIEW_POLICIES } from '../../steps/builder/types';
 
 interface PolicyPickerProps {
@@ -43,12 +44,13 @@ function RadioCardGroup({
 }
 
 export function PolicyPicker({ errorStrategy, reviewPolicy, onErrorStrategyChange, onReviewPolicyChange }: PolicyPickerProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <SectionHeader
           icon={<ShieldAlert className="w-3.5 h-3.5" />}
-          label="Error Handling"
+          label={t.agents.policy_picker.error_handling}
         />
         <RadioCardGroup
           options={ERROR_STRATEGIES}
@@ -60,7 +62,7 @@ export function PolicyPicker({ errorStrategy, reviewPolicy, onErrorStrategyChang
       <div className="space-y-2">
         <SectionHeader
           icon={<UserCheck className="w-3.5 h-3.5" />}
-          label="Manual Review"
+          label={t.agents.policy_picker.manual_review}
         />
         <RadioCardGroup
           options={REVIEW_POLICIES}

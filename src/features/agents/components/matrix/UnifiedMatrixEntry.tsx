@@ -17,6 +17,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("unified-matrix-entry");
 
@@ -59,6 +60,7 @@ function generateAgentName(intent: string): string {
 // ---------------------------------------------------------------------------
 
 export function UnifiedMatrixEntry() {
+  const { t } = useTranslation();
   const createPersona = useAgentStore((s) => s.createPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
 
@@ -234,7 +236,7 @@ export function UnifiedMatrixEntry() {
         personaId = persona.id;
         setDraftPersonaId(personaId);
       } catch (err) {
-        setLaunchError("Failed to create draft agent.");
+        setLaunchError(t.agents.matrix_entry.failed_to_create);
         logger.error("Failed to create draft persona", { error: err });
         return;
       }
@@ -378,7 +380,7 @@ export function UnifiedMatrixEntry() {
             onClick={() => setLaunchError(null)}
             className="text-red-400/60 hover:text-red-400 text-xs"
           >
-            Dismiss
+            {t.common.dismiss}
           </button>
         </div>
       )}

@@ -5,15 +5,16 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Copy `text` to the clipboard and surface a short-lived success/error toast. */
-async function copyDescriptionToClipboard(text: string) {
+async function copyDescriptionToClipboard(text: string, labels: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
   try {
     await navigator.clipboard.writeText(text);
-    addToast('Description copied to clipboard', 'success');
+    addToast(labels.description_copied, 'success');
   } catch {
-    addToast('Failed to copy description', 'error');
+    addToast(labels.copy_failed, 'error');
   }
 }
 
@@ -85,6 +86,7 @@ export function FavoriteCell({
 /* -- Persona identity cell (icon + name + description tooltip) ------- */
 
 export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: Persona) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3 min-w-0 w-full">
       <div
@@ -110,7 +112,7 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                void copyDescriptionToClipboard(persona.description!);
+                void copyDescriptionToClipboard(persona.description!, t.agents.persona_list);
               }}
               className="text-md text-muted-foreground/50 truncate cursor-copy text-left block max-w-full hover:text-muted-foreground/80 transition-colors"
             >
@@ -134,11 +136,12 @@ export function ConnectorsCell({
   persona: Persona;
   connectorNamesMap: Map<string, string[]>;
 }) {
+  const { t } = useTranslation();
   const connectors = connectorNamesMap.get(persona.id) ?? extractConnectorNames(persona);
 
   if (connectors.length === 0) {
     return (
-      <Tooltip content="No connectors configured">
+      <Tooltip content={t.agents.persona_list.no_connectors_configured}>
         <span className="text-muted-foreground/30">
           <Plug className="w-3.5 h-3.5" />
         </span>

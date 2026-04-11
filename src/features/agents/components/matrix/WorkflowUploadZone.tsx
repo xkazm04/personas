@@ -9,6 +9,7 @@ import { useRef, useState, useCallback, type DragEvent } from "react";
 import { Upload, FileJson, X, Workflow } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { useMatrixWorkflowImport } from "./useMatrixWorkflowImport";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WorkflowUploadZoneProps {
   onWorkflowReady?: () => void;
@@ -36,6 +37,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
   const [pasteMode, setPasteMode] = useState(false);
   const [pasteValue, setPasteValue] = useState("");
 
+  const { t } = useTranslation();
   const { processFile, processContent, importError, clearImportError } = useMatrixWorkflowImport();
 
   const workflowName = useAgentStore((s) => s.buildWorkflowName);
@@ -107,7 +109,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
           </button>
         </div>
         <p className="text-[11px] text-muted-foreground/50 px-1">
-          Press Build to transform this workflow into a persona agent.
+          {t.agents.workflow_upload.build_hint}
         </p>
       </div>
     );
@@ -119,7 +121,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
       <div className="space-y-2">
         <textarea
           className="w-full min-h-[80px] max-h-[120px] rounded-lg border border-primary/15 bg-background/40 px-3 py-2 text-[12px] text-foreground/80 placeholder-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-          placeholder="Paste your workflow JSON here..."
+          placeholder={t.agents.workflow_upload.paste_placeholder}
           value={pasteValue}
           onChange={(e) => setPasteValue(e.target.value)}
           autoFocus
@@ -131,14 +133,14 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
             disabled={!pasteValue.trim()}
             className="px-3 py-1 rounded text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
           >
-            Parse
+            {t.agents.workflow_upload.parse}
           </button>
           <button
             type="button"
             onClick={() => { setPasteMode(false); setPasteValue(""); clearImportError(); }}
             className="px-3 py-1 rounded text-[11px] text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
         {importError && (
@@ -165,10 +167,10 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
         <Upload className="w-5 h-5 text-muted-foreground/40" />
         <div className="text-center">
           <p className="text-[12px] text-foreground/60">
-            Drop a workflow file here
+            {t.agents.workflow_upload.drop_file}
           </p>
           <p className="text-[10px] text-muted-foreground/40 mt-0.5">
-            n8n, Zapier, Make, or GitHub Actions (.json, .yaml)
+            {t.agents.workflow_upload.file_types}
           </p>
         </div>
       </div>
@@ -189,7 +191,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
         className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
       >
         <FileJson className="w-3.5 h-3.5" />
-        Or paste JSON directly
+        {t.agents.workflow_upload.paste_json}
       </button>
       {importError && (
         <p className="text-[11px] text-red-400/80 px-1">{importError}</p>

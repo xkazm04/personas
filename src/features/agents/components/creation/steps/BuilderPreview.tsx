@@ -1,4 +1,5 @@
 import { ListChecks, Plug, Clock, ShieldAlert, UserCheck, FileText } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BuilderState } from './builder/types';
 import { COMPONENT_ROLES } from './builder/types';
 import { generateSummary, computeCredentialCoverage } from './builder/builderReducer';
@@ -23,13 +24,14 @@ function PreviewRow({ icon, label, value, muted }: { icon: React.ReactNode; labe
 }
 
 export function BuilderPreview({ state }: BuilderPreviewProps) {
+  const { t, tx } = useTranslation();
   const summary = generateSummary(state);
   const filledUseCases = state.useCases.filter((uc) => uc.title.trim());
 
   return (
     <div className="sticky top-0 space-y-3">
       <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground/60 px-1">
-        Preview
+        {t.agents.builder_preview.title}
       </p>
 
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-3">
@@ -37,14 +39,14 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
         {summary ? (
           <p className="text-sm font-medium text-foreground/70">{summary}</p>
         ) : (
-          <p className="text-sm text-muted-foreground/50 italic">Start building to see a preview</p>
+          <p className="text-sm text-muted-foreground/50 italic">{t.agents.builder_preview.start_building}</p>
         )}
 
         {/* Intent */}
         {state.intent.trim() && (
           <PreviewRow
             icon={<FileText className="w-3 h-3" />}
-            label="Intent"
+            label={t.agents.builder_preview.intent}
             value={<p className="line-clamp-2">{state.intent.trim()}</p>}
           />
         )}
@@ -52,7 +54,7 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
         {/* Use cases */}
         <PreviewRow
           icon={<ListChecks className="w-3 h-3" />}
-          label="Use Cases"
+          label={t.agents.builder_preview.use_cases}
           value={
             filledUseCases.length > 0 ? (
               <ul className="space-y-0.5">
@@ -61,7 +63,7 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
                 ))}
               </ul>
             ) : (
-              'None yet'
+              t.agents.builder_preview.none_yet
             )
           }
           muted={filledUseCases.length === 0}
@@ -70,7 +72,7 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
         {/* Components by role */}
         <PreviewRow
           icon={<Plug className="w-3 h-3" />}
-          label="Components"
+          label={t.agents.builder_preview.components}
           value={
             state.components.length > 0 ? (
               <div className="space-y-1 mt-0.5">
@@ -96,13 +98,13 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
                   const color = cov.status === 'full' ? 'text-emerald-400' : cov.status === 'partial' ? 'text-amber-400' : 'text-muted-foreground/55';
                   return (
                     <p className={`text-sm mt-1 ${color}`}>
-                      Credentials: {cov.matched}/{cov.total} covered
+                      {tx(t.agents.builder_preview.credentials_covered, { matched: cov.matched, total: cov.total })}
                     </p>
                   );
                 })()}
               </div>
             ) : (
-              'None'
+              t.agents.builder_preview.none
             )
           }
           muted={state.components.length === 0}
@@ -111,8 +113,8 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
         {/* Trigger */}
         <PreviewRow
           icon={<Clock className="w-3 h-3" />}
-          label="Schedule"
-          value={state.globalTrigger?.label ?? 'Manual only'}
+          label={t.agents.builder_preview.schedule}
+          value={state.globalTrigger?.label ?? t.agents.builder_preview.manual_only}
           muted={!state.globalTrigger}
         />
 
@@ -122,14 +124,14 @@ export function BuilderPreview({ state }: BuilderPreviewProps) {
             {state.errorStrategy !== 'halt' && (
               <PreviewRow
                 icon={<ShieldAlert className="w-3 h-3" />}
-                label="Errors"
+                label={t.agents.builder_preview.errors}
                 value={state.errorStrategy}
               />
             )}
             {state.reviewPolicy !== 'never' && (
               <PreviewRow
                 icon={<UserCheck className="w-3 h-3" />}
-                label="Review"
+                label={t.agents.builder_preview.review}
                 value={state.reviewPolicy}
               />
             )}

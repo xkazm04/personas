@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Clock, Plug, ChevronUp, ChevronDown, Zap } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useHealthyConnectors } from './useHealthyConnectors';
 import { SchedulePanel } from './SchedulePanel';
 import { ServicesPanel } from './ServicesPanel';
@@ -19,6 +20,7 @@ interface DimensionQuickConfigProps {
 }
 
 export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
+  const { t } = useTranslation();
   const healthyConnectors = useHealthyConnectors();
   const [collapsed, setCollapsed] = useState(false);
   const [openPanel, setOpenPanel] = useState<'conditions' | 'services' | null>(null);
@@ -98,7 +100,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
       <div className="rounded-xl border border-primary/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5">
           <Zap className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
-          <span className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Quick Setup</span>
+          <span className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.title}</span>
 
           {!collapsed && (
             <div className="flex items-center gap-2 ml-2">
@@ -112,7 +114,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
                 }`}
               >
                 <Clock className="w-3 h-3" />
-                Start Conditions
+                {t.agents.quick_config.start_conditions}
                 {(frequency || selectedEvents.length > 0) && (
                   <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-primary/20 text-primary leading-none">
                     {(frequency ? 1 : 0) + selectedEvents.length}
@@ -130,7 +132,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
                 }`}
               >
                 <Plug className="w-3 h-3" />
-                Apps & Services
+                {t.agents.quick_config.apps_and_services}
               </button>
             </div>
           )}
@@ -155,7 +157,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
           <div ref={conditionsRef} className="border-t border-primary/8 px-4 py-4">
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">Time Schedule</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">{t.agents.quick_config.time_schedule}</span>
                 <SchedulePanel
                   frequency={frequency} setFrequency={setFrequency}
                   days={days} setDays={setDays}
@@ -165,7 +167,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               </div>
               <div className="w-px bg-primary/8 self-stretch" />
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">Event Triggers</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">{t.agents.quick_config.event_triggers}</span>
                 <EventsPanel
                   selectedEvents={selectedEvents}
                   onToggleEvent={toggleEvent}

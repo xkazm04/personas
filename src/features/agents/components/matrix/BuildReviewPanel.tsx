@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { useMatrixCredentialGap } from "./useMatrixCredentialGap";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface BuildReviewPanelProps {
   onStartTest?: () => void;
@@ -25,6 +26,7 @@ export function BuildReviewPanel({
   testPassed,
   isTesting,
 }: BuildReviewPanelProps) {
+  const { t } = useTranslation();
   const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
   const cellStates = useAgentStore((s) => s.buildCellStates);
   const cellData = useAgentStore((s) => s.buildCellData);
@@ -40,17 +42,17 @@ export function BuildReviewPanel({
     return { tools, triggers, connectors };
   }, [buildDraft]);
 
-  const agentName = (buildDraft?.name as string) ?? "Draft Agent";
+  const agentName = (buildDraft?.name as string) ?? t.common.draft;
   const description = (buildDraft?.description as string) ?? "";
   const resolvedCount = Object.values(cellStates).filter((s) => s === "resolved" || s === "updated").length;
   const allResolved = resolvedCount >= 8;
   const hasPrompt = !!(buildDraft?.structured_prompt || buildDraft?.system_prompt);
 
   const checks = [
-    { label: "Agent name", ok: agentName !== "Draft Agent" && agentName.length > 0 },
-    { label: "All 8 dimensions", ok: allResolved },
-    { label: "Prompt generated", ok: hasPrompt },
-    { label: "Connectors ready", ok: !hasCriticalGaps },
+    { label: t.agents.build_review.agent_name, ok: agentName !== "Draft Agent" && agentName.length > 0 },
+    { label: t.agents.build_review.all_dimensions, ok: allResolved },
+    { label: t.agents.build_review.prompt_generated, ok: hasPrompt },
+    { label: t.agents.build_review.connectors_ready, ok: !hasCriticalGaps },
   ];
 
   const allReady = checks.every((c) => c.ok);
@@ -67,9 +69,9 @@ export function BuildReviewPanel({
 
       {/* Entity counts */}
       <div className="flex items-center justify-center gap-3 flex-wrap">
-        <CountBadge icon={Wrench} count={counts.tools} label="Tools" color="text-blue-400 bg-blue-500/10" />
-        <CountBadge icon={Zap} count={counts.triggers} label="Triggers" color="text-amber-400 bg-amber-500/10" />
-        <CountBadge icon={Link2} count={counts.connectors} label="Connectors" color="text-emerald-400 bg-emerald-500/10" />
+        <CountBadge icon={Wrench} count={counts.tools} label={t.common.tools} color="text-blue-400 bg-blue-500/10" />
+        <CountBadge icon={Zap} count={counts.triggers} label={t.common.triggers} color="text-amber-400 bg-amber-500/10" />
+        <CountBadge icon={Link2} count={counts.connectors} label={t.common.connectors} color="text-emerald-400 bg-emerald-500/10" />
       </div>
 
       {/* Readiness checklist */}
@@ -88,10 +90,10 @@ export function BuildReviewPanel({
 
       {/* Dimension summaries (compact) */}
       <div className="grid grid-cols-2 gap-1">
-        <DimensionChip icon={Shield} label="Review" data={cellData["human-review"]} />
+        <DimensionChip icon={Shield} label={t.agents.builder_preview.review} data={cellData["human-review"]} />
         <DimensionChip icon={Brain} label="Memory" data={cellData["memory"]} />
         <DimensionChip icon={MessageSquare} label="Messages" data={cellData["messages"]} />
-        <DimensionChip icon={AlertOctagon} label="Errors" data={cellData["error-handling"]} />
+        <DimensionChip icon={AlertOctagon} label={t.agents.builder_preview.errors} data={cellData["error-handling"]} />
         <DimensionChip icon={Calendar} label="Triggers" data={cellData["triggers"]} />
       </div>
 
@@ -104,7 +106,7 @@ export function BuildReviewPanel({
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Promote Agent
+            {t.agents.build_review.promote_agent}
           </button>
         ) : (
           <button
@@ -113,7 +115,7 @@ export function BuildReviewPanel({
             disabled={!allReady || isTesting}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 disabled:opacity-40 transition-colors"
           >
-            {isTesting ? "Testing..." : "Test Agent"}
+            {isTesting ? t.agents.build_review.testing : t.agents.build_review.test_agent}
           </button>
         )}
       </div>
