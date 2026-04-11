@@ -5,7 +5,7 @@ import type { SystemStore } from "../../storeTypes";
 
 export type TourStepId = string;
 
-export type TourId = "getting-started" | "execution-observability" | "orchestration-events";
+export type TourId = "getting-started" | "getting-started-simple" | "execution-observability" | "orchestration-events";
 
 export interface TourSubStepDef {
   id: string;
@@ -202,6 +202,46 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
   },
 ];
 
+/** Simplified tour for Simple (starter) mode — fewer steps, simpler language. */
+const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
+  {
+    id: "appearance-setup",
+    title: "Pick Your Look",
+    description: "Choose a color theme and text size that feels comfortable. Changes apply instantly — try a few!",
+    hint: "Change any setting below to continue.",
+    nav: { sidebarSection: "settings", subTab: "appearance", subTabSetter: "setSettingsTab" },
+    completeOn: "tour:appearance-changed",
+    subSteps: [],
+    highlightTestId: "settings-appearance-panel",
+  },
+  {
+    id: "credentials-intro",
+    title: "Connect a Service",
+    description: "Your agents need access to external services to be useful. Add a connection — like a Slack workspace, email account, or API key.",
+    hint: "Click \"Add new\" and follow the steps.",
+    nav: { sidebarSection: "credentials" },
+    completeOn: "tour:credentials-explored",
+    subSteps: [
+      { id: "browse-categories", label: "Browse services", hint: "Scroll through the available services.", highlightTestId: "credential-manager" },
+      { id: "view-connector", label: "Pick one", hint: "Click any service to see how to connect it." },
+    ],
+  },
+  {
+    id: "persona-creation",
+    title: "Create Your First Agent",
+    description: "Describe what you want your agent to do in plain language. The system will set everything up for you.",
+    hint: "Type a simple description like \"Summarize my daily emails\" or \"Monitor Slack for urgent messages\".",
+    nav: { sidebarSection: "personas" },
+    completeOn: "tour:persona-promoted",
+    panelWidth: 320,
+    subSteps: [
+      { id: "enter-intent", label: "Describe it", hint: "What should your agent do?", highlightTestId: "agent-intent-input" },
+      { id: "review-draft", label: "Review", hint: "Check the agent looks right." },
+      { id: "test-promote", label: "Try it out", hint: "Run a test to see it in action.", highlightTestId: "agent-test-btn" },
+    ],
+  },
+];
+
 export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "getting-started",
@@ -210,6 +250,14 @@ export const TOUR_REGISTRY: TourDef[] = [
     icon: "Compass",
     color: "violet",
     steps: GETTING_STARTED_STEPS,
+  },
+  {
+    id: "getting-started-simple",
+    title: "Quick Setup",
+    description: "Pick your look, connect a service, and create your first agent.",
+    icon: "Sparkles",
+    color: "violet",
+    steps: GETTING_STARTED_SIMPLE_STEPS,
   },
   {
     id: "execution-observability",
@@ -329,6 +377,7 @@ export const createTourSlice: StateCreator<
   // Build completion map from persisted state
   const completionMap: Record<TourId, boolean> = {
     "getting-started": persisted?.tours?.["getting-started"]?.completed ?? false,
+    "getting-started-simple": persisted?.tours?.["getting-started-simple"]?.completed ?? false,
     "execution-observability": persisted?.tours?.["execution-observability"]?.completed ?? false,
     "orchestration-events": persisted?.tours?.["orchestration-events"]?.completed ?? false,
   };

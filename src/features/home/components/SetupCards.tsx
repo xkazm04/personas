@@ -5,6 +5,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 /* ------------------------------------------------------------------ */
 /*  Role definitions                                                    */
@@ -96,14 +97,16 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
 
 function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (role: string) => void }) {
   const isDark = useIsDarkTheme();
+  const { isStarter: isSimple } = useTier();
+  const visibleRoles = isSimple ? ROLES.filter((r) => r.id === 'office-rat') : ROLES;
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading-lg text-foreground">Choose your role</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">We'll tailor the experience to match how you work.</p>
+        <h3 className="typo-heading-lg text-foreground">{isSimple ? 'Your profile' : 'Choose your role'}</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">{isSimple ? 'We\'ve set up the app for everyday office use.' : 'We\'ll tailor the experience to match how you work.'}</p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        {ROLES.map((role) => {
+      <div className={`grid gap-4 ${isSimple ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-3'}`}>
+        {visibleRoles.map((role) => {
           const isSelected = selected === role.label;
           return (
             <motion.button

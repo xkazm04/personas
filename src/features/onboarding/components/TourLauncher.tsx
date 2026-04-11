@@ -1,6 +1,7 @@
 import { Map } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
-import { TOUR_STEPS } from "@/stores/slices/system/tourSlice";
+import { getActiveTourSteps, type TourId } from "@/stores/slices/system/tourSlice";
+import { useTier } from "@/hooks/utility/interaction/useTier";
 
 function TourProgressArc({ completed, total }: { completed: number; total: number }) {
   const radius = 7;
@@ -41,12 +42,15 @@ export default function TourLauncher() {
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const { isStarter } = useTier();
 
   // Hide when tour is active (it's running) or fully completed
   if (tourActive || tourCompleted) return null;
 
+  const tourId: TourId = isStarter ? "getting-started-simple" : "getting-started";
+  const steps = getActiveTourSteps(tourId);
   const completedCount = Object.values(tourStepCompleted).filter(Boolean).length;
-  const totalSteps = TOUR_STEPS.length;
+  const totalSteps = steps.length;
   const hasProgress = completedCount > 0;
 
   const handleClick = () => {
@@ -55,7 +59,7 @@ export default function TourLauncher() {
       useSystemStore.setState({ tourDismissed: false });
     }
     setTimeout(() => {
-      useSystemStore.getState().startTour();
+      useSystemStore.getState().startTour(tourId);
     }, 50);
   };
 

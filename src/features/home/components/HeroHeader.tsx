@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 const BG_OPTIONS = [
   '/illustrations/bg-v1-command-room.png',
@@ -13,14 +14,20 @@ interface HeroHeaderProps {
 }
 
 export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
-  const bgSrc = useMemo(() => BG_OPTIONS[Math.floor(Math.random() * BG_OPTIONS.length)]!, []);
   const isDark = useIsDarkTheme();
+  const { isStarter } = useTier();
+  const bgSrc = useMemo(() => {
+    if (isStarter) {
+      return isDark ? '/illustrations/bg-simple-dark.png' : '/illustrations/bg-simple-light.png';
+    }
+    return BG_OPTIONS[Math.floor(Math.random() * BG_OPTIONS.length)]!;
+  }, [isStarter, isDark]);
 
   return (
     <div className="relative w-full">
-      {isDark && (
+      {(isDark || isStarter) && (
         <div className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl">
-          <img src={bgSrc} alt="" loading="eager" decoding="async" className="w-full h-full object-cover" />
+          <img src={bgSrc} alt="" loading="eager" decoding="async" className={`w-full h-full object-cover ${!isDark ? 'opacity-60' : ''}`} />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         </div>
       )}
