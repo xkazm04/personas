@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Send, ArrowDown, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
-import { OpsSidebar } from './OpsSidebar';
+import { OpsSidebar, type OpsBadges } from './OpsSidebar';
 import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
 
@@ -30,6 +30,17 @@ export function ChatTab() {
   const personaId = selectedPersona?.id ?? '';
   const { textLines: streamTextLines } = useExecutionStream(personaId);
   const { pendingExperiments } = useExperimentBridge();
+  const healthDigest = useAgentStore((s) => s.healthDigest);
+
+  // Compute badges for the ops sidebar icon rail
+  const opsBadges = useMemo((): OpsBadges => {
+    const personaHealth = healthDigest?.personas.find((p) => p.personaId === personaId);
+    const unresolvedIssues = personaHealth?.result.issues?.filter((i) => !i.resolved) ?? [];
+    return {
+      run: { active: isExecuting },
+      health: { issueCount: unresolvedIssues.length },
+    };
+  }, [isExecuting, healthDigest, personaId]);
 
   // Restore session on mount
   useEffect(() => {
@@ -93,7 +104,7 @@ export function ChatTab() {
 
   return (
     <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-xl border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
-      <OpsSidebar personaId={personaId} onNewSession={handleNewSession} />
+      <OpsSidebar personaId={personaId} onNewSession={handleNewSession} badges={opsBadges} />
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Messages area */}

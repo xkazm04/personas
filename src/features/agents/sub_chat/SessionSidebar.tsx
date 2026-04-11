@@ -19,7 +19,7 @@ export function SessionSidebar({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   return (
-    <div className="w-[28rem] border-r border-primary/[0.08] flex flex-col h-full bg-secondary/[0.02]" data-testid="chat-sidebar">
+    <div className="w-full flex flex-col h-full bg-secondary/[0.02]" data-testid="chat-sidebar">
       {/* New Chat button */}
       <div className="p-3 border-b border-primary/[0.06]">
         <button

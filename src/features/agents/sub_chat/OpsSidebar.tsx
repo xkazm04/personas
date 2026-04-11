@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { MessageSquare, Play, FlaskConical, Activity, ShieldCheck } from 'lucide-react';
 import { SessionSidebar } from './SessionSidebar';
 
@@ -42,6 +42,8 @@ interface OpsSidebarProps {
   badges?: OpsBadges;
 }
 
+const PANEL_ORDER: OpsPanel[] = ['sessions', 'run', 'lab', 'health', 'assertions'];
+
 export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps) {
   const [activePanel, setActivePanel] = useState<OpsPanel>('sessions');
 
@@ -49,8 +51,22 @@ export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps)
     setActivePanel((prev) => (prev === id && id !== 'sessions' ? 'sessions' : id));
   }, []);
 
+  // Keyboard shortcuts: Ctrl+1-5 switch panels
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= PANEL_ORDER.length) {
+        e.preventDefault();
+        setActivePanel(PANEL_ORDER[num - 1]!);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   return (
-    <div className="flex h-full" data-testid="ops-sidebar">
+    <div className="flex h-full w-[28rem] border-r border-primary/[0.08]" data-testid="ops-sidebar">
       {/* Icon rail */}
       <div className="w-11 flex-shrink-0 border-r border-primary/[0.06] flex flex-col items-center py-2 gap-1 bg-secondary/[0.03]">
         {PANELS.map((panel) => {
