@@ -1,3 +1,4 @@
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import {
   Clock,
   Webhook,
@@ -68,7 +69,5 @@ export const timeAgo = (iso: string | null) => formatRelativeTime(iso, 'Never');
 export { formatCost } from '@/lib/utils/formatters';
 
 export function parseConfig(configStr: string | null): Record<string, unknown> {
-  if (!configStr) return {};
-  try { return JSON.parse(configStr); }
-  catch { return {}; }
+  return parseJsonOrDefault<Record<string, unknown>>(configStr, {});
 }

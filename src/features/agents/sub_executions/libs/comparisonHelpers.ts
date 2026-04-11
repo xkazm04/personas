@@ -1,4 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
 export type { ToolCallStep };
@@ -57,20 +58,20 @@ export function diffLines(linesA: string[], linesB: string[]): Array<{ type: 'sa
 /** Structural diff of two JSON strings. */
 export function jsonDiff(a: string | null, b: string | null): Array<{ path: string; left: string; right: string }> {
   const diffs: Array<{ path: string; left: string; right: string }> = [];
-  try {
-    const objA = a ? JSON.parse(a) : {};
-    const objB = b ? JSON.parse(b) : {};
-    const allKeys = new Set([...Object.keys(objA), ...Object.keys(objB)]);
+  const objA = parseJsonOrDefault<Record<string, unknown>>(a, {});
+  const objB = parseJsonOrDefault<Record<string, unknown>>(b, {});
+  const keysA = typeof objA === 'object' && objA !== null ? Object.keys(objA) : [];
+  const keysB = typeof objB === 'object' && objB !== null ? Object.keys(objB) : [];
+  if (keysA.length === 0 && keysB.length === 0 && a !== b) {
+    diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
+  } else {
+    const allKeys = new Set([...keysA, ...keysB]);
     for (const key of allKeys) {
       const valA = JSON.stringify(objA[key] ?? null);
       const valB = JSON.stringify(objB[key] ?? null);
       if (valA !== valB) {
         diffs.push({ path: key, left: valA, right: valB });
       }
-    }
-  } catch { // intentional: non-critical -- JSON parse fallback
-    if (a !== b) {
-      diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
     }
   }
   return diffs;
