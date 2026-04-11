@@ -11,6 +11,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listPersonas } from '@/api/agents/personas';
 import { listTeams } from '@/api/pipeline/teams';
@@ -363,15 +364,11 @@ export function ExportSelectionModal({
             {s.export_subtitle}
           </p>
         </div>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors p-1"
-        >
-          <span className="sr-only">Close</span>
+        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Body */}

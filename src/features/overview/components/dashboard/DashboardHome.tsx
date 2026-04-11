@@ -1,4 +1,5 @@
 import { LayoutDashboard } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { useAgentStore } from "@/stores/agentStore";
@@ -29,6 +30,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
 
 export default function DashboardHome() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
   const {
@@ -78,12 +80,12 @@ export default function DashboardHome() {
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  }, []);
+    if (hour < 12) return t.overview.dashboard.greeting_morning;
+    if (hour < 18) return t.overview.dashboard.greeting_afternoon;
+    return t.overview.dashboard.greeting_evening;
+  }, [t]);
 
-  const displayName = user?.display_name || user?.email?.split('@')[0] || 'Operator';
+  const displayName = user?.display_name || user?.email?.split('@')[0] || t.overview.dashboard.default_user;
 
   const chartTotals = useMemo(() => {
     const totalTraffic = chartData.reduce((s, d) => s + d.traffic, 0);
@@ -102,8 +104,8 @@ export default function DashboardHome() {
       <ContentHeader
         icon={<LayoutDashboard className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
-        title="Dashboard"
-        subtitle="Operational overview and system status"
+        title={t.overview.dashboard.title}
+        subtitle={t.overview.dashboard.subtitle}
         actions={
           <DashboardHeaderBadges
             unreadMessageCount={unreadMessageCount}
@@ -128,8 +130,8 @@ export default function DashboardHome() {
               </h2>
               <p className="text-muted-foreground/80 mt-1">
                 {isEmptyDashboard
-                  ? 'Create your first agent to get started.'
-                  : <>You have <span className="text-primary font-medium"><AnimatedCounter value={pendingReviewCount} /> pending reviews</span> requiring attention.</>
+                  ? t.overview.dashboard.empty_cta
+                  : <>You have <span className="text-primary font-medium"><AnimatedCounter value={pendingReviewCount} /> {t.overview.dashboard.pending_reviews_prompt}</span> {t.overview.dashboard.requiring_attention}</>
                 }
               </p>
             </div>
@@ -143,7 +145,7 @@ export default function DashboardHome() {
                   key={source}
                   severity="warning"
                   compact
-                  title={`${source} failed to load`}
+                  title={`${source} ${t.overview.dashboard.pipeline_failed.replace('{source}', '').trim()}`}
                   message={msg}
                   onDismiss={() => setPipelineError(source, null)}
                   actions={

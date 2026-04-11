@@ -1,4 +1,5 @@
 import { CheckSquare, Square, Cloud, Monitor } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { SOURCE_LABELS, type SourceFilter } from '../libs/reviewHelpers';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -26,6 +27,7 @@ export function ReviewFilterTrailing({
   activeSelectionCount,
   onToggleSelectAll,
 }: ReviewFilterTrailingProps) {
+  const { t } = useTranslation();
   return (
     <div className="ml-auto flex items-center gap-2">
       {isCloudConnected && (
@@ -58,7 +60,7 @@ export function ReviewFilterTrailing({
           ) : (
             <Square className="w-3.5 h-3.5" />
           )}{' '}
-          Select all
+          {t.overview.review.select_all}
         </button>
       )}
     </div>

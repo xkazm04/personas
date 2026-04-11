@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, RefreshCw, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -10,6 +11,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 export default function LeaderboardPage() {
+  const { t } = useTranslation();
   const { leaderboard, loading, isEmpty, fleetAvgScore, refresh } = useLeaderboardData();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -46,8 +48,8 @@ export default function LeaderboardPage() {
       <ContentHeader
         icon={<Trophy className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Agent Leaderboard"
-        subtitle="Performance rankings across your agent fleet"
+        title={t.overview.leaderboard.title}
+        subtitle={t.overview.leaderboard.subtitle}
         actions={
           <div className="flex items-center gap-3">
             {leaderboard.length > 0 && (

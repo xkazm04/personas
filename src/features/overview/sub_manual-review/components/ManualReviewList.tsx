@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ClipboardCheck, Plus, BookOpen } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -23,6 +24,7 @@ import type { TriageReview } from './TriagePlayer';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
 
 export default function ManualReviewList() {
+  const { t } = useTranslation();
   const {
     manualReviews, cloudReviews,
     fetchManualReviews, fetchCloudReviews,
@@ -160,11 +162,11 @@ export default function ManualReviewList() {
       <ContentHeader
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Manual Reviews"
-        subtitle={`${allReviews.length} review${allReviews.length !== 1 ? 's' : ''} · ${statusCounts.pending ?? 0} pending${cloudReviews.length > 0 ? ` · ${cloudReviews.length} cloud` : ''}`}
+        title={t.overview.review.title}
+        subtitle={`${allReviews.length} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
         actions={import.meta.env.DEV && (
-          <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock review (dev only)">
-            <Plus className="w-3.5 h-3.5" /> Mock Review
+          <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.review.seed_tooltip}>
+            <Plus className="w-3.5 h-3.5" /> {t.overview.review.mock_review}
           </button>
         )}
       />
@@ -194,10 +196,10 @@ export default function ManualReviewList() {
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={ClipboardCheck}
-              title="No review items yet"
-              subtitle="Items requiring approval will appear here when agents request human review."
-              action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-              secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              title={t.overview.review.empty_title}
+              subtitle={t.overview.review.empty_subtitle}
+              action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+              secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
             />
           </div>
         ) : filter === 'pending' ? (

@@ -1,4 +1,5 @@
 import { toastCatch } from "@/lib/silentCatch";
+import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -18,6 +19,7 @@ interface ConversationThreadProps {
 }
 
 export function ConversationThread({ review, onAction, isProcessing }: ConversationThreadProps) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ReviewMessage[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -102,13 +104,13 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
-              <h3 className="typo-heading text-foreground truncate">{review.persona_name || 'Unknown Persona'}</h3>
+              <h3 className="typo-heading text-foreground truncate">{review.persona_name || t.overview.review.unknown_persona}</h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <SeverityIndicator severity={review.severity} />
-                <span className="text-sm text-foreground/70">{SEVERITY_LABELS[review.severity] ?? 'Info'} severity</span>
+                <span className="text-sm text-foreground/70">{SEVERITY_LABELS[review.severity] ?? 'Info'} {t.overview.review.severity_label}</span>
                 <span className="text-sm text-foreground/40">·</span>
                 <span className="text-sm text-foreground/70">{formatRelativeTime(review.created_at)}</span>
-                {isCloud && (<><span className="text-sm text-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />Cloud</span></>)}
+                {isCloud && (<><span className="text-sm text-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />{t.overview.review.cloud_badge}</span></>)}
               </div>
             </div>
           </div>
@@ -119,7 +121,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             className="inline-flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition-colors"
             title={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
           >
-            <ExternalLink className="w-3 h-3" /> Execution
+            <ExternalLink className="w-3 h-3" /> {t.overview.review.execution_link}
           </button>
         </div>
       </div>
@@ -130,7 +132,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-violet-400">{review.persona_name || 'Agent'}</span>
+              <span className="text-sm font-medium text-violet-400">{review.persona_name || t.overview.review.agent}</span>
               <span className="text-sm text-foreground/60">{formatRelativeTime(review.created_at)}</span>
             </div>
             <div className="rounded-xl bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
@@ -138,7 +140,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             </div>
             {contextData && (
               <div className="mt-2 rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
-                <div className="text-xs font-mono text-foreground/50 uppercase mb-1">Context</div>
+                <div className="text-xs font-mono text-foreground/50 uppercase mb-1">{t.overview.review.context_label}</div>
                 <ContextDataPreview raw={contextData} />
               </div>
             )}
@@ -146,27 +148,27 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {hasDecisions && isPending && (
               <div className="mt-3 rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
-                  <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Decisions ({decisions.length} items)</span>
+                  <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
                       className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
                     >
-                      Accept all
+                      {t.overview.review.accept_all}
                     </button>
                     <span className="text-foreground/30">|</span>
                     <button
                       onClick={() => { const all: Record<string, 'rejected'> = {}; decisions.forEach((d) => { all[d.id] = 'rejected'; }); setDecisionStates(all); }}
                       className="text-xs text-red-400 hover:text-red-300 transition-colors"
                     >
-                      Reject all
+                      {t.overview.review.reject_all_items}
                     </button>
                     <span className="text-foreground/30">|</span>
                     <button
                       onClick={() => setDecisionStates({})}
                       className="text-xs text-foreground/60 hover:text-foreground/80 transition-colors"
                     >
-                      Clear
+                      {t.common.clear}
                     </button>
                   </div>
                 </div>
@@ -204,9 +206,9 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 </div>
                 {(acceptedCount > 0 || rejectedCount > 0) && (
                   <div className="flex items-center gap-3 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-                    {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} accepted</span>}
-                    {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} rejected</span>}
-                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-foreground/50">{decisions.length - acceptedCount - rejectedCount} undecided</span>}
+                    {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} {t.overview.review.accepted_label}</span>}
+                    {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} {t.overview.review.rejected_label}</span>}
+                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-foreground/50">{decisions.length - acceptedCount - rejectedCount} {t.overview.review.undecided_label}</span>}
                   </div>
                 )}
               </div>
@@ -238,7 +240,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-                  <span className={`text-sm font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
+                  <span className={`text-sm font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
                   <span className="text-sm text-foreground/60">{formatRelativeTime(msg.created_at)}</span>
                 </div>
                 <div className={`rounded-xl px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
@@ -268,19 +270,19 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             <textarea
               value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={isCloud ? undefined : handleKeyDown}
-              placeholder={isCloud ? "Response message (optional)..." : "Reply to this review..."}
+              placeholder={isCloud ? t.overview.review.cloud_reply_placeholder : t.overview.review.reply_placeholder}
               rows={1}
               className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus-ring focus-visible:border-primary/30 max-h-24"
               style={{ minHeight: '36px' }}
             />
             {!isCloud && (
-              <button onClick={handleSend} disabled={!input.trim() || isSending} className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0" title="Send message">
+              <button onClick={handleSend} disabled={!input.trim() || isSending} className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0" title={t.overview.review.send_message}>
                 <Send className="w-4 h-4" />
               </button>
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
+            <span className="text-xs text-foreground/50">{isCloud ? t.overview.review.cloud_action_hint : t.overview.review.reply_hint}</span>
             <div className="flex items-center gap-2">
               <button onClick={() => {
                 // Include per-item decisions in reviewer notes for multi-decision reviews
@@ -294,7 +296,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 }
                 handleAction('approved', notes);
               }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <Check className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : hasDecisions && acceptedCount > 0 ? `Approve (${acceptedCount}/${decisions.length})` : 'Approve'}
+                <Check className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
               </button>
               <button onClick={() => {
                 let notes = input.trim() || undefined;
@@ -307,7 +309,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 }
                 handleAction('rejected', notes);
               }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <X className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Reject'}
+                <X className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : t.overview.review.reject}
               </button>
             </div>
           </div>

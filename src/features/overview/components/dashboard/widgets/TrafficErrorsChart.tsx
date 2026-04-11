@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
@@ -23,6 +24,7 @@ interface TrafficErrorsChartProps {
 }
 
 export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+  const { t } = useTranslation();
   const sf = useScaledFontSize();
   const { effectiveDays } = useOverviewFilterValues();
   const rangeLabel = effectiveDays === 1 ? 'Yesterday' : `${effectiveDays} Days Ago`;
@@ -36,7 +38,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
           <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
-          Traffic & Errors
+          {t.overview.widgets.traffic_errors_chart}
         </h3>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   Check, X, AlertTriangle, Info, AlertCircle,
   ArrowRight, ArrowLeft, MessageSquare, Clock,
@@ -60,6 +61,7 @@ function parseSuggestedActions(raw: string | null | undefined): string[] {
 // ---------------------------------------------------------------------------
 
 export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: TriagePlayerProps) {
+  const { t } = useTranslation();
   const pending = reviews.filter((r) => r.status === 'pending');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [notes, setNotes] = useState('');
@@ -138,7 +140,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
         <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
           <Check className="w-8 h-8 text-emerald-400" />
         </div>
-        <p className="text-sm text-foreground/80">All caught up! No pending reviews.</p>
+        <p className="text-sm text-foreground/80">{t.overview.review.all_caught_up}</p>
       </div>
     );
   }
@@ -155,7 +157,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
       {/* Left: Queue sidebar */}
       <div className="w-[200px] flex-shrink-0 rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-primary/8">
-          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Queue ({total})</span>
+          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.queue_label} ({total})</span>
         </div>
         <div className="flex-1 overflow-y-auto py-1">
           {pending.map((r, i) => {
@@ -242,7 +244,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             {/* Context — parsed into readable format */}
             {current.context_data && !hasDecisions && (
               <div className="rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
-                <div className="text-xs font-mono text-foreground/50 uppercase mb-1.5">Technical Context</div>
+                <div className="text-xs font-mono text-foreground/50 uppercase mb-1.5">{t.overview.review.technical_context}</div>
                 <ContextDataPreview raw={current.context_data} />
               </div>
             )}
@@ -251,19 +253,19 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             {hasDecisions && (
               <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
-                  <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Decisions ({decisions.length} items)</span>
+                  <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
                       className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                    >Accept all</button>
+                    >{t.overview.review.accept_all}</button>
                     <span className="text-foreground/30">|</span>
                     <button
                       onClick={() => { const all: Record<string, 'rejected'> = {}; decisions.forEach((d) => { all[d.id] = 'rejected'; }); setDecisionStates(all); }}
                       className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                    >Reject all</button>
+                    >{t.overview.review.reject_all_items}</button>
                     <span className="text-foreground/30">|</span>
-                    <button onClick={() => setDecisionStates({})} className="text-xs text-foreground/60 hover:text-foreground/80 transition-colors">Clear</button>
+                    <button onClick={() => setDecisionStates({})} className="text-xs text-foreground/60 hover:text-foreground/80 transition-colors">{t.common.clear}</button>
                   </div>
                 </div>
                 <div className="divide-y divide-primary/5">
@@ -300,9 +302,9 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                 </div>
                 {(acceptedCount > 0 || rejectedCount > 0) && (
                   <div className="flex items-center gap-3 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-                    {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} accepted</span>}
-                    {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} rejected</span>}
-                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-foreground/50">{decisions.length - acceptedCount - rejectedCount} undecided</span>}
+                    {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} {t.overview.review.accepted_label}</span>}
+                    {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} {t.overview.review.rejected_label}</span>}
+                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-foreground/50">{decisions.length - acceptedCount - rejectedCount} {t.overview.review.undecided_label}</span>}
                   </div>
                 )}
               </div>
@@ -312,7 +314,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             {actions.length > 0 && !hasDecisions && (
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider flex items-center gap-1">
-                  <Zap className="w-3 h-3" /> Select an action {actions.length > 0 && <span className="text-primary">(required)</span>}
+                  <Zap className="w-3 h-3" /> {t.overview.review.select_action} {actions.length > 0 && <span className="text-primary">{t.overview.review.required}</span>}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {actions.map((a, i) => {
@@ -341,7 +343,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add review notes..."
+                placeholder={t.overview.review.notes_placeholder}
                 rows={2}
                 className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/30"
                 autoFocus
@@ -358,30 +360,30 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             className="group flex items-center gap-2 px-6 py-3 rounded-2xl border border-red-500/25 bg-red-500/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/35 transition-all disabled:opacity-40"
           >
             <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-semibold">Reject</span>
+            <span className="text-sm font-semibold">{t.overview.review.reject}</span>
           </button>
           <button
             onClick={() => setShowNotes(!showNotes)}
             className="p-2.5 rounded-xl border border-primary/15 text-foreground/40 hover:text-foreground/70 hover:bg-secondary/30 transition-colors"
-            title="Add notes"
+            title={t.overview.review.add_notes}
           >
             <MessageSquare className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleAction('approve')}
             disabled={approveDisabled}
-            title={approveDisabled && actions.length > 0 ? 'Select a suggested action first' : undefined}
+            title={approveDisabled && actions.length > 0 ? t.overview.review.select_action_first : undefined}
             className="group flex items-center gap-2 px-6 py-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/35 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <span className="text-sm font-semibold">Approve</span>
+            <span className="text-sm font-semibold">{t.overview.review.approve}</span>
             <Check className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
         {/* Keyboard hint */}
         <div className="flex items-center gap-4 text-[10px] text-foreground/25">
-          <span className="flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Reject</span>
-          <span className="flex items-center gap-1"><ArrowRight className="w-3 h-3" /> Approve</span>
+          <span className="flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> {t.overview.review.reject}</span>
+          <span className="flex items-center gap-1"><ArrowRight className="w-3 h-3" /> {t.overview.review.approve}</span>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -17,6 +18,7 @@ const TREND_ICON = {
 };
 
 export function TopPerformersWidget() {
+  const { t } = useTranslation();
   const healthSignals = useOverviewStore((s) => s.healthSignals);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
@@ -32,7 +34,7 @@ export function TopPerformersWidget() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground/70">Top Performers</h3>
+          <h3 className="text-sm font-semibold text-foreground/70">{t.overview.widgets.top_performers}</h3>
         </div>
         <button
           onClick={() => setOverviewTab('leaderboard')}

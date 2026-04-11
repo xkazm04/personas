@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -17,26 +18,27 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("event-log");
 
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'processed', label: 'Processed' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'skipped', label: 'Skipped' },
-];
-
-const SOURCE_TYPE_LABELS: Record<string, string> = {
-  persona: 'Event',
-  user: 'Manual',
-  system: 'System',
-  scheduler: 'Scheduled',
-};
+// Status options and source type labels are built inside the component to use translations
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
 export default function EventLogList() {
+  const { t, tx } = useTranslation();
+  const STATUS_OPTIONS = [
+    { value: 'all', label: t.overview.events.all_statuses },
+    { value: 'completed', label: 'Completed' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'processed', label: 'Processed' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'skipped', label: 'Skipped' },
+  ];
+  const SOURCE_TYPE_LABELS: Record<string, string> = {
+    persona: t.overview.events.source_event,
+    user: t.overview.events.source_manual,
+    system: t.overview.events.source_system,
+    scheduler: t.overview.events.source_scheduled,
+  };
   const {
     recentEvents, personas, availableTypes,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
@@ -93,7 +95,7 @@ export default function EventLogList() {
     const items = Array.from(unique)
       .sort((a, b) => (SOURCE_TYPE_LABELS[a] ?? a).localeCompare(SOURCE_TYPE_LABELS[b] ?? b))
       .map((v) => ({ value: v, label: SOURCE_TYPE_LABELS[v] ?? v }));
-    return [{ value: 'all', label: 'All triggers' }, ...items];
+    return [{ value: 'all', label: t.overview.events.all_triggers }, ...items];
   }, [filteredEvents]);
 
   const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all';
@@ -106,7 +108,7 @@ export default function EventLogList() {
   };
 
   const typeOptions = [
-    { value: 'all', label: 'All types' },
+    { value: 'all', label: t.overview.events.all_types },
     ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ];
 
@@ -204,20 +206,20 @@ export default function EventLogList() {
       <ContentHeader
         icon={<Zap className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
-        title="Events"
-        subtitle={`${filteredEvents.length}${serverHasMore ? '+' : ''} of ${recentEvents.length} event${recentEvents.length !== 1 ? 's' : ''}`}
+        title={t.overview.events.title}
+        subtitle={`${filteredEvents.length}${serverHasMore ? '+' : ''} ${tx(recentEvents.length === 1 ? t.overview.events.subtitle_one : t.overview.events.subtitle, { filtered: filteredEvents.length, total: recentEvents.length })}`}
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock event (dev only)">
-                <Plus className="w-3.5 h-3.5" /> Mock Event
+              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
+                <Plus className="w-3.5 h-3.5" /> {t.overview.events.mock_event}
               </button>
             )}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="p-1.5 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
-              title="Refresh"
+              title={t.common.refresh}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -234,7 +236,7 @@ export default function EventLogList() {
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search events by type, source, or payload..."
+              placeholder={t.overview.events.search_placeholder}
               className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
             />
             {searchText && (
@@ -254,14 +256,14 @@ export default function EventLogList() {
                 className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
                 title="Save current filters as a view"
               >
-                <Bookmark className="w-3 h-3" /> Save view
+                <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
               </button>
               <button
                 onClick={clearFilters}
                 className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
                 title="Clear all filters"
               >
-                <X className="w-3 h-3" /> Clear
+                <X className="w-3 h-3" /> {t.common.clear}
               </button>
             </>
           )}
@@ -270,7 +272,7 @@ export default function EventLogList() {
         {/* Saved views chips */}
         {savedViews.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-foreground/50">Views:</span>
+            <span className="text-xs text-foreground/50">{t.overview.events.views_label}</span>
             {savedViews.map((view) => (
               <button
                 key={view.id}
@@ -285,7 +287,7 @@ export default function EventLogList() {
                 <button
                   onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
                   className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground/40 hover:text-status-error transition-opacity"
-                  title="Delete view"
+                  title={t.overview.events.delete_view}
                 >
                   <BookmarkX className="w-2.5 h-2.5" />
                 </button>
@@ -301,7 +303,7 @@ export default function EventLogList() {
               type="text"
               value={viewName}
               onChange={(e) => setViewName(e.target.value)}
-              placeholder="View name (e.g. 'Failed webhooks this week')"
+              placeholder={t.overview.events.view_name_placeholder}
               className="flex-1 px-2 py-1 text-sm rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30"
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
               autoFocus
@@ -311,13 +313,13 @@ export default function EventLogList() {
               disabled={!viewName.trim()}
               className="px-3 py-1 text-xs rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
-              Save
+              {t.common.save}
             </button>
             <button
               onClick={() => { setShowSaveDialog(false); setViewName(''); }}
               className="px-2 py-1 text-xs rounded-lg text-foreground/60 hover:text-foreground transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         )}
@@ -328,12 +330,12 @@ export default function EventLogList() {
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={Zap}
-              title="No events yet"
-              subtitle="Events from webhooks, executions, and persona actions will appear here as your agents run."
+              title={t.overview.events.no_events}
+              subtitle={t.overview.events.no_events_hint}
               iconColor="text-amber-400/80"
               iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-              action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-              secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+              secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
             />
           </div>
         ) : (
@@ -344,7 +346,7 @@ export default function EventLogList() {
               getRowKey={(e) => e.id}
               onRowClick={setSelectedEvent}
               isLoading={isLoading}
-              emptyTitle="No events match current filters"
+              emptyTitle={t.overview.events.no_filter_match}
               rowHeight={44}
               className="flex-1"
             />
@@ -352,14 +354,14 @@ export default function EventLogList() {
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
                 {isLoadingOlder ? (
                   <span className="flex items-center gap-2 text-xs text-muted-foreground/60">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Loading older events…
+                    <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
                   </span>
                 ) : (
                   <button
                     onClick={loadOlder}
                     className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
                   >
-                    Load older events
+                    {t.overview.events.load_older}
                   </button>
                 )}
               </div>
@@ -370,8 +372,8 @@ export default function EventLogList() {
 
       {selectedEvent && (
         <DetailModal
-          title={`Event: ${selectedEvent.event_type}`}
-          subtitle={`Status: ${selectedEvent.status}`}
+          title={`${t.overview.events.event_detail_title} ${selectedEvent.event_type}`}
+          subtitle={`${t.overview.events.event_detail_status} ${selectedEvent.status}`}
           onClose={() => { setSelectedEvent(null); setCopiedPayload(false); }}
         >
           <EventDetailContent

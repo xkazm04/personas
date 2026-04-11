@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
@@ -226,6 +227,7 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
 // -- Panel -------------------------------------------------------------
 
 export function AlertRulesPanel() {
+  const { t } = useTranslation();
   const {
     alertRules, addAlertRule, updateAlertRule, deleteAlertRule,
     toggleAlertRule, alertEvalHealth,
@@ -285,7 +287,7 @@ export function AlertRulesPanel() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="typo-heading text-foreground">Alert Rules</h3>
+          <h3 className="typo-heading text-foreground">{t.overview.observability.alert_rules}</h3>
           <EvalHealthIndicator health={alertEvalHealth} />
         </div>
         <button

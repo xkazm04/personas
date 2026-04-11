@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { DASHBOARD_GRID_SPAN_MAJOR, CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
@@ -17,18 +18,19 @@ interface RecentActivityListProps {
 }
 
 export const RecentActivityList = memo(function RecentActivityList({ recentExecs, onViewAll }: RecentActivityListProps) {
+  const { t } = useTranslation();
   return (
     <div className={`${DASHBOARD_GRID_SPAN_MAJOR} space-y-4`}>
       <div className="flex items-center justify-between px-1">
         <h3 className="typo-label text-muted-foreground/80 flex items-center gap-2">
           <Clock className="w-4 h-4" />
-          Recent Activity
+          {t.overview.widgets.recent_activity}
         </h3>
         <button
           onClick={onViewAll}
           className="typo-heading text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
         >
-          View All <ArrowRight className="w-3 h-3" />
+          {t.overview.widgets.view_all} <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 

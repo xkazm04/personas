@@ -1,4 +1,5 @@
 import { toastCatch } from "@/lib/silentCatch";
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
@@ -10,6 +11,7 @@ import { DAY_OPTIONS, formatPercent, formatDuration, slaColor } from '../libs/sl
 import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
 
 export default function SLADashboard() {
+  const { t, tx } = useTranslation();
   const [data, setData] = useState<SlaDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState<number>(30);
@@ -33,8 +35,8 @@ export default function SLADashboard() {
       <ContentHeader
         icon={<Shield className="w-5 h-5 text-emerald-400" />}
         iconColor="emerald"
-        title="Agent Reliability SLA"
-        subtitle="Uptime, failure rates, and healing metrics across your agent fleet"
+        title={t.overview.sla.title}
+        subtitle={t.overview.sla.subtitle}
         actions={
           <div className="flex items-center gap-1.5">
             {DAY_OPTIONS.map((d) => (
@@ -50,29 +52,29 @@ export default function SLADashboard() {
         {loading && !data ? (
           null
         ) : !data ? (
-          <InlineErrorBanner severity="info" message="No execution data available." />
+          <InlineErrorBanner severity="info" message={t.overview.sla.no_data} />
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <SlaCard label="Success Rate" value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.successful + data.global.failed} decided`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
-              <SlaCard label="Avg Latency" value={formatDuration(data.global.avg_duration_ms)} sub={`${data.global.active_persona_count} active agents`} color="blue" icon={<Clock className="w-4 h-4" />} />
-              <SlaCard label="Open Issues" value={String(data.healing_summary.open_issues)} sub={`${data.healing_summary.circuit_breaker_count} circuit breakers`} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
-              <SlaCard label="Auto-Healed" value={String(data.healing_summary.auto_fixed_count)} sub={`${data.healing_summary.knowledge_patterns} known patterns`} color="violet" icon={<Wrench className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.success_rate} value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.successful + data.global.failed} decided`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.avg_latency} value={formatDuration(data.global.avg_duration_ms)} sub={`${data.global.active_persona_count} active agents`} color="blue" icon={<Clock className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.open_issues} value={String(data.healing_summary.open_issues)} sub={`${data.healing_summary.circuit_breaker_count} circuit breakers`} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.auto_healed} value={String(data.healing_summary.auto_fixed_count)} sub={`${data.healing_summary.knowledge_patterns} known patterns`} color="violet" icon={<Wrench className="w-4 h-4" />} />
             </div>
 
             {data.daily_trend.length > 0 && (
               <div className="rounded-xl border border-primary/10 bg-card-bg p-5 space-y-3">
-                <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Daily Success Rate -- {days} Days</h2>
+                <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{tx(t.overview.sla.daily_success_rate, { days })}</h2>
                 <DailyTrendChart points={data.daily_trend} />
               </div>
             )}
 
             <div className="rounded-xl border border-primary/10 bg-card-bg overflow-hidden">
               <div className="px-5 py-3.5 border-b border-primary/10">
-                <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Per-Agent Reliability</h2>
+                <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.overview.sla.per_agent}</h2>
               </div>
               {data.persona_stats.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-muted-foreground/60">No agents have executed in this period.</div>
+                <div className="px-5 py-8 text-center text-sm text-muted-foreground/60">{t.overview.sla.no_agent_data}</div>
               ) : (
                 <div className="divide-y divide-primary/5">
                   {data.persona_stats.map((ps) => (

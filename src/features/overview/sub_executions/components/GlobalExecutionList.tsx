@@ -8,6 +8,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
@@ -23,18 +24,7 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 
-const FILTER_LABELS: Record<FilterStatus, string> = {
-  all: 'All', running: 'Running', completed: 'Completed', failed: 'Failed',
-};
-
 const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 140px 120px';
-
-const STATUS_FILTER_OPTIONS = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'running', label: 'Running' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-];
 
 interface GlobalExecutionListProps {
   /** Extra action buttons to render in the header (left of Metrics/Refresh) */
@@ -42,6 +32,16 @@ interface GlobalExecutionListProps {
 }
 
 export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
+  const { t, tx } = useTranslation();
+  const FILTER_LABELS: Record<FilterStatus, string> = {
+    all: t.overview.execution_list.filter_all, running: t.overview.execution_list.filter_running, completed: t.overview.execution_list.filter_completed, failed: t.overview.execution_list.filter_failed,
+  };
+  const STATUS_FILTER_OPTIONS = [
+    { value: 'all', label: t.overview.execution_list.all_statuses },
+    { value: 'running', label: t.overview.execution_list.filter_running },
+    { value: 'completed', label: t.overview.execution_list.filter_completed },
+    { value: 'failed', label: t.overview.execution_list.filter_failed },
+  ];
   const {
     globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
     globalExecutionsWarning, fetchGlobalExecutions,
@@ -63,9 +63,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const [showDashboard, setShowDashboard] = useState(false);
 
   const personaFilterOptions = useMemo(() => [
-    { value: '', label: 'All personas' },
+    { value: '', label: t.overview.execution_list.all_personas },
     ...personas.map((p) => ({ value: p.id, label: p.name })),
-  ], [personas]);
+  ], [personas, t]);
 
   const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
     exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
@@ -138,27 +138,27 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       <ContentHeader
         icon={<Loader2 className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title="Executions"
-        subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
+        title={t.overview.executions.title}
+        subtitle={tx(globalExecutionsTotal === 1 ? t.overview.execution_list.recorded_one : t.overview.execution_list.recorded, { count: globalExecutionsTotal })}
         actions={
           <div className="flex items-center gap-2">
             {headerActions}
             <button
               onClick={() => setShowDashboard(!showDashboard)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
-              title={showDashboard ? 'Show execution list' : 'Show metrics dashboard'}
+              title={showDashboard ? t.overview.execution_list.show_list : t.overview.execution_list.show_metrics}
             >
               <BarChart3 className="w-5 h-5" />
-              <span className="text-sm font-medium">{showDashboard ? 'List' : 'Metrics'}</span>
+              <span className="text-sm font-medium">{showDashboard ? t.overview.execution_list.list : t.overview.execution_list.metrics}</span>
             </button>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
-              title="Refresh"
+              title={t.common.refresh}
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">Refresh</span>
+              <span className="text-sm font-medium">{t.common.refresh}</span>
             </button>
           </div>
         }
@@ -178,7 +178,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             onChange={setFilter}
             badgeStyle="paren"
             layoutIdPrefix="execution-filter"
-            summary={`Showing ${filteredExecutions.length} of ${globalExecutionsTotal}`}
+            summary={tx(t.overview.execution_list.showing, { count: filteredExecutions.length, total: globalExecutionsTotal })}
           />
 
           {globalExecutionsWarning && (
@@ -195,8 +195,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 {personas.length === 0 ? (
                   <EmptyState
                     icon={Bot}
-                    title="No agents created yet"
-                    subtitle="Create your first agent to see execution activity here."
+                    title={t.overview.execution_list.no_agents}
+                    subtitle={t.overview.execution_list.no_agents_hint}
                   />
                 ) : (
                   <EmptyState variant="dashboard-no-executions" />
@@ -212,7 +212,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         options={personaFilterOptions}
                         value={selectedPersonaId}
                         onValueChange={setSelectedPersonaId}
-                        placeholder="Persona"
+                        placeholder={t.overview.execution_list.col_persona}
                         className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                       />
                     </div>
@@ -222,13 +222,13 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         options={STATUS_FILTER_OPTIONS}
                         value={filter}
                         onValueChange={(v) => setFilter(v as FilterStatus)}
-                        placeholder="Status"
+                        placeholder={t.overview.execution_list.col_status}
                         className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                       />
                     </div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Duration</div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Started</div>
-                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">ID</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.execution_list.col_duration}</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.execution_list.col_started}</div>
+                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">{t.common.id}</div>
                   </div>
                 )}
 
@@ -251,7 +251,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
-                            <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                            <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption flex-shrink-0 ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
@@ -273,7 +273,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
-                          <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                          <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
                         </div>
                         <div className="px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg typo-heading ${badgeClass(status)}`}>
@@ -292,7 +292,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 {hasMore && (
                   <div className="pt-3 pb-2 text-center">
                     <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all">
-                      Load More
+                      {t.overview.execution_list.load_more}
                     </button>
                   </div>
                 )}
@@ -303,7 +303,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       )}
 
       {selectedExec && (
-        <DetailModal title={`${selectedExec.persona_name || 'Unknown'} - Execution`} subtitle={`ID: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>
+        <DetailModal title={`${selectedExec.persona_name || t.overview.execution_list.unknown_persona} - ${t.overview.executions.title}`} subtitle={`${t.common.id}: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>
           <ExecutionDetail execution={selectedExec} />
         </DetailModal>
       )}

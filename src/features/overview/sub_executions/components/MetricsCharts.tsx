@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, ReferenceLine, ComposedChart,
 } from 'recharts';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CHART_COLORS, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
@@ -25,12 +26,13 @@ export function MetricsCharts({
   data, comparedChartData, personaCostData, personaNames,
   chartData, anomalyDates, compareEnabled,
 }: MetricsChartsProps) {
+  const { t, tx } = useTranslation();
   const sf = useScaledFontSize();
   return (
     <>
       {/* Cost per Day */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Cost per Day</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.execution_metrics.cost_per_day}</h4>
         <div className="h-48 2xl:h-56 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -54,7 +56,7 @@ export function MetricsCharts({
 
       {/* Execution Count by Status */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Executions by Status</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.execution_metrics.executions_by_status}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -76,7 +78,7 @@ export function MetricsCharts({
 
       {/* Success Rate Trend */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Success Rate Trend</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.execution_metrics.success_rate_trend}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -96,7 +98,7 @@ export function MetricsCharts({
 
       {/* Latency Distribution */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Latency Distribution (p50 / p95 / p99)</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.execution_metrics.latency_distribution}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -120,7 +122,7 @@ export function MetricsCharts({
       {/* Top Personas by Cost */}
       {data.top_personas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="typo-heading text-muted-foreground/70">Top Personas by Cost</h4>
+          <h4 className="typo-heading text-muted-foreground/70">{t.overview.execution_metrics.top_personas_by_cost}</h4>
           <div className="space-y-1.5">
             {data.top_personas.map((p: { persona_id: string; persona_name: string; total_cost: number; total_executions: number; avg_cost_per_exec: number }, i: number) => {
               const maxCost = data.top_personas[0]?.total_cost || 1;
@@ -137,7 +139,7 @@ export function MetricsCharts({
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground/60">
-                      <span>{p.total_executions} executions</span>
+                      <span>{tx(t.overview.execution_metrics.executions_label, { count: p.total_executions })}</span>
                       <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -29,6 +30,7 @@ export function ReviewInboxPanel({
   onToggleSelect,
   onAction,
 }: ReviewInboxPanelProps) {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [slideOverOpen, setSlideOverOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
@@ -82,10 +84,10 @@ export function ReviewInboxPanel({
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-muted-foreground/60 hover:text-foreground/70'
               }`}
-              title="Split view with chat"
+              title={t.overview.review.split_tooltip}
             >
               <PanelRight className="w-3 h-3" />
-              Split
+              {t.overview.review.split}
             </button>
             <button
               onClick={() => { setViewMode('table'); setSlideOverOpen(false); }}
@@ -94,10 +96,10 @@ export function ReviewInboxPanel({
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-muted-foreground/60 hover:text-foreground/70'
               }`}
-              title="Table only"
+              title={t.overview.review.table_tooltip}
             >
               <PanelRightClose className="w-3 h-3" />
-              Table
+              {t.overview.review.table}
             </button>
           </div>
         </div>
@@ -173,7 +175,7 @@ export function ReviewInboxPanel({
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground/50">Select a review to view</p>
+                    <p className="text-sm text-muted-foreground/50">{t.overview.review.select_review}</p>
                   </div>
                 </div>
               )}
@@ -187,7 +189,7 @@ export function ReviewInboxPanel({
               className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-elevation-4 shadow-black/20 flex flex-col z-20"
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
-                <span className="typo-caption text-foreground/70">Review Detail</span>
+                <span className="typo-caption text-foreground/70">{t.overview.review.review_detail}</span>
                 <button
                   onClick={handleCloseSlideOver}
                   className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -216,7 +218,7 @@ export function ReviewInboxPanel({
               >
                 <X className="w-4 h-4" />
               </button>
-              <span className="typo-heading text-foreground/80 truncate">Review Detail</span>
+              <span className="typo-heading text-foreground/80 truncate">{t.overview.review.review_detail}</span>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ConversationThread

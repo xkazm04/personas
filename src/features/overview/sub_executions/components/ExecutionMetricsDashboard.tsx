@@ -1,4 +1,5 @@
 import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -13,6 +14,7 @@ interface ExecutionMetricsDashboardProps {
 }
 
 export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboardProps) {
+  const { t } = useTranslation();
   const m = useExecutionMetrics();
 
   if (m.loading) {
@@ -29,7 +31,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="text-center">
           <AlertTriangle className="w-6 h-6 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-red-400">{m.error}</p>
-          <button onClick={m.load} className="mt-2 text-sm text-blue-400 hover:text-blue-300 underline">Retry</button>
+          <button onClick={m.load} className="mt-2 text-sm text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
         </div>
       </div>
     );
@@ -40,7 +42,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <TrendingUp className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground/70">No execution data for the selected period</p>
+          <p className="text-sm text-muted-foreground/70">{t.overview.execution_metrics.no_data}</p>
         </div>
       </div>
     );
@@ -52,7 +54,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-4 h-4 text-blue-400" />
-          <h3 className="typo-heading text-foreground/90">Execution Metrics</h3>
+          <h3 className="typo-heading text-foreground/90">{t.overview.execution_metrics.title}</h3>
           <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
           <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
           <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
@@ -69,17 +71,17 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {/* Summary cards */}
       <div className={SUMMARY_GRID}>
-        <SummaryCard icon={Zap} label="Total Executions" value={m.data.total_executions.toLocaleString()} color="blue" numericValue={m.data.total_executions} formatFn={(v) => Math.round(v).toLocaleString()} />
-        <SummaryCard icon={DollarSign} label="Total Cost" value={fmtCost(m.data.total_cost)} color="violet" numericValue={m.data.total_cost} formatFn={fmtCost} />
-        <SummaryCard icon={CheckCircle} label="Success Rate" value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" numericValue={m.overallSuccessRatePct} formatFn={(v) => `${v.toFixed(1)}%`} />
-        <SummaryCard icon={Clock} label="Avg Latency" value={fmtMs(m.data.avg_latency_ms)} color="amber" numericValue={m.data.avg_latency_ms} formatFn={fmtMs} />
+        <SummaryCard icon={Zap} label={t.overview.execution_metrics.total_executions} value={m.data.total_executions.toLocaleString()} color="blue" numericValue={m.data.total_executions} formatFn={(v) => Math.round(v).toLocaleString()} />
+        <SummaryCard icon={DollarSign} label={t.overview.execution_metrics.total_cost} value={fmtCost(m.data.total_cost)} color="violet" numericValue={m.data.total_cost} formatFn={fmtCost} />
+        <SummaryCard icon={CheckCircle} label={t.overview.execution_metrics.success_rate} value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" numericValue={m.overallSuccessRatePct} formatFn={(v) => `${v.toFixed(1)}%`} />
+        <SummaryCard icon={Clock} label={t.overview.execution_metrics.avg_latency} value={fmtMs(m.data.avg_latency_ms)} color="amber" numericValue={m.data.avg_latency_ms} formatFn={fmtMs} />
       </div>
 
       {/* Anomalies */}
       {m.data.cost_anomalies.length > 0 && (
         <div className="space-y-2">
           <h4 className="typo-heading text-amber-400/80 flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3" /> Cost Anomalies Detected
+            <AlertTriangle className="w-3 h-3" /> {t.overview.execution_metrics.cost_anomalies}
           </h4>
           {m.data.cost_anomalies.map((a, i) => (
             <AnomalyBadge key={i} anomaly={a} />

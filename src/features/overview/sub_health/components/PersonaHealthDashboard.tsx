@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useState, lazy, Suspense } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, RefreshCw, Heart, AlertTriangle, Shield, Zap, LayoutGrid, Rows3 } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -20,6 +21,7 @@ const SLADashboard = lazy(() => import('@/features/overview/sub_sla'));
 type FilterGrade = 'all' | HealthGrade;
 
 export default function PersonaHealthDashboard() {
+  const { t } = useTranslation();
   const {
     healthSignals, cascadeLinks, routingRecommendations,
     healthLoading, healthError, healthLastRefreshedAt,
@@ -94,8 +96,8 @@ export default function PersonaHealthDashboard() {
       <ContentHeader
         icon={<Activity className="w-5 h-5 text-rose-400" />}
         iconColor="red"
-        title="Persona Health"
-        subtitle="Live health signals, predictive alerts, and cost projections"
+        title={t.overview.health.title}
+        subtitle={t.overview.health.subtitle}
         actions={
           <>
             {/* View toggle */}

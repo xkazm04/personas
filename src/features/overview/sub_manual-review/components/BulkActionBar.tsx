@@ -1,5 +1,6 @@
 import { Check, X, AlertTriangle } from 'lucide-react';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface BulkActionBarProps {
   activeSelectionCount: number;
@@ -18,6 +19,7 @@ export function BulkActionBar({
   onBulkAction,
   onDeselect,
 }: BulkActionBarProps) {
+  const { t } = useTranslation();
   return (
     <>
       {activeSelectionCount > 0 && (
@@ -29,7 +31,7 @@ export function BulkActionBar({
               <div className="flex items-center gap-2 text-sm">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
                 <span className="text-foreground/80">
-                  {confirmAction === 'approved' ? 'Approve' : 'Reject'}{' '}
+                  {confirmAction === 'approved' ? t.overview.review.approve : t.overview.review.reject}{' '}
                   <span className="font-semibold">{activeSelectionCount}</span> review
                   {activeSelectionCount !== 1 ? 's' : ''}?
                 </span>
@@ -40,7 +42,7 @@ export function BulkActionBar({
                   disabled={isBulkProcessing}
                   className="px-3 py-1.5 rounded-xl text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   onClick={() => onBulkAction(confirmAction)}
@@ -51,7 +53,7 @@ export function BulkActionBar({
                       : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
                   }`}
                 >
-                  {isBulkProcessing ? 'Processing...' : 'Confirm'}
+                  {isBulkProcessing ? t.overview.review.processing : t.common.confirm}
                 </button>
               </div>
             </div>
@@ -66,21 +68,21 @@ export function BulkActionBar({
                   onClick={onDeselect}
                   className="px-3 py-1.5 rounded-xl text-sm border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
                 >
-                  Deselect
+                  {t.overview.review.deselect}
                 </button>
                 <button
                   onClick={() => onConfirmAction('approved')}
                   className="px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  Approve All
+                  {t.overview.review.approve_all}
                 </button>
                 <button
                   onClick={() => onConfirmAction('rejected')}
                   className="px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
                 >
                   <X className="w-3.5 h-3.5" />
-                  Reject All
+                  {t.overview.review.reject_all}
                 </button>
               </div>
             </div>

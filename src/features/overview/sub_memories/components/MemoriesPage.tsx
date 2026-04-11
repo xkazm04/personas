@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Brain, Plus, Search, X, Sparkles, Shield } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -35,6 +36,7 @@ type ViewTab = 'memories' | 'conflicts';
 const GRID_COLUMNS = '180px minmax(0,2fr) 100px 80px 100px 40px';
 
 export default function MemoriesPage() {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
@@ -143,7 +145,7 @@ export default function MemoriesPage() {
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Agent Memories"
+        title={t.overview.memories.title}
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">

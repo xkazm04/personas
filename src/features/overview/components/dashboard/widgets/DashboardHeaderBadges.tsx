@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, ClipboardCheck, ShieldCheck, Cpu, Mail, Bell } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -26,6 +27,7 @@ export function DashboardHeaderBadges({
   activeAlertCount,
   setOverviewTab,
 }: DashboardHeaderBadgesProps) {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const { shouldAnimate } = useMotion();
   const hoverScale = shouldAnimate ? { scale: 1.05 } : {};
@@ -38,7 +40,7 @@ export function DashboardHeaderBadges({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         >
           <ShieldCheck className="w-3.5 h-3.5" />
-          <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} /> Success
+          <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} /> {t.overview.widgets.success_badge}
           <MetricHelpPopover metricKey="success" />
         </span>
         <span
@@ -46,7 +48,7 @@ export function DashboardHeaderBadges({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
         >
           <Cpu className="w-3.5 h-3.5" />
-          <AnimatedCounter value={activeAgents} /> Agents
+          <AnimatedCounter value={activeAgents} /> {t.overview.widgets.agents_badge}
           <MetricHelpPopover metricKey="agents" />
         </span>
       </div>
@@ -63,7 +65,7 @@ export function DashboardHeaderBadges({
       >
         <Mail className="w-3 h-3" />
         <AnimatedCounter value={unreadMessageCount} />
-        <span className="text-blue-400/70 font-medium">Msgs</span>
+        <span className="text-blue-400/70 font-medium">{t.overview.widgets.messages_badge}</span>
         <MetricHelpPopover metricKey="messages" />
       </motion.button>
       <motion.button
@@ -74,7 +76,7 @@ export function DashboardHeaderBadges({
       >
         <ClipboardCheck className="w-3 h-3" />
         <AnimatedCounter value={pendingReviewCount} />
-        <span className="text-amber-400/70 font-medium">Reviews</span>
+        <span className="text-amber-400/70 font-medium">{t.overview.widgets.reviews_badge}</span>
         <MetricHelpPopover metricKey="reviews" />
       </motion.button>
       {activeAlertCount > 0 && (
@@ -86,7 +88,7 @@ export function DashboardHeaderBadges({
         >
           <Bell className="w-3 h-3" />
           <AnimatedCounter value={activeAlertCount} />
-          <span className="text-red-400/70 font-medium">Alerts</span>
+          <span className="text-red-400/70 font-medium">{t.overview.widgets.alerts_badge}</span>
           <MetricHelpPopover metricKey="alerts" />
         </motion.button>
       )}
@@ -99,7 +101,7 @@ export function DashboardHeaderBadges({
         >
           <Activity className="w-3 h-3" />
           <AnimatedCounter value={globalExecutionsTotal} formatFn={(v) => Math.round(v).toLocaleString()} />
-          <span className="text-emerald-400/70 font-medium">Runs</span>
+          <span className="text-emerald-400/70 font-medium">{t.overview.widgets.executions_badge}</span>
           <MetricHelpPopover metricKey="runs" />
         </motion.button>
         <span
@@ -108,7 +110,7 @@ export function DashboardHeaderBadges({
         >
           <ShieldCheck className="w-3 h-3" />
           <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} />
-          <span className="text-violet-400/70 font-medium">Success</span>
+          <span className="text-violet-400/70 font-medium">{t.overview.widgets.success_badge}</span>
           <MetricHelpPopover metricKey="success" />
         </span>
         <span
@@ -117,7 +119,7 @@ export function DashboardHeaderBadges({
         >
           <Cpu className="w-3 h-3" />
           <AnimatedCounter value={activeAgents} />
-          <span className="text-rose-400/70 font-medium">Agents</span>
+          <span className="text-rose-400/70 font-medium">{t.overview.widgets.agents_badge}</span>
           <MetricHelpPopover metricKey="agents" />
         </span>
       </div>

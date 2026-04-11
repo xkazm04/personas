@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from "@/stores/agentStore";
@@ -22,6 +23,7 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("knowledge-graph");
 
 export default function KnowledgeGraphDashboard() {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [summary, setSummary] = useState<KnowledgeGraphSummary | null>(null);
   const [entries, setEntries] = useState<ExecutionKnowledge[]>([]);
@@ -108,7 +110,7 @@ export default function KnowledgeGraphDashboard() {
       <ContentHeader
         icon={<Network className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Knowledge Graph"
+        title={t.overview.knowledge.title}
         subtitle={`${summary?.total_entries ?? 0} patterns learned${summary?.annotation_count ? ` · ${summary.annotation_count} annotations` : ''}`}
         actions={
           <div className="flex items-center gap-2">

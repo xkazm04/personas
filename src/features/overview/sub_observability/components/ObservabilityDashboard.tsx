@@ -106,7 +106,7 @@ export default function ObservabilityDashboard() {
               className={`p-1.5 rounded-lg border transition-colors ${
                 d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
               }`}
-              title={d.autoRefresh ? "Auto-refresh on" : "Auto-refresh off"}
+              title={d.autoRefresh ? t.overview.observability_extra.auto_refresh_on : t.overview.observability_extra.auto_refresh_off}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin motion-reduce:animate-none' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
             </button>
@@ -142,10 +142,10 @@ export default function ObservabilityDashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-4 gap-4">
-        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} />
-        <SummaryCard icon={Zap} label="Executions" numericValue={d.summary?.totalExecutions || 0} format={(n) => String(Math.round(n))} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} />
-        <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} />
-        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} />
+        <SummaryCard icon={DollarSign} label={t.overview.observability_extra.total_cost} numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} />
+        <SummaryCard icon={Zap} label={t.overview.observability_extra.executions_label} numericValue={d.summary?.totalExecutions || 0} format={(n) => String(Math.round(n))} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} />
+        <SummaryCard icon={CheckCircle} label={t.overview.observability_extra.success_rate} numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} />
+        <SummaryCard icon={TrendingUp} label={t.overview.observability_extra.active_personas} numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} />
       </div>
 
       {/* Alert Rules & History */}
@@ -188,7 +188,7 @@ export default function ObservabilityDashboard() {
       <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20 space-y-3">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-cyan-400" />
-          <h3 className="typo-heading text-foreground/90">System Trace Timeline</h3>
+          <h3 className="typo-heading text-foreground/90">{t.overview.observability_extra.system_trace}</h3>
         </div>
         <SystemTraceViewer />
       </div>
