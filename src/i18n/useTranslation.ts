@@ -28,18 +28,27 @@ const cache = new Map<Language, Translations>();
 import { en } from './en';
 cache.set('en', en);
 
-/** Shallow-merge a partial translation bundle with the English fallback (one level deep). */
-function mergeWithFallback(partial: Translations): Translations {
-  const merged = { ...en } as Record<string, unknown>;
-  for (const key of Object.keys(partial) as (keyof Translations)[]) {
-    const val = partial[key];
-    if (val && typeof val === 'object' && !Array.isArray(val)) {
-      merged[key] = { ...(en as Record<string, unknown>)[key] as object, ...val as object };
-    } else if (val !== undefined) {
-      merged[key] = val;
+/** Recursively merge two plain objects — `overlay` wins at leaf level, `base` fills gaps. */
+function deepMerge(base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const key of Object.keys(overlay)) {
+    const bVal = base[key];
+    const oVal = overlay[key];
+    if (
+      oVal && typeof oVal === 'object' && !Array.isArray(oVal) &&
+      bVal && typeof bVal === 'object' && !Array.isArray(bVal)
+    ) {
+      out[key] = deepMerge(bVal as Record<string, unknown>, oVal as Record<string, unknown>);
+    } else if (oVal !== undefined) {
+      out[key] = oVal;
     }
   }
-  return merged as Translations;
+  return out;
+}
+
+/** Deep-merge a partial translation bundle with the English fallback (all nesting levels). */
+function mergeWithFallback(partial: Translations): Translations {
+  return deepMerge(en as Record<string, unknown>, partial as unknown as Record<string, unknown>) as Translations;
 }
 
 /** Eagerly load a language bundle into cache (fire-and-forget). */
