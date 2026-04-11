@@ -65,3 +65,29 @@ User requested comprehensive i18n analysis — 5 parallel research agents scanne
 - Deep analysis before goal definition produces much better-scoped goals than jumping straight to implementation
 - The 5-layer model (UI components / constants / lib registries / Rust backend / i18n system) is the right taxonomy for i18n analysis
 - Option A (machine tokens in DB/IPC, frontend resolves) is confirmed as the right architecture — Rust stays language-agnostic, new tokens just need a frontend mapping entry
+
+## Run #4 — 2026-04-11
+
+**Mode:** improve
+**Health scan:** 0 TS errors, 0 lint, 675/675 tests
+**Selected goal:** BYOM: Surface Custom Models + validate local model viability with Ollama/Gemma4
+**Source:** scan (devOnly discovery from Run #1 lesson) + user request for empirical testing
+**Confidence at selection:** medium (feature surface was high confidence; model viability was unknown)
+**Quality score:** 85/100 (code change minimal, bulk of value is the empirical findings)
+**User verdict:** TBD
+
+**Why this goal was selected:**
+Run #1 lesson said "check devOnly items for promotion." The devOnly scan found BYOM (Custom Models) as the most complete hidden feature (1,277 LOC, 6 components, 5 tabs). User accepted but redirected the goal from pure surfacing to include empirical validation: "download Gemma 4, test whether local models actually work."
+
+**Key empirical findings:**
+1. Claude Code CLI does NOT support non-Anthropic models (validates model name against Anthropic's list)
+2. Codex CLI DOES support OpenAI-compatible endpoints (Ollama works via OPENAI_BASE_URL)
+3. Local models (qwen3.5 9.7B, gemma4 12B) are viable for: structured JSON, code review, multi-tool, planning, email
+4. Local models are NOT viable for: complex code changes, architectural reasoning, interactive speed (gemma4: up to 43s)
+5. qwen3.5 is more consistent (7-13s) than gemma4 (6-43s)
+
+**Lessons for future ranking:**
+- "Surface hidden feature" pattern from Run #1 validated again — but user challenged the assumption that "built = works". Testing viability is critical for features that depend on external integrations
+- The BYOM → Ollama path requires engine=codex_cli, not claude_code. This architectural constraint limits which personas can use local models
+- Local models are viable for SECONDARY tasks (review, planning, notifications) but not PRIMARY execution (code generation, complex reasoning). BYOM should be positioned as "cost optimization for simple tasks" not "run everything locally"
+- Future BYOM work should focus on the Codex CLI path and make the engine/provider distinction clearer in the UI
