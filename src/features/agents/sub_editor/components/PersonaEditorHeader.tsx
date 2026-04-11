@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { AlertCircle, X, Play, Loader2 } from 'lucide-react';
+import { AlertCircle, X, Play } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
 import { useAgentStore } from "@/stores/agentStore";
@@ -112,23 +113,18 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
           {/* Execute button — top row, above the Active toggle */}
-          <button
-            type="button"
+          <Button
+            variant="accent"
+            accentColor={isThisPersonaExecuting ? 'orange' : 'blue'}
+            size="sm"
+            icon={<Play className="w-3.5 h-3.5" />}
+            loading={isThisPersonaExecuting}
             onClick={handleExecute}
-            disabled={isThisPersonaExecuting}
             data-testid="persona-header-execute-btn"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-              isThisPersonaExecuting
-                ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 cursor-not-allowed'
-                : 'bg-primary/10 text-primary border-primary/15 hover:bg-primary/15'
-            }`}
-            title={isThisPersonaExecuting ? 'Execution in progress' : 'Execute this agent'}
+            disabledReason={isThisPersonaExecuting ? 'Execution in progress' : undefined}
           >
-            {isThisPersonaExecuting
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <Play className="w-3.5 h-3.5" />}
             {isThisPersonaExecuting ? 'Running…' : 'Execute'}
-          </button>
+          </Button>
           {/* Active toggle row */}
           <div className="flex items-center gap-2">
             <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
@@ -159,14 +155,15 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
                   <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5" /> Cannot enable agent
                   </p>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setShowReadinessPopover(false)}
-                    className="p-0.5 rounded hover:bg-muted/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                     aria-label="Dismiss"
+                    className="w-6 h-6"
                   >
                     <X className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
                 {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-muted-foreground/80 pl-5">{r}</p>)}
               </motion.div>
