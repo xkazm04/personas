@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bookmark, Check, Plus, Trash2, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViews, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
@@ -153,12 +154,12 @@ export function SavedViewsDropdown({
                   if (e.key === 'Escape') setIsSaving(false);
                 }}
               />
-              <button onClick={handleSave} disabled={!newViewName.trim()} title={!newViewName.trim() ? 'Enter a view name to save' : 'Save view'} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
+              <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason="Enter a view name to save" title="Save view" className="text-green-500 hover:bg-green-500/10">
                 <Check className="w-4 h-4" />
-              </button>
-              <button onClick={() => setIsSaving(false)} className="p-1.5 text-muted-foreground hover:bg-secondary rounded" title="Cancel" aria-label="Cancel saving view">
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsSaving(false)} title="Cancel" aria-label="Cancel saving view">
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           ) : (
             <button
@@ -192,13 +193,14 @@ export function SavedViewsDropdown({
                 {views.map((view) => (
                   <div key={view.id} className="group flex items-center justify-between px-3 py-1.5 hover:bg-secondary transition-colors cursor-pointer" onClick={() => applyView(view)}>
                     <span className="text-sm text-foreground truncate flex-1 pr-2">{view.name}</span>
-                    <button
+                    <Button
+                      variant="ghost" size="icon-sm"
                       onClick={(e) => handleDelete(view.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded transition-all flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 text-destructive/70 hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                       title="Delete view"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </>

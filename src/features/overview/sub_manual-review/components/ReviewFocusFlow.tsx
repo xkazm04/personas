@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Video,
 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
@@ -446,12 +447,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
           <span className="text-sm font-medium text-foreground/70">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
-            <button onClick={goPrevReview} disabled={reviewIdx === 0} className="p-1.5 rounded-md hover:bg-primary/10 disabled:opacity-30 transition-colors">
+            <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button onClick={goNextReview} disabled={reviewIdx >= pending.length - 1} className="p-1.5 rounded-md hover:bg-primary/10 disabled:opacity-30 transition-colors">
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={goNextReview} disabled={reviewIdx >= pending.length - 1}>
               <ChevronRight className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -484,9 +485,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           <span className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
-                          <button onClick={goPrevDecision} disabled={decisionIdx === 0} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
+                          <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
                             <ChevronLeft className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                           <div className="flex items-center gap-1">
                             {decisions.map((d, i) => {
                               const v = decisionVerdicts[d.id];
@@ -500,9 +501,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                               );
                             })}
                           </div>
-                          <button onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
+                          <Button variant="ghost" size="icon-sm" onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1}>
                             <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                           {(acceptCount > 0 || rejectCount > 0) && (
                             <button
                               onClick={() => setDecisionVerdicts({})}
