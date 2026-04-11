@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImprovePromptButtonProps {
   personaId: string;
@@ -46,6 +47,7 @@ function getModelsTested(runId: string, mode: string): string[] {
  * persona's design_context with lab test metadata.
  */
 export function ImprovePromptButton({ personaId, runId, mode, disabled }: ImprovePromptButtonProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const startMatrix = useAgentStore((s) => s.startMatrix);
@@ -90,7 +92,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
       const newRunId = await startMatrix(personaId, instruction, defaultModels);
       if (newRunId) {
         setState('success');
-        addToast('Improvement run started! Check the Matrix tab for results.', 'success');
+        addToast('{t.agents.lab.improvement_run_started}! Check the Matrix tab for results.', 'success');
       } else {
         setState('error');
         setErrorMsg('Failed to start improvement run');
@@ -158,12 +160,12 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         {state === 'loading' ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Analyzing and patching prompt...
+            {t.agents.lab.analyzing_patching}
           </>
         ) : (
           <>
             <Wand2 className="w-3.5 h-3.5" />
-            Auto-Improve Prompt
+            {t.agents.lab.auto_improve}
           </>
         )}
       </button>

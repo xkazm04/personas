@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { GenomeBreedingResult } from '@/lib/bindings/GenomeBreedingResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GenerationStats {
   generation: number;
@@ -69,6 +70,7 @@ export function GenerationEvolutionChart({
   results: GenomeBreedingResult[];
   onSelectOffspring?: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const stats = useMemo(() => computeGenerationStats(results), [results]);
 
   if (stats.length === 0) return null;
@@ -78,7 +80,7 @@ export function GenerationEvolutionChart({
   return (
     <div className="space-y-3" role="region" aria-label="Generation evolution chart">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-muted-foreground">Evolution Progress</h4>
+        <h4 className="text-xs font-medium text-muted-foreground">{t.agents.lab.evolution_progress}</h4>
         <span className="text-xs text-muted-foreground/60">
           {stats.length} generation{stats.length !== 1 ? 's' : ''}
         </span>
@@ -128,13 +130,13 @@ export function GenerationEvolutionChart({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center">
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-violet-500 inline-block" /> Best
+          <span className="w-2 h-2 rounded-sm bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-amber-500/40 inline-block" /> Avg
+          <span className="w-2 h-2 rounded-sm bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-red-500/20 inline-block" /> Worst
+          <span className="w-2 h-2 rounded-sm bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
         </span>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ThumbsUp, ThumbsDown, Minus, Send } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UserRatingProps {
   currentRating?: number;          // -1, 0, or 1
@@ -8,13 +9,14 @@ interface UserRatingProps {
   compact?: boolean;               // smaller variant for table rows
 }
 
-const RATING_OPTIONS = [
-  { value: -1, icon: ThumbsDown, label: 'Thumbs down', activeColor: 'text-red-400', activeBg: 'bg-red-500/15 border-red-500/30' },
-  { value: 0, icon: Minus, label: 'Neutral', activeColor: 'text-muted-foreground', activeBg: 'bg-secondary/50 border-primary/20' },
-  { value: 1, icon: ThumbsUp, label: 'Thumbs up', activeColor: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/30' },
-] as const;
-
 export function UserRating({ currentRating, currentFeedback, onRate, compact }: UserRatingProps) {
+  const { t } = useTranslation();
+
+  const RATING_OPTIONS = [
+    { value: -1, icon: ThumbsDown, label: t.agents.lab.thumbs_down, activeColor: 'text-red-400', activeBg: 'bg-red-500/15 border-red-500/30' },
+    { value: 0, icon: Minus, label: t.agents.lab.neutral_rating, activeColor: 'text-muted-foreground', activeBg: 'bg-secondary/50 border-primary/20' },
+    { value: 1, icon: ThumbsUp, label: t.agents.lab.thumbs_up, activeColor: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/30' },
+  ] as const;
   const [selected, setSelected] = useState<number | undefined>(currentRating);
   const [feedback, setFeedback] = useState(currentFeedback ?? '');
   const [saved, setSaved] = useState(currentRating !== undefined);
@@ -72,7 +74,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         )}
 
         {saved && (
-          <span className="ml-1 text-xs text-muted-foreground/50">Saved</span>
+          <span className="ml-1 text-xs text-muted-foreground/50">{t.agents.lab.saved_label}</span>
         )}
       </div>
 
@@ -81,7 +83,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           type="text"
           value={feedback}
           onChange={(e) => { setFeedback(e.target.value); setSaved(false); }}
-          placeholder="What went wrong? (optional)"
+          placeholder={t.agents.lab.what_went_wrong}
           className={`w-full rounded-lg border border-primary/10 bg-secondary/20 text-sm text-foreground/80 placeholder:text-muted-foreground/40 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'text-xs' : ''}`}
         />
       )}

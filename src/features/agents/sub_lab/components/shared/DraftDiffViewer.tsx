@@ -5,6 +5,7 @@ import {
   SECTION_LABELS,
 } from '@/lib/personas/promptMigration';
 import { diffStrings } from '@/features/agents/sub_lab/shared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   currentPromptJson: string | null;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSummary }: Props) {
+  const { t } = useTranslation();
   const { diffs, hasChanges } = useMemo(() => {
     const current = currentPromptJson ? parseStructuredPrompt(currentPromptJson) : null;
     const draft = draftPromptJson ? parseStructuredPrompt(draftPromptJson) : null;
@@ -43,14 +45,14 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
       )}
 
       {!hasChanges ? (
-        <p className="text-sm text-muted-foreground/60 text-center py-4">No structural differences detected</p>
+        <p className="text-sm text-muted-foreground/60 text-center py-4">{t.agents.lab.no_structural_diff}</p>
       ) : (
         diffs.map((d) => (
           <div key={d.key} className="rounded-lg border border-primary/10 bg-secondary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
               <h4 className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">{d.label}</h4>
               {!d.changed && (
-                <span className="text-sm text-muted-foreground/60">No changes</span>
+                <span className="text-sm text-muted-foreground/60">{t.agents.lab.no_changes_diff}</span>
               )}
             </div>
             {d.changed && (

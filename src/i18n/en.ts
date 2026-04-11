@@ -805,6 +805,7 @@ export const en = {
       cost: "Cost",
       completed: "Completed",
       input_data: "Input Data",
+      output_data: "Output Data",
       error: "Error",
       rerun_with_same_input: "Re-run with same input",
       compare_with_original: "Compare with original",
@@ -1015,6 +1016,134 @@ export const en = {
       pin_to_mini_player: "Pin to mini-player",
       pinned: "Pinned",
       pin: "Pin",
+
+      // CircuitBreakerIndicator
+      cb_all_paused: "All providers paused",
+      // {count} = number of unavailable providers
+      cb_providers_unavailable_one: "{count} provider temporarily unavailable",
+      cb_providers_unavailable_other: "{count} providers temporarily unavailable",
+      // {count} = number of interruptions
+      cb_interruptions_one: "{count} interruption in last hour",
+      cb_interruptions_other: "{count} interruptions in last hour",
+      cb_connected: "Connected",
+      cb_disconnected: "Disconnected",
+      cb_reconnecting: "Reconnecting",
+      cb_paused: "Paused",
+      cb_healthy: "healthy",
+      // {count} = consecutive failures, {seconds} = cooldown
+      cb_errors_retrying: "{count} error(s) \u2014 retrying in {seconds}s",
+      // {count} = consecutive failures
+      cb_errors: "{count} error(s)",
+      // {count} = trip count per hour
+      cb_interruptions_per_hour: "({count} interruption(s)/1h)",
+      // {count} = total global failures, {seconds} = cooldown
+      cb_global_paused_detail: "All providers paused due to repeated errors ({count} total).",
+      cb_resuming_in: "Resuming automatically in {seconds}s.",
+      // {count} = number of transitions
+      cb_show_activity: "Show recent activity ({count})",
+      cb_hide_activity: "Hide recent activity ({count})",
+
+      // ComparisonDiff
+      terminal_output_diff: "Terminal Output Diff",
+      // {count} = number of differences
+      differences_count: "{count} differences",
+      no_log_data: "No log data available",
+      identical: "identical",
+      // {count} = number of diffs
+      diff_count_one: "{count} diff",
+      diff_count_other: "{count} diffs",
+      no_differences: "No differences",
+      no_tool_calls_short: "No tool calls",
+      cancel: "Cancel",
+      // {count} = execution count in chain
+      chain_executions: "{count} executions",
+
+      // ChainCascadeTimeline
+      chain_cascade: "Chain Cascade",
+      loading_chain_cascade: "Loading chain cascade...",
+
+      // HealingOverlay
+      ai_healing_diagnosis: "AI Healing Diagnosis",
+      loading_healing_data: "Loading healing data...",
+      failure_point: "Failure Point",
+      // {count} = number of healing issues
+      healing_issues_count: "Healing Issues ({count})",
+      auto_fixed: "Auto-fixed",
+      circuit_breaker: "Circuit Breaker",
+      suggested_fix: "Suggested Fix",
+      retry_chain: "Retry Chain",
+      no_healing_issues: "No healing issues recorded for this execution.",
+
+      // ExpandableToolStep
+      fork_after_this: "Fork after this step",
+      running_ellipsis: "running...",
+
+      // ReplayTracePanel
+      trace_spans: "Trace Spans",
+      no_trace_available: "No trace data available",
+      engine_activity: "Engine Activity",
+      // {count} = active span count
+      active_count: "{count} active",
+      active_now: "Active Now",
+      recently_completed: "Recently Completed",
+      upcoming: "Upcoming",
+
+      // DreamReplayTheater
+      dream_replay: "Dream Replay",
+      zero_tokens: "0 tokens",
+      incomplete_trace: "incomplete trace",
+      // {spans}/{frames} = counts
+      spans_frames: "{spans} spans / {frames} frames",
+      span_boundaries: "Span Boundaries",
+      no_active_spans: "No active spans",
+      none_yet: "None yet",
+      // {count} = additional items
+      plus_more: "+{count} more",
+      metadata_label: "Metadata",
+      active_spans: "Active Spans",
+      no_active_spans_frame: "No active spans at this frame",
+      cost_accumulation: "Cost Accumulation",
+      dream_replay_cost: "Dream Replay Cost",
+      dream_replay_zero: "Replaying from stored traces -- zero LLM tokens consumed",
+      deterministic_replay: "Deterministic replay \u2014 no LLM calls",
+      loading_dream_replay: "Loading dream replay...",
+      no_dream_trace: "No trace data available for dream replay",
+      // {index}/{total} = frame position
+      frame_count: "Frame {index}/{total}",
+
+      // RunnerStreamView -- phase labels
+      phases: "Phases",
+
+      // Phase labels (shared across runner)
+      phase_initializing: "Initializing",
+      phase_thinking: "Thinking",
+      phase_calling_tools: "Running tools",
+      phase_delegating: "Delegating to workflow",
+      phase_responding: "Responding",
+      phase_finalizing: "Finalizing",
+      phase_error: "Error",
+
+      // Status labels
+      status_connected: "Connected",
+      status_disconnected: "Disconnected",
+      status_reconnecting: "Reconnecting",
+
+      // Comparison metrics
+      failed_to_load_logs: "Failed to load execution logs for comparison",
+      failed_to_load_chain: "Failed to load retry chain for comparison",
+
+      // Re-run states
+      running_state: "Running...",
+      execution_started: "Execution started",
+      rerun_failed: "Re-run failed",
+      rerun_execution: "Re-run execution",
+
+      // Misc labels shared across files
+      output_panel: "Output",
+      cancel_compare: "Cancel",
+      compare_btn: "Compare",
+      category_label: "Category: {category}",
+      status_label: "Status: {status}",
     },
 
     // -----------------------------------------------------------------
@@ -1074,6 +1203,274 @@ export const en = {
       describe_changes_hint: "Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.",
       generate_test_draft: "Generate & Test Draft",
       cancel_matrix_test: "Cancel Matrix Test",
+
+      // Shared score labels
+      score_excellent: "Excellent",
+      score_good: "Good",
+      score_fair: "Fair",
+      score_weak: "Weak",
+      score_poor: "Poor",
+      composite_score: "Composite Score",
+      tool_usage: "Tool Usage",
+      output_quality: "Output Quality",
+      protocol: "Protocol",
+      tool_accuracy: "Tool Accuracy",
+      protocol_compliance: "Protocol Compliance",
+      no_results: "No results to display",
+      evaluation_insights: "Evaluation Insights",
+      improvement_suggestions: "Improvement Suggestions",
+      scenario_breakdown: "Scenario Breakdown",
+      click_cell_details: "Click a cell for details",
+      tied: "tied",
+      winner: "Winner",
+      best_badge: "Best",
+
+      // AbHistory
+      ab_comparison: "Comparison",
+      ab_scenarios: "Scenarios",
+      ab_no_runs: "No A/B test runs yet",
+      ab_no_runs_subtitle: "Select two versions and run a comparison",
+      ab_history_title: "A/B History",
+      ab_mode_label: "A/B Test",
+
+      // AbPanel
+      select_version_a: "Select Version A to continue",
+      select_version_b: "Select Version B to continue",
+      run_ab_test: "Run A/B Test",
+      cancel_ab_test: "Cancel A/B Test",
+      version_a: "Version A",
+      version_b: "Version B",
+      select_version: "Select version",
+      test_input_label: "Test Input (optional JSON)",
+
+      // AbResultsView
+      ab_test_summary: "A/B Test Summary",
+      head_to_head: "Head-to-Head",
+
+      // ArenaHistory
+      models_column: "Models",
+      scenarios_column: "Scenarios",
+      best_column: "Best",
+      winner_scores: "Winner Scores",
+      no_arena_runs: "No arena runs yet",
+      no_arena_runs_subtitle: "Select models above and run a test",
+      arena_history_title: "Arena History",
+      arena_mode_label: "Arena",
+
+      // ArenaResultsView
+      test_summary: "Test Summary",
+      model_performance: "Model Performance",
+      insights_suggestions: "Insights & Suggestions",
+
+      // EvalHistory
+      versions_column: "Versions",
+      no_eval_runs: "No evaluation runs yet",
+      no_eval_runs_subtitle: "Select versions and models, then run",
+      eval_history_title: "Eval History",
+      eval_mode_label: "Evaluation",
+
+      // EvalPanel
+      prompt_versions_label: "Prompt Versions (select 2+)",
+      select_2_versions: "Select at least 2 prompt versions",
+      run_eval_matrix: "Run Evaluation Matrix",
+      cancel_eval: "Cancel Eval",
+      min_2_versions_warning: "At least 2 prompt versions are needed. Create more versions in the Versions tab.",
+
+      // EvalRadarChart
+      radar_title: "Model Performance Radar",
+
+      // EvalResultsGrid
+      eval_summary: "Evaluation Summary",
+      version_model_matrix: "Version x Model Matrix",
+      avg_column: "Avg",
+      version_column: "Version",
+      scenario_column: "Scenario",
+
+      // EvalVersionCards
+      version_performance: "Version Performance",
+      composite_label: "Composite",
+
+      // EvolutionPanel
+      select_persona_evolution: "Select a persona to configure auto-evolution",
+      auto_evolution: "Auto-Evolution",
+      auto_evolution_subtitle: "Continuously evolve this persona through lab-driven optimization",
+      darwinian_evolution: "Darwinian Evolution",
+      disable_auto_evolution: "Disable auto-evolution",
+      enable_auto_evolution: "Enable auto-evolution",
+      cycles_label: "Cycles",
+      promotions_label: "Promotions",
+      next_cycle: "Next Cycle",
+      ready_label: "Ready",
+      waiting_label: "Waiting",
+      evolving: "Evolving...",
+      trigger_evolution: "Trigger Evolution Cycle",
+      mutation_rate: "Mutation Rate",
+      variants_per_cycle: "Variants per Cycle",
+      improvement_threshold: "Improvement Threshold",
+      min_execs_between: "Min Executions Between",
+      save_settings: "Save Settings",
+      evolution_history: "Evolution History",
+      variants_tested: "{count} variants tested",
+      promoted_label: "Promoted",
+      self_improving_title: "Self-improving personas",
+      self_improving_desc: "Enable auto-evolution to continuously optimize this persona. After each batch of executions, variants are automatically generated, evaluated, and promoted if they outperform the current configuration.",
+      quality_label: "Quality",
+      speed_label: "Speed",
+      cost_label: "Cost",
+
+      // GenomeBreedingPanel
+      genome_breeding: "Genome Breeding",
+      genome_breeding_subtitle: "Cross-breed top-performing personas to discover novel configurations",
+      select_parents: "Select Parents (2-5 personas)",
+      no_personas_available: "No personas available",
+      fitness_objective: "Fitness Objective",
+      overall_label: "Overall",
+      generations_label: "Generations",
+      breeding_ellipsis: "Breeding...",
+      breeding_history: "Breeding History",
+      evolution_progress: "Evolution Progress",
+      evolution_progress_subtitle: "Fitness trajectory across generations",
+      offspring_subtitle: "Adopt top performers as new personas",
+      breeding_in_progress: "Breeding in progress...",
+      breeding_results_hint: "Results will appear when the breeding run completes",
+      evolve_personas_title: "Evolve your personas",
+      evolve_personas_desc: "Select 2-5 parent personas above, tune the fitness objective, then click Start Breeding. The genetic algorithm will cross-breed prompts, tools, and model configurations to discover novel high-performing variants.",
+      adopt_as_persona: "Adopt as Persona",
+      adopted: "Adopted",
+      compare_parent: "Compare with parent",
+
+      // GenerationEvolutionChart
+      best_legend: "Best",
+      avg_legend: "Avg",
+      worst_legend: "Worst",
+      total_offspring: "{count} total offspring",
+
+      // GenomeDiffView
+      genome_diff: "Genome Diff",
+      prompt_segments_section: "Prompt Segments",
+      tools_section: "Tools",
+      model_section: "Model",
+      config_section: "Config",
+      no_changes: "No changes",
+
+      // MatrixHistory
+      instruction_column: "Instruction",
+      draft_column: "Draft",
+      accepted_label: "Accepted",
+      pending_label: "Pending",
+      no_matrix_runs: "No matrix runs yet",
+      no_matrix_runs_subtitle: "Describe a change above to generate and test a draft",
+      matrix_history_title: "Matrix History",
+      matrix_mode_label: "Matrix",
+
+      // MatrixResultsView
+      draft_changes: "Draft Changes",
+      current_column: "Current",
+      accept_draft: "Accept Draft",
+      accept_applies_desc: "Accept applies the draft prompt to the persona, creating a new prompt version.",
+      draft_accepted: "Draft accepted and applied",
+
+      // MatrixScoreComparison
+      score_comparison: "Score Comparison",
+      metric_column: "Metric",
+      delta_column: "Delta",
+
+      // RegressionPanel
+      no_baseline_title: "No Baseline Pinned",
+      no_baseline_subtitle: "Pin a prompt version as baseline in the Versions tab to enable regression testing.",
+      go_to_versions: "Go to Versions",
+      compare_against: "Compare against:",
+      models_to_test: "Models to test:",
+      regression_threshold: "Regression threshold:",
+      threshold_hint: "pts (fail if composite score drops more than this)",
+      running_regression: "Running Regression Check...",
+      run_regression: "Run Regression Check",
+
+      // RegressionResultsView
+      no_regressions: "No Regressions Detected",
+      improved_over_baseline: "Improved Over Baseline",
+      no_comparable_scenarios: "No comparable scenarios found between baseline and current eval results.",
+      per_scenario_results: "Per-Scenario Results",
+
+      // DraftDiffViewer
+      no_structural_diff: "No structural differences detected",
+      no_changes_diff: "No changes",
+
+      // ImprovePromptButton
+      improvement_run_started: "Improvement run started",
+      analyzing_patching: "Analyzing and patching prompt...",
+      auto_improve: "Auto-Improve Prompt",
+
+      // InlineDiffPreview
+      no_prompt_changes: "No prompt changes",
+
+      // ScenarioDetailPanel
+      evaluation_notes: "Evaluation Notes",
+      how_to_fix: "How to Fix This",
+      rate_label: "Rate",
+      agent_output: "Agent Output",
+      tool_calls: "Tool Calls",
+      expected_label: "Expected",
+      actual_label: "Actual",
+      none_specified: "None specified",
+      none_label: "None",
+      composite_score_formula: "Composite Score (TA 40% + OQ 40% + PC 20%)",
+
+      // ScoreTrendCard
+      score_trend: "Score Trend",
+      run_tests_hint: "Run tests to see score trends",
+
+      // PromptTimeline
+      prompt_timeline: "Prompt Timeline",
+      no_versions_yet: "No prompt versions yet",
+      versions_auto_created: "Versions are created automatically when the prompt is modified through the Lab or Matrix build.",
+
+      // TimelineEntry
+      no_change_summary: "No change summary",
+      initial_version: "Initial version \u2014 no previous version to compare",
+      promote_action: "Promote",
+      archive_action: "Archive",
+      rollback_action: "Rollback",
+
+      // UserRating
+      thumbs_down: "Thumbs down",
+      neutral_rating: "Neutral",
+      thumbs_up: "Thumbs up",
+      saved_label: "Saved",
+      what_went_wrong: "What went wrong? (optional)",
+
+      // VersionsPanel
+      no_persona_selected: "No persona selected",
+      persona_versions: "Persona Versions",
+      persona_versions_subtitle: "Prompts, tools, and settings",
+      no_versions: "No versions yet",
+      versions_auto_edit: "Versions are created automatically when you edit the prompt",
+      select_two_compare: "Select two versions to compare",
+      click_a_b_hint: "Click the A and B buttons on any version",
+      run_ab_versions: "Run these versions in A/B test",
+      run_check: "Run Check",
+      error_rate_monitor: "Error Rate Monitor",
+      last_10_execs: "Last 10 executions",
+      error_rate_rollback_hint: "If error rate exceeds 50% after a prompt change, rollback to the production version using the version list.",
+
+      // VersionItem
+      actions_label: "Actions",
+      promote_to_production: "Promote to Production",
+      unarchive_action: "Unarchive",
+      rollback_to_this: "Rollback to this",
+      pin_as_baseline: "Pin as Baseline",
+      unpin_baseline: "Unpin Baseline",
+      operation_failed: "Operation Failed",
+
+      // ModelToggleGrid
+      models_header: "Models",
+      ollama_local: "Ollama (local)",
+
+      // UseCaseFilterPicker
+      all_use_cases: "All Use Cases",
+
+      // LabResultModal
+      results_suffix: "Results",
     },
 
     // -----------------------------------------------------------------
@@ -1894,6 +2291,253 @@ export const en = {
       delete_agents_message: "{count} agent(s) and all their configuration will be permanently removed.",
       delete_drafts: "Delete {count} Draft(s)",
       delete_drafts_message: "{count} draft agent(s) will be permanently removed.",
+    },
+
+    // -----------------------------------------------------------------
+    //  PICKER -- assign modal, credential coverage, role card, selectors
+    // -----------------------------------------------------------------
+    picker: {
+      assign_to: "Assign to {role}",
+      saved_credentials: "Saved Credentials ({count})",
+      all_connectors_tab: "All Connectors ({count})",
+      search_credentials: "Search credentials...",
+      search_connectors: "Search connectors...",
+      no_saved_credentials: "No saved credentials yet",
+      no_credentials_match: "No credentials match your search",
+      vault_hint: "Save credentials in the Vault, or use the Connectors tab",
+      no_connectors_match: "No connectors match your search",
+      credentials_coverage: "{matched}/{total} credentials",
+      no_credential: "No credential",
+      edit_tables: "edit",
+      select_tables_btn: "select tables",
+      assign_btn: "Assign",
+      no_connectors_available: "No connectors available",
+      search_connectors_short: "Search connectors...",
+      selected_count: "{count} selected",
+      no_connectors_match_search: "No connectors match \"{search}\"",
+      in_app_messaging: "In-app Messaging",
+      channel_vault_hint: "Save communication credentials (Slack, Email, etc.) in the Vault to see them here.",
+      select_tables_title: "Select Tables",
+      choose_tables_to_watch: "{label} -- choose tables to watch",
+      tables_selected_one: "{count} table selected",
+      tables_selected_other: "{count} tables selected",
+      no_tables_selected: "No tables selected -- agent watches all",
+      skip: "Skip",
+      done: "Done",
+      error_handling: "Error Handling",
+      manual_review: "Manual Review",
+    },
+
+    // -----------------------------------------------------------------
+    //  TRIGGER -- popover labels
+    // -----------------------------------------------------------------
+    trigger: {
+      trigger_label: "Trigger",
+      clear_override: "Clear override",
+    },
+
+    // -----------------------------------------------------------------
+    //  USE CASE -- builder and card
+    // -----------------------------------------------------------------
+    use_case: {
+      add_use_case: "Add use case",
+      title_placeholder: "Use case title \u2014 e.g. Handle refund requests, Summarize daily tickets",
+      description_placeholder: "Describe the steps \u2014 e.g. When a refund request arrives, verify the order, check policy, and send approval or denial",
+    },
+
+    // -----------------------------------------------------------------
+    //  BUILDER -- action components, preview, dry run, identity
+    // -----------------------------------------------------------------
+    builder: {
+      processing: "Processing...",
+      error_try_again: "Something went wrong. Please try again.",
+      cancel: "Cancel",
+      enhancing: "Enhancing...",
+      enhance_with_ai: "Enhance with AI",
+      continue_btn: "Continue",
+      describe_agent: "Describe what your agent should do",
+      preview: "Preview",
+      start_building_preview: "Start building to see a preview",
+      intent: "Intent",
+      use_cases_label: "Use Cases",
+      none_yet: "None yet",
+      components_label: "Components",
+      credentials_covered: "Credentials: {matched}/{total} covered",
+      none: "None",
+      schedule: "Schedule",
+      manual_only: "Manual only",
+      errors_label: "Errors",
+      review_label: "Review",
+      status_ready: "Ready",
+      status_blocked: "Blocked",
+      status_partial: "Partial",
+      issues_remaining_one: "{count} issue remaining",
+      issues_remaining_other: "{count} issues remaining",
+      capabilities: "Capabilities",
+      issues_label: "Issues",
+      apply_fix: "Apply Fix: {label}",
+      manual_action_needed: "Manual action needed",
+      no_issues_found: "No issues found. Your agent configuration looks good.",
+      agent_name_placeholder: "Agent Name",
+      description_fallback: "Description",
+    },
+
+    // -----------------------------------------------------------------
+    //  MATRIX -- build review, connectors cell, dimension edit, etc.
+    // -----------------------------------------------------------------
+    matrix: {
+      draft_agent: "Draft Agent",
+      tools: "Tools",
+      triggers: "Triggers",
+      connectors: "Connectors",
+      agent_name_check: "Agent name",
+      all_dimensions: "All 8 dimensions",
+      prompt_generated: "Prompt generated",
+      connectors_ready: "Connectors ready",
+      promote_agent: "Promote Agent",
+      testing_status: "Testing...",
+      test_agent: "Test Agent",
+      linked: "Linked",
+      add_in_keys: "Add in Keys",
+      link: "Link",
+      no_credential_found: "No {name} credential found. Add one in Keys to continue.",
+      swap_to: "Swap to:",
+      recalculating: "Recalculating...",
+      recalculate_dimensions: "Recalculate Dimensions",
+      rebuilding_connector: "Rebuilding with new connector...",
+      add_item: "Add item...",
+      add_connector: "Add connector...",
+      add_trigger: "Add trigger...",
+      add_review_rule: "Add review rule...",
+      add_task: "Add task...",
+      add_notification: "Add notification channel...",
+      add_memory_item: "Add memory item...",
+      add_error_strategy: "Add error strategy...",
+      replace: "Replace",
+      replace_connector: "Replace: {name}",
+      pick_credential: "Pick one of your connected credentials",
+      no_connected_credentials: "No connected credentials yet",
+      add_credentials_hint: "Add credentials in the Keys module first.",
+      open_keys: "Open Keys",
+      add_credential_in_keys: "Add credential in Keys",
+      health_healthy: "healthy",
+      health_check_failed: "check failed",
+      health_not_tested: "not tested",
+      connectors_need_credentials: "Some connectors need healthy credentials before this dimension can be finalized",
+      approval_required: "Approval Required",
+      fully_automated: "Fully Automated",
+      cron_label: "Cron:",
+      every_label: "Every:",
+      edit_label: "Edit",
+      done_label: "Done",
+      quick_setup: "Quick Setup",
+      start_conditions: "Start Conditions",
+      apps_services: "Apps & Services",
+      time_schedule: "Time Schedule",
+      event_triggers: "Event Triggers",
+      source_agent: "Source Agent",
+      events_from: "Events from {name}",
+      select_agent: "Select an agent",
+      loading_events: "Loading events...",
+      no_event_subscriptions: "No event subscriptions found",
+      choose_agent_events: "Choose an agent to see its events",
+      no_agents_available: "No agents available",
+      no_stored_credentials: "No stored credentials",
+      best_match: "Best match",
+      other: "Other",
+      frequency: "Frequency",
+      days_label: "Days",
+      day_of_month: "Day of Month",
+      time_label: "Time",
+      no_healthy_connectors: "No connectors with healthy API keys found. Add credentials in the Vault first.",
+      all_category: "All",
+      select_table_btn: "Select table",
+      agent_configuration: "Agent Configuration",
+      or_type_custom: "Or type a custom answer",
+      type_answer: "Type your answer...",
+      submit: "Submit",
+      press_to_select: "Press 1-{count} to select instantly",
+      select_table_title: "Select Table",
+      search_tables: "Search tables...",
+      loading_tables: "Loading tables...",
+      no_tables_found: "No tables found for this connector",
+      clear_selection: "Clear selection",
+      no_tables_matching: "No tables matching \"{search}\"",
+      new_agent_fallback: "New Agent",
+      failed_create_draft: "Failed to create draft agent.",
+      dismiss: "Dismiss",
+      drop_workflow: "Drop a workflow file here",
+      supported_formats: "n8n, Zapier, Make, or GitHub Actions (.json, .yaml)",
+      build_workflow_hint: "Press Build to transform this workflow into a persona agent.",
+      paste_json_placeholder: "Paste your workflow JSON here...",
+      parse: "Parse",
+      or_paste_json: "Or paste JSON directly",
+      swap_alternative: "Swap to alternative",
+    },
+
+    // -----------------------------------------------------------------
+    //  ONBOARDING -- checklist, template step, config popup
+    // -----------------------------------------------------------------
+    onboarding: {
+      setup_complete: "Setup {score}% complete",
+      steps_done: "{completed}/{total} steps done",
+      dismiss_checklist: "Dismiss checklist",
+      choose_template: "Choose a Template",
+      template_subtitle: "Pick a template to pre-fill your agent, or start from scratch.",
+      start_from_scratch: "Start from scratch",
+      could_not_load: "Could not load saved values -- you may need to re-enter them.",
+      saving: "Saving\u2026",
+      fill_one_field: "Fill in at least one field to save",
+    },
+
+    // -----------------------------------------------------------------
+    //  PERSONA LIST -- overview page, cards, cells, batch bar, etc.
+    // -----------------------------------------------------------------
+    persona_list: {
+      all_personas: "All Personas",
+      delete_drafts_btn: "Delete Drafts ({count})",
+      badge_draft: "Draft",
+      badge_disabled: "Disabled",
+      badge_building: "Building",
+      batch_selected: "{count} selected",
+      batch_delete: "Delete",
+      batch_clear: "Clear",
+      no_personas_match: "No personas match",
+      no_connectors: "No connectors",
+      never: "Never",
+      click_to_copy: "Click to copy",
+      description_copied: "Description copied to clipboard",
+      copy_failed: "Failed to copy description",
+      no_match_filters: "No personas match these filters",
+      adjust_filters_hint: "Try adjusting your search or filter chips, or reset the view to see all personas.",
+      clear_all_filters: "Clear all filters",
+      more_actions: "More actions",
+      settings: "Settings",
+      search_personas: "Search personas\u2026",
+      favorites: "Favorites",
+      show_all_personas: "Show all personas",
+      show_only_favorites: "Show only favorites",
+      clear_search: "Clear search",
+      col_persona: "Persona",
+      no_connectors_configured: "No connectors configured",
+    },
+
+    // -----------------------------------------------------------------
+    //  DESIGN PREVIEW -- preview panel
+    // -----------------------------------------------------------------
+    design_preview: {
+      preview: "Preview",
+      identity: "Identity",
+      prompt: "Prompt",
+      lines: "{count} lines",
+      tools: "Tools",
+      triggers: "Triggers",
+      subscriptions: "Subscriptions",
+      none_yet: "None yet",
+      activating: "Activating...",
+      activate_agent: "Activate Agent",
+      create_agent: "Create Agent",
+      min_completeness: "Add more detail to reach 40% completeness",
     },
   },
 

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ArrowLeftRight } from 'lucide-react';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { getSectionSummary, diffStrings } from './labPrimitives';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DiffViewerProps {
   versionA: PersonaPromptVersion;
@@ -9,6 +10,7 @@ interface DiffViewerProps {
 }
 
 export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
+  const { t } = useTranslation();
   const sectionsA = useMemo(() => getSectionSummary(versionA.structured_prompt), [versionA.structured_prompt]);
   const sectionsB = useMemo(() => getSectionSummary(versionB.structured_prompt), [versionB.structured_prompt]);
   const allKeys = useMemo(() => [...new Set([...Object.keys(sectionsA), ...Object.keys(sectionsB)])], [sectionsA, sectionsB]);
@@ -50,7 +52,7 @@ export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
       })}
 
       {allKeys.every((key) => (sectionsA[key] ?? '') === (sectionsB[key] ?? '')) && (
-        <p className="text-sm text-muted-foreground/60 text-center py-4">No differences detected in section summaries</p>
+        <p className="text-sm text-muted-foreground/60 text-center py-4">{t.agents.lab.no_structural_diff}</p>
       )}
     </div>
   );

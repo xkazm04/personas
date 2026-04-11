@@ -1,6 +1,7 @@
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
 import type { VersionAggregate } from '../../libs/evalAggregation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EvalVersionCardsProps {
   versionAggs: VersionAggregate[];
@@ -43,6 +44,7 @@ function ScoreBar({ value, label, icon: Icon }: { value: number; label: string; 
 }
 
 export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: EvalVersionCardsProps) {
+  const { t } = useTranslation();
   const colors = [
     { gradient: 'from-blue-500/15 via-blue-500/10 to-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400', bg: 'bg-blue-500/15' },
     { gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
@@ -52,7 +54,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Version Performance</h4>
+      <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">{t.agents.lab.version_performance}</h4>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(versionAggs.length, 4)}, 1fr)` }}>
         {versionAggs.map((agg, idx) => {
           const isWinner = agg.versionId === winnerId;
@@ -71,7 +73,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
                   <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
                   {isWinner && (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
-                      <Trophy className="w-2.5 h-2.5" /> Best
+                      <Trophy className="w-2.5 h-2.5" /> {t.agents.lab.best_badge}
                     </span>
                   )}
                 </div>

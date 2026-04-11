@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { compositeScore } from '@/lib/eval/evalFramework';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   baselineResults: LabEvalResult[];
@@ -28,6 +29,7 @@ function avg(vals: number[]): number {
 }
 
 export function RegressionResultsView({ baselineResults, currentResults, baselineVersionNum, currentVersionNum, threshold }: Props) {
+  const { t } = useTranslation();
   const { deltas, overallVerdict, overallDelta, summaryScores } = useMemo(() => {
     const deltas: ScenarioDelta[] = [];
 
@@ -73,8 +75,8 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
   }, [baselineResults, currentResults, threshold]);
 
   const verdictConfig = {
-    pass: { icon: CheckCircle2, text: 'No Regressions Detected', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-    improved: { icon: TrendingUp, text: 'Improved Over Baseline', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    pass: { icon: CheckCircle2, text: t.agents.lab.no_regressions, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    improved: { icon: TrendingUp, text: t.agents.lab.improved_over_baseline, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     fail: { icon: XCircle, text: `${deltas.filter((d) => d.verdict === 'fail').length} Regression(s) Found`, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
   };
 
@@ -85,7 +87,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
     return (
       <div className="text-center py-12 space-y-2">
         <AlertTriangle className="w-8 h-8 text-amber-400/40 mx-auto" />
-        <p className="typo-body text-muted-foreground/60">No comparable scenarios found between baseline and current eval results.</p>
+        <p className="typo-body text-muted-foreground/60">{t.agents.lab.no_comparable_scenarios}</p>
       </div>
     );
   }
@@ -106,9 +108,9 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
       {/* Summary score deltas */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Tool Accuracy', delta: summaryScores.avgToolAccuracy },
-          { label: 'Output Quality', delta: summaryScores.avgOutputQuality },
-          { label: 'Protocol Compliance', delta: summaryScores.avgProtocol },
+          { label: t.agents.lab.tool_accuracy, delta: summaryScores.avgToolAccuracy },
+          { label: t.agents.lab.output_quality, delta: summaryScores.avgOutputQuality },
+          { label: t.agents.lab.protocol_compliance, delta: summaryScores.avgProtocol },
         ].map(({ label, delta }) => (
           <div key={label} className="rounded-xl border border-primary/10 bg-secondary/20 p-3 space-y-1">
             <p className="typo-caption text-muted-foreground/50">{label}</p>
@@ -130,7 +132,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
 
       {/* Per-scenario breakdown */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">Per-Scenario Results</p>
+        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.per_scenario_results}</p>
         <div className="space-y-1">
           {deltas.map((d, i) => (
             <div

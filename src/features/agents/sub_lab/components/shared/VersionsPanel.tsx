@@ -8,11 +8,13 @@ import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/s
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { ScoreTrendCard } from './ScoreTrendCard';
 import { PromptTimeline } from './PromptTimeline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type VersionView = 'list' | 'timeline';
 const VIEW_KEY = 'dac-version-view';
 
 export function VersionsPanel() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const promptVersions = useAgentStore((s) => s.promptVersions);
   const healthErrorRate = useAgentStore((s) => s.healthErrorRate);
@@ -89,7 +91,7 @@ export function VersionsPanel() {
   };
 
   if (!personaId) {
-    return <div className="text-sm text-muted-foreground/60 text-center py-8">No persona selected</div>;
+    return <div className="text-sm text-muted-foreground/60 text-center py-8">{t.agents.lab.no_persona_selected}</div>;
   }
 
   const handleViewChange = (v: VersionView) => {
@@ -116,8 +118,8 @@ export function VersionsPanel() {
         <div className="flex items-center gap-2 mb-3 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
           <div>
-            <h3 className="text-sm font-medium text-foreground/80">Persona Versions</h3>
-            <p className="text-[10px] text-muted-foreground/40">Prompts, tools, and settings</p>
+            <h3 className="text-sm font-medium text-foreground/80">{t.agents.lab.persona_versions}</h3>
+            <p className="text-[10px] text-muted-foreground/40">{t.agents.lab.persona_versions_subtitle}</p>
           </div>
           <ViewToggle view={view} onChange={handleViewChange} />
           <span className="ml-auto text-sm text-muted-foreground/60">{promptVersions.length}</span>
@@ -128,8 +130,8 @@ export function VersionsPanel() {
         ) : promptVersions.length === 0 ? (
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-sm text-muted-foreground/60">No versions yet</p>
-            <p className="text-sm text-muted-foreground/60">Versions are created automatically when you edit the prompt</p>
+            <p className="text-sm text-muted-foreground/60">{t.agents.lab.no_versions}</p>
+            <p className="text-sm text-muted-foreground/60">{t.agents.lab.versions_auto_edit}</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
@@ -165,7 +167,7 @@ export function VersionsPanel() {
         ) : (
           <div className="text-center py-12 space-y-2">
             <ArrowLeftRight className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-sm text-muted-foreground/60">Select two versions to compare</p>
+            <p className="text-sm text-muted-foreground/60">{t.agents.lab.select_two_compare}</p>
             <p className="text-sm text-muted-foreground/60">
               Click the <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> buttons on any version
             </p>
@@ -178,7 +180,7 @@ export function VersionsPanel() {
             onClick={() => { setAbPreselect(compareAId, compareBId); setLabMode('ab'); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
           >
-            Run these versions in A/B test
+            {t.agents.lab.run_ab_versions}
           </button>
         )}
 
@@ -197,7 +199,7 @@ export function VersionsPanel() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors focus-ring flex-shrink-0"
             >
               <Star className="w-3 h-3" />
-              Run Check
+              {t.agents.lab.run_check}
             </button>
           </div>
         )}
@@ -209,12 +211,12 @@ export function VersionsPanel() {
         <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-emerald-400" />
-            <h4 className="text-sm font-medium text-foreground/80">Error Rate Monitor</h4>
+            <h4 className="text-sm font-medium text-foreground/80">{t.agents.lab.error_rate_monitor}</h4>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="flex items-center justify-between text-sm text-muted-foreground/70 mb-1">
-                <span>Last 10 executions</span>
+                <span>{t.agents.lab.last_10_execs}</span>
                 <span>{healthLoading ? '...' : healthErrorRate != null ? `${(healthErrorRate * 100).toFixed(0)}%` : '--'}</span>
               </div>
               <div className="w-full h-2 rounded-full bg-secondary/60 overflow-hidden">

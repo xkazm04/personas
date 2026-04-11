@@ -1,6 +1,7 @@
 import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScenarioResult {
   scenarioName: string;
@@ -92,6 +93,7 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
 }
 
 export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, onRate }: ScenarioDetailPanelProps) {
+  const { t } = useTranslation();
   const ta = result.toolAccuracyScore ?? 0;
   const oq = result.outputQualityScore ?? 0;
   const pc = result.protocolCompliance ?? 0;
@@ -138,7 +140,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Per-metric score cards with inline rationale */}
         <div className="space-y-2">
           <ScoreCard
-            label="Tool Accuracy"
+            label={t.agents.lab.tool_accuracy}
             icon={Target}
             score={ta}
             rationale={structured?.tool_accuracy ?? undefined}
@@ -146,7 +148,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
             borderColor="border-blue-500/10"
           />
           <ScoreCard
-            label="Output Quality"
+            label={t.agents.lab.output_quality}
             icon={FileText}
             score={oq}
             rationale={structured?.output_quality ?? undefined}
@@ -154,7 +156,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
             borderColor="border-emerald-500/10"
           />
           <ScoreCard
-            label="Protocol Compliance"
+            label={t.agents.lab.protocol_compliance}
             icon={Shield}
             score={pc}
             rationale={structured?.protocol ?? undefined}
@@ -168,7 +170,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <div className="space-y-1.5">
             <h5 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
               <MessageSquare className="w-3 h-3" />
-              Evaluation Notes
+              {t.agents.lab.evaluation_notes}
             </h5>
             <p className="text-sm text-foreground/70 leading-relaxed bg-secondary/20 rounded-lg px-3 py-2.5 border border-primary/5">
               {plain}
@@ -181,7 +183,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <div className="space-y-1.5">
             <h5 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/80 uppercase tracking-wider">
               <Lightbulb className="w-3 h-3" />
-              How to Fix This
+              {t.agents.lab.how_to_fix}
             </h5>
             <p className="text-sm text-foreground/70 leading-relaxed bg-amber-500/5 rounded-lg px-3 py-2.5 border border-amber-500/10">
               {result.suggestions}
@@ -205,7 +207,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <details className="group">
             <summary className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
-              Agent Output
+              {t.agents.lab.agent_output}
             </summary>
             <pre className="mt-2 text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-3 border border-primary/5 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
               {result.outputPreview}
@@ -218,19 +220,19 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <details className="group">
             <summary className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
-              Tool Calls
+              {t.agents.lab.tool_calls}
             </summary>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground/50 block mb-1">Expected</span>
                 <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-                  {result.toolCallsExpected ?? 'None specified'}
+                  {result.toolCallsExpected ?? t.agents.lab.none_specified}
                 </pre>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground/50 block mb-1">Actual</span>
                 <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-                  {result.toolCallsActual ?? 'None'}
+                  {result.toolCallsActual ?? t.agents.lab.none_label}
                 </pre>
               </div>
             </div>

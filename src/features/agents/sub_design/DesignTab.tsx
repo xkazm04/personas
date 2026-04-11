@@ -1,7 +1,9 @@
 import { useDesignTabState } from './libs/useDesignTabState';
 import { DesignTabPhaseContent } from './components/DesignTabPhaseContent';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function DesignTab() {
+  const { t } = useTranslation();
   const {
     selectedPersona, toolDefinitions, credentials, connectorDefinitions,
     phase, outputLines, result, error, applyWarnings, failedOperations, question, retryFailed,
@@ -20,7 +22,7 @@ export function DesignTab() {
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-        <p className="text-sm">Select an agent to start design analysis</p>
+        <p className="text-sm">{t.agents.design.select_agent}</p>
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
 const MatrixPanel = lazy(() => import('../matrix/MatrixPanel').then((m) => ({ default: m.MatrixPanel })));
@@ -26,6 +27,7 @@ const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof F
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
 
 export function LabTab() {
+  const { t } = useTranslation();
   const labMode = useAgentStore((s) => s.labMode);
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
@@ -90,7 +92,7 @@ export function LabTab() {
       </div>
 
       {/* Mode content */}
-      <Suspense fallback={<div className="py-8 text-center text-xs text-muted-foreground/50">Loading...</div>}>
+      <Suspense fallback={<div className="py-8 text-center text-xs text-muted-foreground/50">{t.agents.lab.loading}</div>}>
         {labMode === 'arena' && <ArenaPanel />}
         {(labMode === 'matrix' || labMode === 'ab' || labMode === 'eval') && <MatrixPanel />}
         {labMode === 'breed' && <GenomeBreedingPanel />}

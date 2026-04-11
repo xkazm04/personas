@@ -4,6 +4,7 @@ import {
   Cpu, Settings2, Plus, Minus as MinusIcon, ArrowLeftRight,
 } from 'lucide-react';
 import type { PersonaGenome } from '@/lib/bindings/PersonaGenome';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type DiffKind = 'added' | 'removed' | 'changed' | 'unchanged';
 
@@ -210,6 +211,7 @@ export function GenomeDiffView({
   parent: PersonaGenome;
   offspring: PersonaGenome;
 }) {
+  const { t } = useTranslation();
   const diff = useMemo(() => diffGenomes(parent, offspring), [parent, offspring]);
 
   const totalChanges =
@@ -222,7 +224,7 @@ export function GenomeDiffView({
     <div className="space-y-2" role="region" aria-label="Genome comparison">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <GitCompare className="w-3.5 h-3.5 text-violet-400" />
-        <span className="font-medium">Genome Diff</span>
+        <span className="font-medium">{t.agents.lab.genome_diff}</span>
         <span className="text-muted-foreground/50">
           {totalChanges} mutation{totalChanges !== 1 ? 's' : ''}
         </span>

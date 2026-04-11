@@ -5,6 +5,7 @@ import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UserRatingEntry {
   rating: number;
@@ -108,6 +109,7 @@ function collectTopSuggestions(results: LabArenaResult[], limit = 3): string[] {
 }
 
 export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatings, onRate }: Props) {
+  const { t } = useTranslation();
   const { models, scenarios, matrix, aggregates, bestModelId } = useMemo(
     () => aggregateArenaResults(results),
     [results],
@@ -121,7 +123,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
   if (results.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground/60 text-sm">
-        No results to display
+        {t.agents.lab.no_results}
       </div>
     );
   }
@@ -138,7 +140,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-foreground/90">Test Summary</h4>
+              <h4 className="text-sm font-semibold text-foreground/90">{t.agents.lab.test_summary}</h4>
               <p className="text-xs text-muted-foreground/50">{scenarios.length} scenarios across {models.length} models</p>
             </div>
           </div>
@@ -152,7 +154,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
       {/* Model comparison cards */}
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Model Performance</h4>
+        <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">{t.agents.lab.model_performance}</h4>
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(aggregates.length, 3)}, 1fr)` }}>
           {aggregates.map((agg, idx) => {
             const isWinner = agg.modelId === bestModelId;
@@ -177,7 +179,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     </div>
                     {isWinner && (
                       <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
-                        <Trophy className="w-2.5 h-2.5" /> Best
+                        <Trophy className="w-2.5 h-2.5" /> {t.agents.lab.best_badge}
                       </span>
                     )}
                   </div>
@@ -198,7 +200,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                           ? <><TrendingDown className="w-3 h-3 text-red-400/60" /><span>-{aggregates[0].compositeScore - agg.compositeScore}</span></>
                           : agg.compositeScore > aggregates[0].compositeScore
                             ? <><TrendingUp className="w-3 h-3 text-emerald-400/60" /><span>+{agg.compositeScore - aggregates[0].compositeScore}</span></>
-                            : <><Minus className="w-3 h-3" /><span>tied</span></>
+                            : <><Minus className="w-3 h-3" /><span>{t.agents.lab.tied}</span></>
                         }
                       </div>
                     )}
@@ -228,14 +230,14 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
         <details className="group">
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-            <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Insights &amp; Suggestions</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.insights_suggestions}</h4>
           </summary>
           <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {topRationale.length > 0 && (
               <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
                   <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                    <MessageSquare className="w-3 h-3" /> Evaluation Insights
+                    <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2.5">
@@ -252,7 +254,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
                   <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
-                    <Lightbulb className="w-3 h-3" /> Improvement Suggestions
+                    <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2">
@@ -271,8 +273,8 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
       {/* Scenario breakdown */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Scenario Breakdown</h4>
-          <span className="text-[10px] text-muted-foreground/30">Click a cell for details</span>
+          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
+          <span className="text-[10px] text-muted-foreground/30">{t.agents.lab.click_cell_details}</span>
         </div>
         <div className="overflow-x-auto border border-primary/10 rounded-xl">
           <table className="w-full text-sm">

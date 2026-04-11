@@ -6,6 +6,7 @@ import {
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { useScaledFontSize } from '@/stores/themeStore';
 import type { VersionAggregate } from '../../libs/evalAggregation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EvalRadarChartProps {
   versionAggs: VersionAggregate[];
@@ -14,6 +15,7 @@ interface EvalRadarChartProps {
 const RADAR_PALETTE = ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'];
 
 export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
+  const { t } = useTranslation();
   const sf = useScaledFontSize();
   const radarVersions = versionAggs.slice(0, 4);
 
@@ -38,7 +40,7 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
     <div className="space-y-2">
       <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary/40 to-accent/40 rounded-full" />
-        Model Performance Radar
+        {t.agents.lab.radar_title}
       </h4>
       <div className="border border-primary/10 rounded-xl bg-background/20 p-3">
         <div className="h-[260px]" data-testid="eval-radar-chart">

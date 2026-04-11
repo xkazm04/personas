@@ -7,6 +7,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from './labPrimitives';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type VersionAction = 'promote' | 'archive' | 'unarchive' | 'rollback' | null;
 
@@ -45,6 +46,7 @@ export function VersionItem({
   actionError,
   onDismissError,
 }: VersionItemProps) {
+  const { t } = useTranslation();
   const [showActions, setShowActions] = useState(false);
   const style = TAG_STYLES[version.tag] ?? TAG_STYLES.experimental!;
   const TagIcon = style.icon;
@@ -216,7 +218,7 @@ export function VersionItem({
               <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-elevation-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-0.5">
-                  <p className="text-sm font-semibold text-red-400 uppercase tracking-tight">Operation Failed</p>
+                  <p className="text-sm font-semibold text-red-400 uppercase tracking-tight">{t.agents.lab.operation_failed}</p>
                   <p className="text-sm text-red-300/90 leading-relaxed">{actionError}</p>
                 </div>
                 <button

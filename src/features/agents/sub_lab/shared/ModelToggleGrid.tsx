@@ -1,4 +1,5 @@
 import { ANTHROPIC_MODELS, OLLAMA_LOCAL_MODELS } from '@/lib/models/modelCatalog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ModelToggleGridProps {
   selectedModels: Set<string>;
@@ -7,9 +8,10 @@ interface ModelToggleGridProps {
 }
 
 export function ModelToggleGrid({ selectedModels, toggleModel, testIdPrefix }: ModelToggleGridProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
-      <label className="text-sm font-medium text-muted-foreground/80">Models</label>
+      <label className="text-sm font-medium text-muted-foreground/80">{t.agents.lab.models_header}</label>
       <div className="flex flex-wrap gap-2" data-testid={testIdPrefix ? `${testIdPrefix}-model-selector` : undefined}>
         {ANTHROPIC_MODELS.map((m) => (
           <button key={m.id} onClick={() => toggleModel(m.id)}
@@ -21,7 +23,7 @@ export function ModelToggleGrid({ selectedModels, toggleModel, testIdPrefix }: M
       </div>
       {OLLAMA_LOCAL_MODELS.length > 0 && (
         <>
-          <label className="text-xs font-medium text-muted-foreground/60 mt-2 pt-1 border-t border-primary/8">Ollama (local)</label>
+          <label className="text-xs font-medium text-muted-foreground/60 mt-2 pt-1 border-t border-primary/8">{t.agents.lab.ollama_local}</label>
           <div className="flex flex-wrap gap-2">
             {OLLAMA_LOCAL_MODELS.map((m) => (
               <button key={m.id} onClick={() => toggleModel(m.id)}

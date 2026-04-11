@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Shield, Beaker, Archive, RotateCcw, Star } f
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from '../../shared/labPrimitives';
 import { InlineDiffPreview } from './InlineDiffPreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TimelineEntryProps {
   version: PersonaPromptVersion;
@@ -30,6 +31,7 @@ export function TimelineEntry({
   onTag,
   onRollback,
 }: TimelineEntryProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const style = TAG_STYLES[version.tag] ?? TAG_STYLES.experimental!;
   const TagIcon = TAG_ICONS[version.tag] ?? Beaker;
@@ -93,7 +95,7 @@ export function TimelineEntry({
           {/* Change summary + date */}
           <div className="mt-1 flex items-center gap-2">
             <p className="text-xs text-foreground/50 truncate flex-1">
-              {version.change_summary || 'No change summary'}
+              {version.change_summary || t.agents.lab.no_change_summary}
             </p>
             <span className="text-[10px] text-muted-foreground/40 flex-shrink-0">
               {formatRelative(version.created_at)}
@@ -126,7 +128,7 @@ export function TimelineEntry({
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                     >
-                      <Shield className="w-3 h-3" /> Promote
+                      <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
                     </button>
                   )}
                   {version.tag !== 'archived' && (
@@ -134,7 +136,7 @@ export function TimelineEntry({
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
                     >
-                      <Archive className="w-3 h-3" /> Archive
+                      <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
                     </button>
                   )}
                   {!isFirst && (
@@ -142,7 +144,7 @@ export function TimelineEntry({
                       onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >
-                      <RotateCcw className="w-3 h-3" /> Rollback
+                      <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
                     </button>
                   )}
                 </div>

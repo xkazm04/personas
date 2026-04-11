@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ChevronDown, Filter } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseFilterPickerProps {
   selectedUseCaseId: string | null;
@@ -11,8 +12,9 @@ interface UseCaseFilterPickerProps {
 }
 
 export function UseCaseFilterPicker({ selectedUseCaseId, setSelectedUseCaseId, label = 'Focus', testIdPrefix }: UseCaseFilterPickerProps) {
+  const { t } = useTranslation();
   const useCases = useSelectedUseCases();
-  const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
+  const useCaseOptions = useMemo(() => [{ value: '__all__', label: t.agents.lab.all_use_cases }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
 
   if (useCases.length === 0) return null;
 
@@ -23,7 +25,7 @@ export function UseCaseFilterPicker({ selectedUseCaseId, setSelectedUseCaseId, l
         renderTrigger={({ isOpen, toggle }) => (
           <button onClick={toggle} data-testid={testIdPrefix ? `${testIdPrefix}-usecase-trigger` : undefined}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} cursor-pointer`}>
-            <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
+            <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? t.agents.lab.all_use_cases}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}>

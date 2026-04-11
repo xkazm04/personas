@@ -5,6 +5,7 @@ import { IntentResultExtras } from '../IntentResultExtras';
 
 import type { AgentIR, IntentCompilationResult } from '@/lib/types/designTypes';
 import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignPreviewResources {
   toolDefinitions: PersonaToolDefinition[];
@@ -62,6 +63,7 @@ export function DesignPhasePreview({
   refinement,
   actions,
 }: DesignPhasePreviewProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
@@ -161,7 +163,7 @@ export function DesignPhasePreview({
         <textarea
           value={refinement.message}
           onChange={(e) => refinement.onMessageChange(e.target.value)}
-          placeholder="Describe what to change..."
+          placeholder={t.agents.design.describe_changes_to_refine}
           className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {

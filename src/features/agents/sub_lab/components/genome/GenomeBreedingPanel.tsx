@@ -20,6 +20,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ============================================================================
 // Parent selector
@@ -34,10 +35,11 @@ function ParentSelector({
   selectedIds: string[];
   onToggle: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5" role="group" aria-label="Parent persona selection">
       <label className="text-xs font-medium text-muted-foreground">
-        Select Parents (2-5 personas)
+        {t.agents.lab.select_parents}
       </label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
         {personas.map((p) => {
@@ -61,7 +63,7 @@ function ParentSelector({
         })}
       </div>
       {personas.length === 0 && (
-        <p className="text-xs text-muted-foreground/60 italic">No personas available</p>
+        <p className="text-xs text-muted-foreground/60 italic">{t.agents.lab.no_personas_available}</p>
       )}
     </div>
   );
@@ -78,6 +80,7 @@ function ObjectiveSliders({
   objective: FitnessObjective;
   onChange: (obj: FitnessObjective) => void;
 }) {
+  const { t } = useTranslation();
   const adjust = (key: keyof FitnessObjective, value: number) => {
     const next = { ...objective, [key]: value };
     const total = next.speed + next.quality + next.cost;
@@ -117,7 +120,7 @@ function ObjectiveSliders({
 
   return (
     <fieldset className="space-y-2">
-      <legend className="text-xs font-medium text-muted-foreground">Fitness Objective</legend>
+      <legend className="text-xs font-medium text-muted-foreground">{t.agents.lab.fitness_objective}</legend>
       {sliderRow('quality', 'Quality', <Target className="w-3 h-3" aria-hidden="true" />, 'text-emerald-400')}
       {sliderRow('speed', 'Speed', <Zap className="w-3 h-3" aria-hidden="true" />, 'text-amber-400')}
       {sliderRow('cost', 'Cost', <DollarSign className="w-3 h-3" aria-hidden="true" />, 'text-blue-400')}
@@ -146,12 +149,13 @@ function FitnessBar({ label, value, color }: { label: string; value: number; col
 }
 
 function FitnessDisplay({ score }: { score: FitnessScore }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
-      <FitnessBar label="Overall" value={score.overall} color="bg-violet-500" />
-      <FitnessBar label="Quality" value={score.quality} color="bg-emerald-500" />
-      <FitnessBar label="Speed" value={score.speed} color="bg-amber-500" />
-      <FitnessBar label="Cost" value={score.cost} color="bg-blue-500" />
+      <FitnessBar label={t.agents.lab.overall_label} value={score.overall} color="bg-violet-500" />
+      <FitnessBar label={t.agents.lab.quality_label} value={score.quality} color="bg-emerald-500" />
+      <FitnessBar label={t.agents.lab.speed_label} value={score.speed} color="bg-amber-500" />
+      <FitnessBar label={t.agents.lab.cost_label} value={score.cost} color="bg-blue-500" />
     </div>
   );
 }
@@ -175,6 +179,7 @@ function OffspringCard({
   isAdopting: boolean;
   parentGenomes: Map<string, PersonaGenome>;
 }) {
+  const { t } = useTranslation();
   const [showDiff, setShowDiff] = useState(false);
   const genome = parseGenome(result.genomeJson);
 
@@ -245,7 +250,7 @@ function OffspringCard({
       <div className="flex items-center justify-end pt-1 border-t border-primary/5">
         {result.adopted ? (
           <span className="text-xs text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> Adopted
+            <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> {t.agents.lab.adopted}
           </span>
         ) : (
           <button
@@ -258,7 +263,7 @@ function OffspringCard({
             ) : (
               <Plus className="w-3 h-3" aria-hidden="true" />
             )}
-            Adopt as Persona
+            {t.agents.lab.adopt_as_persona}
           </button>
         )}
       </div>
@@ -335,18 +340,17 @@ function RunCard({
 // ============================================================================
 
 function BreedingEmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="text-center py-10">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-violet-500/10 mb-3">
         <HeartPulse className="w-7 h-7 text-violet-400/60" aria-hidden="true" />
       </div>
       <h3 className="text-sm font-medium text-muted-foreground mb-1">
-        Evolve your personas
+        {t.agents.lab.evolve_personas_title}
       </h3>
       <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto leading-relaxed">
-        Select 2-5 parent personas above, tune the fitness objective, then click
-        Start Breeding. The genetic algorithm will cross-breed prompts, tools,
-        and model configurations to discover novel high-performing variants.
+        {t.agents.lab.evolve_personas_desc}
       </p>
     </div>
   );
@@ -357,6 +361,7 @@ function BreedingEmptyState() {
 // ============================================================================
 
 export function GenomeBreedingPanel() {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -635,7 +640,7 @@ export function GenomeBreedingPanel() {
       {selectedRunId && results.length === 0 && (
         <div className="text-center py-8 text-muted-foreground/60 text-sm" role="status">
           <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin opacity-30" aria-hidden="true" />
-          <p>Breeding in progress...</p>
+          <p>{t.agents.lab.breeding_in_progress}</p>
           <p className="text-xs mt-1">Results will appear when the breeding run completes</p>
         </div>
       )}

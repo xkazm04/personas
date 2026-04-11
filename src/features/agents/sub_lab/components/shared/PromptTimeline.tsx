@@ -5,8 +5,10 @@ import { useAgentStore } from '@/stores/agentStore';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TimelineEntry } from './TimelineEntry';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function PromptTimeline() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const promptVersions = useAgentStore((s) => s.promptVersions);
   const fetchVersions = useAgentStore((s) => s.fetchVersions);
@@ -56,7 +58,7 @@ export function PromptTimeline() {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <GitBranch className="w-8 h-8 text-muted-foreground/15" />
-        <p className="text-sm font-medium text-muted-foreground/50">No prompt versions yet</p>
+        <p className="text-sm font-medium text-muted-foreground/50">{t.agents.lab.no_versions_yet}</p>
         <p className="text-xs text-muted-foreground/35 max-w-xs text-center">
           Versions are created automatically when the prompt is modified through the Lab or Matrix build.
         </p>
@@ -70,7 +72,7 @@ export function PromptTimeline() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <GitBranch className="w-4 h-4 text-violet-400" />
-          <h3 className="text-sm font-semibold text-foreground/70">Prompt Timeline</h3>
+          <h3 className="text-sm font-semibold text-foreground/70">{t.agents.lab.prompt_timeline}</h3>
           <span className="text-[10px] text-muted-foreground/40 px-1.5 py-0.5 rounded-md bg-secondary/30">
             {sortedVersions.length} version{sortedVersions.length !== 1 ? 's' : ''}
           </span>

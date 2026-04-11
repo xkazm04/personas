@@ -6,6 +6,7 @@ import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { EvalResultsGrid } from './EvalResultsGrid';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import type { LabEvalRun } from '@/lib/bindings/LabEvalRun';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function parseVersionNums(run: LabEvalRun): string {
   return run.versionNumbers.map((n) => `v${n}`).join(', ');
@@ -19,35 +20,36 @@ interface EvalHistoryProps {
   onDelete: (runId: string) => void;
 }
 
-const COLUMNS: LabHistoryColumn<LabEvalRun>[] = [
-  {
-    key: 'versions',
-    label: 'Versions',
-    render: (run) => <span className="text-sm font-mono text-foreground/80">{parseVersionNums(run)}</span>,
-  },
-  {
-    key: 'scenarios',
-    label: 'Scenarios',
-    className: 'w-[90px]',
-    render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
-  },
-];
-
 export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: EvalHistoryProps) {
+  const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
+
+  const columns: LabHistoryColumn<LabEvalRun>[] = useMemo(() => [
+    {
+      key: 'versions',
+      label: t.agents.lab.versions_column,
+      render: (run) => <span className="text-sm font-mono text-foreground/80">{parseVersionNums(run)}</span>,
+    },
+    {
+      key: 'scenarios',
+      label: t.agents.lab.scenarios_column,
+      className: 'w-[90px]',
+      render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
+    },
+  ], [t]);
 
   return (
     <>
       <LabHistoryTable
         runs={runs}
-        columns={COLUMNS}
+        columns={columns}
         activeRunId={expandedRunId}
         onRowClick={(id) => onToggleExpand(expandedRunId === id ? null : id)}
         onDelete={onDelete}
         emptyIcon={Grid3X3}
-        emptyTitle="No evaluation runs yet"
-        emptySubtitle="Select versions and models, then run"
-        title="Eval History"
+        emptyTitle={t.agents.lab.no_eval_runs}
+        emptySubtitle={t.agents.lab.no_eval_runs_subtitle}
+        title={t.agents.lab.eval_history_title}
       />
 
       {activeRun && (
@@ -55,7 +57,7 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
           isOpen
           onClose={() => onToggleExpand(null)}
           run={activeRun}
-          modeLabel="Evaluation"
+          modeLabel={t.agents.lab.eval_mode_label}
           headerChips={
             <>
               <span className="text-xs font-mono text-muted-foreground/60">{parseVersionNums(activeRun)}</span>

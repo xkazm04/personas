@@ -7,10 +7,12 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ModelToggleGrid } from '../../shared';
 import { RegressionResultsView } from './RegressionResultsView';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DEFAULT_THRESHOLD = 5;
 
 export function RegressionPanel() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const baselinePin = useAgentStore((s) => s.baselinePin);
   const loadBaseline = useAgentStore((s) => s.loadBaseline);
@@ -112,12 +114,12 @@ export function RegressionPanel() {
       <div className="py-12">
         <EmptyState
           icon={Star}
-          title="No Baseline Pinned"
-          subtitle="Pin a prompt version as baseline in the Versions tab to enable regression testing."
+          title={t.agents.lab.no_baseline_title}
+          subtitle={t.agents.lab.no_baseline_subtitle}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
           action={{
-            label: 'Go to Versions',
+            label: t.agents.lab.go_to_versions,
             onClick: () => setLabMode('versions'),
             icon: Shield,
           }}
@@ -142,7 +144,7 @@ export function RegressionPanel() {
 
       {/* Version selector */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">Compare against:</p>
+        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.compare_against}</p>
         <div className="flex flex-wrap gap-2">
           {promptVersions
             .filter((v) => v.id !== baselinePin.versionId && v.tag !== 'archived')
@@ -165,13 +167,13 @@ export function RegressionPanel() {
 
       {/* Model selector */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">Models to test:</p>
+        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.models_to_test}</p>
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
       </div>
 
       {/* Threshold */}
       <div className="flex items-center gap-3">
-        <p className="typo-caption text-muted-foreground/60">Regression threshold:</p>
+        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.regression_threshold}</p>
         <input
           type="number"
           value={threshold}
@@ -180,7 +182,7 @@ export function RegressionPanel() {
           min={1}
           max={50}
         />
-        <p className="typo-caption text-muted-foreground/40">pts (fail if composite score drops more than this)</p>
+        <p className="typo-caption text-muted-foreground/40">{t.agents.lab.threshold_hint}</p>
       </div>
 
       {/* Run button */}
@@ -190,7 +192,7 @@ export function RegressionPanel() {
         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors disabled:opacity-40 focus-ring"
       >
         {running ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
-        {running ? 'Running Regression Check...' : 'Run Regression Check'}
+        {running ? t.agents.lab.running_regression : t.agents.lab.run_regression}
       </button>
 
       {/* Results */}

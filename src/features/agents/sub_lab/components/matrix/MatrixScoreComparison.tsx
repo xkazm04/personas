@@ -1,5 +1,6 @@
 import { Target, FileText, Shield, DollarSign, Clock, ArrowUp, ArrowDown } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface VariantScores {
   avgToolAccuracy: number;
@@ -16,29 +17,30 @@ interface MatrixScoreComparisonProps {
 }
 
 export function MatrixScoreComparison({ currentAgg, draftAgg }: MatrixScoreComparisonProps) {
+  const { t } = useTranslation();
   if (!currentAgg || !draftAgg) return null;
 
   const rows = [
-    { label: 'Tool Accuracy', icon: Target, current: currentAgg.avgToolAccuracy, draft: draftAgg.avgToolAccuracy },
-    { label: 'Output Quality', icon: FileText, current: currentAgg.avgOutputQuality, draft: draftAgg.avgOutputQuality },
-    { label: 'Protocol', icon: Shield, current: currentAgg.avgProtocolCompliance, draft: draftAgg.avgProtocolCompliance },
-    { label: 'Composite', icon: null as typeof Target | null, current: currentAgg.compositeScore, draft: draftAgg.compositeScore },
+    { label: t.agents.lab.tool_accuracy, icon: Target, current: currentAgg.avgToolAccuracy, draft: draftAgg.avgToolAccuracy },
+    { label: t.agents.lab.output_quality, icon: FileText, current: currentAgg.avgOutputQuality, draft: draftAgg.avgOutputQuality },
+    { label: t.agents.lab.protocol, icon: Shield, current: currentAgg.avgProtocolCompliance, draft: draftAgg.avgProtocolCompliance },
+    { label: t.agents.lab.composite_label, icon: null as typeof Target | null, current: currentAgg.compositeScore, draft: draftAgg.compositeScore },
   ];
 
   return (
     <div className="space-y-2">
       <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-        Score Comparison
+        {t.agents.lab.score_comparison}
       </h4>
       <div className="overflow-x-auto border border-primary/10 rounded-xl">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/30">
-              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">Metric</th>
-              <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">Current</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">{t.agents.lab.metric_column}</th>
+              <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">{t.agents.lab.current_column}</th>
               <th className="text-center px-3 py-2.5 font-medium text-violet-400">Draft</th>
-              <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">Delta</th>
+              <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">{t.agents.lab.delta_column}</th>
             </tr>
           </thead>
           <tbody>

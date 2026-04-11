@@ -6,6 +6,7 @@ import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { MatrixResultsView } from './MatrixResultsView';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface MatrixHistoryProps {
   runs: LabMatrixRun[];
@@ -15,40 +16,41 @@ interface MatrixHistoryProps {
   onDelete: (runId: string) => void;
 }
 
-const COLUMNS: LabHistoryColumn<LabMatrixRun>[] = [
-  {
-    key: 'instruction',
-    label: 'Instruction',
-    render: (run) => (
-      <span className="text-sm text-foreground/80 truncate block max-w-[350px]">{run.userInstruction}</span>
-    ),
-  },
-  {
-    key: 'accepted',
-    label: 'Draft',
-    className: 'w-[100px]',
-    render: (run) =>
-      run.draftAccepted
-        ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400"><Check className="w-2.5 h-2.5" />Accepted</span>
-        : <span className="text-xs text-muted-foreground/50">Pending</span>,
-  },
-];
-
 export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: MatrixHistoryProps) {
+  const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
+
+  const columns: LabHistoryColumn<LabMatrixRun>[] = useMemo(() => [
+    {
+      key: 'instruction',
+      label: t.agents.lab.instruction_column,
+      render: (run) => (
+        <span className="text-sm text-foreground/80 truncate block max-w-[350px]">{run.userInstruction}</span>
+      ),
+    },
+    {
+      key: 'accepted',
+      label: t.agents.lab.draft_column,
+      className: 'w-[100px]',
+      render: (run) =>
+        run.draftAccepted
+          ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400"><Check className="w-2.5 h-2.5" />{t.agents.lab.accepted_label}</span>
+          : <span className="text-xs text-muted-foreground/50">{t.agents.lab.pending_label}</span>,
+    },
+  ], [t]);
 
   return (
     <>
       <LabHistoryTable
         runs={runs}
-        columns={COLUMNS}
+        columns={columns}
         activeRunId={expandedRunId}
         onRowClick={(id) => onToggleExpand(expandedRunId === id ? null : id)}
         onDelete={onDelete}
         emptyIcon={Wand2}
-        emptyTitle="No matrix runs yet"
-        emptySubtitle="Describe a change above to generate and test a draft"
-        title="Matrix History"
+        emptyTitle={t.agents.lab.no_matrix_runs}
+        emptySubtitle={t.agents.lab.no_matrix_runs_subtitle}
+        title={t.agents.lab.matrix_history_title}
       />
 
       {activeRun && (
@@ -56,7 +58,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
           isOpen
           onClose={() => onToggleExpand(null)}
           run={activeRun}
-          modeLabel="Matrix"
+          modeLabel={t.agents.lab.matrix_mode_label}
           headerChips={
             <span className="text-xs text-muted-foreground/60 truncate max-w-[300px]">{activeRun.userInstruction}</span>
           }

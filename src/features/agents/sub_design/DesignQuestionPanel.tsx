@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, MessageCircleQuestion } from 'lucide-react';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface DesignQuestion {
   question: string;
@@ -21,6 +22,7 @@ export function DesignQuestionPanel({
   onAnswerQuestion,
   onCancelAnalysis,
 }: DesignQuestionPanelProps) {
+  const { t } = useTranslation();
   const [questionAnswer, setQuestionAnswer] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -62,7 +64,7 @@ export function DesignQuestionPanel({
           <div className="w-7 h-7 rounded-[var(--radius-secondary)] bg-accent/10 border border-accent/25 flex items-center justify-center">
             <MessageCircleQuestion className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-sm font-semibold text-accent">Clarification Needed</span>
+          <span className="text-sm font-semibold text-accent">{t.agents.design.clarification_needed}</span>
         </div>
 
         <p className="text-sm text-foreground/80 leading-relaxed">{question.question}</p>
@@ -97,7 +99,7 @@ export function DesignQuestionPanel({
         {/* Divider */}
         <div className="flex items-center gap-3 pt-1">
           <div className="flex-1 h-px bg-primary/10" />
-          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">or type your answer</span>
+          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">{t.agents.design.or_type_answer}</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 
@@ -107,7 +109,7 @@ export function DesignQuestionPanel({
             ref={textareaRef}
             value={questionAnswer}
             onChange={(e) => setQuestionAnswer(e.target.value)}
-            placeholder="Type a custom answer..."
+            placeholder={t.agents.design.type_custom_answer}
             className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/20 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent/30 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && e.ctrlKey) {
@@ -137,7 +139,7 @@ export function DesignQuestionPanel({
             Answer
           </button>
         </div>
-        <p className="text-sm text-muted-foreground">Ctrl+Enter to submit</p>
+        <p className="text-sm text-muted-foreground">{t.agents.design.ctrl_enter_submit}</p>
       </div>
 
       {/* Cancel */}

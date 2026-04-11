@@ -7,6 +7,7 @@ import { ArenaResultsView } from './ArenaResultsView';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ArenaHistoryProps {
   runs: LabArenaRun[];
@@ -50,24 +51,24 @@ function computeWinnerScore(results: LabArenaResult[] | undefined): { ta: number
   return best;
 }
 
-function buildColumns(resultsMap: Record<string, LabArenaResult[]>): LabHistoryColumn<LabArenaRun>[] {
+function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Record<string, LabArenaResult[]>): LabHistoryColumn<LabArenaRun>[] {
   return [
     {
       key: 'models',
-      label: 'Models',
+      label: t.agents.lab.models_column,
       render: (run) => (
         <span className="text-sm text-foreground/80 font-medium">{parseModels(run).join(', ') || '--'}</span>
       ),
     },
     {
       key: 'scenarios',
-      label: 'Scenarios',
+      label: t.agents.lab.scenarios_column,
       className: 'w-[70px]',
       render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
     },
     {
       key: 'best',
-      label: 'Best',
+      label: t.agents.lab.best_column,
       className: 'w-[100px]',
       render: (run) => {
         const s = parseSummary(run);
@@ -78,7 +79,7 @@ function buildColumns(resultsMap: Record<string, LabArenaResult[]>): LabHistoryC
     },
     {
       key: 'scores',
-      label: 'Winner Scores',
+      label: t.agents.lab.winner_scores,
       className: 'w-[200px]',
       render: (run) => {
         const scores = computeWinnerScore(resultsMap[run.id]);
@@ -98,8 +99,9 @@ function buildColumns(resultsMap: Record<string, LabArenaResult[]>): LabHistoryC
 }
 
 export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: ArenaHistoryProps) {
+  const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
-  const columns = useMemo(() => buildColumns(resultsMap), [resultsMap]);
+  const columns = useMemo(() => buildColumns(t, resultsMap), [t, resultsMap]);
 
   return (
     <>
@@ -110,9 +112,9 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
         onRowClick={(id) => onToggleExpand(expandedRunId === id ? null : id)}
         onDelete={onDelete}
         emptyIcon={FlaskConical}
-        emptyTitle="No arena runs yet"
-        emptySubtitle="Select models above and run a test"
-        title="Arena History"
+        emptyTitle={t.agents.lab.no_arena_runs}
+        emptySubtitle={t.agents.lab.no_arena_runs_subtitle}
+        title={t.agents.lab.arena_history_title}
       />
 
       {activeRun && (
@@ -120,7 +122,7 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
           isOpen
           onClose={() => onToggleExpand(null)}
           run={activeRun}
-          modeLabel="Arena"
+          modeLabel={t.agents.lab.arena_mode_label}
           headerChips={
             <>
               <span className="text-xs text-muted-foreground/60">{parseModels(activeRun).join(', ')}</span>

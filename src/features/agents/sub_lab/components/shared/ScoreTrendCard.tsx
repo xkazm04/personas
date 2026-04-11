@@ -6,6 +6,7 @@ import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScoreTrendCardProps {
   personaId: string;
@@ -61,6 +62,7 @@ function toSvgCoords(points: RunDataPoint[]): Array<{ x: number; y: number; dp: 
 }
 
 export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
+  const { t } = useTranslation();
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
   const abRuns = useAgentStore((s) => s.abRuns);
   const evalRuns = useAgentStore((s) => s.evalRuns);
@@ -123,9 +125,9 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
         <div className="flex items-center gap-2 mb-1">
           <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/50" />
-          <span className="text-xs font-medium text-muted-foreground/60">Score Trend</span>
+          <span className="text-xs font-medium text-muted-foreground/60">{t.agents.lab.score_trend}</span>
         </div>
-        <p className="text-xs text-muted-foreground/40">Run tests to see score trends</p>
+        <p className="text-xs text-muted-foreground/40">{t.agents.lab.run_tests_hint}</p>
       </div>
     );
   }
@@ -141,7 +143,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
     <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <TrendingUp className="w-3.5 h-3.5 text-primary/70" />
-        <span className="text-xs font-medium text-foreground/70">Score Trend</span>
+        <span className="text-xs font-medium text-foreground/70">{t.agents.lab.score_trend}</span>
         {bestScore != null && (
           <span className="ml-auto text-xs text-emerald-400 font-medium">Best: {bestScore}</span>
         )}

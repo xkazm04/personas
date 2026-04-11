@@ -7,8 +7,10 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function AbPanel() {
+  const { t } = useTranslation();
   const promptVersions = useAgentStore((s) => s.promptVersions);
   const abRuns = useAgentStore((s) => s.abRuns);
   const abResultsMap = useAgentStore((s) => s.abResultsMap);
@@ -69,7 +71,7 @@ export function AbPanel() {
           <button onClick={toggle} data-testid={testId}
 
             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
-            <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
+            <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? t.agents.lab.select_version}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}>
@@ -94,15 +96,15 @@ export function AbPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={!versionAId || !versionBId || selectedModels.size === 0}
-        disabledReason={!versionAId ? 'Select Version A to continue' : !versionBId ? 'Select Version B to continue' : selectedModels.size === 0 ? 'Select at least one model' : ''}
-        runLabel="Run A/B Test"
-        cancelLabel="Cancel A/B Test"
+        disabledReason={!versionAId ? t.agents.lab.select_version_a : !versionBId ? t.agents.lab.select_version_b : selectedModels.size === 0 ? t.agents.lab.select_model : ''}
+        runLabel={t.agents.lab.run_ab_test}
+        cancelLabel={t.agents.lab.cancel_ab_test}
         cancelTestId="ab-cancel-btn"
         runTestId="ab-run-btn"
       >
         <div className="grid grid-cols-2 gap-3">
-          {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
-          {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
+          {renderVersionPicker(t.agents.lab.version_a, 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
+          {renderVersionPicker(t.agents.lab.version_b, 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
         </div>
 
         {versionA && versionB && (
@@ -115,7 +117,7 @@ export function AbPanel() {
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
 
         <div className="space-y-1">
-          <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
+          <label className="text-sm text-muted-foreground/70">{t.agents.lab.test_input_label}</label>
           <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}'
             className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
         </div>

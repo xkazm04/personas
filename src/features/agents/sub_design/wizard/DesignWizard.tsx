@@ -5,6 +5,7 @@ import type { WizardAnswers } from './wizardSteps';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { WizardStepRenderer } from './WizardStepRenderer';
 import { WizardStepIndicator } from './WizardStepIndicator';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignWizardProps {
   onComplete: (instruction: string) => void;
@@ -15,6 +16,7 @@ interface DesignWizardProps {
 }
 
 export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizardProps) {
+  const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [additionalContext, setAdditionalContext] = useState('');
@@ -114,7 +116,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                 <textarea
                   value={additionalContext}
                   onChange={(e) => setAdditionalContext(e.target.value)}
-                  placeholder="Add any specific requirements, domain knowledge, or constraints..."
+                  placeholder={t.agents.design.additional_instructions_placeholder}
                   rows={4}
                   className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />

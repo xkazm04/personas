@@ -1,12 +1,20 @@
 import { Check, FileEdit, Sparkles, Play, BarChart3 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const LAB_PHASES = [
-  { key: 'drafting', label: 'Drafting', icon: FileEdit },
-  { key: 'generating', label: 'Generating', icon: Sparkles },
-  { key: 'executing', label: 'Executing', icon: Play },
-  { key: 'summarizing', label: 'Summarizing', icon: BarChart3 },
+  { key: 'drafting', icon: FileEdit },
+  { key: 'generating', icon: Sparkles },
+  { key: 'executing', icon: Play },
+  { key: 'summarizing', icon: BarChart3 },
 ] as const;
+
+const PHASE_LABELS: Record<string, string> = {
+  drafting: 'phase_drafting',
+  generating: 'phase_generating',
+  executing: 'phase_executing',
+  summarizing: 'phase_summarizing',
+};
 
 function phaseIndex(phase: string): number {
   const idx = LAB_PHASES.findIndex((p) => p.key === phase);
@@ -14,6 +22,7 @@ function phaseIndex(phase: string): number {
 }
 
 export function LabProgress() {
+  const { t } = useTranslation();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const labProgress = useAgentStore((s) => s.labProgress);
 
@@ -59,7 +68,7 @@ export function LabProgress() {
                           : 'text-muted-foreground/40'
                     }`}
                   >
-                    {phase.label}
+                    {(t.agents.lab as Record<string, string>)[PHASE_LABELS[phase.key] ?? ''] ?? phase.key}
                   </span>
                 </div>
 
@@ -81,13 +90,13 @@ export function LabProgress() {
         <div className="flex items-center justify-between text-sm">
           <span className="text-foreground/70">
             {labProgress.phase === 'drafting'
-              ? 'Generating draft persona...'
+              ? t.agents.lab.generating_draft
               : labProgress.phase === 'generating'
-                ? 'Generating test scenarios...'
+                ? t.agents.lab.generating_scenarios
                 : labProgress.phase === 'summarizing'
-                  ? 'Generating test summary...'
+                  ? t.agents.lab.generating_summary
                   : labProgress.phase === 'executing'
-                    ? `Testing ${labProgress.modelId ?? ''} — ${labProgress.scenarioName ?? ''}`
+                    ? `Testing ${labProgress.modelId ?? ''} \u2014 ${labProgress.scenarioName ?? ''}`
                     : labProgress.phase}
           </span>
 

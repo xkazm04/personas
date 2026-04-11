@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { GitBranch } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
@@ -15,41 +16,42 @@ interface AbHistoryProps {
   onDelete: (runId: string) => void;
 }
 
-const COLUMNS: LabHistoryColumn<LabAbRun>[] = [
-  {
-    key: 'versions',
-    label: 'Comparison',
-    render: (run) => (
-      <div className="flex items-center gap-1.5">
-        <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{run.versionANum}</span>
-        <span className="text-muted-foreground/40 text-xs">vs</span>
-        <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{run.versionBNum}</span>
-      </div>
-    ),
-  },
-  {
-    key: 'scenarios',
-    label: 'Scenarios',
-    className: 'w-[90px]',
-    render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
-  },
-];
-
 export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: AbHistoryProps) {
+  const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
+
+  const columns: LabHistoryColumn<LabAbRun>[] = useMemo(() => [
+    {
+      key: 'versions',
+      label: t.agents.lab.ab_comparison,
+      render: (run) => (
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{run.versionANum}</span>
+          <span className="text-muted-foreground/40 text-xs">vs</span>
+          <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{run.versionBNum}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'scenarios',
+      label: t.agents.lab.ab_scenarios,
+      className: 'w-[90px]',
+      render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
+    },
+  ], [t]);
 
   return (
     <>
       <LabHistoryTable
         runs={runs}
-        columns={COLUMNS}
+        columns={columns}
         activeRunId={expandedRunId}
         onRowClick={(id) => onToggleExpand(expandedRunId === id ? null : id)}
         onDelete={onDelete}
         emptyIcon={GitBranch}
-        emptyTitle="No A/B test runs yet"
-        emptySubtitle="Select two versions and run a comparison"
-        title="A/B History"
+        emptyTitle={t.agents.lab.ab_no_runs}
+        emptySubtitle={t.agents.lab.ab_no_runs_subtitle}
+        title={t.agents.lab.ab_history_title}
       />
 
       {activeRun && (
@@ -57,7 +59,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
           isOpen
           onClose={() => onToggleExpand(null)}
           run={activeRun}
-          modeLabel="A/B Test"
+          modeLabel={t.agents.lab.ab_mode_label}
           headerChips={
             <div className="flex items-center gap-1.5">
               <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{activeRun.versionANum}</span>

@@ -7,8 +7,10 @@ import { ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ArenaPanel() {
+  const { t } = useTranslation();
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
   const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
   const isLabRunning = useAgentStore((s) => s.isArenaRunning);
@@ -66,9 +68,9 @@ export function ArenaPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={selectedModels.size === 0 || !hasPrompt}
-        disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        disabledReason={!hasPrompt ? t.agents.lab.add_prompt_first : selectedModels.size === 0 ? t.agents.lab.select_model : ''}
         runLabel={<>Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})</>}
-        cancelLabel="Cancel Test"
+        cancelLabel={t.agents.lab.cancel_test}
         cancelTestId="arena-cancel-btn"
         runTestId="arena-run-btn"
       >
@@ -76,13 +78,13 @@ export function ArenaPanel() {
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-amber-400/90">
-              {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
-              {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
+              {!hasPrompt && <p>{t.agents.lab.no_prompt_warning}</p>}
+              {!hasTools && <p>{t.agents.lab.no_tools_warning}</p>}
             </div>
           </div>
         )}
 
-        <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label="Focus on Use Case" />
+        <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label={t.agents.lab.focus_use_case} />
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="arena" />
       </LabPanelShell>
 

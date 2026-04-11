@@ -6,8 +6,10 @@ import { EvalHistory } from './EvalHistory';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function EvalPanel() {
+  const { t } = useTranslation();
   const promptVersions = useAgentStore((s) => s.promptVersions);
   const evalRuns = useAgentStore((s) => s.evalRuns);
   const evalResultsMap = useAgentStore((s) => s.evalResultsMap);
@@ -51,14 +53,14 @@ export function EvalPanel() {
         onStart={() => void handleStart()}
         onCancel={() => void handleCancel()}
         disabled={selectedVersionIds.values.size < 2 || selectedModels.size === 0}
-        disabledReason={selectedVersionIds.values.size < 2 ? 'Select at least 2 prompt versions' : selectedModels.size === 0 ? 'Select at least one model' : ''}
-        runLabel="Run Evaluation Matrix"
-        cancelLabel="Cancel Eval"
+        disabledReason={selectedVersionIds.values.size < 2 ? t.agents.lab.select_2_versions : selectedModels.size === 0 ? t.agents.lab.select_model : ''}
+        runLabel={t.agents.lab.run_eval_matrix}
+        cancelLabel={t.agents.lab.cancel_eval}
         cancelTestId="eval-cancel-btn"
         runTestId="eval-start-btn"
       >
         <div className="space-y-1">
-          <label className="text-sm font-medium text-muted-foreground/80">Prompt Versions (select 2+)</label>
+          <label className="text-sm font-medium text-muted-foreground/80">{t.agents.lab.prompt_versions_label}</label>
           <div className="flex flex-wrap gap-2" data-testid="eval-version-selector">
             {promptVersions.map((v) => {
               const isSelected = selectedVersionIds.values.has(v.id);
@@ -73,14 +75,14 @@ export function EvalPanel() {
               );
             })}
           </div>
-          {promptVersions.length < 2 && <p className="text-sm text-amber-400/80 mt-1">At least 2 prompt versions are needed. Create more versions in the Versions tab.</p>}
+          {promptVersions.length < 2 && <p className="text-sm text-amber-400/80 mt-1">{t.agents.lab.min_2_versions_warning}</p>}
         </div>
 
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="eval" />
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} testIdPrefix="eval" />
 
         <div className="space-y-1">
-          <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
+          <label className="text-sm text-muted-foreground/70">{t.agents.lab.test_input_label}</label>
           <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' data-testid="eval-test-input"
             className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
         </div>

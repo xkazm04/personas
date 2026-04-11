@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { getSectionSummary, diffStrings } from '../../shared/labPrimitives';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface InlineDiffPreviewProps {
   older: PersonaPromptVersion;
@@ -15,6 +16,7 @@ interface SectionChange {
 }
 
 export function InlineDiffPreview({ older, newer }: InlineDiffPreviewProps) {
+  const { t } = useTranslation();
   const changes = useMemo(() => {
     const sectionsA = getSectionSummary(older.structured_prompt);
     const sectionsB = getSectionSummary(newer.structured_prompt);
@@ -41,7 +43,7 @@ export function InlineDiffPreview({ older, newer }: InlineDiffPreviewProps) {
   }, [older.structured_prompt, newer.structured_prompt]);
 
   if (changes.length === 0) {
-    return <p className="text-[11px] text-muted-foreground/40 italic">No prompt changes</p>;
+    return <p className="text-[11px] text-muted-foreground/40 italic">{t.agents.lab.no_prompt_changes}</p>;
   }
 
   return (

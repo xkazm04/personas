@@ -9,6 +9,7 @@ import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { MatrixScoreComparison } from './MatrixScoreComparison';
 import { useAgentStore } from "@/stores/agentStore";
 import { aggregateMatrixResults } from '../../libs/labAggregation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UserRatingEntry {
   rating: number;
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function MatrixResultsView({ run, results, userRatings, onRate }: Props) {
+  const { t } = useTranslation();
   const acceptDraft = useAgentStore((s) => s.acceptDraft);
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; variant: string } | null>(null);
@@ -41,7 +43,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
         <div className="space-y-2">
           <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" />
-            Draft Changes
+            {t.agents.lab.draft_changes}
           </h4>
           <DraftDiffViewer currentPromptJson={selectedPersona?.structured_prompt ?? null}
             draftPromptJson={run.draftPromptJson} changeSummary={run.draftChangeSummary} />
@@ -54,15 +56,15 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
         <div className="space-y-2">
           <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
-            Scenario Breakdown
-            <span className="text-xs font-normal text-muted-foreground/50 ml-1">Click a cell for details</span>
+            {t.agents.lab.scenario_breakdown}
+            <span className="text-xs font-normal text-muted-foreground/50 ml-1">{t.agents.lab.click_cell_details}</span>
           </h4>
           <div className="overflow-x-auto border border-primary/10 rounded-xl">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">Scenario</th>
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">Current</th>
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">{t.agents.lab.current_column}</th>
                   <th className="text-center px-3 py-2.5 font-medium text-violet-400">Draft</th>
                 </tr>
               </thead>
@@ -162,16 +164,16 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
         <div className="flex items-center gap-3 pt-2">
           <button onClick={() => void acceptDraft(run.id)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
-            <Check className="w-4 h-4" />Accept Draft
+            <Check className="w-4 h-4" />{t.agents.lab.accept_draft}
           </button>
           <p className="text-sm text-muted-foreground/60">
-            Accept applies the draft prompt to the persona, creating a new prompt version.
+            {t.agents.lab.accept_applies_desc}
           </p>
         </div>
       )}
       {run.draftAccepted && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
-          <Check className="w-4 h-4" />Draft accepted and applied
+          <Check className="w-4 h-4" />{t.agents.lab.draft_accepted}
         </div>
       )}
     </div>

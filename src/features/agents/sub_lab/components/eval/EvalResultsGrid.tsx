@@ -8,6 +8,7 @@ import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UserRatingEntry {
   rating: number;
@@ -76,6 +77,7 @@ function collectSuggestions(results: LabEvalResult[], limit = 3): string[] {
 }
 
 export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }: Props) {
+  const { t } = useTranslation();
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string; modelId: string } | null>(null);
   const { shouldAnimate } = useMotion();
@@ -118,7 +120,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   if (results.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground/60 text-sm" data-testid="eval-results-empty">
-        No results to display
+        {t.agents.lab.no_results}
       </div>
     );
   }
@@ -133,7 +135,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
               <Grid3X3 className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-foreground/90">Evaluation Summary</h4>
+              <h4 className="text-sm font-semibold text-foreground/90">{t.agents.lab.eval_summary}</h4>
               <p className="text-xs text-muted-foreground/50">{versions.length} versions x {models.length} models x {scenarios.length} scenarios</p>
             </div>
           </div>
@@ -155,7 +157,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                  <MessageSquare className="w-3 h-3" /> Evaluation Insights
+                  <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                 </h4>
               </div>
               <div className="px-4 py-3 space-y-2.5">
@@ -172,7 +174,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
               <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
-                  <Lightbulb className="w-3 h-3" /> Improvement Suggestions
+                  <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                 </h4>
               </div>
               <div className="px-4 py-3 space-y-2">
@@ -191,7 +193,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       <details className="group" open>
         <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Version x Model Matrix</h4>
+          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.version_model_matrix}</h4>
         </summary>
         <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
           <table className="w-full text-sm" data-testid="eval-matrix-table">
@@ -244,8 +246,8 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
         <details className="group" open>
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-            <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Scenario Breakdown</h4>
-            <span className="text-[10px] text-muted-foreground/30">Click a cell for details</span>
+            <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
+            <span className="text-[10px] text-muted-foreground/30">{t.agents.lab.click_cell_details}</span>
           </summary>
           <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
             <table className="w-full text-sm" data-testid="eval-scenario-table">

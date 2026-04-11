@@ -12,6 +12,7 @@ import type { EvolutionPolicy } from '@/lib/bindings/EvolutionPolicy';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
 import type { FitnessObjective } from '@/lib/bindings/FitnessObjective';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ============================================================================
 // Cycle status badge
@@ -45,6 +46,7 @@ function ObjectiveEditor({
   objective: FitnessObjective;
   onChange: (obj: FitnessObjective) => void;
 }) {
+  const { t } = useTranslation();
   const adjust = (key: keyof FitnessObjective, value: number) => {
     const next = { ...objective, [key]: value };
     const total = next.speed + next.quality + next.cost;
@@ -73,9 +75,9 @@ function ObjectiveEditor({
 
   return (
     <div className="space-y-1.5">
-      {row('quality', 'Quality', <Target className="w-3 h-3" />, 'text-emerald-400')}
-      {row('speed', 'Speed', <Zap className="w-3 h-3" />, 'text-amber-400')}
-      {row('cost', 'Cost', <DollarSign className="w-3 h-3" />, 'text-blue-400')}
+      {row('quality', t.agents.lab.quality_label, <Target className="w-3 h-3" />, 'text-emerald-400')}
+      {row('speed', t.agents.lab.speed_label, <Zap className="w-3 h-3" />, 'text-amber-400')}
+      {row('cost', t.agents.lab.cost_label, <DollarSign className="w-3 h-3" />, 'text-blue-400')}
     </div>
   );
 }
@@ -85,6 +87,7 @@ function ObjectiveEditor({
 // ============================================================================
 
 function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
+  const { t } = useTranslation();
   const improvement = cycle.winnerFitness != null && cycle.incumbentFitness != null
     ? cycle.winnerFitness - cycle.incumbentFitness
     : null;
@@ -99,7 +102,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
           </span>
           {cycle.promoted && (
             <span className="text-emerald-400 font-medium flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> Promoted
+              <TrendingUp className="w-3 h-3" /> {t.agents.lab.promoted_label}
             </span>
           )}
           {improvement != null && improvement > 0 && (
@@ -129,6 +132,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
 // ============================================================================
 
 export function EvolutionPanel() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const addToast = useToastStore((s) => s.addToast);
   const personaId = selectedPersona?.id;
@@ -252,7 +256,7 @@ export function EvolutionPanel() {
   if (!personaId) {
     return (
       <div className="text-center py-10 text-muted-foreground/60 text-sm">
-        Select a persona to configure auto-evolution
+        {t.agents.lab.select_persona_evolution}
       </div>
     );
   }
@@ -302,21 +306,21 @@ export function EvolutionPanel() {
             <div className="grid grid-cols-3 gap-2">
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">{policy.totalCycles}</div>
-                <div className="text-[10px] text-muted-foreground">Cycles</div>
+                <div className="text-[10px] text-muted-foreground">{t.agents.lab.cycles_label}</div>
               </div>
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-emerald-400">{policy.totalPromotions}</div>
-                <div className="text-[10px] text-muted-foreground">Promotions</div>
+                <div className="text-[10px] text-muted-foreground">{t.agents.lab.promotions_label}</div>
               </div>
               <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">
                   {eligible ? (
-                    <span className="text-amber-400">Ready</span>
+                    <span className="text-amber-400">{t.agents.lab.ready_label}</span>
                   ) : (
-                    <span className="text-muted-foreground/60">Waiting</span>
+                    <span className="text-muted-foreground/60">{t.agents.lab.waiting_label}</span>
                   )}
                 </div>
-                <div className="text-[10px] text-muted-foreground">Next Cycle</div>
+                <div className="text-[10px] text-muted-foreground">{t.agents.lab.next_cycle}</div>
               </div>
             </div>
           )}
@@ -442,7 +446,7 @@ export function EvolutionPanel() {
                     ) : (
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     )}
-                    Save Settings
+                    {t.agents.lab.save_settings}
                   </button>
                 </div>
               </div>
