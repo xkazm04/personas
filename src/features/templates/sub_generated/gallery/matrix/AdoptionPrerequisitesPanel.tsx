@@ -11,6 +11,7 @@ import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import type { ConnectorReadinessStatus, AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Types ------------------------------------------------------------
 
@@ -52,6 +53,7 @@ export function AdoptionPrerequisitesPanel({
   onAddCredential,
   onAdopt,
 }: AdoptionPrerequisitesPanelProps) {
+  const { t } = useTranslation();
   const items = useMemo<PrerequisiteItem[]>(() => {
     if (!designResult?.suggested_connectors?.length) return [];
     const installedNames = new Set(connectorDefinitions.map((c) => c.name));
@@ -75,7 +77,7 @@ export function AdoptionPrerequisitesPanel({
       {/* Header */}
       <div className="flex items-center gap-2">
         <Plug className="w-4 h-4 text-muted-foreground/70" />
-        <SectionLabel className="mb-0">Prerequisites</SectionLabel>
+        <SectionLabel className="mb-0">{t.templates.matrix_grid.prerequisites}</SectionLabel>
         <OverallBadge overall={overall} total={items.length} ready={items.filter((i) => i.status.health === 'ready').length} />
       </div>
 
@@ -102,14 +104,14 @@ export function AdoptionPrerequisitesPanel({
         {overall === 'ready' ? (
           <>
             <ShieldCheck className="w-4 h-4" />
-            All set -- Start Adoption
+            {t.templates.matrix_grid.all_set_start}
           </>
         ) : (
           <>
             <ArrowRight className="w-4 h-4" />
-            Continue to Adoption
+            {t.templates.matrix_grid.continue_to_adoption}
             <span className="text-muted-foreground/50 text-sm ml-1">
-              (setup in wizard)
+              {t.templates.matrix_grid.setup_in_wizard}
             </span>
           </>
         )}
@@ -135,6 +137,7 @@ function OverallBadge({ overall, total, ready }: { overall: PrerequisiteOverall;
 }
 
 function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; onSetup: () => void }) {
+  const { t } = useTranslation();
   const meta = getConnectorMeta(item.connectorName);
   const isReady = item.status.health === 'ready';
 
@@ -161,8 +164,8 @@ function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; o
           {isReady
             ? 'Credential configured'
             : !item.status.installed
-              ? 'Connector not installed'
-              : 'Needs credential'}
+              ? t.templates.matrix_grid.connector_not_installed
+              : t.templates.matrix_grid.needs_credential}
         </span>
       </div>
 

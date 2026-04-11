@@ -3,6 +3,7 @@ import { X, Sparkles, Users, ArrowRight, CheckCircle2, AlertCircle } from 'lucid
 import { synthesizeTeamFromTemplates } from '@/api/overview/intelligence/teamSynthesis';
 import type { TeamSynthesisResult } from '@/api/overview/intelligence/teamSynthesis';
 import { BaseModal } from './BaseModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TeamSynthesisPanelProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface TeamSynthesisPanelProps {
 }
 
 export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynthesisPanelProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               <Users className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">Synthesize Team</h2>
+              <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
               <p className="text-sm text-muted-foreground/60">
                 AI selects templates and assembles a connected team
               </p>

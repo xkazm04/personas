@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, MessageSquare, Pencil, Sparkles } from 'lucide-react';
 import type { TransformSubPhase } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StepDef {
   id: TransformSubPhase;
@@ -8,25 +9,26 @@ interface StepDef {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const TRANSFORM_STEPS: StepDef[] = [
-  { id: 'asking', label: 'Analyze', icon: MessageSquare },
-  { id: 'answering', label: 'Questions', icon: Pencil },
-  { id: 'generating', label: 'Generate', icon: Sparkles },
-];
-
-function phaseIndex(phase: TransformSubPhase): number {
-  const idx = TRANSFORM_STEPS.findIndex((s) => s.id === phase);
-  if (phase === 'completed') return TRANSFORM_STEPS.length;
-  if (phase === 'failed') return -1;
-  return idx;
-}
-
 interface TransformPhaseStepperProps {
   currentPhase: TransformSubPhase;
 }
 
 export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperProps) {
+  const { t } = useTranslation();
   if (currentPhase === 'idle') return null;
+
+  const TRANSFORM_STEPS: StepDef[] = [
+    { id: 'asking', label: t.templates.n8n.analyze_phase, icon: MessageSquare },
+    { id: 'answering', label: t.templates.n8n.questions_phase, icon: Pencil },
+    { id: 'generating', label: t.templates.n8n.generate_phase, icon: Sparkles },
+  ];
+
+  const phaseIndex = (phase: TransformSubPhase): number => {
+    const idx = TRANSFORM_STEPS.findIndex((s) => s.id === phase);
+    if (phase === 'completed') return TRANSFORM_STEPS.length;
+    if (phase === 'failed') return -1;
+    return idx;
+  };
 
   const activeIdx = phaseIndex(currentPhase);
 

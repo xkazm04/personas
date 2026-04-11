@@ -10,6 +10,7 @@ import { N8nParserResults } from './N8nParserResults';
 import { N8nSessionList } from './N8nSessionList';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Slide animation variants --
 
@@ -29,6 +30,7 @@ const slideVariants = {
 };
 
 export default function N8nImportTab() {
+  const { t } = useTranslation();
   const {
     state,
     dispatch,
@@ -99,7 +101,7 @@ export default function N8nImportTab() {
         >
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-red-400 font-medium">Import Error</p>
+            <p className="text-sm text-red-400 font-medium">{t.templates.n8n.import_error}</p>
             <p className="text-sm text-red-400/70 mt-0.5">{state.error}</p>
           </div>
           <Button
@@ -122,7 +124,7 @@ export default function N8nImportTab() {
         >
           <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-amber-300 font-medium">Partial Session Restore</p>
+            <p className="text-sm text-amber-300 font-medium">{t.templates.n8n.partial_session_restore}</p>
             <p className="text-sm text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
           </div>
           <Button

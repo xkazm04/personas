@@ -6,6 +6,7 @@ import { CARD_PADDING } from '@/lib/utils/designTokens';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TemplateCardPreviewProps {
   reviewId: string;
@@ -30,6 +31,7 @@ export function TemplateCardPreview({
   previewOpen,
   prefersReducedMotion,
 }: TemplateCardPreviewProps) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {previewOpen && (
@@ -55,7 +57,7 @@ export function TemplateCardPreview({
             {/* Use Cases with Descriptions */}
             {displayFlows.length > 0 && (
               <div>
-                <SectionLabel as="h5">Use Cases</SectionLabel>
+                <SectionLabel as="h5">{t.templates.card.use_cases_label}</SectionLabel>
                 <div className="space-y-2">
                   {displayFlows.map((flow) => (
                     <div key={flow.id} className="flex items-start gap-2">
@@ -79,7 +81,7 @@ export function TemplateCardPreview({
             {/* Connector Configuration Status */}
             {connectors.length > 0 && (
               <div>
-                <SectionLabel as="h5">Connectors</SectionLabel>
+                <SectionLabel as="h5">{t.templates.card.connectors_label}</SectionLabel>
                 <div className="space-y-1.5">
                   {connectors.map((c) => {
                     const meta = getConnectorMeta(c);

@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaCredential } from '@/lib/types/types';
 
 // ============================================================================
@@ -24,6 +25,7 @@ export function CredentialPicker({
   totalCredentials,
   onLinkCredential,
 }: CredentialPickerProps) {
+  const { t } = useTranslation();
   return (
     <>
       {isOpen && (
@@ -34,7 +36,7 @@ export function CredentialPicker({
             {matchingCreds.length > 0 && (
               <>
                 <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
-                  Best match
+                  {t.templates.n8n.best_match}
                 </p>
                 {matchingCreds.map((cred) => (
                   <button
@@ -55,7 +57,7 @@ export function CredentialPicker({
               <>
                 {matchingCreds.length > 0 && (
                   <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
-                    Other credentials
+                    {t.templates.n8n.other_credentials}
                   </p>
                 )}
                 {otherCreds.map((cred) => (
@@ -75,7 +77,7 @@ export function CredentialPicker({
             )}
             {totalCredentials === 0 && (
               <p className="px-3 py-4 text-sm text-muted-foreground/60 text-center">
-                No stored credentials found
+                {t.templates.n8n.no_stored_credentials}
               </p>
             )}
           </div>

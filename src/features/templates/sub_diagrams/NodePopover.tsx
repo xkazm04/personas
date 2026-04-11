@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { FlowNode } from '@/lib/types/frontendTypes';
 import { NODE_TYPE_META, DEFAULT_NODE_META } from './activityDiagramTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ============================================================================
 // Helpers
@@ -26,6 +27,7 @@ interface NodePopoverProps {
 }
 
 export default function NodePopover({ node, onClose }: NodePopoverProps) {
+  const { t } = useTranslation();
   const typeMeta = NODE_TYPE_META[node.type] ?? DEFAULT_NODE_META;
   const TypeIcon = typeMeta.Icon;
 
@@ -59,14 +61,14 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
       {node.error_message && (
         <div className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/15">
-          <div className="text-sm font-mono uppercase tracking-wider text-red-400/60 mb-1">Error</div>
+          <div className="text-sm font-mono uppercase tracking-wider text-red-400/60 mb-1">{t.templates.diagram.error_label}</div>
           <p className="text-sm text-red-400/90 leading-relaxed">{node.error_message}</p>
         </div>
       )}
 
       {requestData && (
         <div>
-          <div className="text-sm font-mono uppercase tracking-wider text-blue-400/50 mb-1">Request</div>
+          <div className="text-sm font-mono uppercase tracking-wider text-blue-400/50 mb-1">{t.templates.diagram.request_label}</div>
           <pre className="text-sm text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-xl px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof requestData === 'string' ? requestData : JSON.stringify(requestData, null, 2)}
           </pre>
@@ -75,7 +77,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
       {responseData && (
         <div>
-          <div className="text-sm font-mono uppercase tracking-wider text-emerald-400/50 mb-1">Response</div>
+          <div className="text-sm font-mono uppercase tracking-wider text-emerald-400/50 mb-1">{t.templates.diagram.response_label}</div>
           <pre className="text-sm text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
           </pre>

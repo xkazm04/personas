@@ -7,6 +7,7 @@ import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TemplateCardBodyProps {
   connectors: string[];
@@ -25,6 +26,7 @@ export function TemplateCardBody({
   readinessStatuses,
   onViewFlows,
 }: TemplateCardBodyProps) {
+  const { t } = useTranslation();
   const readinessMap = useMemo(
     () => new Map(readinessStatuses.map((s) => [s.connector_name, s])),
     [readinessStatuses],
@@ -35,15 +37,15 @@ export function TemplateCardBody({
       {/* Compact Body (mobile) */}
       <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">Use Cases</span>
+          <span className="text-muted-foreground/60">{t.templates.card.use_cases_label}</span>
           <span className="text-foreground/80">{displayFlows.length}</span>
         </div>
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">Connectors</span>
+          <span className="text-muted-foreground/60">{t.templates.card.connectors_label}</span>
           <span className="text-foreground/80">{connectors.length}</span>
         </div>
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">Triggers</span>
+          <span className="text-muted-foreground/60">{t.templates.card.triggers_label}</span>
           <span className="text-foreground/80">{suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length}</span>
         </div>
       </div>
@@ -52,7 +54,7 @@ export function TemplateCardBody({
       <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
         {/* Use Cases */}
         <div className="min-w-0">
-          <SectionLabel>Use Cases</SectionLabel>
+          <SectionLabel>{t.templates.card.use_cases_label}</SectionLabel>
           {displayFlows.length > 0 ? (
             <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
@@ -77,13 +79,13 @@ export function TemplateCardBody({
               )}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">No flows</span>
+            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.no_flows}</span>
           )}
         </div>
 
         {/* Connectors */}
         <div className="min-w-0">
-          <SectionLabel>Connectors</SectionLabel>
+          <SectionLabel>{t.templates.card.connectors_label}</SectionLabel>
           {connectors.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {connectors.map((c) => {
@@ -106,13 +108,13 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">None</span>
+            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.none_label}</span>
           )}
         </div>
 
         {/* Triggers */}
         <div className="min-w-0">
-          <SectionLabel>Triggers</SectionLabel>
+          <SectionLabel>{t.templates.card.triggers_label}</SectionLabel>
           {(triggerTypes.length > 0 || suggestedTriggers.length > 0) ? (
             <div className="space-y-1.5">
               {(suggestedTriggers.length > 0 ? suggestedTriggers : triggerTypes.map((t) => ({ trigger_type: t, description: t, config: {} }))).slice(0, 3).map((trigger, i) => {
@@ -128,7 +130,7 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">None</span>
+            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.none_label}</span>
           )}
         </div>
       </div>

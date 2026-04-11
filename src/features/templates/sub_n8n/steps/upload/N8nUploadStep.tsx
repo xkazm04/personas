@@ -12,6 +12,7 @@ import { PreviewCard } from './PreviewCard';
 import { useFileUpload } from './useFileUpload';
 import { usePasteImport } from './usePasteImport';
 import { useUrlImport } from './useUrlImport';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nUploadStepProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -20,6 +21,7 @@ interface N8nUploadStepProps {
 }
 
 export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<ImportMode>('file');
 
   const {
@@ -41,9 +43,9 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const FileIcon = preview?.kind === 'valid' ? getFileIcon(preview.fileName) : FileJson;
 
   const modes: { id: ImportMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'file', label: 'Upload File', icon: <Upload className="w-3.5 h-3.5" /> },
-    { id: 'paste', label: 'Paste JSON', icon: <ClipboardPaste className="w-3.5 h-3.5" /> },
-    { id: 'url', label: 'From URL', icon: <Link2 className="w-3.5 h-3.5" /> },
+    { id: 'file', label: t.templates.n8n.upload_file, icon: <Upload className="w-3.5 h-3.5" /> },
+    { id: 'paste', label: t.templates.n8n.paste_json, icon: <ClipboardPaste className="w-3.5 h-3.5" /> },
+    { id: 'url', label: t.templates.n8n.from_url, icon: <Link2 className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -124,6 +126,7 @@ function FileUploadTab({
   handleFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleManualProceed: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="animate-fade-slide-in" key="file">
       <div
@@ -152,10 +155,10 @@ function FileUploadTab({
         </div>
         <div className="text-center">
           <p className="text-sm font-medium text-foreground/80">
-            {isDragging ? 'Drop your workflow file here' : 'Import a workflow from any platform'}
+            {isDragging ? t.templates.n8n.drop_file_here : t.templates.n8n.import_from_any_platform}
           </p>
           <p className="text-sm text-muted-foreground/90 mt-1">
-            Click to browse or drag and drop your exported workflow
+            {t.templates.n8n.click_to_browse}
           </p>
         </div>
         <PlatformLabels />
@@ -167,7 +170,7 @@ function FileUploadTab({
           <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
+          <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}
     </div>
@@ -183,12 +186,13 @@ function PasteTab({
   validatePastedContent: (text: string) => void;
   handlePasteImport: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div key="paste">
       <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
-          <span className="text-sm font-medium text-foreground/80">Paste workflow JSON</span>
+          <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.paste_workflow_json}</span>
           <span className="text-sm text-muted-foreground/70 ml-auto">
             {pasteText.length > 0 && formatFileSize(pasteText.length)}
           </span>
@@ -235,12 +239,13 @@ function UrlTab({
   handleUrlFetch: () => Promise<void>;
   handleUrlImport: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div key="url">
       <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground/80">Import from URL</span>
+          <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.import_from_url}</span>
         </div>
         <p className="text-sm text-muted-foreground/70">
           Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.
@@ -268,12 +273,12 @@ function UrlTab({
             {urlFetching ? (
               <><LoadingSpinner size="sm" /> Fetching</>
             ) : (
-              <><ChevronRight className="w-3.5 h-3.5" /> Fetch</>
+              <><ChevronRight className="w-3.5 h-3.5" /> {t.templates.n8n.fetch}</>
             )}
           </button>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
-          <span>Accepts:</span>
+          <span>{t.templates.n8n.accepts_label}</span>
           <span className="font-mono text-sm">github.com/*/blob/*</span>
           <span className="text-primary/20">|</span>
           <span className="font-mono text-sm">gist.github.com/*</span>
@@ -287,7 +292,7 @@ function UrlTab({
           <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
+          <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}
     </div>

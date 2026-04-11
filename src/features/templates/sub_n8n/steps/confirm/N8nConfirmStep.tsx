@@ -14,6 +14,7 @@ import type { ColorKey } from '../../colorTokens';
 import { SuccessBanner } from './SuccessBanner';
 import { ConnectorHealthRail } from './ConnectorHealthRail';
 import type { ConfirmResult } from './n8nConfirmTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type { EntityError, ConfirmResult } from './n8nConfirmTypes';
 
@@ -38,6 +39,7 @@ export function N8nConfirmStep({
   confirmResult,
   onReset,
 }: N8nConfirmStepProps) {
+  const { t } = useTranslation();
   const [showPrompt, setShowPrompt] = useState(false);
 
   // Resolve entities via shared hook (draft-first, parser fallback)
@@ -188,7 +190,7 @@ export function N8nConfirmStep({
                 ) : (
                   <ChevronRight className="w-3.5 h-3.5" />
                 )}
-                <span>System Prompt Preview</span>
+                <span>{t.templates.n8n.system_prompt_preview}</span>
               </button>
               {showPrompt && (
                 <div

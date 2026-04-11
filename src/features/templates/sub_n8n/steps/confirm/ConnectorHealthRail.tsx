@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { ConnectorRailItem } from '../../edit/connectorHealth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectorHealthRailProps {
   connectorRailItems: ConnectorRailItem[];
@@ -8,6 +9,7 @@ interface ConnectorHealthRailProps {
 }
 
 export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }: ConnectorHealthRailProps) {
+  const { t } = useTranslation();
   if (connectorRailItems.length === 0) return null;
 
   return (
@@ -65,7 +67,7 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
                   {item.credentialName}
                 </span>
               ) : (
-                <span className="text-sm text-amber-400/70">No credential</span>
+                <span className="text-sm text-amber-400/70">{t.templates.n8n.no_credential}</span>
               )}
 
               {/* Status icon */}

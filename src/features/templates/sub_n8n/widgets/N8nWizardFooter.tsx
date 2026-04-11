@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Hammer } from 'lucide-react';
 import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nWizardFooterProps {
   step: N8nWizardStep;
@@ -42,6 +43,7 @@ export function N8nWizardFooter({
   onApplyAdjustment,
   onProcessWithMatrix,
 }: N8nWizardFooterProps) {
+  const { t } = useTranslation();
   // No footer on upload step
   if (step === 'upload') return null;
 
@@ -57,18 +59,18 @@ export function N8nWizardFooter({
         return null;
       case 'edit':
         return {
-          label: 'Review & Confirm',
+          label: t.templates.n8n.review_and_confirm,
           icon: ArrowRight,
           disabled: !hasDraft || transforming || testStatus !== 'passed' || connectorsMissing > 0,
           variant: 'violet',
         };
       case 'confirm':
         if (created) {
-          return { label: 'Persona Saved', icon: Check, disabled: true, variant: 'emerald' };
+          return { label: t.templates.n8n.persona_saved, icon: Check, disabled: true, variant: 'emerald' };
         }
         return confirming
-          ? { label: 'Saving...', icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
-          : { label: 'Confirm & Save Persona', icon: Check, disabled: !hasDraft, variant: 'emerald' };
+          ? { label: t.templates.n8n.saving, icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
+          : { label: t.templates.n8n.confirm_and_save, icon: Check, disabled: !hasDraft, variant: 'emerald' };
       default:
         return null;
     }
@@ -122,13 +124,13 @@ export function N8nWizardFooter({
             }`}
           >
             {testStatus === 'running' ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> Testing...</>
+              <><RefreshCw className="w-4 h-4 animate-spin" /> {t.templates.n8n.testing_btn}</>
             ) : testStatus === 'passed' ? (
-              <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Test Passed</>
+              <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t.templates.n8n.test_passed}</>
             ) : testStatus === 'failed' ? (
-              <><AlertCircle className="w-4 h-4 text-red-400" /> Retest</>
+              <><AlertCircle className="w-4 h-4 text-red-400" /> {t.templates.n8n.retest}</>
             ) : (
-              <><FlaskConical className="w-4 h-4" /> Test Persona</>
+              <><FlaskConical className="w-4 h-4" /> {t.templates.n8n.test_persona}</>
             )}
           </button>
         )}
@@ -152,9 +154,9 @@ export function N8nWizardFooter({
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {analyzing ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> Analyzing...</>
+              <><RefreshCw className="w-4 h-4 animate-spin" /> {t.templates.n8n.analyzing_btn}</>
             ) : (
-              <><Hammer className="w-4 h-4" /> Build Persona</>
+              <><Hammer className="w-4 h-4" /> {t.templates.n8n.build_persona}</>
             )}
           </button>
         )}

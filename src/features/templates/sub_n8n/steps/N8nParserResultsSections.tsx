@@ -1,6 +1,7 @@
 import { Wrench, Zap, Link } from 'lucide-react';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { SelectionCheckbox } from './SelectionCheckbox';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ToolsSectionProps {
   tools: string[];
@@ -10,13 +11,14 @@ interface ToolsSectionProps {
 }
 
 export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggleTool }: ToolsSectionProps) {
+  const { t, tx } = useTranslation();
   if (tools.length === 0) return null;
 
   return (
     <div className="p-4">
       <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
         <Wrench className="w-3 h-3" />
-        Tools ({tools.length})
+        {tx(t.templates.n8n.tools_header, { count: tools.length })}
       </h4>
       <div className="flex flex-wrap gap-2">
         {tools.map((tool, i) => {
@@ -54,13 +56,14 @@ interface TriggersSectionProps {
 }
 
 export function TriggersSection({ triggers, selectedTriggerIndices, hasSelection, onToggleTrigger }: TriggersSectionProps) {
+  const { t, tx } = useTranslation();
   if (triggers.length === 0) return null;
 
   return (
     <div className="p-4">
       <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
         <Zap className="w-3 h-3" />
-        Triggers ({triggers.length})
+        {tx(t.templates.n8n.triggers_header, { count: triggers.length })}
       </h4>
       <div className="space-y-2">
         {triggers.map((trigger, i) => {
@@ -107,13 +110,14 @@ interface ConnectorsSectionProps {
 }
 
 export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelection, onToggleConnector }: ConnectorsSectionProps) {
+  const { t, tx } = useTranslation();
   if (connectors.length === 0) return null;
 
   return (
     <div className="p-4">
       <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
         <Link className="w-3 h-3" />
-        Connectors ({connectors.length})
+        {tx(t.templates.n8n.connectors_header, { count: connectors.length })}
       </h4>
       <div className="flex flex-wrap gap-2">
         {connectors.map((conn) => {

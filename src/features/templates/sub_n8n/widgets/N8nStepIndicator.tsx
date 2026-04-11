@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, Search, Check, Hammer } from 'lucide-react';
 import { STEP_META, type N8nWizardStep } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Visible steps in the n8n import wizard (upload → analyze → build persona). */
 const VISIBLE_STEPS: readonly N8nWizardStep[] = ['upload', 'analyze'] as const;
@@ -10,9 +11,9 @@ const STEP_ICONS: Partial<Record<N8nWizardStep, React.ComponentType<{ className?
   analyze: Search,
 };
 
-const STEP_LABELS: Partial<Record<N8nWizardStep, string>> = {
-  upload: 'Upload',
-  analyze: 'Analyze',
+const STEP_LABEL_KEYS: Partial<Record<N8nWizardStep, 'upload_step' | 'analyze_step'>> = {
+  upload: 'upload_step',
+  analyze: 'analyze_step',
 };
 
 /** Estimated duration hints for long-running steps. */
@@ -28,6 +29,7 @@ interface N8nStepIndicatorProps {
 }
 
 export function N8nStepIndicator({ currentStep, processing = false, className = '' }: N8nStepIndicatorProps) {
+  const { t } = useTranslation();
   const activeIndex = STEP_META[currentStep].index;
 
   // Elapsed timer -- resets on step change or when processing starts/stops
@@ -53,7 +55,8 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
       <div className="flex items-center gap-1 w-full" role="list" aria-label="Wizard steps">
       {VISIBLE_STEPS.map((step, i) => {
         const Icon = STEP_ICONS[step] ?? Hammer;
-        const label = STEP_LABELS[step] ?? step;
+        const labelKey = STEP_LABEL_KEYS[step];
+        const label = labelKey ? t.templates.n8n[labelKey] : step;
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
         const hint = STEP_DURATION_HINT[step];

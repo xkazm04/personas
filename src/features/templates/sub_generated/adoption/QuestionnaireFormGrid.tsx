@@ -9,6 +9,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,6 +109,7 @@ function SelectPills({
   onChange: (v: string) => void;
   allowCustom?: boolean;
 }) {
+  const { t } = useTranslation();
   const isCustomValue = allowCustom && value && !options.includes(value);
   const [showCustomInput, setShowCustomInput] = useState(isCustomValue ?? false);
   const customInputRef = useRef<HTMLInputElement>(null);
@@ -158,7 +160,7 @@ function SelectPills({
           type="text"
           value={isCustomValue ? value : ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Type your custom value..."
+          placeholder={t.templates.adopt_modal.type_custom_value}
           className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
         />
       )}
@@ -304,6 +306,7 @@ export function QuestionnaireFormGrid({
   onSubmit,
   onClose,
 }: QuestionnaireFormGridProps) {
+  const { t } = useTranslation();
   const grouped = useMemo(() => groupByCategory(questions), [questions]);
   const categoryKeys = useMemo(() => Object.keys(grouped), [grouped]);
 
@@ -336,7 +339,7 @@ export function QuestionnaireFormGrid({
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-5 h-5 text-primary/80" />
               <h2 id="questionnaire-form-grid" className="text-lg font-semibold text-foreground">
-                Configure Your Persona
+                {t.templates.adopt_modal.configure_your_persona}
               </h2>
             </div>
             <button
@@ -406,7 +409,7 @@ export function QuestionnaireFormGrid({
             onClick={onClose}
             className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
           >
-            Cancel
+            {t.templates.adopt_modal.cancel}
           </button>
 
           <button
@@ -420,7 +423,7 @@ export function QuestionnaireFormGrid({
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            {allAnswered ? 'Submit All' : `Submit All (${remaining} remaining)`}
+            {allAnswered ? t.templates.adopt_modal.submit_all : t.templates.adopt_modal.submit_remaining.replace('{remaining}', String(remaining))}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectorsSectionProps {
   result: AgentIR;
@@ -29,6 +30,7 @@ export function ConnectorsSection({
   onConnectorClick,
   readOnly,
 }: ConnectorsSectionProps) {
+  const { t } = useTranslation();
   const credentialTypes = new Set(credentials.map((c) => c.service_type));
   const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
   const suggestedConnectors = result.suggested_connectors ?? [];
@@ -110,7 +112,7 @@ export function ConnectorsSection({
                   ) : (
                     <AlertCircle className="w-3 h-3 text-amber-400" />
                   )}
-                  <span>{installed && hasCredential ? 'Credential ready' : 'Configure credential'}</span>
+                  <span>{installed && hasCredential ? t.templates.design.credential_ready : t.templates.design.configure_credential}</span>
                   {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
                 </button>
               )}

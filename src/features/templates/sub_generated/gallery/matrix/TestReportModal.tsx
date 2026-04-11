@@ -10,7 +10,6 @@ import {
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { ToolTestResult } from '@/lib/types/buildTypes';
 import { useAgentStore } from '@/stores/agentStore';
-import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // TestReportModal

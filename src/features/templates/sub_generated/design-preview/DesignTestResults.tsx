@@ -3,6 +3,7 @@ import { motion, type Variants } from 'framer-motion';
 import type { DesignTestResult } from '@/lib/types/designTypes';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { useTemplateMotion, REDUCED_FRAMER } from '@/features/templates/animationPresets';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const listContainer: Variants = {
   hidden: {},
@@ -93,6 +94,7 @@ function getNextSteps(result: DesignTestResult): string[] {
 }
 
 export function DesignTestResults({ result }: DesignTestResultsProps) {
+  const { t } = useTranslation();
   const colors = FEASIBILITY_COLORS[result.overall_feasibility] ?? FEASIBILITY_COLORS.partial!;
   const meta = FEASIBILITY_META[result.overall_feasibility] ?? FEASIBILITY_META.partial!;
   const Icon = meta.icon;
@@ -111,7 +113,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           <Icon className={`w-4 h-4 ${colors.text}`} />
           <span className={`text-sm font-medium ${colors.text}`}>{meta.label}</span>
         </div>
-        <span className="text-sm text-muted-foreground/90">Feasibility Assessment</span>
+        <span className="text-sm text-muted-foreground/90">{t.templates.design.feasibility_assessment}</span>
       </div>
 
       {/* Plain-language explanation */}

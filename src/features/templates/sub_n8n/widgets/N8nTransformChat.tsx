@@ -8,6 +8,7 @@ import type { TransformQuestion, TransformSubPhase } from '../hooks/useN8nImport
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { StreamingSections } from './StreamingSections';
 import { TransformPhaseStepper } from './TransformPhaseStepper';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nTransformChatProps {
   transformSubPhase: TransformSubPhase;
@@ -39,6 +40,7 @@ export function N8nTransformChat({
   onCancel,
   errorMessage,
 }: N8nTransformChatProps) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'list' | 'stepper'>('stepper');
 
@@ -165,7 +167,7 @@ export function N8nTransformChat({
                     No configuration needed
                   </p>
                   <p className="text-sm text-muted-foreground/80 mt-0.5">
-                    Click Generate to create your persona draft with defaults.
+                    {t.templates.n8n.click_generate_defaults}
                   </p>
                 </div>
               </div>

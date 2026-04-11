@@ -8,6 +8,7 @@ import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoaded
 import { STEP_META, WIZARD_STEPS } from '../hooks/useN8nImportReducer';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function isValidAgentIR(v: unknown): v is AgentIR {
   return v != null && typeof v === 'object' && 'name' in (v as Record<string, unknown>);
@@ -27,6 +28,7 @@ interface SessionCardProps {
 }
 
 const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelete }: SessionCardProps) {
+  const { t } = useTranslation();
   const interrupted = session.status === 'interrupted';
   const statusKey = session.status;
   const style = SESSION_STATUS_STYLES[statusKey] ?? SESSION_STATUS_STYLES.draft!;
@@ -66,7 +68,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
           className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
-          title="Delete session"
+          title={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -89,6 +91,7 @@ interface N8nSessionListProps {
 }
 
 export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<N8nSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -108,7 +111,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       setSessions(result);
     } catch {
       // User-facing: error is displayed inline via error state
-      setError('Failed to load previous imports. Please retry.');
+      setError(t.templates.n8n.failed_to_load_imports);
     } finally {
       setLoading(false);
     }
@@ -136,7 +139,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       setError(null);
     } catch {
       // User-facing: error is displayed inline via error state
-      setError('Failed to delete session. Please retry.');
+      setError(t.templates.n8n.failed_to_delete_session);
     } finally {
       lockedIdsRef.current.delete(id);
       setDeletingId(null);
@@ -230,7 +233,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     } catch {
       // Suppress errors if the load was intentionally aborted by a delete
       if (!abortController.signal.aborted) {
-        setError('Failed to load session. Please retry.');
+        setError(t.templates.n8n.failed_to_load_session);
       }
     } finally {
       lockedIdsRef.current.delete(id);

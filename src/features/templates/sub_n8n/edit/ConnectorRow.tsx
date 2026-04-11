@@ -1,4 +1,5 @@
 import { Link, CheckCircle2, XCircle, AlertCircle, Activity, Plus, ChevronDown, Wrench } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaCredential } from '@/lib/types/types';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
@@ -39,6 +40,7 @@ export function ConnectorRow({
   onAddCredential,
   onLinkCredential,
 }: ConnectorRowProps) {
+  const { t, tx } = useTranslation();
   const statusKey = getStatusKey(status);
   const config = STATUS_CONFIG[statusKey];
   const translated = status.result && !status.result.success
@@ -68,8 +70,8 @@ export function ConnectorRow({
           </div>
           <p className="text-sm text-muted-foreground/80 mt-0.5">
             {status.credentialName
-              ? `Credential: ${status.credentialName}`
-              : `n8n type: ${status.n8nType}`}
+              ? tx(t.templates.n8n.credential_label, { name: status.credentialName })
+              : tx(t.templates.n8n.n8n_type_label, { type: status.n8nType })}
           </p>
         </div>
 
@@ -82,7 +84,7 @@ export function ConnectorRow({
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />}
-              Test
+              {t.templates.n8n.test}
             </button>
           ) : (
             <>
@@ -96,7 +98,7 @@ export function ConnectorRow({
                   }`}
                 >
                   <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} />
-                  Link Existing
+                  {t.templates.n8n.link_existing}
                 </button>
               )}
               <button
@@ -104,7 +106,7 @@ export function ConnectorRow({
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
-                Add New
+                {t.templates.n8n.add_new}
               </button>
             </>
           )}

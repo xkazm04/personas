@@ -5,6 +5,7 @@ import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 import { useN8nDesignData } from '../hooks/useN8nDesignData';
 import { CAPABILITY_SPLIT_STYLES, CATEGORY_STYLES, MODE_BADGE } from '../colorTokens';
 import type { ProtocolType } from './protocolParser';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CAPABILITY_ICONS: Record<ProtocolType, React.ComponentType<{ className?: string }>> = {
   manual_review: ShieldCheck,
@@ -34,6 +35,7 @@ export function N8nUseCasesTab({
   onTestUseCase,
   testingUseCaseId,
 }: N8nUseCasesTabProps) {
+  const { t } = useTranslation();
   const { contextData, capabilities } = useN8nDesignData(
     draft.design_context,
     draft.system_prompt,
@@ -53,11 +55,11 @@ export function N8nUseCasesTab({
             <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />
             <p className="text-sm font-medium text-muted-foreground/60">
               {draft.design_context
-                ? 'No structured use cases found in design context.'
-                : 'No use cases generated yet.'}
+                ? t.templates.n8n.no_use_cases_design
+                : t.templates.n8n.no_use_cases_yet}
             </p>
             <p className="text-sm text-muted-foreground/60">
-              Use the adjustment input below to request use case generation.
+              {t.templates.n8n.use_adjustment_hint}
             </p>
           </div>
         ) : (
@@ -120,10 +122,10 @@ export function N8nUseCasesTab({
                             }`}
                             title={
                               mode === 'non_executable'
-                                ? 'This use case is informational only'
+                                ? t.templates.n8n.informational_only
                                 : mode === 'mock'
-                                  ? 'View example output'
-                                  : 'Test this use case'
+                                  ? t.templates.n8n.view_example_output
+                                  : t.templates.n8n.test_use_case
                             }
                           >
                             {isTesting ? (
@@ -140,7 +142,7 @@ export function N8nUseCasesTab({
                         )}
                         {!onTestUseCase && mode !== 'non_executable' && (
                           <span className="text-sm text-muted-foreground/60 flex-shrink-0 mt-1">
-                            Save to test
+                            {t.templates.n8n.save_to_test}
                           </span>
                         )}
                       </div>
@@ -149,11 +151,11 @@ export function N8nUseCasesTab({
                     {/* Mock viewer */}
                     {mode === 'mock' && mockViewId === uc.id && (
                       <div className="border-t border-amber-500/15 bg-amber-500/5 p-3">
-                        <p className="text-sm text-amber-400/70 mb-1.5">Example output:</p>
+                        <p className="text-sm text-amber-400/70 mb-1.5">{t.templates.n8n.example_output}</p>
                         <pre className="text-sm font-mono text-foreground/60 bg-background/40 rounded-lg p-2.5 overflow-auto max-h-40 border border-amber-500/10">
                           {uc.sample_input
                             ? JSON.stringify(uc.sample_input, null, 2)
-                            : '// No sample data provided'}
+                            : t.templates.n8n.no_sample_data}
                         </pre>
                       </div>
                     )}
@@ -194,13 +196,13 @@ export function N8nUseCasesTab({
       <div className="border-t border-primary/10 pt-4 space-y-2 flex-shrink-0">
         <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
           <Sparkles className="w-3 h-3" />
-          Request AI Adjustments
+          {t.templates.n8n.request_ai_adjustments}
         </label>
         <div className="flex gap-2">
           <textarea
             value={adjustmentRequest}
             onChange={(e) => onAdjustmentChange(e.target.value)}
-            placeholder="Example: Add more use cases, make error handling stricter..."
+            placeholder={t.templates.n8n.adjustment_placeholder}
             className="flex-1 h-16 p-2.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-none placeholder-muted-foreground/30"
             disabled={disabled || transforming}
           />

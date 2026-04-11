@@ -1,6 +1,7 @@
 import { Bell, Plug } from 'lucide-react';
 import { DesignCheckbox } from './DesignCheckbox';
 import { channelIconMeta, SECTION_LABEL } from './helpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface MessagesSectionProps {
   channels: Array<{ type: string; description: string; required_connector: string; config_hints: Record<string, string> }>;
@@ -15,6 +16,7 @@ export function MessagesSection({
   onChannelToggle,
   readOnly,
 }: MessagesSectionProps) {
+  const { t } = useTranslation();
   if (channels.length === 0) return null;
 
   return (
@@ -22,7 +24,7 @@ export function MessagesSection({
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         Messages & Notifications
-        <span className="text-sm font-normal text-muted-foreground/80 ml-1">How this persona communicates</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">{t.templates.design.how_communicates}</span>
       </div>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>

@@ -130,6 +130,7 @@ export function deriveArchCategories(connectors: string[]): ArchCategory[] {
   const seen = new Set<string>();
   const result: ArchCategory[] = [];
   for (const c of connectors) {
+    if (!c) continue;
     const cat = getArchCategory(c);
     if (!seen.has(cat.key)) {
       seen.add(cat.key);

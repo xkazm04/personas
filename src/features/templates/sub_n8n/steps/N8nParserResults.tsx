@@ -6,6 +6,7 @@ import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_COLORS, TAG_COLORS } from '../colorTokens';
 import { ToolsSection, TriggersSection, ConnectorsSection } from './N8nParserResultsSections';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nParserResultsProps {
   parsedResult: AgentIR;
@@ -41,6 +42,7 @@ export function N8nParserResults({
   platformNeedsConfirmation,
   onConfirmPlatform,
 }: N8nParserResultsProps) {
+  const { t } = useTranslation();
   const hasSelection = !!selectedToolIndices;
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -161,7 +163,7 @@ export function N8nParserResults({
           <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.emerald}`}>
             {connectorCount} connectors
           </span>
-          <span className="text-muted-foreground/80 ml-1">selected for import</span>
+          <span className="text-muted-foreground/80 ml-1">{t.templates.n8n.selected_for_import}</span>
         </div>
       )}
 

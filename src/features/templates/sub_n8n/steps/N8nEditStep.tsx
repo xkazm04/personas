@@ -10,6 +10,7 @@ import { N8nEntitiesTab } from '../edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from '../edit/N8nUseCasesTab';
 import { useN8nDesignData } from '../hooks/useN8nDesignData';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Shallow-compare two objects by own enumerable keys. */
 function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
@@ -76,6 +77,7 @@ export function N8nEditStep({
   onTestUseCase,
   testingUseCaseId,
 }: N8nEditStepProps) {
+  const { t } = useTranslation();
   // Stabilise draft reference: only update when a field actually changes
   // (shallow comparison) so that memos depending on stableDraft don't
   // re-compute on every keystroke that creates a new object wrapper.
@@ -120,7 +122,7 @@ export function N8nEditStep({
   const earlyTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'use-cases',
-      label: 'Use Cases',
+      label: t.templates.n8n.use_cases_tab,
       Icon: ListChecks,
       content: (
         <N8nUseCasesTab
@@ -146,7 +148,7 @@ export function N8nEditStep({
   const additionalTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'entities',
-      label: 'Tools & Connectors',
+      label: t.templates.n8n.tools_and_connectors_tab,
       Icon: Wrench,
       badge: connectorsBadge,
       content: (

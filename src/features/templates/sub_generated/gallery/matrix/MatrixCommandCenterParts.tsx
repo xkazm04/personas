@@ -16,7 +16,6 @@ import type { DesignQuestion } from '@/lib/types/designTypes';
 import type { ToolTestResult } from '@/lib/types/buildTypes';
 import { useAgentStore } from '@/stores/agentStore';
 import { TestReportModal } from './TestReportModal';
-import { useTranslation } from '@/i18n/useTranslation';
 
 // Re-export constants for backward compatibility
 export { BUILD_PHASE_LABELS, CELL_FRIENDLY_NAMES, PHASE_SUBTEXT, ORB_GLOW_CLASSES } from './matrixBuildConstants';

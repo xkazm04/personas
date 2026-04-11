@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { StreamingSection, SectionKind } from '@/api/templates/n8nTransform';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Section icon + color mapping --
 
@@ -139,6 +140,7 @@ interface StreamingSectionsProps {
 }
 
 export function StreamingSections({ sections, isStreaming }: StreamingSectionsProps) {
+  const { t } = useTranslation();
   const { validCount, warningCount, errorCount } = useMemo(() => {
     let valid = 0;
     let warning = 0;
@@ -210,7 +212,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
             className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
           >
             <LoadingSpinner size="xs" />
-            Awaiting next section...
+            {t.templates.n8n.awaiting_next_section}
           </div>
         )}
       </div>

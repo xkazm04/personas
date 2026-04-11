@@ -15,6 +15,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScanResult, ScanFinding } from '@/lib/templates/personaSafetyScanner';
 import { SEVERITY_CONFIG, CATEGORY_LABELS } from '@/lib/templates/personaSafetyScanner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Empathetic illustrations ----------------------------------------
 
@@ -201,14 +202,15 @@ function SeveritySection({
 // -- Main component ---------------------------------------------------
 
 export function ScanResultsBanner({ result, scanning, className = '' }: ScanResultsBannerProps) {
+  const { t } = useTranslation();
   // Scanning in progress
   if (scanning) {
     return (
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/15 bg-blue-500/5 ${className}`}>
         <LoadingSpinner className="text-blue-400/60 flex-shrink-0" />
         <div>
-          <p className="text-sm text-blue-300/80 font-medium">Scanning persona draft...</p>
-          <p className="text-sm text-blue-300/50">Checking for malicious instructions and unsafe patterns</p>
+          <p className="text-sm text-blue-300/80 font-medium">{t.templates.scan.scanning_draft}</p>
+          <p className="text-sm text-blue-300/50">{t.templates.scan.checking_unsafe}</p>
         </div>
       </div>
     );
@@ -223,8 +225,8 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
         <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
         <div>
-          <p className="text-sm text-emerald-300/80 font-medium">Safety scan passed</p>
-          <p className="text-sm text-emerald-300/50">No security concerns detected in this persona draft</p>
+          <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
+          <p className="text-sm text-emerald-300/50">{t.templates.scan.no_concerns}</p>
         </div>
       </div>
     );
@@ -237,7 +239,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         <div className="flex items-center gap-3 px-4 py-3">
           <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-emerald-300/80 font-medium">Safety scan passed</p>
+            <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
             <p className="text-sm text-emerald-300/50">
               {result.info.length} informational note{result.info.length !== 1 ? 's' : ''} for review
             </p>

@@ -23,6 +23,7 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -154,6 +155,7 @@ function getThemeVariant(themeId: ThemeId): MatrixVariant {
 }
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
+  const { t } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
@@ -420,7 +422,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   if (!seeded) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm text-muted-foreground/50 animate-pulse">Loading template into matrix...</div>
+        <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { triggerIconMeta, SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EventsSectionProps {
   result: AgentIR;
@@ -28,6 +29,7 @@ export function EventsSection({
   actualTriggers,
   onTriggerEnabledToggle,
 }: EventsSectionProps) {
+  const { t } = useTranslation();
   const suggestedTriggers = result?.suggested_triggers ?? [];
   const hasTriggers = suggestedTriggers.length > 0 || (readOnly && actualTriggers.length > 0);
   const hasSubscriptions = suggestedSubscriptions && suggestedSubscriptions.length > 0;
@@ -39,14 +41,14 @@ export function EventsSection({
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         Events & Triggers
-        <span className="text-sm font-normal text-muted-foreground/80 ml-1">What activates this persona</span>
+        <span className="text-sm font-normal text-muted-foreground/80 ml-1">{t.templates.design.what_activates}</span>
       </div>
 
       <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">
-            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">Triggers</span>
+            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">{t.templates.design.triggers_section}</span>
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
                 const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
