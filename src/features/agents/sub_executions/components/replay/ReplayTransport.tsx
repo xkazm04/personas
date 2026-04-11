@@ -8,6 +8,7 @@ import {
   GitFork,
   X,
 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { SPEED_OPTIONS } from '../../libs/useReplayState';
 
 interface ReplayTransportProps {
@@ -40,29 +41,27 @@ export function ReplayTransport({
 }: ReplayTransportProps) {
   return (
     <div className="flex items-center gap-1.5">
-      <button onClick={onJumpToStart} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Jump to start (Home)">
+      <Button variant="ghost" size="icon-sm" onClick={onJumpToStart} title="Jump to start (Home)">
         <ChevronsLeft className="w-3.5 h-3.5" />
-      </button>
-      <button onClick={onStepBackward} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Previous step (Shift+Left)">
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={onStepBackward} title="Previous step (Shift+Left)">
         <SkipBack className="w-3.5 h-3.5" />
-      </button>
-      <button
+      </Button>
+      <Button
+        variant={isPlaying ? 'accent' : 'secondary'}
+        accentColor={isPlaying ? 'blue' : undefined}
+        size="icon-md"
         onClick={onTogglePlay}
-        className={`p-2 rounded-xl border transition-all ${
-          isPlaying
-            ? 'bg-blue-500/15 border-blue-500/25 text-blue-400'
-            : 'bg-primary/10 border-primary/20 text-foreground/80 hover:bg-primary/15'
-        }`}
         title="Play/Pause (Space)"
       >
         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-      </button>
-      <button onClick={onStepForward} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Next step (Shift+Right)">
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={onStepForward} title="Next step (Shift+Right)">
         <SkipForward className="w-3.5 h-3.5" />
-      </button>
-      <button onClick={onJumpToEnd} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Jump to end (End)">
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={onJumpToEnd} title="Jump to end (End)">
         <ChevronsRight className="w-3.5 h-3.5" />
-      </button>
+      </Button>
 
       {/* Speed selector */}
       <div className="ml-3 flex items-center gap-0.5 bg-secondary/30 rounded-lg border border-primary/10 p-0.5">
@@ -86,13 +85,9 @@ export function ReplayTransport({
           <div
             className="animate-fade-slide-in ml-auto flex items-center gap-2"
           >
-            <button
-              onClick={onClearFork}
-              className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground"
-              title="Clear fork point"
-            >
+            <Button variant="ghost" size="icon-sm" onClick={onClearFork} title="Clear fork point">
               <X className="w-3 h-3" />
-            </button>
+            </Button>
             <button
               onClick={onFork}
               className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"

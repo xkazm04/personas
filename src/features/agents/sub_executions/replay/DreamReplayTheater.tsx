@@ -25,6 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import type { PersonaExecution } from '@/lib/types/types';
 import type { DreamFrame } from '@/lib/bindings/DreamFrame';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
@@ -192,25 +193,21 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
 
         {/* Transport controls */}
         <div className="flex items-center gap-1">
-          <button onClick={actions.jumpToStart} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Jump to start (Shift+Left)">
+          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToStart} title="Jump to start (Shift+Left)">
             <ChevronsLeft className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={actions.stepBackward} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Previous frame (Left)">
+          </Button>
+          <Button variant="ghost" size="icon-sm" onClick={actions.stepBackward} title="Previous frame (Left)">
             <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={actions.togglePlay}
-            className="p-1.5 rounded-lg bg-violet-500/15 hover:bg-violet-500/25 text-violet-400 transition-colors"
-            title="Play/Pause (Space)"
-          >
+          </Button>
+          <Button variant="accent" accentColor="violet" size="icon-sm" onClick={actions.togglePlay} title="Play/Pause (Space)">
             {state.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </button>
-          <button onClick={actions.stepForward} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Next frame (Right)">
+          </Button>
+          <Button variant="ghost" size="icon-sm" onClick={actions.stepForward} title="Next frame (Right)">
             <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={actions.jumpToEnd} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground/60 hover:text-foreground/80 transition-colors" title="Jump to end (Shift+Right)">
+          </Button>
+          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToEnd} title="Jump to end (Shift+Right)">
             <ChevronsRight className="w-3.5 h-3.5" />
-          </button>
+          </Button>
 
           {/* Speed selector */}
           <div className="ml-2 flex items-center gap-0.5">
@@ -232,13 +229,13 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
           {/* Error navigation */}
           {errorIndices.length > 0 && (
             <div className="ml-2 flex items-center gap-1">
-              <button onClick={actions.jumpToPrevError} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400/50 hover:text-red-400 transition-colors" title="Previous error (Shift+E)">
+              <Button variant="ghost" size="icon-sm" onClick={actions.jumpToPrevError} title="Previous error (Shift+E)" className="text-red-400/50 hover:text-red-400 hover:bg-red-500/10">
                 <SkipBack className="w-3 h-3" />
-              </button>
+              </Button>
               <span className="text-[10px] font-mono text-red-400/50">{errorIndices.length} err</span>
-              <button onClick={actions.jumpToNextError} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400/50 hover:text-red-400 transition-colors" title="Next error (E)">
+              <Button variant="ghost" size="icon-sm" onClick={actions.jumpToNextError} title="Next error (E)" className="text-red-400/50 hover:text-red-400 hover:bg-red-500/10">
                 <SkipForward className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
           )}
 
