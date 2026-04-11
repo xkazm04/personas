@@ -29,4 +29,17 @@ export type UnregisteredCommand =
   | "zapier_trigger_webhook"
   | "get_setting"
   | "set_setting"
-  | "lab_create_version_snapshot";
+  | "lab_create_version_snapshot"
+  // Composition workflow commands (Rust impl exists, not yet in generate_handler)
+  | "list_composition_workflows"
+  | "get_composition_workflow"
+  | "create_composition_workflow"
+  | "update_composition_workflow"
+  | "delete_composition_workflow"
+  | "import_composition_workflows"
+  // Obsidian Brain Google Drive commands (Rust impl exists, not yet in generate_handler)
+  | "obsidian_drive_status"
+  | "obsidian_drive_push_sync"
+  | "obsidian_drive_pull_sync"
+  | "login_with_google_drive"
+  | "get_google_drive_status";
