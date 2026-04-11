@@ -36,6 +36,7 @@ const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+const CompositionEditor = lazy(() => import('@/features/composition/components/CompositionEditor'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -97,8 +98,9 @@ export default function PersonasPage() {
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchWorkflows()),
     ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups', 'workflows'] as const;
     secondaryResults.forEach((r, i) => {
       if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
     });
@@ -136,6 +138,7 @@ export default function PersonasPage() {
       import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
       import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
       import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
+      import('@/features/composition/components/CompositionEditor').catch(silentCatch("PersonasPage:prefetchComposition"));
     });
     return () => {
       cancelIdleCallback(id);
@@ -218,6 +221,7 @@ export default function PersonasPage() {
     if (sidebarSection === 'overview') {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
+    if (sidebarSection === 'workflows') return <ErrorBoundary name="Workflows"><Suspense fallback={SectionFallback}><CompositionEditor /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
