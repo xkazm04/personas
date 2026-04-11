@@ -15,6 +15,7 @@ import {
   MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
 } from '../gallery/matrix/MatrixIcons';
 import type { CellBuildStatus, BuildPhase } from '@/lib/types/buildTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 

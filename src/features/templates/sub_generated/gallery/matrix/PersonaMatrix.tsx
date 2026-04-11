@@ -28,6 +28,7 @@ import { MatrixCellRenderer, CellBullets, type MatrixCell } from './MatrixCellRe
 import { DimensionQuickConfig, serializeQuickConfig, describeTriggerConfig, type QuickConfigState } from '@/features/agents/components/matrix/DimensionQuickConfig';
 import { useHealthyConnectors } from '@/features/agents/components/matrix/useHealthyConnectors';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   extractTriggers, extractHumanReview, extractMemory, extractErrorStrategies,
   cellRevealVariants,
@@ -141,6 +142,7 @@ export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
+  const { t } = useTranslation();
   const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers, onSaveVersion } = props;
   const isEditMode = props.mode === 'edit';
 
