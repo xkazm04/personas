@@ -87,7 +87,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
                     }`}
                   >
                     <ConnectorIcon meta={meta} size="w-3 h-3" />
-                    <span className="truncate max-w-[120px]">{meta.label}</span>
+                    <span className="truncate">{meta.label}</span>
                   </button>
                 );
               })}

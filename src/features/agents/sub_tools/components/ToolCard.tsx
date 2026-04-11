@@ -63,8 +63,8 @@ export const ToolCard = memo(function ToolCard({
           onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h4 className="font-medium text-foreground text-sm truncate">{tool.name}</h4>
+          <div className="flex items-start justify-between gap-2 min-w-0">
+            <h4 className="font-medium text-foreground text-sm truncate min-w-0">{tool.name}</h4>
             {tool.requires_credential_type && (
               credentialTypeSet.has(tool.requires_credential_type) ? (
                 <span title={`${credentialLabel(tool.requires_credential_type)} credential available`}>

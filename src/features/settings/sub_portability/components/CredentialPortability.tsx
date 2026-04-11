@@ -163,8 +163,8 @@ export function CredentialPortability({
             {conflicts.map((c) => (
               <div key={c.name} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-foreground/80">{c.name}</span>
-                  <span className="text-xs text-muted-foreground/50 ml-2">{c.service_type}</span>
+                  <span className="text-sm font-medium text-foreground/80 truncate block">{c.name}</span>
+                  <span className="text-xs text-muted-foreground/50">{c.service_type}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {(['skip', 'keep_both', 'replace'] as const).map((action) => {

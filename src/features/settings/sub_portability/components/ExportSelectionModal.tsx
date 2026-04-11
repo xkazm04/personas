@@ -183,7 +183,7 @@ function CategorySection({
                 <div className="min-w-0">
                   <div className="text-sm text-foreground/85 truncate">{item.name}</div>
                   {item.description && (
-                    <div className="text-xs text-muted-foreground/50 truncate max-w-sm">
+                    <div className="text-xs text-muted-foreground/50 truncate">
                       {item.description}
                     </div>
                   )}
