@@ -324,6 +324,148 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE personas ADD COLUMN gateway_exposure TEXT NOT NULL DEFAULT 'local_only';"
     ); // ignore "duplicate column" error on re-run
 
+    // -- Research Lab plugin tables -------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS research_projects (
+            id                  TEXT PRIMARY KEY,
+            name                TEXT NOT NULL,
+            description         TEXT,
+            domain              TEXT,
+            status              TEXT NOT NULL DEFAULT 'scoping',
+            thesis              TEXT,
+            scope_constraints   TEXT,
+            team_id             TEXT,
+            obsidian_vault_path TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS research_sources (
+            id                  TEXT PRIMARY KEY,
+            project_id          TEXT NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+            source_type         TEXT NOT NULL DEFAULT 'web',
+            title               TEXT NOT NULL,
+            authors             TEXT,
+            year                INTEGER,
+            abstract_text       TEXT,
+            doi                 TEXT,
+            url                 TEXT,
+            pdf_path            TEXT,
+            citation_count      INTEGER,
+            metadata            TEXT,
+            relevance_score     REAL,
+            knowledge_base_id   TEXT,
+            status              TEXT NOT NULL DEFAULT 'pending',
+            ingested_at         TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_sources_project ON research_sources(project_id);
+
+        CREATE TABLE IF NOT EXISTS research_citations (
+            id                  TEXT PRIMARY KEY,
+            source_id           TEXT NOT NULL REFERENCES research_sources(id) ON DELETE CASCADE,
+            cited_source_id     TEXT REFERENCES research_sources(id) ON DELETE SET NULL,
+            cited_reference     TEXT,
+            context             TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_citations_source ON research_citations(source_id);
+
+        CREATE TABLE IF NOT EXISTS research_hypotheses (
+            id                      TEXT PRIMARY KEY,
+            project_id              TEXT NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+            statement               TEXT NOT NULL,
+            rationale               TEXT,
+            status                  TEXT NOT NULL DEFAULT 'proposed',
+            confidence              REAL NOT NULL DEFAULT 0.5,
+            parent_hypothesis_id    TEXT REFERENCES research_hypotheses(id) ON DELETE SET NULL,
+            generated_by            TEXT,
+            supporting_evidence     TEXT,
+            counter_evidence        TEXT,
+            linked_experiments      TEXT,
+            created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_hypotheses_project ON research_hypotheses(project_id);
+
+        CREATE TABLE IF NOT EXISTS research_experiments (
+            id                  TEXT PRIMARY KEY,
+            project_id          TEXT NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+            hypothesis_id       TEXT REFERENCES research_hypotheses(id) ON DELETE SET NULL,
+            name                TEXT NOT NULL,
+            methodology         TEXT,
+            input_schema        TEXT,
+            success_criteria    TEXT,
+            status              TEXT NOT NULL DEFAULT 'designed',
+            pipeline_id         TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_experiments_project ON research_experiments(project_id);
+
+        CREATE TABLE IF NOT EXISTS research_experiment_runs (
+            id                  TEXT PRIMARY KEY,
+            experiment_id       TEXT NOT NULL REFERENCES research_experiments(id) ON DELETE CASCADE,
+            run_number          INTEGER NOT NULL DEFAULT 1,
+            inputs              TEXT,
+            outputs             TEXT,
+            metrics             TEXT,
+            passed              INTEGER NOT NULL DEFAULT 0,
+            execution_id        TEXT,
+            duration_ms         INTEGER,
+            cost_usd            REAL,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_runs_experiment ON research_experiment_runs(experiment_id);
+
+        CREATE TABLE IF NOT EXISTS research_findings (
+            id                      TEXT PRIMARY KEY,
+            project_id              TEXT NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+            title                   TEXT NOT NULL,
+            description             TEXT,
+            confidence              REAL NOT NULL DEFAULT 0.5,
+            category                TEXT,
+            source_experiment_ids   TEXT,
+            source_ids              TEXT,
+            hypothesis_ids          TEXT,
+            generated_by            TEXT,
+            status                  TEXT NOT NULL DEFAULT 'draft',
+            created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_findings_project ON research_findings(project_id);
+
+        CREATE TABLE IF NOT EXISTS research_reports (
+            id                  TEXT PRIMARY KEY,
+            project_id          TEXT NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            report_type         TEXT,
+            status              TEXT NOT NULL DEFAULT 'outline',
+            template            TEXT,
+            format              TEXT DEFAULT 'markdown',
+            review_id           TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_reports_project ON research_reports(project_id);
+
+        CREATE TABLE IF NOT EXISTS research_report_sections (
+            id                  TEXT PRIMARY KEY,
+            report_id           TEXT NOT NULL REFERENCES research_reports(id) ON DELETE CASCADE,
+            section_key         TEXT NOT NULL,
+            title               TEXT,
+            content             TEXT,
+            sort_order          INTEGER NOT NULL DEFAULT 0,
+            generated_by        TEXT,
+            citation_ids        TEXT,
+            status              TEXT NOT NULL DEFAULT 'empty',
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_sections_report ON research_report_sections(report_id);"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -3805,6 +3947,83 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ] {
         let _ = conn.execute_batch(stmt); // ignore duplicate column errors on re-run
     }
+
+    // -- Lab: Consensus (stochastic multi-run agreement) ----------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS lab_consensus_runs (
+            id              TEXT PRIMARY KEY,
+            persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            status          TEXT NOT NULL DEFAULT 'generating',
+            num_samples     INTEGER NOT NULL DEFAULT 5,
+            model_id        TEXT NOT NULL DEFAULT '',
+            scenarios_count INTEGER NOT NULL DEFAULT 0,
+            use_case_filter TEXT,
+            agreement_rate  REAL,
+            summary         TEXT,
+            llm_summary     TEXT,
+            progress_json   TEXT,
+            error           TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            completed_at    TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_lab_consensus_runs_persona ON lab_consensus_runs(persona_id);
+
+        CREATE TABLE IF NOT EXISTS lab_consensus_results (
+            id                   TEXT PRIMARY KEY,
+            run_id               TEXT NOT NULL REFERENCES lab_consensus_runs(id) ON DELETE CASCADE,
+            sample_index         INTEGER NOT NULL DEFAULT 0,
+            scenario_name        TEXT NOT NULL,
+            model_id             TEXT NOT NULL,
+            provider             TEXT NOT NULL DEFAULT '',
+            status               TEXT NOT NULL DEFAULT 'pending',
+            output_preview       TEXT,
+            tool_calls_expected  TEXT,
+            tool_calls_actual    TEXT,
+            tool_accuracy_score  INTEGER,
+            output_quality_score INTEGER,
+            protocol_compliance  INTEGER,
+            input_tokens         INTEGER NOT NULL DEFAULT 0,
+            output_tokens        INTEGER NOT NULL DEFAULT 0,
+            cost_usd             REAL NOT NULL DEFAULT 0.0,
+            duration_ms          INTEGER NOT NULL DEFAULT 0,
+            rationale            TEXT,
+            suggestions          TEXT,
+            error_message        TEXT,
+            created_at           TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_lab_consensus_results_run ON lab_consensus_results(run_id);"
+    )?;
+
+    // -- dev_tasks: depth column (quick / campaign / deep_build) ---------------
+    conn.execute_batch(
+        "ALTER TABLE dev_tasks ADD COLUMN depth TEXT NOT NULL DEFAULT 'quick';"
+    ).ok(); // ok() — column may already exist
+
+    // -- dev_projects: monitoring connector fields ----------------------------
+    conn.execute_batch(
+        "ALTER TABLE dev_projects ADD COLUMN monitoring_credential_id TEXT;"
+    ).ok();
+    conn.execute_batch(
+        "ALTER TABLE dev_projects ADD COLUMN monitoring_project_slug TEXT;"
+    ).ok();
+
+    // ── Composition Workflows (persisted DAG definitions) ───────────────
+    // Migrates workflows from frontend localStorage to backend SQLite.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS composition_workflows (
+            id               TEXT PRIMARY KEY,
+            name             TEXT NOT NULL,
+            description      TEXT NOT NULL DEFAULT '',
+            nodes_json       TEXT NOT NULL DEFAULT '[]',
+            edges_json       TEXT NOT NULL DEFAULT '[]',
+            input_schema_json TEXT,
+            enabled          INTEGER NOT NULL DEFAULT 1,
+            created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_composition_workflows_enabled ON composition_workflows(enabled);
+        CREATE INDEX IF NOT EXISTS idx_composition_workflows_updated ON composition_workflows(updated_at);"
+    )?;
 
     Ok(())
 }
