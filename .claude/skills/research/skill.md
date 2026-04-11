@@ -293,6 +293,8 @@ If the finding's premise depends on catalog count = runtime count, **the finding
 
 **Security escalation rule:** When a grep against a file that exposes an HTTP, IPC, webhook, or external surface — **OR** that spawns a privileged subprocess (e.g. with `--dangerously-skip-permissions`) — returns **zero hits for auth/sandbox patterns** (`api_key|Authorization|Bearer|require_auth|middleware|sandbox|seatbelt|seccomp|landlock`), do NOT drop the finding as "no existing pattern". Instead, **escalate it to severity `CRITICAL` and re-label it as a security gap, not a feature add.** Open HTTP/IPC surfaces and unsandboxed privileged spawn sites are findings even when the user didn't ask about security — the source may not even mention security, but the codebase reality does.
 
+**i18n impact check:** When a code finding touches frontend files (`src/**/*.tsx`), note whether it introduces new user-facing strings. If yes, mark it with `i18n: required` in the finding output and add an effort note: "New UI strings must go through `src/i18n/en.ts` + `useTranslation()` — see CLAUDE.md → Internationalization." This ensures the implementing CLI knows about the i18n cost upfront, not as a surprise during Phase 8 handoff execution. For findings that add backend status tokens displayed in the UI, note that `tokenLabel()` from `src/i18n/tokenMaps.ts` must be used instead of raw token strings.
+
 ### Template bucket
 - **First** scan `codebase-catalogs.md` Template Catalog section for duplicates (faster than filesystem)
 - If a similar entry exists by id/scope/services, drop the idea — note "duplicate of {id}"
@@ -378,7 +380,9 @@ Write a self-contained handoff to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md`. T
 - **Non-goals** — explicit "do NOT do these" list (deferred findings, scope creep traps, layers not to touch). This is the most important section — it prevents the implementing CLI from drifting.
 - **Dependency graph & order** — which tasks ship together, which depend on which
 - **Per-task spec** — for each task: file path & line anchor, schema/migration SQL, struct definitions, function signatures, error mapping, acceptance criteria
-- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults (default to denial), backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), explicitly include a "Honor the typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions" line.**
+- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults (default to denial), backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), explicitly include BOTH of these lines:**
+  - "Honor the typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions."
+  - "All user-facing strings MUST use the i18n system (`useTranslation()` hook, keys in `src/i18n/en.ts`). No hardcoded English in JSX, placeholder, title, or aria-label attributes. For backend status tokens, use `tokenLabel()` from `src/i18n/tokenMaps.ts`. For error messages, use `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`. See CLAUDE.md → Internationalization for the full contract."
 - **Final acceptance checklist** — manual smoke tests + negative paths
 - **What to do if you get stuck** — explicit rule: prefer the more conservative option, leave a `TODO(handoff-{date})` comment, write follow-ups to a sibling file rather than expanding scope silently
 - **Out of band** — the deferred findings, so the implementing CLI knows they're queued and won't accidentally implement them
@@ -947,3 +951,19 @@ After the 6-run iteration session completed, six follow-up topics accumulated as
 - Phase 10f tracks descoped-reopenable entries but doesn't delete them when blockers clear. The "cleanup" rule exists but has never run in practice. Watch for file growth over time.
 - The "handoff as default" change means the user sees fewer Phase 8 choices. If that feels prescriptive on a specific run, the user can still override — but if overrides happen frequently, the default may be wrong. Track override rate across the next few runs.
 - Option C (theoretical scaffolding) has only been used once (run 6). Whether the strict non-goals section holds up in practice — or if implementing CLIs drift into real HTTP anyway — is unknown until a second scaffolding handoff exists.
+
+### 2026-04-11 — i18n infrastructure integration (post vibeman run #3)
+
+**Context:** vibeman run #3 built the i18n infrastructure for the personas project — deep merge, token maps, error registry bridge, ESLint rule, locale parity script. CLAUDE.md now has a comprehensive Internationalization section. The research skill needed to be updated so handoff plans that touch frontend code carry the i18n contract forward to implementing CLIs.
+
+**Rules added:**
+
+- **Phase 6 — i18n impact check.** When a code finding touches frontend files (`src/**/*.tsx`), note whether it introduces new user-facing strings. If yes, mark `i18n: required` and add an effort note. For backend status tokens, note that `tokenLabel()` must be used. This catches the i18n cost at evidence-gathering time, not as a surprise during handoff execution. The safety rule at line 843 already covered the "never write English directly" prohibition, but the Phase 6 check surfaces the requirement earlier — at the finding level, before triage.
+
+- **Phase 8 Option B cross-cutting concerns — explicit i18n bullet.** The typography contrast bullet existed; now an i18n bullet is mandatory alongside it for any handoff that touches `src/**/*.tsx`. References the specific tools: `useTranslation()` for UI strings, `tokenLabel()` for backend tokens, `resolveErrorTranslated()` for errors. Points to CLAUDE.md → Internationalization for the full contract.
+
+**Why both rules matter together:** the Phase 6 check tells the user "this finding has i18n cost" at triage time, which affects effort estimates and priority. The Phase 8 cross-cutting concern tells the implementing CLI "here's how to honor i18n" at execution time. Without Phase 6, the user may accept a finding not realizing it requires en.ts changes. Without Phase 8, the implementing CLI may write hardcoded English despite the ESLint warning.
+
+**Rules NOT added:**
+- "Force all findings that touch .tsx to include i18n migration of existing hardcoded strings in the same file." Too aggressive — that's a separate goal (i18n Phase 2-8 migration), not a research skill concern. The research skill only ensures NEW strings from its findings go through i18n, not that existing strings in the same file get migrated.
+- "Add i18n effort as a multiplier to the relevance score." The i18n cost is ~5 minutes per finding (add key to en.ts, use t.section.key in component) — not enough to change a relevance score.
