@@ -14,12 +14,14 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabDeploymentRecord } from '@/api/system/gitlab';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DeploymentHistoryTabProps {
   projectId: number | null;
 }
 
 export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
+  const { t } = useTranslation();
   const [filterPersonaId, setFilterPersonaId] = useState<string>('');
   const [confirmRollback, setConfirmRollback] = useState<string | null>(null);
 
@@ -58,7 +60,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-sm text-muted-foreground/70">
-          Select a project in the Deploy tab to view deployment history.
+          {t.gitlab.select_project_for_history}
         </p>
       </div>
     );
@@ -70,7 +72,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
       <div className="flex items-center gap-3">
         <div className="flex-1">
           <label htmlFor="history-persona-filter" className="block text-sm font-medium text-foreground/80 mb-1.5">
-            Filter by Persona
+            {t.gitlab.filter_by_persona}
           </label>
           <select
             id="history-persona-filter"
@@ -81,7 +83,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
             }}
             className="w-full rounded-xl border border-primary/15 bg-secondary/30 px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
           >
-            <option value="">All personas</option>
+            <option value="">{t.gitlab.all_personas}</option>
             {personas.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.icon ? `${p.icon} ` : ''}{p.name}
@@ -95,14 +97,14 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           className="mt-6 flex items-center gap-1.5 px-2.5 py-2 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         >
           {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-2">
         <History className="w-4 h-4 text-amber-400" />
-        <h3 className="text-sm font-medium text-foreground/80">Deployment Timeline</h3>
+        <h3 className="text-sm font-medium text-foreground/80">{t.gitlab.deployment_timeline}</h3>
         <span className="ml-auto text-xs text-muted-foreground/50">
           {history.length} deployment{history.length !== 1 ? 's' : ''}
         </span>
@@ -112,7 +114,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
       {loading && history.length === 0 && (
         <div className="text-center py-8">
           <LoadingSpinner />
-          <p className="text-sm text-muted-foreground/60 mt-2">Loading deployment history...</p>
+          <p className="text-sm text-muted-foreground/60 mt-2">{t.gitlab.loading_deployment_history}</p>
         </div>
       )}
 
@@ -122,9 +124,9 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
             <Rocket className="w-6 h-6 text-amber-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/80">No deployments recorded yet</p>
+          <p className="text-sm text-muted-foreground/80">{t.gitlab.no_deployments}</p>
           <p className="text-sm text-muted-foreground/60 mt-1">
-            Deploy a persona to start building deployment history
+            {t.gitlab.deploy_to_build_history}
           </p>
         </div>
       )}
@@ -173,6 +175,7 @@ function DeploymentRow({
   onRollback,
   onCancelRollback,
 }: DeploymentRowProps) {
+  const { t } = useTranslation();
   const timeAgo = formatRelativeTime(record.createdAt, '-', { dateFallbackDays: 30 });
   const isRollback = !!record.rolledBackFrom;
 
@@ -221,17 +224,17 @@ function DeploymentRow({
               {isLatest && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 text-xs font-medium text-emerald-400">
                   <Check className="w-3 h-3" />
-                  Current
+                  {t.gitlab.current}
                 </span>
               )}
               {isRollback && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-amber-500/20 bg-amber-500/10 text-xs font-medium text-amber-400">
                   <RotateCcw className="w-3 h-3" />
-                  Rollback
+                  {t.gitlab.rollback}
                 </span>
               )}
               <span className="px-1.5 py-0.5 rounded-md border border-primary/10 bg-secondary/30 text-xs text-muted-foreground/60">
-                {record.method === 'api' ? 'Duo Agent API' : 'AGENTS.md'}
+                {record.method === 'api' ? t.gitlab.duo_agent_api : t.gitlab.agents_md}
               </span>
             </div>
 
@@ -266,24 +269,24 @@ function DeploymentRow({
                     ) : (
                       <AlertTriangle className="w-3 h-3" />
                     )}
-                    Confirm
+                    {t.common.confirm}
                   </button>
                   <button
                     onClick={onCancelRollback}
                     disabled={rollingBack}
                     className="px-2 py-1.5 text-xs rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                 </>
               ) : (
                 <button
                   onClick={onRollback}
                   className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-muted-foreground/60 hover:text-amber-400 transition-colors"
-                  title="Rollback to this deployment"
+                  title={t.gitlab.rollback_to_deployment}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Rollback
+                  {t.gitlab.rollback}
                 </button>
               )}
             </div>

@@ -8,6 +8,7 @@ import {
   type CiCdTemplate,
   type GitLabTierId,
 } from '../data/cicdTemplates';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CiCdTemplatesPickerProps {
   userTier: GitLabTierId;
@@ -15,6 +16,7 @@ interface CiCdTemplatesPickerProps {
 }
 
 export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplatesPickerProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -25,7 +27,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         className="flex items-center gap-2 w-full text-left"
       >
         <Cpu className="w-4 h-4 text-orange-400" />
-        <span className="text-sm font-medium text-foreground/80">CI/CD Agent Templates</span>
+        <span className="text-sm font-medium text-foreground/80">{t.gitlab.cicd_agent_templates}</span>
         {expanded
           ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
           : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
@@ -43,7 +45,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
               >
                 {tier.name}
                 {tier.id === userTier && (
-                  <span className="text-[10px] opacity-60">(yours)</span>
+                  <span className="text-[10px] opacity-60">{t.gitlab.your_tier}</span>
                 )}
               </span>
             ))}

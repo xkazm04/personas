@@ -12,8 +12,10 @@ import type { PipelineTemplate } from './templates/PipelineTemplateGallery';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
 import { TeamCard } from './TeamCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function TeamList() {
+  const { t } = useTranslation();
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const createTeam = usePipelineStore((s) => s.createTeam);
@@ -90,9 +92,9 @@ export default function TeamList() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground/90">Agent Teams</h1>
+            <h1 className="text-2xl font-bold text-foreground/90">{t.pipeline.agent_teams}</h1>
             <p className="text-sm text-muted-foreground/80 mt-1">
-              Design multi-agent pipelines with visual canvas
+              {t.pipeline.agent_teams_subtitle}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -103,7 +105,7 @@ export default function TeamList() {
               onClick={() => setShowAutoTeam(true)}
               className="bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25"
             >
-              Auto-Team
+              {t.pipeline.auto_team}
             </Button>
             <Button
               variant="primary"
@@ -112,7 +114,7 @@ export default function TeamList() {
               onClick={() => setShowCreate(true)}
               className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
             >
-              New Team
+              {t.pipeline.new_team}
             </Button>
           </div>
         </div>
@@ -149,9 +151,9 @@ export default function TeamList() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground/90 mb-1">No teams yet</h2>
+            <h2 className="text-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
             <p className="text-sm text-muted-foreground/90 mb-6 max-w-sm mx-auto">
-              Start from a template below or create a blank team
+              {t.pipeline.no_teams_hint}
             </p>
             <div className="flex items-center justify-center gap-3">
               <Button
@@ -161,7 +163,7 @@ export default function TeamList() {
                 onClick={() => setShowAutoTeam(true)}
                 className="bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25"
               >
-                Auto-Team
+                {t.pipeline.auto_team}
               </Button>
               <Button
                 variant="primary"
@@ -170,7 +172,7 @@ export default function TeamList() {
                 onClick={() => setShowCreate(true)}
                 className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
               >
-                Create Blank Team
+                {t.pipeline.create_blank_team}
               </Button>
             </div>
           </div>

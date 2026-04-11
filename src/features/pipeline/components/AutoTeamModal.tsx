@@ -15,6 +15,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useAutoTeam } from './useAutoTeam';
 import { BlueprintPreview, EXAMPLE_PROMPTS } from './BlueprintPreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoTeamModalProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface AutoTeamModalProps {
 }
 
 export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
+  const { t, tx } = useTranslation();
   const at = useAutoTeam();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -70,8 +72,8 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
               <Zap className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h2 id="auto-team-title" className="text-sm font-semibold text-foreground">Auto-Team</h2>
-              <p className="text-xs text-muted-foreground/60">Describe an outcome, get a team</p>
+              <h2 id="auto-team-title" className="text-sm font-semibold text-foreground">{t.pipeline.auto_team}</h2>
+              <p className="text-xs text-muted-foreground/60">{t.pipeline.auto_team_subtitle}</p>
             </div>
           </div>
           {!isWorking && (
@@ -96,7 +98,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 value={at.query}
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
-                placeholder="What do you want the team to do?"
+                placeholder={t.pipeline.auto_team_placeholder}
                 className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
@@ -105,7 +107,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   size="icon-sm"
                   onClick={() => at.suggest()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25"
-                  title="Generate team"
+                  title={t.pipeline.generate_team}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </Button>
@@ -140,7 +142,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 className="animate-fade-slide-in flex items-center gap-3 py-6 justify-center"
               >
                 <LoadingSpinner size="lg" className="text-indigo-400" />
-                <span className="text-sm text-muted-foreground/70">Assembling your team...</span>
+                <span className="text-sm text-muted-foreground/70">{t.pipeline.assembling_team}</span>
               </div>
             )}
 
@@ -159,7 +161,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     onClick={at.reset}
                     className="flex-1"
                   >
-                    Try different
+                    {t.pipeline.try_different}
                   </Button>
                   <Button
                     variant="primary"
@@ -168,7 +170,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     iconRight={<ArrowRight className="w-3.5 h-3.5" />}
                     className="flex-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
                   >
-                    Create Team
+                    {t.pipeline.create_team}
                   </Button>
                 </div>
               </div>
@@ -187,7 +189,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   )}
                   <span className="text-sm text-foreground/80">
-                    Creating team with {at.blueprint?.members.length ?? 0} agents...
+                    {tx(t.pipeline.creating_team, { count: at.blueprint?.members.length ?? 0 })}
                   </span>
                 </div>
                 {at.phase === 'seeding' && (
@@ -195,7 +197,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     <LoadingSpinner className="text-violet-400 flex-shrink-0" />
                     <span className="text-sm text-foreground/80 flex items-center gap-1.5">
                       <Brain className="w-3.5 h-3.5 text-violet-400" />
-                      Seeding memories from similar teams...
+                      {t.pipeline.seeding_memories}
                     </span>
                   </div>
                 )}
@@ -211,7 +213,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm font-medium text-emerald-400">Team created</span>
+                    <span className="text-sm font-medium text-emerald-400">{t.pipeline.team_created}</span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
                     <span className="flex items-center gap-1">
@@ -235,7 +237,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   onClick={handleDone}
                   className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
                 >
-                  Open Team Canvas
+                  {t.pipeline.open_team_canvas}
                 </Button>
               </div>
             )}
@@ -256,7 +258,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   block
                   onClick={at.reset}
                 >
-                  Try again
+                  {t.pipeline.try_again}
                 </Button>
               </div>
             )}

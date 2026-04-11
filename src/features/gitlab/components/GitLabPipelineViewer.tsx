@@ -9,6 +9,7 @@ import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
 import { JobRow } from './JobRow';
 import { usePipelineNotifications } from '../hooks/usePipelineNotifications';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -19,6 +20,7 @@ interface GitLabPipelineViewerProps {
 }
 
 export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
+  const { t } = useTranslation();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
@@ -62,7 +64,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">Select a project in the Deploy tab to view pipelines.</p>
+        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_for_pipelines}</p>
       </div>
     );
   }
@@ -81,7 +83,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground/70">
-          {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : 'No pipelines'}
+          {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -91,7 +93,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             onClick={() => fetchPipelines(projectId)}
             disabled={loading}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
           <Button
             variant="ghost"
@@ -102,7 +104,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             disabled={triggering}
             accentColor="orange"
           >
-            Trigger Pipeline
+            {t.gitlab.trigger_pipeline}
           </Button>
         </div>
       </div>
@@ -118,8 +120,8 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-orange-400/60" />
               </div>
-              <p className="text-sm text-muted-foreground/70">No pipelines yet</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">Trigger a pipeline to get started</p>
+              <p className="text-sm text-muted-foreground/70">{t.gitlab.no_pipelines_yet}</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">{t.gitlab.trigger_to_start}</p>
             </div>
           ) : (
             pipelines.map((p) => (
@@ -154,7 +156,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
-                      title="Open in GitLab"
+                      title={t.gitlab.open_in_gitlab}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
@@ -163,7 +165,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => refreshPipeline(projectId, activePipeline.id)}
-                    title="Refresh pipeline"
+                    title={t.gitlab.refresh_pipeline}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </Button>
@@ -175,7 +177,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                 {jobs.length === 0 && loading ? (
                   null
                 ) : jobs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground/50 text-center py-4">No jobs found</p>
+                  <p className="text-sm text-muted-foreground/50 text-center py-4">{t.gitlab.no_jobs_found}</p>
                 ) : (
                   jobs.map((job) => (
                     <JobRow
@@ -191,7 +193,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             </div>
           ) : (
             <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-muted-foreground/50">
-              Select a pipeline to view jobs
+              {t.gitlab.select_pipeline_to_view}
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Trash2, Settings, UserCog } from 'lucide-react';
 import { TEAM_ROLES } from '../../libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NodeContextMenuProps {
   x: number;
@@ -14,6 +15,7 @@ interface NodeContextMenuProps {
 }
 
 export default function NodeContextMenu({ x, y, memberName, currentRole, onChangeRole, onRemove, onConfigure, onClose }: NodeContextMenuProps) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           >
             <UserCog className="w-3 h-3" />
             <span className="capitalize">{role.label}</span>
-            {currentRole === role.value && <span className="ml-auto text-sm text-indigo-400">current</span>}
+            {currentRole === role.value && <span className="ml-auto text-sm text-indigo-400">{t.pipeline.current_role}</span>}
           </button>
         ))}
       </div>
@@ -58,14 +60,14 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-xl transition-colors"
         >
           <Settings className="w-3 h-3" />
-          Configure
+          {t.pipeline.configure}
         </button>
         <button
           onClick={() => { onRemove(); onClose(); }}
           className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
         >
           <Trash2 className="w-3 h-3" />
-          Remove from Team
+          {t.pipeline.remove_from_team}
         </button>
       </div>
     </div>

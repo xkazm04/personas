@@ -14,6 +14,7 @@ import { GitLabPipelineViewer } from '@/features/gitlab/components/GitLabPipelin
 import { GitOpsVersionHistory } from '@/features/gitlab/components/GitOpsVersionHistory';
 import { DeploymentHistoryTab } from '@/features/gitlab/components/DeploymentHistoryTab';
 import type { CiCdTemplate } from '../data/cicdTemplates';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,27 +22,22 @@ import type { CiCdTemplate } from '../data/cicdTemplates';
 
 type TabId = 'connection' | 'agents' | 'deploy' | 'history' | 'pipelines' | 'gitops';
 
-interface TabDef {
-  id: TabId;
-  label: string;
-  disabledWhenOffline: boolean;
-}
-
-const TABS: TabDef[] = [
-  { id: 'connection', label: 'Connection', disabledWhenOffline: false },
-  { id: 'deploy', label: 'Deploy', disabledWhenOffline: true },
-  { id: 'agents', label: 'Agents', disabledWhenOffline: true },
-  { id: 'history', label: 'History', disabledWhenOffline: true },
-  { id: 'gitops', label: 'GitOps', disabledWhenOffline: true },
-  { id: 'pipelines', label: 'Pipelines', disabledWhenOffline: true },
-];
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function GitLabPanel() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('connection');
+
+  const TABS = [
+    { id: 'connection' as TabId, label: t.gitlab.tab_connection, disabledWhenOffline: false },
+    { id: 'deploy' as TabId, label: t.gitlab.tab_deploy, disabledWhenOffline: true },
+    { id: 'agents' as TabId, label: t.gitlab.tab_agents, disabledWhenOffline: true },
+    { id: 'history' as TabId, label: t.gitlab.tab_history, disabledWhenOffline: true },
+    { id: 'gitops' as TabId, label: t.gitlab.tab_gitops, disabledWhenOffline: true },
+    { id: 'pipelines' as TabId, label: t.gitlab.tab_pipelines, disabledWhenOffline: true },
+  ];
 
   const config = useSystemStore((s) => s.gitlabConfig);
   const isConnecting = useSystemStore((s) => s.gitlabIsConnecting);
@@ -121,8 +117,8 @@ export default function GitLabPanel() {
       <ContentHeader
         icon={<GitBranch className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="GitLab Integration"
-        subtitle="Deploy personas as GitLab Duo Agents"
+        title={t.gitlab.integration_title}
+        subtitle={t.gitlab.integration_subtitle}
         actions={<ConnectionStatusBadge connected={isConnected} isBusy={isConnecting} />}
       >
         <PanelTabBar

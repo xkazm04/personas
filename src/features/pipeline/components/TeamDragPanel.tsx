@@ -4,8 +4,10 @@ import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { PersonaAvatar, useCanvasDragRef } from '@/features/pipeline/sub_canvas';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function TeamDragPanel() {
+  const { t } = useTranslation();
   const canvasDragRef = useCanvasDragRef();
   const personas = useAgentStore((s) => s.personas);
   const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
@@ -25,7 +27,7 @@ export default function TeamDragPanel() {
   return (
     <div>
       <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest px-1 mb-2">
-        Drag to canvas
+        {t.pipeline.drag_to_canvas}
       </div>
       <div className="space-y-0.5">
         {personas.map((p) => (
@@ -43,7 +45,7 @@ export default function TeamDragPanel() {
             </span>
             {memberPersonaIds.has(p.id) && (
               <span className="text-sm font-mono text-emerald-400/50 shrink-0">
-                added
+                {t.pipeline.added}
               </span>
             )}
           </div>
@@ -51,7 +53,7 @@ export default function TeamDragPanel() {
       </div>
       {personas.length === 0 && (
         <div className="text-center py-6 text-sm text-muted-foreground/60">
-          No agents created yet
+          {t.pipeline.no_agents_created}
         </div>
       )}
     </div>

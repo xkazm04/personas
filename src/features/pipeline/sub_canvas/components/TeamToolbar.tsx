@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { PersonaAvatar } from '../libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TeamToolbarProps {
   teamName: string;
@@ -16,6 +17,7 @@ interface TeamToolbarProps {
 }
 
 export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember, onAddNote, saveStatus = 'saved' }: TeamToolbarProps) {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const teamMembers = usePipelineStore((s) => s.teamMembers);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -55,7 +57,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 text-sm font-medium transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Agent
+            {t.pipeline.add_agent}
             <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
@@ -64,7 +66,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
               <div className="p-1.5 max-h-60 overflow-y-auto">
                 {availablePersonas.length === 0 ? (
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground/90">
-                    All agents already added
+                    {t.pipeline.all_agents_added}
                   </div>
                 ) : (
                   availablePersonas.map((p) => (
@@ -93,7 +95,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-sm font-medium transition-all"
           >
             <StickyNote className="w-3.5 h-3.5" />
-            Note
+            {t.pipeline.note}
           </button>
         )}
 
@@ -103,7 +105,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80 text-sm font-medium transition-all"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
-          Layout
+          {t.pipeline.layout}
         </button>
 
         {/* Save */}
@@ -125,7 +127,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
           ) : (
             <Save className="w-3.5 h-3.5" />
           )}
-          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+          {saveStatus === 'saving' ? t.pipeline.saving : saveStatus === 'saved' ? t.pipeline.saved : t.common.save}
         </button>
       </div>
     </div>

@@ -17,12 +17,14 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabPersonaVersion } from '@/api/system/gitlab';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GitOpsVersionHistoryProps {
   projectId: number | null;
 }
 
 export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
+  const { t } = useTranslation();
   const [selectedPersonaName, setSelectedPersonaName] = useState<string>('');
   const [confirmRollback, setConfirmRollback] = useState<string | null>(null);
   const [showBranches, setShowBranches] = useState(false);
@@ -74,7 +76,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">Select a project in the Deploy tab to view version history.</p>
+        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_for_versions}</p>
       </div>
     );
   }
@@ -84,7 +86,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
       {/* Persona selector */}
       <div>
         <label htmlFor="gitops-persona" className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Persona
+          {t.gitlab.persona_label}
         </label>
         <select
           id="gitops-persona"
@@ -95,7 +97,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           }}
           className="w-full rounded-xl border border-primary/15 bg-secondary/30 px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
         >
-          <option value="">Select a persona...</option>
+          <option value="">{t.gitlab.select_persona}</option>
           {personas.map((p) => (
             <option key={p.id} value={p.name}>
               {p.icon ? `${p.icon} ` : ''}{p.name}
@@ -118,7 +120,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                 <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
               )}
               <GitBranch className="w-4 h-4 text-amber-400" />
-              Environment Branches
+              {t.gitlab.environment_branches}
               <span className="ml-auto text-xs text-muted-foreground/50">
                 {branches.length} branch{branches.length !== 1 ? 'es' : ''}
               </span>
@@ -129,14 +131,14 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                 {branches.length === 0 ? (
                   <div className="text-center py-4">
                     <p className="text-sm text-muted-foreground/60 mb-2">
-                      No environment branches yet
+                      {t.gitlab.no_environment_branches}
                     </p>
                     <button
                       onClick={handleSetupBranches}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Create dev / staging / production
+                      {t.gitlab.create_branches}
                     </button>
                   </div>
                 ) : (
@@ -155,7 +157,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                         </span>
                       </div>
                       {branch.isProtected && (
-                        <span title="Protected branch">
+                        <span title={t.gitlab.protected_branch}>
                           <Shield className="w-3.5 h-3.5 text-emerald-400/60" />
                         </span>
                       )}
@@ -170,7 +172,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-medium text-foreground/80">Version History</h3>
+              <h3 className="text-sm font-medium text-foreground/80">{t.gitlab.version_history}</h3>
             </div>
             <button
               onClick={loadVersions}
@@ -178,7 +180,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
             >
               {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              Refresh
+              {t.common.refresh}
             </button>
           </div>
 
@@ -186,7 +188,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           {loading && versions.length === 0 && (
             <div className="text-center py-8">
               <LoadingSpinner />
-              <p className="text-sm text-muted-foreground/60 mt-2">Loading version history...</p>
+              <p className="text-sm text-muted-foreground/60 mt-2">{t.gitlab.loading_version_history}</p>
             </div>
           )}
 
@@ -196,9 +198,9 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Tag className="w-6 h-6 text-amber-400/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80">No versions deployed yet</p>
+              <p className="text-sm text-muted-foreground/80">{t.gitlab.no_versions}</p>
               <p className="text-sm text-muted-foreground/60 mt-1">
-                Deploy this persona with versioning enabled to start tracking history
+                {t.gitlab.deploy_with_versioning}
               </p>
             </div>
           )}
@@ -237,6 +239,7 @@ interface VersionRowProps {
 }
 
 function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRollback }: VersionRowProps) {
+  const { t, tx } = useTranslation();
   const timeAgo = version.createdAt ? formatRelativeTime(version.createdAt, '-', { dateFallbackDays: 30 }) : null;
 
   return (
@@ -272,7 +275,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
             {version.isCurrent && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 text-xs font-medium text-emerald-400">
                 <Check className="w-3 h-3" />
-                Current
+                {t.gitlab.current}
               </span>
             )}
             {version.environment && (
@@ -310,24 +313,24 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                   ) : (
                     <AlertTriangle className="w-3 h-3" />
                   )}
-                  Confirm rollback
+                  {t.gitlab.confirm_rollback_version}
                 </button>
                 <button
                   onClick={onCancelRollback}
                   disabled={rollingBack}
                   className="px-2 py-1.5 text-xs rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
               </>
             ) : (
               <button
                 onClick={onRollback}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-muted-foreground/60 hover:text-amber-400 transition-colors"
-                title={`Rollback to ${version.version}`}
+                title={tx(t.gitlab.rollback_to_version, { version: version.version })}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Rollback
+                {t.gitlab.rollback}
               </button>
             )}
           </div>

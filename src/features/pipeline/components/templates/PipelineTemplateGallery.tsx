@@ -5,6 +5,7 @@ import type { PipelineTemplate } from './pipelineTemplateTypes';
 import { EDGE_COLORS, NODE_ROLE_FILLS } from './pipelineTemplateTypes';
 import { PIPELINE_TEMPLATES } from './pipelineTemplateData';
 import { MiniCanvas, RoleBadge } from './MiniCanvas';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Re-export for consumers that import from this file
 export type { PipelineTemplate } from './pipelineTemplateTypes';
@@ -19,6 +20,7 @@ interface PipelineTemplateGalleryProps {
 }
 
 export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGalleryProps) {
+  const { t } = useTranslation();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -26,7 +28,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
     <div className="mt-2">
       <div className="flex items-center gap-2 mb-4">
         <LayoutTemplate className="w-4 h-4 text-indigo-400/60" />
-        <h2 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Starter Templates</h2>
+        <h2 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">{t.pipeline.starter_templates}</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -73,9 +75,9 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                         {tpl.description}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground/60 font-mono">
-                        <span>{tpl.nodes.length} nodes</span>
+                        <span>{tpl.nodes.length} {t.pipeline.nodes}</span>
                         <span className="opacity-40">·</span>
-                        <span>{tpl.edges.length} edges</span>
+                        <span>{tpl.edges.length} {t.pipeline.edges}</span>
                       </div>
                     </div>
                   </div>
@@ -132,7 +134,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                           }}
                         >
                           <Zap className="w-3.5 h-3.5" />
-                          Use Template
+                          {t.pipeline.use_template}
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>

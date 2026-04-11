@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -22,6 +23,7 @@ export function GitLabAgentList({
   onRedeploy,
   redeployingAgentId,
 }: GitLabAgentListProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (projectId) {
       onFetchAgents(projectId);
@@ -31,7 +33,7 @@ export function GitLabAgentList({
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">Select a project in the Deploy tab to view agents.</p>
+        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_to_view_agents}</p>
       </div>
     );
   }
@@ -42,14 +44,14 @@ export function GitLabAgentList({
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
           <Bot className="w-6 h-6 text-orange-400/60" />
         </div>
-        <p className="text-sm text-muted-foreground/80">No Duo Agents deployed</p>
-        <p className="text-sm text-muted-foreground/60 mt-1">Deploy a persona from the Deploy tab</p>
+        <p className="text-sm text-muted-foreground/80">{t.gitlab.no_duo_agents}</p>
+        <p className="text-sm text-muted-foreground/60 mt-1">{t.gitlab.deploy_persona_hint}</p>
         <button
           onClick={() => onFetchAgents(projectId)}
           className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
     );
@@ -58,13 +60,13 @@ export function GitLabAgentList({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground/70">{agents.length} agent(s) deployed</p>
+        <p className="text-sm text-muted-foreground/70">{agents.length} agent(s)</p>
         <button
           onClick={() => onFetchAgents(projectId)}
           className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 
@@ -88,7 +90,7 @@ export function GitLabAgentList({
               onClick={() => onRedeploy(agent.name)}
               disabled={redeployingAgentId === agent.name}
               className="p-1.5 rounded-lg hover:bg-orange-500/10 text-muted-foreground/60 hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Redeploy agent"
+              title={t.gitlab.redeploy_agent}
             >
               {redeployingAgentId === agent.name ? (
                 <LoadingSpinner size="xs" />
@@ -102,7 +104,7 @@ export function GitLabAgentList({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
-                title="Open in GitLab"
+                title={t.gitlab.open_in_gitlab}
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
@@ -110,7 +112,7 @@ export function GitLabAgentList({
             <button
               onClick={() => onUndeploy(projectId, agent.id)}
               className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
-              title="Undeploy agent"
+              title={t.gitlab.undeploy_agent}
             >
               <Trash2 className="w-4 h-4" />
             </button>

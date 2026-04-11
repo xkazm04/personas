@@ -1,5 +1,6 @@
 import { Bug, ChevronDown, X } from 'lucide-react';
 import type { DryRunNodeData } from '../../libs/debuggerTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DebuggerVariablesProps {
   inspectedData: DryRunNodeData;
@@ -14,6 +15,7 @@ export default function DebuggerVariables({
   onCollapse,
   onClose,
 }: DebuggerVariablesProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in mx-4 mb-2 rounded-xl bg-secondary/90 backdrop-blur-md border border-primary/15 shadow-elevation-4 overflow-hidden max-h-[280px]"
@@ -51,24 +53,24 @@ export default function DebuggerVariables({
       <div className="grid grid-cols-2 gap-0 divide-x divide-primary/10 overflow-y-auto max-h-[230px]">
         {/* Input */}
         <div className="p-3">
-          <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Input</div>
+          <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">{t.pipeline.input}</div>
           {inspectedData.input ? (
             <pre className="text-sm text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
               {JSON.stringify(inspectedData.input, null, 2)}
             </pre>
           ) : (
-            <span className="text-sm text-muted-foreground/50 italic">No input data</span>
+            <span className="text-sm text-muted-foreground/50 italic">{t.pipeline.no_input_data}</span>
           )}
         </div>
         {/* Output */}
         <div className="p-3">
-          <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">Output</div>
+          <div className="text-sm font-mono uppercase tracking-wider text-muted-foreground/60 mb-1.5">{t.pipeline.output}</div>
           {inspectedData.output ? (
             <pre className="text-sm text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap break-all">
               {JSON.stringify(inspectedData.output, null, 2)}
             </pre>
           ) : (
-            <span className="text-sm text-muted-foreground/50 italic">Awaiting execution</span>
+            <span className="text-sm text-muted-foreground/50 italic">{t.pipeline.awaiting_execution}</span>
           )}
         </div>
       </div>

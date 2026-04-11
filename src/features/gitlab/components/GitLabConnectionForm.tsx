@@ -6,6 +6,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { PipelineNotificationPrefs } from './PipelineNotificationPrefs';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GitLabConnectionFormProps {
   isConnected: boolean;
@@ -24,6 +25,7 @@ export function GitLabConnectionForm({
   onConnect,
   onDisconnect,
 }: GitLabConnectionFormProps) {
+  const { t, tx } = useTranslation();
   const [instanceUrl, setInstanceUrl] = useState('');
   const credentials = useVaultStore((s) => s.credentials);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -50,7 +52,7 @@ export function GitLabConnectionForm({
               </span>
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground/90">Connected as @{username}</p>
+              <p className="text-sm font-medium text-foreground/90">{tx(t.gitlab.connected_as, { username })}</p>
               <p className="text-sm text-muted-foreground/70">{baseUrl.replace(/^https?:\/\//, '')}</p>
             </div>
           </div>
@@ -63,7 +65,7 @@ export function GitLabConnectionForm({
           className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          Disconnect
+          {t.gitlab.disconnect}
         </button>
       </div>
     );
@@ -74,7 +76,7 @@ export function GitLabConnectionForm({
       {/* Vault credential status */}
       <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10`}>
         <h3 className={`text-sm font-medium text-foreground/90 ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
-          GitLab Credential
+          {t.gitlab.gitlab_credential}
         </h3>
 
         {gitlabCredential ? (
@@ -82,25 +84,25 @@ export function GitLabConnectionForm({
             <div className="flex items-center gap-2 text-sm text-emerald-400">
               <Key className="w-4 h-4" />
               <span>
-                Using <span className="font-medium">{gitlabCredential.name}</span> from Vault
+                {tx(t.gitlab.using_credential, { name: gitlabCredential.name })}
               </span>
             </div>
 
             <div className="mt-3">
               <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 mb-1.5">
                 <Globe className="w-3.5 h-3.5" />
-                Instance URL
+                {t.gitlab.instance_url}
               </label>
               <input
                 id="gitlab-instance-url"
                 type="url"
                 value={instanceUrl}
                 onChange={(e) => setInstanceUrl(e.target.value)}
-                placeholder="https://gitlab.com"
+                placeholder={t.gitlab.instance_url_placeholder}
                 className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 transition-colors"
               />
               <p className="mt-1 text-xs text-muted-foreground/50">
-                Leave empty for gitlab.com, or enter your self-hosted instance URL
+                {t.gitlab.instance_url_help}
               </p>
             </div>
 
@@ -117,20 +119,20 @@ export function GitLabConnectionForm({
               ) : (
                 <LogIn className="w-4 h-4" />
               )}
-              {isConnecting ? 'Connecting...' : 'Connect to GitLab'}
+              {isConnecting ? t.gitlab.connecting : t.gitlab.connect_to_gitlab}
             </button>
           </>
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground/70">
-              No GitLab PAT found in your Credential Vault. Add one to connect.
+              {t.gitlab.no_pat_found}
             </p>
             <button
               onClick={navigateToCatalog}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/15 transition-colors"
             >
               <Key className="w-3.5 h-3.5" />
-              Add GitLab Credential
+              {t.gitlab.add_gitlab_credential}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

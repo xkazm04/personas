@@ -5,12 +5,14 @@ import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Job log viewer
 // ---------------------------------------------------------------------------
 
 function JobLogViewer({ log }: { log: string | null }) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
@@ -23,14 +25,14 @@ function JobLogViewer({ log }: { log: string | null }) {
     return (
       <div className="flex items-center justify-center py-6 text-muted-foreground/50 text-sm">
         <LoadingSpinner className="mr-2" />
-        Loading log...
+        {t.gitlab.loading_log}
       </div>
     );
   }
 
   if (log.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground/50">No log output</div>
+      <div className="text-center py-4 text-sm text-muted-foreground/50">{t.gitlab.no_log_output}</div>
     );
   }
 
@@ -56,6 +58,7 @@ interface JobRowProps {
 }
 
 export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
+  const { t } = useTranslation();
   const jobLog = useSystemStore((s) => s.gitlabJobLog);
   const fetchJobLog = useSystemStore((s) => s.gitlabFetchJobLog);
 
@@ -92,7 +95,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-foreground/70 transition-colors"
-            title="Open in GitLab"
+            title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -11,6 +12,7 @@ interface AddTeamMemoryFormProps {
 }
 
 export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFormProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -44,7 +46,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         onClick={() => setExpanded(true)}
       >
         <Plus className="w-3 h-3" />
-        Add Memory
+        {t.pipeline.add_memory}
       </button>
     );
   }
@@ -52,7 +54,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   return (
     <div className="border border-primary/15 rounded-lg p-2.5 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground/80">New Memory</span>
+        <span className="text-sm font-medium text-foreground/80">{t.pipeline.new_memory}</span>
         <button
           className="p-0.5 rounded hover:bg-primary/10 text-muted-foreground/60"
           onClick={() => setExpanded(false)}
@@ -63,14 +65,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <input
         className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
-        placeholder="Title..."
+        placeholder={t.pipeline.title_placeholder}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <textarea
         className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
-        placeholder="Content..."
+        placeholder={t.pipeline.content_placeholder}
         rows={3}
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -88,7 +90,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         </select>
 
         <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground/50">Imp:</span>
+          <span className="text-sm text-muted-foreground/50">{t.pipeline.importance_label}</span>
           <input
             type="range"
             min={IMPORTANCE_MIN}
@@ -106,7 +108,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         disabled={!title.trim() || !content.trim()}
         onClick={handleSubmit}
       >
-        Save Memory
+        {t.pipeline.save_memory}
       </button>
     </div>
   );

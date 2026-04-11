@@ -1,5 +1,6 @@
 import { Brain, ChevronDown, List, GitCommitVertical, GitCompareArrows } from 'lucide-react';
 import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface MemoryPanelHeaderProps {
   total: number;
@@ -20,11 +21,12 @@ export default function MemoryPanelHeader({
   onClearRunFilter,
   onClose,
 }: MemoryPanelHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
       <div className="flex items-center gap-2">
         <Brain className="w-4 h-4 text-violet-400" />
-        <span className="text-sm font-semibold text-foreground/90">Team Memory</span>
+        <span className="text-sm font-semibold text-foreground/90">{t.pipeline.team_memory}</span>
         <span className="text-sm px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
           {total}
         </span>
@@ -40,7 +42,7 @@ export default function MemoryPanelHeader({
                   ? 'bg-violet-500/20 text-violet-400'
                   : 'text-muted-foreground/40 hover:text-muted-foreground/60'
               }`}
-              title="List view"
+              title={t.pipeline.list_view}
             >
               <List className="w-3 h-3" />
             </button>
@@ -51,7 +53,7 @@ export default function MemoryPanelHeader({
                   ? 'bg-violet-500/20 text-violet-400'
                   : 'text-muted-foreground/40 hover:text-muted-foreground/60'
               }`}
-              title="Timeline view"
+              title={t.pipeline.timeline_view}
             >
               <GitCommitVertical className="w-3 h-3" />
             </button>
@@ -63,7 +65,7 @@ export default function MemoryPanelHeader({
                     ? 'bg-violet-500/20 text-violet-400'
                     : 'text-muted-foreground/40 hover:text-muted-foreground/60'
                 }`}
-                title="Compare runs"
+                title={t.pipeline.compare_runs}
               >
                 <GitCompareArrows className="w-3 h-3" />
               </button>

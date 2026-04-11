@@ -3,6 +3,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { PersonaAvatar, ROLE_COLORS } from '../../libs/teamConstants';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { BlueprintMember } from '@/lib/bindings/BlueprintMember';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AssistantMessagesProps {
   loading: boolean;
@@ -28,6 +29,7 @@ export default function AssistantMessages({
   onTogglePreview,
   onApply,
 }: AssistantMessagesProps) {
+  const { t, tx } = useTranslation();
   const suggestedPattern = blueprint?.description
     ? blueprint.description.match(/\(Pattern:\s*([^)]+)\)/)?.[1] ?? null
     : null;
@@ -50,7 +52,7 @@ export default function AssistantMessages({
       {loading && (
         <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
           <LoadingSpinner size="xs" className="flex-shrink-0" />
-          Building your team...
+          {t.pipeline.building_team}
         </div>
       )}
 
@@ -72,7 +74,7 @@ export default function AssistantMessages({
               className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
             >
               <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-                Blueprint -- {blueprint.members.length} agents
+                {tx(t.pipeline.blueprint_agents, { count: blueprint.members.length })}
                 {suggestedPattern && (
                   <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
                     {suggestedPattern}
@@ -131,12 +133,12 @@ export default function AssistantMessages({
                   {isApplying ? (
                     <>
                       <LoadingSpinner size="sm" />
-                      Applying...
+                      {t.pipeline.applying}
                     </>
                   ) : (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      {memberCount > 0 ? 'Apply to Canvas' : 'Build Pipeline'}
+                      {memberCount > 0 ? t.pipeline.apply_to_canvas : t.pipeline.build_pipeline}
                     </>
                   )}
                 </button>

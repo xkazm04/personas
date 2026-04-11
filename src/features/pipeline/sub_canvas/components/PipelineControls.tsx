@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Play, Info, Bug } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NodeStatus {
   member_id: string;
@@ -56,6 +57,7 @@ export default function PipelineControls({
   onDryRun,
   agentNames = {},
 }: PipelineControlsProps) {
+  const { t } = useTranslation();
   const [hoveredDot, setHoveredDot] = useState<string | null>(null);
 
   const allCompleted =
@@ -83,12 +85,12 @@ export default function PipelineControls({
           {isRunning ? (
             <>
               <LoadingSpinner />
-              Running...
+              {t.pipeline.running}
             </>
           ) : (
             <>
               <Play className="w-4 h-4" />
-              Execute
+              {t.pipeline.execute}
             </>
           )}
         </button>
@@ -104,7 +106,7 @@ export default function PipelineControls({
           }`}
         >
           <Bug className="w-4 h-4" />
-          Dry Run
+          {t.pipeline.dry_run}
         </button>
 
         {/* Node status dots */}
@@ -157,7 +159,7 @@ export default function PipelineControls({
         {isRunning && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-primary/5 text-muted-foreground border border-primary/10">
             <Info className="w-3 h-3" />
-            Runs until completion
+            {t.pipeline.runs_until_completion}
           </span>
         )}
       </div>

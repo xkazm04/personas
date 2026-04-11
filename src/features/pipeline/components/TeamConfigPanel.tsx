@@ -7,6 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { AgentIR } from '@/lib/types/designTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TeamConfigPanelProps {
   member: {
@@ -38,6 +39,7 @@ function extractToolCount(designResult: string | null): number {
 }
 
 export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemove }: TeamConfigPanelProps) {
+  const { t, tx } = useTranslation();
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const personas = useAgentStore((s) => s.personas);
@@ -91,7 +93,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <span className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Configure</span>
+          <span className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.pipeline.configure}</span>
           <button
             onClick={onClose}
             className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
@@ -112,7 +114,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
             {member.persona_id && (
               <button
                 onClick={handleViewPersona}
-                title="View persona"
+                title={t.pipeline.view_persona}
                 className="p-1.5 rounded-lg hover:bg-secondary/70 text-muted-foreground/50 hover:text-foreground/80 transition-colors shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -123,14 +125,14 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
           {/* Persona Stats */}
           {stats && (
             <div className="grid grid-cols-2 gap-1.5">
-              <StatPill icon={Cpu} label="Model" value={stats.model} color={personaColor} />
-              <StatPill icon={Wrench} label="Tools" value={String(stats.toolCount)} color="#3b82f6" />
-              <StatPill icon={Zap} label="Triggers" value={String(stats.triggerCount)} color="#f59e0b" />
-              <StatPill icon={Link} label="Connectors" value={String(stats.connectorCount)} color="#10b981" />
+              <StatPill icon={Cpu} label={t.pipeline.model_label} value={stats.model} color={personaColor} />
+              <StatPill icon={Wrench} label={t.pipeline.tools_label} value={String(stats.toolCount)} color="#3b82f6" />
+              <StatPill icon={Zap} label={t.pipeline.triggers_label} value={String(stats.triggerCount)} color="#f59e0b" />
+              <StatPill icon={Link} label={t.pipeline.connectors_label} value={String(stats.connectorCount)} color="#10b981" />
               {stats.lastRun && (
                 <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
                   <Clock className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                  <span className="text-sm text-muted-foreground/70">Last run</span>
+                  <span className="text-sm text-muted-foreground/70">{t.pipeline.last_run}</span>
                   <span className="text-sm text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
                 </div>
               )}
@@ -140,7 +142,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
           {/* Role Selector */}
           <div>
             <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2 block">
-              Role
+              {t.pipeline.role}
             </label>
             <div className="space-y-1.5">
               {TEAM_ROLES.map((role) => (
@@ -172,7 +174,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               >
                 <div className="flex items-center gap-2 text-sm text-amber-400/70">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Remove "{personaName}" from team?
+                  {tx(t.pipeline.remove_confirm, { name: personaName })}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -182,13 +184,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                     }}
                     className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
                   >
-                    Confirm
+                    {t.common.confirm}
                   </button>
                   <button
                     onClick={() => setConfirmRemove(false)}
                     className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                 </div>
               </div>
@@ -199,7 +201,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 className="animate-fade-slide-in w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Remove from Team
+                {t.pipeline.remove_from_team}
               </button>
             )}
         </div>

@@ -21,6 +21,7 @@ import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
 function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, executionOutput }: {
@@ -30,6 +31,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
   elapsed: number;
   executionOutput: string[];
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   // Extract the last non-empty meaningful output lines as the "result"
@@ -51,7 +53,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
       <div className="px-3 py-3">
         <div className="flex items-center justify-between gap-2 mb-2">
           <span className="text-sm text-foreground/80">
-            {error ? 'Something went wrong' : stageProgress.label}
+            {error ? t.execution.something_went_wrong : stageProgress.label}
           </span>
           {!error && (
             <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
@@ -74,7 +76,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
     <div className="px-3 py-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <span className={`text-sm font-medium ${error ? 'text-red-400' : 'text-emerald-400'}`}>
-          {error ? 'Failed' : 'Complete'}
+          {error ? t.execution.failed : t.execution.complete}
         </span>
         <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
           {formatElapsed(elapsed)}
@@ -93,7 +95,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
           className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied' : 'Copy full output'}
+          {copied ? t.common.copied : t.execution.copy_full_output}
         </button>
       )}
     </div>
@@ -101,6 +103,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
 }
 
 export default function ExecutionMiniPlayer() {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const miniPlayerPinned = useAgentStore((s) => s.miniPlayerPinned);
   const miniPlayerExpanded = useAgentStore((s) => s.miniPlayerExpanded);
@@ -237,7 +240,7 @@ export default function ExecutionMiniPlayer() {
             </div>
           )}
           {isExecuting && activeExecutionId && (
-            <Tooltip content="Stop execution">
+            <Tooltip content={t.execution.stop_execution}>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -249,7 +252,7 @@ export default function ExecutionMiniPlayer() {
             </Tooltip>
           )}
           {!isSimple && (
-          <Tooltip content={miniPlayerExpanded ? 'Collapse' : 'Expand'}>
+          <Tooltip content={miniPlayerExpanded ? t.execution.collapse : t.execution.expand}>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -259,7 +262,7 @@ export default function ExecutionMiniPlayer() {
             </Button>
           </Tooltip>
           )}
-          <Tooltip content="Unpin mini-player">
+          <Tooltip content={t.execution.unpin_mini_player}>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -273,7 +276,7 @@ export default function ExecutionMiniPlayer() {
         {/* Background executions bar */}
         {backgroundExecutions.length > 0 && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mr-1">Background</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mr-1">{t.execution.background}</span>
             {backgroundExecutions.map((bg) => (
               <Tooltip key={bg.executionId} content={`${bg.personaName} — ${bg.status}`}>
                 <div className="relative w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
@@ -303,11 +306,11 @@ export default function ExecutionMiniPlayer() {
         {/* Full mode: Pipeline stage dots */}
         {!isSimple && (
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Pipeline</span>
+          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">{t.execution.pipeline}</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
             <span className="ml-auto text-sm font-mono text-muted-foreground/80">
-              {executionOutput.length} lines
+              {executionOutput.length} {t.execution.lines}
             </span>
           )}
         </div>
@@ -321,7 +324,7 @@ export default function ExecutionMiniPlayer() {
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
               )}
               <span className="truncate">
-                {lastLine || (isExecuting ? 'Waiting for output...' : 'No output')}
+                {lastLine || (isExecuting ? t.execution.waiting_for_output : t.execution.no_output)}
               </span>
             </div>
           </div>
@@ -336,7 +339,7 @@ export default function ExecutionMiniPlayer() {
             {lastLines.length === 0 && (
               <div className="text-muted-foreground/80 flex items-center gap-2 py-2">
                 <Terminal className="w-3.5 h-3.5" />
-                {isExecuting ? 'Waiting for output...' : 'No output'}
+                {isExecuting ? t.execution.waiting_for_output : t.execution.no_output}
               </div>
             )}
             {lastLines.map((line, i) => (

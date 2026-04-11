@@ -6,6 +6,7 @@ import {
   type PipelineNotificationPrefs as Prefs,
 } from '../hooks/usePipelineNotifications';
 import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function Toggle({ checked, onChange, label, id }: {
   checked: boolean;
@@ -40,6 +41,7 @@ function Toggle({ checked, onChange, label, id }: {
 }
 
 export function PipelineNotificationPrefs() {
+  const { t } = useTranslation();
   const [prefs, setPrefs] = useState<Prefs>(loadPipelineNotificationPrefs);
 
   const update = useCallback((patch: Partial<Prefs>) => {
@@ -59,12 +61,12 @@ export function PipelineNotificationPrefs() {
           ) : (
             <BellOff className="w-4 h-4 text-muted-foreground/50" />
           )}
-          Pipeline Notifications
+          {t.gitlab.pipeline_notifications}
         </h3>
         <button
           role="switch"
           aria-checked={prefs.enabled}
-          aria-label="Enable pipeline notifications"
+          aria-label={t.gitlab.enable_pipeline_notifications}
           onClick={() => update({ enabled: !prefs.enabled })}
           className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${
             prefs.enabled
@@ -83,23 +85,23 @@ export function PipelineNotificationPrefs() {
       {prefs.enabled && (
         <div className="space-y-0.5 pl-0.5">
           <p className="text-xs text-muted-foreground/50 mb-2">
-            Get notified when a pipeline finishes running.
+            {t.gitlab.notification_description}
           </p>
           <Toggle
             id="notif-success"
-            label="Success"
+            label={t.gitlab.success_label}
             checked={prefs.onSuccess}
             onChange={(v) => update({ onSuccess: v })}
           />
           <Toggle
             id="notif-failed"
-            label="Failed"
+            label={t.gitlab.failed_label}
             checked={prefs.onFailed}
             onChange={(v) => update({ onFailed: v })}
           />
           <Toggle
             id="notif-canceled"
-            label="Canceled"
+            label={t.gitlab.canceled_label}
             checked={prefs.onCanceled}
             onChange={(v) => update({ onCanceled: v })}
           />
@@ -107,7 +109,7 @@ export function PipelineNotificationPrefs() {
             <label htmlFor="notif-sound" className="flex items-center justify-between py-1.5 cursor-pointer group">
               <span className="flex items-center gap-1.5 text-sm text-foreground/80 group-hover:text-foreground/95 transition-colors">
                 <Volume2 className="w-3.5 h-3.5 text-muted-foreground/50" />
-                Play sound
+                {t.gitlab.play_sound}
               </span>
               <button
                 id="notif-sound"

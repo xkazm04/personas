@@ -2,6 +2,7 @@ import { Brain, Search, GitCommitVertical, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORY_FILTERS = ['all', 'observation', 'decision', 'context', 'learning'] as const;
 
@@ -36,6 +37,7 @@ export default function MemoryPanelList({
   onImportanceChange,
   onEdit,
 }: MemoryPanelListProps) {
+  const { t, tx } = useTranslation();
   const hasMore = memories.length < total;
 
   return (
@@ -63,7 +65,7 @@ export default function MemoryPanelList({
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
           <input
             className="w-full text-sm bg-primary/5 border border-primary/10 rounded-xl pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/20"
-            placeholder="Search memories..."
+            placeholder={t.pipeline.search_memories}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -77,7 +79,7 @@ export default function MemoryPanelList({
             <button
               onClick={onClearRunFilter}
               className="p-0.5 rounded text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
-              title="Clear run filter"
+              title={t.pipeline.clear_run_filter}
             >
               <X className="w-3 h-3" />
             </button>
@@ -91,10 +93,10 @@ export default function MemoryPanelList({
           <div className="text-center py-6">
             <Brain className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
             <p className="text-sm text-muted-foreground/50">
-              {activeRunFilter ? 'No memories for this run' : 'No memories yet'}
+              {activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
             </p>
             <p className="text-sm text-muted-foreground/60 mt-0.5">
-              {activeRunFilter ? 'Try clearing the run filter' : 'Run a pipeline or add one manually'}
+              {activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
             </p>
           </div>
         ) : (
@@ -114,12 +116,12 @@ export default function MemoryPanelList({
                 disabled={loadingMore}
                 className="w-full py-1.5 text-sm text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                {loadingMore ? (<><LoadingSpinner size="xs" />Loading...</>) : <>Load more</>}
+                {loadingMore ? (<><LoadingSpinner size="xs" />{t.common.loading}</>) : <>{t.pipeline.load_more}</>}
               </button>
             )}
             {!activeRunFilter && total > memories.length && (
               <div className="text-center text-sm text-muted-foreground/60 py-1">
-                Showing {memories.length} of {total}
+                {tx(t.pipeline.showing_count, { shown: memories.length, total })}
               </div>
             )}
           </>

@@ -3,6 +3,7 @@ import { Users, Trash2, ChevronRight, GitBranch, GitFork } from 'lucide-react';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TeamCardProps {
   team: PersonaTeam;
@@ -23,6 +24,7 @@ export const TeamCard = memo(function TeamCard({
   onDelete,
   onConfirmDelete,
 }: TeamCardProps) {
+  const { t, tx } = useTranslation();
   const counts = usePipelineStore((s) => s.teamCounts[team.id]);
   return (
     <div
@@ -64,7 +66,7 @@ export const TeamCard = memo(function TeamCard({
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onClone(team.id)}
-            title="Fork team"
+            title={t.pipeline.fork_team}
             className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
           >
             <GitFork className="w-3.5 h-3.5" />
@@ -81,13 +83,13 @@ export const TeamCard = memo(function TeamCard({
                   }}
                   className="px-2 py-1 text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
                 >
-                  Delete
+                  {t.common.delete}
                 </button>
                 <button
                   onClick={() => onConfirmDelete(null)}
                   className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-lg transition-colors"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
               </div>
             ) : (
@@ -105,14 +107,14 @@ export const TeamCard = memo(function TeamCard({
       {team.parent_team_id && (
         <div className="mt-2 flex items-center gap-1.5 text-xs text-violet-400/80">
           <GitFork className="w-3 h-3" />
-          <span>forked from <span className="font-medium">{parentTeamName ?? 'deleted team'}</span></span>
+          <span>{parentTeamName ? tx(t.pipeline.forked_from, { name: parentTeamName }) : t.pipeline.forked_from_deleted}</span>
         </div>
       )}
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
-            {team.enabled ? 'active' : 'draft'}
+            {team.enabled ? t.pipeline.active : t.pipeline.draft}
           </span>
           {counts && (
               <>

@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const TEAM_COLORS: Record<string, string> = {
   '#6366f1': 'Indigo',
@@ -35,19 +36,20 @@ export function CreateTeamForm({
   onSubmit,
   onCancel,
 }: CreateTeamFormProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in mb-6 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
     >
       <div className="space-y-4">
-        <FormField label="Team Name" required>
+        <FormField label={t.pipeline.team_name} required>
           {(inputProps) => (
             <input
               {...inputProps}
               type="text"
               value={newName}
               onChange={(e) => onNameChange(e.target.value)}
-              placeholder="e.g. Code Review Pipeline"
+              placeholder={t.pipeline.team_name_placeholder}
               className={INPUT_FIELD}
               autoFocus
             />
@@ -60,13 +62,13 @@ export function CreateTeamForm({
               type="text"
               value={newDescription}
               onChange={(e) => onDescriptionChange(e.target.value)}
-              placeholder="Optional description"
+              placeholder={t.pipeline.team_description_placeholder}
               className={INPUT_FIELD}
             />
           )}
         </FormField>
         <div>
-          <label className="text-sm font-medium text-foreground/80 mb-1.5 block">Color</label>
+          <label className="text-sm font-medium text-foreground/80 mb-1.5 block">{t.pipeline.color}</label>
           <div className="flex gap-2 flex-wrap">
             {Object.entries(TEAM_COLORS).map(([hex, name]) => {
               const isSelected = newColor === hex;
@@ -97,14 +99,14 @@ export function CreateTeamForm({
             onClick={onCancel}
             className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             onClick={onSubmit}
             disabled={!newName.trim()}
             className="px-4 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            Create Team
+            {t.pipeline.create_team}
           </button>
         </div>
       </div>

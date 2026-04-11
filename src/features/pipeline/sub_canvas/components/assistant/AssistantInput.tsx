@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const EXAMPLE_QUERIES = [
   'Code review pipeline with testing',
@@ -28,6 +29,7 @@ export default function AssistantInput({
   onExampleClick,
   autoFocus,
 }: AssistantInputProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function AssistantInput({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSubmit()}
-          placeholder="Describe your pipeline..."
+          placeholder={t.pipeline.describe_pipeline}
           className="flex-1 px-3 py-2 rounded-xl bg-secondary/60 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         />
         <button

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { CONNECTION_TYPE_STYLES, getConnectionStyle } from '../../libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EdgeDeleteTooltipProps {
   x: number;
@@ -29,6 +30,7 @@ export default function EdgeDeleteTooltip({
   onChangeType,
   onClose,
 }: EdgeDeleteTooltipProps) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const style = getConnectionStyle(connectionType);
   const clampedPos = useViewportClampFixed(ref, x, y);
@@ -71,7 +73,7 @@ export default function EdgeDeleteTooltip({
       {/* Connection type picker */}
       <div className="flex flex-col gap-0.5">
         <span className="text-sm uppercase font-mono text-muted-foreground/90 tracking-wider px-1 mb-0.5">
-          Connection Type
+          {t.pipeline.connection_type}
         </span>
         {CONNECTION_TYPES.map((ct) => {
           const isActive = ct.value === connectionType;
@@ -121,7 +123,7 @@ export default function EdgeDeleteTooltip({
         className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >
         <Trash2 className="w-3 h-3" />
-        Delete Connection
+        {t.pipeline.delete_connection}
       </button>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Bug,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DebuggerControlsProps {
   paused: boolean;
@@ -39,12 +40,13 @@ export default function DebuggerControls({
   onStop,
   onExpandInspector,
 }: DebuggerControlsProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Debug badge */}
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25">
         <Bug className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">Dry Run</span>
+        <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">{t.pipeline.dry_run_label}</span>
       </div>
 
       {/* Transport controls */}
@@ -53,7 +55,7 @@ export default function DebuggerControls({
           <button
             onClick={onPause}
             className="p-1.5 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors"
-            title="Pause"
+            title={t.pipeline.pause}
           >
             <Pause className="w-4 h-4" />
           </button>
@@ -62,7 +64,7 @@ export default function DebuggerControls({
             onClick={onPlay}
             disabled={isFinished}
             className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title={isStarted ? 'Continue' : 'Start'}
+            title={isStarted ? t.pipeline.continue_label : t.pipeline.start}
           >
             <Play className="w-4 h-4" />
           </button>
@@ -72,7 +74,7 @@ export default function DebuggerControls({
           onClick={onStepForward}
           disabled={isFinished}
           className="p-1.5 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="Step Forward"
+          title={t.pipeline.step_forward}
         >
           <SkipForward className="w-4 h-4" />
         </button>
@@ -80,7 +82,7 @@ export default function DebuggerControls({
         <button
           onClick={onStop}
           className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
-          title="Stop Dry Run"
+          title={t.pipeline.stop_dry_run}
         >
           <Square className="w-4 h-4" />
         </button>
@@ -89,8 +91,8 @@ export default function DebuggerControls({
       {/* Step progress */}
       <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/80">
         <span>Step {Math.max(0, stepIndex + 1)} / {totalSteps}</span>
-        {isFinished && <span className="text-emerald-400">Complete</span>}
-        {paused && isStarted && !isFinished && <span className="text-amber-400">Paused</span>}
+        {isFinished && <span className="text-emerald-400">{t.pipeline.complete_label}</span>}
+        {paused && isStarted && !isFinished && <span className="text-amber-400">{t.pipeline.paused}</span>}
       </div>
 
       {/* Spacer is handled by parent */}
@@ -102,7 +104,7 @@ export default function DebuggerControls({
           className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors text-sm"
         >
           <ChevronUp className="w-3 h-3" />
-          Inspector
+          {t.pipeline.inspector}
         </button>
       )}
 

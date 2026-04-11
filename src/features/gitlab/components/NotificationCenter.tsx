@@ -4,6 +4,8 @@ import { useNotificationCenterStore, type PipelineNotification, type ProcessType
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon, statusBg } from './pipelineHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
+import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,25 +37,12 @@ function isProcessNotification(n: PipelineNotification): boolean {
   return n.pipelineId === 0 && n.id.startsWith('proc-');
 }
 
-const PROCESS_LABELS: Record<string, string> = {
-  'n8n-transform': 'n8n Transform',
-  'template-adopt': 'Template Adoption',
-  'rebuild': 'Agent Rebuild',
-  'template-test': 'Template Test',
-  'context-scan': 'Context Map Scan',
-  'idea-scan': 'Idea Scan',
-  'execution': 'Agent Execution',
-  'matrix-build': 'Matrix Build',
-  'lab-run': 'Lab Run',
-  'connector-test': 'Connector Test',
-  'creative-session': 'Creative Session',
-};
-
 // ---------------------------------------------------------------------------
 // ProcessNotificationItem (human reviews, execution results, etc.)
 // ---------------------------------------------------------------------------
 
 function ProcessNotificationItem({ notification }: { notification: PipelineNotification }) {
+  const { t } = useTranslation();
   const markRead = useNotificationCenterStore((s) => s.markRead);
   const dismiss = useNotificationCenterStore((s) => s.dismiss);
   const setOpen = useNotificationCenterStore((s) => s.setOpen);
@@ -62,7 +51,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
 
   const processType = notification.ref as ProcessType;
-  const processLabel = PROCESS_LABELS[processType] ?? processType;
+  const processLabel = getProcessLabel(processType, t);
 
   // Parse redirect from webUrl (format: "section#tab" or just "section")
   const [redirectSection, redirectTab] = notification.webUrl.includes('#')
@@ -93,7 +82,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   }, [notification, markRead]);
 
   // Compose body lines: prefer message if present, fall back to status label.
-  const headerTitle = notification.title ?? (hasReviewRedirect ? 'Human Review' : processLabel);
+  const headerTitle = notification.title ?? (hasReviewRedirect ? t.gitlab.human_review : processLabel);
   const bodyText = notification.message ?? statusLabel(notification.status);
 
   return (
@@ -140,7 +129,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           <button
             onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title={hasReviewRedirect ? 'Go to Approvals' : `Go to ${processLabel}`}
+            title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
           >
             <ArrowRight className="w-3 h-3" />
             {hasReviewRedirect ? 'Review' : 'Open'}
@@ -156,6 +145,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
 // ---------------------------------------------------------------------------
 
 function NotificationItem({ notification }: { notification: PipelineNotification }) {
+  const { t } = useTranslation();
   const markRead = useNotificationCenterStore((s) => s.markRead);
   const dismiss = useNotificationCenterStore((s) => s.dismiss);
   const setOpen = useNotificationCenterStore((s) => s.setOpen);
@@ -225,7 +215,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           <button
             onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title="Open in GitLab"
+            title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3 h-3" />
             GitLab
@@ -235,10 +225,10 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           <button
             onClick={(e) => { e.stopPropagation(); handleRetry(); }}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title="Retry pipeline"
+            title={t.common.retry}
           >
             <RefreshCw className="w-3 h-3" />
-            Retry
+            {t.common.retry}
           </button>
         )}
         {notification.webUrl && (
@@ -253,10 +243,10 @@ function NotificationItem({ notification }: { notification: PipelineNotification
               markRead(notification.id);
             }}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title="View logs"
+            title={t.gitlab.view_logs}
           >
             <FileText className="w-3 h-3" />
-            Logs
+            {t.gitlab.view_logs}
           </button>
         )}
       </div>
@@ -269,6 +259,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
 // ---------------------------------------------------------------------------
 
 export function NotificationCenter() {
+  const { t } = useTranslation();
   const isOpen = useNotificationCenterStore((s) => s.isOpen);
   const setOpen = useNotificationCenterStore((s) => s.setOpen);
   const notifications = useNotificationCenterStore((s) => s.notifications);
@@ -294,7 +285,7 @@ export function NotificationCenter() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="text-sm font-semibold text-foreground/90">Notifications</h2>
+                <h2 className="text-sm font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
                 {unreadCount > 0 && (
                   <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-white">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -306,7 +297,7 @@ export function NotificationCenter() {
                   <button
                     onClick={markAllRead}
                     className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
-                    title="Mark all as read"
+                    title={t.gitlab.mark_all_read}
                   >
                     <CheckCheck className="w-4 h-4" />
                   </button>
@@ -315,7 +306,7 @@ export function NotificationCenter() {
                   <button
                     onClick={clearAll}
                     className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
-                    title="Clear all"
+                    title={t.gitlab.clear_all}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -323,7 +314,7 @@ export function NotificationCenter() {
                 <button
                   onClick={() => setOpen(false)}
                   className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
-                  aria-label="Close notification center"
+                  aria-label={t.gitlab.close_notification_center}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -340,9 +331,9 @@ export function NotificationCenter() {
                     <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
                       <BellOff className="w-7 h-7 text-muted-foreground/30" />
                     </div>
-                    <p className="text-lg text-muted-foreground font-medium">No notifications yet</p>
+                    <p className="text-lg text-muted-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
                     <p className="text-md text-muted-foreground mt-1 max-w-[220px]">
-                      Pipeline status changes will appear here as they happen.
+                      {t.gitlab.pipeline_status_hint}
                     </p>
                   </div>
                 ) : (

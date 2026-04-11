@@ -3,6 +3,7 @@ import { Sparkles, X } from 'lucide-react';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import AssistantInput from './AssistantInput';
 import AssistantMessages from './AssistantMessages';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CanvasAssistantProps {
   onSuggest: (query: string) => Promise<TopologyBlueprint | null>;
@@ -17,6 +18,7 @@ export default function CanvasAssistant({
   isApplying,
   memberCount,
 }: CanvasAssistantProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,7 @@ export default function CanvasAssistant({
         setBlueprint(result);
         setPreviewExpanded(true);
       } else {
-        setError('No matching agents found. Create some agents first, then try again.');
+        setError(t.pipeline.no_matching_agents);
       }
     } catch (err) {
       setError(String(err));
@@ -68,7 +70,7 @@ export default function CanvasAssistant({
           className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-elevation-3 backdrop-blur-sm"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          Assistant
+          {t.pipeline.assistant}
         </button>
       )}
 
@@ -83,7 +85,7 @@ export default function CanvasAssistant({
                 <div className="w-5 h-5 rounded-lg bg-indigo-500/20 flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-indigo-400" />
                 </div>
-                <span className="text-sm font-semibold text-foreground/90">Canvas Assistant</span>
+                <span className="text-sm font-semibold text-foreground/90">{t.pipeline.canvas_assistant}</span>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
