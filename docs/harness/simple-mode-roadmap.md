@@ -5,7 +5,7 @@
 > without exposure to developer-oriented features.
 
 **Created:** 2026-04-11
-**Status:** Phases 0-3 complete. Phase 4 (Home/Onboarding) is the remaining roadmap.
+**Status:** All 4 phases complete (0-4). Simple mode is fully operational.
 
 ---
 
