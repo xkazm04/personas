@@ -15,6 +15,9 @@ use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 static CREDENTIAL_REFRESH_LOCKS: LazyLock<KeyedResourcePool<String, Arc<Mutex<()>>>> =
     LazyLock::new(|| KeyedResourcePool::new(32, 8));
 
+/// Once-per-session CLI version check. Populated on first execution, never re-checked.
+static CLI_VERSION_CHECKED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
 /// Acquire a per-credential refresh lock. The returned [`PoolHandle`] holds a
 /// clone of the `Arc<Mutex<()>>` and decrements the active-user count when
 /// dropped, making the entry eligible for future pruning.
@@ -23,6 +26,7 @@ fn credential_refresh_lock(credential_id: &str) -> PoolHandle<String, Arc<Mutex<
 }
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
+use crate::db::repos::communication::manual_reviews as review_repo;
 use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::executions as exec_repo;
@@ -357,6 +361,15 @@ pub async fn run_execution(
         };
     }
 
+    // Append proxy connection vars so the CLI subprocess can route credential-
+    // authenticated HTTP calls through the management API proxy instead of using
+    // raw secret env vars.  Secrets stay server-side; only credential IDs are
+    // exposed to the process environment.
+    cred_env.push(("PERSONAS_PROXY_URL".to_string(), "http://127.0.0.1:9420/api/proxy".to_string()));
+    if let Ok(api_key) = crate::engine::management_api::get_or_create_system_api_key(&pool) {
+        cred_env.push(("PERSONAS_PROXY_KEY".to_string(), api_key));
+    }
+
     let cred_env_clone = cred_env.clone();
 
     // Load engine kind once and reuse for both config snapshot and provider selection
@@ -516,6 +529,52 @@ pub async fn run_execution(
         prompt_text // skip for session resumes -- context already loaded
     };
 
+    // Inject recent manual review decisions from prior runs so the persona
+    // can see what the user approved/rejected/commented on. This closes the
+    // feedback loop between execution → review → next execution.
+    let prompt_text = if !is_session_resume {
+        match review_repo::get_recent_resolved(&pool, &persona.id, 30, 20) {
+            Ok(reviews) if !reviews.is_empty() => {
+                let mut review_section = String::from(
+                    "\n\n## Previous Manual Review Decisions\n\n\
+                     The following items were reviewed by the user in previous runs. \
+                     Use these decisions to inform your current analysis.\n\n"
+                );
+                for r in &reviews {
+                    let status_label = match r.status.as_str() {
+                        "approved" => "APPROVED",
+                        "rejected" => "REJECTED",
+                        "resolved" => "RESOLVED",
+                        _ => "UNKNOWN",
+                    };
+                    review_section.push_str(&format!(
+                        "- **{}** [{}]: {}{}",
+                        r.title,
+                        status_label,
+                        r.description.as_deref().unwrap_or(""),
+                        r.reviewer_notes
+                            .as_ref()
+                            .map(|n| format!(" — User note: \"{n}\""))
+                            .unwrap_or_default()
+                    ));
+                    review_section.push('\n');
+                }
+                logger.log(&format!(
+                    "[REVIEW-FEEDBACK] Injected {} review decisions for persona {}",
+                    reviews.len(), persona.id
+                ));
+                format!("{prompt_text}{review_section}")
+            }
+            Ok(_) => prompt_text,
+            Err(e) => {
+                logger.log(&format!("[REVIEW-FEEDBACK] Failed to load reviews: {e}"));
+                prompt_text
+            }
+        }
+    } else {
+        prompt_text
+    };
+
     trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");
@@ -627,11 +686,70 @@ pub async fn run_execution(
     let execution_config = execution_config;
     let execution_config_json = serde_json::to_string(&execution_config).ok();
 
+    // ── Native Ollama path ─────────────────────────────────────────────
+    // When provider is "ollama", bypass the CLI spawn entirely and call
+    // Ollama's HTTP API directly. Local models cannot handle Claude Code's
+    // tool-use protocol, so we use a simpler prompt format.
+    if model_profile.as_ref().and_then(|p| p.provider.as_deref()) == Some(super::types::providers::OLLAMA) {
+        trace.end_span_ok(&spawn_engine_stage);
+
+        let result = super::ollama::execute_native(
+            &app,
+            &pool,
+            &execution_id,
+            &persona,
+            model_profile.as_ref().unwrap(),
+            &prompt_text,
+            &cancelled,
+        ).await;
+
+        super::process_activity::emit_process_activity(
+            &app,
+            "execution",
+            if result.success { "completed" } else { "failed" },
+            Some(&execution_id),
+            Some(&persona.name),
+        );
+
+        return result;
+    }
+
     let failover_chain = failover::build_failover_chain_with_policy(
         primary_engine,
         model_profile.as_ref(),
         &policy_decision,
     );
+
+    // Once-per-session CLI version check: warn (don't block) if the installed
+    // CLI is below the provider's recommended minimum version.
+    {
+        let app_for_version = app.clone();
+        let primary_provider = provider::resolve_provider(primary_engine);
+        CLI_VERSION_CHECKED.get_or_init(|| {
+            if let Some(minimum) = primary_provider.minimum_version() {
+                let binary = primary_provider.binary_candidates().first().copied().unwrap_or("claude");
+                let minimum = minimum.to_string();
+                let binary = binary.to_string();
+                tokio::spawn(async move {
+                    match provider::check_cli_version(&binary, &minimum).await {
+                        Ok(version) => {
+                            tracing::info!(cli_version = %version, minimum = %minimum, "CLI version check passed");
+                        }
+                        Err(warning) => {
+                            tracing::warn!("{}", warning);
+                            let _ = app_for_version.emit(
+                                event_name::CLI_VERSION_WARNING,
+                                serde_json::json!({
+                                    "message": warning,
+                                    "minimum": minimum,
+                                }),
+                            );
+                        }
+                    }
+                });
+            }
+        });
+    }
 
     // Resolve provider + build CLI args + spawn, trying each failover candidate
     let mut last_spawn_error: Option<String> = None;
@@ -2250,37 +2368,15 @@ pub(crate) async fn inject_credential(
         "token_type", "expiry_date", "expires_in",
     ];
 
-    for (field_key, field_val) in &fields {
-        if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
-            continue;
-        }
-        let raw_key = format!("{}_{}", prefix, field_key);
-        let env_key = match sanitize_env_name(&raw_key) {
-            Some(k) => k,
-            None => continue,
-        };
-        env_vars.push((env_key.clone(), field_val.clone()));
-        hints.push(format!(
-            "`{}` (from {} credential '{}')",
-            env_key, connector_label, cred.name
-        ));
-    }
-
-    // Add well-known aliases for Google connectors so the CLI finds credentials
-    // regardless of whether it looks for GMAIL_ACCESS_TOKEN or GOOGLE_ACCESS_TOKEN.
-    let is_google_family = connector_name.starts_with("google")
-        || connector_name == "gmail"
-        || connector_name == "google_calendar"
-        || connector_name == "google_drive"
-        || connector_name == "google_sheets";
-    if is_google_family && prefix != "GOOGLE" {
-        if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
-        }
-        if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
-        }
-    }
+    // Credential proxy routing: inject credential ID instead of raw secrets.
+    // The CLI subprocess calls the local proxy at $PERSONAS_PROXY_URL/<credential_id>
+    // which injects auth headers server-side — secrets never enter the process env.
+    let id_key = format!("PERSONAS_CRED_{}_ID", prefix);
+    env_vars.push((id_key.clone(), cred.id.clone()));
+    hints.push(format!(
+        "`{}` = `{}` (from {} credential '{}')",
+        id_key, cred.id, connector_label, cred.name
+    ));
 
     let _ = cred_repo::record_usage(pool, &cred.id);
     let _ = audit_log::insert(

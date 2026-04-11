@@ -45,6 +45,7 @@ pub mod kb_index;
 pub mod llm_topology;
 pub mod logger;
 pub mod optimizer;
+pub mod ollama;
 pub mod parser;
 pub mod pipeline;
 pub mod polling;
@@ -138,6 +139,7 @@ use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition, Upd
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
+use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::background::SchedulerState;
@@ -1795,6 +1797,27 @@ async fn handle_execution_result(
             circuit_breaker,
             healing_personas,
         );
+    }
+
+    // Auto-evolution: if the persona has an enabled evolution policy and enough
+    // executions have accumulated since the last cycle, spawn a new cycle.
+    // Only on successful executions — failed runs shouldn't trigger evolution.
+    if result.success {
+        if let Ok(Some(policy)) = evolution_repo::get_policy_for_persona(pool, persona_id) {
+            if evolution::should_evolve(pool, &policy) {
+                if let Ok(cycle) = evolution_repo::create_cycle(pool, &policy.id, persona_id) {
+                    let evo_pool = pool.clone();
+                    let cycle_id = cycle.id.clone();
+                    tokio::spawn(async move {
+                        evolution::run_evolution_cycle(evo_pool, policy, cycle_id).await;
+                    });
+                    tracing::info!(
+                        persona_id,
+                        "Auto-triggered evolution cycle after execution threshold met",
+                    );
+                }
+            }
+        }
     }
 
     // Signal frontend that persona health data has changed
