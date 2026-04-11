@@ -1,4 +1,5 @@
 import { Circle, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { StatusBadge as SharedStatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 // ---------------------------------------------------------------------------
 // Types – thin view-models mapped from store bindings
@@ -103,11 +104,21 @@ export const GOAL_ICONS: Record<string, typeof Circle> = {
   blocked: AlertCircle,
 };
 
+const STATUS_TO_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
+  active: 'success',
+  done: 'success',
+  'in-progress': 'info',
+  paused: 'warning',
+  blocked: 'error',
+  archived: 'neutral',
+  open: 'neutral',
+};
+
 export function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium border ${STATUS_STYLES[status] ?? STATUS_STYLES.open}`}>
+    <SharedStatusBadge variant={STATUS_TO_VARIANT[status] ?? 'neutral'} pill>
       {status.replace('-', ' ')}
-    </span>
+    </SharedStatusBadge>
   );
 }
 

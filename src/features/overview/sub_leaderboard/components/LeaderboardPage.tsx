@@ -4,6 +4,7 @@ import { Trophy, RefreshCw, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import Button from '@/features/shared/components/buttons/Button';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useLeaderboardData, type LeaderboardEntry } from '../libs/useLeaderboardData';
 import { LeaderboardCard } from './LeaderboardCard';
 import { ScoreRadar } from './ScoreRadar';
@@ -54,12 +55,8 @@ export default function LeaderboardPage() {
           <div className="flex items-center gap-3">
             {leaderboard.length > 0 && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  {leaderboard.length} agents
-                </span>
-                <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  Fleet avg: {fleetAvgScore}
-                </span>
+                <StatusBadge variant="info">{leaderboard.length} agents</StatusBadge>
+                <StatusBadge accent="amber">Fleet avg: {fleetAvgScore}</StatusBadge>
               </div>
             )}
             <Button
