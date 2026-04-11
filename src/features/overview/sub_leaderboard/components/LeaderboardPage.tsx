@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trophy, RefreshCw, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { useLeaderboardData, type LeaderboardEntry } from '../libs/useLeaderboardData';
 import { LeaderboardCard } from './LeaderboardCard';
 import { ScoreRadar } from './ScoreRadar';
@@ -59,15 +60,16 @@ export default function LeaderboardPage() {
                 </span>
               </div>
             )}
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              loading={loading}
               onClick={() => void refresh()}
-              disabled={loading}
-              className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
-              title="Refresh leaderboard"
               aria-label="Refresh leaderboard"
+              title="Refresh leaderboard"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </div>
         }
       />
