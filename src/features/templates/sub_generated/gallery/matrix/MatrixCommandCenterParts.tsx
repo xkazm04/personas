@@ -17,7 +17,8 @@ import type { ToolTestResult } from '@/lib/types/buildTypes';
 import { useAgentStore } from '@/stores/agentStore';
 import { TestReportModal } from './TestReportModal';
 
-// Re-export constants for backward compatibility
+// Import constants used locally + re-export for backward compatibility
+import { BUILD_PHASE_LABELS, CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES, type BuildPhase } from './matrixBuildConstants';
 export { BUILD_PHASE_LABELS, CELL_FRIENDLY_NAMES, PHASE_SUBTEXT, ORB_GLOW_CLASSES } from './matrixBuildConstants';
 export type { BuildPhase } from './matrixBuildConstants';
 
