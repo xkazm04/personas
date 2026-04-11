@@ -13,6 +13,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { createLogger } from '@/lib/log';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
+import { QuickStatsBar } from './QuickStatsBar';
 
 const logger = createLogger('persona-editor-header');
 
@@ -173,6 +174,8 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           </AnimatePresence>
         </div>
       }
-    />
+    >
+      {selectedPersona?.id && <QuickStatsBar personaId={selectedPersona.id} />}
+    </ContentHeader>
   );
 }
