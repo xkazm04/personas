@@ -116,7 +116,13 @@ export function ActivityTab() {
     onDataChanged: loadData,
   });
 
-  if (!selectedPersona) return null;
+  if (!selectedPersona) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
+        Select a persona to view activity
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

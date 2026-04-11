@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Brain } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -27,7 +28,15 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
     }
   }, [executionId, executionStatus]);
 
-  if (!memoriesLoaded || executionMemories.length === 0) return null;
+  if (!memoriesLoaded) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground/50 typo-body py-1">
+        <LoadingSpinner size="sm" label="Loading memories" />
+      </div>
+    );
+  }
+
+  if (executionMemories.length === 0) return null;
 
   return (
     <div>

@@ -1,6 +1,7 @@
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
 import { AlertCircle, Activity } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
@@ -14,7 +15,13 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   const { trace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap } =
     useTraceData(execution.id, execution.persona_id);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading trace" />
+      </div>
+    );
+  }
 
   if (error) {
     return (

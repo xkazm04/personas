@@ -6,7 +6,7 @@ import { createLogger } from '@/lib/log';
 const logger = createLogger("matrix-tab");
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { answerBuildQuestion, testBuildDraft } from '@/api/agents/buildSession';
-import { RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CellBuildStatus, BuildPhase } from '@/lib/types/buildTypes';
 import type { BuildSessionState } from '@/stores/slices/agents/matrixBuildSlice';
 
@@ -218,9 +218,8 @@ export function MatrixTab() {
 
   if (isLoading) {
     return (
-      <div className="py-8 text-center text-muted-foreground/50 text-sm">
-        <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />
-        Loading matrix...
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading matrix" />
       </div>
     );
   }

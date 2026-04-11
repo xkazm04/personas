@@ -98,7 +98,13 @@ export function ChatTab() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
   };
 
-  if (!selectedPersona) return null;
+  if (!selectedPersona) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
+        Select a persona to start chatting
+      </div>
+    );
+  }
 
   const showPresets = messages.length === 0 && !chatStreaming;
 

@@ -1,4 +1,5 @@
 import { Rocket, Play } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ExecutionComparison } from '../../components/list/ExecutionComparison';
 import { ExecutionListHeader } from './ExecutionListHeader';
 import { ExecutionRow } from './ExecutionRow';
@@ -41,7 +42,13 @@ export function ExecutionList() {
     );
   }
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+        <LoadingSpinner size="lg" label="Loading executions" />
+      </div>
+    );
+  }
 
   // Show comparison view
   if (showComparison && leftExec && rightExec) {
