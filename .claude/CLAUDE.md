@@ -180,6 +180,19 @@ node scripts/check-locale-parity.mjs --json    # Machine-readable
 
 ---
 
+## Guide Sync (Marketing Site)
+
+After significant feature work, run `/guide-sync` to keep the marketing site guides (`personas-web`) in sync with desktop app changes. The skill:
+
+1. Detects changed files since last sync (marker at `.claude/guide-sync-marker.json`)
+2. Maps changes to guide topics via `personas-web/src/data/guide/desktop-modules.ts`
+3. Flags stale topics and suggests content updates
+4. Optionally updates guide content in `personas-web/src/data/guide/content/*.ts`
+
+**Mode tags**: Guide categories and topics have a `mode` field (`"simple"`, `"power"`, or `"both"`) that controls visibility in the guide filter UI. When moving features between Simple/Power modes in the desktop app, update the corresponding category or topic mode in `personas-web`.
+
+---
+
 ## Pre-existing Issues (Do Not Fix Unless Asked)
 
 - `AccountSettings.tsx` has TS errors (missing Sparkles, TIERS, TIER_LABELS imports)
