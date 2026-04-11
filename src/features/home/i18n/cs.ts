@@ -18,6 +18,10 @@ export const cs = {
         label: "Agenti",
         description: "Vytvářejte, konfigurujte a spravujte své AI agenty"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "Události",
         description: "Konfigurujte spouštěče událostí, webhooky a automatizace"

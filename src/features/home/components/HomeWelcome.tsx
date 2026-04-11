@@ -1,4 +1,4 @@
-import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle, GitBranch } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
 import { useMemo } from 'react';
@@ -10,6 +10,7 @@ import type { NavCard } from './NavigationGrid';
 const NAV_CARDS: NavCard[] = [
   { id: 'overview', icon: BarChart3, color: 'indigo', gradFrom: 'from-indigo-500/8', gradTo: 'to-violet-500/4', glowColor: 'bg-indigo-500/20', accentBorder: 'border-indigo-500/20 hover:border-indigo-400/40', iconBg: 'bg-indigo-500/15', iconText: 'text-indigo-400' },
   { id: 'personas', icon: Bot, color: 'cyan', gradFrom: 'from-cyan-500/8', gradTo: 'to-blue-500/4', glowColor: 'bg-cyan-500/20', accentBorder: 'border-cyan-500/20 hover:border-cyan-400/40', iconBg: 'bg-cyan-500/15', iconText: 'text-cyan-400' },
+  { id: 'workflows', icon: GitBranch, color: 'rose', gradFrom: 'from-rose-500/8', gradTo: 'to-pink-500/4', glowColor: 'bg-rose-500/20', accentBorder: 'border-rose-500/20 hover:border-rose-400/40', iconBg: 'bg-rose-500/15', iconText: 'text-rose-400' },
   { id: 'events', icon: Zap, color: 'amber', gradFrom: 'from-amber-500/8', gradTo: 'to-orange-500/4', glowColor: 'bg-amber-500/20', accentBorder: 'border-amber-500/20 hover:border-amber-400/40', iconBg: 'bg-amber-500/15', iconText: 'text-amber-400' },
   { id: 'credentials', icon: Key, color: 'emerald', gradFrom: 'from-emerald-500/8', gradTo: 'to-teal-500/4', glowColor: 'bg-emerald-500/20', accentBorder: 'border-emerald-500/20 hover:border-emerald-400/40', iconBg: 'bg-emerald-500/15', iconText: 'text-emerald-400' },
   { id: 'design-reviews', icon: FlaskConical, color: 'purple', gradFrom: 'from-purple-500/8', gradTo: 'to-fuchsia-500/4', glowColor: 'bg-purple-500/20', accentBorder: 'border-purple-500/20 hover:border-purple-400/40', iconBg: 'bg-purple-500/15', iconText: 'text-purple-400' },

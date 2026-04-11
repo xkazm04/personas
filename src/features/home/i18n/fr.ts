@@ -18,6 +18,10 @@ export const fr = {
         label: "Agents",
         description: "Créez, configurez et gérez vos agents IA"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "Événements",
         description: "Configurez les déclencheurs, webhooks et automatisations"

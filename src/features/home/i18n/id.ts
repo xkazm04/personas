@@ -18,6 +18,10 @@ export const id = {
         label: "Agen",
         description: "Buat, konfigurasi, dan kelola persona agen AI Anda"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "Acara",
         description: "Konfigurasikan pemicu acara, webhook, dan otomatisasi"

@@ -18,6 +18,10 @@ export const vi = {
         label: "Agent",
         description: "Tạo, cấu hình và quản lý các agent AI của bạn"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "Sự Kiện",
         description: "Cấu hình trigger sự kiện, webhook và tự động hóa"

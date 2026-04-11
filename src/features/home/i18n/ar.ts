@@ -18,6 +18,10 @@ export const ar = {
         label: "الوكلاء",
         description: "إنشاء وتهيئة وإدارة شخصيات وكلاء الذكاء الاصطناعي الخاصة بك"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "الأحداث",
         description: "تكوين مشغلات الأحداث، الويب هوكس، والأتمتة"

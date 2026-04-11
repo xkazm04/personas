@@ -18,6 +18,10 @@ export const hi = {
         label: "एजेंट",
         description: "अपने AI एजेंट व्यक्तित्व बनाएं, कॉन्फ़िगर करें और प्रबंधित करें"
       },
+      workflows: {
+        label: "Workflows",
+        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
+      },
       events: {
         label: "इवेंट्स",
         description: "इवेंट ट्रिगर्स, वेबहुक और ऑटोमेशन कॉन्फ़िगर करें"
