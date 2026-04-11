@@ -19,7 +19,8 @@ export interface ContextGroup {
   contexts: ContextItem[];
 }
 
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+
 export function parseJsonArray(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try { return JSON.parse(raw); } catch { return []; }
+  return parseJsonOrDefault(raw, []);
 }

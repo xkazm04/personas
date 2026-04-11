@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Shield, Layers, AlertTriangle } from 'lucide-react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { PersonaTrigger } from '@/lib/types/types';
 import { extractRateLimit, hasActiveRateLimit } from '@/lib/utils/platform/triggerConstants';
@@ -10,8 +11,7 @@ interface RateLimitDashboardProps {
 }
 
 function parseConfig(config: string | null): Record<string, unknown> {
-  if (!config) return {};
-  try { return JSON.parse(config); } catch { return {}; }
+  return parseJsonOrDefault<Record<string, unknown>>(config, {});
 }
 
 export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {

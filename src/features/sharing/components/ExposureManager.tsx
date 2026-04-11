@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Share2, Plus, Package, Eye, GitFork, Trash2 } from 'lucide-react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -40,12 +41,8 @@ function ResourceExposureCard({
   const AccessIcon = ACCESS_ICONS[resource.access_level] ?? Eye;
   const colorClass = ACCESS_COLORS[resource.access_level] ?? ACCESS_COLORS.read;
 
-  const parsedFields: string[] = useMemo(() => {
-    try { return JSON.parse(resource.fields_exposed); } catch { return []; }
-  }, [resource.fields_exposed]);
-  const parsedTags: string[] = useMemo(() => {
-    try { return JSON.parse(resource.tags); } catch { return []; }
-  }, [resource.tags]);
+  const parsedFields: string[] = useMemo(() => parseJsonOrDefault(resource.fields_exposed, []), [resource.fields_exposed]);
+  const parsedTags: string[] = useMemo(() => parseJsonOrDefault(resource.tags, []), [resource.tags]);
 
   return (
     <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">

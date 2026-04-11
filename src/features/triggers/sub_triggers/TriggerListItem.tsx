@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { PersonaTrigger } from '@/lib/types/types';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { extractRateLimit, type TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
 import { TriggerRow } from './TriggerRow';
@@ -14,8 +15,7 @@ export interface TriggerListItemProps {
 
 /** Parse the trigger's raw config into a plain object. */
 function parseRawConfig(config: string | null): Record<string, unknown> {
-  if (!config) return {};
-  try { return JSON.parse(config); } catch { return {}; }
+  return parseJsonOrDefault<Record<string, unknown>>(config, {});
 }
 
 /**

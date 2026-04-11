@@ -1,4 +1,5 @@
 import type { CredentialMetadata } from '@/lib/types/types';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 // -- Tag color presets ------------------------------------------------
 
@@ -20,8 +21,7 @@ export function getTagStyle(tag: string) {
 // -- Metadata helpers -------------------------------------------------
 
 function parseMetadata(metadata: string | null): Record<string, unknown> {
-  if (!metadata) return {};
-  try { return JSON.parse(metadata) as Record<string, unknown>; } catch { /* intentional: non-critical -- JSON parse fallback */ return {}; }
+  return parseJsonOrDefault<Record<string, unknown>>(metadata, {});
 }
 
 export function getCredentialTags(credential: CredentialMetadata): string[] {

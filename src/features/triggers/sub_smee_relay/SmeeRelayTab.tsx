@@ -1,4 +1,5 @@
 import { silentCatch } from "@/lib/silentCatch";
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -351,9 +352,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               const isActive = relay.status === 'active';
               const isPaused = relay.status === 'paused';
               const isError = relay.status === 'error';
-              const filters: string[] = relay.eventFilter
-                ? (() => { try { return JSON.parse(relay.eventFilter!); } catch { return []; } })()
-                : [];
+              const filters: string[] = parseJsonOrDefault(relay.eventFilter, []);
 
               return (
                 <motion.div
