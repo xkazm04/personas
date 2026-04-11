@@ -2174,6 +2174,99 @@ export const en = {
   },
 
   // -------------------------------------------------------------------
+  //  ERROR REGISTRY -- user-friendly error messages with recovery hints.
+  //  Each entry has a `message` (what happened) and `suggestion` (what to do).
+  //  Keys mirror the match patterns in src/lib/errors/errorRegistry.ts.
+  //  Used by useTranslatedError() hook for localized error display.
+  // -------------------------------------------------------------------
+  error_registry: {
+    // Network & connectivity
+    network_offline_message: "You appear to be offline.",
+    network_offline_suggestion: "Check your internet connection and try again.",
+    timed_out_message: "The request took too long to complete.",
+    timed_out_suggestion: "Try again — if the problem persists, simplify your request or check your connection.",
+    http_client_message: "Could not establish a network connection.",
+    http_client_suggestion: "Check your internet connection and firewall settings.",
+    // Auth & permissions
+    auth_invalid_message: "Your session has expired or is invalid.",
+    auth_invalid_suggestion: "Sign out and sign back in to refresh your session.",
+    session_expired_message: "Your session has expired.",
+    session_expired_suggestion: "Sign in again to continue.",
+    oauth_timeout_message: "The authorization window was open too long.",
+    oauth_timeout_suggestion: "Try connecting again and complete the sign-in promptly.",
+    permission_denied_message: "You don't have permission to perform this action.",
+    permission_denied_suggestion: "Check that you have the right access level, or ask an admin for help.",
+    forbidden_message: "Access denied.",
+    forbidden_suggestion: "You may not have permission for this action. Check your credentials or contact an admin.",
+    // Rate limiting
+    rate_limit_message: "Too many requests — slow down.",
+    rate_limit_suggestion: "Wait a moment and try again.",
+    rate_limited_message: "You've hit a rate limit.",
+    rate_limited_suggestion: "Wait a few seconds before retrying.",
+    // Budget
+    budget_limit_message: "This agent has reached its spending limit for the month.",
+    budget_limit_suggestion: "Increase the budget in Settings or wait until the next billing cycle.",
+    budget_exceeded_message: "Budget limit reached — execution was blocked.",
+    budget_exceeded_suggestion: "Adjust the agent's monthly budget to continue.",
+    // CLI / backend
+    cli_not_found_message: "The AI backend (Claude CLI) is not installed.",
+    cli_not_found_suggestion: "Install the Claude CLI and restart the app.",
+    cli_config_conflict_message: "A configuration conflict is blocking the AI backend.",
+    cli_config_conflict_suggestion: "Restart the app — this usually resolves automatically.",
+    cli_error_message: "The AI backend returned an unexpected error.",
+    cli_error_suggestion: "Try again. If it keeps happening, check the Claude CLI logs.",
+    cli_no_output_message: "The AI did not return a response.",
+    cli_no_output_suggestion: "Try again with a simpler request.",
+    // Design / generation
+    connector_design_message: "Could not generate a connector from your description.",
+    connector_design_suggestion: "Be more specific — include the service name and credential type (e.g. \"Stripe API key\").",
+    generation_failed_message: "Generation failed.",
+    generation_failed_suggestion: "Try rephrasing your request with more detail.",
+    // Validation
+    invalid_json_message: "The data format is invalid.",
+    invalid_json_suggestion: "Check that your input is properly formatted and try again.",
+    validation_message: "Some input values are invalid.",
+    validation_suggestion: "Review the highlighted fields and correct any errors.",
+    body_too_large_message: "The data you're sending is too large.",
+    body_too_large_suggestion: "Reduce the size of your input and try again.",
+    // Encryption
+    decryption_message: "Could not decrypt — the passphrase may be wrong or the file is corrupted.",
+    decryption_suggestion: "Double-check your passphrase and try again.",
+    // Circular chains
+    circular_chain_message: "This would create a loop where agents trigger each other endlessly.",
+    circular_chain_suggestion: "Review your agent chain and remove the circular reference.",
+    // Database / connection
+    not_found_message: "The requested item could not be found.",
+    not_found_suggestion: "It may have been deleted. Refresh and try again.",
+    connection_limit_message: "Too many active connections.",
+    connection_limit_suggestion: "Disconnect an existing peer before adding a new one.",
+    // Webhooks / automation
+    webhook_error_message: "The external service returned an error.",
+    webhook_error_suggestion: "Check that the webhook URL is correct and the service is available.",
+    zapier_message: "Could not reach the Zapier webhook.",
+    zapier_suggestion: "Verify the webhook URL in your Zapier integration settings.",
+    inactive_message: "This automation is currently disabled.",
+    inactive_suggestion: "Activate the automation before running it.",
+    no_webhook_message: "No webhook URL has been set up for this automation.",
+    no_webhook_suggestion: "Add a webhook URL in the automation settings.",
+    no_credential_message: "This automation is missing its credentials.",
+    no_credential_suggestion: "Add the required credential in the automation settings.",
+    // Import / export
+    empty_bundle_message: "The import file is empty or damaged.",
+    empty_bundle_suggestion: "Try re-exporting from the source and importing again.",
+    invalid_bundle_message: "This file doesn't appear to be a valid export bundle.",
+    invalid_bundle_suggestion: "Make sure you're importing a file that was exported from this app.",
+    // Generic fallback
+    generic_message: "Something went wrong.",
+    generic_suggestion: "Try again. If the problem persists, restart the app or check your connection.",
+    // Severity labels (for healing / alert toasts)
+    severity_critical: "Needs immediate attention",
+    severity_high: "Important issue",
+    severity_medium: "Minor issue",
+    severity_low: "Informational",
+  },
+
+  // -------------------------------------------------------------------
   //  EMPTY STATES -- contextual guidance when a section has no content
   // -------------------------------------------------------------------
   empty_states: {
