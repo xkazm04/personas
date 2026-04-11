@@ -15,6 +15,7 @@ import { createLogger } from '@/lib/log';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 import { QuickStatsBar } from './QuickStatsBar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger('persona-editor-header');
 
@@ -26,6 +27,7 @@ interface PersonaEditorHeaderProps {
 }
 
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const executePersonaAction = useAgentStore((s) => s.executePersona);
@@ -46,7 +48,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await executePersonaAction(selectedPersona.id);
     } catch (err) {
       logger.error('Execute failed', { error: err instanceof Error ? err.message : String(err) });
-      useToastStore.getState().addToast('Failed to start execution. Please try again.', 'error');
+      useToastStore.getState().addToast(t.agents.editor_ui.execute_failed, 'error');
     }
   }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction]);
 
@@ -69,14 +71,14 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     if (!selectedPersona) return { canEnable: false, reasons: [] as string[] };
     const reasons: string[] = [];
     if (!(triggers || []).length && !(subscriptions || []).length) {
-      reasons.push('No triggers or event subscriptions configured');
+      reasons.push(t.agents.editor_ui.no_triggers_or_subs);
     }
     const credTypes = new Set(credentials.map((c) => c.service_type));
     const missingCreds = (tools || [])
-      .filter((t) => t.requires_credential_type && !credTypes.has(t.requires_credential_type))
-      .map((t) => t.requires_credential_type!);
+      .filter((tl) => tl.requires_credential_type && !credTypes.has(tl.requires_credential_type))
+      .map((tl) => tl.requires_credential_type!);
     const unique = [...new Set(missingCreds)];
-    if (unique.length > 0) reasons.push(`Missing credentials: ${unique.join(', ')}`);
+    if (unique.length > 0) reasons.push(tx(t.agents.editor_ui.missing_credentials, { credentials: unique.join(', ') }));
     return { canEnable: reasons.length === 0, reasons };
   }, [selectedPersona, triggers, subscriptions, tools, credentials]);
 
@@ -91,7 +93,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
-    } catch { useToastStore.getState().addToast('Could not update agent status. Please check your connection.', 'error'); }
+    } catch { useToastStore.getState().addToast(t.agents.header.toggle_failed, 'error'); }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
 
   if (!effective) return null;
@@ -121,14 +123,14 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             loading={isThisPersonaExecuting}
             onClick={handleExecute}
             data-testid="persona-header-execute-btn"
-            disabledReason={isThisPersonaExecuting ? 'Execution in progress' : undefined}
+            disabledReason={isThisPersonaExecuting ? t.agents.editor_ui.execution_in_progress : undefined}
           >
-            {isThisPersonaExecuting ? 'Running…' : 'Execute'}
+            {isThisPersonaExecuting ? t.agents.editor_ui.running : t.agents.editor_ui.execute}
           </Button>
           {/* Active toggle row */}
           <div className="flex items-center gap-2">
             <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
-              {effective.enabled ? 'Active' : 'Off'}
+              {effective.enabled ? t.common.active : t.common.off}
             </span>
             <AccessibleToggle
               checked={effective.enabled}
@@ -153,13 +155,13 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
               >
                 <div className="flex items-start justify-between gap-1">
                   <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5" /> Cannot enable agent
+                    <AlertCircle className="w-3.5 h-3.5" /> {t.agents.editor_ui.cannot_enable}
                   </p>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => setShowReadinessPopover(false)}
-                    aria-label="Dismiss"
+                    aria-label={t.common.dismiss}
                     className="w-6 h-6"
                   >
                     <X className="w-3.5 h-3.5" />

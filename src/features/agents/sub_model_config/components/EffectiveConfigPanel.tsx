@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { ConfigInheritanceBadge } from './ConfigInheritanceBadge';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EffectiveConfigPanelProps {
   config: EffectiveModelConfig | null;
@@ -44,6 +45,8 @@ function FieldRow({ label, field, workspaceName, mask }: {
 }
 
 export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelProps) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   const [expanded, setExpanded] = useState(false);
 
   if (loading) {
@@ -72,12 +75,12 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
       >
         <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/70">
           <Layers className="w-3 h-3 text-primary/60" />
-          Effective Config
+          {mc.effective_config}
           {hasInheritance && (
             <span className="text-[10px] text-muted-foreground/50">
-              {inheritedCount > 0 && `${inheritedCount} inherited`}
+              {inheritedCount > 0 && `${inheritedCount} ${mc.inherited}`}
               {inheritedCount > 0 && overriddenCount > 0 && ' \u00B7 '}
-              {overriddenCount > 0 && `${overriddenCount} overridden`}
+              {overriddenCount > 0 && `${overriddenCount} ${mc.overridden}`}
             </span>
           )}
         </span>
@@ -97,13 +100,13 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
               </span>
             </div>
           )}
-          <FieldRow label="Model" field={config.model} workspaceName={config.workspaceName} />
-          <FieldRow label="Provider" field={config.provider} workspaceName={config.workspaceName} />
-          <FieldRow label="Base URL" field={config.baseUrl} workspaceName={config.workspaceName} />
-          <FieldRow label="Auth Token" field={config.authToken} workspaceName={config.workspaceName} mask />
-          <FieldRow label="Max Budget" field={config.maxBudgetUsd} workspaceName={config.workspaceName} />
-          <FieldRow label="Max Turns" field={config.maxTurns} workspaceName={config.workspaceName} />
-          <FieldRow label="Prompt Cache" field={config.promptCachePolicy} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_model} field={config.model} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_provider} field={config.provider} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_base_url} field={config.baseUrl} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_auth_token} field={config.authToken} workspaceName={config.workspaceName} mask />
+          <FieldRow label={mc.field_max_budget} field={config.maxBudgetUsd} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_max_turns} field={config.maxTurns} workspaceName={config.workspaceName} />
+          <FieldRow label={mc.field_prompt_cache} field={config.promptCachePolicy} workspaceName={config.workspaceName} />
         </div>
       )}
     </div>

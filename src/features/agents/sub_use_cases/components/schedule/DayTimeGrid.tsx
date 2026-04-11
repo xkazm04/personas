@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { DAYS, HOURS, formatHour } from '../../libs/scheduleHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DayTimeGridProps {
   selectedDays: Set<string>;
@@ -18,6 +19,8 @@ export function DayTimeGrid({
   onHourChange,
   onMinuteChange,
 }: DayTimeGridProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const allSelected = selectedDays.size === 7;
   const weekdaysSelected = selectedDays.size === 5 &&
     ['1', '2', '3', '4', '5'].every((d) => selectedDays.has(d));
@@ -27,7 +30,7 @@ export function DayTimeGrid({
       {/* Day selector */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">Days</label>
+          <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{uc.days}</label>
           <div className="flex gap-1">
             <button
               type="button"
@@ -38,7 +41,7 @@ export function DayTimeGrid({
                 allSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
               }`}
             >
-              All
+              {uc.all}
             </button>
             <button
               type="button"
@@ -54,7 +57,7 @@ export function DayTimeGrid({
                 weekdaysSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
               }`}
             >
-              Weekdays
+              {uc.weekdays}
             </button>
           </div>
         </div>
@@ -82,7 +85,7 @@ export function DayTimeGrid({
 
       {/* Time selector */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">Time</label>
+        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">{uc.time}</label>
         <div className="flex items-center gap-2">
           {/* Hour picker */}
           <div className="relative flex-1">
@@ -123,7 +126,7 @@ export function DayTimeGrid({
       {/* Visual hour bar */}
       <div>
         <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">
-          Hour (click to set)
+          {uc.hour_click}
         </label>
         <div className="flex gap-px">
           {HOURS.map((h) => (

@@ -7,6 +7,7 @@ import { UseCaseSubscriptionForm } from './UseCaseSubscriptionForm';
 import { ActiveTriggers, ActiveSubscriptions, SuggestedTriggerSection } from './SubscriptionList';
 import type { UnifiedSubscription } from '@/features/agents/sub_connectors/libs/subscriptionLifecycle';
 import type { UseCaseEventSubscription } from '@/lib/types/frontendTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SuggestedTrigger {
   type: string;
@@ -37,6 +38,8 @@ export function UseCaseSubscriptions({
   onToggleSuggested,
   activating,
 }: UseCaseSubscriptionsProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [showAddForm, setShowAddForm] = useState(false);
 
   const activeTriggers = items.filter((i) => i.kind === 'trigger' && (i.stage === 'activated' || i.stage === 'paused'));
@@ -68,10 +71,10 @@ export function UseCaseSubscriptions({
       <div className="space-y-1.5">
         <SectionHeader
           icon={<Radio className="w-3.5 h-3.5" />}
-          label="Event Subscriptions"
+          label={uc.event_subscriptions}
           trailing={(
             <span className="text-sm text-muted-foreground/70">
-              {suggestedSubscriptions.filter((i) => i.stage === 'suggested').length} configured
+              {suggestedSubscriptions.filter((i) => i.stage === 'suggested').length} {uc.configured}
             </span>
           )}
         />
@@ -102,10 +105,10 @@ export function UseCaseSubscriptions({
                 onClick={() => void onActivate(item)}
                 disabled={activating.has(item.key)}
                 className="flex items-center gap-1 px-2 py-0.5 text-sm rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Activate as DB-backed subscription"
+                title={uc.activate_db}
               >
                 <Zap className="w-2.5 h-2.5" />
-                Activate
+                {uc.activate}
               </button>
               {item.suggestedIndex != null && (
                 <>
@@ -136,7 +139,7 @@ export function UseCaseSubscriptions({
               onClick={() => setShowAddForm(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-dashed border-primary/20 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
             >
-              <Plus className="w-3.5 h-3.5" /> Add Subscription
+              <Plus className="w-3.5 h-3.5" /> {uc.add_subscription}
             </button>
           )}
         </div>

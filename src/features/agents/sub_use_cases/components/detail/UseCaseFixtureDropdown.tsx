@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Database, ChevronDown } from 'lucide-react';
 import type { TestFixture } from '@/lib/types/frontendTypes';
 import { FixtureList, AddFixtureForm } from './FixtureDropdownList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseFixtureDropdownProps {
   fixtures: TestFixture[];
@@ -22,6 +23,8 @@ export function UseCaseFixtureDropdown({
   onUpdate,
   currentInputs,
 }: UseCaseFixtureDropdownProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +51,11 @@ export function UseCaseFixtureDropdown({
             ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
             : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:border-primary/30'
         }`}
-        title={selectedFixture ? `Fixture: ${selectedFixture.name}` : 'Select test fixture'}
+        title={selectedFixture ? `Fixture: ${selectedFixture.name}` : uc.select_test_fixture}
       >
         <Database className="w-3.5 h-3.5" />
         <span className="truncate max-w-[120px]">
-          {selectedFixture?.name ?? 'No fixture'}
+          {selectedFixture?.name ?? uc.no_fixture}
         </span>
         <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -71,7 +74,7 @@ export function UseCaseFixtureDropdown({
               }`}
             >
               <span className="text-muted-foreground/50">--</span>
-              No fixture (auto-generate)
+              {uc.no_fixture_auto}
             </button>
 
             <FixtureList

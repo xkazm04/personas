@@ -1,5 +1,6 @@
 import { Radio, Zap, Clock, ChevronRight } from 'lucide-react';
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function PipelineArrow() {
   return (
@@ -10,6 +11,7 @@ export function PipelineArrow() {
 }
 
 export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
+  const { t } = useTranslation();
   const trigger = useCase.suggested_trigger;
   const subs = useCase.event_subscriptions?.filter((s) => s.enabled) ?? [];
   const hasTrigger = !!trigger;
@@ -30,7 +32,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
         <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${hasSubscriptions ? 'text-cyan-400' : 'text-muted-foreground/40'}`} />
       )}
       <span className="truncate flex-1 text-left">
-        {!hasAny && 'No inputs'}
+        {!hasAny && t.agents.use_cases.no_inputs}
         {hasTrigger && !hasSubscriptions && (
           <>
             <Clock className="w-3 h-3 text-amber-400/70 inline mr-0.5" />
@@ -50,7 +52,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
       </span>
       {hasAny && (
         <span className="text-sm font-semibold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 flex-shrink-0">
-          Input
+          {t.agents.use_cases.stage_input}
         </span>
       )}
     </div>

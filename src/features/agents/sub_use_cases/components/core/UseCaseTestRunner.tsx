@@ -8,6 +8,7 @@ import type { TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel } from '../../libs/useCaseDetailHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
 import { UseCaseFixtureDropdown } from '../detail/UseCaseFixtureDropdown';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseTestRunnerProps {
   useCaseId: string;
@@ -95,6 +96,8 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
     [selectedPersona, useCaseId],
   );
 
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const canCancel = !!testRunProgress?.runId;
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
 
@@ -102,13 +105,13 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
     <div className="space-y-2">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <FlaskConical className="w-3.5 h-3.5" />
-        Test
+        {uc.test}
       </h5>
 
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground/70 min-w-0">
-            Run with <span className="text-foreground/80 font-medium">{resolved.label}</span>
+            {uc.run_with} <span className="text-foreground/80 font-medium">{resolved.label}</span>
           </p>
           <UseCaseFixtureDropdown
             fixtures={fixtures}
@@ -124,7 +127,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
         {/* Show active fixture inputs preview */}
         {selectedFixture && Object.keys(selectedFixture.inputs).length > 0 && (
           <div className="px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15 text-xs">
-            <span className="text-amber-400/70 font-medium">Fixture inputs:</span>
+            <span className="text-amber-400/70 font-medium">{uc.fixture_inputs}</span>
             <pre className="mt-1 text-muted-foreground/70 whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
               {JSON.stringify(selectedFixture.inputs, null, 2)}
             </pre>
@@ -137,9 +140,9 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
               onClick={handleCancel}
               disabled={!canCancel}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              title={!canCancel ? 'Waiting for test to start...' : 'Cancel test'}
+              title={!canCancel ? uc.waiting_for_test : uc.cancel_test}
             >
-              <Square className="w-3.5 h-3.5" /> Cancel
+              <Square className="w-3.5 h-3.5" /> {t.common.cancel}
             </button>
 
             {/* Progress */}
@@ -151,9 +154,9 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
                     <LoadingSpinner size="sm" className="text-primary" />
                     <span className="capitalize">
                       {testRunProgress.phase === 'generating'
-                        ? 'Generating scenarios...'
+                        ? uc.generating
                         : testRunProgress.phase === 'executing'
-                          ? `Testing ${testRunProgress.scenarioName ?? ''}...`
+                          ? `${uc.testing} ${testRunProgress.scenarioName ?? ''}`
                           : testRunProgress.phase}
                     </span>
                   </div>
@@ -173,7 +176,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
             disabled={!hasPrompt || !resolved.config}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Play className="w-3.5 h-3.5" /> Test Use Case
+            <Play className="w-3.5 h-3.5" /> {uc.test_use_case}
           </button>
         )}
 
@@ -181,7 +184,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
           onClick={() => setEditorTab('lab')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground/60 hover:text-primary/80 transition-colors"
         >
-          View full test history <ArrowRight className="w-3 h-3" />
+          {uc.view_full_test_history} <ArrowRight className="w-3 h-3" />
         </button>
       </div>
     </div>

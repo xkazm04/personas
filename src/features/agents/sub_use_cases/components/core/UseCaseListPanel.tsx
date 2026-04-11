@@ -1,6 +1,7 @@
 import { Cpu, Bell } from 'lucide-react';
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
@@ -18,6 +19,7 @@ interface UseCaseListPanelProps {
 }
 
 export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseListPanelProps) {
+  const { t } = useTranslation();
   if (useCases.length === 0) {
     return (
       <EmptyState variant="use-cases-empty" />
@@ -60,12 +62,12 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
                 {(hasModelOverride || hasNotifications) && (
                   <div className="flex items-center gap-2 mt-1">
                     {hasModelOverride && (
-                      <span className="flex items-center gap-0.5 text-sm text-primary/60" title="Custom model">
+                      <span className="flex items-center gap-0.5 text-sm text-primary/60" title={t.agents.use_cases.custom_model}>
                         <Cpu className="w-2.5 h-2.5" />
                       </span>
                     )}
                     {hasNotifications && (
-                      <span className="flex items-center gap-0.5 text-sm text-amber-400/60" title="Notifications configured">
+                      <span className="flex items-center gap-0.5 text-sm text-amber-400/60" title={t.agents.use_cases.notifications_configured}>
                         <Bell className="w-2.5 h-2.5" />
                       </span>
                     )}

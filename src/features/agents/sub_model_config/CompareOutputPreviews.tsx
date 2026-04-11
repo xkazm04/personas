@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import type { ModelOption } from './compareModels';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Output previews
@@ -23,6 +24,8 @@ export function OutputPreviews({
     return [...set];
   }, [results]);
 
+  const { t } = useTranslation();
+
   if (scenarios.length === 0) return null;
 
   // If only one scenario, show it directly
@@ -30,7 +33,7 @@ export function OutputPreviews({
 
   return (
     <div className="space-y-2">
-      <h5 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Output Previews</h5>
+      <h5 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">{t.agents.model_config.output_previews}</h5>
       {scenarios.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {scenarios.map((s) => (
@@ -66,6 +69,11 @@ export function OutputPreviews({
   );
 }
 
+function NoOutputText() {
+  const { t } = useTranslation();
+  return <span className="text-muted-foreground/60 italic">{t.agents.model_config.no_output}</span>;
+}
+
 function OutputBox({ label, text, accent }: { label: string; text: string; accent: 'blue' | 'amber' }) {
   const borderCls = accent === 'blue' ? 'border-blue-500/20' : 'border-amber-500/20';
   const headerCls = accent === 'blue' ? 'text-blue-400/80' : 'text-amber-400/80';
@@ -75,7 +83,7 @@ function OutputBox({ label, text, accent }: { label: string; text: string; accen
         {label}
       </div>
       <div className="px-2.5 py-2 text-xs text-foreground/70 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
-        {text || <span className="text-muted-foreground/60 italic">No output</span>}
+        {text || <NoOutputText />}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Clock } from 'lucide-react';
 import { listExecutions } from '@/api/agents/executions';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatRelativeTime, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseGeneralHistoryProps {
   personaId: string;
@@ -10,6 +11,8 @@ interface UseCaseGeneralHistoryProps {
 }
 
 export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGeneralHistoryProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [showGeneralHistory, setShowGeneralHistory] = useState(false);
   const [generalHistory, setGeneralHistory] = useState<PersonaExecution[]>([]);
   const [generalHistoryLoading, setGeneralHistoryLoading] = useState(false);
@@ -48,10 +51,12 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
         )}
         <Clock className="w-3.5 h-3.5 text-muted-foreground/50" />
         <span className="text-sm text-muted-foreground/70">
-          General History
+          {uc.general_history}
           {!showGeneralHistory && generalHistory.length > 0 && (
             <span className="ml-1 text-muted-foreground/60">
-              ({generalHistory.length} unlinked execution{generalHistory.length !== 1 ? 's' : ''})
+              {generalHistory.length === 1
+                ? uc.unlinked_executions.replace('{count}', String(generalHistory.length))
+                : uc.unlinked_executions_other.replace('{count}', String(generalHistory.length))}
             </span>
           )}
         </span>
@@ -60,10 +65,10 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
       {showGeneralHistory && (
         <div className="border-t border-primary/10">
           {generalHistoryLoading ? (
-            <div className="px-4 py-3 text-sm text-muted-foreground/50">Loading...</div>
+            <div className="px-4 py-3 text-sm text-muted-foreground/50">{t.common.loading}</div>
           ) : generalHistory.length === 0 ? (
             <div className="px-4 py-3 text-sm text-muted-foreground/60">
-              No unlinked executions found.
+              {uc.no_unlinked_executions}
             </div>
           ) : (
             <div className="divide-y divide-primary/5 max-h-64 overflow-y-auto">

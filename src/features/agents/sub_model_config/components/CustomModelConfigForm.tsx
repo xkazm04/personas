@@ -4,6 +4,7 @@ import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { CustomModelConfig } from './ModelSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function CustomModelConfigForm({
   selectedModel,
@@ -12,6 +13,8 @@ export function CustomModelConfigForm({
   selectedModel: string;
   customConfig: CustomModelConfig;
 }) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   return (
     <>
       {selectedModel === 'custom' && (
@@ -20,43 +23,43 @@ export function CustomModelConfigForm({
         >
           <div className="space-y-3 pt-1">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Provider</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.provider}</label>
               <ThemedSelect
                 value={customConfig.selectedProvider}
                 onChange={(e) => customConfig.onProviderChange(e.target.value as ModelProvider)}
                 className="py-1.5"
               >
-                <option value="anthropic">Anthropic</option>
-                <option value="ollama">Ollama (local)</option>
-                <option value="litellm">LiteLLM (proxy)</option>
-                <option value="custom">Custom URL</option>
+                <option value="anthropic">{mc.provider_anthropic}</option>
+                <option value="ollama">{mc.provider_ollama}</option>
+                <option value="litellm">{mc.provider_litellm}</option>
+                <option value="custom">{mc.provider_custom}</option>
               </ThemedSelect>
             </div>
 
             {customConfig.selectedProvider !== 'anthropic' && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-1">Model Name</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.model_name}</label>
                   <input
                     type="text"
                     value={customConfig.customModelName}
                     onChange={(e) => customConfig.onCustomModelNameChange(e.target.value)}
                     placeholder={
                       customConfig.selectedProvider === 'litellm'
-                        ? 'e.g. anthropic/claude-sonnet-4-20250514'
+                        ? mc.model_name_placeholder_litellm
                         : customConfig.selectedProvider === 'ollama'
-                          ? 'e.g. llama3.1:8b'
-                          : 'Model identifier'
+                          ? mc.model_name_placeholder_ollama
+                          : mc.model_name_placeholder_custom
                     }
                     className={INPUT_FIELD}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground/80 mb-1">
-                    Base URL
+                    {mc.base_url}
                     <FieldHint
-                      text="The API endpoint for your model provider. Must include protocol (http/https) and port if non-standard."
-                      example="http://localhost:11434"
+                      text={mc.base_url_hint}
+                      example={mc.base_url_example}
                     />
                   </label>
                   <input
@@ -73,10 +76,10 @@ export function CustomModelConfigForm({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground/80 mb-1">
-                    Auth Token
+                    {mc.auth_token}
                     <FieldHint
-                      text="Authentication token for the provider API. For Ollama local, use 'ollama'. For LiteLLM, use your master key."
-                      example="sk-..."
+                      text={mc.auth_token_hint}
+                      example={mc.auth_token_example}
                     />
                   </label>
                   <input
@@ -86,10 +89,10 @@ export function CustomModelConfigForm({
                     onChange={(e) => customConfig.onAuthTokenChange(e.target.value)}
                     placeholder={
                       customConfig.selectedProvider === 'litellm'
-                        ? 'LiteLLM master key (sk-...)'
+                        ? mc.auth_token_placeholder_litellm
                         : customConfig.selectedProvider === 'ollama'
-                          ? 'ollama'
-                          : 'Bearer token'
+                          ? mc.auth_token_placeholder_ollama
+                          : mc.auth_token_placeholder_custom
                     }
                     className={INPUT_FIELD}
                   />

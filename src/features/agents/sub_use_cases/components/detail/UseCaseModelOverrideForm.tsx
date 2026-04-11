@@ -1,6 +1,7 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseModelOverrideFormProps {
   visible: boolean;
@@ -9,6 +10,8 @@ interface UseCaseModelOverrideFormProps {
 }
 
 export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange }: UseCaseModelOverrideFormProps) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   return (
     <>
       {visible && (
@@ -17,20 +20,20 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
         >
           <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-2">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Provider</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.provider}</label>
               <ThemedSelect
                 value={customConfig.provider || 'anthropic'}
                 onChange={(e) => onFieldChange('provider', e.target.value)}
                 className="py-1.5"
               >
-                <option value="anthropic">Anthropic</option>
-                <option value="ollama">Ollama (local)</option>
-                <option value="litellm">LiteLLM (proxy)</option>
-                <option value="custom">Custom URL</option>
+                <option value="anthropic">{mc.provider_anthropic}</option>
+                <option value="ollama">{mc.provider_ollama}</option>
+                <option value="litellm">{mc.provider_litellm}</option>
+                <option value="custom">{mc.provider_custom}</option>
               </ThemedSelect>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Model Name</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.model_name}</label>
               <input
                 type="text"
                 value={customConfig.model || ''}
@@ -40,7 +43,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Base URL</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.base_url}</label>
               <input
                 type="text"
                 value={customConfig.base_url || ''}
@@ -50,7 +53,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">Auth Token</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.auth_token}</label>
               <input
                 type="password"
                 value={customConfig.auth_token || ''}

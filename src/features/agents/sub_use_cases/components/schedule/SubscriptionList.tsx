@@ -4,6 +4,7 @@ import { SectionHeader } from '@/features/shared/components/layout/SectionHeader
 import { ScheduleBuilder } from './ScheduleBuilder';
 import type { UnifiedSubscription } from '@/features/agents/sub_connectors/libs/subscriptionLifecycle';
 import type { SubscriptionStage } from '@/features/agents/sub_connectors/libs/subscriptionLifecycle';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SuggestedTrigger {
   type: string;
@@ -24,12 +25,13 @@ interface ActiveTriggersProps {
 }
 
 export function ActiveTriggers({ items, onRetire }: ActiveTriggersProps) {
+  const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
     <div className="space-y-1.5">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Zap className="w-3.5 h-3.5 text-amber-400" />
-        Active Triggers
+        {t.agents.use_cases.active_triggers}
       </h5>
       {items.map((item) => {
         const badge = STAGE_BADGE[item.stage];
@@ -68,12 +70,13 @@ interface ActiveSubscriptionsProps {
 }
 
 export function ActiveSubscriptions({ items, onRetire }: ActiveSubscriptionsProps) {
+  const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
     <div className="space-y-1.5">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Radio className="w-3.5 h-3.5 text-cyan-400" />
-        Active Subscriptions
+        {t.agents.use_cases.active_subscriptions}
       </h5>
       {items.map((item) => {
         const badge = STAGE_BADGE[item.stage];
@@ -115,9 +118,10 @@ interface SuggestedTriggerSectionProps {
 }
 
 export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger, useCaseId, onActivate, activating }: SuggestedTriggerSectionProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
-      <SectionHeader icon={<Clock className="w-3.5 h-3.5" />} label="Schedule Trigger" />
+      <SectionHeader icon={<Clock className="w-3.5 h-3.5" />} label={t.agents.use_cases.schedule_trigger} />
       {(suggestedTrigger.type === 'schedule' || suggestedTrigger.type === 'polling' || suggestedTrigger.cron) ? (
         <ScheduleBuilder
           suggestedTrigger={suggestedTrigger}
@@ -146,7 +150,7 @@ export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger
             className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Zap className="w-3 h-3" />
-            Activate
+            {t.agents.use_cases.activate}
           </button>
         </div>
       )}

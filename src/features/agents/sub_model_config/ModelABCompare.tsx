@@ -10,6 +10,7 @@ import { toastCatch } from "@/lib/silentCatch";
 import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults } from './compareModels';
 import { ModelDropdown } from './ComparisonResults';
 import { ComparisonResults } from './ComparisonResults';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ModelABCompare() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -20,6 +21,8 @@ export function ModelABCompare() {
   const fetchArenaResults = useAgentStore((s) => s.fetchArenaResults);
   const labProgress = useAgentStore((s) => s.labProgress);
 
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   const [expanded, setExpanded] = useState(false);
   const [modelA, setModelA] = useState('haiku');
   const [modelB, setModelB] = useState('sonnet');
@@ -84,8 +87,8 @@ export function ModelABCompare() {
       >
         <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/70 flex-shrink-0" />
         <span className="text-sm font-medium text-foreground/85 flex-1">
-          Compare Models
-          <span className="text-muted-foreground/50 font-normal ml-1.5">Side-by-side</span>
+          {mc.compare_models}
+          <span className="text-muted-foreground/50 font-normal ml-1.5">{mc.side_by_side}</span>
         </span>
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
@@ -98,7 +101,7 @@ export function ModelABCompare() {
               {/* Selector row */}
               <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
                 <ModelDropdown
-                  label="Model A"
+                  label={mc.model_a}
                   value={modelA}
                   onChange={setModelA}
                   disabled={isLabRunning}
@@ -108,7 +111,7 @@ export function ModelABCompare() {
                   <ArrowLeftRight className="w-4 h-4 text-muted-foreground/40" />
                 </div>
                 <ModelDropdown
-                  label="Model B"
+                  label={mc.model_b}
                   value={modelB}
                   onChange={setModelB}
                   disabled={isLabRunning}
@@ -120,13 +123,13 @@ export function ModelABCompare() {
               {!hasPrompt && (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-amber-400/90">Add a prompt first to run comparisons.</span>
+                  <span className="text-sm text-amber-400/90">{mc.add_prompt_first}</span>
                 </div>
               )}
               {modelA === modelB && (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-amber-400/90">Select two different models to compare.</span>
+                  <span className="text-sm text-amber-400/90">{mc.select_different_models}</span>
                 </div>
               )}
 
@@ -138,7 +141,7 @@ export function ModelABCompare() {
                              bg-red-500/80 hover:bg-red-500 text-foreground transition-all cursor-pointer"
                 >
                   <Square className="w-3.5 h-3.5" />
-                  Cancel
+                  {t.common.cancel}
                 </button>
               ) : (
                 <button
@@ -149,7 +152,7 @@ export function ModelABCompare() {
                              text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Run Comparison
+                  {mc.run_comparison}
                 </button>
               )}
 
@@ -159,9 +162,9 @@ export function ModelABCompare() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
                     <LoadingSpinner size="sm" className="text-indigo-400" />
                     <span>
-                      {progress.phase === 'generating' ? 'Generating scenarios...' :
-                       progress.modelId ? `Testing ${progress.modelId}` :
-                       'Running...'}
+                      {progress.phase === 'generating' ? mc.generating_scenarios :
+                       progress.modelId ? mc.testing_model.replace('{modelId}', progress.modelId) :
+                       mc.running}
                       {progress.scenarioName ? ` -- ${progress.scenarioName}` : ''}
                     </span>
                   </div>

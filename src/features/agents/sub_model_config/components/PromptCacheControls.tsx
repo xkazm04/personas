@@ -1,12 +1,7 @@
 import { Database } from 'lucide-react';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import type { PromptCachePolicy } from '@/lib/types/frontendTypes';
-
-const POLICIES: { value: PromptCachePolicy; label: string; desc: string }[] = [
-  { value: 'none', label: 'Off', desc: 'No caching' },
-  { value: 'short', label: '5 min', desc: 'Short retention' },
-  { value: 'long', label: '1 hr', desc: 'Long retention' },
-];
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PromptCacheControlsProps {
   value: PromptCachePolicy;
@@ -14,15 +9,22 @@ interface PromptCacheControlsProps {
 }
 
 export function PromptCacheControls({ value, onChange }: PromptCacheControlsProps) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
+  const POLICIES: { value: PromptCachePolicy; label: string; desc: string }[] = [
+    { value: 'none', label: mc.cache_off, desc: mc.cache_off_desc },
+    { value: 'short', label: mc.cache_short, desc: mc.cache_short_desc },
+    { value: 'long', label: mc.cache_long, desc: mc.cache_long_desc },
+  ];
   return (
     <div>
       <label className="block text-sm font-medium text-foreground/80 mb-1.5">
         <span className="flex items-center gap-1">
-          <Database className="w-3 h-3" /> Prompt Caching
+          <Database className="w-3 h-3" /> {mc.prompt_caching}
           <FieldHint
-            text="Caches the system prompt across executions to reduce input token costs. Agents that run frequently with the same prompt benefit most."
-            range="Off, 5 min, or 1 hr retention"
-            example="5 min for cron-triggered agents"
+            text={mc.prompt_caching_hint}
+            range={mc.prompt_caching_range}
+            example={mc.prompt_caching_example}
           />
         </span>
       </label>

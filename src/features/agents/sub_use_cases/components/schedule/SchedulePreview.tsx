@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CalendarClock } from 'lucide-react';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { formatRunTime } from '../../libs/scheduleHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function NextRunsPreview({ preview }: { preview: CronPreview }) {
   const runs = useMemo(
@@ -10,6 +11,7 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
   );
   const firstRun = runs[0];
   const lastRun = runs[runs.length - 1];
+  const { t } = useTranslation();
   if (!firstRun || !lastRun) return null;
 
   const now = Date.now();
@@ -25,7 +27,7 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
         <CalendarClock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         <p className="text-sm text-foreground/90">
           <span className="font-medium text-amber-400/90">{preview.description}</span>
-          {' -- '}next:{' '}
+          {' -- '}{t.agents.use_cases.next}{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
         </p>
       </div>
@@ -35,7 +37,7 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
         <div className="absolute top-1/2 left-0 right-0 h-px bg-amber-400/15 -translate-y-1/2" />
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-sm text-muted-foreground/60 mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="text-sm text-muted-foreground/60 mt-1.5 absolute top-full whitespace-nowrap">{t.agents.use_cases.now}</span>
         </div>
         {runs.map((run, i) => {
           const pct = Math.min(((run.getTime() - now) / totalSpan) * 100, 100);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, Save, Pencil } from 'lucide-react';
 import type { TestFixture } from '@/lib/types/frontendTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface FixtureListProps {
   fixtures: TestFixture[];
@@ -13,6 +14,8 @@ interface FixtureListProps {
 }
 
 export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSelect, onUpdate, onDelete, onClose }: FixtureListProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
@@ -48,7 +51,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate(f.id, currentInputs); }}
                 className="p-1 rounded hover:bg-primary/15 text-muted-foreground/60 hover:text-primary transition-colors"
-                title="Update fixture with current inputs"
+                title={uc.update_fixture_title}
               >
                 <Pencil className="w-3 h-3" />
               </button>
@@ -58,13 +61,13 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
                 onClick={(e) => { e.stopPropagation(); handleDelete(f.id); }}
                 className="px-1.5 py-0.5 text-xs font-medium text-red-400 bg-red-500/15 rounded hover:bg-red-500/25 transition-colors"
               >
-                Confirm
+                {uc.confirm}
               </button>
             ) : (
               <button
                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(f.id); }}
                 className="p-1 rounded hover:bg-red-500/15 text-muted-foreground/60 hover:text-red-400 transition-colors"
-                title="Delete fixture"
+                title={uc.delete_fixture_title}
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -82,6 +85,8 @@ interface AddFixtureFormProps {
 }
 
 export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -102,7 +107,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="e.g. Happy Path"
+            placeholder={uc.fixture_name_placeholder}
             className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
             autoFocus
             onKeyDown={(e) => {
@@ -114,7 +119,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             type="text"
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
-            placeholder="Description (optional)"
+            placeholder={uc.description_optional}
             className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
           />
           <div className="flex items-center gap-2">
@@ -123,13 +128,13 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
               disabled={!newName.trim()}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
-              <Save className="w-3 h-3" /> Save
+              <Save className="w-3 h-3" /> {t.common.save}
             </button>
             <button
               onClick={() => setShowForm(false)}
               className="px-2.5 py-1 text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </div>
@@ -139,7 +144,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/60 hover:text-primary/80 hover:bg-secondary/30 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Save current as fixture
+          {uc.save_current_as_fixture}
         </button>
       )}
     </div>

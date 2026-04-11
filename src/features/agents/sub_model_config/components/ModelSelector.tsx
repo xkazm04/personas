@@ -8,6 +8,7 @@ import { CustomModelConfigForm } from './CustomModelConfigForm';
 import { BudgetControls } from './BudgetControls';
 import { PromptCacheControls } from './PromptCacheControls';
 import { EffectiveConfigPanel } from './EffectiveConfigPanel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Provider brand colors --
 const PROVIDER_COLORS: Record<string, string> = {
@@ -142,13 +143,15 @@ export function ModelSelector({
   effectiveConfig,
   effectiveConfigLoading,
 }: ModelSelectorProps) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   return (
     <div className="space-y-3">
       {!hideHeader && (
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           <Cpu className="w-3.5 h-3.5" />
-          Model &amp; Provider
+          {mc.model_and_provider}
         </h4>
       )}
       <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
@@ -245,7 +248,7 @@ export function ModelSelector({
           <div className="pt-1">
             <span className="flex items-center gap-1.5 text-sm text-amber-400/70">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              Unsaved changes
+              {mc.unsaved_changes}
             </span>
           </div>
         )}

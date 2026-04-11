@@ -6,6 +6,7 @@ import type { ModelOption, ModelMetrics } from './compareModels';
 import { ALL_COMPARE_MODELS } from './compareModels';
 import { MetricCard, CompareBar } from './CompareMetricCards';
 import { OutputPreviews } from './CompareOutputPreviews';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Model dropdown
@@ -76,6 +77,8 @@ export function ComparisonResults({
   metricsB: ModelMetrics;
   results: LabArenaResult[];
 }) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   const winner = metricsA.composite > metricsB.composite ? 'A' : metricsA.composite < metricsB.composite ? 'B' : null;
 
   // Per-scenario side by side
@@ -101,10 +104,10 @@ export function ComparisonResults({
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
           <Trophy className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground/90">
-            {winner === 'A' ? modelA.label : modelB.label} wins
+            {winner === 'A' ? modelA.label : modelB.label} {mc.wins}
           </span>
           <span className="text-sm text-muted-foreground/60">
-            ({(winner === 'A' ? metricsA : metricsB).composite} vs {(winner === 'A' ? metricsB : metricsA).composite} composite)
+            ({(winner === 'A' ? metricsA : metricsB).composite} vs {(winner === 'A' ? metricsB : metricsA).composite} {mc.composite})
           </span>
         </div>
       )}
@@ -117,9 +120,9 @@ export function ComparisonResults({
 
       {/* Metric comparison bars */}
       <div className="space-y-2 px-1">
-        <CompareBar label="Quality" labelIcon={FileText} valueA={metricsA.avgOutputQuality} valueB={metricsB.avgOutputQuality} />
-        <CompareBar label="Tool Accuracy" labelIcon={Target} valueA={metricsA.avgToolAccuracy} valueB={metricsB.avgToolAccuracy} />
-        <CompareBar label="Protocol" labelIcon={Shield} valueA={metricsA.avgProtocolCompliance} valueB={metricsB.avgProtocolCompliance} />
+        <CompareBar label={mc.quality} labelIcon={FileText} valueA={metricsA.avgOutputQuality} valueB={metricsB.avgOutputQuality} />
+        <CompareBar label={mc.tool_accuracy} labelIcon={Target} valueA={metricsA.avgToolAccuracy} valueB={metricsB.avgToolAccuracy} />
+        <CompareBar label={mc.protocol} labelIcon={Shield} valueA={metricsA.avgProtocolCompliance} valueB={metricsB.avgProtocolCompliance} />
       </div>
 
       {/* Per-scenario breakdown */}
@@ -128,7 +131,7 @@ export function ComparisonResults({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/30">
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground/80 text-xs">Scenario</th>
+                <th className="text-left px-3 py-2 font-medium text-muted-foreground/80 text-xs">{mc.scenario}</th>
                 <th className="text-center px-3 py-2 font-medium text-blue-400/80 text-xs">{modelA.label}</th>
                 <th className="text-center px-3 py-2 font-medium text-amber-400/80 text-xs">{modelB.label}</th>
               </tr>

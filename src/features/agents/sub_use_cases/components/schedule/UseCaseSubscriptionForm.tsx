@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { UseCaseEventSubscription } from '@/features/shared/components/use-cases/UseCasesList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const EVENT_TYPES = [
   { value: 'webhook_received', label: 'Webhook Received' },
@@ -18,6 +19,8 @@ interface UseCaseSubscriptionFormProps {
 }
 
 export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscriptionFormProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [newEventType, setNewEventType] = useState('');
   const [newSourceFilter, setNewSourceFilter] = useState('');
 
@@ -36,14 +39,14 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
     <div className="border border-primary/20 rounded-lg p-2.5 space-y-2 bg-secondary/30">
       <div>
         <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
-          Event Type
+          {uc.event_type}
         </label>
         <ThemedSelect
           value={newEventType}
           onChange={(e) => setNewEventType(e.target.value)}
           className="py-1.5"
         >
-          <option value="">Select event type...</option>
+          <option value="">{uc.select_event_type}</option>
           {EVENT_TYPES.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
@@ -51,13 +54,13 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
       </div>
       <div>
         <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
-          Source Filter <span className="normal-case">(optional)</span>
+          {uc.source_filter} <span className="normal-case">{uc.source_filter_optional}</span>
         </label>
         <input
           type="text"
           value={newSourceFilter}
           onChange={(e) => setNewSourceFilter(e.target.value)}
-          placeholder="e.g. persona-id or glob pattern"
+          placeholder={uc.source_filter_placeholder}
           className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus-ring"
         />
       </div>
@@ -71,13 +74,13 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
               : 'bg-secondary/40 text-muted-foreground/70 cursor-not-allowed'
           }`}
         >
-          <Plus className="w-3 h-3" /> Add
+          <Plus className="w-3 h-3" /> {uc.add}
         </button>
         <button
           onClick={() => { onCancel(); setNewEventType(''); setNewSourceFilter(''); }}
           className="px-3 py-1.5 text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

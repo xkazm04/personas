@@ -7,15 +7,17 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { Tier } from '@/lib/constants/uiModes';
 import { TIERS } from '@/lib/constants/uiModes';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devOnly?: boolean; minTier?: Tier }> = [
-  { id: 'activity', label: 'Activity', icon: Activity, minTier: TIERS.TEAM },
-  { id: 'matrix', label: 'Matrix', icon: Grid3X3, minTier: TIERS.TEAM },
-  { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
-  { id: 'lab', label: 'Lab', icon: FlaskConical, minTier: TIERS.TEAM },
-  { id: 'connectors', label: 'Connectors', icon: Link },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'settings', label: 'Settings', icon: Settings },
+type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; devOnly?: boolean; minTier?: Tier };
+const tabDefs: TabDefBase[] = [
+  { id: 'activity', labelKey: 'tab_activity', icon: Activity, minTier: TIERS.TEAM },
+  { id: 'matrix', labelKey: 'tab_matrix', icon: Grid3X3, minTier: TIERS.TEAM },
+  { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
+  { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
+  { id: 'connectors', labelKey: 'tab_connectors', icon: Link },
+  { id: 'chat', labelKey: 'tab_chat', icon: MessageCircle },
+  { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
 interface EditorTabBarProps {
@@ -52,28 +54,31 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
 }
 
 export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
+  const { t } = useTranslation();
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
+  const editorLabels = t.agents.editor_ui;
   return (
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex overflow-x-auto ${IS_MOBILE ? 'px-1 gap-0' : 'px-6 gap-1'} scrollbar-none`}>
-        {tabDefs.filter((t) => (!t.devOnly || import.meta.env.DEV) && (!t.minTier || tier.isVisible(t.minTier))).map((tab) => {
+        {tabDefs.filter((td) => (!td.devOnly || import.meta.env.DEV) && (!td.minTier || tier.isVisible(td.minTier))).map((tab) => {
           const Icon = tab.icon;
           const isActive = editorTab === tab.id;
           const tabDirty = isTabDirty(tab.id, dirtyTabs);
+          const label = (editorLabels as Record<string, string>)[tab.labelKey] ?? tab.labelKey;
           return (
             <button
               key={tab.id}
               onClick={() => setEditorTab(tab.id)}
               data-testid={`editor-tab-${tab.id}`}
-              title={tab.label}
+              title={label}
               className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
                 isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'
               }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
-              {!IS_MOBILE && tab.label}
+              {!IS_MOBILE && label}
               {tab.id === 'connectors' && connectorsMissing > 0
                 ? <TabBadge variant="error" count={connectorsMissing} />
                 : tabDirty

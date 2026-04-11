@@ -7,6 +7,7 @@ import {
   profileToOptionId,
   type ModelOption,
 } from '../../libs/useCaseDetailHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseModelDropdownProps {
   hasOverride: boolean;
@@ -23,6 +24,8 @@ export function UseCaseModelDropdown({
   useCase,
   onSelectModel,
 }: UseCaseModelDropdownProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   return (
     <Listbox
       ariaLabel="Select model"
@@ -45,12 +48,12 @@ export function UseCaseModelDropdown({
           {/* Provenance badge */}
           {hasOverride ? (
             <span className="text-sm font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20 flex-shrink-0">
-              Override
+              {uc.override}
             </span>
           ) : (
             <span className="text-sm font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/10 flex-shrink-0 flex items-center gap-0.5">
               <Link2 className="w-2.5 h-2.5" />
-              Inherited
+              {uc.inherited_label}
             </span>
           )}
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -61,7 +64,7 @@ export function UseCaseModelDropdown({
         <div className="py-1 max-h-56 overflow-y-auto">
           {/* Persona Default group */}
           <div className="px-3 pt-1.5 pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground/50">
-            Persona Default
+            {uc.persona_default}
           </div>
           <button
             role="option"
@@ -73,7 +76,7 @@ export function UseCaseModelDropdown({
           >
             <Link2 className="w-3 h-3 flex-shrink-0 text-muted-foreground/50" />
             <span className="flex-1 text-left">
-              Use persona default
+              {uc.use_persona_default}
               <span className="text-muted-foreground/50 ml-1.5">({personaDefaultLabel})</span>
             </span>
             {!hasOverride && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
@@ -84,7 +87,7 @@ export function UseCaseModelDropdown({
 
           {/* Override options group */}
           <div className="px-3 pt-1.5 pb-1 text-sm font-semibold uppercase tracking-wider text-amber-400/50">
-            Override
+            {uc.override}
           </div>
           {OVERRIDE_OPTIONS.map((opt, i) => {
             const globalIndex = i + 1; // offset by 1 for the __default__ entry

@@ -9,6 +9,7 @@ import {
 } from '../../libs/scheduleHelpers';
 import { PresetPanel, VisualPanel, CronPanel } from './ScheduleModePanels';
 import { NextRunsPreview } from './SchedulePreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isActivating }: ScheduleBuilderProps) {
   const initialCron = suggestedTrigger.cron || '0 9 * * *';
@@ -59,11 +60,13 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
     onActivate(useCaseId, 'schedule', config);
   }, [cronExpression, timezone, useCaseId, onActivate]);
 
+  const { t } = useTranslation();
+  const ucT = t.agents.use_cases;
   const isValid = cronPreview?.valid ?? false;
   const MODE_TABS = [
-    { key: 'presets' as const, icon: Sparkles, label: 'Quick Pick' },
-    { key: 'visual' as const, icon: CalendarClock, label: 'Visual' },
-    { key: 'cron' as const, icon: Code2, label: 'Cron' },
+    { key: 'presets' as const, icon: Sparkles, label: ucT.quick_pick },
+    { key: 'visual' as const, icon: CalendarClock, label: ucT.visual },
+    { key: 'cron' as const, icon: Code2, label: ucT.cron },
   ];
 
   return (
@@ -116,11 +119,11 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
       <button onClick={handleActivate} disabled={isActivating || !isValid}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">
         {isActivating ? <LoadingSpinner size="sm" /> : <Zap className="w-3.5 h-3.5" />}
-        {isActivating ? 'Activating...' : 'Activate Schedule Trigger'}
+        {isActivating ? ucT.activating : ucT.activate_schedule}
       </button>
 
       {suggestedTrigger.description && (
-        <p className="text-sm text-muted-foreground/60 px-0.5 leading-relaxed">AI suggestion: {suggestedTrigger.description}</p>
+        <p className="text-sm text-muted-foreground/60 px-0.5 leading-relaxed">{ucT.ai_suggestion} {suggestedTrigger.description}</p>
       )}
     </div>
   );

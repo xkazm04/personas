@@ -1,17 +1,20 @@
 import { ExternalLink } from 'lucide-react';
 import { OLLAMA_API_KEY_SETTING } from '../libs/OllamaCloudPresets';
 import { ProviderCredentialField } from './ProviderCredentialField';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function OllamaApiKeyField() {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   return (
     <ProviderCredentialField
-      label="Ollama API Key"
-      sublabel="(global, shared across all personas)"
-      field1={{ settingKey: OLLAMA_API_KEY_SETTING, placeholder: 'Paste your key from ollama.com/settings', type: 'password' }}
-      saveLabel="Save Key"
+      label={mc.ollama_label}
+      sublabel={mc.ollama_sublabel}
+      field1={{ settingKey: OLLAMA_API_KEY_SETTING, placeholder: mc.ollama_placeholder, type: 'password' }}
+      saveLabel={mc.ollama_save_label}
       description={
         <>
-          Sign up free at{' '}
+          {mc.ollama_signup}{' '}
           <a
             href="https://ollama.com"
             target="_blank"
@@ -20,7 +23,7 @@ export function OllamaApiKeyField() {
           >
             ollama.com <ExternalLink className="w-2.5 h-2.5" />
           </a>
-          {' '}and copy your API key from Settings.
+          {' '}{mc.ollama_copy_key}
         </>
       }
     />

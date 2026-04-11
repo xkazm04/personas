@@ -7,6 +7,7 @@ import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes
 import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 import { useEffectiveConfig } from '@/features/agents/sub_model_config/hooks/useEffectiveConfig';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Derive a human-readable label from the draft --------------------
 function resolveModelLabel(draft: PersonaDraft): { label: string; provider: string } {
@@ -30,6 +31,8 @@ interface DefaultModelSectionProps {
 }
 
 export function DefaultModelSection({ draft, patch, modelDirty, personaId }: DefaultModelSectionProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const [expanded, setExpanded] = useState(false);
   const { label, provider } = resolveModelLabel(draft);
   const { config: effectiveConfig, loading: effectiveConfigLoading } = useEffectiveConfig(personaId);
@@ -41,12 +44,12 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
     ? `${draft.maxTurns} turns`
     : null;
   const cacheLabel = draft.promptCachePolicy !== 'none'
-    ? draft.promptCachePolicy === 'short' ? 'Cache 5m' : 'Cache 1h'
+    ? draft.promptCachePolicy === 'short' ? uc.cache_5m : uc.cache_1h
     : null;
 
   return (
     <div className="space-y-1.5">
-      <SectionHeader icon={<Cpu className="w-3.5 h-3.5" />} label="Persona Default Model" />
+      <SectionHeader icon={<Cpu className="w-3.5 h-3.5" />} label={uc.persona_default_model} />
 
       {/* Collapsed summary bar */}
       <button
@@ -101,7 +104,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
           >
             <div className="pt-1">
               <p className="text-sm text-muted-foreground/70 mb-2 ml-[34px]">
-                All use cases inherit this model unless overridden below.
+                {uc.inherit_hint}
               </p>
               <ModelSelector
                 selectedModel={draft.selectedModel}

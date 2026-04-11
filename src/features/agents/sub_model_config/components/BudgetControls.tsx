@@ -1,6 +1,7 @@
 import { DollarSign } from 'lucide-react';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface BudgetControlsProps {
   maxBudget: number | null | '' | undefined;
@@ -15,16 +16,18 @@ export function BudgetControls({
   onMaxBudgetChange,
   onMaxTurnsChange,
 }: BudgetControlsProps) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
   return (
     <div className="flex gap-3">
       <div className="flex-1">
         <label className="block text-sm font-medium text-foreground/80 mb-1">
           <span className="flex items-center gap-1">
-            <DollarSign className="w-3 h-3" /> Max Budget (USD)
+            <DollarSign className="w-3 h-3" /> {mc.max_budget_label}
             <FieldHint
-              text="Maximum total spend for a single execution. The run will stop if this limit is reached."
-              range="$0.01 and up, or leave blank for no limit"
-              example="0.50"
+              text={mc.max_budget_hint}
+              range={mc.max_budget_range}
+              example={mc.max_budget_example}
             />
           </span>
         </label>
@@ -36,7 +39,7 @@ export function BudgetControls({
             const n = parseFloat(e.target.value);
             onMaxBudgetChange(Number.isNaN(n) ? '' : n);
           }}
-          placeholder="Monthly budget in USD — e.g. 25.00"
+          placeholder={mc.max_budget_placeholder}
           min={0}
           step={0.01}
           className={INPUT_FIELD}
@@ -44,11 +47,11 @@ export function BudgetControls({
       </div>
       <div className="flex-1">
         <label className="block text-sm font-medium text-foreground/80 mb-1">
-          Max Turns
+          {mc.max_turns_label}
           <FieldHint
-            text="Maximum number of LLM round-trips per execution. Each turn is one prompt-response cycle with tool use."
-            range="1 and up, or leave blank for no limit"
-            example="5"
+            text={mc.max_turns_hint}
+            range={mc.max_turns_range}
+            example={mc.max_turns_example}
           />
         </label>
         <input
@@ -59,7 +62,7 @@ export function BudgetControls({
             const n = parseInt(e.target.value, 10);
             onMaxTurnsChange(Number.isNaN(n) ? '' : n);
           }}
-          placeholder="Max round-trips — e.g. 5"
+          placeholder={mc.max_turns_placeholder}
           min={1}
           step={1}
           className={INPUT_FIELD}

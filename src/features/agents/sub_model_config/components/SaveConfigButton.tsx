@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 interface SaveConfigButtonProps {
   onClick: () => void;
   disabled: boolean;
@@ -5,7 +7,9 @@ interface SaveConfigButtonProps {
   label?: string;
 }
 
-export function SaveConfigButton({ onClick, disabled, saved, label = 'Save' }: SaveConfigButtonProps) {
+export function SaveConfigButton({ onClick, disabled, saved, label }: SaveConfigButtonProps) {
+  const { t } = useTranslation();
+  const displayLabel = label ?? t.common.save;
   return (
     <button
       onClick={onClick}
@@ -18,7 +22,7 @@ export function SaveConfigButton({ onClick, disabled, saved, label = 'Save' }: S
             : 'bg-secondary/40 text-muted-foreground/80 border border-primary/10 cursor-not-allowed'
       }`}
     >
-      {saved ? 'Saved' : label}
+      {saved ? t.agents.model_config.saved : displayLabel}
     </button>
   );
 }

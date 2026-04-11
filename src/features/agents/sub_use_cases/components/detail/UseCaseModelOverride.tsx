@@ -8,6 +8,7 @@ import {
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 import { UseCaseModelOverrideForm } from './UseCaseModelOverrideForm';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Available model options ------------------------------------------
 
@@ -35,8 +36,8 @@ const MODEL_OPTIONS: ModelOption[] = [
   { id: 'custom', label: 'Custom...', provider: 'custom', group: 'Custom' },
 ];
 
-function profileToLabel(mp: ModelProfile | undefined): string {
-  if (!mp) return 'None';
+function profileToLabel(mp: ModelProfile | undefined, noneLabel = 'None'): string {
+  if (!mp) return noneLabel;
   if (mp.provider === 'ollama' && mp.model) {
     const preset = OLLAMA_CLOUD_PRESETS.find((p) => p.modelId === mp.model);
     if (preset) return preset.label.split(' (')[0] ?? preset.label;
@@ -50,14 +51,14 @@ function profileToLabel(mp: ModelProfile | undefined): string {
   return mp.model || 'Custom';
 }
 
-function defaultProfileLabel(rawModelProfile: string | null): string {
-  if (!rawModelProfile) return 'Not set';
+function defaultProfileLabel(rawModelProfile: string | null, notSet = 'Not set'): string {
+  if (!rawModelProfile) return notSet;
   try {
     const mp = JSON.parse(rawModelProfile) as ModelProfile;
     return profileToLabel(mp);
   } catch {
     // intentional: non-critical -- JSON parse fallback
-    return 'Not set';
+    return notSet;
   }
 }
 
@@ -70,6 +71,8 @@ interface UseCaseModelOverrideProps {
 }
 
 export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }: UseCaseModelOverrideProps) {
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
   const hasOverride = !!useCase.model_override;
   const [customExpanded, setCustomExpanded] = useState(false);
   const [customConfig, setCustomConfig] = useState<ModelProfile>(useCase.model_override ?? {});
@@ -109,7 +112,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
     <div className="space-y-2" data-testid="use-case-model-section">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Cpu className="w-3.5 h-3.5" />
-        Model
+        {uc.model}
       </h5>
 
       <div className="flex items-center gap-2">
@@ -122,7 +125,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
               : 'bg-background/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
           }`}
         >
-          Default ({defaultProfileLabel(defaultModelProfile)})
+          {uc.default_label} ({defaultProfileLabel(defaultModelProfile, uc.not_set)})
         </button>
 
         {/* Override dropdown */}

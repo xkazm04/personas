@@ -3,6 +3,7 @@ import { Radio, Trash2, Zap } from 'lucide-react';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function InlineDeleteButton({
   id,
@@ -43,12 +44,7 @@ function InlineDeleteButton({
       className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
     >
       {confirming ? (
-          <span
-            key="confirm"
-            className="animate-fade-slide-in text-sm font-semibold text-red-400"
-          >
-            Confirm?
-          </span>
+          <ConfirmLabel />
         ) : (
           <span key="icon">
             <Trash2 className="animate-fade-slide-in w-3 h-3" />
@@ -58,19 +54,29 @@ function InlineDeleteButton({
   );
 }
 
+function ConfirmLabel() {
+  const { t } = useTranslation();
+  return (
+    <span key="confirm" className="animate-fade-slide-in text-sm font-semibold text-red-400">
+      {t.agents.use_cases.confirm_delete}
+    </span>
+  );
+}
+
 interface UseCaseActiveTriggersProps {
   triggers: PersonaTrigger[];
   onDelete?: (triggerId: string) => void;
 }
 
 export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTriggersProps) {
+  const { t } = useTranslation();
   if (triggers.length === 0) return null;
 
   return (
     <div className="space-y-1.5">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Zap className="w-3.5 h-3.5 text-amber-400" />
-        Active Triggers
+        {t.agents.use_cases.active_triggers}
       </h5>
       {triggers.map((trigger) => (
         <SectionCard
@@ -107,13 +113,14 @@ interface UseCaseActiveSubscriptionsProps {
 }
 
 export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseActiveSubscriptionsProps) {
+  const { t } = useTranslation();
   if (subscriptions.length === 0) return null;
 
   return (
     <div className="space-y-1.5">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Radio className="w-3.5 h-3.5 text-cyan-400" />
-        Active Subscriptions
+        {t.agents.use_cases.active_subscriptions}
       </h5>
       {subscriptions.map((sub) => (
         <SectionCard

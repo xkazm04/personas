@@ -3,12 +3,14 @@ import { useQuickStats } from '../hooks/useQuickStats';
 import { useSystemStore } from '@/stores/systemStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import Button from '@/features/shared/components/buttons/Button';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface QuickStatsBarProps {
   personaId: string;
 }
 
 export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
+  const { t } = useTranslation();
   const { stats, loading, isEmpty } = useQuickStats(personaId);
 
   if (loading) {
@@ -27,14 +29,14 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
     <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
       <StatChip
         icon={<CheckCircle2 className="w-3 h-3" />}
-        label="Success"
+        label={t.agents.editor_ui.success}
         value={`${stats.successRate}%`}
         color={stats.successRate >= 80 ? 'emerald' : stats.successRate >= 50 ? 'amber' : 'red'}
       />
       {stats.healthGrade && (
         <StatChip
           icon={<Heart className="w-3 h-3" />}
-          label="Health"
+          label={t.agents.editor_ui.health}
           value={stats.healthScore != null ? String(stats.healthScore) : stats.healthGrade}
           color={stats.healthGrade === 'healthy' ? 'emerald' : stats.healthGrade === 'degraded' ? 'amber' : 'red'}
         />
@@ -42,7 +44,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
       {stats.avgLatencyMs > 0 && (
         <StatChip
           icon={<Clock className="w-3 h-3" />}
-          label="Latency"
+          label={t.agents.editor_ui.latency}
           value={stats.avgLatencyMs >= 1000 ? `${(stats.avgLatencyMs / 1000).toFixed(1)}s` : `${stats.avgLatencyMs}ms`}
           color="blue"
         />
@@ -50,7 +52,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
       {stats.avgCostPerRun > 0 && (
         <StatChip
           icon={<DollarSign className="w-3 h-3" />}
-          label="Cost/run"
+          label={t.agents.editor_ui.cost_per_run}
           value={`$${stats.avgCostPerRun < 0.01 ? stats.avgCostPerRun.toFixed(4) : stats.avgCostPerRun.toFixed(3)}`}
           color="violet"
         />
@@ -58,7 +60,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
       {stats.lastRunAt && (
         <StatChip
           icon={<Activity className="w-3 h-3" />}
-          label="Last run"
+          label={t.agents.editor_ui.last_run}
           value={formatRelativeTime(stats.lastRunAt, '—', { dateFallbackDays: 7 })}
           color={stats.lastRunStatus === 'completed' || stats.lastRunStatus === 'success' ? 'emerald' : stats.lastRunStatus === 'failed' ? 'red' : 'slate'}
         />
@@ -74,9 +76,9 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
             useOverviewStore.getState().setOverviewTab('leaderboard'),
           );
         }}
-        title="View in Leaderboard"
+        title={t.agents.editor_ui.view_in_leaderboard}
       >
-        Rank
+        {t.agents.editor_ui.rank}
       </Button>
     </div>
   );

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
 import Button from '@/features/shared/components/buttons/Button';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type BannerColorScheme = 'amber' | 'violet' | 'sky' | 'red';
 
@@ -70,18 +71,19 @@ interface UnsavedBannerProps {
 export function UnsavedChangesBanner({
   visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss,
 }: UnsavedBannerProps) {
+  const { t } = useTranslation();
   return (
     <BannerPrimitive
       visible={visible}
       colorScheme="amber"
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
-      message={`Unsaved changes${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
+      message={`${t.agents.editor_ui.unsaved_changes}${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
       actions={[
         <Button key="save" variant="accent" accentColor="amber" size="sm" onClick={onSaveAndSwitch}>
-          Save & Switch
+          {t.agents.editor.save_and_switch}
         </Button>,
         <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch}>
-          Discard
+          {t.agents.editor.discard}
         </Button>,
       ]}
       onDismiss={onDismiss}
@@ -95,18 +97,20 @@ interface PartialLoadBannerProps {
 }
 
 export function PartialLoadBanner({ warnings, onDismiss }: PartialLoadBannerProps) {
+  const { t } = useTranslation();
   return (
     <BannerPrimitive
       visible={warnings.length > 0}
       colorScheme="amber"
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
-      message={`Partial load: ${warnings.join('; ')}`}
+      message={`${t.agents.editor_ui.partial_load} ${warnings.join('; ')}`}
       onDismiss={onDismiss}
     />
   );
 }
 
 export function CloudNudgeBanner() {
+  const { t } = useTranslation();
   const showCloudNudge = useSystemStore((s) => s.showCloudNudge);
   const setShowCloudNudge = useSystemStore((s) => s.setShowCloudNudge);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -118,8 +122,8 @@ export function CloudNudgeBanner() {
       colorScheme="sky"
       icon={<Cloud className="w-4 h-4 text-sky-400 flex-shrink-0" />}
       message={isAuthenticated
-        ? 'Connect a cloud orchestrator to run personas remotely'
-        : 'Sign in to unlock cloud features and remote execution'}
+        ? t.agents.editor_ui.cloud_connect
+        : t.agents.editor_ui.cloud_signin}
       actions={[
         ...(!isAuthenticated ? [
           <Button
@@ -130,7 +134,7 @@ export function CloudNudgeBanner() {
             icon={<LogIn className="w-3 h-3" />}
             onClick={() => { setSidebarSection('settings'); setShowCloudNudge(false); }}
           >
-            Sign In
+            {t.agents.editor.sign_in}
           </Button>,
         ] : []),
         <Button
@@ -141,7 +145,7 @@ export function CloudNudgeBanner() {
           icon={<Cloud className="w-3 h-3" />}
           onClick={() => { setSidebarSection('personas'); useSystemStore.getState().setAgentTab('cloud'); setShowCloudNudge(false); }}
         >
-          Set up Cloud
+          {t.agents.editor.set_up_cloud}
         </Button>,
       ]}
       onDismiss={() => setShowCloudNudge(false)}

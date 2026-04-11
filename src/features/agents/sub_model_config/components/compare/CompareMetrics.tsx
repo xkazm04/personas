@@ -1,6 +1,7 @@
 import { Trophy, Clock, DollarSign, Target, FileText } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
 import type { ModelOption, ModelMetrics } from '../../libs/compareHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Metric card --
 
@@ -33,12 +34,20 @@ export function MetricCard({
         {metrics.composite}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-        <MetricRow icon={Clock} label="Latency" value={`${(metrics.avgDuration / 1000).toFixed(1)}s`} />
-        <MetricRow icon={DollarSign} label="Cost" value={`$${metrics.totalCost.toFixed(4)}`} />
-        <MetricRow icon={Target} label="Tokens In" value={metrics.totalInputTokens.toLocaleString()} />
-        <MetricRow icon={FileText} label="Tokens Out" value={metrics.totalOutputTokens.toLocaleString()} />
-      </div>
+      <MetricRows metrics={metrics} />
+    </div>
+  );
+}
+
+function MetricRows({ metrics }: { metrics: ModelMetrics }) {
+  const { t } = useTranslation();
+  const mc = t.agents.model_config;
+  return (
+    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+      <MetricRow icon={Clock} label={mc.latency} value={`${(metrics.avgDuration / 1000).toFixed(1)}s`} />
+      <MetricRow icon={DollarSign} label={mc.cost} value={`$${metrics.totalCost.toFixed(4)}`} />
+      <MetricRow icon={Target} label={mc.tokens_in} value={metrics.totalInputTokens.toLocaleString()} />
+      <MetricRow icon={FileText} label={mc.tokens_out} value={metrics.totalOutputTokens.toLocaleString()} />
     </div>
   );
 }

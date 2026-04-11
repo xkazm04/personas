@@ -6,6 +6,7 @@ import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
 import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 import { InputStageSummary, PipelineArrow } from './UseCaseDetailSections';
 import { useUseCaseDetail } from '../../libs/useUseCaseDetail';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseDetailPanelProps {
   useCaseId: string;
@@ -41,10 +42,13 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
     handleChannelToggle,
   } = useUseCaseDetail(useCaseId);
 
+  const { t } = useTranslation();
+  const uc = t.agents.use_cases;
+
   if (!useCase) {
     return (
       <div className="flex items-center justify-center py-2 text-sm text-muted-foreground/60">
-        Use case not found.
+        {uc.use_case_not_found}
       </div>
     );
   }
@@ -94,37 +98,37 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
               onClick={handleCancelTest}
               disabled={!canCancel}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title={!canCancel ? 'Waiting for test to start...' : 'Stop test'}
+              title={!canCancel ? uc.waiting_for_test : uc.stop_test}
             >
-              <Square className="w-3.5 h-3.5" /> Stop
+              <Square className="w-3.5 h-3.5" /> {uc.stop}
             </button>
           ) : (
             <button
               onClick={handleRunTest}
               disabled={!hasPrompt || !modelConfig}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title={!hasPrompt ? 'No prompt configured' : 'Test this use case'}
+              title={!hasPrompt ? uc.no_prompt_configured : uc.test_this_use_case}
             >
-              <Play className="w-3.5 h-3.5" /> Test
+              <Play className="w-3.5 h-3.5" /> {uc.test}
             </button>
           )}
           <button
             onClick={() => setEditorTab('lab')}
             className="flex items-center gap-1 text-sm text-muted-foreground/40 hover:text-primary/70 transition-colors"
-            title="View full test history"
+            title={uc.view_full_test_history_title}
           >
-            Tests <ArrowRight className="w-3 h-3" />
+            {uc.tests} <ArrowRight className="w-3 h-3" />
           </button>
         </div>
       </div>
 
       {/* Pipeline stage labels */}
       <div className="flex items-center gap-0.5 px-1">
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">Input</span>
+        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_input}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">Transform</span>
+        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_transform}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">Output</span>
+        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_output}</span>
         <div className="flex-shrink-0 ml-1.5" style={{ width: 130 }} />
       </div>
 
@@ -136,9 +140,9 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
               <LoadingSpinner size="sm" className="text-primary" />
               <span className="capitalize text-sm">
                 {testRunProgress.phase === 'generating'
-                  ? 'Generating...'
+                  ? uc.generating
                   : testRunProgress.phase === 'executing'
-                    ? 'Testing...'
+                    ? uc.testing
                     : testRunProgress.phase}
               </span>
             </span>
@@ -149,7 +153,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
               title={saveError}
               onClick={() => setSaveError(null)}
             >
-              Save failed
+              {uc.save_failed}
             </span>
           )}
         </div>

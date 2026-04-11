@@ -22,8 +22,10 @@ import { useEditorDraft } from '../hooks/useEditorDraft';
 import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function EditorBody() {
+  const { t } = useTranslation();
   const {
     selectedPersona, deletePersona,
     pendingSelectPersonaId: pendingPersonaId,
@@ -98,7 +100,7 @@ export function EditorBody() {
     } catch (err) {
       console.error("[EditorBody] Failed to delete persona:", err);
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(`Delete failed: ${msg}`, 'error');
+      useToastStore.getState().addToast(t.agents.editor_ui.delete_failed.replace('{message}', msg), 'error');
       // Keep the delete confirmation dialog open so the user can retry
     }
   }, [selectedPersona, deletePersona, setShowDeleteConfirm]);
@@ -108,8 +110,8 @@ export function EditorBody() {
       <ContentBox>
         <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-fade-slide-in">
           <Bot className="w-12 h-12 text-muted-foreground/20" />
-          <p className="typo-heading text-muted-foreground/80">Select an agent to get started</p>
-          <p className="typo-body text-muted-foreground/50">Choose from the sidebar or create a new agent</p>
+          <p className="typo-heading text-muted-foreground/80">{t.agents.editor_ui.select_agent}</p>
+          <p className="typo-body text-muted-foreground/50">{t.agents.editor_ui.choose_from_sidebar}</p>
         </div>
       </ContentBox>
     );
@@ -136,7 +138,7 @@ export function EditorBody() {
       {saveError && (
         <div className="animate-fade-slide-in mx-6 my-2 rounded-xl px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
           <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
-          <span className="typo-body text-red-300/90">Save failed — will retry on next edit</span>
+          <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>
         </div>
       )}
 

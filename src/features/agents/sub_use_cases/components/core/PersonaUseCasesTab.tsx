@@ -11,6 +11,7 @@ import { SectionHeader } from '@/features/shared/components/layout/SectionHeader
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { LinkedRecipesSection } from '@/features/recipes/sub_list/components/LinkedRecipesSection';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const MemoUseCaseRow = memo(UseCaseRow);
 
@@ -43,10 +44,12 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     handleExecutionFinished,
   } = useUseCasesTab();
 
+  const { t } = useTranslation();
+
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+        {t.agents.use_cases.no_persona_selected}
       </div>
     );
   }
@@ -63,7 +66,9 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
         <div className="space-y-4">
           <SectionHeader
             icon={<ListChecks className="w-3.5 h-3.5" />}
-            label={`${useCases.length} use case${useCases.length !== 1 ? 's' : ''} identified`}
+            label={useCases.length === 1
+              ? t.agents.use_cases.use_cases_identified.replace('{count}', String(useCases.length))
+              : t.agents.use_cases.use_cases_identified_other.replace('{count}', String(useCases.length))}
           />
 
           <div className="space-y-2">

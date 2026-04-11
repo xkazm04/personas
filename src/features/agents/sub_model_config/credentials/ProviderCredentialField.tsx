@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { SaveConfigButton } from './SaveConfigButton';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface ProviderFieldConfig {
   settingKey: string;
@@ -26,10 +27,12 @@ export function ProviderCredentialField({
   sublabel,
   field1,
   field2,
-  saveLabel = 'Save',
+  saveLabel: saveLabelProp,
   description,
   containerClassName,
 }: ProviderCredentialFieldProps) {
+  const { t } = useTranslation();
+  const saveLabel = saveLabelProp ?? t.common.save;
   const f1 = useAppSetting(field1.settingKey);
   // Always call -- hook is a no-op when field2 is absent (empty key returns null gracefully)
   const f2 = useAppSetting(field2?.settingKey ?? '');

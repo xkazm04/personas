@@ -87,6 +87,9 @@ export const en = {
     tools: "Tools",
     triggers: "Triggers",
     connectors: "Connectors",
+    add: "Add",
+    none: "None",
+    test: "Test",
 
     // Column/field headers used in tables and forms
     actions: "Actions",
@@ -755,6 +758,8 @@ export const en = {
       selected: "{count} selected",
       remove_from_favorites: "Remove from favorites",
       add_to_favorites: "Add to favorites",
+      // {label} = column header label
+      filter_by: "Filter by {label}",
     },
 
     // Agent status labels (shown in overview grid and cards)
@@ -1189,6 +1194,7 @@ export const en = {
 
       // LabHistoryTable
       delete_run: "Delete run",
+      col_time: "Time",
 
       // ArenaPanel
       no_prompt_warning: "This persona has no prompt configured. Add a prompt first.",
@@ -1548,6 +1554,54 @@ export const en = {
       review_prompt: "Review Prompt",
       review_prompt_desc: "Fine-tune the generated prompt",
 
+      // PhaseIndicator -- step labels in the progress bar
+      phase_progress_label: "Design phase progress",
+      stage_input: "Input",
+      stage_analyzing: "Analyzing",
+      stage_question: "Question",
+      stage_review: "Review",
+      stage_applied: "Applied",
+      stage_error: "Error",
+
+      // IntentResultExtras -- collapsible detail sections
+      label_expected: "Expected",
+      label_sample_input: "Sample Input",
+      label_intent: "Intent",
+      label_model_recommendation: "Model Recommendation",
+      label_model: "Model",
+      label_est_cost_run: "Est. Cost/Run",
+      label_complexity: "Complexity",
+      // {count} = number of use cases
+      use_cases_title: "Use Cases",
+      // {count} = number of test scenarios
+      test_scenarios_title: "Test Scenarios",
+
+      // ConversationMessageList -- conversation card details
+      // {count} = number of messages
+      msg_count_one: "{count} msg",
+      msg_count_other: "{count} msgs",
+      resume: "Resume",
+
+      // DesignConversationHistory -- section titles
+      design_drift: "Design Drift",
+      design_sessions: "Design Sessions",
+
+      // PairItem / ExamplePairCollector -- input/output example builder
+      // {index} = 1-based example number
+      example_n: "Example {index}",
+      remove_example: "Remove example",
+      input_label: "Input -- what the agent receives",
+      output_label: "Output -- what you want the agent to produce",
+      input_placeholder: "Paste a real input...\n\ne.g. an email body, a Slack message, an incoming request, a CSV row",
+      output_placeholder: "Describe or paste the desired output...\n\ne.g. \"Create a Jira ticket with title from subject, priority P2, assigned to backend team\"",
+      example_instructions: "Paste a real input (email, incoming request, message) and show the output you want. The compiler reverse-engineers the full agent configuration from your examples.",
+      add_first_example: "Add your first input -> output example",
+
+      // DesignPhasePanelSaved -- chat input for modifications
+      current_config_preserved: "Current configuration will be preserved. Describe what to change.",
+      describe_changes_placeholder: "Describe changes to this design...",
+      update_design: "Update Design",
+
       // DesignWizard
       switch_to_manual: "Switch to manual",
       generate_design: "Generate Design",
@@ -1699,6 +1753,21 @@ export const en = {
       ts_hide_runner: "Hide Tool Runner",
       ts_try_tools: "Try Tools ({count})",
 
+      // -- Credential picker --
+      cp_select: "Select credential...",
+      cp_none: "None",
+      cp_no_creds: "No credentials available",
+      cp_select_label: "Select credential",
+
+      // -- Connectors tab --
+      ct_no_persona: "No persona selected",
+      ct_connectors_label: "Connectors",
+      ct_list_view: "List view",
+      ct_graph_view: "Dependency graph",
+      ct_swap_alt_tooltip: "Swap to alternative connector",
+      // {count} = dependency count
+      ct_deps: "{count} dep(s)",
+
       // -- Dependency graph --
       dg_no_deps: "No dependencies to display.",
       dg_broken: "{count} broken",
@@ -1712,6 +1781,10 @@ export const en = {
       dg_low_risk: "Low Risk",
       dg_medium_risk: "Medium Risk",
       dg_high_risk: "High Risk",
+      // {count} = affected count
+      dg_high_blast: "If this credential expires or goes offline, {count} capabilities will break.",
+      dg_medium_blast: "{count} capabilities depend on this credential.",
+      dg_low_blast: "No tools or automations depend on this credential.",
 
       // -- Agent credential demands --
       dm_needed: "{count} credential(s) needed",
@@ -2205,6 +2278,19 @@ export const en = {
       reviewer_notes: "Reviewer Notes",
       approve: "Approve",
       reject: "Reject",
+      // ActivityList column headers
+      col_activity: "Activity",
+      col_status: "Status",
+      col_time: "Time",
+      // ActivityTab data titles
+      execution_status: "Execution {status}",
+      no_output: "No output",
+      message_title: "Message",
+      // ActivityModals
+      modal_execution_title: "{name} - Execution",
+      modal_execution_subtitle: "ID: {id}",
+      modal_review_title: "Review: {title}",
+      modal_review_subtitle: "Severity: {severity} \u00b7 Status: {status}",
     },
 
     chat: {
@@ -2222,11 +2308,27 @@ export const en = {
       no_conversations: "No conversations yet",
       new_chat: "New Chat",
       confirm_delete: "Delete?",
+      // ChatBubbles -- fallback for empty assistant content
+      processing: "Processing...",
+      delete_conversation: "Delete conversation",
+      confirm_delete_conversation: "Confirm delete conversation",
     },
 
     advisory: {
       how_can_improve: "How can this agent work better for you?",
       go: "Go",
+      // Advisory preset labels
+      improve: "Improve",
+      improve_desc: "Describe what you want this agent to do better",
+      improve_goal_label: "What should improve?",
+      experiment: "Experiment",
+      experiment_desc: "Test two approaches side-by-side",
+      experiment_hypothesis_label: "What to test?",
+      analyze: "Analyze",
+      analyze_desc: "Review performance trends and patterns",
+      test_run: "Test Run",
+      test_run_desc: "Run the agent and evaluate the result",
+      test_input_label: "Test input (optional)",
     },
 
     ops: {
@@ -2236,6 +2338,27 @@ export const en = {
       health: "Health",
       assertions: "Assertions",
       switch_panel: "Switch to {panel} panel",
+      // OpsLaunchpad preset labels
+      choose_action: "Choose an action or type a message below",
+      diagnose: "Diagnose",
+      diagnose_desc: "Analyze health, performance and find issues",
+      execute: "Execute",
+      execute_desc: "Run the agent with optional input",
+      input_optional: "Input (optional)",
+      arena_test: "Arena Test",
+      arena_test_desc: "Compare models head-to-head",
+      models: "Models",
+      improve: "Improve",
+      improve_desc: "AI-driven persona refinement",
+      focus_area: "Focus area",
+      executions: "Executions",
+      executions_desc: "Review recent execution history",
+      knowledge: "Knowledge",
+      knowledge_desc: "View memories and learned patterns",
+      reviews: "Reviews",
+      reviews_desc: "Pending approvals and decisions",
+      versions: "Versions",
+      versions_desc: "Prompt version history and rollback",
     },
 
     ops_run: {
@@ -2243,11 +2366,15 @@ export const en = {
       running: "Running...",
       recent: "Recent",
       no_executions: "No executions yet",
+      refresh_executions: "Refresh executions",
     },
 
     ops_lab: {
       history: "History",
       no_lab_runs: "No lab runs yet",
+      refresh_lab: "Refresh lab history",
+      arena: "Arena",
+      improve: "Improve",
     },
 
     ops_health: {
@@ -2257,15 +2384,24 @@ export const en = {
       last_check: "Last check",
       checked_at: "Checked {time}",
       issues: "Issues",
+      run_check_aria: "Run health check",
+      // Grade labels
+      healthy: "Healthy",
+      degraded: "Degraded",
+      unhealthy: "Unhealthy",
     },
 
     ops_assertions: {
       active_count: "{enabled}/{total} active",
       no_assertions: "No assertions configured",
+      refresh_assertions: "Refresh assertions",
+      enable_assertion: "Enable {name}",
+      disable_assertion: "Disable {name}",
     },
 
     health_tab: {
       title: "Health Check",
+      description: "Run a dry-run analysis against this agent's current configuration to detect missing credentials, disconnected connectors, incompatible tool combinations, and underspecified use cases. Issues are surfaced as actionable cards with one-click fixes.",
     },
 
     matrix_tab: {
@@ -2278,14 +2414,114 @@ export const en = {
       changed: "{sections} changed",
       all_saved: "All changes saved",
       irreversible: "Irreversible",
+      // PersonaSettingsTab labels
+      identity: "Identity",
+      execution: "Execution",
+      label_name: "Name",
+      label_description: "Description",
+      label_icon: "Icon",
+      label_color: "Color",
+      max_concurrent: "Max Concurrent",
+      timeout_sec: "Timeout (sec)",
+      execution_retention: "Execution Retention",
+      months: "months",
+      persona_enabled: "Persona Enabled",
+      sensitive_preview: "Sensitive Preview",
+      sensitive_preview_desc: "Mask hover preview details until revealed.",
+      failed_health_watch: "Failed to update health watch setting",
+      health_watch: "Health Watch",
+      health_watch_active: "Health monitoring active (every 6h)",
+      health_watch_enable: "Enable continuous health monitoring",
     },
 
     tool_runner: {
       no_tools: "No tools assigned to this persona.",
       input_json: "Input JSON",
       run: "Run",
+      running: "Running...",
       success: "Success",
       failed: "Failed",
+      error: "Error",
+    },
+
+    // -- Health check panel (full-page health check) --
+    health_check: {
+      title: "Agent Health Check",
+      idle_description: "Run a dry-run analysis to detect missing credentials, disconnected connectors, and underspecified use cases.",
+      run_check: "Run Check",
+      select_agent: "Select an agent to run health check",
+      scanning: "Scanning agent configuration...",
+      scanning_detail: "Checking credentials, connectors, and use cases",
+      check_failed: "Health check failed",
+      issues_found_one: "{count} issue found",
+      issues_found_other: "{count} issues found",
+      no_issues: "No issues detected",
+      stale: "Stale",
+      rerun: "Re-run",
+      capabilities: "Capabilities",
+      all_healthy: "All systems healthy",
+      all_healthy_detail: "No issues detected in agent configuration",
+    },
+
+    // -- Health digest panel (multi-agent overview) --
+    health_digest: {
+      title: "Agent Health Digest",
+      description: "Run a comprehensive health check across all your agents to detect configuration drift, expired credentials, and optimization opportunities.",
+      run_digest: "Run Health Digest",
+      generating: "Generating digest...",
+      stale_warning: "Health data is outdated. Re-run for current results.",
+      all_healthy: "All systems healthy",
+      some_attention: "Some agents need attention",
+      critical_issues: "Critical issues detected",
+      agents_checked_one: "{count} agent checked",
+      agents_checked_other: "{count} agents checked",
+      issues_one: "{count} issue",
+      issues_other: "{count} issues",
+      last_run: "Last run: {time}",
+    },
+
+    // -- Health issue card --
+    health_issue: {
+      apply_fix: "Apply Fix: {label}",
+      manual_action: "Manual action needed",
+    },
+
+    // -- Health score display --
+    health_score: {
+      healthy: "Healthy",
+      degraded: "Degraded",
+      unhealthy: "Unhealthy",
+    },
+
+    // -- Prompt editor --
+    prompt_editor: {
+      no_persona: "No persona selected",
+      enter_content: "Enter {section} content...",
+      new_section: "New Section",
+      saved: "Saved",
+      sections: "sections",
+    },
+
+    // -- Custom sections panel --
+    custom_sections: {
+      title: "Custom Sections",
+      add: "Add",
+      no_sections: "No custom sections yet",
+      section_fallback: "Section {index}",
+      remove_section: "Remove section",
+      title_placeholder: "Section title...",
+      content_placeholder: "Section content...",
+      custom_section: "Custom Section",
+    },
+
+    // -- Activity filter tabs (labels for the filter bar) --
+    activity_filters: {
+      all: "All",
+      executions: "Executions",
+      events: "Events",
+      memories: "Memories",
+      reviews: "Reviews",
+      messages: "Messages",
     },
 
     overview_actions: {
@@ -2339,6 +2575,301 @@ export const en = {
       activate_agent: "Activate Agent",
       create_agent: "Create Agent",
       min_completeness: "Add more detail to reach 40% completeness",
+    },
+
+    // -----------------------------------------------------------------
+    //  MODEL CONFIG -- model selector, comparison, budget, credentials
+    // -----------------------------------------------------------------
+    model_config: {
+      // ModelSelector header
+      model_and_provider: "Model & Provider",
+      unsaved_changes: "Unsaved changes",
+
+      // BudgetControls
+      max_budget_label: "Max Budget (USD)",
+      max_budget_hint: "Maximum total spend for a single execution. The run will stop if this limit is reached.",
+      max_budget_range: "$0.01 and up, or leave blank for no limit",
+      max_budget_example: "0.50",
+      max_budget_placeholder: "Monthly budget in USD -- e.g. 25.00",
+      max_turns_label: "Max Turns",
+      max_turns_hint: "Maximum number of LLM round-trips per execution. Each turn is one prompt-response cycle with tool use.",
+      max_turns_range: "1 and up, or leave blank for no limit",
+      max_turns_example: "5",
+      max_turns_placeholder: "Max round-trips -- e.g. 5",
+
+      // PromptCacheControls
+      prompt_caching: "Prompt Caching",
+      prompt_caching_hint: "Caches the system prompt across executions to reduce input token costs. Agents that run frequently with the same prompt benefit most.",
+      prompt_caching_range: "Off, 5 min, or 1 hr retention",
+      prompt_caching_example: "5 min for cron-triggered agents",
+      cache_off: "Off",
+      cache_off_desc: "No caching",
+      cache_short: "5 min",
+      cache_short_desc: "Short retention",
+      cache_long: "1 hr",
+      cache_long_desc: "Long retention",
+
+      // ConfigInheritanceBadge
+      source_agent: "Agent",
+      source_workspace: "Workspace",
+      source_global: "Global",
+      source_default: "Default",
+      tooltip_workspace: "Inherited from workspace \"{name}\"",
+      tooltip_global: "Inherited from global defaults",
+      tooltip_agent_override: "Overrides workspace/global default",
+      tooltip_agent_set: "Set on this agent",
+      tooltip_default: "No value configured",
+      tooltip_overriding: "Overriding inherited value",
+
+      // EffectiveConfigPanel
+      effective_config: "Effective Config",
+      inherited: "inherited",
+      overridden: "overridden",
+      field_model: "Model",
+      field_provider: "Provider",
+      field_base_url: "Base URL",
+      field_auth_token: "Auth Token",
+      field_max_budget: "Max Budget",
+      field_max_turns: "Max Turns",
+      field_prompt_cache: "Prompt Cache",
+
+      // CustomModelConfigForm
+      provider: "Provider",
+      provider_anthropic: "Anthropic",
+      provider_ollama: "Ollama (local)",
+      provider_litellm: "LiteLLM (proxy)",
+      provider_custom: "Custom URL",
+      model_name: "Model Name",
+      model_name_placeholder_litellm: "e.g. anthropic/claude-sonnet-4-20250514",
+      model_name_placeholder_ollama: "e.g. llama3.1:8b",
+      model_name_placeholder_custom: "Model identifier",
+      base_url: "Base URL",
+      base_url_hint: "The API endpoint for your model provider. Must include protocol (http/https) and port if non-standard.",
+      base_url_example: "http://localhost:11434",
+      auth_token: "Auth Token",
+      auth_token_hint: "Authentication token for the provider API. For Ollama local, use 'ollama'. For LiteLLM, use your master key.",
+      auth_token_example: "sk-...",
+      auth_token_placeholder_litellm: "LiteLLM master key (sk-...)",
+      auth_token_placeholder_ollama: "ollama",
+      auth_token_placeholder_custom: "Bearer token",
+
+      // ProviderCredentialField + SaveConfigButton
+      saved: "Saved",
+
+      // LiteLLMConfigField
+      litellm_label: "LiteLLM Proxy Settings",
+      litellm_sublabel: "(global, shared across all agents)",
+      litellm_base_url_placeholder: "Proxy Base URL (http://localhost:4000)",
+      litellm_master_key_placeholder: "Master Key (sk-...)",
+      litellm_save_label: "Save Global Config",
+      litellm_description: "These global settings are used as defaults for all agents using the LiteLLM provider. Per-agent overrides above take precedence.",
+
+      // OllamaApiKeyField
+      ollama_label: "Ollama API Key",
+      ollama_sublabel: "(global, shared across all personas)",
+      ollama_placeholder: "Paste your key from ollama.com/settings",
+      ollama_save_label: "Save Key",
+      ollama_signup: "Sign up free at",
+      ollama_copy_key: "and copy your API key from Settings.",
+
+      // Compare (ModelABCompare)
+      compare_models: "Compare Models",
+      side_by_side: "Side-by-side",
+      model_a: "Model A",
+      model_b: "Model B",
+      add_prompt_first: "Add a prompt first to run comparisons.",
+      select_different_models: "Select two different models to compare.",
+      run_comparison: "Run Comparison",
+      generating_scenarios: "Generating scenarios...",
+      testing_model: "Testing {modelId}",
+      running: "Running...",
+
+      // CompareMetricCards
+      latency: "Latency",
+      cost: "Cost",
+      tokens_in: "Tokens In",
+      tokens_out: "Tokens Out",
+
+      // ComparisonResults
+      wins: "wins",
+      composite: "composite",
+      quality: "Quality",
+      tool_accuracy: "Tool Accuracy",
+      protocol: "Protocol",
+      scenario: "Scenario",
+
+      // CompareOutputPreviews
+      output_previews: "Output Previews",
+      no_output: "No output",
+    },
+
+    // -----------------------------------------------------------------
+    //  USE CASES -- use case flows, detail, schedule, subscriptions
+    // -----------------------------------------------------------------
+    use_cases: {
+      no_persona_selected: "No persona selected",
+      use_cases_identified: "{count} use case identified",
+      use_cases_identified_other: "{count} use cases identified",
+
+      // DefaultModelSection
+      persona_default_model: "Persona Default Model",
+      inherit_hint: "All use cases inherit this model unless overridden below.",
+      cache_5m: "Cache 5m",
+      cache_1h: "Cache 1h",
+
+      // UseCaseListPanel
+      custom_model: "Custom model",
+      notifications_configured: "Notifications configured",
+
+      // UseCaseTabHeader / GeneralHistory
+      general_history: "General History",
+      unlinked_executions: "({count} unlinked execution)",
+      unlinked_executions_other: "({count} unlinked executions)",
+      no_unlinked_executions: "No unlinked executions found.",
+
+      // UseCaseTestRunner
+      test: "Test",
+      run_with: "Run with",
+      fixture_inputs: "Fixture inputs:",
+      test_use_case: "Test Use Case",
+      waiting_for_test: "Waiting for test to start...",
+      cancel_test: "Cancel test",
+      view_full_test_history: "View full test history",
+
+      // UseCaseDetailPanel
+      use_case_not_found: "Use case not found.",
+      stop: "Stop",
+      stop_test: "Stop test",
+      no_prompt_configured: "No prompt configured",
+      test_this_use_case: "Test this use case",
+      tests: "Tests",
+      view_full_test_history_title: "View full test history",
+      stage_input: "Input",
+      stage_transform: "Transform",
+      stage_output: "Output",
+      generating: "Generating...",
+      testing: "Testing...",
+      save_failed: "Save failed",
+
+      // UseCaseDetailSections
+      no_inputs: "No inputs",
+
+      // UseCaseModelDropdown
+      override: "Override",
+      inherited_label: "Inherited",
+      persona_default: "Persona Default",
+      use_persona_default: "Use persona default",
+
+      // UseCaseModelOverride
+      model: "Model",
+      default_label: "Default",
+      not_set: "Not set",
+
+      // UseCaseModelOverrideForm (labels shared with model_config)
+
+      // UseCaseChannelDropdown (labels from channelSummary helper)
+
+      // FixtureDropdownList
+      confirm: "Confirm",
+      update_fixture_title: "Update fixture with current inputs",
+      delete_fixture_title: "Delete fixture",
+      fixture_name_placeholder: "e.g. Happy Path",
+      description_optional: "Description (optional)",
+      save_current_as_fixture: "Save current as fixture",
+
+      // UseCaseFixtureDropdown
+      no_fixture: "No fixture",
+      select_test_fixture: "Select test fixture",
+      no_fixture_auto: "No fixture (auto-generate)",
+
+      // UseCaseActiveItems
+      active_triggers: "Active Triggers",
+      active_subscriptions: "Active Subscriptions",
+      confirm_delete: "Confirm?",
+
+      // ScheduleBuilder
+      quick_pick: "Quick Pick",
+      visual: "Visual",
+      cron: "Cron",
+      activating: "Activating...",
+      activate_schedule: "Activate Schedule Trigger",
+      ai_suggestion: "AI suggestion:",
+
+      // DayTimeGrid
+      days: "Days",
+      all: "All",
+      weekdays: "Weekdays",
+      time: "Time",
+      hour_click: "Hour (click to set)",
+
+      // ScheduleModePanels (cron field labels)
+      cron_placeholder: "* * * * *  (min hour dom mon dow)",
+
+      // SchedulePreview -- next label
+      next: "next:",
+      now: "now",
+
+      // SubscriptionList
+      schedule_trigger: "Schedule Trigger",
+      activate: "Activate",
+
+      // UseCaseSubscriptionForm
+      event_type: "Event Type",
+      select_event_type: "Select event type...",
+      source_filter: "Source Filter",
+      source_filter_optional: "(optional)",
+      source_filter_placeholder: "e.g. persona-id or glob pattern",
+      add: "Add",
+
+      // UseCaseSubscriptions
+      event_subscriptions: "Event Subscriptions",
+      configured: "configured",
+      activate_db: "Activate as DB-backed subscription",
+      add_subscription: "Add Subscription",
+    },
+
+    // -----------------------------------------------------------------
+    //  EDITOR -- editor layout, tab bar, banners, header, stats
+    // -----------------------------------------------------------------
+    editor_ui: {
+      // EditorBody
+      select_agent: "Select an agent to get started",
+      choose_from_sidebar: "Choose from the sidebar or create a new agent",
+      save_failed_retry: "Save failed -- will retry on next edit",
+      delete_failed: "Delete failed: {message}",
+
+      // EditorTabBar
+      tab_activity: "Activity",
+      tab_matrix: "Matrix",
+      tab_use_cases: "Use Cases",
+      tab_lab: "Lab",
+      tab_connectors: "Connectors",
+      tab_chat: "Chat",
+      tab_settings: "Settings",
+
+      // EditorBanners
+      unsaved_changes: "Unsaved changes",
+      partial_load: "Partial load:",
+      cloud_connect: "Connect a cloud orchestrator to run personas remotely",
+      cloud_signin: "Sign in to unlock cloud features and remote execution",
+
+      // PersonaEditorHeader
+      execution_in_progress: "Execution in progress",
+      running: "Running...",
+      execute: "Execute",
+      execute_failed: "Failed to start execution. Please try again.",
+      no_triggers_or_subs: "No triggers or event subscriptions configured",
+      missing_credentials: "Missing credentials: {credentials}",
+      cannot_enable: "Cannot enable agent",
+
+      // QuickStatsBar
+      success: "Success",
+      health: "Health",
+      latency: "Latency",
+      cost_per_run: "Cost/run",
+      last_run: "Last run",
+      rank: "Rank",
+      view_in_leaderboard: "View in Leaderboard",
     },
   },
 
@@ -5024,6 +5555,8 @@ export const en = {
       submit_remaining: "Submit All ({remaining} remaining)",
       custom_btn: "Custom...",
       type_custom_value: "Type your custom value...",
+      // Vault auto-detection badge shown when a connector question is pre-answered from credentials
+      auto_detected: "Auto-detected from credentials",
     },
 
     // Scan results
