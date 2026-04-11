@@ -1,4 +1,5 @@
 pub mod conflict;
+pub mod drive;
 pub mod lint;
 pub mod markdown;
 pub mod semantic_lint;
@@ -1223,4 +1224,122 @@ pub async fn obsidian_brain_semantic_lint_vault(
         .unwrap_or_else(|| self::semantic_lint::DEFAULT_SEMANTIC_LINT_MODEL.to_string());
 
     self::semantic_lint::run_semantic_lint(Path::new(&path), model).await
+}
+
+// ── Phase 6: Google Drive Cloud Sync ────────────────────────────────────
+
+#[tauri::command]
+pub async fn obsidian_drive_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<drive::DriveStatus, AppError> {
+    require_auth(&state).await?;
+
+    let token = get_google_provider_token(&state).await?;
+    let config = get_config_or_err(&state.db)?;
+    let vault_name = config
+        .vault_name
+        .is_empty()
+        .then(|| "default".to_string())
+        .unwrap_or(config.vault_name);
+
+    drive::get_drive_status(&token, &vault_name).await
+}
+
+#[tauri::command]
+pub async fn obsidian_drive_push_sync(
+    state: State<'_, Arc<AppState>>,
+    folder_names: Option<Vec<String>>,
+) -> Result<drive::DriveSyncResult, AppError> {
+    require_auth(&state).await?;
+
+    let token = get_google_provider_token(&state).await?;
+    let config = get_config_or_err(&state.db)?;
+
+    let folders = folder_names.unwrap_or_else(|| {
+        let mut f = Vec::new();
+        if config.sync_personas {
+            f.push(config.folder_mapping.personas_folder.clone());
+        }
+        if config.sync_memories {
+            f.push(format!(
+                "{}/{}",
+                config.folder_mapping.personas_folder, config.folder_mapping.memories_folder
+            ));
+        }
+        if config.sync_connectors {
+            f.push(config.folder_mapping.connectors_folder.clone());
+        }
+        f
+    });
+
+    let vault_name = if config.vault_name.is_empty() {
+        "default".to_string()
+    } else {
+        config.vault_name
+    };
+
+    drive::push_to_drive(
+        &token,
+        Path::new(&config.vault_path),
+        &vault_name,
+        &folders,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn obsidian_drive_pull_sync(
+    state: State<'_, Arc<AppState>>,
+    folder_names: Option<Vec<String>>,
+) -> Result<drive::DriveSyncResult, AppError> {
+    require_auth(&state).await?;
+
+    let token = get_google_provider_token(&state).await?;
+    let config = get_config_or_err(&state.db)?;
+
+    let folders = folder_names.unwrap_or_else(|| {
+        let mut f = Vec::new();
+        if config.sync_personas {
+            f.push(config.folder_mapping.personas_folder.clone());
+        }
+        if config.sync_memories {
+            f.push(format!(
+                "{}/{}",
+                config.folder_mapping.personas_folder, config.folder_mapping.memories_folder
+            ));
+        }
+        if config.sync_connectors {
+            f.push(config.folder_mapping.connectors_folder.clone());
+        }
+        f
+    });
+
+    let vault_name = if config.vault_name.is_empty() {
+        "default".to_string()
+    } else {
+        config.vault_name
+    };
+
+    drive::pull_from_drive(
+        &token,
+        Path::new(&config.vault_path),
+        &vault_name,
+        &folders,
+    )
+    .await
+}
+
+/// Extract the Google provider token from auth state.
+/// This is the raw Google access token (not the Supabase JWT),
+/// obtained when the user authenticates with the `drive.file` scope.
+async fn get_google_provider_token(state: &Arc<AppState>) -> Result<String, AppError> {
+    let auth = state.auth.read().await;
+    auth.google_provider_token
+        .as_ref()
+        .map(|t| t.expose_secret().to_string())
+        .ok_or_else(|| {
+            AppError::Auth(
+                "Google Drive not connected. Please sign in with Google Drive access.".into(),
+            )
+        })
 }
