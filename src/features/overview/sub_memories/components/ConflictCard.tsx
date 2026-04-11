@@ -1,40 +1,10 @@
 import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { MemoryConflict, ConflictResolution } from '../libs/memoryConflicts';
-import { kindBadge, similarityBadge, VARIANT_STYLES } from '../libs/conflictHelpers';
-
-// ---------------------------------------------------------------------------
-// Resolution button
-// ---------------------------------------------------------------------------
-
-function ResolutionButton({
-  icon: Icon,
-  label,
-  variant,
-  disabled,
-  onClick,
-}: {
-  icon: typeof Check;
-  label: string;
-  variant: keyof typeof VARIANT_STYLES;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={disabled ? 'Processing resolution...' : undefined}
-      className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-lg border transition-colors disabled:opacity-40 cursor-pointer ${VARIANT_STYLES[variant]}`}
-    >
-      <Icon className="w-3 h-3" />
-      {label}
-    </button>
-  );
-}
+import { kindBadge, similarityBadge } from '../libs/conflictHelpers';
 
 // ---------------------------------------------------------------------------
 // Memory preview
@@ -115,11 +85,15 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {conflict.kind === 'duplicate' && (
-                <ResolutionButton icon={GitMerge} label="Merge" variant="primary" disabled={isProcessing} onClick={() => onResolve('merge')} />
+                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('merge')}>Merge</Button>
               )}
-              <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryA.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_a')} />
-              <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryB.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_b')} />
-              <ResolutionButton icon={X} label="Dismiss" variant="muted" disabled={isProcessing} onClick={() => onResolve('dismiss')} />
+              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_a')}>
+                Keep &ldquo;{stripHtml(conflict.memoryA.title).slice(0, 20)}...&rdquo;
+              </Button>
+              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_b')}>
+                Keep &ldquo;{stripHtml(conflict.memoryB.title).slice(0, 20)}...&rdquo;
+              </Button>
+              <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('dismiss')}>Dismiss</Button>
             </div>
           </div>
         </div>

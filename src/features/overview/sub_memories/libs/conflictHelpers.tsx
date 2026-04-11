@@ -69,8 +69,3 @@ export function mergeMemories(a: PersonaMemory, b: PersonaMemory): {
   };
 }
 
-export const VARIANT_STYLES = {
-  primary: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25 hover:bg-indigo-500/25',
-  success: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25',
-  muted: 'bg-secondary/40 text-muted-foreground/80 border-primary/15 hover:bg-secondary/60',
-} as const;
