@@ -47,6 +47,7 @@ export default function CommandPalette() {
   const personas = useAgentStore((s) => s.personas);
   const groups = usePipelineStore((s) => s.groups);
   const recipes = usePipelineStore((s) => s.recipes);
+  const compositionWorkflows = usePipelineStore((s) => s.workflows);
   const credentials = useVaultStore((s) => s.credentials);
   const automations = useVaultStore((s) => s.automations);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -154,6 +155,17 @@ export default function CommandPalette() {
     const autoItems = automations.map(a =>
       automationItem(a, setSidebarSection, workflowIcon),
     );
+    const compositionItems: PaletteItem[] = compositionWorkflows.map(wf => ({
+      id: `workflow:${wf.id}`,
+      kind: 'workflow' as ResultKind,
+      label: wf.name,
+      subtitle: wf.description || `${wf.nodes.length} nodes`,
+      icon: workflowIcon,
+      onSelect: () => {
+        setSidebarSection('workflows');
+        usePipelineStore.getState().selectWorkflow(wf.id);
+      },
+    }));
     const navItems = NAV_ITEMS.map(nav => ({
       id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
       icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
@@ -174,12 +186,12 @@ export default function CommandPalette() {
         health: healthIcon, edit: pencilIcon,
       }),
     ];
-    return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
+    return { agentItems, credItems, templateItems, autoItems, compositionItems, navItems, commandItems };
   }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
 
   // Stage 2: filtered + scored (recomputed on deferred searchQuery)
   const items = useMemo((): PaletteItem[] => {
-    const { agentItems, credItems, templateItems, autoItems, navItems, commandItems } = stableItems;
+    const { agentItems, credItems, templateItems, autoItems, compositionItems, navItems, commandItems } = stableItems;
     const results: PaletteItem[] = [];
     const recentAgentIds = getRecentAgentIds();
 
@@ -243,6 +255,14 @@ export default function CommandPalette() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
       for (const { item } of scoredAutomations) results.push(item);
+
+      // -- Composition Workflows --
+      const scoredWorkflows = compositionItems
+        .map((item, i) => { const w = compositionWorkflows[i]; return w ? { item, score: Math.max(fuzzyScore(searchQuery, w.name), fuzzyScore(searchQuery, w.description) * 0.7) } : { item, score: 0 }; })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { item } of scoredWorkflows) results.push(item);
     }
 
     // -- Navigation --
@@ -254,7 +274,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations]);
+  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations, compositionWorkflows]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -326,6 +346,7 @@ export default function CommandPalette() {
       addSection('credential', 'Credentials');
       addSection('template', 'Templates');
       addSection('automation', 'Automations');
+      addSection('workflow', 'Workflows');
       addSection('navigation', 'Navigation');
     }
     return grouped;

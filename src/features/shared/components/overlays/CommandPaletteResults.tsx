@@ -7,6 +7,7 @@ const KIND_COLORS: Record<ResultKind, { icon: string; border: string }> = {
   credential:     { icon: 'text-emerald-400',           border: 'border-l-emerald-400' },
   template:       { icon: 'text-cyan-400',              border: 'border-l-cyan-400' },
   automation:     { icon: 'text-amber-400',             border: 'border-l-amber-400' },
+  workflow:       { icon: 'text-blue-400',              border: 'border-l-blue-400' },
   navigation:     { icon: 'text-muted-foreground/70',   border: 'border-l-muted-foreground/70' },
   action:         { icon: 'text-muted-foreground/70',   border: 'border-l-muted-foreground/70' },
   'agent-action': { icon: 'text-violet-300',            border: 'border-l-violet-300' },

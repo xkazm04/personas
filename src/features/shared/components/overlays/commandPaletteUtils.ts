@@ -5,7 +5,7 @@ import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 
 // -- Types -------------------------------------------------------------
 
-export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action' | 'agent-action';
+export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'workflow' | 'navigation' | 'action' | 'agent-action';
 
 export interface PaletteItem {
   id: string;
