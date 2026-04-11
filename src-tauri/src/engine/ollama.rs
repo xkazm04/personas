@@ -67,11 +67,9 @@ fn build_system_prompt(persona: &Persona) -> String {
     }
     prompt.push_str("\n\n");
 
-    if let Some(ref system) = persona.system_prompt {
-        if !system.is_empty() {
-            prompt.push_str(system);
-            prompt.push_str("\n\n");
-        }
+    if !persona.system_prompt.is_empty() {
+        prompt.push_str(&persona.system_prompt);
+        prompt.push_str("\n\n");
     }
 
     prompt.push_str("Be concise and direct. If the task requires structured output (JSON, code, lists), use the appropriate format.\n");
@@ -211,6 +209,7 @@ pub async fn execute_native(
 
     let _ = exec_repo::update_status(pool, execution_id, crate::db::models::UpdateExecutionStatus {
         status: ExecutionState::Completed,
+        output_data: if full_output.is_empty() { None } else { Some(full_output.clone()) },
         duration_ms: Some(duration_ms as i64),
         output_tokens: Some(eval_tokens as i64),
         input_tokens: Some(prompt_tokens as i64),
