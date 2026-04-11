@@ -265,3 +265,18 @@
 - Workflow execution history is still ephemeral (in-memory WorkflowExecution state) — not persisted to any table. Future work: add `composition_workflow_executions` table for execution replay
 - The compiled workflow path (`compileWorkflow`) creates a workflow locally then persists — but uses a client-generated ID that won't match the backend's. Need to use the backend's returned ID
 - Consider adding a `composition_workflows` sidebar badge showing workflow count (like the automations count badge)
+
+## Visual Consistency Patterns
+
+- [2026-04-11] `CARD_CONTAINER` in `dashboardGrid.ts` and `SectionCard` in `shared/layout/SectionCard.tsx` are now visually aligned: `bg-secondary/30 border-primary/12 shadow-elevation-1`
+- [2026-04-11] Entrance animation pattern for sub-tab switching: `key={tabState} className="animate-fade-slide-in"` on the content wrapper div. Applied to: OverviewPage, SettingsPage, HomePage, ObsidianBrainPage, ArtistPage, TriggersPage, DesignReviewsPage, DocSigningPage
+- [2026-04-11] `bg-white/*` is dark-theme-only for hover/stripe/zebra patterns. CSS safety-net overrides exist in globals.css, but JSX source should use `bg-primary/*` instead. Mapping: `bg-white/[0.015]` → `bg-primary/[0.03]`, `hover:bg-white/[0.03]` → `hover:bg-primary/[0.05]`, `hover:bg-white/[0.05]` → `hover:bg-primary/[0.08]`
+- [2026-04-11] `typo-label` CSS class replaces inline `text-[10px] font-bold uppercase tracking-widest` patterns — same visual output but respects text-scale settings
+- [2026-04-11] DocSigningPage was the last top-level section page without ContentLayout — now all sections use ContentBox + ContentHeader + ContentBody (or thin wrappers around sub-components that do)
+
+## Open follow-ups (from Run #9 — Visual Consistency, 2026-04-11)
+
+- ~20 more files still use `bg-white/*` patterns outside overview/shared (artists Gallery2D, vault authMethodStyles, templates, agents, forms). Same mechanical replacement applies
+- CredentialManager and ScheduleTimeline don't have sub-tab entrance animations — but they're single-content pages, not tabbed UIs. Low priority
+- `text-3xl font-bold` in DashboardHome greeting was replaced with `typo-heading-lg` — slightly smaller on desktop but now respects text-scale. If users want it larger, consider adding a `typo-heading-xl` tier to typography.css
+- FleetOptimizationCard's TYPE_CONFIG uses `text-*-300` badge text colors — all have light theme overrides. No action needed unless new recommendation types are added

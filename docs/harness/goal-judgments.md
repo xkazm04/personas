@@ -135,3 +135,33 @@ Discovered 10,658 LOC of orphaned overview dashboards (Analytics 1,280, Observab
 - Novel features that enhance existing UX (timeline view of existing versions) are more attractive than surfacing separate pages
 - The existing lab primitives (diffStrings, getSectionSummary, TAG_STYLES, formatRelative) are well-designed building blocks — new views can compose them without duplication
 - 10,658 LOC of orphaned overview features remains a significant cleanup/surfacing opportunity for a future run — but should be offered only when the user specifically asks for it
+
+## Run #9 — 2026-04-11
+
+**Mode:** improve (user-specified goal)
+**Health scan:** 0 TS errors, 0 lint, 675/675 tests
+**Selected goal:** Visual Consistency Pass — ContentLayout, SectionCard, typography, light theme
+**Source:** user-specified (chose "C. Visual Consistency Pass" from 4 options)
+**Confidence at selection:** high (all building blocks exist, pure adoption work)
+**Quality score:** 100/100
+**User verdict:** TBD
+
+**Why this goal was selected:**
+User requested "UI/UX polish and upgrade — full app scope." Skill pushed back on scope (would exceed 8 tasks) and proposed 4 scoped options. User chose Visual Consistency Pass — standardize layout patterns, card styles, animations, and light theme colors across the app.
+
+**Key decisions during this run:**
+1. DocSigningPage was the only top-level page without ContentLayout — refactored to use ContentBox + ContentHeader + PanelTabBar + ContentBody
+2. CARD_CONTAINER constant aligned with SectionCard values (single-line change that propagates to all dashboard widgets)
+3. Entrance animations added to TriggersPage and DesignReviewsPage (the only multi-tab pages missing `key={tab} + animate-fade-slide-in`)
+4. bg-white/* replaced with bg-primary/* in 8 high-traffic files (lists, tables, cards) — CSS safety-net overrides existed but source should be semantic
+5. Light theme accent color audit found NO gaps — all colors already have `[data-theme^="light"]` overrides
+
+**Already-existed catches:**
+- Overview sub-page entrance animations: initially planned as a 6-file task, but OverviewPage already handles this at the container level with `key={overviewTab}` + `animate-fade-slide-in`. Rescoped to target TriggersPage and DesignReviewsPage instead
+- HomePage and SettingsPage also already had the `key={tab}` + animation pattern
+
+**Lessons for future ranking:**
+- "Full app scope" goals need aggressive scoping — this project has 18 feature areas and 8 sidebar sections. Even a "polish" pass is 20+ tasks unscoped
+- Visual consistency work is low-risk/high-impact: 14 files, 0 errors introduced, immediate visual improvement on every theme
+- The bg-white → bg-primary migration is mechanical and could be automated for the remaining ~20 files
+- The codebase already has excellent shared components (ContentLayout, SectionCard, PanelTabBar) — the issue is adoption, not infrastructure
