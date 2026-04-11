@@ -1,9 +1,9 @@
 /**
  * Composition slice — manages multi-agent DAG workflows.
  *
- * Workflows are persisted locally via localStorage (no Rust backend table yet).
- * The slice exposes CRUD operations and a DAG execution runner that walks
- * the graph topologically, feeding persona output downstream.
+ * Workflows are persisted via Tauri backend SQLite (composition_workflows table).
+ * Falls back to localStorage for migration: on first fetch, if the backend returns
+ * empty but localStorage has data, bulk-imports to the backend and clears localStorage.
  */
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
@@ -22,20 +22,64 @@ import type { CompiledWorkflow } from "@/lib/bindings";
 import { topologicalSort, validateWorkflow, getUpstream } from "@/features/composition/libs/dagUtils";
 import { measureStoreAction } from "@/lib/utils/storePerf";
 import { getExecution as fetchExecutionRecord } from "@/api/agents/executions";
+import * as workflowApi from "@/api/composition";
 
-const STORAGE_KEY = "__personas_workflows";
+// ── localStorage migration helpers ─────────────────────────────────────
 
-function loadWorkflows(): Workflow[] {
+const LEGACY_STORAGE_KEY = "__personas_workflows";
+const MIGRATION_DONE_KEY = "__personas_workflows_migrated";
+
+function loadLegacyWorkflows(): Workflow[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveWorkflows(workflows: Workflow[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(workflows));
+function clearLegacyWorkflows() {
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+  localStorage.setItem(MIGRATION_DONE_KEY, "true");
+}
+
+function isMigrationDone(): boolean {
+  return localStorage.getItem(MIGRATION_DONE_KEY) === "true";
+}
+
+/** Convert a Workflow (frontend type) to the API row format for import. */
+function workflowToRow(wf: Workflow): workflowApi.CompositionWorkflowRow {
+  return {
+    id: wf.id,
+    name: wf.name,
+    description: wf.description,
+    nodesJson: JSON.stringify(wf.nodes),
+    edgesJson: JSON.stringify(wf.edges),
+    inputSchemaJson: wf.inputSchema ? JSON.stringify(wf.inputSchema) : null,
+    enabled: wf.enabled,
+    createdAt: wf.created_at,
+    updatedAt: wf.updated_at,
+  };
+}
+
+/** Convert a backend row to the frontend Workflow type. */
+function rowToWorkflow(row: workflowApi.CompositionWorkflowRow): Workflow {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    nodes: safeParse<WorkflowNode[]>(row.nodesJson, []),
+    edges: safeParse<WorkflowEdge[]>(row.edgesJson, []),
+    inputSchema: row.inputSchemaJson ? safeParse<Record<string, string>>(row.inputSchemaJson, {}) : undefined,
+    enabled: row.enabled,
+    created_at: row.createdAt,
+    updated_at: row.updatedAt,
+  };
+}
+
+function safeParse<T>(json: string, fallback: T): T {
+  try { return JSON.parse(json); }
+  catch { return fallback; }
 }
 
 function uid(): string {
@@ -55,10 +99,10 @@ export interface CompositionSlice {
   lastCompiledWorkflow: CompiledWorkflow | null;
 
   // CRUD
-  fetchWorkflows: () => void;
-  createWorkflow: (name: string, description?: string) => string;
-  updateWorkflow: (id: string, patch: Partial<Pick<Workflow, "name" | "description" | "nodes" | "edges" | "enabled" | "inputSchema">>) => void;
-  deleteWorkflow: (id: string) => void;
+  fetchWorkflows: () => Promise<void>;
+  createWorkflow: (name: string, description?: string) => Promise<string>;
+  updateWorkflow: (id: string, patch: Partial<Pick<Workflow, "name" | "description" | "nodes" | "edges" | "enabled" | "inputSchema">>) => Promise<void>;
+  deleteWorkflow: (id: string) => Promise<void>;
   selectWorkflow: (id: string | null) => void;
 
   // Node / edge mutations (convenience wrappers)
@@ -85,12 +129,44 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
 
   // ── CRUD ──────────────────────────────────────────────────────────────
 
-  fetchWorkflows: () => {
-    set({ workflows: loadWorkflows(), error: null });
+  fetchWorkflows: async () => {
+    try {
+      const rows = await workflowApi.listCompositionWorkflows();
+      let workflows = rows.map(rowToWorkflow);
+
+      // Migration: if backend is empty but localStorage has data, import it
+      if (workflows.length === 0 && !isMigrationDone()) {
+        const legacy = loadLegacyWorkflows();
+        if (legacy.length > 0) {
+          logger.info(`Migrating ${legacy.length} workflows from localStorage to SQLite`);
+          try {
+            const imported = await workflowApi.importCompositionWorkflows(legacy.map(workflowToRow));
+            logger.info(`Migrated ${imported} workflows to SQLite`);
+            clearLegacyWorkflows();
+            // Re-fetch from backend after import
+            const freshRows = await workflowApi.listCompositionWorkflows();
+            workflows = freshRows.map(rowToWorkflow);
+          } catch (migrationErr) {
+            logger.error("localStorage → SQLite migration failed, falling back to localStorage", { error: String(migrationErr) });
+            workflows = legacy;
+          }
+        } else {
+          // No legacy data either — mark migration as done
+          clearLegacyWorkflows();
+        }
+      }
+
+      set({ workflows, error: null });
+    } catch {
+      // Backend not available — fall back to localStorage
+      logger.warn("Backend unavailable, falling back to localStorage for workflows");
+      set({ workflows: loadLegacyWorkflows(), error: null });
+    }
   },
 
-  createWorkflow: (name, description = "") => {
+  createWorkflow: async (name, description = "") => {
     const id = uid();
+    // Optimistic update: add to local state immediately
     const workflow: Workflow = {
       id,
       name,
@@ -102,27 +178,57 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
       updated_at: now(),
     };
     const updated = [...get().workflows, workflow];
-    saveWorkflows(updated);
     set({ workflows: updated, selectedWorkflowId: id, error: null });
+
+    // Persist to backend
+    try {
+      await workflowApi.createCompositionWorkflow({
+        name,
+        description,
+      });
+    } catch (err) {
+      logger.error("Failed to persist workflow to backend", { error: String(err) });
+    }
     return id;
   },
 
-  updateWorkflow: (id, patch) => {
+  updateWorkflow: async (id, patch) => {
+    // Optimistic update
     const updated = get().workflows.map((w) =>
       w.id === id ? { ...w, ...patch, updated_at: now() } : w,
     );
-    saveWorkflows(updated);
     set({ workflows: updated, error: null });
+
+    // Persist to backend
+    try {
+      const input: workflowApi.UpdateCompositionWorkflowInput = {};
+      if (patch.name !== undefined) input.name = patch.name;
+      if (patch.description !== undefined) input.description = patch.description;
+      if (patch.nodes !== undefined) input.nodesJson = JSON.stringify(patch.nodes);
+      if (patch.edges !== undefined) input.edgesJson = JSON.stringify(patch.edges);
+      if (patch.enabled !== undefined) input.enabled = patch.enabled;
+      if (patch.inputSchema !== undefined) input.inputSchemaJson = JSON.stringify(patch.inputSchema);
+      await workflowApi.updateCompositionWorkflow(id, input);
+    } catch (err) {
+      logger.error("Failed to persist workflow update to backend", { error: String(err) });
+    }
   },
 
-  deleteWorkflow: (id) => {
+  deleteWorkflow: async (id) => {
+    // Optimistic update
     const updated = get().workflows.filter((w) => w.id !== id);
-    saveWorkflows(updated);
     set({
       workflows: updated,
       selectedWorkflowId: get().selectedWorkflowId === id ? null : get().selectedWorkflowId,
       error: null,
     });
+
+    // Persist to backend
+    try {
+      await workflowApi.deleteCompositionWorkflow(id);
+    } catch (err) {
+      logger.error("Failed to delete workflow from backend", { error: String(err) });
+    }
   },
 
   selectWorkflow: (id) => {
@@ -179,8 +285,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
           description,
         });
 
-        // Convert the compiled team blueprint into a local Workflow so it
-        // appears on the canvas immediately.
         const nodes: WorkflowNode[] = result.blueprint.members.map((m, i) => ({
           id: `node-${i}-${uid()}`,
           kind: "persona" as const,
@@ -211,7 +315,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
         };
 
         const updated = [...get().workflows, workflow];
-        saveWorkflows(updated);
         set({
           workflows: updated,
           selectedWorkflowId: workflowId,
@@ -219,6 +322,18 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
           lastCompiledWorkflow: result,
           error: null,
         });
+
+        // Persist compiled workflow to backend
+        try {
+          await workflowApi.createCompositionWorkflow({
+            name: workflow.name,
+            description: workflow.description,
+            nodesJson: JSON.stringify(workflow.nodes),
+            edgesJson: JSON.stringify(workflow.edges),
+          });
+        } catch (err) {
+          logger.error("Failed to persist compiled workflow to backend", { error: String(err) });
+        }
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -248,7 +363,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
       const { sorted } = topologicalSort(wf.nodes, wf.edges);
       const nodeMap = new Map(wf.nodes.map((n) => [n.id, n]));
 
-      // Initialise execution state
       const nodeExecutions: Record<string, WorkflowNodeExecution> = {};
       for (const nodeId of sorted) {
         nodeExecutions[nodeId] = { nodeId, status: "pending" };
@@ -268,8 +382,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
 
       logger.debug("Workflow started", { workflowId, nodeCount: sorted.length });
 
-      // Helper: derive next state from the latest accumulated store state,
-      // ensuring completed node outputs are never lost when a later node fails.
       const setExecution = (overrides: Partial<WorkflowExecution>) => {
         const latest = get().workflowExecution;
         if (!latest) return;
@@ -282,10 +394,8 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
         });
       };
 
-      // Collect outputs per node (used to pass downstream)
       const outputs = new Map<string, string>();
 
-      // If there's an input node, seed it
       const inputNode = wf.nodes.find((n) => n.kind === "input");
       if (inputNode && input) {
         outputs.set(inputNode.id, input);
@@ -301,17 +411,13 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
         setExecution({});
       }
 
-      // Walk topological order
       for (const nodeId of sorted) {
-        // Check cancellation
         if (get().workflowExecution?.status === "cancelled") break;
 
         const node = nodeMap.get(nodeId)!;
 
-        // Input nodes already handled
         if (node.kind === "input") continue;
 
-        // Gather upstream outputs
         const upstreamIds = getUpstream(nodeId, wf.edges);
         const upstreamOutputs = upstreamIds
           .map((id) => outputs.get(id))
@@ -320,7 +426,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
           ? [node.staticInput, ...upstreamOutputs].join("\n\n---\n\n")
           : upstreamOutputs.join("\n\n---\n\n");
 
-        // Output nodes just pass through
         if (node.kind === "output") {
           outputs.set(nodeId, mergedInput);
           const outputTs = now();
@@ -336,7 +441,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
           continue;
         }
 
-        // Persona node: execute via the agent store
         if (node.kind === "persona" && node.personaId) {
           const startedAt = now();
           const nodeStartMs = performance.now();
@@ -349,10 +453,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
             const inputData = mergedInput ? { prompt: mergedInput } : undefined;
             const execId = await agentState.executePersona(node.personaId, inputData);
 
-            // Wait for execution to finish (poll every 500ms, max 5 min).
-            // Check both activeExecutionId and lastExecutionId because
-            // finishExecution clears activeExecutionId synchronously after
-            // setting isExecuting=false — the poll may only see the final state.
             const maxWait = 300_000;
             const pollInterval = 500;
             let elapsed = 0;
@@ -375,16 +475,12 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
               logger.warn("Workflow node timed out", { nodeId, nodeLabel: node.label, maxWaitMs: maxWait });
             }
 
-            // Capture output from the per-execution snapshot (populated by
-            // finishExecution) so that the shared executionOutput array — which
-            // gets cleared on the next executePersona call — cannot race us.
             const finalState = useAgentStore.getState();
             const snapshotLines = execId
               ? finalState.consumeCompletedOutput(execId)
               : undefined;
             const outputText = (snapshotLines ?? finalState.executionOutput).join("\n");
 
-            // Fetch the backend execution record to extract cost / token metrics
             let nodeCostUsd: number | undefined;
             let nodeInputTokens: number | undefined;
             let nodeOutputTokens: number | undefined;
@@ -399,7 +495,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
                   executionMs = record.duration_ms ?? undefined;
                 }
               } catch {
-                // Non-fatal — metrics are best-effort
+                // Non-fatal
               }
             }
 
@@ -446,7 +542,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
         }
       }
 
-      // Determine final output from leaf/output nodes
       const outputNode = wf.nodes.find((n) => n.kind === "output");
       const lastSorted = sorted[sorted.length - 1];
       const finalOutput = outputNode
@@ -456,7 +551,6 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
       const total_duration_ms = Math.round(performance.now() - workflowStartMs);
       const finalStatus = get().workflowExecution?.status === "cancelled" ? "cancelled" : "completed";
 
-      // Aggregate cost / token totals across all persona nodes
       let totalCost = 0;
       let totalIn = 0;
       let totalOut = 0;
