@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   GitBranch, ArrowLeftRight, Shield,
-  RotateCcw,
+  RotateCcw, ShieldCheck, Star,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
@@ -157,6 +157,26 @@ export function VersionsPanel() {
           >
             Run these versions in A/B test
           </button>
+        )}
+
+        {/* Regression nudge */}
+        {baselinePin && promptVersions.some((v) => v.version_number > baselinePin.versionNumber && v.tag !== 'archived') && (
+          <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/15 bg-blue-500/5">
+            <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="typo-heading text-blue-400">Newer versions since baseline v{baselinePin.versionNumber}</p>
+              <p className="typo-caption text-muted-foreground/50">
+                Run a regression check to verify the new prompt doesn&apos;t degrade performance.
+              </p>
+            </div>
+            <button
+              onClick={() => setLabMode('regression')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors focus-ring flex-shrink-0"
+            >
+              <Star className="w-3 h-3" />
+              Run Check
+            </button>
+          </div>
         )}
 
         {/* Score trend */}
