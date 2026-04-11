@@ -18,6 +18,7 @@ import { listCredentials } from '@/api/vault/credentials';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -216,6 +217,8 @@ export function ExportSelectionModal({
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [selectedCredentialIds, setSelectedCredentialIds] = useState<Set<string>>(new Set());
   const [exportPassphrase, setExportPassphrase] = useState('');
+  const { t, tx } = useTranslation();
+  const s = t.settings.portability;
 
   // Load data when modal opens
   useEffect(() => {
@@ -354,10 +357,10 @@ export function ExportSelectionModal({
       <div className="flex items-center justify-between px-6 py-5 border-b border-primary/10">
         <div>
           <h2 id="export-selection-title" className="text-lg font-semibold text-foreground/90">
-            Export Workspace
+            {s.export_title}
           </h2>
           <p className="text-sm text-muted-foreground/60 mt-0.5">
-            Choose what to include in your export
+            {s.export_subtitle}
           </p>
         </div>
         <button
@@ -376,7 +379,7 @@ export function ExportSelectionModal({
         {loading ? (
           <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground/60">
             <LoadingSpinner />
-            <span className="text-sm">Loading workspace data...</span>
+            <span className="text-sm">{s.loading_data}</span>
           </div>
         ) : (
           <>
@@ -388,10 +391,10 @@ export function ExportSelectionModal({
                 onChange={toggleGlobalAll}
               />
               <span className="text-sm font-medium text-foreground/80">
-                {allGlobalSelected ? 'Deselect All' : 'Select All'}
+                {allGlobalSelected ? s.deselect_all : s.select_all}
               </span>
               <span className="text-xs text-muted-foreground/50 ml-auto">
-                {totalSelected} of {totalItems} items selected
+                {tx(s.items_selected, { selected: totalSelected, total: totalItems })}
               </span>
             </div>
 
@@ -412,12 +415,12 @@ export function ExportSelectionModal({
             <div className="rounded-xl border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
               <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
                 <KeyRound className="w-4 h-4 text-amber-400/70" />
-                Encrypt credentials with passphrase
-                <span className="text-xs font-normal text-muted-foreground/50 ml-1">(optional)</span>
+                {s.encrypt_passphrase}
+                <span className="text-xs font-normal text-muted-foreground/50 ml-1">{s.optional}</span>
               </label>
               <input
                 type="password"
-                placeholder="Passphrase (min 8 characters)"
+                placeholder={s.passphrase_placeholder}
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
                 className={`px-3 py-2 rounded-lg border bg-secondary/20 text-sm
@@ -428,10 +431,10 @@ export function ExportSelectionModal({
                   }`}
               />
               {!passphraseValid && (
-                <p className="text-xs text-red-400/80">Passphrase must be at least 8 characters</p>
+                <p className="text-xs text-red-400/80">{s.passphrase_too_short}</p>
               )}
               <p className="text-xs text-muted-foreground/50">
-                If set, credential secrets will be included in the export and protected with AES-256 encryption.
+                {s.passphrase_note}
               </p>
             </div>
 
@@ -439,8 +442,7 @@ export function ExportSelectionModal({
             <div className="flex items-start gap-2.5 px-2 py-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                Groups, tools, memories, and test suites linked to selected personas are automatically
-                included.{!exportPassphrase ? ' Credential secrets are not included unless a passphrase is set above.' : ''}
+                {s.auto_included_note}{!exportPassphrase ? s.no_passphrase_note : ''}
               </p>
             </div>
           </>
@@ -455,7 +457,7 @@ export function ExportSelectionModal({
           className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground/70
             hover:text-foreground/80 transition-colors disabled:opacity-50"
         >
-          Cancel
+          {s.cancel}
         </button>
         <button
           onClick={handleExport}
@@ -470,10 +472,10 @@ export function ExportSelectionModal({
             <Download className="w-4 h-4" />
           )}
           {exporting
-            ? 'Exporting...'
+            ? s.exporting
             : isFullExport
-              ? 'Export All'
-              : `Export ${totalSelected} Item${totalSelected !== 1 ? 's' : ''}`}
+              ? s.export_all
+              : tx(totalSelected !== 1 ? s.export_items_plural : s.export_items, { count: totalSelected })}
         </button>
       </div>
     </BaseModal>

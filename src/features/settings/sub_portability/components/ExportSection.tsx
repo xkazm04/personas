@@ -9,6 +9,7 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ExportSelectionModal } from './ExportSelectionModal';
 import type { PortabilityImportResult } from '@/api/system/dataPortability';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -35,6 +36,8 @@ export function ExportSection({
 }: ExportSectionProps) {
   const [importPassphrase, setImportPassphrase] = useState('');
   const [showImportInput, setShowImportInput] = useState(false);
+  const { t } = useTranslation();
+  const s = t.settings.portability;
 
   const handleImport = () => {
     onImport(importPassphrase || undefined);
@@ -44,12 +47,9 @@ export function ExportSection({
 
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title="Workspace Export & Import" />
+      <SectionHeading title={s.export_import_title} />
       <p className="text-sm text-muted-foreground/70">
-        Export your workspace to a portable ZIP archive containing personas, teams,
-        credentials, and related data. Choose exactly what to include. Import restores
-        from a previously exported archive — imported items are created as new entities
-        (disabled by default).
+        {s.export_import_hint}
       </p>
 
       <div className="flex flex-wrap gap-3">
@@ -68,10 +68,10 @@ export function ExportSection({
             <Download className="w-4 h-4" />
           )}
           {exportStatus === 'loading'
-            ? 'Exporting...'
+            ? s.exporting
             : exportStatus === 'success'
-              ? 'Exported!'
-              : 'Export Workspace'}
+              ? s.exported
+              : s.export_workspace}
         </button>
 
         {!showImportInput ? (
@@ -83,13 +83,13 @@ export function ExportSection({
               transition-colors disabled:opacity-50"
           >
             {importStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
-            {importStatus === 'success' ? 'Imported!' : 'Import Workspace'}
+            {importStatus === 'success' ? s.imported : s.import_workspace}
           </button>
         ) : (
           <div className="flex items-center gap-2">
             <input
               type="password"
-              placeholder="Passphrase (optional)"
+              placeholder={s.passphrase_optional}
               value={importPassphrase}
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
@@ -106,13 +106,13 @@ export function ExportSection({
                 transition-colors disabled:opacity-50"
             >
               {importStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
-              Import
+              {s.import_label}
             </button>
             <button
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
               className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
             >
-              Cancel
+              {s.cancel}
             </button>
           </div>
         )}
@@ -123,7 +123,7 @@ export function ExportSection({
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
             <PackageCheck className="w-4 h-4" />
-            Import Complete
+            {s.import_complete}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 text-sm text-muted-foreground/80">
             {importResult.personas_created > 0 && (
@@ -144,7 +144,7 @@ export function ExportSection({
           </div>
           {importResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-sm font-medium text-amber-400">Warnings:</p>
+              <p className="text-sm font-medium text-amber-400">{s.warnings}</p>
               {importResult.warnings.map((w, i) => (
                 <p key={i} className="text-sm text-muted-foreground/70 pl-2">
                   - {w}

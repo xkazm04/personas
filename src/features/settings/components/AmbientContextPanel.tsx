@@ -7,6 +7,7 @@ import type { SensoryPolicy } from '@/lib/bindings/SensoryPolicy';
 import type { ContextRule } from '@/lib/bindings/ContextRule';
 import type { ContextAction } from '@/lib/bindings/ContextAction';
 import { DEFAULT_SENSORY_POLICY } from '@/stores/slices/system/ambientContextSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -14,10 +15,11 @@ const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   app_focus: AppWindow,
 };
 
-const ACTION_LABELS: Record<ContextAction, string> = {
-  TriggerExecution: 'Trigger Execution',
-  EmitEvent: 'Emit Event',
-  Log: 'Log Only',
+// Action labels are resolved at render time via useTranslation
+const ACTION_LABEL_KEYS: Record<ContextAction, 'action_trigger' | 'action_emit' | 'action_log'> = {
+  TriggerExecution: 'action_trigger',
+  EmitEvent: 'action_emit',
+  Log: 'action_log',
 };
 
 
@@ -50,6 +52,8 @@ export function AmbientContextPanel() {
   const [ruleAppFilter, setRuleAppFilter] = useState('');
   const [ruleAction, setRuleAction] = useState<ContextAction>('EmitEvent');
   const [ruleCooldown, setRuleCooldown] = useState(60);
+  const { t, tx } = useTranslation();
+  const s = t.settings.ambient;
 
   // Fetch ambient state on mount and when persona changes
   useEffect(() => {
@@ -159,7 +163,7 @@ export function AmbientContextPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-blue-400" />
-          <h3 className="text-sm font-medium text-foreground">Ambient Context Fusion</h3>
+          <h3 className="text-sm font-medium text-foreground">{s.title}</h3>
         </div>
         <AccessibleToggle
           checked={ambientEnabled}
@@ -169,8 +173,7 @@ export function AmbientContextPanel() {
       </div>
 
       <p className="text-xs text-muted-foreground/60">
-        Ambient context captures clipboard, file changes, and app focus signals to give personas
-        awareness of your desktop workflow.
+        {s.description}
       </p>
 
       {/* Context Stream Stats */}
@@ -178,11 +181,11 @@ export function AmbientContextPanel() {
         <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
           <div className="flex items-center gap-1">
             <Activity className="w-3 h-3" />
-            <span>{contextStreamStats.totalEventsBroadcast} events broadcast</span>
+            <span>{tx(s.events_broadcast, { count: contextStreamStats.totalEventsBroadcast })}</span>
           </div>
           <div className="flex items-center gap-1">
             <Zap className="w-3 h-3" />
-            <span>{contextStreamStats.activeSubscribers} subscriber{contextStreamStats.activeSubscribers !== 1 ? 's' : ''}</span>
+            <span>{tx(contextStreamStats.activeSubscribers !== 1 ? s.subscribers_plural : s.subscribers, { count: contextStreamStats.activeSubscribers })}</span>
           </div>
         </div>
       )}
@@ -191,9 +194,9 @@ export function AmbientContextPanel() {
       {ambientEnabled && ambientSnapshot && (
         <div className="border border-primary/10 rounded-lg bg-secondary/20 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground/80">Live Context Window</span>
+            <span className="text-xs font-medium text-foreground/80">{s.live_context}</span>
             <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-              <span>{ambientSnapshot.totalSignalsCaptured} total signals</span>
+              <span>{tx(s.total_signals, { count: ambientSnapshot.totalSignalsCaptured })}</span>
               <button
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
                 className="hover:text-foreground/80 transition-colors"
@@ -216,7 +219,7 @@ export function AmbientContextPanel() {
           )}
 
           {ambientSnapshot.signals.length === 0 ? (
-            <p className="text-xs text-muted-foreground/40 italic">No recent signals captured</p>
+            <p className="text-xs text-muted-foreground/40 italic">{s.no_signals}</p>
           ) : (
             <div className="max-h-40 overflow-y-auto space-y-1">
               {ambientSnapshot.signals.map((signal, i) => {
@@ -245,20 +248,20 @@ export function AmbientContextPanel() {
       {ambientEnabled && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground/80">Sensory Policy</span>
+            <span className="text-xs font-medium text-foreground/80">{s.sensory_policy}</span>
             <button
               onClick={handleReset}
               className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
             >
-              Reset to defaults
+              {s.reset_defaults}
             </button>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             {([
-              { key: 'clipboard' as const, label: 'Clipboard', icon: Clipboard },
-              { key: 'fileChanges' as const, label: 'File Changes', icon: FolderOpen },
-              { key: 'appFocus' as const, label: 'App Focus', icon: AppWindow },
+              { key: 'clipboard' as const, label: s.clipboard, icon: Clipboard },
+              { key: 'fileChanges' as const, label: s.file_changes, icon: FolderOpen },
+              { key: 'appFocus' as const, label: s.app_focus, icon: AppWindow },
             ]).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -277,16 +280,16 @@ export function AmbientContextPanel() {
 
           {/* Focus App Filter */}
           <div className="space-y-1.5">
-            <span className="text-xs text-muted-foreground/70">Focus App Filter</span>
+            <span className="text-xs text-muted-foreground/70">{s.focus_filter}</span>
             <p className="text-[10px] text-muted-foreground/40">
-              Only capture signals when these apps are in focus. Empty = capture from any app.
+              {s.focus_filter_hint}
             </p>
             <div className="flex gap-1.5">
               <input
                 value={filterInput}
                 onChange={(e) => setFilterInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFilter()}
-                placeholder="e.g. Code.exe"
+                placeholder={s.focus_filter_placeholder}
                 className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
               />
               <button
@@ -294,7 +297,7 @@ export function AmbientContextPanel() {
                 disabled={!filterInput.trim()}
                 className="px-2 py-1 bg-secondary/40 hover:bg-secondary/60 text-xs rounded text-foreground/80 disabled:opacity-50"
               >
-                Add
+                {s.add}
               </button>
             </div>
             {localPolicy.focusAppFilter.length > 0 && (
@@ -325,19 +328,19 @@ export function AmbientContextPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-xs font-medium text-foreground/80">Context Rules</span>
+              <span className="text-xs font-medium text-foreground/80">{s.context_rules}</span>
             </div>
             <button
               onClick={() => setShowRuleForm(!showRuleForm)}
               className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
             >
               <Plus className="w-3 h-3" />
-              Add Rule
+              {s.add_rule}
             </button>
           </div>
 
           <p className="text-[10px] text-muted-foreground/40">
-            Define patterns that trigger proactive persona actions when desktop context matches.
+            {s.context_rules_hint}
           </p>
 
           {/* Rule creation form */}
@@ -351,7 +354,7 @@ export function AmbientContextPanel() {
               />
 
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground/60">Match sources (empty = all)</span>
+                <span className="text-[10px] text-muted-foreground/60">{s.match_sources}</span>
                 <div className="flex gap-1.5">
                   {(['clipboard', 'file_watcher', 'app_focus'] as const).map((src) => (
                     <button
@@ -393,19 +396,19 @@ export function AmbientContextPanel() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground/60">Action</span>
+                  <span className="text-[10px] text-muted-foreground/60">{s.action}</span>
                   <select
                     value={ruleAction}
                     onChange={(e) => setRuleAction(e.target.value as ContextAction)}
                     className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80"
                   >
-                    <option value="TriggerExecution">Trigger Execution</option>
-                    <option value="EmitEvent">Emit Event</option>
-                    <option value="Log">Log Only</option>
+                    <option value="TriggerExecution">{s.action_trigger}</option>
+                    <option value="EmitEvent">{s.action_emit}</option>
+                    <option value="Log">{s.action_log}</option>
                   </select>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground/60">Cooldown (sec)</span>
+                  <span className="text-[10px] text-muted-foreground/60">{s.cooldown}</span>
                   <input
                     type="number"
                     min={0}
@@ -421,14 +424,14 @@ export function AmbientContextPanel() {
                   onClick={() => setShowRuleForm(false)}
                   className="px-2.5 py-1 text-xs text-muted-foreground/70 hover:text-foreground/80 transition-colors"
                 >
-                  Cancel
+                  {s.cancel}
                 </button>
                 <button
                   onClick={handleAddRule}
                   disabled={!ruleName.trim()}
                   className="px-2.5 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs rounded-md transition-colors disabled:opacity-50"
                 >
-                  Create Rule
+                  {s.create_rule}
                 </button>
               </div>
             </div>
@@ -436,7 +439,7 @@ export function AmbientContextPanel() {
 
           {/* Existing rules list */}
           {contextRules.length === 0 ? (
-            <p className="text-xs text-muted-foreground/40 italic">No context rules defined</p>
+            <p className="text-xs text-muted-foreground/40 italic">{s.no_rules}</p>
           ) : (
             <div className="space-y-1.5">
               {contextRules.map((rule) => (
@@ -449,9 +452,9 @@ export function AmbientContextPanel() {
                     <div className="min-w-0">
                       <span className="text-xs text-foreground/80 block truncate">{rule.name}</span>
                       <span className="text-[10px] text-muted-foreground/40 block truncate">
-                        {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : 'all sources'}
+                        {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : s.all_sources}
                         {rule.pattern.summaryContains && ` / "${rule.pattern.summaryContains}"`}
-                        {' '}&rarr; {ACTION_LABELS[rule.action]}
+                        {' '}&rarr; {s[ACTION_LABEL_KEYS[rule.action]]}
                       </span>
                     </div>
                   </div>

@@ -9,6 +9,7 @@ import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS, TIER_CYCLE, TIER_LABELS } from '@/lib/constants/uiModes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -97,17 +98,18 @@ const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: strin
   { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
 ];
 
-function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
+function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: {
   themeId: ThemeId;
   setTheme: (id: ThemeId) => void;
   darkThemes: ThemeDefinition[];
   lightThemes: ThemeDefinition[];
+  labels: { theming: string; default_tab: string; custom_tab: string; dark: string; light: string };
 }) {
   const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <SectionHeading title="Theming" icon={<Palette />} />
+        <SectionHeading title={labels.theming} icon={<Palette />} />
         <div className="flex rounded-lg border border-primary/15 overflow-hidden">
           <button
             onClick={() => setThemeTab('default')}
@@ -115,7 +117,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
               themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
             }`}
           >
-            Default
+            {labels.default_tab}
           </button>
           <button
             onClick={() => setThemeTab('custom')}
@@ -123,14 +125,14 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
               themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
             }`}
           >
-            Custom
+            {labels.custom_tab}
           </button>
         </div>
       </div>
       {themeTab === 'default' ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">Dark</span>
+            <span className="text-sm text-muted-foreground/60">{labels.dark}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -138,7 +140,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">Light</span>
+            <span className="text-sm text-muted-foreground/60">{labels.light}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -169,6 +171,8 @@ export default function AppearanceSettings() {
 
   const viewMode = useSystemStore((s) => s.viewMode);
   const setViewMode = useSystemStore((s) => s.setViewMode);
+  const { t } = useTranslation();
+  const s = t.settings.appearance;
 
   const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);
   const { darkWithCustom, lightWithCustom } = useMemo(() => {
@@ -185,17 +189,17 @@ export default function AppearanceSettings() {
       <ContentHeader
         icon={<Palette className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Appearance"
-        subtitle="Customize how the app looks"
+        title={s.title}
+        subtitle={s.subtitle}
       />
 
       <ContentBody centered>
         <div className="space-y-6">
           {/* Interface mode */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Interface Mode" icon={<Sparkles className="text-violet-400" />} />
+            <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
             <p className="text-xs text-muted-foreground/60">
-              Simple mode shows only core features. Power mode unlocks the full interface.
+              {s.interface_mode_hint}
             </p>
             <div className="grid grid-cols-2 gap-3">
               {([
@@ -228,13 +232,13 @@ export default function AppearanceSettings() {
 
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Text Size" icon={<Type />} />
+            <SectionHeading title={s.text_size} icon={<Type />} />
             <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
                 const sizeClass =
-                  scale.id === 'default' ? 'text-sm' :
-                  scale.id === 'large' ? 'text-base' : 'text-lg';
+                  scale.id === 'large' ? 'text-base' :
+                  scale.id === 'larger' ? 'text-lg' : 'text-xl';
                 return (
                   <Button
                     variant="ghost"
@@ -270,9 +274,9 @@ export default function AppearanceSettings() {
 
           {/* Timezone */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Timezone" icon={<Globe />} />
+            <SectionHeading title={s.timezone} icon={<Globe />} />
             <p className="text-xs text-muted-foreground/60">
-              Controls how schedule times and cron expressions are displayed throughout the app.
+              {s.timezone_hint}
             </p>
             <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
               {TIMEZONE_OPTIONS.map((tz) => {
@@ -305,14 +309,18 @@ export default function AppearanceSettings() {
             </div>
           </div>
 
-          {/* Language & Translation Contributions */}
-          <TranslationContributor />
+          {/* Language & Translation Contributions — dev only */}
+          {import.meta.env.DEV && (
+            <div className="rounded-xl border-2 border-amber-500/50 ring-1 ring-amber-500/20">
+              <TranslationContributor />
+            </div>
+          )}
 
           {/* Brightness */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Brightness" icon={<Sun />} />
+            <SectionHeading title={s.brightness} icon={<Sun />} />
             <p className="text-sm text-muted-foreground/60">
-              Adjust screen brightness if the app feels too dark on your display.
+              {s.brightness_hint}
             </p>
             <div className="grid grid-cols-3 gap-3">
               {brightnessLevels.map((level, i) => {
@@ -353,6 +361,7 @@ export default function AppearanceSettings() {
             setTheme={setTheme}
             darkThemes={darkWithCustom}
             lightThemes={lightWithCustom}
+            labels={s}
           />
         </div>
       </ContentBody>

@@ -2,6 +2,7 @@ import { Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, AlertCircle, Info
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { ComplianceRule } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, type PolicyWarning, type PolicyWarningSeverity } from '../libs/byomHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
   error:   { border: 'border-red-500/30',   text: 'text-red-400/90',   icon: AlertCircle },
@@ -18,28 +19,30 @@ interface ByomComplianceRulesProps {
 }
 
 export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove }: ByomComplianceRulesProps) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-4">
         <SectionHeading
-          title="Compliance-Driven Restrictions"
+          title={s.compliance_title}
           action={
             <button
               onClick={onAdd}
               className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add Rule
+              {s.add_rule}
             </button>
           }
         />
         <p className="text-sm text-muted-foreground/60 mt-1">
-          Restrict providers for specific workflow types (e.g., HIPAA, SOC2)
+          {s.compliance_hint}
         </p>
 
         {rules.length === 0 ? (
           <p className="text-sm text-muted-foreground/50 text-center py-6">
-            No compliance rules configured. Add rules to restrict providers for sensitive workflows.
+            {s.compliance_empty}
           </p>
         ) : (
           <div className="space-y-3">
@@ -80,7 +83,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                         value={rule.name}
                         onChange={(e) => onUpdate(idx, { name: e.target.value })}
                         className="text-sm font-medium bg-transparent border-none outline-none text-foreground"
-                        placeholder="Rule name (e.g., HIPAA)"
+                        placeholder={s.compliance_name_placeholder}
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -102,7 +105,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                   <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground/60 mb-1 block">
-                        Workflow Tags (comma-separated)
+                        {s.workflow_tags}
                       </label>
                       <input
                         value={rule.workflow_tags.join(', ')}
@@ -114,13 +117,13 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                               .filter(Boolean),
                           })
                         }
-                        placeholder="hipaa, healthcare, pii"
+                        placeholder={s.workflow_tags_placeholder}
                         className="w-full text-sm p-2 rounded-lg border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-muted-foreground/30"
                       />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground/60 mb-1 block">
-                        Allowed Providers
+                        {s.allowed_providers_label}
                       </label>
                       <div className="flex flex-wrap gap-1.5">
                         {PROVIDER_OPTIONS.map((prov) => {

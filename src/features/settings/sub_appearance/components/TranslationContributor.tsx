@@ -76,7 +76,8 @@ const langLoaders: Record<Language, () => Promise<Record<string, unknown>>> = {
 
 export default function TranslationContributor() {
   const { language } = useI18nStore();
-  useTranslation(); // subscribe to language changes
+  const { t } = useTranslation(); // subscribe to language changes
+  const s = t.settings.appearance;
   const [coverage, setCoverage] = useState<Record<Language, number>>({} as Record<Language, number>);
   const [exporting, setExporting] = useState<Language | null>(null);
 
@@ -122,7 +123,7 @@ export default function TranslationContributor() {
 
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title="Language & Translations" icon={<Languages />} />
+      <SectionHeading title={s.language_translations} icon={<Languages />} />
 
       {/* Current language display */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-primary/10">
@@ -131,21 +132,21 @@ export default function TranslationContributor() {
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
           <p className="typo-caption text-muted-foreground/60">
             {currentPct === 100
-              ? interpolate('{count} translation keys', { count: TOTAL_KEYS })
-              : interpolate('{covered} of {total} keys ({pct}%)', { covered: currentCoverage, total: TOTAL_KEYS, pct: currentPct })
+              ? interpolate(s.translation_keys, { count: TOTAL_KEYS })
+              : interpolate(s.translation_coverage, { covered: currentCoverage, total: TOTAL_KEYS, pct: currentPct })
             }
           </p>
         </div>
         {currentPct === 100 && (
           <span className="ml-auto px-2 py-0.5 typo-label rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-            Full
+            {s.coverage_full}
           </span>
         )}
       </div>
 
       {/* Language coverage grid — click a language to export its file */}
       <div>
-        <p className="typo-caption text-muted-foreground/60 mb-2">Translation coverage — click to export</p>
+        <p className="typo-caption text-muted-foreground/60 mb-2">{s.coverage_hint}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {ALL_LANGUAGES.map((lang) => {
             const keys = coverage[lang.code] ?? 0;
@@ -195,9 +196,9 @@ export default function TranslationContributor() {
 
       {/* Contribution link */}
       <div className="border-t border-primary/10 pt-4 space-y-3">
-        <p className="typo-heading text-foreground/80">Contribute translations</p>
+        <p className="typo-heading text-foreground/80">{s.contribute_title}</p>
         <p className="typo-caption text-muted-foreground/60">
-          Help translate Personas into your language. Export a language file above, translate the values, and submit via GitHub.
+          {s.contribute_hint}
         </p>
         <Button
           variant="ghost"
@@ -205,7 +206,7 @@ export default function TranslationContributor() {
           icon={<ExternalLink className="w-3.5 h-3.5" />}
           onClick={() => window.open('https://github.com/anthropics/personas-desktop/tree/main/src/i18n', '_blank')}
         >
-          Contribute on GitHub
+          {s.contribute_github}
         </Button>
       </div>
     </div>

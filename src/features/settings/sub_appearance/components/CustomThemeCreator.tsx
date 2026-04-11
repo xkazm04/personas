@@ -7,12 +7,15 @@ import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
 import { Button } from '@/features/shared/components/buttons';
 import { ColorRow } from './ColorRow';
 import { ThemePreview } from './ThemePreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
   const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
   const clearCustomTheme = useThemeStore((s) => s.clearCustomTheme);
   const currentThemeId = useThemeStore((s) => s.themeId);
+  const { t } = useTranslation();
+  const s = t.settings.appearance;
 
   // Local draft state — initialized from store or defaults
   const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? 'dark');
@@ -95,21 +98,21 @@ export default function CustomThemeCreator() {
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-5">
       {/* Header */}
       <SectionHeading
-        title="Custom Theme"
+        title={s.custom_theme}
         icon={<Paintbrush />}
         action={isActiveCustom ? (
-          <span className="text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">Active</span>
+          <span className="text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">{s.custom_theme_active}</span>
         ) : undefined}
       />
 
       <p className="text-xs text-muted-foreground/60">
-        Choose a primary color to auto-derive all others, or override individual colors for full control.
+        {s.custom_theme_hint}
       </p>
 
       {/* Base mode + theme name */}
       <div className="flex items-end gap-4">
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground/80">Base Mode</label>
+          <label className="text-xs font-medium text-muted-foreground/80">{s.base_mode}</label>
           <div className="flex gap-1.5">
             {(['dark', 'light'] as const).map((mode) => {
               const active = baseMode === mode;
@@ -123,14 +126,14 @@ export default function CustomThemeCreator() {
                   }`}
                 >
                   <Icon className="w-3 h-3" />
-                  {mode === 'dark' ? 'Dark' : 'Light'}
+                  {mode === 'dark' ? s.dark : s.light}
                 </button>
               );
             })}
           </div>
         </div>
         <div className="space-y-2 flex-1 max-w-xs">
-          <label className="text-xs font-medium text-muted-foreground/80">Theme Name</label>
+          <label className="text-xs font-medium text-muted-foreground/80">{s.theme_name}</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -143,7 +146,7 @@ export default function CustomThemeCreator() {
 
       {/* Color rows */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground/80">Colors</label>
+        <label className="text-xs font-medium text-muted-foreground/80">{s.colors}</label>
         <div className="rounded-lg border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
           {colorRows.map((row) => (
             <ColorRow key={row.label} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
@@ -158,7 +161,7 @@ export default function CustomThemeCreator() {
           className="flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors"
         >
           <ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />
-          Background gradient
+          {s.background_gradient}
         </button>
         {showGradient && (
           <div className="pl-4 space-y-3">
@@ -166,7 +169,7 @@ export default function CustomThemeCreator() {
               <ColorRow label="End Color" value={backgroundEndColor} derivedValue={backgroundColor ?? baseVars['--background']} onChange={setBackgroundEndColor} />
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-xs text-muted-foreground/70 w-24 flex-shrink-0">Angle</label>
+              <label className="text-xs text-muted-foreground/70 w-24 flex-shrink-0">{s.angle}</label>
               <input type="range" min={0} max={360} value={backgroundAngle} onChange={(e) => setBackgroundAngle(Number(e.target.value))} className="flex-1 accent-primary h-1.5" />
               <span className="text-xs font-mono text-muted-foreground/50 w-10 text-right">{backgroundAngle}&deg;</span>
             </div>
@@ -176,17 +179,17 @@ export default function CustomThemeCreator() {
 
       {/* Live preview */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground/80">Preview</label>
+        <label className="text-xs font-medium text-muted-foreground/80">{s.preview}</label>
         <ThemePreview vars={derivedVars} />
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
-        <Button variant="accent" accentColor="violet" size="sm" icon={<Paintbrush className="w-3.5 h-3.5" />} onClick={handleSave} disabled={!label.trim()} disabledReason="Enter a theme name">
-          {isDirty ? 'Save & Apply' : 'Applied'}
+        <Button variant="accent" accentColor="violet" size="sm" icon={<Paintbrush className="w-3.5 h-3.5" />} onClick={handleSave} disabled={!label.trim()} disabledReason={s.enter_theme_name}>
+          {isDirty ? s.save_apply : s.applied}
         </Button>
         {existingConfig && (
-          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleReset}>Reset</Button>
+          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleReset}>{s.reset}</Button>
         )}
       </div>
     </div>

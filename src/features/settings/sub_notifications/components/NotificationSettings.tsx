@@ -3,6 +3,7 @@ import { Bell, ShieldAlert, Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SETTINGS_KEY = 'notification_prefs';
 
@@ -22,38 +23,20 @@ const DEFAULT_PREFS: NotificationPrefs = {
 
 const SEVERITY_ROWS: Array<{
   key: keyof NotificationPrefs;
-  label: string;
-  description: string;
+  labelKey: 'severity_critical_label' | 'severity_high_label' | 'severity_medium_label' | 'severity_low_label';
+  descKey: 'severity_critical' | 'severity_high' | 'severity_medium' | 'severity_low';
   color: string;
 }> = [
-  {
-    key: 'healing_critical',
-    label: 'Critical',
-    description: 'Circuit breaker tripped, CLI not found',
-    color: 'text-red-400',
-  },
-  {
-    key: 'healing_high',
-    label: 'High',
-    description: 'Credential errors, session limits, repeated timeouts',
-    color: 'text-orange-400',
-  },
-  {
-    key: 'healing_medium',
-    label: 'Medium',
-    description: 'Rate limits, first timeouts (auto-fixable)',
-    color: 'text-amber-400',
-  },
-  {
-    key: 'healing_low',
-    label: 'Low',
-    description: 'Informational issues',
-    color: 'text-blue-400',
-  },
+  { key: 'healing_critical', labelKey: 'severity_critical_label', descKey: 'severity_critical', color: 'text-red-400' },
+  { key: 'healing_high', labelKey: 'severity_high_label', descKey: 'severity_high', color: 'text-orange-400' },
+  { key: 'healing_medium', labelKey: 'severity_medium_label', descKey: 'severity_medium', color: 'text-amber-400' },
+  { key: 'healing_low', labelKey: 'severity_low_label', descKey: 'severity_low', color: 'text-blue-400' },
 ];
 
 function WeeklyDigestToggle() {
   const digestSetting = useAppSetting('health_digest_enabled', 'true', (v) => v === 'true' || v === 'false');
+  const { t } = useTranslation();
+  const s = t.settings.notifications;
 
   const enabled = digestSetting.value === 'true';
 
@@ -79,13 +62,13 @@ function WeeklyDigestToggle() {
     <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary/60" />
-        <span className="text-sm font-medium text-foreground/80">Weekly Health Digest</span>
+        <span className="text-sm font-medium text-foreground/80">{s.weekly_digest}</span>
       </div>
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-medium text-foreground/80">Agent Health Digest</span>
+          <span className="text-sm font-medium text-foreground/80">{s.digest_title}</span>
           <p className="text-sm text-muted-foreground/80">
-            Weekly notification summarizing health issues across all agents with a total health score
+            {s.digest_description}
           </p>
         </div>
         <AccessibleToggle
@@ -103,6 +86,8 @@ export default function NotificationSettings() {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
+  const { t } = useTranslation();
+  const s = t.settings.notifications;
 
   // Auto-save whenever value changes (debounced to prevent race conditions from rapid toggles)
   useEffect(() => {
@@ -146,8 +131,8 @@ export default function NotificationSettings() {
       <ContentHeader
         icon={<Bell className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Notifications"
-        subtitle="Control which healing alerts trigger notifications"
+        title={s.title}
+        subtitle={s.subtitle}
       />
 
       <ContentBody centered>
@@ -155,20 +140,20 @@ export default function NotificationSettings() {
           <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
             <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary/60" />
-              <span className="text-sm font-medium text-foreground/80">Healing Alert Severity</span>
+              <span className="text-sm font-medium text-foreground/80">{s.healing_severity}</span>
             </div>
 
             <div className="divide-y divide-primary/10">
-              {SEVERITY_ROWS.map(({ key, label, description, color }) => (
+              {SEVERITY_ROWS.map(({ key, labelKey, descKey, color }) => (
                 <div key={key} className="flex items-center justify-between px-4 py-3">
                   <div className="space-y-0.5">
-                    <span className={`text-sm font-medium ${color}`}>{label}</span>
-                    <p className="text-sm text-muted-foreground/80">{description}</p>
+                    <span className={`text-sm font-medium ${color}`}>{s[labelKey]}</span>
+                    <p className="text-sm text-muted-foreground/80">{s[descKey]}</p>
                   </div>
                   <AccessibleToggle
                     checked={prefs[key]}
                     onChange={() => toggle(key)}
-                    label={`${label} notifications`}
+                    label={`${s[labelKey]} notifications`}
                   />
                 </div>
               ))}
@@ -179,7 +164,7 @@ export default function NotificationSettings() {
           <WeeklyDigestToggle />
 
           <p className="text-sm text-muted-foreground/80">
-            Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.
+            {s.notification_hint}
           </p>
         </div>
       </ContentBody>

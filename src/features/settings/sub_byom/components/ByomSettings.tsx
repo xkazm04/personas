@@ -12,17 +12,20 @@ import { ByomAuditLog } from './ByomAuditLog';
 import { ByomApiKeyManager } from './ByomApiKeyManager';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const SECTION_TABS: { id: ByomSection; label: string; icon: typeof Shield }[] = [
-  { id: 'policy', label: 'Providers', icon: Shield },
-  { id: 'keys', label: 'API Keys', icon: KeyRound },
-  { id: 'routing', label: 'Cost Routing', icon: Route },
-  { id: 'compliance', label: 'Compliance', icon: Shield },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText },
+const SECTION_TABS: { id: ByomSection; labelKey: 'tab_providers' | 'tab_keys' | 'tab_routing' | 'tab_compliance' | 'tab_audit'; icon: typeof Shield }[] = [
+  { id: 'policy', labelKey: 'tab_providers', icon: Shield },
+  { id: 'keys', labelKey: 'tab_keys', icon: KeyRound },
+  { id: 'routing', labelKey: 'tab_routing', icon: Route },
+  { id: 'compliance', labelKey: 'tab_compliance', icon: Shield },
+  { id: 'audit', labelKey: 'tab_audit', icon: ScrollText },
 ];
 
 export default function ByomSettings() {
   const bm = useByomSettings();
+  const { t } = useTranslation();
+  const s = t.settings.byom;
 
   const guardCallbacks = useMemo(() => ({
     onSave: () => bm.handleSave(),
@@ -38,7 +41,7 @@ export default function ByomSettings() {
           icon={<Network className="w-5 h-5 text-violet-400" />}
           iconColor="violet"
           title="BYOM"
-          subtitle="Loading..."
+          subtitle={s.loading}
         />
       </ContentBox>
     );
@@ -49,23 +52,23 @@ export default function ByomSettings() {
       <ContentHeader
         icon={<Network className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Bring Your Own Model"
-        subtitle="Configure approved providers, compliance restrictions, and cost-optimized routing"
+        title={s.title}
+        subtitle={s.subtitle}
         actions={
           <div className="flex items-center gap-2">
             {bm.isDirty && (
-              <span className="text-xs text-amber-400/80 mr-1">Unsaved changes</span>
+              <span className="text-xs text-amber-400/80 mr-1">{s.unsaved_changes}</span>
             )}
             <button
               onClick={bm.handleReset}
               className="px-3 py-1.5 text-sm rounded-xl border border-primary/10 text-muted-foreground hover:bg-secondary/50 transition-colors"
             >
-              Reset
+              {s.reset}
             </button>
             <button
               onClick={bm.handleSave}
               disabled={bm.hasBlockingErrors}
-              title={bm.hasBlockingErrors ? 'Fix all errors before saving' : undefined}
+              title={bm.hasBlockingErrors ? s.fix_errors : undefined}
               className={`px-3 py-1.5 text-sm rounded-xl border transition-colors ${
                 bm.hasBlockingErrors
                   ? 'bg-red-500/15 text-red-400/60 border-red-500/30 cursor-not-allowed'
@@ -74,7 +77,7 @@ export default function ByomSettings() {
                   : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
               }`}
             >
-              Save Policy
+              {s.save_policy}
             </button>
           </div>
         }
@@ -87,11 +90,9 @@ export default function ByomSettings() {
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-red-300">BYOM Policy Corrupted</h3>
+                <h3 className="text-sm font-medium text-red-300">{s.policy_corrupted}</h3>
                 <p className="text-sm text-red-300/80 mt-1">
-                  The stored policy JSON could not be parsed. All provider restrictions are
-                  currently inactive and executions are blocked. Reset the policy to restore
-                  normal operation.
+                  {s.policy_corrupted_desc}
                 </p>
                 <p className="text-xs text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
               </div>
@@ -99,7 +100,7 @@ export default function ByomSettings() {
                 onClick={bm.handleReset}
                 className="shrink-0 px-3 py-1.5 text-sm rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
-                Reset Policy
+                {s.reset_policy}
               </button>
             </div>
           )}
@@ -108,9 +109,9 @@ export default function ByomSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-foreground">BYOM Policy Enforcement</h3>
+                <h3 className="text-sm font-medium text-foreground">{s.policy_enforcement}</h3>
                 <p className="text-sm text-muted-foreground/70 mt-0.5">
-                  When enabled, provider selection follows your configured rules
+                  {s.policy_enforcement_desc}
                 </p>
               </div>
               <AccessibleToggle
@@ -142,7 +143,7 @@ export default function ByomSettings() {
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
                   <tab.icon className="w-3.5 h-3.5" />
-                  {tab.label}
+                  {s[tab.labelKey]}
                 </span>
               </button>
             ))}

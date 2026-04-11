@@ -11,6 +11,7 @@ import {
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialImportResult } from '@/api/system/dataPortability';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 type ConflictAction = 'skip' | 'replace' | 'keep_both';
@@ -49,6 +50,8 @@ export function CredentialPortability({
   onCredImportWithResolutions,
 }: CredentialPortabilityProps) {
   const [resolutions, setResolutions] = useState<Record<string, ConflictAction>>({});
+  const { t } = useTranslation();
+  const s = t.settings.portability;
   const conflicts = credImportResult?.conflicts ?? [];
   const hasConflicts = conflicts.length > 0;
 
@@ -66,12 +69,11 @@ export function CredentialPortability({
 
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title="Credential Vault" />
+      <SectionHeading title={s.credential_vault} />
       <div className="flex items-start gap-2 text-sm text-muted-foreground/70">
         <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400/70" />
         <p>
-          Workspace exports do not include credential secrets. Use this section to
-          export and import your vault with password-protected AES-256 encryption.
+          {s.credential_vault_hint}
         </p>
       </div>
 
@@ -87,7 +89,7 @@ export function CredentialPortability({
                 transition-colors disabled:opacity-50"
             >
               {credExportStatus === 'success' ? <Check className="w-4 h-4" /> : <KeyRound className="w-4 h-4" />}
-              {credExportStatus === 'success' ? 'Exported!' : 'Export Credentials'}
+              {credExportStatus === 'success' ? s.exported : s.export_credentials}
             </button>
           ) : (
             <div className="flex items-center gap-2">
@@ -124,7 +126,7 @@ export function CredentialPortability({
                 transition-colors disabled:opacity-50"
             >
               {credImportStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
-              {credImportStatus === 'success' ? 'Imported!' : 'Import Credentials'}
+              {credImportStatus === 'success' ? s.imported : s.import_credentials}
             </button>
           ) : (
             <div className="flex items-center gap-2">
@@ -197,7 +199,7 @@ export function CredentialPortability({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Upload className="w-4 h-4" />
-            Import with Resolutions
+            {s.import_with_resolutions}
           </button>
         </div>
       )}
@@ -207,7 +209,7 @@ export function CredentialPortability({
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
             <PackageCheck className="w-4 h-4" />
-            Credential Import Complete
+            {s.cred_import_complete}
           </div>
           <p className="text-sm text-muted-foreground/80">
             {credImportResult.created} imported

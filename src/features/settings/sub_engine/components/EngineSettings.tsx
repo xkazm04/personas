@@ -5,6 +5,7 @@ import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilitie
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
 import { AmbientContextPanel } from '@/features/settings/components/AmbientContextPanel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function EngineSettings() {
   const {
@@ -14,6 +15,8 @@ export default function EngineSettings() {
     toggle,
     resetToDefaults,
   } = useEngineCapabilities();
+  const { t } = useTranslation();
+  const s = t.settings.engine;
 
   if (!loaded) {
     return (
@@ -21,12 +24,12 @@ export default function EngineSettings() {
         <ContentHeader
           icon={<Cpu className="w-5 h-5 text-cyan-400" />}
           iconColor="cyan"
-          title="Engine"
-          subtitle="Loading engine capabilities..."
+          title={s.title}
+          subtitle={s.loading_capabilities}
         />
         <ContentBody centered>
           <div className="h-40 flex items-center justify-center text-muted-foreground/60 text-sm">
-            Detecting installed providers...
+            {s.detecting_providers}
           </div>
         </ContentBody>
       </ContentBox>
@@ -38,8 +41,8 @@ export default function EngineSettings() {
       <ContentHeader
         icon={<Cpu className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="Engine"
-        subtitle="Configure which CLI providers handle each operation"
+        title={s.title}
+        subtitle={s.subtitle}
       />
 
       <ContentBody centered>
@@ -47,14 +50,14 @@ export default function EngineSettings() {
           {/* Capability matrix */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading
-              title="Operation Capability Map"
+              title={s.capability_map}
               action={
                 <button
                   onClick={resetToDefaults}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset to defaults
+                  {s.reset_defaults}
                 </button>
               }
             />
@@ -65,7 +68,7 @@ export default function EngineSettings() {
                 <thead>
                   <tr className="border-b border-primary/10">
                     <th className="text-left py-2 pr-4 text-muted-foreground/70 font-medium w-[45%]">
-                      Operation
+                      {s.operation}
                     </th>
                     {PROVIDERS.map((p) => {
                       const installed = installedProviders.has(p.id);
@@ -80,7 +83,7 @@ export default function EngineSettings() {
                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                                 : 'bg-rose-500/10 text-rose-400/60 border border-rose-500/20'
                             }`}>
-                              {installed ? 'installed' : 'missing'}
+                              {installed ? s.provider_installed : s.provider_missing}
                             </span>
                           </div>
                         </th>
@@ -107,25 +110,25 @@ export default function EngineSettings() {
 
           {/* Legend */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-2">
-            <SectionHeading title="Legend" />
+            <SectionHeading title={s.legend} />
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground/70">
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                   <Check className="w-2.5 h-2.5 text-emerald-400" />
                 </span>
-                Enabled
+                {s.legend_enabled}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
                   <Lock className="w-2.5 h-2.5 text-rose-400/40" />
                 </span>
-                Unsupported (locked)
+                {s.legend_unsupported}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-secondary/30 border border-primary/10 flex items-center justify-center">
                   <Minus className="w-2.5 h-2.5 text-muted-foreground/30" />
                 </span>
-                Not installed
+                {s.legend_not_installed}
               </span>
             </div>
           </div>
@@ -139,12 +142,9 @@ export default function EngineSettings() {
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground/80">
-              <p className="font-medium text-amber-400/90 mb-1">Defaults from Integration Tests</p>
+              <p className="font-medium text-amber-400/90 mb-1">{s.defaults_heading}</p>
               <p>
-                The default map is derived from Round 9 business-level integration tests that validate
-                each provider against the exact JSON schemas the backend parses. Enabling a provider for
-                an operation it failed may cause unparseable responses. Claude Code is the only provider
-                that passed all operations at 100%.
+                {s.defaults_description}
               </p>
             </div>
           </div>

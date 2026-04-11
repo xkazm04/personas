@@ -5,6 +5,7 @@ import { getQualityGateConfig, resetQualityGateConfig } from '@/api/system/setti
 import type { QualityGateConfig } from '@/lib/bindings/QualityGateConfig';
 import type { QualityGateRule } from '@/lib/bindings/QualityGateRule';
 import type { FilterAction } from '@/lib/bindings/FilterAction';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ACTION_LABELS: Record<FilterAction, { label: string; color: string; icon: typeof Ban }> = {
   reject: { label: 'Reject', color: 'text-red-400', icon: Ban },
@@ -31,12 +32,13 @@ function RuleRow({ rule }: { rule: QualityGateRule }) {
   );
 }
 
-function RuleSection({ title, icon: Icon, description, rules, categories }: {
+function RuleSection({ title, icon: Icon, description, rules, categories, rejectedLabel }: {
   title: string;
   icon: typeof Brain;
   description: string;
   rules: QualityGateRule[];
   categories?: string[];
+  rejectedLabel?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -51,7 +53,7 @@ function RuleSection({ title, icon: Icon, description, rules, categories }: {
 
       {categories && categories.length > 0 && (
         <div className="pl-[22px] space-y-1">
-          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Rejected categories</span>
+          <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">{rejectedLabel}</span>
           <div className="flex gap-1.5 flex-wrap">
             {categories.map((cat) => (
               <span key={cat} className="text-[10px] font-mono text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
@@ -76,6 +78,8 @@ export default function QualityGateSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const { t, tx } = useTranslation();
+  const s = t.settings.quality_gates;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,11 +119,11 @@ export default function QualityGateSettings() {
     <ContentBox>
       <ContentHeader
         icon={<Shield className="w-5 h-5 text-violet-400" />}
-        title="Quality Gates"
+        title={s.title}
         subtitle={
-          loading ? 'Loading...'
-            : error ? 'Error loading config'
-            : `${totalRules} active filter rules`
+          loading ? s.loading
+            : error ? s.error_loading
+            : tx(s.active_rules, { count: totalRules })
         }
       />
       <ContentBody>
@@ -130,33 +134,30 @@ export default function QualityGateSettings() {
         )}
 
         {loading && !config && (
-          <div className="text-xs text-muted-foreground/60 py-8 text-center">Loading quality gate configuration...</div>
+          <div className="text-xs text-muted-foreground/60 py-8 text-center">{s.loading_config}</div>
         )}
 
         {config && (
           <div className="space-y-6">
             <div className="text-[11px] text-muted-foreground/70 bg-secondary/30 rounded p-3 leading-relaxed">
-              Quality gates filter AI-generated memories and reviews during execution dispatch.
-              Patterns are matched as substrings against the combined title and content of each
-              submission. When a pattern matches, the configured action is applied. These rules
-              prevent operational noise (credential errors, stack traces, empty workspace reports)
-              from polluting your knowledge base.
+              {s.description}
             </div>
 
             <RuleSection
-              title="Memory Filters"
+              title={s.memory_filters}
               icon={Brain}
-              description="Applied to AgentMemory submissions. Blocks operational failures and credential leaks from being stored as persona memories."
+              description={s.memory_filters_desc}
               rules={config.memoryRules}
               categories={config.memoryRejectCategories}
+              rejectedLabel={s.rejected_categories}
             />
 
             <div className="border-t border-border/30" />
 
             <RuleSection
-              title="Review Filters"
+              title={s.review_filters}
               icon={FileSearch}
-              description="Applied to ManualReview submissions. Filters infrastructure errors so only genuine business decisions reach the review queue."
+              description={s.review_filters_desc}
               rules={config.reviewRules}
             />
 
@@ -164,7 +165,7 @@ export default function QualityGateSettings() {
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-[11px] text-muted-foreground/60">
-                Rules are loaded from the database on each dispatch. Changes take effect immediately.
+                {s.rules_hint}
               </span>
               <button
                 onClick={handleReset}
@@ -177,12 +178,12 @@ export default function QualityGateSettings() {
                 {confirmReset ? (
                   <>
                     <AlertTriangle size={12} />
-                    Confirm reset?
+                    {s.confirm_reset}
                   </>
                 ) : (
                   <>
                     <RotateCcw size={12} />
-                    Reset to defaults
+                    {s.reset_defaults}
                   </>
                 )}
               </button>

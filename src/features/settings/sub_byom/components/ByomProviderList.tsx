@@ -4,6 +4,7 @@ import { testProviderConnection } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ProviderSparkline } from './ProviderSparkline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ByomProviderListProps {
   policy: ByomPolicy;
@@ -44,6 +45,8 @@ interface ConnectionTestResult {
 export function ByomProviderList({ policy, usageStats, usageTimeseries, toggleProvider }: ByomProviderListProps) {
   const trendsByEngine = useTimeseriesByEngine(usageTimeseries);
   const [testResults, setTestResults] = useState<Record<string, ConnectionTestResult>>({});
+  const { t } = useTranslation();
+  const s = t.settings.byom;
 
   const handleTestConnection = useCallback(async (providerId: string) => {
     setTestResults((prev) => ({ ...prev, [providerId]: { state: 'testing' } }));
@@ -71,9 +74,9 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
     <div className="space-y-4">
       {/* Allowed providers */}
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <SectionHeading title="Allowed Providers" />
+        <SectionHeading title={s.allowed_providers} />
         <p className="text-sm text-muted-foreground/60">
-          Select which providers your organization approves. Leave empty to allow all.
+          {s.allowed_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
           {PROVIDER_OPTIONS.map((prov) => {
@@ -90,7 +93,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                   }`}
                 >
                   {prov.label}
-                  {isAllowed && <span className="ml-2 text-emerald-400">Allowed</span>}
+                  {isAllowed && <span className="ml-2 text-emerald-400">{s.allowed}</span>}
                 </button>
                 <TestConnectionButton
                   providerId={prov.id}
@@ -105,9 +108,9 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
 
       {/* Blocked providers */}
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <SectionHeading title="Blocked Providers" />
+        <SectionHeading title={s.blocked_providers} />
         <p className="text-sm text-muted-foreground/60">
-          Explicitly block specific providers. Takes precedence over allowed list.
+          {s.blocked_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
           {PROVIDER_OPTIONS.map((prov) => {
@@ -123,7 +126,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                 }`}
               >
                 {prov.label}
-                {isBlocked && <span className="ml-2 text-red-400">Blocked</span>}
+                {isBlocked && <span className="ml-2 text-red-400">{s.blocked}</span>}
               </button>
             );
           })}
@@ -134,8 +137,8 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       {usageStats.length > 0 && (
         <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
           <div className="flex items-baseline gap-2">
-            <SectionHeading title="Provider Usage" />
-            <span className="text-xs text-muted-foreground/40">30-day trends</span>
+            <SectionHeading title={s.provider_usage} />
+            <span className="text-xs text-muted-foreground/40">{s.usage_trends}</span>
           </div>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {usageStats.map((stat) => {
@@ -147,7 +150,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">Executions</div>
+                      <div className="text-xs text-muted-foreground/50">{s.executions}</div>
                       <div className="text-sm font-medium text-foreground">{stat.execution_count}</div>
                       <ProviderSparkline
                         data={trends?.executions ?? []}
@@ -156,7 +159,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">Cost</div>
+                      <div className="text-xs text-muted-foreground/50">{s.cost}</div>
                       <div className="text-sm font-medium text-foreground">${stat.total_cost_usd.toFixed(4)}</div>
                       <ProviderSparkline
                         data={trends?.cost ?? []}
@@ -165,7 +168,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">Avg Duration</div>
+                      <div className="text-xs text-muted-foreground/50">{s.avg_duration}</div>
                       <div className="text-sm font-medium text-foreground">{Math.round(stat.avg_duration_ms / 1000)}s</div>
                       <ProviderSparkline
                         data={trends?.duration ?? []}

@@ -4,6 +4,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import { hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function AdminSettings() {
   const tourActive = useSystemStore((s) => s.tourActive);
@@ -19,6 +20,8 @@ export default function AdminSettings() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [consentStatus, setConsentStatus] = useState(hasUserConsented);
   const [confirmConsentReset, setConfirmConsentReset] = useState(false);
+  const { t } = useTranslation();
+  const s = t.settings.admin;
 
   const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
 
@@ -43,12 +46,12 @@ export default function AdminSettings() {
   };
 
   const statusLabel = tourActive
-    ? 'Active'
+    ? s.tour_active
     : tourCompleted
-      ? 'Completed'
+      ? s.tour_completed
       : tourDismissed
-        ? 'Dismissed'
-        : 'Not started';
+        ? s.tour_dismissed
+        : s.tour_not_started;
 
   const statusColor = tourActive
     ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
@@ -63,8 +66,8 @@ export default function AdminSettings() {
       <ContentHeader
         icon={<Shield className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Admin"
-        subtitle="Development tools and testing utilities"
+        title={s.title}
+        subtitle={s.subtitle}
       />
       <ContentBody>
         <div className="max-w-2xl 2xl:max-w-4xl 3xl:max-w-5xl 4xl:max-w-6xl mx-auto space-y-6 py-2">
@@ -75,8 +78,8 @@ export default function AdminSettings() {
                 <Map className="w-4.5 h-4.5 text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground/90">Guided Tour</h3>
-                <p className="text-sm text-muted-foreground/50">Force-start or reset the onboarding tour for e2e testing</p>
+                <h3 className="text-sm font-semibold text-foreground/90">{s.guided_tour}</h3>
+                <p className="text-sm text-muted-foreground/50">{s.tour_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${statusColor}`}>
                 {statusLabel}
@@ -87,13 +90,13 @@ export default function AdminSettings() {
               {/* Tour state summary */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Progress</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{s.progress}</p>
                   <p className="text-sm font-medium text-foreground/80">
-                    {completedCount} / {TOUR_STEPS.length} steps
+                    {completedCount} / {TOUR_STEPS.length} {s.steps}
                   </p>
                 </div>
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Current Step</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{s.current_step}</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
                   </p>
@@ -102,7 +105,7 @@ export default function AdminSettings() {
 
               {/* Step completion detail */}
               <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">Step Status</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">{s.step_status}</p>
                 <div className="space-y-1.5">
                   {TOUR_STEPS.map((step, i) => (
                     <div key={step.id} className="flex items-center gap-2">
@@ -139,7 +142,7 @@ export default function AdminSettings() {
                     hover:bg-violet-500/25 transition-colors"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Force Start Tour
+                  {s.force_start}
                 </button>
 
                 <button
@@ -153,12 +156,12 @@ export default function AdminSettings() {
                   {confirmReset ? (
                     <>
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Confirm Reset
+                      {s.confirm_reset}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-3.5 h-3.5" />
-                      Reset State
+                      {s.reset_state}
                     </>
                   )}
                 </button>
@@ -172,7 +175,7 @@ export default function AdminSettings() {
                         hover:bg-emerald-500/20 transition-colors"
                     >
                       <Check className="w-3.5 h-3.5" />
-                      Force Complete
+                      {s.force_complete}
                     </button>
                     <button
                       onClick={() => dismissTour()}
@@ -181,7 +184,7 @@ export default function AdminSettings() {
                         hover:bg-amber-500/20 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Force Dismiss
+                      {s.force_dismiss}
                     </button>
                   </>
                 )}
@@ -195,21 +198,21 @@ export default function AdminSettings() {
                 <ScrollText className="w-4.5 h-4.5 text-cyan-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground/90">User Consent</h3>
-                <p className="text-sm text-muted-foreground/50">Reset the first-use consent modal to test onboarding</p>
+                <h3 className="text-sm font-semibold text-foreground/90">{s.user_consent}</h3>
+                <p className="text-sm text-muted-foreground/50">{s.consent_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${
                 consentStatus
                   ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
                   : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
               }`}>
-                {consentStatus ? 'Accepted' : 'Not accepted'}
+                {consentStatus ? s.consent_accepted : s.consent_not_accepted}
               </span>
             </div>
 
             <div className="px-5 py-4 space-y-4">
               <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Storage Key</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{s.storage_key}</p>
                 <p className="text-sm font-mono text-foreground/80">__personas_user_consent_accepted</p>
               </div>
 
@@ -234,12 +237,12 @@ export default function AdminSettings() {
                   {confirmConsentReset ? (
                     <>
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Confirm Reset
+                      {s.confirm_reset}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-3.5 h-3.5" />
-                      Reset Consent
+                      {s.reset_consent}
                     </>
                   )}
                 </button>
@@ -252,7 +255,7 @@ export default function AdminSettings() {
                       hover:bg-amber-500/20 transition-colors"
                   >
                     <Play className="w-3.5 h-3.5" />
-                    Reload to Show Modal
+                    {s.reload_modal}
                   </button>
                 )}
               </div>

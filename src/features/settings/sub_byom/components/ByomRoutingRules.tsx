@@ -2,6 +2,7 @@ import { Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, AlertCircle, Info
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { RoutingRule, TaskComplexity } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, COMPLEXITY_OPTIONS, type PolicyWarning, type PolicyWarningSeverity } from '../libs/byomHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
   error:   { border: 'border-red-500/30',   text: 'text-red-400/90',   icon: AlertCircle },
@@ -18,28 +19,30 @@ interface ByomRoutingRulesProps {
 }
 
 export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }: ByomRoutingRulesProps) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-4">
         <SectionHeading
-          title="Cost-Optimized Routing Rules"
+          title={s.routing_title}
           action={
             <button
               onClick={onAdd}
               className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add Rule
+              {s.add_rule}
             </button>
           }
         />
         <p className="text-sm text-muted-foreground/60 mt-1">
-          Route tasks to specific providers/models based on complexity level
+          {s.routing_hint}
         </p>
 
         {rules.length === 0 ? (
           <p className="text-sm text-muted-foreground/50 text-center py-6">
-            No routing rules configured. Add rules to optimize cost by task complexity.
+            {s.routing_empty}
           </p>
         ) : (
           <div className="space-y-3">
@@ -66,7 +69,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         value={rule.name}
                         onChange={(e) => onUpdate(idx, { name: e.target.value })}
                         className="text-sm font-medium bg-transparent border-none outline-none text-foreground"
-                        placeholder="Rule name"
+                        placeholder={s.rule_name_placeholder}
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -87,7 +90,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
 
                   <div className="grid grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">Complexity</label>
+                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.complexity}</label>
                       <select
                         value={rule.task_complexity}
                         onChange={(e) => onUpdate(idx, { task_complexity: e.target.value as TaskComplexity })}
@@ -99,7 +102,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">Provider</label>
+                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.provider}</label>
                       <select
                         value={rule.provider}
                         onChange={(e) => onUpdate(idx, { provider: e.target.value })}
@@ -113,7 +116,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">Model (optional)</label>
+                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.model_optional}</label>
                       <input
                         value={rule.model || ''}
                         onChange={(e) => onUpdate(idx, { model: e.target.value || null })}

@@ -5,6 +5,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SOURCE_ICON: Record<ConfigSource, typeof Globe> = {
   agent: User,
@@ -61,6 +62,8 @@ const FIELDS: { key: keyof EffectiveModelConfig; label: string; mask?: boolean }
 export default function ConfigResolutionPanel() {
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
+  const { t } = useTranslation();
+  const s = t.settings.config;
 
   const load = async () => {
     setGlobalLoading(true);
@@ -96,9 +99,9 @@ export default function ConfigResolutionPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary/60" />
-          <h2 className="text-sm font-semibold text-foreground/90">Config Resolution</h2>
+          <h2 className="text-sm font-semibold text-foreground/90">{s.title}</h2>
           <span className="text-[10px] text-muted-foreground/50">
-            Shows which tier (agent / workspace / global) supplies each setting per persona
+            {s.subtitle}
           </span>
         </div>
         <button
@@ -108,17 +111,17 @@ export default function ConfigResolutionPanel() {
           className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {s.refresh}
         </button>
       </div>
 
       {/* Legend */}
       <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60">
-        <span className="flex items-center gap-1"><User className="w-2.5 h-2.5 text-violet-400" /> Agent-level</span>
-        <span className="flex items-center gap-1"><FolderOpen className="w-2.5 h-2.5 text-blue-400" /> Workspace</span>
-        <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-emerald-400" /> Global</span>
-        <span className="flex items-center gap-1"><Minus className="w-2.5 h-2.5 text-muted-foreground/50" /> Not set</span>
-        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /> Overrides inherited</span>
+        <span className="flex items-center gap-1"><User className="w-2.5 h-2.5 text-violet-400" /> {s.agent_level}</span>
+        <span className="flex items-center gap-1"><FolderOpen className="w-2.5 h-2.5 text-blue-400" /> {s.workspace_level}</span>
+        <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5 text-emerald-400" /> {s.global_level}</span>
+        <span className="flex items-center gap-1"><Minus className="w-2.5 h-2.5 text-muted-foreground/50" /> {s.not_set}</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /> {s.overrides_inherited}</span>
       </div>
 
       {/* Table */}
@@ -126,8 +129,8 @@ export default function ConfigResolutionPanel() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
-              <th className="text-left px-3 py-2 font-medium text-muted-foreground/70">Agent</th>
-              <th className="text-left px-3 py-2 font-medium text-muted-foreground/70">Workspace</th>
+              <th className="text-left px-3 py-2 font-medium text-muted-foreground/70">{s.agent}</th>
+              <th className="text-left px-3 py-2 font-medium text-muted-foreground/70">{s.workspace_level}</th>
               {FIELDS.map((f) => (
                 <th key={f.key} className="text-left px-3 py-2 font-medium text-muted-foreground/70">{f.label}</th>
               ))}
@@ -137,14 +140,14 @@ export default function ConfigResolutionPanel() {
             {globalLoading && rows.length === 0 && (
               <tr>
                 <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-muted-foreground/40">
-                  Loading agents...
+                  {s.loading_agents}
                 </td>
               </tr>
             )}
             {!globalLoading && rows.length === 0 && (
               <tr>
                 <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-muted-foreground/40">
-                  No agents found
+                  {s.no_agents}
                 </td>
               </tr>
             )}

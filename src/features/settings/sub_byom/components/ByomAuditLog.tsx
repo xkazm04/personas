@@ -1,35 +1,38 @@
 import type { ProviderAuditEntry } from '@/api/system/byom';
 import { ENGINE_LABELS } from '../libs/byomHelpers';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ByomAuditLogProps {
   auditLog: ProviderAuditEntry[];
 }
 
 export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <SectionHeading title="Provider Audit Log" />
+        <SectionHeading title={s.audit_title} />
         <p className="text-sm text-muted-foreground/60">
-          Compliance trail showing which provider handled each execution
+          {s.audit_hint}
         </p>
 
         {auditLog.length === 0 ? (
           <p className="text-sm text-muted-foreground/50 text-center py-6">
-            No audit entries yet. Entries are recorded automatically for every execution.
+            {s.audit_empty}
           </p>
         ) : (
           <div className="border border-primary/10 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">Provider</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">Model</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">Persona</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">Status</th>
-                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">Cost</th>
-                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">Time</th>
+                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_provider}</th>
+                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_model}</th>
+                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_persona}</th>
+                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_status}</th>
+                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">{s.audit_cost}</th>
+                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">{s.audit_time}</th>
                 </tr>
               </thead>
               <tbody>
@@ -42,7 +45,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
                         </span>
                         {entry.was_failover && (
                           <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                            failover
+                            {s.failover}
                           </span>
                         )}
                       </div>

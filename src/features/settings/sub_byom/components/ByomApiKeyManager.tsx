@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { getAppSetting, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Definition of a provider API key entry that maps to a backend settings_key. */
 interface ProviderKeyDef {
@@ -61,6 +62,8 @@ function maskValue(value: string, isUrl?: boolean): string {
 export function ByomApiKeyManager() {
   const [entries, setEntries] = useState<KeyEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
+  const s = t.settings.byom;
 
   // Load all key values from settings
   useEffect(() => {
@@ -148,9 +151,9 @@ export function ByomApiKeyManager() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <SectionHeading title="API Key Management" />
+        <SectionHeading title={s.api_key_title} />
         <p className="text-sm text-muted-foreground/60">
-          Configure API keys and endpoints for custom model providers. Keys are stored encrypted in the local database.
+          {s.api_key_hint}
         </p>
 
         <div className="space-y-3">
@@ -198,6 +201,8 @@ function KeyEntryRow({
 }) {
   const hasValue = !!entry.savedValue;
   const isDirty = entry.value !== entry.savedValue;
+  const { t } = useTranslation();
+  const s = t.settings.byom;
 
   return (
     <div className="rounded-lg border border-primary/10 bg-secondary/20 p-3 space-y-2">
@@ -221,7 +226,7 @@ function KeyEntryRow({
                   Testing
                 </span>
               ) : (
-                'Verify'
+                s.verify
               )}
             </button>
           )}
@@ -229,7 +234,7 @@ function KeyEntryRow({
             <button
               onClick={onDelete}
               className="text-xs p-1.5 rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
-              title="Remove key"
+              title={s.remove_key}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -310,6 +315,8 @@ function KeyEntryRow({
 // =============================================================================
 
 function ConnectionBadge({ state }: { state: ConnectionState }) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
   if (state === 'idle') return null;
 
   if (state === 'testing') {
@@ -324,7 +331,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     return (
       <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-        Stored
+        {s.stored}
       </span>
     );
   }
@@ -332,7 +339,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
   return (
     <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
       <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-      Error
+      {s.error}
     </span>
   );
 }

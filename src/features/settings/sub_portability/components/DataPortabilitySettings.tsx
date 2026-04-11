@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useDataPortability } from '../libs/useDataPortability';
 import { ExportSection } from './ExportSection';
 import { CredentialPortability } from './CredentialPortability';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -17,42 +18,44 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 export default function DataPortabilitySettings() {
   const dp = useDataPortability();
+  const { t } = useTranslation();
+  const s = t.settings.portability;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<HardDriveDownload className="w-5 h-5 text-emerald-400" />}
         iconColor="emerald"
-        title="Data Portability"
-        subtitle="Export, import, and migrate your workspace data"
+        title={s.title}
+        subtitle={s.subtitle}
       />
 
       <ContentBody centered>
         <div className="space-y-6">
           {/* Workspace overview */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Workspace Overview" />
+            <SectionHeading title={s.workspace_overview} />
 
             {dp.statsStatus === 'loading' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
                 <LoadingSpinner />
-                Loading workspace stats...
+                {s.loading_stats}
               </div>
             )}
 
             {dp.statsStatus === 'error' && (
-              <p className="text-sm text-red-400">Failed to load workspace statistics.</p>
+              <p className="text-sm text-red-400">{s.stats_error}</p>
             )}
 
             {dp.stats && (
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-                <StatCard label="Personas" value={dp.stats.persona_count} />
-                <StatCard label="Teams" value={dp.stats.team_count} />
-                <StatCard label="Tools" value={dp.stats.tool_count} />
-                <StatCard label="Groups" value={dp.stats.group_count} />
-                <StatCard label="Credentials" value={dp.stats.credential_count} />
-                <StatCard label="Memories" value={dp.stats.memory_count} />
-                <StatCard label="Test Suites" value={dp.stats.test_suite_count} />
+                <StatCard label={s.personas} value={dp.stats.persona_count} />
+                <StatCard label={s.teams} value={dp.stats.team_count} />
+                <StatCard label={s.tools} value={dp.stats.tool_count} />
+                <StatCard label={s.groups} value={dp.stats.group_count} />
+                <StatCard label={s.credentials} value={dp.stats.credential_count} />
+                <StatCard label={s.memories} value={dp.stats.memory_count} />
+                <StatCard label={s.test_suites} value={dp.stats.test_suite_count} />
               </div>
             )}
           </div>
@@ -90,7 +93,7 @@ export default function DataPortabilitySettings() {
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-muted-foreground/80">
-                <p className="font-medium text-red-400/90 mb-1">Error</p>
+                <p className="font-medium text-red-400/90 mb-1">{s.error_label}</p>
                 <p>{dp.errorMsg}</p>
               </div>
             </div>
