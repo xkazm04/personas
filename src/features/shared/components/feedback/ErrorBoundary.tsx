@@ -3,6 +3,7 @@ import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } fro
 import { useState } from 'react';
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("error-boundary");
 
@@ -77,6 +78,7 @@ function ErrorFallback({
   errorInfo: string | null;
   onReset: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -120,11 +122,11 @@ function ErrorFallback({
             <div>
               <p className="typo-heading text-foreground">
                 {name
-                  ? `Something unexpected happened in ${name}`
-                  : 'Something unexpected happened'}
+                  ? tx(t.common.error_boundary_title_named, { name })
+                  : t.common.error_boundary_title}
               </p>
               <p className="typo-body text-foreground mt-0.5">
-                Don't worry -- your data is safe. You can try again or head back to the dashboard.
+                {t.common.error_boundary_subtitle}
               </p>
             </div>
           </div>
@@ -136,14 +138,14 @@ function ErrorFallback({
               className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Try Again
+              {t.common.try_again}
             </button>
             <button
               onClick={handleGoHome}
               className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
             >
               <Home className="w-3.5 h-3.5" />
-              Go to Dashboard
+              {t.common.go_to_dashboard}
             </button>
           </div>
 
@@ -153,7 +155,7 @@ function ErrorFallback({
             className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors mb-3"
           >
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            {copied ? 'Copied to clipboard' : 'Copy report for support'}
+            {copied ? t.common.copied_to_clipboard : t.common.copy_report}
           </button>
 
           {/* Details toggle -- hidden by default, labeled for developers */}
@@ -162,13 +164,13 @@ function ErrorFallback({
             className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
           >
             {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            For developers
+            {t.common.for_developers}
           </button>
 
           {showDetails && (
             <div className="mt-2 p-3 rounded-lg bg-background/60 border border-primary/10 overflow-hidden">
               <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
-                {error?.stack || 'No stack trace available'}
+                {error?.stack || t.common.no_stack_trace}
                 {errorInfo && (
                   <>
                     {'\n\n--- Component Stack ---\n'}

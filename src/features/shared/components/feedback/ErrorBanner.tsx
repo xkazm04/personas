@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw, ChevronLeft } from 'lucide-react';
 import { InlineErrorBanner } from './InlineErrorBanner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ErrorBannerProps {
   message: string;
@@ -17,6 +18,8 @@ export function ErrorBanner({
   onRetry,
   onBack,
 }: ErrorBannerProps) {
+  const { t } = useTranslation();
+
   if (variant === 'panel') {
     return (
       <div
@@ -36,7 +39,7 @@ export function ErrorBanner({
               className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              Go back
+              {t.common.go_back}
             </button>
           )}
           {onRetry && (
@@ -46,7 +49,7 @@ export function ErrorBanner({
               className="flex items-center gap-1.5 px-3 py-1.5 typo-heading text-white bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Retry
+              {t.common.retry}
             </button>
           )}
         </div>

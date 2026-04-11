@@ -1,6 +1,7 @@
 import { Save, Trash2, ArrowLeft } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { UnsavedGuardAction } from '@/hooks/utility/interaction/useUnsavedGuard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UnsavedChangesModalProps {
   isOpen: boolean;
@@ -17,17 +18,22 @@ export function UnsavedChangesModal({
   changedSections = [],
   isSaving = false,
 }: UnsavedChangesModalProps) {
+  const { t } = useTranslation();
+
   return (
     <BaseModal isOpen={isOpen} onClose={() => onAction('stay')} titleId="unsaved-changes-title" size="sm">
       <div className="p-6 space-y-4">
         <h2 id="unsaved-changes-title" className="typo-heading-lg text-foreground">
-          Save changes before leaving?
+          {t.common.unsaved_title}
         </h2>
 
         <p className="typo-body text-foreground leading-relaxed">
           {changedSections.length > 0
-            ? <>You have unsaved changes in <span className="text-foreground/90 font-medium">{changedSections.join(', ')}</span>. These will be lost if you leave without saving.</>
-            : 'You have unsaved changes that will be lost if you leave without saving.'}
+            ? (() => {
+                const parts = t.common.unsaved_body_sections.split('{sections}');
+                return <>{parts[0]}<span className="text-foreground/90 font-medium">{changedSections.join(', ')}</span>{parts[1]}</>;
+              })()
+            : t.common.unsaved_body}
         </p>
 
         <div className="flex flex-col gap-2 pt-2">
@@ -38,7 +44,7 @@ export function UnsavedChangesModal({
             data-testid="unsaved-guard-save"
           >
             <Save className="w-4 h-4" />
-            {isSaving ? 'Saving\u2026' : 'Save and continue'}
+            {isSaving ? t.common.saving : t.common.save_and_continue}
           </button>
 
           <button
@@ -48,7 +54,7 @@ export function UnsavedChangesModal({
             data-testid="unsaved-guard-discard"
           >
             <Trash2 className="w-4 h-4" />
-            Discard changes
+            {t.common.discard_changes}
           </button>
 
           <button
@@ -58,7 +64,7 @@ export function UnsavedChangesModal({
             data-testid="unsaved-guard-stay"
           >
             <ArrowLeft className="w-4 h-4" />
-            Stay on page
+            {t.common.stay_on_page}
           </button>
         </div>
       </div>

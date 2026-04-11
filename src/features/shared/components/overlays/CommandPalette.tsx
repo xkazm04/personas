@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
-  Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy, Puzzle,
+  Settings, Plus, Power, Play, ToggleLeft, Copy, Puzzle,
   HeartPulse, Pencil, Trophy,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -9,6 +9,7 @@ import { usePipelineStore } from "@/stores/pipelineStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
@@ -37,6 +38,7 @@ const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] 
 ];
 
 export default function CommandPalette() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -47,7 +49,6 @@ export default function CommandPalette() {
   const personas = useAgentStore((s) => s.personas);
   const groups = usePipelineStore((s) => s.groups);
   const recipes = usePipelineStore((s) => s.recipes);
-  const compositionWorkflows = usePipelineStore((s) => s.workflows);
   const credentials = useVaultStore((s) => s.credentials);
   const automations = useVaultStore((s) => s.automations);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -93,7 +94,6 @@ export default function CommandPalette() {
   const powerIcon = <Power className="w-4 h-4 text-foreground" />;
   const keyIcon = <Key className="w-4 h-4" />;
   const flaskIcon = <FlaskConical className="w-4 h-4" />;
-  const workflowIcon = <Workflow className="w-4 h-4" />;
   const playIcon = <Play className="w-4 h-4" />;
   const toggleIcon = <ToggleLeft className="w-4 h-4" />;
   const copyIcon = <Copy className="w-4 h-4" />;
@@ -153,19 +153,8 @@ export default function CommandPalette() {
       templateItem(r, setSidebarSection, flaskIcon),
     );
     const autoItems = automations.map(a =>
-      automationItem(a, setSidebarSection, workflowIcon),
+      automationItem(a, setSidebarSection, flaskIcon),
     );
-    const compositionItems: PaletteItem[] = compositionWorkflows.map(wf => ({
-      id: `workflow:${wf.id}`,
-      kind: 'workflow' as ResultKind,
-      label: wf.name,
-      subtitle: wf.description || `${wf.nodes.length} nodes`,
-      icon: workflowIcon,
-      onSelect: () => {
-        setSidebarSection('workflows');
-        usePipelineStore.getState().selectWorkflow(wf.id);
-      },
-    }));
     const navItems = NAV_ITEMS.map(nav => ({
       id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
       icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
@@ -196,12 +185,12 @@ export default function CommandPalette() {
         health: healthIcon, edit: pencilIcon,
       }),
     ];
-    return { agentItems, credItems, templateItems, autoItems, compositionItems, navItems, commandItems };
-  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
+    return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
+  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
 
   // Stage 2: filtered + scored (recomputed on deferred searchQuery)
   const items = useMemo((): PaletteItem[] => {
-    const { agentItems, credItems, templateItems, autoItems, compositionItems, navItems, commandItems } = stableItems;
+    const { agentItems, credItems, templateItems, autoItems, navItems, commandItems } = stableItems;
     const results: PaletteItem[] = [];
     const recentAgentIds = getRecentAgentIds();
 
@@ -265,14 +254,6 @@ export default function CommandPalette() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
       for (const { item } of scoredAutomations) results.push(item);
-
-      // -- Composition Workflows --
-      const scoredWorkflows = compositionItems
-        .map((item, i) => { const w = compositionWorkflows[i]; return w ? { item, score: Math.max(fuzzyScore(searchQuery, w.name), fuzzyScore(searchQuery, w.description) * 0.7) } : { item, score: 0 }; })
-        .filter(s => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      for (const { item } of scoredWorkflows) results.push(item);
     }
 
     // -- Navigation --
@@ -284,7 +265,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations, compositionWorkflows]);
+  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -356,7 +337,6 @@ export default function CommandPalette() {
       addSection('credential', 'Credentials');
       addSection('template', 'Templates');
       addSection('automation', 'Automations');
-      addSection('workflow', 'Workflows');
       addSection('navigation', 'Navigation');
     }
     return grouped;
@@ -381,7 +361,7 @@ export default function CommandPalette() {
                   value={query}
                   onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
                   onKeyDown={handleKeyDown}
-                  placeholder='Search agents, credentials, templates... (type ">" for commands)'
+                  placeholder={t.common.command_palette_placeholder}
                   className="flex-1 bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 outline-none"
                   spellCheck={false}
                 />
@@ -410,15 +390,15 @@ export default function CommandPalette() {
                 <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-foreground">
                   <span className="flex items-center gap-1">
                     <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
-                    navigate
+                    {t.common.command_palette_navigate}
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&crarr;</kbd>
-                    select
+                    {t.common.command_palette_select}
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&gt;</kbd>
-                    commands
+                    {t.common.command_palette_commands}
                   </span>
                 </div>
               </>

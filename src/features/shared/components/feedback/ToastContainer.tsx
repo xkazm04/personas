@@ -5,6 +5,7 @@ import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { formatElapsed } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -42,6 +43,7 @@ const SEVERITY_STYLES: Record<string, { border: string; icon: string; badge: str
 // ---------------------------------------------------------------------------
 
 function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismiss: (id: string) => void }) {
+  const { t } = useTranslation();
   const [paused, setPaused] = useState(false);
   const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
@@ -115,7 +117,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         <span className="typo-caption opacity-50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
         <button
           onClick={() => onDismiss(toast.id)}
-          aria-label="Dismiss notification"
+          aria-label={t.common.dismiss_notification}
           className="ml-1 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
         >
           <X className="w-3.5 h-3.5" />
@@ -139,6 +141,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 // ---------------------------------------------------------------------------
 
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
+  const { t } = useTranslation();
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
   const [paused, setPaused] = useState(false);
   const [elapsedLabel, setElapsedLabel] = useState('');
@@ -216,7 +219,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
           <span className="typo-caption text-foreground tabular-nums flex-shrink-0">{elapsedLabel}</span>
           <button
             onClick={() => onDismiss(toast.id)}
-            aria-label="Dismiss notification"
+            aria-label={t.common.dismiss_notification}
             className="text-foreground hover:text-foreground transition-colors flex-shrink-0"
           >
             <X className="w-3.5 h-3.5" />
@@ -237,7 +240,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
             className="flex items-center gap-1 px-2 py-1 typo-heading rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <CheckCircle2 className="w-3 h-3" />
-            Resolve
+            {t.common.resolve}
           </button>
         </div>
       </div>
@@ -258,6 +261,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 // ---------------------------------------------------------------------------
 
 export function ToastContainer() {
+  const { t, tx } = useTranslation();
   const toasts = useToastStore((s) => s.toasts);
   const dismiss = useToastStore((s) => s.dismiss);
 
@@ -287,7 +291,7 @@ export function ToastContainer() {
         <div
           className="animate-fade-slide-in pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-foreground"
         >
-          +{overflowCount} more
+          {tx(t.common.toast_overflow, { count: overflowCount })}
         </div>
       )}
 

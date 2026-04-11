@@ -1,5 +1,6 @@
 import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StalenessIndicatorProps {
   /** Epoch ms when this data source was last successfully fetched. */
@@ -13,19 +14,13 @@ interface StalenessIndicatorProps {
 /** Threshold (ms) after which data is considered "stale" even without an error. */
 const STALE_THRESHOLD_MS = 5 * 60_000; // 5 minutes
 
-function formatAge(ms: number): string {
-  if (ms < 60_000) return 'just now';
-  if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m ago`;
-  if (ms < 86_400_000) return `${Math.round(ms / 3_600_000)}h ago`;
-  return `${Math.round(ms / 86_400_000)}d ago`;
-}
-
 /**
  * Small inline indicator showing when a data section was last refreshed.
  * Renders nothing when data is fresh and healthy.
  * Shows an amber "stale" badge when the source has errored or data is old.
  */
 export function StalenessIndicator({ fetchedAt, hasError, label }: StalenessIndicatorProps) {
+  const { t, tx } = useTranslation();
   const [now, setNow] = useState(Date.now);
 
   // Re-render every 30s so the age label stays current
@@ -42,10 +37,18 @@ export function StalenessIndicator({ fetchedAt, hasError, label }: StalenessIndi
 
   if (!isStale) return null;
 
+  const formatAge = (ms: number): string => {
+    if (ms < 60_000) return t.common.staleness_just_now;
+    if (ms < 3_600_000) return tx(t.common.staleness_minutes_ago, { minutes: Math.round(ms / 60_000) });
+    if (ms < 86_400_000) return tx(t.common.staleness_hours_ago, { hours: Math.round(ms / 3_600_000) });
+    return tx(t.common.staleness_days_ago, { days: Math.round(ms / 86_400_000) });
+  };
+
   const ageText = formatAge(age);
+  const failedSuffix = hasError ? ` ${t.common.staleness_refresh_failed}` : '';
   const title = label
-    ? `${label} data last updated ${ageText}${hasError ? ' (refresh failed)' : ''}`
-    : `Data last updated ${ageText}${hasError ? ' (refresh failed)' : ''}`;
+    ? tx(t.common.staleness_tooltip_labeled, { label, age: ageText }) + failedSuffix
+    : tx(t.common.staleness_tooltip, { age: ageText }) + failedSuffix;
 
   return (
     <span

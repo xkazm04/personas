@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Save, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface QuickEditPanelProps {
   persona: Persona;
@@ -21,6 +22,7 @@ function parseModelName(json: string | null | undefined): string {
 }
 
 export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProps) {
+  const { t } = useTranslation();
   const [description, setDescription] = useState(persona.description ?? '');
   const [model, setModel] = useState(() => parseModelName(persona.model_profile));
   const descRef = useRef<HTMLTextAreaElement>(null);
@@ -62,13 +64,13 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
       <div className="flex items-center gap-2">
         <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" className="shrink-0" frameSize={"lg"} />
         <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
-        <span className="typo-caption text-foreground">Quick Edit</span>
+        <span className="typo-caption text-foreground">{t.common.quick_edit}</span>
       </div>
 
       {/* Description */}
       <div className="space-y-1">
         <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">
-          Description
+          {t.common.description_label}
         </label>
         <textarea
           ref={descRef}
@@ -76,14 +78,14 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
           onChange={e => setDescription(e.target.value)}
           rows={3}
           className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-violet-400/50 resize-none transition-colors"
-          placeholder="Agent description..."
+          placeholder={t.common.agent_description_placeholder}
         />
       </div>
 
       {/* Model */}
       <div className="space-y-1">
         <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">
-          Model
+          {t.common.model_label}
         </label>
         <input
           value={model}
@@ -108,14 +110,14 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground hover:bg-secondary/40 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             onClick={handleSave}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/30 transition-colors"
           >
             <Save className="w-3.5 h-3.5" />
-            Save
+            {t.common.save}
           </button>
         </div>
       </div>

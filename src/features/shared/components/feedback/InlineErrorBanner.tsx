@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { AlertTriangle, Info, AlertCircle, X, RefreshCw } from 'lucide-react';
 import { STATUS_PALETTE } from '@/lib/design/statusTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type BannerSeverity = 'info' | 'warning' | 'error';
 
@@ -54,6 +55,7 @@ export function InlineErrorBanner({
   compact = false,
   className = '',
 }: InlineErrorBannerProps) {
+  const { t } = useTranslation();
   const tier = TIER[severity];
   const { Icon, tokens } = tier;
 
@@ -75,7 +77,7 @@ export function InlineErrorBanner({
             onClick={onRetry}
             className={`flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl border ${tier.buttonBg} transition-colors cursor-pointer shrink-0`}
           >
-            <RefreshCw className="w-3 h-3" /> Retry
+            <RefreshCw className="w-3 h-3" /> {t.common.retry}
           </button>
         )}
         {actions}
@@ -83,7 +85,7 @@ export function InlineErrorBanner({
           <button
             type="button"
             onClick={onDismiss}
-            aria-label="Dismiss"
+            aria-label={t.common.dismiss}
             className={`${tier.dismissText} transition-colors cursor-pointer shrink-0`}
           >
             <X className="w-4 h-4" />

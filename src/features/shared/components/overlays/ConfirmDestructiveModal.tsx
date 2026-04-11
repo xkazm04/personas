@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
 import type { BlastRadiusItem } from '@/api/agents/personas';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -50,6 +51,7 @@ function ModalContent({ config, onClose, onConfirm }: {
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const [typedValue, setTypedValue] = useState('');
 
   // Fetch blast radius dynamically if a fetcher is provided
@@ -66,7 +68,7 @@ function ModalContent({ config, onClose, onConfirm }: {
   const blastItems = hasPreSupplied ? (config.blastRadiusItems ?? []) : fetchedItems;
   const blastLoading = hasPreSupplied ? config.blastRadiusLoading : fetchLoading;
 
-  const confirmLabel = config.confirmLabel ?? 'Delete';
+  const confirmLabel = config.confirmLabel ?? t.common.delete;
   const needsTyping = !!config.requireTypedConfirmation;
   const typingMatches = !needsTyping || typedValue === config.requireTypedConfirmation;
 
@@ -124,7 +126,10 @@ function ModalContent({ config, onClose, onConfirm }: {
       {needsTyping && (
         <div className="space-y-1.5">
           <p className="text-xs text-foreground">
-            Type <span className="font-semibold text-foreground">{config.requireTypedConfirmation}</span> to confirm
+            {(() => {
+              const parts = t.common.type_to_confirm.split('{name}');
+              return <>{parts[0]}<span className="font-semibold text-foreground">{config.requireTypedConfirmation}</span>{parts[1]}</>;
+            })()}
           </p>
           <input
             type="text"
@@ -143,7 +148,7 @@ function ModalContent({ config, onClose, onConfirm }: {
           onClick={handleClose}
           className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
         <button
           onClick={handleConfirm}
