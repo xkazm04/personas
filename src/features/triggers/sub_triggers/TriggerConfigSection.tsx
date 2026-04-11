@@ -4,6 +4,7 @@ import { parseTriggerConfig, getWebhookUrl, IS_WEBHOOK_LOCALHOST } from '@/lib/u
 import { formatInterval } from '@/lib/utils/formatters';
 import { CheckCircle2, Copy } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConfigSectionProps {
   trigger: PersonaTrigger;
@@ -12,6 +13,7 @@ interface ConfigSectionProps {
 }
 
 export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigSectionProps) {
+  const { t } = useTranslation();
   const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
 
   return (
@@ -59,7 +61,7 @@ export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigS
           {IS_WEBHOOK_LOCALHOST && (
             <div className="flex items-center gap-1.5 text-sm text-amber-400/80 mt-1">
               <AlertTriangle className="w-3 h-3 shrink-0" />
-              Dev mode -- this URL is only reachable locally
+              {t.triggers.dev_mode_warning}
             </div>
           )}
         </div>

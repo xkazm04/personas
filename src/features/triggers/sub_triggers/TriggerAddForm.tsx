@@ -19,6 +19,7 @@ import { CompositeConfig } from './configs/CompositeConfig';
 import { EventListenerConfig } from './configs/EventListenerConfig';
 import { PollingConfig } from './configs/PollingConfig';
 import { buildTriggerConfig } from './configs/buildTriggerConfig';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
@@ -27,6 +28,7 @@ export interface TriggerAddFormProps {
 }
 
 export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel }: TriggerAddFormProps) {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<TriggerCategory | null>(null);
   const [triggerType, setTriggerType] = useState<string>('manual');
   const [scheduleMode, setScheduleMode] = useState<'interval' | 'cron'>('interval');
@@ -153,7 +155,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
 
       <div className="relative flex items-center gap-3 py-0.5">
         <div className="flex-1 border-t border-border/20" />
-        <span className="text-xs text-muted-foreground/40 shrink-0">or use templates</span>
+        <span className="text-xs text-muted-foreground/40 shrink-0">{t.triggers.or_use_templates}</span>
         <div className="flex-1 border-t border-border/20" />
       </div>
 
@@ -164,15 +166,15 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       {triggerType === 'schedule' && (
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Schedule Mode</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
               <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
-                <Clock className="w-3.5 h-3.5" /> Interval
+                <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
               </button>
               <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
-                <CalendarClock className="w-3.5 h-3.5" /> Cron Expression
+                <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule_mode_label}
               </button>
             </div>
           </div>
@@ -197,8 +199,8 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">Cancel</button>
-        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20">Create Trigger</button>
+        <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">{t.common.cancel}</button>
+        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20">{t.triggers.add.create_trigger}</button>
       </div>
     </div>
   );

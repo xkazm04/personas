@@ -5,6 +5,7 @@ import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
 import { previewConflicts } from '../libs/calendarHelpers';
 import { useThemeStore } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface FrequencyEditorProps {
   agent: CronAgent;
@@ -23,6 +24,7 @@ export default function FrequencyEditor({
   onCancel,
   onPreviewCron,
 }: FrequencyEditorProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'preset' | 'custom'>(
     agent.cron_expression ? 'custom' : 'preset',
   );
@@ -92,7 +94,7 @@ export default function FrequencyEditor({
               <Clock className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <h3 className="typo-heading text-foreground/90">Change Frequency</h3>
+              <h3 className="typo-heading text-foreground/90">{t.schedules.change_frequency_title}</h3>
               <p className="text-xs text-muted-foreground/70">{agent.persona_name}</p>
             </div>
           </div>
@@ -112,7 +114,7 @@ export default function FrequencyEditor({
 
           {/* Quick presets */}
           <div>
-            <p className="typo-caption text-muted-foreground/80 mb-2">Quick presets</p>
+            <p className="typo-caption text-muted-foreground/80 mb-2">{t.schedules.quick_presets}</p>
             <div className="grid grid-cols-3 gap-1.5">
               {CRON_PRESETS.map((preset) => (
                 <button
@@ -166,7 +168,7 @@ export default function FrequencyEditor({
               />
               {/* Preview */}
               {previewLoading && (
-                <p className="text-xs text-muted-foreground/50">Previewing...</p>
+                <p className="text-xs text-muted-foreground/50">{t.schedules.previewing}</p>
               )}
               {preview && !previewLoading && (
                 <div className={`text-xs space-y-1 p-2.5 rounded-lg border ${

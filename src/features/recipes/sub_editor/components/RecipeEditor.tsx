@@ -6,6 +6,7 @@ import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { TagChipInput } from './TagChipInput';
 import { SchemaFieldBuilder, type SchemaField } from './SchemaFieldBuilder';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeEditorProps {
   /** null = create mode, RecipeDefinition = edit mode */
@@ -58,6 +59,7 @@ function serializeSchema(fields: SchemaField[]): string | null {
 }
 
 export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
+  const { t } = useTranslation();
   const createRecipe = usePipelineStore((s) => s.createRecipe);
   const updateRecipe = usePipelineStore((s) => s.updateRecipe);
 
@@ -129,7 +131,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
-          {recipe ? 'Save Changes' : 'Create Recipe'}
+          {recipe ? t.recipes.save_changes : t.recipes.create_recipe}
         </button>
       </div>
 
@@ -137,7 +139,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Name *</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t.recipes.name_label}</label>
           <input
             type="text"
             value={name}
@@ -149,11 +151,11 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Description</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t.recipes.description_label}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What does this recipe do?"
+            placeholder={t.recipes.description_placeholder}
             rows={2}
             className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
@@ -161,13 +163,13 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Category</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t.recipes.category_label}</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           >
-            <option value="">None</option>
+            <option value="">{t.common.none}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
             ))}
@@ -197,14 +199,14 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             Input Schema
           </label>
           <p className="text-sm text-muted-foreground/60 mb-1.5">
-            Define input fields with key, type, and label. Drag to reorder.
+            {t.recipes.input_schema_help}
           </p>
           <SchemaFieldBuilder fields={schemaFields} onChange={setSchemaFields} />
         </div>
 
         {/* Tags — Chip Input */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tags</label>
+          <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t.recipes.tags_label}</label>
           <TagChipInput tags={tags} onChange={setTags} />
         </div>
       </div>

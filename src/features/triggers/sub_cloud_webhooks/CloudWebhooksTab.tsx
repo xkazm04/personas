@@ -11,6 +11,7 @@ import {
 } from '@/api/system/cloud';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WebhookTriggerRow {
   trigger: CloudTrigger;
@@ -22,6 +23,7 @@ interface WebhookTriggerRow {
 }
 
 export function CloudWebhooksTab() {
+  const { t } = useTranslation();
   const relay = useCloudWebhookRelay();
   const personas = useAgentStore((s) => s.personas);
 
@@ -139,9 +141,9 @@ export function CloudWebhooksTab() {
             <CloudOff className="w-7 h-7 text-muted-foreground/50" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground/80">Cloud not connected</p>
+            <p className="text-sm font-medium text-foreground/80">{t.triggers.cloud_not_connected}</p>
             <p className="text-sm text-muted-foreground/60 mt-1">
-              Connect to a cloud orchestrator to receive 3rd-party webhooks
+              {t.triggers.cloud_not_connected_desc}
             </p>
           </div>
         </div>
@@ -157,7 +159,7 @@ export function CloudWebhooksTab() {
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
             <span className="text-sm text-foreground/80">
-              {relay.connected ? 'Cloud relay active' : 'Connecting...'}
+              {relay.connected ? t.triggers.cloud_relay_active : t.common.connecting}
             </span>
             {relay.active_webhook_triggers > 0 && (
               <span className="text-xs text-muted-foreground/60">
@@ -189,14 +191,14 @@ export function CloudWebhooksTab() {
         {/* Header + Create button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-            Cloud Webhook Triggers
+            {t.triggers.cloud_webhook_triggers}
           </h3>
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Webhook
+            {t.triggers.add_webhook}
           </button>
         </div>
 
@@ -212,7 +214,7 @@ export function CloudWebhooksTab() {
                 onChange={(e) => setCreatePersonaId(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40"
               >
-                <option value="">Select a persona...</option>
+                <option value="">{t.triggers.select_persona}</option>
                 {personas
                   .filter((p) => !deployedPersonaIds.has(p.id) || true)
                   .map((p) => (
@@ -227,7 +229,7 @@ export function CloudWebhooksTab() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-50 transition-colors"
               >
                 {isCreating ? <LoadingSpinner size="sm" /> : <Webhook className="w-3.5 h-3.5" />}
-                Create Webhook
+                {t.triggers.create_webhook}
               </button>
               <button
                 onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}
@@ -250,9 +252,9 @@ export function CloudWebhooksTab() {
         {!isLoading && webhookRows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Webhook className="w-8 h-8 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground/70">No webhook triggers yet</p>
+            <p className="text-sm text-muted-foreground/70">{t.triggers.no_webhook_triggers}</p>
             <p className="text-sm text-muted-foreground/50 mt-1">
-              Create a webhook trigger on a deployed persona to receive 3rd-party POSTs
+              {t.triggers.no_webhook_triggers_desc}
             </p>
           </div>
         )}
@@ -334,14 +336,14 @@ export function CloudWebhooksTab() {
         {selectedTriggerId && (
           <div className="space-y-3">
             <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Recent Firings
+              {t.triggers.recent_firings}
             </h4>
             {firingsLoading ? (
               <div className="flex items-center justify-center py-6">
                 <LoadingSpinner className="text-muted-foreground/60" />
               </div>
             ) : firings.length === 0 ? (
-              <p className="text-sm text-muted-foreground/50 py-4">No firings recorded yet</p>
+              <p className="text-sm text-muted-foreground/50 py-4">{t.triggers.no_firings}</p>
             ) : (
               <div className="border border-border/30 rounded-xl overflow-hidden">
                 <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-muted-foreground/70 uppercase tracking-wider">

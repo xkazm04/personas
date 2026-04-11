@@ -12,21 +12,23 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
 import { EventTypeChip } from './EventTypeChip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
-
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'skipped', label: 'Skipped' },
-];
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
 export function LiveStreamTab() {
+  const { t } = useTranslation();
+
+  const STATUS_OPTIONS = [
+    { value: 'all', label: t.triggers.all_statuses },
+    { value: 'completed', label: t.execution_status.completed },
+    { value: 'failed', label: t.execution_status.failed },
+    { value: 'pending', label: t.status_tokens.event.pending },
+    { value: 'processing', label: t.status_tokens.event.processing },
+    { value: 'skipped', label: 'Skipped' },
+  ];
   const personas = useAgentStore((s) => s.personas);
 
   const [events, setEvents] = useState<PersonaEvent[]>([]);
@@ -164,7 +166,7 @@ export function LiveStreamTab() {
   }), [events, statusFilter, typeFilter, targetPersonaId]);
 
   const typeOptions = useMemo(() => [
-    { value: 'all', label: 'All types' },
+    { value: 'all', label: t.triggers.all_types },
     ...availableTypes.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ], [availableTypes]);
 
@@ -220,7 +222,7 @@ export function LiveStreamTab() {
             </div>
           );
         }
-        return <span className="text-sm text-foreground/60 truncate">broadcast</span>;
+        return <span className="text-sm text-foreground/60 truncate">{t.triggers.broadcast_label}</span>;
       },
     },
     {
@@ -267,22 +269,22 @@ export function LiveStreamTab() {
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : attached ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
           </span>
-          <span className="typo-label text-foreground/80">{isPaused ? 'Paused' : attached ? 'Live' : 'Connecting'}</span>
+          <span className="typo-label text-foreground/80">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
         </div>
 
         <div className="h-4 w-px bg-primary/15" />
 
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
           <span className="text-foreground/80 font-semibold">{eventsPerMin}</span>
-          <span className="text-muted-foreground/50">events/min</span>
+          <span className="text-muted-foreground/50">{t.triggers.events_per_min}</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
           <span className="text-foreground/80 font-semibold">{totalReceived}</span>
-          <span className="text-muted-foreground/50">received</span>
+          <span className="text-muted-foreground/50">{t.triggers.received_label}</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
           <span className="text-foreground/80 font-semibold">{events.length}</span>
-          <span className="text-muted-foreground/50">in buffer</span>
+          <span className="text-muted-foreground/50">{t.triggers.in_buffer}</span>
         </div>
         {pausedQueueCount > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-amber-300 tabular-nums">
@@ -302,7 +304,7 @@ export function LiveStreamTab() {
             title={isPaused ? 'Resume live updates' : 'Pause incoming events'}
           >
             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-            {isPaused ? 'Resume' : 'Pause'}
+            {isPaused ? t.triggers.resume_label : t.triggers.pause_label}
           </button>
           <button
             onClick={handleClear}
@@ -334,10 +336,10 @@ export function LiveStreamTab() {
           onSort={() => { }}
           pageSize={20}
           isLoading={isLoading}
-          loadingLabel="Connecting to event bus..."
+          loadingLabel={t.triggers.connecting_to_bus}
           emptyIcon={Radio}
-          emptyTitle="No events on the bus"
-          emptyDescription="Events will appear here in real-time as agents publish and subscribe through the shared event bus."
+          emptyTitle={t.triggers.no_events_title}
+          emptyDescription={t.triggers.no_events_desc}
           className="flex-1"
         />
       </ContentBody>

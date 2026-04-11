@@ -1,6 +1,7 @@
 import { Zap } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface PollingConfigProps {
   credentialEventsList: { id: string; name: string }[];
@@ -14,20 +15,21 @@ export function PollingConfig({
   credentialEventsList, selectedEventId, setSelectedEventId,
   endpoint, setEndpoint,
 }: PollingConfigProps) {
+  const { t } = useTranslation();
   return (
     <>
       {credentialEventsList.length > 0 && (
         <TriggerFieldGroup
           label={<><Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />Credential Event</>}
           optional
-          helpText="Link to a credential event instead of a custom endpoint"
+          helpText={t.triggers.credential_event_help}
         >
           <ThemedSelect
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
             className="rounded-xl"
           >
-            <option value="">None - use endpoint URL instead</option>
+            <option value="">{t.triggers.none_use_endpoint}</option>
             {credentialEventsList.map(evt => (
               <option key={evt.id} value={evt.id}>{evt.name}</option>
             ))}
@@ -35,7 +37,7 @@ export function PollingConfig({
         </TriggerFieldGroup>
       )}
       {!selectedEventId && (
-        <TriggerFieldGroup label="Endpoint URL">
+        <TriggerFieldGroup label={t.triggers.endpoint_url}>
           <input
             type="text"
             value={endpoint}

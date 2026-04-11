@@ -3,6 +3,7 @@ import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react'
 import type { PersonaTrigger } from '@/lib/types/types';
 import { useAgentStore } from "@/stores/agentStore";
 import { TriggerStatusSummary } from './TriggerStatusSummary';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TriggerRowProps {
   trigger: PersonaTrigger;
@@ -13,6 +14,7 @@ interface TriggerRowProps {
 
 /** Collapsed trigger row: always visible, shows type + config summary + toggle + expand. */
 export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
+  const { t, tx } = useTranslation();
   const budgetStatus = useAgentStore((s) => s.getBudgetStatus(trigger.persona_id));
 
   return (
@@ -28,13 +30,13 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
         <span className="ml-auto flex items-center gap-2">
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground/80" title="Budget data unavailable">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground/80" title={t.triggers.list.budget_unavailable}>
               <ShieldAlert className="w-3 h-3" />
-              Unknown Budget
+              {t.triggers.unknown_budget_label}
             </span>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded -- trigger paused">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>
@@ -46,7 +48,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             onClick={(e) => { e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); } }}
             className="p-0.5 hover:bg-secondary/60 rounded-lg transition-colors"
-            title={trigger.enabled ? 'Disable' : 'Enable'}
+            title={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}
           >
             {trigger.enabled ? (
               <ToggleRight className="w-5 h-5 text-emerald-400" />

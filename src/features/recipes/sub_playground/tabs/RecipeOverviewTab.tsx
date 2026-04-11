@@ -2,12 +2,14 @@ import { Tag, Cpu, FileText } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { parseTags, parseInputSchema } from '@/features/recipes/shared/recipeParseUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeOverviewTabProps {
   recipe: RecipeDefinition;
 }
 
 export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
+  const { t } = useTranslation();
   const tags = parseTags(recipe.tags);
   const inputs = parseInputSchema(recipe.input_schema);
 
@@ -15,14 +17,14 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
     <div className="p-4 space-y-4">
       {/* Details */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Details</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t.recipes.details}</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-border/40 bg-card/30 p-3">
-            <p className="text-sm text-muted-foreground/60 mb-1">Category</p>
+            <p className="text-sm text-muted-foreground/60 mb-1">{t.recipes.category}</p>
             <p className="text-sm text-foreground">{recipe.category || 'None'}</p>
           </div>
           <div className="rounded-lg border border-border/40 bg-card/30 p-3">
-            <p className="text-sm text-muted-foreground/60 mb-1">Created</p>
+            <p className="text-sm text-muted-foreground/60 mb-1">{t.recipes.created}</p>
             <p className="text-sm text-foreground">{new Date(recipe.created_at).toLocaleDateString()}</p>
           </div>
         </div>
@@ -54,9 +56,9 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/30 bg-muted/20">
-                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">Key</th>
-                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">Type</th>
-                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">Label</th>
+                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">{t.recipes.col_key}</th>
+                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">{t.recipes.col_type}</th>
+                  <th className="text-left px-3 py-1.5 text-muted-foreground font-medium">{t.recipes.col_label}</th>
                 </tr>
               </thead>
               <tbody>

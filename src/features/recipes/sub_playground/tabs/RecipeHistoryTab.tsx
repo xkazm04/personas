@@ -2,6 +2,7 @@ import { Clock, Trash2 } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeHistoryTabProps {
   history: RecipeExecutionResult[];
@@ -9,11 +10,12 @@ interface RecipeHistoryTabProps {
 }
 
 export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
+  const { t } = useTranslation();
   if (history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground/60 gap-2">
         <Clock className="w-5 h-5" />
-        No executions yet. Run the recipe in the Test Runner tab.
+        {t.recipes.no_executions}
       </div>
     );
   }
@@ -28,7 +30,7 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
           onClick={onClear}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-400 transition-colors"
         >
-          <Trash2 className="w-3 h-3" /> Clear
+          <Trash2 className="w-3 h-3" /> {t.common.clear}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">

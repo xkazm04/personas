@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Clock, ChevronDown, ChevronRight, Globe } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 const DAYS = [
   { key: 0, label: 'Sun', short: 'S' },
   { key: 1, label: 'Mon', short: 'M' },
@@ -71,6 +72,7 @@ interface ActiveHoursSectionProps {
 }
 
 export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const aw = useMemo(() => parseActiveWindow(config), [config]);
 
@@ -121,7 +123,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Clock className="w-3 h-3" />
-        Active Hours
+        {t.triggers.active_hours}
         {aw.enabled && (
           <span className="ml-1 px-1.5 py-0.5 rounded-full text-sm bg-sky-500/15 text-sky-400 font-medium">
             {summaryLabel}
@@ -143,7 +145,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   className="accent-sky-500"
                 />
                 <span className="text-sm text-muted-foreground/80">
-                  Only fire during active hours
+                  {t.triggers.only_fire_during_active}
                 </span>
               </label>
 

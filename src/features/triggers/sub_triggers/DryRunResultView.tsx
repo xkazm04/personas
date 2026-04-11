@@ -1,11 +1,13 @@
 import { X, CheckCircle2, Zap, ArrowRight, Radio, FlaskConical } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DryRunResultViewProps {
   detail: ReturnType<typeof useTriggerDetail>;
 }
 
 export function DryRunResultView({ detail }: DryRunResultViewProps) {
+  const { t } = useTranslation();
   const { dryRunResult, clearDryRunResult } = detail;
   if (!dryRunResult) return null;
 
@@ -17,7 +19,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
               <FlaskConical className="w-3.5 h-3.5" />
-              Dry Run Result
+              {t.triggers.dry_run_result_title}
             </div>
             <button onClick={clearDryRunResult} className="p-0.5 hover:bg-amber-500/15 rounded transition-colors">
               <X className="w-3 h-3 text-amber-400/60" />
@@ -27,7 +29,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Validation status */}
           <div className={`flex items-center gap-1.5 text-sm ${dryRunResult.valid ? 'text-emerald-400' : 'text-red-400'}`}>
             {dryRunResult.valid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-            {dryRunResult.valid ? 'All checks passed' : 'Validation failed'}
+            {dryRunResult.valid ? t.triggers.all_checks_passed : t.triggers.validation_failed}
           </div>
 
           {/* Validation check details when failed */}
@@ -42,7 +44,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Simulated Event */}
           {dryRunResult.simulated_event && (
             <div className="space-y-1.5">
-              <div className="text-sm text-muted-foreground/90 font-medium">Simulated Event</div>
+              <div className="text-sm text-muted-foreground/90 font-medium">{t.triggers.simulated_event}</div>
               <div className="rounded-lg bg-background/40 border border-primary/8 p-2 space-y-1 text-sm font-mono">
                 <div className="flex items-center gap-1.5">
                   <Radio className="w-3 h-3 text-amber-400/60" />
@@ -82,7 +84,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Empty state */}
           {dryRunResult.valid && dryRunResult.matched_subscriptions.length === 0 && (
             <div className="text-sm text-muted-foreground/60 italic">
-              No subscriptions would be activated
+              {t.triggers.no_subscriptions_activated}
             </div>
           )}
         </div>

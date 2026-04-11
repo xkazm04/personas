@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Eye, EyeOff, Copy, CheckCircle2, RefreshCw } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface WebhookConfigProps {
   hmacSecret: string;
@@ -8,6 +9,7 @@ export interface WebhookConfigProps {
 }
 
 export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps) {
+  const { t } = useTranslation();
   const [showHmacSecret, setShowHmacSecret] = useState(false);
   const [copiedHmac, setCopiedHmac] = useState(false);
 
@@ -32,8 +34,8 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
   return (
     <div className="space-y-3">
       <TriggerFieldGroup
-        label="HMAC Secret"
-        helpText="Incoming webhooks must include a valid HMAC signature header. A secret will be auto-generated if left empty."
+        label={t.triggers.hmac_secret_label}
+        helpText={t.triggers.hmac_help}
       >
         <div className="relative flex items-center gap-1.5">
           <div className="relative flex-1">
@@ -41,14 +43,14 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               type={showHmacSecret ? 'text' : 'password'}
               value={hmacSecret}
               onChange={(e) => setHmacSecret(e.target.value)}
-              placeholder="Auto-generated if left empty"
+              placeholder={t.triggers.auto_generated_hint}
               className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
             />
             <button
               type="button"
               onClick={() => setShowHmacSecret(!showHmacSecret)}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
-              title={showHmacSecret ? 'Hide secret' : 'Show secret'}
+              title={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}
             >
               {showHmacSecret ? (
                 <EyeOff className="w-4 h-4" />
@@ -61,7 +63,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
             type="button"
             onClick={generateSecret}
             className="flex-shrink-0 p-2 rounded-xl border transition-all bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30"
-            title="Generate random secret"
+            title={t.triggers.generate_secret}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -74,7 +76,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
                   : 'bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30'
               }`}
-              title={copiedHmac ? 'Copied!' : 'Copy secret'}
+              title={copiedHmac ? t.common.copied : t.common.copy}
             >
               {copiedHmac ? (
                 <CheckCircle2 className="w-4 h-4" />
@@ -86,7 +88,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
         </div>
       </TriggerFieldGroup>
       <div className="p-3 bg-background/30 rounded-xl border border-primary/10">
-        <p className="text-sm text-muted-foreground/90">A unique webhook URL will be shown after creation with a copy button</p>
+        <p className="text-sm text-muted-foreground/90">{t.triggers.webhook_url_note}</p>
       </div>
     </div>
   );

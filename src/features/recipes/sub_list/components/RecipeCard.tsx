@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Play, Settings, Pencil, Trash2, Search, Cog, Sparkles, ArrowLeftRight, Eye, type LucideIcon } from 'lucide-react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { parseTags } from '@/features/recipes/shared/recipeParseUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeCardProps {
   recipe: RecipeDefinition;
@@ -54,6 +55,7 @@ function getCategoryStyle(category: string | null): string {
 }
 
 export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest }: RecipeCardProps) {
+  const { t } = useTranslation();
   const tags = parseTags(recipe.tags);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +105,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           <button
             onClick={() => onQuickTest(recipe.id)}
             className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-lg text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
-            title="Run quick test"
+            title={t.recipes.run_quick_test}
           >
             <Play className="w-3.5 h-3.5" />
           </button>
@@ -111,14 +113,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         <button
           onClick={() => onEdit(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
-          title="Edit recipe"
+          title={t.recipes.edit_recipe}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onPlayground(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
-          title="Open settings"
+          title={t.recipes.open_settings}
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
@@ -130,7 +132,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
-            title="Delete recipe"
+            title={t.recipes.delete_recipe}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -140,7 +142,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
               <p className="text-sm text-foreground mb-1">
                 Delete <span className="font-semibold">{recipe.name}</span>?
               </p>
-              <p className="text-sm text-muted-foreground/70 mb-3">This action cannot be undone.</p>
+              <p className="text-sm text-muted-foreground/70 mb-3">{t.common.confirm_destructive_cannot_undo}</p>
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}

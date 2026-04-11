@@ -3,8 +3,10 @@ import { Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { testEventFlow } from '@/api/overview/events';
 import type { PersonaEvent } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function TestTab() {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [testEventType, setTestEventType] = useState('test_event');
   const [testPayload, setTestPayload] = useState('{}');
@@ -39,16 +41,16 @@ export function TestTab() {
       <div className="p-6 space-y-6 max-w-xl">
         <div>
           <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-4">
-            Publish Test Event
+            {t.triggers.publish_test_event}
           </h3>
           <p className="text-sm text-muted-foreground/70 mb-4">
-            Fire a test event into the bus to verify subscriptions and agent routing.
+            {t.triggers.publish_test_desc}
           </p>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">Event Type</label>
+            <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">{t.triggers.event_type_form_label}</label>
             <input
               type="text"
               value={testEventType}
@@ -58,7 +60,7 @@ export function TestTab() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">Payload (JSON)</label>
+            <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">{t.triggers.payload_json_label}</label>
             <textarea
               value={testPayload}
               onChange={(e) => setTestPayload(e.target.value)}
@@ -72,13 +74,13 @@ export function TestTab() {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors"
           >
             <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
-            {isTesting ? 'Publishing...' : 'Publish Event'}
+            {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
           </button>
         </div>
 
         {testResult && (
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-            <p className="text-sm font-medium text-emerald-400">Event published</p>
+            <p className="text-sm font-medium text-emerald-400">{t.triggers.event_published}</p>
             <div className="text-xs text-muted-foreground/70 space-y-1 font-mono">
               <p>ID: {testResult.id}</p>
               <p>Type: {testResult.event_type}</p>

@@ -9,6 +9,7 @@ import { RecipeTestRunnerTab } from '../tabs/RecipeTestRunnerTab';
 import { RecipeHistoryTab } from '../tabs/RecipeHistoryTab';
 import { RecipeVersionsTab } from '../tabs/RecipeVersionsTab';
 import { useRecipeTestRunner } from '../libs/useRecipeTestRunner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type PlaygroundTab = 'overview' | 'test-runner' | 'history' | 'versions';
 
@@ -17,14 +18,15 @@ interface RecipePlaygroundModalProps {
   onClose: () => void;
 }
 
-const TABS: Array<{ id: PlaygroundTab; label: string; icon: typeof BookOpen }> = [
-  { id: 'overview', label: 'Overview', icon: BookOpen },
-  { id: 'test-runner', label: 'Test Runner', icon: Play },
-  { id: 'history', label: 'History', icon: Clock },
-  { id: 'versions', label: 'Versions', icon: GitBranch },
-];
-
 export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModalProps) {
+  const { t } = useTranslation();
+
+  const TABS: Array<{ id: PlaygroundTab; label: string; icon: typeof BookOpen }> = [
+    { id: 'overview', label: t.recipes.tab_overview, icon: BookOpen },
+    { id: 'test-runner', label: t.recipes.tab_test_runner, icon: Play },
+    { id: 'history', label: t.recipes.tab_history, icon: Clock },
+    { id: 'versions', label: t.recipes.tab_versions, icon: GitBranch },
+  ];
   const [activeTab, setActiveTab] = useState<PlaygroundTab>('test-runner');
   const [currentRecipe, setCurrentRecipe] = useState(recipe);
   const testRunner = useRecipeTestRunner(currentRecipe);

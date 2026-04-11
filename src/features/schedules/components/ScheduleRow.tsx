@@ -9,6 +9,7 @@ import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
 import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScheduleRowProps {
   entry: ScheduleEntry;
@@ -21,14 +22,6 @@ interface ScheduleRowProps {
   onPreviewCron: (expression: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
 }
 
-const HEALTH_CONFIG = {
-  healthy: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', accent: 'border-l-emerald-500/60', label: 'Healthy' },
-  degraded: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', accent: 'border-l-amber-500/60', label: 'Degraded' },
-  failing: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', accent: 'border-l-red-500/60', label: 'Failing' },
-  paused: { icon: Pause, color: 'text-muted-foreground/50', bg: 'bg-primary/5', accent: 'border-l-primary/20', label: 'Paused' },
-  idle: { icon: Clock, color: 'text-muted-foreground/50', bg: 'bg-primary/5', accent: 'border-l-primary/20', label: 'Idle' },
-} as const;
-
 export default function ScheduleRow({
   entry,
   existingEntries,
@@ -39,6 +32,16 @@ export default function ScheduleRow({
   onUpdateFrequency,
   onPreviewCron,
 }: ScheduleRowProps) {
+  const { t } = useTranslation();
+
+  const HEALTH_CONFIG = {
+    healthy: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', accent: 'border-l-emerald-500/60', label: t.schedules.healthy },
+    degraded: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', accent: 'border-l-amber-500/60', label: t.schedules.degraded },
+    failing: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', accent: 'border-l-red-500/60', label: t.schedules.failing },
+    paused: { icon: Pause, color: 'text-muted-foreground/50', bg: 'bg-primary/5', accent: 'border-l-primary/20', label: t.schedules.paused },
+    idle: { icon: Clock, color: 'text-muted-foreground/50', bg: 'bg-primary/5', accent: 'border-l-primary/20', label: t.schedules.idle },
+  } as const;
+
   const [showFreqEditor, setShowFreqEditor] = useState(false);
   const timezone = useThemeStore((s) => s.timezone);
   const tzLabel = timezone === 'local' ? Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') || 'Local'
@@ -124,7 +127,7 @@ export default function ScheduleRow({
             onClick={onManualExecute}
             disabled={isExecuting || disabled}
             className="p-2 rounded-lg hover:bg-emerald-500/15 text-muted-foreground/70 hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Run now"
+            title={t.schedules.run_now}
           >
             {isExecuting ? (
               <LoadingSpinner size="sm" />
@@ -138,7 +141,7 @@ export default function ScheduleRow({
             onClick={() => setShowFreqEditor(true)}
             disabled={isEditing}
             className="p-2 rounded-lg hover:bg-blue-500/15 text-muted-foreground/70 hover:text-blue-400 transition-colors disabled:opacity-40"
-            title="Change frequency"
+            title={t.schedules.change_frequency}
           >
             <Settings2 className="w-4 h-4" />
           </button>
@@ -147,7 +150,7 @@ export default function ScheduleRow({
           <button
             onClick={onToggleEnabled}
             className="p-2 rounded-lg hover:bg-secondary/60 transition-colors"
-            title={agent.trigger_enabled ? 'Pause schedule' : 'Resume schedule'}
+            title={agent.trigger_enabled ? t.schedules.pause_schedule : t.schedules.resume_schedule}
           >
             {agent.trigger_enabled ? (
               <ToggleRight className="w-5 h-5 text-emerald-400" />

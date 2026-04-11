@@ -5,11 +5,13 @@ import { listDeadLetterEvents, retryDeadLetterEvent, discardDeadLetterEvent } fr
 import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaEvent } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Must match MAX_MANUAL_RETRIES in events.rs */
 const MAX_MANUAL_RETRIES = 5;
 
 export function DeadLetterTab() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export function DeadLetterTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Archive className="w-5 h-5 text-red-400" />
-            <h3 className="text-sm font-semibold">Dead Letter Queue</h3>
+            <h3 className="text-sm font-semibold">{t.triggers.tab_dead_letter}</h3>
             <span className="text-xs text-muted-foreground">
               ({events.length} event{events.length !== 1 ? 's' : ''})
             </span>
@@ -99,7 +101,7 @@ export function DeadLetterTab() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Events that failed processing after exhausting all retry attempts. You can retry them manually or discard.
+          {t.triggers.dead_letter_help}
         </p>
 
         {loading && events.length === 0 && (
@@ -111,8 +113,8 @@ export function DeadLetterTab() {
         {!loading && events.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
             <Archive className="w-8 h-8 opacity-30" />
-            <p className="text-sm">No dead-lettered events</p>
-            <p className="text-xs opacity-70">All events processed successfully</p>
+            <p className="text-sm">{t.triggers.no_dead_letters}</p>
+            <p className="text-xs opacity-70">{t.triggers.all_events_processed}</p>
           </div>
         )}
 
@@ -156,7 +158,7 @@ export function DeadLetterTab() {
                         title="Retry limit exhausted — discard or investigate the root cause"
                       >
                         <Ban className="w-3 h-3" />
-                        Exhausted
+                        {t.triggers.exhausted_label}
                       </span>
                     ) : (
                       <button

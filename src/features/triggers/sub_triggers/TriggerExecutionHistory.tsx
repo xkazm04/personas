@@ -8,6 +8,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useTriggerHistory } from '../hooks/useTriggerHistory';
 import { TriggerHealthSparkline } from './TriggerHealthSparkline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // --- Payload Inspector ----------------------------------------------
 
@@ -43,6 +44,7 @@ interface ExecutionRowProps {
 }
 
 function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, replayResult }: ExecutionRowProps) {
+  const { t } = useTranslation();
   const statusEntry = getStatusEntry(exec.status);
   const StatusIcon = statusEntry.icon;
   const hasPayload = exec.input_data || exec.output_data || exec.error_message;
@@ -115,7 +117,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                   {isReplaying
                     ? <LoadingSpinner size="xs" />
                     : <RotateCcw className="w-3 h-3" />}
-                  {isReplaying ? 'Replaying...' : 'Replay'}
+                  {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
                 </button>
                 {replayResult && (
                   <span className={`flex items-center gap-1 text-sm ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -141,6 +143,7 @@ interface TriggerExecutionHistoryProps {
 }
 
 export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = false }: TriggerExecutionHistoryProps) {
+  const { t } = useTranslation();
   const history = useTriggerHistory(triggerId, personaId);
   const [open, setOpen] = useState(defaultOpen);
 
@@ -161,7 +164,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <History className="w-3 h-3" />
-        Execution history
+        {t.triggers.execution_history}
         {history.stats.totalRuns > 0 && (
           <span className="text-muted-foreground/50 ml-1">({history.stats.totalRuns})</span>
         )}
@@ -180,7 +183,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
               ) : history.error ? (
                 <div className="flex items-center gap-2 py-2 text-sm text-amber-400/90">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
-                  Could not load history
+                  {t.triggers.could_not_load_history}
                   <button
                     onClick={() => void history.fetch()}
                     className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
@@ -191,7 +194,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                 </div>
               ) : history.executions.length === 0 ? (
                 <div className="py-2 text-sm text-muted-foreground/80">
-                  No executions recorded for this trigger yet
+                  {t.triggers.no_executions_recorded}
                 </div>
               ) : (
                 <>

@@ -8,6 +8,7 @@ import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { SkippedExecution, RecoveryPolicy } from '../libs/scheduleHelpers';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { formatRelative, formatInterval } from '../libs/scheduleHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SkippedRecoveryPanelProps {
   skipped: SkippedExecution[];
@@ -22,6 +23,7 @@ export default function SkippedRecoveryPanel({
   onBatchRecover,
   onManualExecute,
 }: SkippedRecoveryPanelProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [policies, setPolicies] = useState<Record<string, RecoveryPolicy>>({});
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -170,7 +172,7 @@ export default function SkippedRecoveryPanel({
               onClick={handleDismissAll}
               className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
             >
-              Dismiss all
+              {t.schedules.dismiss_all}
             </button>
 
             <div className="flex items-center gap-2">

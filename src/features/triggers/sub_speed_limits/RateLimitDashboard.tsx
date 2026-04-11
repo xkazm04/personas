@@ -3,6 +3,7 @@ import { Shield, Layers, AlertTriangle } from 'lucide-react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { PersonaTrigger } from '@/lib/types/types';
 import { extractRateLimit, hasActiveRateLimit } from '@/lib/utils/platform/triggerConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RateLimitDashboardProps {
   triggers: PersonaTrigger[];
@@ -14,6 +15,7 @@ function parseConfig(config: string | null): Record<string, unknown> {
 }
 
 export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
+  const { t } = useTranslation();
   const rateLimits = usePipelineStore((s) => s.triggerRateLimits);
 
   const stats = useMemo(() => {
@@ -49,9 +51,9 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
           <Shield className="w-5 h-5 text-muted-foreground/40" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground/70">No rate limits configured</p>
+          <p className="text-sm font-medium text-foreground/70">{t.triggers.no_rate_limits}</p>
           <p className="text-xs text-muted-foreground/50 mt-1 max-w-xs">
-            Add rate limits to your triggers to control execution frequency and prevent API overuse.
+            {t.triggers.no_rate_limits_desc}
           </p>
         </div>
       </div>
@@ -63,7 +65,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-1.5 text-muted-foreground/70">
           <Shield className="w-3.5 h-3.5" />
-          <span className="font-medium">Rate Limits</span>
+          <span className="font-medium">{t.triggers.rate_limits_heading}</span>
         </div>
 
         <div className="flex items-center gap-3 flex-1">

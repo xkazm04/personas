@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { getCompositePartialMatch } from '@/api/pipeline/triggers';
 import type { PartialMatchResult } from '@/lib/bindings/PartialMatchResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   triggerId: string;
 }
 
 export function CompositePartialMatchIndicator({ triggerId }: Props) {
+  const { t } = useTranslation();
   const [result, setResult] = useState<PartialMatchResult | null>(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
           {operator.toUpperCase()}
         </span>
         {suppressed && (
-          <span className="text-xs text-muted-foreground/50 italic">suppressed</span>
+          <span className="text-xs text-muted-foreground/50 italic">{t.triggers.suppressed_label}</span>
         )}
       </div>
 

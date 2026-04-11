@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface FileWatcherConfigProps {
   watchPaths: string[];
@@ -19,9 +20,10 @@ export function FileWatcherConfig({
   watchRecursive, setWatchRecursive, globFilter, setGlobFilter,
   validationError, setValidationError,
 }: FileWatcherConfigProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
-      <TriggerFieldGroup label="Watch Paths" error={validationError} errorId="watch-paths-error">
+      <TriggerFieldGroup label={t.triggers.file_watcher.paths_label} error={validationError} errorId="watch-paths-error">
         {watchPaths.map((path, i) => (
           <div key={i} className="flex items-center gap-1.5 mb-1.5">
             <input
@@ -48,10 +50,10 @@ export function FileWatcherConfig({
           </div>
         ))}
         <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 text-sm text-orange-400/80 hover:text-orange-400 transition-colors">
-          <Plus className="w-3.5 h-3.5" /> Add path
+          <Plus className="w-3.5 h-3.5" /> {t.triggers.file_watcher.add_path}
         </button>
       </TriggerFieldGroup>
-      <TriggerFieldGroup label="File Events">
+      <TriggerFieldGroup label={t.triggers.file_watcher.events_label}>
         <div className="flex flex-wrap gap-1.5">
           {(['create', 'modify', 'delete', 'rename'] as const).map((evt) => (
             <button
@@ -72,10 +74,10 @@ export function FileWatcherConfig({
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
-          <span className="text-sm text-foreground/80">Watch subdirectories recursively</span>
+          <span className="text-sm text-foreground/80">{t.triggers.watch_subdirs}</span>
         </label>
       </div>
-      <TriggerFieldGroup label="Glob Filter" optional>
+      <TriggerFieldGroup label={t.triggers.file_watcher.glob_filter} optional>
         <input
           type="text"
           value={globFilter}

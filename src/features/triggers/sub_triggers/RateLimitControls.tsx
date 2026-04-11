@@ -7,6 +7,7 @@ import {
   hasActiveRateLimit,
 } from '@/lib/utils/platform/triggerConstants';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RateLimitControlsProps {
   rateLimit: TriggerRateLimitConfig;
@@ -15,6 +16,7 @@ interface RateLimitControlsProps {
 }
 
 export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLimitControlsProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const active = hasActiveRateLimit(rateLimit);
 
@@ -30,7 +32,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Shield className="w-3 h-3" />
-        Rate Limiting
+        {t.triggers.rate_limiting}
         {active && (
           <span className="ml-1 px-1.5 py-0.5 rounded-full text-sm bg-amber-500/15 text-amber-400 font-medium">
             Active
@@ -57,7 +59,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 text-sm text-muted-foreground/70">
                   <Gauge className="w-3 h-3" />
-                  Max executions
+                  {t.triggers.max_executions}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -79,14 +81,14 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                     ))}
                   </select>
                 </div>
-                <p className="text-sm text-muted-foreground/50">0 = unlimited</p>
+                <p className="text-sm text-muted-foreground/50">{t.triggers.unlimited_hint}</p>
               </div>
 
               {/* Cooldown */}
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 text-sm text-muted-foreground/70">
                   <Clock className="w-3 h-3" />
-                  Cooldown between firings (seconds)
+                  {t.triggers.cooldown_label}
                 </label>
                 <input
                   type="number"
@@ -103,7 +105,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 text-sm text-muted-foreground/70">
                   <Layers className="w-3 h-3" />
-                  Max concurrent executions
+                  {t.triggers.max_concurrent_label}
                 </label>
                 <input
                   type="number"
@@ -121,14 +123,14 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
               {runtimeState && active && (
                 <div className="rounded-lg border border-primary/8 bg-background/30 p-2 space-y-1 text-sm">
                   <div className="flex items-center justify-between text-muted-foreground/70">
-                    <span>Window usage</span>
+                    <span>{t.triggers.window_usage}</span>
                     <span className="font-mono">
                       {runtimeState.firingTimestamps.length}
                       {rateLimit.max_per_window > 0 ? ` / ${rateLimit.max_per_window}` : ''}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-muted-foreground/70">
-                    <span>Concurrent</span>
+                    <span>{t.triggers.concurrent_label}</span>
                     <span className="font-mono">
                       {runtimeState.concurrentCount}
                       {rateLimit.max_concurrent > 0 ? ` / ${rateLimit.max_concurrent}` : ''}
@@ -136,13 +138,13 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   </div>
                   {runtimeState.queueDepth > 0 && (
                     <div className="flex items-center justify-between text-amber-400/80">
-                      <span>Queued</span>
+                      <span>{t.triggers.queued_stat}</span>
                       <span className="font-mono">{runtimeState.queueDepth}</span>
                     </div>
                   )}
                   {runtimeState.cooldownUntil > Date.now() && (
                     <div className="flex items-center justify-between text-amber-400/80">
-                      <span>Cooldown</span>
+                      <span>{t.triggers.cooldown_stat}</span>
                       <span className="font-mono">
                         {Math.ceil((runtimeState.cooldownUntil - Date.now()) / 1000)}s
                       </span>
@@ -157,7 +159,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   onClick={() => onChange({ ...DEFAULT_RATE_LIMIT })}
                   className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
                 >
-                  Clear all limits
+                  {t.triggers.clear_all_limits}
                 </button>
               )}
             </div>

@@ -7,8 +7,10 @@ import { RecipeList } from '@/features/recipes/sub_list/components/RecipeList';
 import { RecipeEditor } from '@/features/recipes/sub_editor/components/RecipeEditor';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
 import { useRecipeViewFSM } from '@/features/recipes/hooks/useRecipeViewFSM';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function RecipeManager() {
+  const { t } = useTranslation();
   const recipes = usePipelineStore((s) => s.recipes);
   const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
   const deleteRecipe = usePipelineStore((s) => s.deleteRecipe);
@@ -65,7 +67,7 @@ export function RecipeManager() {
       <ContentHeader
         icon={<BookOpen className="w-5 h-5 text-primary" />}
         iconColor="primary"
-        title="Recipes"
+        title={t.recipes.title}
         subtitle={
           loading
             ? 'Loading...'
@@ -91,7 +93,7 @@ export function RecipeManager() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search recipes... (Ctrl+K)"
+              placeholder={t.recipes.search_placeholder}
               className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
             />
             {search && (

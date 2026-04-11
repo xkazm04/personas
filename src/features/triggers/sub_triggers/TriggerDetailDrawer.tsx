@@ -11,6 +11,7 @@ import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
 import { WebhookRequestInspector } from './WebhookRequestInspector';
 import { CompositePartialMatchIndicator } from './CompositePartialMatchIndicator';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TriggerDetailDrawerProps {
   trigger: PersonaTrigger;
@@ -24,6 +25,7 @@ interface TriggerDetailDrawerProps {
 }
 
 export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, rateLimit, rateLimitState, onRateLimitChange, rawConfig, onActiveWindowChange }: TriggerDetailDrawerProps) {
+  const { t } = useTranslation();
   const detail = useTriggerDetail(trigger.id, trigger.persona_id);
   return (
     <div
@@ -66,7 +68,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
             }`}
           >
             <Terminal className="w-3 h-3" />
-            {detail.copiedCurl ? 'Copied!' : 'Copy sample curl'}
+            {detail.copiedCurl ? t.common.copied : t.triggers.copy_sample_curl}
           </button>
         )}
 
@@ -81,7 +83,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
               title="Validate trigger config, then fire"
             >
               {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
-              {detail.testing ? 'Validating...' : 'Test fire'}
+              {detail.testing ? t.triggers.detail.validating : t.triggers.test_fire_label}
             </button>
 
             <button
@@ -91,7 +93,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
               title="Simulate trigger without executing"
             >
               {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
-              {detail.dryRunning ? 'Simulating...' : 'Dry run'}
+              {detail.dryRunning ? t.triggers.detail.simulating : t.triggers.dry_run_label}
             </button>
           </div>
 
@@ -104,16 +106,16 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
           <div className="flex items-center rounded-xl bg-red-500/5 p-1">
             {detail.confirmingDelete ? (
               <div className="flex items-center gap-1">
-                <button onClick={() => detail.confirmDelete(onDelete)} className="p-2 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors" title="Confirm delete">
+                <button onClick={() => detail.confirmDelete(onDelete)} className="p-2 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors" title={t.triggers.detail.delete_confirm}>
                   <Check className="w-4 h-4 text-red-400" />
                 </button>
-                <button onClick={detail.cancelDelete} className="p-2 hover:bg-secondary/60 rounded-lg transition-colors" title="Cancel">
+                <button onClick={detail.cancelDelete} className="p-2 hover:bg-secondary/60 rounded-lg transition-colors" title={t.common.cancel}>
                   <X className="w-4 h-4 text-muted-foreground/90" />
                 </button>
               </div>
             ) : (
-              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete trigger">
-                <Trash2 className="w-4 h-4" />Delete
+              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title={t.triggers.detail.delete_trigger}>
+                <Trash2 className="w-4 h-4" />{t.common.delete}
               </button>
             )}
           </div>

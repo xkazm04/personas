@@ -8,8 +8,10 @@ import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from './TriggerAddForm';
 import { TriggerListItem } from './TriggerListItem';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function TriggerConfig() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
   const credentialEvents = useVaultStore((s) => s.credentialEvents);
   const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
@@ -57,7 +59,7 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Triggers</h3>
+        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"
@@ -101,7 +103,7 @@ export function TriggerConfig() {
 
         {triggers.length === 0 && (
           <div className="text-center py-10 text-muted-foreground/80 text-sm">
-            No triggers configured. Add one to automate this persona.
+            {t.triggers.config.empty}
           </div>
         )}
       </div>

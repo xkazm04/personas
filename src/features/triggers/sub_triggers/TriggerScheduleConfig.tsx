@@ -1,6 +1,7 @@
 import { formatInterval } from '@/lib/utils/formatters';
 import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function IntervalConfig({
   interval,
@@ -19,10 +20,11 @@ export function IntervalConfig({
   setValidationError: (v: string | null) => void;
   triggerType: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div>
       <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-        Interval
+        {t.triggers.schedule.interval_label}
       </label>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {([
@@ -137,6 +139,7 @@ export function CronConfig({
   validationError: string | null;
   onPresetSelect: (expr: string) => void;
 }) {
+  const { t } = useTranslation();
   const hasError = cronPreview && !cronPreview.valid;
 
   return (
@@ -210,7 +213,7 @@ export function CronConfig({
           <span>day</span>
           <span>month</span>
           <span>weekday</span>
-          <span className="ml-auto text-amber-400/60 text-xs font-sans font-medium">local time</span>
+          <span className="ml-auto text-amber-400/60 text-xs font-sans font-medium">{t.triggers.local_time}</span>
         </div>
       </div>
 

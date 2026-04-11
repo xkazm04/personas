@@ -29,10 +29,12 @@ const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
 import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("schedule-timeline");
 
 export default function ScheduleTimeline() {
+  const { t, tx } = useTranslation();
   const { cronAgents, loading, fetchCronAgents } = useOverviewStore(useShallow((s) => ({
     cronAgents: s.cronAgents,
     loading: s.cronAgentsLoading,
@@ -154,8 +156,8 @@ export default function ScheduleTimeline() {
       <ContentHeader
         icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title="Schedule Timeline"
-        subtitle="Aggregated view of all scheduled agent executions. Cron schedules use UTC."
+        title={t.schedules.title}
+        subtitle={t.schedules.subtitle}
         actions={
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
@@ -172,12 +174,12 @@ export default function ScheduleTimeline() {
                 {schedulerStats.running ? (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Engine On
+                    {t.schedules.engine_on}
                   </>
                 ) : (
                   <>
                     <Pause className="w-3 h-3" />
-                    Engine Off
+                    {t.schedules.engine_off}
                   </>
                 )}
               </button>
@@ -186,7 +188,7 @@ export default function ScheduleTimeline() {
             {/* Mock seed (dev only) */}
             {import.meta.env.DEV && (
               <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
-                <Plus className="w-3.5 h-3.5" /> Mock Schedule
+                <Plus className="w-3.5 h-3.5" /> {t.schedules.mock_schedule}
               </button>
             )}
 
@@ -194,12 +196,12 @@ export default function ScheduleTimeline() {
             <div className="flex items-center gap-1.5 text-xs">
               <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Zap className="w-3 h-3" />
-                {activeCount} active
+                {tx(t.schedules.active_count, { count: activeCount })}
               </span>
               {pausedCount > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 text-muted-foreground/50 border border-primary/10">
                   <Pause className="w-3 h-3" />
-                  {pausedCount} paused
+                  {tx(t.schedules.paused_count, { count: pausedCount })}
                 </span>
               )}
             </div>
@@ -247,7 +249,7 @@ export default function ScheduleTimeline() {
         {loading && cronAgents.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground/70">
             <LoadingSpinner size="lg" className="mr-2" />
-            Loading schedules...
+            {t.schedules.loading_schedules}
           </div>
         ) : cronAgents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground/60">
@@ -255,9 +257,9 @@ export default function ScheduleTimeline() {
               <CalendarClock className="w-10 h-10 text-blue-400/50" />
             </div>
             <div className="text-center space-y-1.5">
-              <p className="typo-heading text-foreground/70">No scheduled agents</p>
+              <p className="typo-heading text-foreground/70">{t.schedules.no_scheduled_agents}</p>
               <p className="text-xs text-muted-foreground/50 max-w-[280px] mx-auto leading-relaxed">
-                Create a cron or polling trigger on any agent to see its schedule here. Missed runs are recovered automatically on startup.
+                {t.schedules.no_scheduled_hint}
               </p>
             </div>
           </div>
@@ -275,7 +277,7 @@ export default function ScheduleTimeline() {
 
             {/* Main schedule view */}
             {viewMode === 'calendar' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><LoadingSpinner className="mr-2" />Loading calendar...</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : viewMode === 'grouped' ? (
@@ -296,13 +298,14 @@ export default function ScheduleTimeline() {
 
 // -- Segmented View Toggle (tablist) -------------------------------------------
 
-const VIEW_OPTIONS: { value: ViewMode; label: string; icon?: true }[] = [
-  { value: 'grouped', label: 'Grouped' },
-  { value: 'timeline', label: 'Timeline' },
-  { value: 'calendar', label: 'Calendar', icon: true },
-];
-
 function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const { t } = useTranslation();
+
+  const VIEW_OPTIONS: { value: ViewMode; label: string; icon?: true }[] = [
+    { value: 'grouped', label: t.schedules.view_grouped },
+    { value: 'timeline', label: t.schedules.view_timeline },
+    { value: 'calendar', label: t.schedules.view_calendar, icon: true },
+  ];
   const tablistRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

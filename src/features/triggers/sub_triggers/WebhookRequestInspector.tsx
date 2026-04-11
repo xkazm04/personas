@@ -13,6 +13,7 @@ import {
   replayWebhookRequest,
   webhookRequestToCurl,
 } from '@/api/pipeline/triggers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // --- Helpers ---------------------------------------------------------------
 
@@ -165,6 +166,7 @@ interface WebhookRequestInspectorProps {
 }
 
 export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState<WebhookRequestLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -241,7 +243,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Radio className="w-3 h-3" />
-        Request inspector
+        {t.triggers.request_inspector}
         {logs.length > 0 && (
           <span className="text-muted-foreground/50 ml-1">({logs.length})</span>
         )}
@@ -263,7 +265,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
               ) : error ? (
                 <div className="flex items-center gap-2 py-2 text-sm text-amber-400/90">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
-                  Could not load request log
+                  {t.triggers.could_not_load_log}
                   <button
                     onClick={() => void fetch()}
                     className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
@@ -273,7 +275,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                 </div>
               ) : logs.length === 0 ? (
                 <div className="py-2 text-sm text-muted-foreground/80">
-                  No webhook requests received yet
+                  {t.triggers.no_webhook_requests}
                 </div>
               ) : (
                 <>

@@ -1,4 +1,5 @@
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface ClipboardConfigProps {
   clipboardContentType: string;
@@ -14,9 +15,10 @@ export function ClipboardConfig({
   clipboardPattern, setClipboardPattern,
   clipboardInterval, setClipboardInterval,
 }: ClipboardConfigProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
-      <TriggerFieldGroup label="Content Type">
+      <TriggerFieldGroup label={t.triggers.clipboard.content_type}>
         <div className="flex gap-1.5">
           {(['text', 'image', 'any'] as const).map((ct) => (
             <button
@@ -36,7 +38,7 @@ export function ClipboardConfig({
       </TriggerFieldGroup>
       <TriggerFieldGroup
         label={<>Text Pattern <span className="text-muted-foreground/50">(optional regex)</span></>}
-        helpText="Only fires when clipboard text matches this pattern"
+        helpText={t.triggers.text_pattern_help}
       >
         <input
           type="text"
@@ -46,7 +48,7 @@ export function ClipboardConfig({
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
-      <TriggerFieldGroup label="Poll Interval (seconds)">
+      <TriggerFieldGroup label={t.triggers.poll_interval_label}>
         <input
           type="number"
           value={clipboardInterval}

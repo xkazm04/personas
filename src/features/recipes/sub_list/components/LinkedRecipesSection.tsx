@@ -8,12 +8,14 @@ import { SectionHeader } from '@/features/shared/components/layout/SectionHeader
 import { RecipePicker } from './RecipePicker';
 import { RecipePlaygroundModal } from '../../sub_playground/components/RecipePlaygroundModal';
 import { PuzzlePieceIllustration } from '../../shared/PuzzlePieceIllustration';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface LinkedRecipesSectionProps {
   personaId: string;
 }
 
 export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
+  const { t } = useTranslation();
   const fetchPersonaRecipes = usePipelineStore((s) => s.fetchPersonaRecipes);
   const linkRecipeToPersona = usePipelineStore((s) => s.linkRecipeToPersona);
   const unlinkRecipeFromPersona = usePipelineStore((s) => s.unlinkRecipeFromPersona);
@@ -66,7 +68,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground/60">
-        <LoadingSpinner size="xs" /> Loading linked recipes...
+        <LoadingSpinner size="xs" /> {t.recipes.loading_linked}
       </div>
     );
   }
@@ -82,7 +84,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
           onClick={() => setPickerOpen(true)}
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
         >
-          <Plus className="w-3 h-3" /> Add
+          <Plus className="w-3 h-3" /> {t.common.edit ? 'Add' : 'Add'}
         </button>
       </div>
 
@@ -118,7 +120,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 onClick={() => setPlaygroundRecipe(recipe)}
                 className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
               >
-                <Play className="w-3 h-3" /> Run
+                <Play className="w-3 h-3" /> {t.recipes.run}
               </button>
               <button
                 onClick={() => handleUnlink(recipe.id)}

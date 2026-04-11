@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, Search, Plus } from 'lucide-react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipePickerProps {
   /** Recipes already linked -- excluded from the list */
@@ -11,6 +12,7 @@ interface RecipePickerProps {
 }
 
 export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePickerProps) {
+  const { t } = useTranslation();
   const recipes = usePipelineStore((s) => s.recipes);
   const [search, setSearch] = useState('');
 
@@ -41,7 +43,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
           <BookOpen className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground flex-1">Link Recipe</h2>
+          <h2 className="text-sm font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
             onClick={onClose}
             className="flex items-center justify-center w-6 h-6 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -58,7 +60,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search recipes..."
+              placeholder={t.recipes.search_recipes}
               autoFocus
               className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
             />
@@ -70,8 +72,8 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
           {available.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60">
               {recipes.length === linkedRecipeIds.size
-                ? 'All recipes are already linked.'
-                : 'No matching recipes found.'}
+                ? t.recipes.all_linked
+                : t.recipes.no_matching}
             </div>
           ) : (
             <div className="space-y-1">

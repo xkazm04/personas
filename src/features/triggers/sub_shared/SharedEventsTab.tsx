@@ -9,10 +9,12 @@ import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogE
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import { CatalogCard } from './CatalogCard';
 import { SubscriptionList } from './SubscriptionList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type View = 'browse' | 'subscriptions';
 
 export function SharedEventsTab() {
+  const { t } = useTranslation();
   const [view, setView] = useState<View>('browse');
   const [catalog, setCatalog] = useState<SharedEventCatalogEntry[]>([]);
   const [subscriptions, setSubscriptions] = useState<SharedEventSubscription[]>([]);
@@ -87,7 +89,7 @@ export function SharedEventsTab() {
             }`}
           >
             <Store className="w-3 h-3 inline mr-1.5" />
-            Browse
+            {t.triggers.browse_label}
           </button>
           <button
             onClick={() => setView('subscriptions')}
@@ -96,7 +98,7 @@ export function SharedEventsTab() {
             }`}
           >
             <Rss className="w-3 h-3 inline mr-1.5" />
-            My Subscriptions
+            {t.triggers.my_subscriptions}
             {subscriptions.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-[10px]">{subscriptions.length}</span>
             )}
@@ -124,7 +126,7 @@ export function SharedEventsTab() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search feeds..."
+                placeholder={t.triggers.search_feeds}
                 className="w-full pl-8 pr-7 py-1.5 text-xs rounded-md bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               {search && (
@@ -180,10 +182,10 @@ export function SharedEventsTab() {
                   <RssIcon className="w-6 h-6 text-sky-400" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {loading ? 'Loading catalog...' : 'No shared event feeds available yet'}
+                  {loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
                 </p>
                 <p className="text-xs text-muted-foreground/50">
-                  Click Refresh to fetch the latest feeds from the cloud
+                  {t.triggers.no_feeds_hint}
                 </p>
               </div>
             )}

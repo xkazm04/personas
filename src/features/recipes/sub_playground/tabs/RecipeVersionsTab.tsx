@@ -11,6 +11,7 @@ import { EstimatedProgressBar } from '@/features/shared/components/progress/Esti
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { VersionTimelineIllustration } from '../../shared/VersionTimelineIllustration';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeVersionsTabProps {
   recipe: RecipeDefinition;
@@ -18,6 +19,7 @@ interface RecipeVersionsTabProps {
 }
 
 export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTabProps) {
+  const { t } = useTranslation();
   const [versions, setVersions] = useState<RecipeVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [requirements, setRequirements] = useState('');
@@ -103,7 +105,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
         <div>
           <label className="block text-sm text-muted-foreground mb-1.5">
-            What changes do you want to make?
+            {t.recipes.what_changes}
           </label>
           <textarea
             value={requirements}
@@ -122,7 +124,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
             className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Generate New Version
+            {t.recipes.generate_new_version}
           </button>
         )}
 
@@ -131,7 +133,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <RecipePageFlipLoader className="text-primary" />
-              <span>Generating new version...</span>
+              <span>{t.recipes.generating_version}</span>
             </div>
             <EstimatedProgressBar isRunning estimatedSeconds={30} />
             <TerminalStrip
@@ -168,17 +170,17 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               />
             )}
 
-            <h4 className="text-sm font-semibold text-foreground/80">Generated Version</h4>
+            <h4 className="text-sm font-semibold text-foreground/80">{t.recipes.generated_version}</h4>
 
             {versioning.draft.changes_summary && (
               <div>
-                <p className="text-sm text-muted-foreground/60 mb-0.5">Changes</p>
+                <p className="text-sm text-muted-foreground/60 mb-0.5">{t.recipes.changes}</p>
                 <p className="text-sm text-foreground/80">{versioning.draft.changes_summary}</p>
               </div>
             )}
 
             <div>
-              <p className="text-sm text-muted-foreground/60 mb-0.5">Updated Prompt Template</p>
+              <p className="text-sm text-muted-foreground/60 mb-0.5">{t.recipes.updated_prompt}</p>
               <PromptTemplateRenderer content={versioning.draft.prompt_template} maxHeight="max-h-40" />
             </div>
 
@@ -189,7 +191,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {accepting ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
-                Accept & Apply
+                {t.recipes.accept_apply}
               </button>
               <button
                 onClick={() => {
@@ -211,7 +213,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         )}
       </div>
 
-      {/* Version History */}
+      {/* {t.recipes.version_history} */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Version History {!loading && versions.length > 0 && `(${versions.length})`}
@@ -219,12 +221,12 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
-            <LoadingSpinner size="sm" /> Loading versions...
+            <LoadingSpinner size="sm" /> {t.recipes.loading_versions}
           </div>
         ) : versions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60 gap-2">
             <VersionTimelineIllustration />
-            No versions yet. Generate a new version to start tracking changes.
+            {t.recipes.no_versions}
           </div>
         ) : (
           <div className="relative">
@@ -292,7 +294,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                           ) : (
                             <RotateCcw className="w-3 h-3" />
                           )}
-                          Revert to this version
+                          {t.recipes.revert_to_version}
                         </button>
                       )}
                     </div>

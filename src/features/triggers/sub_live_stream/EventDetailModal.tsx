@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { HighlightedJson } from './HighlightedJson';
 import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EventDetailModalProps {
   event: PersonaEvent;
@@ -20,6 +21,7 @@ const SOURCE_ICONS: Record<string, { icon: typeof Cloud; color: string }> = {
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
 export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
+  const { t } = useTranslation();
   const [copiedPayload, setCopiedPayload] = useState(false);
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
   const sourceConfig = event.source_type ? SOURCE_ICONS[event.source_type] : null;
@@ -74,7 +76,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           </button>
         </div>
 
-        {/* ── Body — flex-1 so Event Data fills remaining space ── */}
+        {/* ── Body — flex-1 so {t.triggers.event_data} fills remaining space ── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Improvement #7: Metadata grid with better visual hierarchy */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-primary/5 border-b border-primary/10 flex-shrink-0">
@@ -132,7 +134,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                   ) : (
                     <>
                       <Copy className="w-3 h-3" />
-                      Copy JSON
+                      {t.triggers.copy_json}
                     </>
                   )}
                 </button>
@@ -147,7 +149,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* If no payload, show empty state */}
           {!event.payload && !event.error_message && (
             <div className="flex-1 flex items-center justify-center text-muted-foreground/40 text-sm">
-              No event data
+              {t.triggers.no_event_data}
             </div>
           )}
 

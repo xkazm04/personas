@@ -5,6 +5,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { formatOutputForMarkdown } from './recipeTestHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeOutputSectionProps {
   result: { recipe_name: string; rendered_prompt: string; executed_at: string } | null;
@@ -25,6 +26,7 @@ export function RecipeOutputSection({
   error,
   executionError,
 }: RecipeOutputSectionProps) {
+  const { t } = useTranslation();
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedOutput, setCopiedOutput] = useState(false);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
@@ -85,7 +87,7 @@ export function RecipeOutputSection({
             <PromptTemplateRenderer content={result.rendered_prompt} maxHeight="max-h-[400px]" className="flex-1" />
           ) : (
             <div className="rounded-lg border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
-              {running ? 'Rendering prompt...' : 'Run the recipe to see the rendered prompt.'}
+              {running ? t.recipes.rendering_prompt : t.recipes.run_to_see_prompt}
             </div>
           )}
         </div>
@@ -129,7 +131,7 @@ export function RecipeOutputSection({
             </div>
           ) : (
             <div className="rounded-lg border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
-              {running ? 'Waiting for prompt render...' : 'Execute the recipe to see LLM output.'}
+              {running ? t.recipes.waiting_for_render : t.recipes.execute_to_see_output}
             </div>
           )}
         </div>

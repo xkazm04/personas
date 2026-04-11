@@ -16,6 +16,7 @@ import { TestTab } from './sub_test/TestTab';
 import { SmeeRelayTab } from './sub_smee_relay/SmeeRelayTab';
 import { CloudWebhooksTab } from './sub_cloud_webhooks/CloudWebhooksTab';
 import { DeadLetterTab } from './sub_dead_letter/DeadLetterTab';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const EventCanvas = lazy(() => import('./sub_builder/EventCanvas').then(m => ({ default: m.EventCanvas })));
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
@@ -34,82 +35,6 @@ interface TabHeaderConfig {
   renderActions?: () => ReactNode;
 }
 
-/**
- * Per-tab header metadata. Every Triggers tab gets a distinct introduction
- * and a slot for custom actions — no more hardcoded "Live Stream" header.
- */
-const TAB_HEADERS: Record<EventBusTab, TabHeaderConfig> = {
-  'live-stream': {
-    icon: Radio,
-    iconColor: 'cyan',
-    title: 'Live Stream',
-    subtitle: 'Real-time event hub — agents publish and subscribe to events through this shared bus',
-    renderActions: () => (
-      <button
-        onClick={() => {
-          useSystemStore.getState().setSidebarSection('overview');
-          void import("@/stores/overviewStore").then(({ useOverviewStore }) =>
-            useOverviewStore.getState().setOverviewTab('events')
-          );
-        }}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
-        title="View full Event Log in Overview"
-      >
-        <ExternalLink className="w-3 h-3" />
-        Full Event Log
-      </button>
-    ),
-  },
-  builder: {
-    icon: Network,
-    iconColor: 'violet',
-    title: 'Builder',
-    subtitle: 'Connect personas to event sources — every event flowing through the bus, with the personas listening to it',
-  },
-  'rate-limits': {
-    icon: Gauge,
-    iconColor: 'amber',
-    title: 'Speed Limits',
-    subtitle: 'Throttling, queue depth, and concurrency limits for triggers',
-  },
-  test: {
-    icon: Zap,
-    iconColor: 'emerald',
-    title: 'Test',
-    subtitle: 'Fire test events into the bus to validate listeners and routing',
-  },
-  'smee-relay': {
-    icon: Unplug,
-    iconColor: 'indigo',
-    title: 'Local Relay',
-    subtitle: 'Forward webhooks from public endpoints into your local event bus',
-  },
-  'cloud-webhooks': {
-    icon: Webhook,
-    iconColor: 'blue',
-    title: 'Cloud Events',
-    subtitle: 'Webhook endpoints exposed by deployed cloud workers',
-  },
-  'dead-letter': {
-    icon: Archive,
-    iconColor: 'red',
-    title: 'Dead Letter Queue',
-    subtitle: 'Events that failed delivery — inspect, retry, or discard',
-  },
-  studio: {
-    icon: GitBranch,
-    iconColor: 'primary',
-    title: 'Chain Studio',
-    subtitle: 'Visually compose multi-step trigger chains with conditional routing',
-  },
-  shared: {
-    icon: Store,
-    iconColor: 'primary',
-    title: 'Marketplace',
-    subtitle: 'Discover and subscribe to events shared by other personas',
-  },
-};
-
 function LazyWrap({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading...</div>}>
@@ -119,6 +44,39 @@ function LazyWrap({ children }: { children: ReactNode }) {
 }
 
 export function TriggersPage() {
+  const { t } = useTranslation();
+
+  const TAB_HEADERS: Record<EventBusTab, TabHeaderConfig> = useMemo(() => ({
+    'live-stream': {
+      icon: Radio,
+      iconColor: 'cyan',
+      title: t.triggers.tab_live_stream,
+      subtitle: t.triggers.tab_live_stream_subtitle,
+      renderActions: () => (
+        <button
+          onClick={() => {
+            useSystemStore.getState().setSidebarSection('overview');
+            void import("@/stores/overviewStore").then(({ useOverviewStore }) =>
+              useOverviewStore.getState().setOverviewTab('events')
+            );
+          }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+          title={t.triggers.full_event_log}
+        >
+          <ExternalLink className="w-3 h-3" />
+          {t.triggers.full_event_log}
+        </button>
+      ),
+    },
+    builder: { icon: Network, iconColor: 'violet', title: t.triggers.tab_builder, subtitle: t.triggers.tab_builder_subtitle },
+    'rate-limits': { icon: Gauge, iconColor: 'amber', title: t.triggers.tab_rate_limits, subtitle: t.triggers.tab_rate_limits_subtitle },
+    test: { icon: Zap, iconColor: 'emerald', title: t.triggers.tab_test, subtitle: t.triggers.tab_test_subtitle },
+    'smee-relay': { icon: Unplug, iconColor: 'indigo', title: t.triggers.tab_smee_relay, subtitle: t.triggers.tab_smee_relay_subtitle },
+    'cloud-webhooks': { icon: Webhook, iconColor: 'blue', title: t.triggers.tab_cloud_webhooks, subtitle: t.triggers.tab_cloud_webhooks_subtitle },
+    'dead-letter': { icon: Archive, iconColor: 'red', title: t.triggers.tab_dead_letter, subtitle: t.triggers.tab_dead_letter_subtitle },
+    studio: { icon: GitBranch, iconColor: 'primary', title: t.triggers.tab_studio, subtitle: t.triggers.tab_studio_subtitle },
+    shared: { icon: Store, iconColor: 'primary', title: t.triggers.tab_shared, subtitle: t.triggers.tab_shared_subtitle },
+  }), [t]);
   const personas = useAgentStore((s) => s.personas);
   const eventBusTab = useSystemStore((s) => s.eventBusTab);
 

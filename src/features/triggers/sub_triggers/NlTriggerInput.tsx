@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Sparkles, ArrowRight, RotateCcw, Check, AlertCircle } from 'lucide-react';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/platform/triggerConstants';
 import { parseNaturalLanguageTrigger, type NlParseResult } from './nlTriggerParser';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface NlTriggerInputProps {
   onApplyResult: (result: NlParseResult) => void;
@@ -23,6 +24,7 @@ const CONFIDENCE_STYLES = {
 };
 
 export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [result, setResult] = useState<NlParseResult | null>(null);
   const [noMatch, setNoMatch] = useState(false);
@@ -90,7 +92,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
     <div className="space-y-2">
       <label className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
         <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-        Describe your trigger
+        {t.triggers.describe_trigger}
       </label>
 
       <div className="relative">

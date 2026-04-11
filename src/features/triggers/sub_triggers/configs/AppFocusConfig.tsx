@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface AppFocusConfigProps {
   appNames: string[];
@@ -14,12 +15,13 @@ export function AppFocusConfig({
   appNames, setAppNames, titlePattern, setTitlePattern,
   appFocusInterval, setAppFocusInterval,
 }: AppFocusConfigProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <TriggerFieldGroup
-        label="App Names"
+        label={t.triggers.app_focus.app_names_label}
         optional
-        helpText="Leave empty to trigger on any app focus change"
+        helpText={t.triggers.app_names_help}
       >
         {appNames.map((name, i) => (
           <div key={i} className="flex items-center gap-1.5 mb-1.5">
@@ -42,7 +44,7 @@ export function AppFocusConfig({
           </div>
         ))}
         <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 text-sm text-indigo-400/80 hover:text-indigo-400 transition-colors">
-          <Plus className="w-3.5 h-3.5" /> Add app
+          <Plus className="w-3.5 h-3.5" /> {t.triggers.app_focus.add_app}
         </button>
       </TriggerFieldGroup>
       <TriggerFieldGroup
@@ -56,7 +58,7 @@ export function AppFocusConfig({
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
-      <TriggerFieldGroup label="Poll Interval (seconds)">
+      <TriggerFieldGroup label={t.triggers.poll_interval_label}>
         <input
           type="number"
           value={appFocusInterval}

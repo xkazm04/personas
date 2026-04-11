@@ -16,12 +16,14 @@ import {
 } from '@/api/system/cloud';
 import { openExternalUrl } from '@/api/system/system';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SmeeRelayTabProps {
   onSwitchToLiveStream?: () => void;
 }
 
 export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
+  const { t } = useTranslation();
   const globalStatus = useSmeeRelayStatus();
   const personas = useAgentStore((s) => s.personas);
 
@@ -175,7 +177,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 onClick={onSwitchToLiveStream}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
               >
-                Live Stream
+                {t.triggers.live_stream}
               </button>
             )}
           </div>
@@ -184,14 +186,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Header + Add button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-            Smee Relays
+            {t.triggers.smee_relays}
           </h3>
           <button
             onClick={() => { setShowAdd(!showAdd); if (showAdd) setTouchedFields(new Set()); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
           >
             {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showAdd ? 'Cancel' : 'Add Relay'}
+            {showAdd ? t.common.cancel : t.triggers.add_relay}
           </button>
         </div>
 
@@ -268,7 +270,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                   onChange={(e) => setAddPersonaId(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/40"
                 >
-                  <option value="">Broadcast to all</option>
+                  <option value="">{t.triggers.broadcast_to_all}</option>
                   {personas.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -302,7 +304,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
               >
                 {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
-                Create Relay
+                {t.triggers.create_relay}
               </button>
               <p className="text-xs text-muted-foreground/50">
                 Get a channel URL from <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
@@ -324,16 +326,16 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
               <Unplug className="w-7 h-7 text-purple-400/50" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">No Smee relays configured</p>
+            <p className="text-sm font-medium text-foreground/70">{t.triggers.no_smee_relays}</p>
             <p className="text-sm text-muted-foreground/50 mt-1 max-w-sm">
-              Add a Smee relay to receive GitHub webhooks and 3rd-party events in real-time through the event bus.
+              {t.triggers.smee_relay_desc}
             </p>
             <button
               onClick={() => setShowAdd(true)}
               className="mt-4 flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add First Relay
+              {t.triggers.add_first_relay}
             </button>
           </div>
         )}
@@ -488,10 +490,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 // ---------------------------------------------------------------------------
 
 function SetupGuide() {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-border/20 bg-secondary/5 p-5 space-y-3">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">
-        How it works
+        {t.triggers.how_it_works}
       </h4>
       <div className="space-y-2 text-sm text-muted-foreground/60">
         <div className="flex items-start gap-2.5">

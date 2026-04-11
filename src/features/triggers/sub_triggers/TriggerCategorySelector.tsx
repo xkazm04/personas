@@ -3,6 +3,7 @@ import {
   TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_CATEGORIES,
   type TriggerCategory,
 } from '@/lib/utils/platform/triggerConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerCategorySelectorProps {
   selectedCategory: TriggerCategory | null;
@@ -13,6 +14,7 @@ export interface TriggerCategorySelectorProps {
 export function TriggerCategorySelector({
   selectedCategory, onSelectCategory, onSelectTriggerType,
 }: TriggerCategorySelectorProps) {
+  const { t } = useTranslation();
   return (
     <div>
       <label className="block text-sm font-medium text-foreground/80 mb-1.5">
@@ -61,9 +63,9 @@ export function TriggerCategorySelector({
         >
           <div className="flex items-center gap-2">
             {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
-            <span className="text-sm font-semibold text-foreground/90">Manual</span>
+            <span className="text-sm font-semibold text-foreground/90">{t.triggers.category_manual}</span>
           </div>
-          <span className="text-xs text-muted-foreground/70">Run on demand</span>
+          <span className="text-xs text-muted-foreground/70">{t.triggers.category_manual_hint}</span>
         </button>
       </div>
     </div>

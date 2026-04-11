@@ -9,6 +9,7 @@ import { PromptTemplateRenderer } from '@/features/shared/components/editors/Pro
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { RecipeBookIllustration } from '../../shared/RecipeBookIllustration';
 import * as recipeApi from '@/api/templates/recipes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeListProps {
   recipes: RecipeDefinition[];
@@ -19,6 +20,7 @@ interface RecipeListProps {
 }
 
 export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: RecipeListProps) {
+  const { t } = useTranslation();
   const [quickTestResults, setQuickTestResults] = useState<Record<string, RecipeExecutionResult | null>>({});
   const [quickTestLoading, setQuickTestLoading] = useState<Record<string, boolean>>({});
 
@@ -57,11 +59,11 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
     return (
       <EmptyState
         icon={search ? BookOpen : undefined}
-        title={search ? 'No matching recipes' : 'No recipes yet'}
+        title={search ? t.recipes.no_match : t.recipes.empty}
         description={
           search
-            ? 'Try a different search term.'
-            : 'Create your first reusable LLM recipe to get started.'
+            ? t.recipes.no_match_hint
+            : t.recipes.empty_hint
         }
       >
         {!search && <RecipeBookIllustration className="mb-1" />}
@@ -86,7 +88,7 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
             {/* Quick test loading */}
             {quickTestLoading[recipe.id] && (
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-border/40 bg-card/30 px-3 py-2 text-sm text-muted-foreground">
-                <RecipePageFlipLoader className="text-primary" /> Running quick test...
+                <RecipePageFlipLoader className="text-primary" /> {t.recipes.running_quick_test}
               </div>
             )}
 
@@ -94,7 +96,7 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
             {quickTestResults[recipe.id] && (
               <div className="mt-2 rounded-lg border border-border/40 bg-card/30 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Quick Test Result</p>
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
                     onClick={() => dismissResult(recipe.id)}
                     className="p-0.5 rounded text-muted-foreground/50 hover:text-foreground transition-colors"

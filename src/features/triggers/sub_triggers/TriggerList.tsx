@@ -16,12 +16,14 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { TriggerHealth } from './triggerListTypes';
 import { HealthDot } from './HealthDot';
 import { TriggerCountdown } from './TriggerCountdown';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TriggerListProps {
   onNavigateToPersona?: (personaId: string) => void;
 }
 
 export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((state) => state.personas);
   const triggerRateLimits = usePipelineStore((s) => s.triggerRateLimits);
   const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
@@ -86,12 +88,12 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={Zap}
-              title="No triggers configured yet"
-              description="Triggers let your agents react to events automatically -- schedules, webhooks, file changes, and more."
+              title={t.triggers.list.empty_title}
+              description={t.triggers.list.empty_hint}
               iconColor="text-amber-400/80"
               iconContainerClassName="bg-amber-500/10 border-amber-500/20"
               action={onNavigateToPersona ? {
-                label: 'Create Your First Trigger',
+                label: t.triggers.list.create_first,
                 onClick: () => {
                   const firstPersona = personas[0];
                   if (firstPersona) onNavigateToPersona(firstPersona.id);
@@ -101,7 +103,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Event Triggers</h3>
+            <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">
@@ -153,18 +155,18 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'
                               }`}>
-                                {trigger.enabled ? 'On' : 'Off'}
+                                {trigger.enabled ? t.triggers.on_label : t.triggers.off_label}
                               </span>
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
                               {triggerRateLimits[trigger.id]?.isThrottled && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-sm bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
                                   <Shield className="w-2.5 h-2.5" />
-                                  Throttled
+                                  {t.triggers.throttled_label}
                                 </span>
                               )}
                               {(triggerRateLimits[trigger.id]?.queueDepth ?? 0) > 0 && (
                                 <span className="px-1.5 py-0.5 rounded-full text-sm bg-amber-500/15 text-amber-400 border border-amber-500/20 font-mono">
-                                  {triggerRateLimits[trigger.id]!.queueDepth} queued
+                                  {tx(t.triggers.queued_label, { count: triggerRateLimits[trigger.id]!.queueDepth })}
                                 </span>
                               )}
                             </div>
