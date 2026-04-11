@@ -197,3 +197,22 @@
 - The `obsidian_drive_status` and `obsidian_drive_push/pull_sync` Tauri commands need to be registered in `lib.rs` `generate_handler!()` macro to be callable from frontend
 - BrowsePanel markdown rendering uses `prose-invert` — needs light theme override for `[data-theme^="light"]` to avoid invisible text
 - No i18n for any Obsidian Brain UI text (all 4 panels hardcoded English)
+
+## Lab Regression Testing
+
+- [2026-04-11] LabMode extended with `"regression"` — 8th mode alongside arena/ab/matrix/eval/versions/breed/evolve
+- [2026-04-11] Baseline pinning via localStorage (`dac-lab-baselines` key) — stores `BaselinePin { versionId, versionNumber, runId, pinnedAt }` per personaId
+- [2026-04-11] VersionItem has Pin/Unpin Baseline buttons (Star icon) + golden "baseline" badge. Currently pins with empty runId — needs UX to link an eval run when pinning
+- [2026-04-11] RegressionPanel uses existing `startEval` to run baseline + selected version as a 2-version eval. Results compared via `compositeScore` from `evalFramework.ts` (weights: 0.4 tool_accuracy, 0.4 output_quality, 0.2 protocol_compliance)
+- [2026-04-11] RegressionResultsView shows overall verdict (pass/fail/improved), summary deltas per metric dimension, per-scenario breakdown with color-coded rows
+- [2026-04-11] Regression threshold is configurable (default 5 pts) — fail if any scenario's composite score drops more than threshold vs baseline
+- [2026-04-11] Regression nudge banner in VersionsPanel: appears when baseline exists AND newer non-archived versions exist. One-click navigation to Lab > Regression tab
+
+## Open follow-ups (from Run #6 — Regression Testing, 2026-04-11)
+
+- The "Pin as Baseline" action currently passes empty string for runId — should be linked to a specific eval run. Consider showing a run picker when pinning, or auto-selecting the most recent completed eval run for that version
+- No auto-regression-on-save: prompt saves don't auto-trigger regression checks yet. A future enhancement could add a setting to run regression automatically on every prompt version creation
+- No CI/CD integration: regression pass/fail verdict is UI-only. A Tauri command exposing the verdict programmatically would enable external CI hooks
+- Regression results are ephemeral — they exist as normal eval runs, not tagged specially. Consider adding a `regression_check` tag to eval runs started from the Regression panel for filtering/history
+- The compositeScore weighting (0.4/0.4/0.2) is hardcoded — consider making weights configurable per persona for specialized use cases
+- No i18n for any regression panel text
