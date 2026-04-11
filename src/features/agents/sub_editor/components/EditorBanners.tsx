@@ -2,6 +2,7 @@ import { AlertTriangle, Cloud, LogIn, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/features/shared/components/buttons/Button';
 
 type BannerColorScheme = 'amber' | 'violet' | 'sky' | 'red';
 
@@ -48,9 +49,9 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
             {actions.map((action, index) => (
               <span key={index}>{action}</span>
             ))}
-            <button onClick={onDismiss} className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/90 transition-colors duration-snap">
+            <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="w-7 h-7">
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -76,12 +77,12 @@ export function UnsavedChangesBanner({
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
       message={`Unsaved changes${changedSections.length > 0 ? `: ${changedSections.join(', ')}` : ''}`}
       actions={[
-        <button key="save" onClick={onSaveAndSwitch} className="btn-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors duration-snap">
+        <Button key="save" variant="accent" accentColor="amber" size="sm" onClick={onSaveAndSwitch}>
           Save & Switch
-        </button>,
-        <button key="discard" onClick={onDiscardAndSwitch} className="btn-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/20 hover:bg-secondary/70 transition-colors duration-snap">
+        </Button>,
+        <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch}>
           Discard
-        </button>,
+        </Button>,
       ]}
       onDismiss={onDismiss}
     />
@@ -121,23 +122,27 @@ export function CloudNudgeBanner() {
         : 'Sign in to unlock cloud features and remote execution'}
       actions={[
         ...(!isAuthenticated ? [
-          <button
+          <Button
             key="signin"
+            variant="accent"
+            accentColor="sky"
+            size="sm"
+            icon={<LogIn className="w-3 h-3" />}
             onClick={() => { setSidebarSection('settings'); setShowCloudNudge(false); }}
-            className="px-3 py-1 rounded-xl typo-heading bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
           >
-            <LogIn className="w-3 h-3" />
             Sign In
-          </button>,
+          </Button>,
         ] : []),
-        <button
+        <Button
           key="cloud"
+          variant="accent"
+          accentColor="sky"
+          size="sm"
+          icon={<Cloud className="w-3 h-3" />}
           onClick={() => { setSidebarSection('personas'); useSystemStore.getState().setAgentTab('cloud'); setShowCloudNudge(false); }}
-          className="px-3 py-1 rounded-xl typo-heading bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition-colors duration-snap flex items-center gap-1.5"
         >
-          <Cloud className="w-3 h-3" />
           Set up Cloud
-        </button>,
+        </Button>,
       ]}
       onDismiss={() => setShowCloudNudge(false)}
     />
