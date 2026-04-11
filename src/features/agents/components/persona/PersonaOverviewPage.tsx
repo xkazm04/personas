@@ -3,6 +3,7 @@ import { Bot, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
@@ -126,14 +127,14 @@ export default function PersonaOverviewPage() {
               onClear={() => setSelectedIds(new Set())}
             />
             {draftIds.length > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Trash2 className="w-3.5 h-3.5" />}
                 onClick={handleDeleteDrafts}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" />
                 Delete Drafts ({draftIds.length})
-              </button>
+              </Button>
             )}
             <ViewPresetBar currentConfig={view} onApplyConfig={setView} />
           </div>
