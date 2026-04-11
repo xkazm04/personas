@@ -1,4 +1,5 @@
 import { X, Sparkles, Download } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { BaseModal } from '../../shared/BaseModal';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
@@ -17,6 +18,7 @@ export function RecommendedModal({
   recommendedTemplates,
   onSelectTemplate,
 }: RecommendedModalProps) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -32,10 +34,10 @@ export function RecommendedModal({
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400/70" />
           <h2 id="recommended-modal-title" className="text-sm font-semibold text-foreground/90">
-            Recommended for You
+            {t.templates.recommended.title}
           </h2>
           <span className="text-xs text-muted-foreground/60">
-            Based on your connectors
+            {t.templates.recommended.subtitle}
           </span>
         </div>
         <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/50 transition-colors">
@@ -47,7 +49,7 @@ export function RecommendedModal({
       <div className="flex-1 overflow-y-auto">
         {recommendedTemplates.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/50">
-            No recommendations available yet.
+            {t.templates.recommended.no_recommendations}
           </div>
         ) : (
           <div className="divide-y divide-primary/5">

@@ -1,4 +1,5 @@
 import { Trash2, X, Check, Play, Terminal, FlaskConical } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaTrigger } from '@/lib/types/types';
 import type { TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
@@ -106,12 +107,12 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
           <div className="flex items-center rounded-xl bg-red-500/5 p-1">
             {detail.confirmingDelete ? (
               <div className="flex items-center gap-1">
-                <button onClick={() => detail.confirmDelete(onDelete)} className="p-2 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors" title={t.triggers.detail.delete_confirm}>
-                  <Check className="w-4 h-4 text-red-400" />
-                </button>
-                <button onClick={detail.cancelDelete} className="p-2 hover:bg-secondary/60 rounded-lg transition-colors" title={t.common.cancel}>
-                  <X className="w-4 h-4 text-muted-foreground/90" />
-                </button>
+                <Button variant="ghost" size="icon-sm" onClick={() => detail.confirmDelete(onDelete)} title={t.triggers.detail.delete_confirm} className="text-red-400 bg-red-500/15 hover:bg-red-500/25">
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" onClick={detail.cancelDelete} title={t.common.cancel}>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             ) : (
               <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title={t.triggers.detail.delete_trigger}>

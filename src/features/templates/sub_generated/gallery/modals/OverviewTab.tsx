@@ -1,4 +1,5 @@
 import { Workflow, Lightbulb, AlertTriangle, BarChart3, ThumbsUp, ThumbsDown, DollarSign, Activity, Users } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -19,6 +20,7 @@ export function OverviewTab({
   review,
   onViewFlows,
 }: OverviewTabProps) {
+  const { t } = useTranslation();
   const { performance, loading: perfLoading, error: perfError } = useTemplatePerformance(review.id);
 
   return (
@@ -35,7 +37,7 @@ export function OverviewTab({
         <div className="rounded-xl border border-primary/10 bg-secondary/20 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground/80 animate-spin" />
-            <span className="text-sm text-muted-foreground/60">Loading performance metrics...</span>
+            <span className="text-sm text-muted-foreground/60">{t.templates.overview_tab.loading_metrics}</span>
           </div>
         </div>
       )}
@@ -43,53 +45,53 @@ export function OverviewTab({
         <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="text-sm text-amber-400/80">Performance metrics unavailable</span>
+            <span className="text-sm text-amber-400/80">{t.templates.overview_tab.metrics_unavailable}</span>
           </div>
-          <p className="text-sm text-muted-foreground/60 mt-1">Could not load metrics for this template.</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">{t.templates.overview_tab.metrics_load_error}</p>
         </div>
       )}
       {!perfLoading && !perfError && performance && !performance.data_available && (
         <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="text-sm text-amber-400/80">Incomplete performance data</span>
+            <span className="text-sm text-amber-400/80">{t.templates.overview_tab.incomplete_data}</span>
           </div>
           <p className="text-sm text-muted-foreground/60 mt-1">
-            Some metric queries failed. The values below may not reflect actual usage.
+            {t.templates.overview_tab.incomplete_data_hint}
           </p>
         </div>
       )}
       {!perfLoading && !perfError && performance && performance.data_available && (
         <div>
           <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
-            Performance
+            {t.templates.overview_tab.performance}
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Users className="w-3.5 h-3.5 text-violet-400/70" />
-                <span className="text-sm text-muted-foreground/60">Adoptions</span>
+                <span className="text-sm text-muted-foreground/60">{t.templates.overview_tab.adoptions_label}</span>
               </div>
               <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_adoptions}</span>
             </div>
             <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Activity className="w-3.5 h-3.5 text-blue-400/70" />
-                <span className="text-sm text-muted-foreground/60">Executions</span>
+                <span className="text-sm text-muted-foreground/60">{t.templates.overview_tab.executions_label}</span>
               </div>
               <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_executions}</span>
             </div>
             <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
-                <span className="text-sm text-muted-foreground/60">Success</span>
+                <span className="text-sm text-muted-foreground/60">{t.templates.overview_tab.success_label}</span>
               </div>
               <span className="text-lg font-semibold text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
             </div>
             <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
-                <span className="text-sm text-muted-foreground/60">Avg Cost</span>
+                <span className="text-sm text-muted-foreground/60">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
               <span className="text-lg font-semibold text-foreground/90 font-mono">${performance.avg_cost_usd.toFixed(3)}</span>
             </div>
@@ -111,7 +113,7 @@ export function OverviewTab({
               )}
               {performance.derived_quality_score > 0 && (
                 <span className="text-sm text-muted-foreground/50 ml-auto">
-                  Quality score: <span className="font-mono font-semibold text-foreground/70">{Math.round(performance.derived_quality_score)}</span>/100
+                  {t.templates.overview_tab.quality_score}: <span className="font-mono font-semibold text-foreground/70">{Math.round(performance.derived_quality_score)}</span>/100
                 </span>
               )}
             </div>
@@ -123,7 +125,7 @@ export function OverviewTab({
       {flows.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
-            Use Case Flows
+            {t.templates.overview_tab.use_case_flows}
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
@@ -139,8 +141,8 @@ export function OverviewTab({
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
-                  <span>{flow.nodes.length} nodes</span>
-                  <span>{flow.edges.length} edges</span>
+                  <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
+                  <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
               </button>
             ))}
@@ -154,10 +156,10 @@ export function OverviewTab({
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-400/80" />
             <h4 className="text-sm font-medium text-amber-400/80 uppercase">
-              Suggested Adjustment
+              {t.templates.overview_tab.suggested_adjustment}
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-muted-foreground/80 normal-case">
-                  (attempt {review.adjustment_generation}/3)
+                  {t.templates.overview_tab.adjustment_attempt.replace('{attempt}', String(review.adjustment_generation))}
                 </span>
               )}
             </h4>
@@ -185,7 +187,7 @@ export function OverviewTab({
       {review.structural_score !== null && (
         <div>
           <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
-            Dimension Completion
+            {t.templates.overview_tab.dimension_completion}
           </h4>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2 bg-secondary/40 rounded-full overflow-hidden max-w-[200px]">
@@ -202,7 +204,7 @@ export function OverviewTab({
               {review.structural_score}%
             </span>
             <span className="text-sm text-muted-foreground/50">
-              ({Math.round(review.structural_score / 100 * 9)}/9 dimensions)
+              {t.templates.overview_tab.dimensions_score.replace('{score}', String(Math.round(review.structural_score / 100 * 9)))}
             </span>
           </div>
         </div>

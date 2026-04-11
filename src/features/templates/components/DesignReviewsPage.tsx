@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDesignReviews } from '@/hooks/design/template/useDesignReviews';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -17,6 +18,7 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 // ============================================================================
 
 export default function DesignReviewsPage() {
+  const { t } = useTranslation();
   const {
     reviews,
     error,
@@ -35,10 +37,10 @@ export default function DesignReviewsPage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Agentic Templates"
+        title={t.templates.page.title}
         subtitle={(() => {
           const count = activeTab === 'generated' && galleryTotal > 0 ? galleryTotal : reviews.length;
-          return `${count} template${count !== 1 ? 's' : ''} available`;
+          return (count === 1 ? t.templates.page.subtitle_one : t.templates.page.subtitle_other).replace('{count}', String(count));
         })()}
       />
 

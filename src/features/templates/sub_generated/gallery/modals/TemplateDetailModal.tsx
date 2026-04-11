@@ -13,6 +13,7 @@ import {
   FileCode,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
@@ -24,15 +25,17 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
-import type { LucideIcon } from 'lucide-react';
 
 type DetailTab = 'overview' | 'prompt' | 'connectors';
 
-const TAB_CONFIG: { key: DetailTab; label: string; icon: LucideIcon }[] = [
-  { key: 'overview', label: 'Overview', icon: Eye },
-  { key: 'prompt', label: 'Prompt', icon: FileCode },
-  { key: 'connectors', label: 'Features', icon: Layers },
-];
+function useTabConfig() {
+  const { t } = useTranslation();
+  return [
+    { key: 'overview' as DetailTab, label: t.templates.detail.tab_overview, icon: Eye },
+    { key: 'prompt' as DetailTab, label: t.templates.detail.tab_prompt, icon: FileCode },
+    { key: 'connectors' as DetailTab, label: t.templates.detail.tab_features, icon: Layers },
+  ];
+}
 
 interface TemplateDetailModalProps {
   isOpen: boolean;
@@ -53,8 +56,10 @@ export function TemplateDetailModal({
   onViewFlows,
   onTryIt,
 }: TemplateDetailModalProps) {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+  const TAB_CONFIG = useTabConfig();
 
   if (!isOpen || !review) return null;
 
@@ -67,9 +72,9 @@ export function TemplateDetailModal({
   } | null>(review.suggested_adjustment, null);
 
   const statusBadge = {
-    passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: 'Passed' },
-    failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: 'Failed' },
-    error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: 'Error' },
+    passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: t.templates.detail.review_passed },
+    failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: t.templates.detail.review_failed },
+    error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: t.templates.detail.review_error },
   }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
@@ -102,13 +107,13 @@ export function TemplateDetailModal({
                 {!isSimple && review.adoption_count > 0 && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
                     <Download className="w-3.5 h-3.5" />
-                    {review.adoption_count} adopted
+                    {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
                   </span>
                 )}
                 {!isSimple && review.had_references && (
                   <span className="text-sm text-violet-400/60 flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-violet-400/50 ring-2 ring-violet-400/20" />
-                    Reference patterns
+                    {t.templates.detail_modal.reference_patterns}
                   </span>
                 )}
               </div>
@@ -171,7 +176,7 @@ export function TemplateDetailModal({
                 <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-muted-foreground/40" />
                 </div>
-                Design data unavailable for this template.
+                {t.templates.detail_modal.design_unavailable}
               </div>
             )}
           </TabTransition>
@@ -191,7 +196,7 @@ export function TemplateDetailModal({
                   className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 shadow-elevation-3 shadow-violet-500/5"
                   data-testid="button-adopt-template"
                 >
-                  Adopt as Persona
+                  {t.templates.detail_modal.adopt_as_persona}
                 </Button>
                 {designResult && (
                   <Button
@@ -204,7 +209,7 @@ export function TemplateDetailModal({
                     icon={<Play className="w-4 h-4" />}
                     className="bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 shadow-elevation-3 shadow-emerald-500/5"
                   >
-                    Try It
+                    {t.templates.detail_modal.try_it}
                   </Button>
                 )}
               </div>
@@ -219,7 +224,7 @@ export function TemplateDetailModal({
                 icon={<Trash2 className="w-3.5 h-3.5" />}
                 className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
               >
-                Delete
+                {t.common.delete}
               </Button>
               )}
             </div>

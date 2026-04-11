@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Search, Filter, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -16,6 +17,7 @@ export function ConnectorFilterDropdown({
   connectorFilter: string[];
   setConnectorFilter: (connectors: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownSearch, setDropdownSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -68,7 +70,7 @@ export function ConnectorFilterDropdown({
         className="px-3 py-2 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
       >
         <Filter className="w-3.5 h-3.5" />
-        Connectors
+        {t.templates.search.connectors_label}
         {connectorFilter.length > 0 && (
           <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-sm font-medium">
             {connectorFilter.length}
@@ -87,7 +89,7 @@ export function ConnectorFilterDropdown({
                 type="text"
                 value={dropdownSearch}
                 onChange={(e) => setDropdownSearch(e.target.value)}
-                placeholder="Search connectors..."
+                placeholder={t.templates.search.search_connectors}
                 className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
               />
             </div>
@@ -127,7 +129,7 @@ export function ConnectorFilterDropdown({
             })}
             {filtered.length === 0 && (
               <div className="px-3.5 py-3 text-sm text-muted-foreground/60 italic text-center">
-                {dropdownSearch ? 'No matching connectors' : 'No connectors available'}
+                {dropdownSearch ? t.templates.search.no_matching_connectors : t.templates.search.no_connectors_available}
               </div>
             )}
           </div>
@@ -141,7 +143,7 @@ export function ConnectorFilterDropdown({
                 }}
                 className="w-full px-3.5 py-2 text-left text-sm text-muted-foreground/90 hover:text-foreground/95 hover:bg-primary/5 rounded-xl transition-colors"
               >
-                Clear all
+                {t.templates.search.clear_all}
               </button>
             </div>
           )}

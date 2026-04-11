@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { X, Play, RotateCcw } from 'lucide-react';
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { DimensionRadial } from '../../shared/DimensionRadial';
@@ -67,6 +68,7 @@ export function TemplatePreviewModal({
   onStartPreview,
   onRetryPreview,
 }: TemplatePreviewModalProps) {
+  const { t } = useTranslation();
   const designResult = useMemo(
     () => review ? getCachedDesignResult(review) : null,
     [review],
@@ -101,10 +103,10 @@ export function TemplatePreviewModal({
         <div className={`px-6 py-4 border-b ${BORDER_SUBTLE} flex items-center justify-between gap-4 flex-shrink-0`}>
           <div className="min-w-0 flex-1">
             <h2 id="template-preview-title" className="typo-heading-lg text-foreground/90 truncate">
-              Preview: {review.test_case_name}
+              {t.templates.preview_modal.preview_title.replace('{name}', review.test_case_name)}
             </h2>
             <p className="typo-body text-muted-foreground/60 mt-0.5">
-              Sandboxed single-turn execution -- no persona created
+              {t.templates.preview_modal.sandboxed_hint}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -125,11 +127,10 @@ export function TemplatePreviewModal({
               </div>
               <div className="text-center max-w-md">
                 <h3 className="typo-body-lg font-medium text-foreground/85 mb-1.5">
-                  Try this template
+                  {t.templates.preview_modal.try_this_template}
                 </h3>
                 <p className="typo-body text-muted-foreground/60 leading-relaxed">
-                  Run a sandboxed single-turn execution to see how this persona behaves.
-                  Uses the template's system prompt with mock inputs -- nothing is saved.
+                  {t.templates.preview_modal.try_description}
                 </p>
               </div>
               <button
@@ -138,11 +139,11 @@ export function TemplatePreviewModal({
                 className="px-4 py-2.5 typo-body rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <Play className="w-4 h-4" />
-                Run Preview
+                {t.templates.preview_modal.run_preview}
               </button>
               {!designResult && (
                 <p className="typo-body text-red-400/70">
-                  No design data available for this template.
+                  {t.templates.preview_modal.no_design_data}
                 </p>
               )}
             </div>
@@ -164,20 +165,20 @@ export function TemplatePreviewModal({
         <div className={`px-6 py-3 border-t ${BORDER_SUBTLE} flex items-center justify-between flex-shrink-0`}>
           <div className="flex items-center gap-2">
             {phase === 'idle' && hasStarted && (
-              <span className="typo-body text-muted-foreground/50">Ready</span>
+              <span className="typo-body text-muted-foreground/50">{t.templates.preview_modal.ready}</span>
             )}
             {isRunning && (
               <span className="typo-body text-blue-400/80 flex items-center gap-1.5">
                 <ThinkingLoader size={20} />
-                Running...
+                {t.templates.preview_modal.running}
               </span>
             )}
             {phase === 'completed' && (
-              <span className="typo-body text-emerald-400/80">Completed</span>
+              <span className="typo-body text-emerald-400/80">{t.templates.preview_modal.completed}</span>
             )}
             {phase === 'failed' && (
               <span className="typo-body text-red-400/80">
-                {error || 'Execution failed'}
+                {error || t.templates.preview_modal.execution_failed}
               </span>
             )}
           </div>
@@ -188,19 +189,19 @@ export function TemplatePreviewModal({
                 className="px-3.5 py-2 typo-body rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Run Again
+                {t.templates.preview_modal.run_again}
               </button>
             )}
             {isRunning && (
               <span className="typo-body text-muted-foreground/60">
-                You can close -- test will continue in background
+                {t.templates.preview_modal.close_test_continues}
               </span>
             )}
             <button
               onClick={onClose}
               className="px-3.5 py-2 typo-body rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
             >
-              Close
+              {t.common.close}
             </button>
           </div>
         </div>

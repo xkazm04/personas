@@ -1,6 +1,7 @@
 import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { useTranslation } from '@/i18n/useTranslation';
 /** Label map for legacy adoption wizard steps shown in draft resume banners. */
 const ADOPT_STEP_LABELS: Record<string, string> = {
   choose: 'Choose', connect: 'Connect', tune: 'Tune', build: 'Build', create: 'Create',
@@ -62,6 +63,7 @@ export function BackgroundBanners({
   onResumePreview,
   onDismissPreview,
 }: BackgroundBannersProps) {
+  const { t } = useTranslation();
   // Don't show draft banner if there's an active adoption or the modal is open
   const showDraftBanner = adoptionDraft && !templateAdoptActive && !adoptModalOpen;
 
@@ -80,17 +82,17 @@ export function BackgroundBanners({
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-amber-300 block truncate">
-                  Draft: {adoptionDraft.templateName}
+                  {t.templates.banners.draft_prefix}{adoptionDraft.templateName}
                 </span>
                 <span className="text-sm text-muted-foreground/80">
-                  Step: {ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step} -- click to resume
+                  {t.templates.banners.step_click_resume.replace('{step}', ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step)}
                 </span>
               </div>
             </button>
             <button
               onClick={onDiscardDraft}
               className="p-1 rounded-lg hover:bg-amber-500/15 text-muted-foreground/50 hover:text-amber-400 transition-colors flex-shrink-0"
-              title="Discard draft"
+              title={t.templates.banners.discard_draft}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -109,8 +111,8 @@ export function BackgroundBanners({
               <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-violet-300 block">Template adoption in progress</span>
-              <span className="text-sm text-muted-foreground/80">Click to view progress</span>
+              <span className="text-sm font-medium text-violet-300 block">{t.templates.banners.adoption_in_progress}</span>
+              <span className="text-sm text-muted-foreground/80">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
           </button>
@@ -129,9 +131,9 @@ export function BackgroundBanners({
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-blue-300 block">
-                Rebuilding: {rebuildReviewName ?? 'template'}
+                {t.templates.banners.rebuilding.replace('{name}', rebuildReviewName ?? 'template')}
               </span>
-              <span className="text-sm text-muted-foreground/80">Click to view progress</span>
+              <span className="text-sm text-muted-foreground/80">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
           </button>
@@ -169,14 +171,14 @@ export function BackgroundBanners({
             : Play;
 
         const statusText = isFailed
-          ? 'Failed'
+          ? t.templates.banners.status_failed
           : isCompleted
-            ? 'Completed'
-            : 'Testing';
+            ? t.templates.banners.status_completed
+            : t.templates.banners.status_testing;
 
         const subtitleText = isDone
-          ? 'Click to view result'
-          : 'Click to view output';
+          ? t.templates.banners.click_to_view_result
+          : t.templates.banners.click_to_view_output;
 
         const iconColor = isFailed
           ? 'text-red-400'

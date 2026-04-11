@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useVaultStore } from "@/stores/vaultStore";
 
 interface QuerySidebarProps {
@@ -52,12 +53,12 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 placeholder="Query title"
                 className="flex-1 px-2.5 py-1.5 rounded-xl text-sm bg-background/50 border border-primary/15 text-foreground/80 focus-ring placeholder:text-muted-foreground/30"
               />
-              <button onClick={handleCreate} className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors">
+              <Button variant="ghost" size="icon-sm" onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
                 <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => setIsCreating(false)} className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/40 transition-colors">
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsCreating(false)}>
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ) : (
             <button

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-gallery');
@@ -46,6 +47,7 @@ export default function GeneratedReviewsTab({
   onViewFlows,
   onTotalChange,
 }: Props) {
+  const { t } = useTranslation();
   const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
   const adoptionDraft = useSystemStore((s) => s.adoptionDraft);
   const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
@@ -210,7 +212,7 @@ export default function GeneratedReviewsTab({
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Explore variant picker */}
           <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/10 flex-shrink-0">
-            {([['role', 'By Role'], ['need', 'By Need'], ['classic', 'Classic']] as const).map(([id, label]) => (
+            {([['role', t.templates.explore.by_role], ['need', t.templates.explore.by_need], ['classic', t.templates.explore.classic]] as const).map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => setExploreVariant(id)}

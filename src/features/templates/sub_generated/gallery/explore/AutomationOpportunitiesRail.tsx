@@ -3,6 +3,7 @@ import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/di
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import type { AutomationOpportunity } from './useAutomationDiscovery';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutomationOpportunitiesRailProps {
   opportunities: AutomationOpportunity[];
@@ -24,14 +25,15 @@ export function AutomationOpportunitiesRail({
   onSelectTemplate,
   onSelectCategory,
 }: AutomationOpportunitiesRailProps) {
+  const { t } = useTranslation();
   if (opportunities.length === 0) return null;
 
   return (
     <div className="mb-6 max-w-5xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-4 h-4 text-amber-400/70" />
-        <SectionLabel as="span" className="mb-0">Automation Opportunities</SectionLabel>
-        <span className="text-sm text-muted-foreground/50">Workflows you can unlock</span>
+        <SectionLabel as="span" className="mb-0">{t.templates.opportunities.title}</SectionLabel>
+        <span className="text-sm text-muted-foreground/50">{t.templates.opportunities.subtitle}</span>
       </div>
 
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
@@ -57,6 +59,7 @@ function OpportunityCard({
   onSelectTemplate: (template: PersonaDesignReview) => void;
   onSelectCategory: (category: string) => void;
 }) {
+  const { t } = useTranslation();
   const { group, readyNow, oneConnectorAway, suggestedConnector } = opportunity;
   const GroupIcon = group.icon;
   const hasReadyNow = readyNow.length > 0;
@@ -77,7 +80,7 @@ function OpportunityCard({
         <button
           onClick={() => onSelectCategory(group.categories[0]!)}
           className="text-sm text-amber-400/60 hover:text-amber-400 transition-colors"
-          title={`Explore ${group.label} templates`}
+          title={t.templates.opportunities.explore_templates.replace('{label}', group.label)}
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -94,15 +97,15 @@ function OpportunityCard({
           <div className="flex items-center gap-1.5 mb-1.5">
             <Zap className="w-3 h-3 text-emerald-400/70" />
             <span className="text-sm font-medium text-emerald-400/70">
-              Ready now
+              {t.templates.opportunities.ready_now}
             </span>
             <span className="text-sm text-muted-foreground/40">
               ({readyNow.length})
             </span>
           </div>
           <div className="space-y-1">
-            {readyNow.slice(0, 2).map((t) => (
-              <TemplateRow key={t.id} template={t} onClick={() => onSelectTemplate(t)} />
+            {readyNow.slice(0, 2).map((tmpl) => (
+              <TemplateRow key={tmpl.id} template={tmpl} onClick={() => onSelectTemplate(tmpl)} />
             ))}
           </div>
         </div>
@@ -114,19 +117,19 @@ function OpportunityCard({
           <div className="flex items-center gap-1.5 mb-1.5">
             <Plus className="w-3 h-3 text-amber-400/60" />
             <span className="text-sm font-medium text-amber-400/70">
-              Add
+              {t.templates.opportunities.add_connector}
             </span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/15">
               <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
               {connectorMeta.label}
             </span>
             <span className="text-sm text-muted-foreground/40">
-              to unlock {oneConnectorAway.length} more
+              {t.templates.opportunities.unlock_more.replace('{count}', String(oneConnectorAway.length))}
             </span>
           </div>
           <div className="space-y-1">
-            {oneConnectorAway.slice(0, 2).map((t) => (
-              <TemplateRow key={t.id} template={t} onClick={() => onSelectTemplate(t)} dimmed />
+            {oneConnectorAway.slice(0, 2).map((tmpl) => (
+              <TemplateRow key={tmpl.id} template={tmpl} onClick={() => onSelectTemplate(tmpl)} dimmed />
             ))}
           </div>
         </div>

@@ -20,6 +20,7 @@ import { CheckCircle2, Download, ArrowRight, Users, Code, BarChart3, Shield, Meg
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { CATEGORY_ROLE_GROUPS } from '../search/filters/searchConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   availableCategories: CategoryWithCount[];
@@ -45,6 +46,7 @@ export function ExploreVariantA({
   onSelectCategory,
   onSelectTemplate,
 }: Props) {
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState(CATEGORY_ROLE_GROUPS[0]?.role ?? '');
 
   const roleGroup = CATEGORY_ROLE_GROUPS.find((g) => g.role === selectedRole);
@@ -71,7 +73,7 @@ export function ExploreVariantA({
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-5 h-5 text-primary/60" />
-            <h2 className="text-lg font-semibold text-foreground">What&apos;s your role?</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t.templates.explore.whats_your_role}</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {CATEGORY_ROLE_GROUPS.map((group) => {
@@ -98,9 +100,9 @@ export function ExploreVariantA({
         {/* Role description */}
         {roleGroup && (
           <div className="rounded-xl border border-primary/10 bg-secondary/10 p-5">
-            <h3 className="text-base font-semibold text-foreground mb-1">{roleGroup.role} Templates</h3>
+            <h3 className="text-base font-semibold text-foreground mb-1">{t.templates.explore.role_templates.replace('{role}', roleGroup.role)}</h3>
             <p className="text-sm text-muted-foreground/70 mb-3">
-              {roleGroup.categories.length} categories with specialized agent templates for {roleGroup.role.toLowerCase()} workflows.
+              {t.templates.explore.categories_for_role.replace('{count}', String(roleGroup.categories.length)).replace('{role}', roleGroup.role.toLowerCase())}
             </p>
             <div className="flex flex-wrap gap-2">
               {roleGroup.categories.map((cat) => (
@@ -120,19 +122,19 @@ export function ExploreVariantA({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top templates for role */}
           <div className="lg:col-span-2 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground/80">Popular in {selectedRole}</h3>
+            <h3 className="text-sm font-semibold text-foreground/80">{t.templates.explore.popular_in.replace('{role}', selectedRole)}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {roleTemplates.map((t) => (
+              {roleTemplates.map((tmpl) => (
                 <button
-                  key={t.id}
-                  onClick={() => onSelectTemplate(t)}
+                  key={tmpl.id}
+                  onClick={() => onSelectTemplate(tmpl)}
                   className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all"
                 >
-                  <div className="text-sm font-medium text-foreground/85 mb-1">{t.test_case_name}</div>
-                  <p className="text-sm text-muted-foreground/60 line-clamp-2">{t.instruction}</p>
-                  {t.adoption_count > 0 && (
+                  <div className="text-sm font-medium text-foreground/85 mb-1">{tmpl.test_case_name}</div>
+                  <p className="text-sm text-muted-foreground/60 line-clamp-2">{tmpl.instruction}</p>
+                  {tmpl.adoption_count > 0 && (
                     <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
-                      <Download className="w-3 h-3" /> {t.adoption_count} adoptions
+                      <Download className="w-3 h-3" /> {(tmpl.adoption_count === 1 ? t.templates.explore.adoption_count_one : t.templates.explore.adoption_count_other).replace('{count}', String(tmpl.adoption_count))}
                     </div>
                   )}
                 </button>
@@ -144,24 +146,24 @@ export function ExploreVariantA({
           <div className="space-y-3">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
-              <h3 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h3>
+              <h3 className="text-sm font-semibold text-foreground/80">{t.templates.explore.ready_to_deploy}</h3>
             </div>
             {roleReadyTemplates.length > 0 ? (
               <div className="space-y-2">
-                {roleReadyTemplates.map((t) => (
+                {roleReadyTemplates.map((tmpl) => (
                   <button
-                    key={t.id}
-                    onClick={() => onSelectTemplate(t)}
+                    key={tmpl.id}
+                    onClick={() => onSelectTemplate(tmpl)}
                     className="w-full text-left p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <div className="text-sm font-medium text-foreground/85">{t.test_case_name}</div>
-                    <div className="text-sm text-muted-foreground/60 truncate mt-0.5">{t.instruction.slice(0, 60)}</div>
+                    <div className="text-sm font-medium text-foreground/85">{tmpl.test_case_name}</div>
+                    <div className="text-sm text-muted-foreground/60 truncate mt-0.5">{tmpl.instruction.slice(0, 60)}</div>
                   </button>
                 ))}
               </div>
             ) : (
               <div className="p-4 rounded-xl border border-primary/10 bg-secondary/5 text-sm text-muted-foreground/50 text-center">
-                Configure connectors to unlock ready-to-deploy templates
+                {t.templates.explore.configure_to_unlock}
               </div>
             )}
           </div>

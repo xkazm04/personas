@@ -2,6 +2,7 @@ import { Download } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getCategoryMeta, type RoleGroup } from '../search/filters/searchConstants';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RoleGroupCardProps {
   group: RoleGroup;
@@ -11,6 +12,7 @@ interface RoleGroupCardProps {
 }
 
 export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCategory }: RoleGroupCardProps) {
+  const { t } = useTranslation();
   const GroupIcon = group.icon;
 
   return (
@@ -54,7 +56,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
       {/* Top templates preview */}
       {topTemplates.length > 0 && (
         <div className="border-t border-primary/8 pt-2.5">
-          <SectionLabel as="div" className="mb-1.5 px-1">Popular</SectionLabel>
+          <SectionLabel as="div" className="mb-1.5 px-1">{t.templates.gallery.popular}</SectionLabel>
           {topTemplates.slice(0, 3).map((t) => (
             <div key={t.id} className="flex items-center gap-2 px-1 py-1 text-sm text-muted-foreground/60">
               <span className="flex-1 truncate">{t.test_case_name}</span>

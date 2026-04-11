@@ -1747,6 +1747,482 @@ export const en = {
       conflict_count_one: "{count} conflict",
       conflict_count_other: "{count} conflicts",
     },
+
+    // Dashboard home page
+    dashboard: {
+      title: "Dashboard",
+      subtitle: "Operational overview and system status",
+      greeting_morning: "Good Morning",
+      greeting_afternoon: "Good Afternoon",
+      greeting_evening: "Good Evening",
+      // Default user display name when none is set
+      default_user: "Operator",
+      // {count} = number of pending reviews
+      pending_reviews_prompt: "pending reviews",
+      requiring_attention: "requiring attention.",
+      empty_cta: "Create your first agent to get started.",
+      // Pipeline error banner -- {source} = data pipeline name
+      pipeline_failed: "{source} failed to load",
+      // Empty dashboard (no agents, no executions)
+      empty_title: "Welcome to Personas",
+      empty_subtitle: "Create your first agent to start seeing execution metrics, traffic charts, and activity here.",
+      // Action buttons
+      create_persona: "Create Persona",
+      from_templates: "From Templates",
+    },
+
+    // Execution metrics dashboard
+    execution_metrics: {
+      title: "Execution Metrics",
+      total_executions: "Total Executions",
+      total_cost: "Total Cost",
+      success_rate: "Success Rate",
+      avg_latency: "Avg Latency",
+      cost_anomalies: "Cost Anomalies Detected",
+      no_data: "No execution data for the selected period",
+      // Chart headings
+      cost_per_day: "Cost per Day",
+      executions_by_status: "Executions by Status",
+      success_rate_trend: "Success Rate Trend",
+      latency_distribution: "Latency Distribution (p50 / p95 / p99)",
+      top_personas_by_cost: "Top Personas by Cost",
+      // Anomaly badge
+      // {date} = anomaly date
+      cost_spike: "Cost spike",
+      // {sigma} = standard deviations
+      above_avg: "above avg",
+      top_executions: "Top executions:",
+      // Per-persona stats
+      // {count} = execution count
+      executions_label: "{count} executions",
+    },
+
+    // Global execution list
+    execution_list: {
+      // {count} = total execution count
+      recorded: "{count} executions recorded",
+      recorded_one: "{count} execution recorded",
+      list: "List",
+      metrics: "Metrics",
+      show_list: "Show execution list",
+      show_metrics: "Show metrics dashboard",
+      // {count} = visible count, {total} = total count
+      showing: "Showing {count} of {total}",
+      load_more: "Load More",
+      // Filter labels
+      filter_all: "All",
+      filter_running: "Running",
+      filter_completed: "Completed",
+      filter_failed: "Failed",
+      // Column headers
+      col_persona: "Persona",
+      col_status: "Status",
+      col_duration: "Duration",
+      col_started: "Started",
+      col_id: "ID",
+      // Status filter dropdown
+      all_statuses: "All statuses",
+      all_personas: "All personas",
+      // Empty states
+      no_agents: "No agents created yet",
+      no_agents_hint: "Create your first agent to see execution activity here.",
+      // Row labels
+      unknown_persona: "Unknown",
+      // Healing retry badge -- {count} = retry number
+      healing_retry: "Healing retry #{count}",
+    },
+
+    // Manual review
+    review: {
+      title: "Manual Reviews",
+      // {count} = total reviews, {pending} = pending count
+      subtitle: "{count} reviews",
+      pending_count: "{count} pending",
+      cloud_count: "{count} cloud",
+      mock_review: "Mock Review",
+      seed_tooltip: "Seed a mock review (dev only)",
+      // Empty state
+      empty_title: "No review items yet",
+      empty_subtitle: "Items requiring approval will appear here when agents request human review.",
+      // Status filter labels
+      filter_all: "All",
+      filter_pending: "Pending",
+      filter_approved: "Approved",
+      filter_rejected: "Rejected",
+      // Source filter labels
+      source_all: "All",
+      source_local: "Local",
+      source_cloud: "Cloud",
+      // Actions
+      approve: "Approve",
+      reject: "Reject",
+      approve_all: "Approve All",
+      reject_all: "Reject All",
+      accept: "Accept",
+      accept_all: "Accept all",
+      reject_all_items: "Reject all",
+      processing: "Processing...",
+      deselect: "Deselect",
+      select_all: "Select all",
+      // Bulk action bar
+      // {count} = number of selected reviews
+      confirm_bulk: "{count} reviews?",
+      confirm_bulk_one: "{count} review?",
+      pending_selected: "pending reviews selected",
+      pending_selected_one: "pending review selected",
+      // Conversation thread
+      unknown_persona: "Unknown Persona",
+      severity_label: "severity",
+      cloud_badge: "Cloud",
+      execution_link: "Execution",
+      context_label: "Context",
+      you: "You",
+      agent: "Agent",
+      review_status: "Review {status}",
+      // Decision items
+      decisions_label: "Decisions",
+      // {count} = number of decision items
+      decisions_count: "({count} items)",
+      accepted_label: "accepted",
+      rejected_label: "rejected",
+      undecided_label: "undecided",
+      // Action bar
+      reply_placeholder: "Reply to this review...",
+      cloud_reply_placeholder: "Response message (optional)...",
+      cloud_action_hint: "Approve or reject this cloud review",
+      reply_hint: "Enter to send -- Shift+Enter for new line",
+      send_message: "Send message",
+      // Approve with decision counts -- {accepted}/{total}
+      approve_with_count: "Approve ({accepted}/{total})",
+      // Triage player
+      all_caught_up: "All caught up! No pending reviews.",
+      // {current}/{total}
+      queue_label: "Queue",
+      select_action: "Select an action",
+      required: "(required)",
+      add_notes: "Add notes",
+      notes_placeholder: "Add review notes...",
+      select_action_first: "Select a suggested action first",
+      // Focus flow (view mode)
+      split: "Split",
+      table: "Table",
+      split_tooltip: "Split view with chat",
+      table_tooltip: "Table only",
+      review_detail: "Review Detail",
+      select_review: "Select a review to view",
+      // Technical context
+      technical_context: "Technical Context",
+    },
+
+    // Messages
+    messages_view: {
+      title: "Messages",
+      // {count} = total thread count
+      threads_subtitle: "{count} threads",
+      threads_subtitle_one: "{count} thread",
+      // {count} = total message count
+      messages_subtitle: "{count} messages recorded",
+      messages_subtitle_one: "{count} message recorded",
+      mock_message: "Mock Message",
+      seed_tooltip: "Seed a mock message (dev only)",
+      flat_view: "Flat view",
+      threaded_view: "Threaded view",
+      mark_all_read: "Mark All Read",
+      // {count}/{total} threads
+      threads_of: "{count} of {total} threads",
+      // Empty states
+      no_threads: "No message threads yet",
+      no_threads_hint: "Threads are created automatically when agents produce messages during executions.",
+      no_messages: "No messages yet",
+      no_messages_hint: "Messages are created when agents run and communicate with each other.",
+      no_filter_match: "No messages match current filters",
+      loading_replies: "Loading replies...",
+      // {count} = remaining count
+      load_more: "Load More ({count} remaining)",
+      // Column headers
+      col_title: "Title",
+      col_priority: "Priority",
+      col_delivery: "Delivery",
+      col_status: "Status",
+      col_created: "Created",
+      // Priorities
+      all_priorities: "All priorities",
+      // Read filter
+      all_statuses: "All statuses",
+      read: "Read",
+      unread: "Unread",
+      new_badge: "New",
+      // Delivery statuses
+      failed_count: "{count} failed",
+      pending_count: "{count} pending",
+      sent_count: "{count} sent",
+      // Message detail modal
+      message_label: "Message",
+      // "From {name} -- {time}"
+      from_label: "From {name}",
+      content_label: "Content",
+      view_execution: "View Execution",
+      type_label: "Type:",
+      delivery_status: "Delivery Status",
+      no_channels: "No delivery channels configured",
+      confirm_delete: "Confirm delete",
+      // Feedback / improve
+      improve_agent: "Improve Agent",
+      improvement_started: "Improvement started -- you'll be notified when done",
+      what_could_be_better: "What could be better?",
+      improve_placeholder: "Describe how this output could be improved...",
+      submit_improvement: "Submit Improvement",
+      starting: "Starting...",
+      unknown_persona: "Unknown",
+    },
+
+    // Events
+    events: {
+      title: "Events",
+      // {filtered}/{total} events
+      subtitle: "{filtered} of {total} events",
+      subtitle_one: "{filtered} of {total} event",
+      mock_event: "Mock Event",
+      seed_tooltip: "Seed a mock event (dev only)",
+      // Search
+      search_placeholder: "Search events by type, source, or payload...",
+      loading_older: "Loading older events...",
+      load_older: "Load older events",
+      // Empty states
+      no_events: "No events yet",
+      no_events_hint: "Events from webhooks, executions, and persona actions will appear here as your agents run.",
+      no_filter_match: "No events match current filters",
+      // Saved views
+      save_view: "Save view",
+      view_name_placeholder: "View name (e.g. 'Failed webhooks this week')",
+      views_label: "Views:",
+      delete_view: "Delete view",
+      clear_filters: "Clear all filters",
+      // Column headers
+      col_trigger: "Trigger",
+      col_persona: "Persona",
+      col_event_name: "Event Name",
+      col_status: "Status",
+      col_created: "Created",
+      // Filter dropdowns
+      all_statuses: "All statuses",
+      all_types: "All types",
+      all_triggers: "All triggers",
+      // Source type labels
+      source_event: "Event",
+      source_manual: "Manual",
+      source_system: "System",
+      source_scheduled: "Scheduled",
+      // Event detail modal
+      event_detail_title: "Event:",
+      event_detail_status: "Status:",
+      event_id: "Event ID",
+      project: "Project",
+      source: "Source",
+      processed: "Processed",
+      event_data: "Event Data",
+      error: "Error",
+    },
+
+    // Health dashboard
+    health: {
+      title: "Agent Health",
+      subtitle: "Real-time health monitoring across all agents",
+      all_healthy: "All agents healthy",
+      all_healthy_hint: "Every monitored agent is operating normally",
+      no_agents: "No agents yet",
+      no_agents_hint: "Create agents to start monitoring their health",
+      // Health card metrics
+      success_rate: "Success Rate",
+      avg_latency: "Avg Latency",
+      executions: "Executions",
+      last_execution: "Last execution",
+      never_executed: "Never",
+      cost: "Cost",
+      // Health status
+      healthy: "Healthy",
+      warning: "Warning",
+      critical: "Critical",
+      unknown: "Unknown",
+      // Burn rate
+      burn_rate: "Burn Rate Projection",
+      monthly_budget: "Monthly Budget",
+      current_burn: "Current Burn",
+      projected: "Projected",
+      days_remaining: "Days Remaining",
+      // Cascade
+      cascade_title: "Cascade Analysis",
+      // Predictive alerts
+      predictive_alerts: "Predictive Alerts",
+      no_alerts: "No predictive alerts at this time",
+      // Status page
+      status_page: "Status Page",
+      operational: "Operational",
+      degraded: "Degraded",
+      outage: "Outage",
+    },
+
+    // Leaderboard
+    leaderboard: {
+      title: "Agent Leaderboard",
+      subtitle: "Performance rankings across all agents",
+      no_data: "No leaderboard data available",
+      no_data_hint: "Run your agents to start building performance rankings",
+      // Metrics
+      reliability: "Reliability",
+      speed: "Speed",
+      efficiency: "Efficiency",
+      cost_effectiveness: "Cost Effectiveness",
+      overall: "Overall",
+    },
+
+    // Activity / analytics shared
+    analytics: {
+      title: "Analytics",
+      subtitle: "Execution patterns and trends",
+      loading: "Loading analytics...",
+      no_data: "No analytics data available",
+      // Chart headings
+      executions_over_time: "Executions Over Time",
+      success_failure: "Success vs Failure",
+      cost_breakdown: "Cost Breakdown",
+      // Summary cards
+      total_executions: "Total Executions",
+      total_cost: "Total Cost",
+      avg_success_rate: "Avg Success Rate",
+      active_agents: "Active Agents",
+      // Filters
+      saved_views: "Saved Views",
+      create_view: "Create View",
+      // Health issues panel
+      health_issues: "Health Issues",
+      rotation_overview: "Rotation Overview",
+    },
+
+    // Usage / cost dashboard
+    usage: {
+      title: "Usage",
+      subtitle: "Cost and resource consumption",
+      chart_error: "Chart failed to load",
+      chart_error_hint: "An error occurred rendering this chart",
+      try_again: "Try Again",
+    },
+
+    // SLA dashboard -- see existing sla section above
+
+    // Cron agents
+    cron_agents: {
+      title: "Scheduled Agents",
+      subtitle: "Agents running on automatic schedules",
+      no_agents: "No scheduled agents",
+      no_agents_hint: "Add a cron trigger to any agent to see it here",
+    },
+
+    // Timeline
+    timeline: {
+      title: "Activity Timeline",
+      subtitle: "Unified view of all agent activity",
+      no_activity: "No recent activity",
+    },
+
+    // Realtime visualizer
+    realtime_viz: {
+      title: "Event Bus",
+      filter_events: "Filter events",
+      pause: "Pause",
+      resume: "Resume",
+      clear: "Clear",
+      // Stats bar
+      total_events: "Total Events",
+      events_per_sec: "Events/sec",
+      active_lanes: "Active Lanes",
+      // Event detail
+      event_type: "Event Type",
+      source: "Source",
+      target: "Target",
+      timestamp: "Timestamp",
+      payload: "Payload",
+      // Saved views
+      saved_views: "Saved Views",
+      save_current: "Save Current",
+    },
+
+    // Observability extras (beyond existing keys)
+    observability_extra: {
+      // Auto-refresh toggle
+      auto_refresh_on: "Auto-refresh on",
+      auto_refresh_off: "Auto-refresh off",
+      // Summary card labels
+      total_cost: "Total Cost",
+      executions_label: "Executions",
+      success_rate: "Success Rate",
+      active_personas: "Active Personas",
+      // System trace
+      system_trace: "System Trace Timeline",
+      // IPC performance
+      ipc_performance: "IPC Performance",
+      // Alert panels
+      alert_rules_label: "Alert rules",
+      alert_history_label: "Alert history",
+      // Healing issues
+      healing_issues: "Health Issues",
+      run_analysis: "Run analysis",
+      resolve: "Resolve",
+      healing_view_list: "List",
+      healing_view_timeline: "Timeline",
+      // Healing issue modal labels
+      issue_details: "Issue Details",
+      // Anomaly drilldown
+      anomaly_drilldown: "Anomaly Drill-Down",
+      // Spend overview
+      spend_overview: "Spend Overview",
+      // Metrics charts
+      cost_vs_executions: "Cost vs Executions",
+      daily_executions: "Daily Executions",
+      // IPC panel
+      ipc_channel: "IPC Channel",
+      avg_duration: "Avg Duration",
+      call_count: "Call Count",
+      error_rate: "Error Rate",
+    },
+
+    // Dashboard widgets
+    widgets: {
+      recent_activity: "Recent Activity",
+      view_all: "View all",
+      // {count} = execution count
+      total_traffic: "Total Traffic",
+      total_errors: "Total Errors",
+      traffic_errors_chart: "Traffic & Errors",
+      top_performers: "Top Performers",
+      // Metric help popover
+      metric_help: "Metric Help",
+      how_calculated: "How is this calculated?",
+      // Detail modal
+      details: "Details",
+      // Header badges
+      messages_badge: "Messages",
+      reviews_badge: "Reviews",
+      executions_badge: "Executions",
+      success_badge: "Success",
+      alerts_badge: "Alerts",
+      agents_badge: "Agents",
+    },
+
+    // Dashboard cards
+    cards: {
+      // Fleet optimization
+      fleet_optimization: "Fleet Optimization",
+      fleet_subtitle: "Automated recommendations to improve agent performance",
+      // Remote control
+      remote_control: "Remote Control",
+      remote_subtitle: "Quick actions for agent management",
+      // Resume setup
+      resume_setup: "Continue Setup",
+      resume_subtitle: "Pick up where you left off",
+      // Knowledge hub (when used as subtab)
+      knowledge_hub: "Knowledge Hub",
+    },
   },
 
   // -------------------------------------------------------------------
@@ -2074,6 +2550,295 @@ export const en = {
       // Compact badge labels
       badge_unverified: "Unverified",
       badge_sandbox: "Restricted Mode",
+    },
+
+    // DesignReviewsPage -- top-level template page header
+    page: {
+      title: "Agentic Templates",
+      // {count} = number of templates; shown in the page subtitle
+      subtitle_one: "{count} template available",
+      subtitle_other: "{count} templates available",
+    },
+
+    // Explore view -- "Ready to Deploy" section
+    explore: {
+      ready_to_deploy: "Ready to Deploy",
+      ready_to_deploy_hint: "Templates with all connectors configured",
+      // {count} = adoption count shown per template card
+      adoption_count_one: "{count} adoption",
+      adoption_count_other: "{count} adoptions",
+      popular_in: "Popular in {role}",
+      configure_to_unlock: "Configure connectors to unlock ready-to-deploy templates",
+      hero_title: "What do you want to automate?",
+      hero_subtitle: "Browse by use case or search for templates that match your workflow needs.",
+      hero_search_placeholder: "Search templates by keyword or describe your need...",
+      // {count} = templates in a lane
+      templates_count_one: "{count} template",
+      templates_count_other: "{count} templates",
+      view_all: "View all",
+      most_adopted: "Most Adopted",
+      whats_your_role: "What's your role?",
+      categories_for_role: "{count} categories with specialized agent templates for {role} workflows.",
+      role_templates: "{role} Templates",
+      by_role: "By Role",
+      by_need: "By Need",
+      classic: "Classic",
+    },
+
+    // Automation opportunities rail
+    opportunities: {
+      title: "Automation Opportunities",
+      subtitle: "Workflows you can unlock",
+      ready_now: "Ready now",
+      add_connector: "Add",
+      unlock_more: "to unlock {count} more",
+      explore_templates: "Explore {label} templates",
+    },
+
+    // Recommended carousel
+    recommended: {
+      title: "Recommended for You",
+      subtitle: "Based on your connectors",
+      no_recommendations: "No recommendations available yet.",
+    },
+
+    // Trending carousel
+    trending: {
+      title: "Most Adopted This Week",
+    },
+
+    // Empty states
+    empty: {
+      no_templates: "No generated templates yet",
+      no_templates_hint: "Use the Synthesize Team button in the header or the Claude Code skill to generate templates.",
+      no_search_results: "No matching templates",
+      no_search_results_hint: "Try adjusting your search terms or filters to find what you're looking for.",
+      clear_search: "Clear search",
+      waiting_for_draft: "Waiting for persona draft",
+      waiting_for_draft_hint: "The AI is generating a draft based on your selections. This usually takes a few seconds.",
+    },
+
+    // Background banners
+    banners: {
+      draft_prefix: "Draft: ",
+      step_click_resume: "Step: {step} -- click to resume",
+      discard_draft: "Discard draft",
+      adoption_in_progress: "Template adoption in progress",
+      click_to_view_progress: "Click to view progress",
+      rebuilding: "Rebuilding: {name}",
+      status_testing: "Testing",
+      status_completed: "Completed",
+      status_failed: "Failed",
+      click_to_view_result: "Click to view result",
+      click_to_view_output: "Click to view output",
+    },
+
+    // Search bar and filters
+    search: {
+      switch_to_keyword: "Switch to keyword search",
+      switch_to_ai: "Switch to AI search",
+      few_results: "Few results found",
+      try_ai_search: "Try AI search",
+      ai_searching: "Searching with AI -- results will appear when ready...",
+      ai_results_one: "{count} result",
+      ai_results_other: "{count} results",
+      show_log: "Show Log",
+      hide_log: "Hide Log",
+      placeholder_default: "Search templates... (try category: difficulty: setup:)",
+      placeholder_ai: "Describe what you need, then press Enter...",
+      placeholder_add_more: "Add more filters or search...",
+      list_view: "List view",
+      explore_view: "Explore view",
+      comfortable_view: "Comfortable view",
+      compact_view: "Compact view",
+      recommended_for_you: "Recommended for you",
+      connectors_label: "Connectors",
+      components_label: "Components",
+      search_connectors: "Search connectors...",
+      search_components: "Search components...",
+      no_matching_connectors: "No matching connectors",
+      no_connectors_available: "No connectors available",
+      no_matching_components: "No matching components",
+      no_components_available: "No components available",
+      clear_all: "Clear all",
+      admin_tools: "Admin tools",
+      deduplicate: "Deduplicate",
+      backfill_pipelines: "Backfill Pipelines",
+      backfill_tools: "Backfill Tools",
+      coverage_all: "All",
+      coverage_ready: "Ready",
+      coverage_partial: "Partial",
+      autocomplete_categories: "Categories",
+      autocomplete_difficulty: "Difficulty",
+      autocomplete_setup_time: "Setup Time",
+      autocomplete_suggestions: "Suggestions",
+    },
+
+    // Virtual list column headers
+    list: {
+      template_name: "Template Name",
+      components: "Components",
+      adoptions: "Adoptions",
+    },
+
+    // Row action menu
+    row_actions: {
+      row_actions_label: "Row actions",
+      view_details: "View Details",
+      rebuild: "Rebuild",
+      delete_template: "Delete template",
+    },
+
+    // Connector readiness
+    connector_readiness: {
+      click_to_add: "click to add credential",
+      ready: "Ready",
+      partial: "Partial",
+      setup_needed: "Setup needed",
+      needs_setup: "Needs setup",
+      not_ready: "Not ready",
+      needs_credential: "needs credential",
+      not_installed: "not installed",
+    },
+
+    // Template detail modal
+    detail_modal: {
+      adopted: "{count} adopted",
+      reference_patterns: "Reference patterns",
+      adopt_as_persona: "Adopt as Persona",
+      try_it: "Try It",
+      design_unavailable: "Design data unavailable for this template.",
+    },
+
+    // Overview tab (inside detail modal)
+    overview_tab: {
+      loading_metrics: "Loading performance metrics...",
+      metrics_unavailable: "Performance metrics unavailable",
+      metrics_load_error: "Could not load metrics for this template.",
+      incomplete_data: "Incomplete performance data",
+      incomplete_data_hint: "Some metric queries failed. The values below may not reflect actual usage.",
+      performance: "Performance",
+      adoptions_label: "Adoptions",
+      executions_label: "Executions",
+      success_label: "Success",
+      avg_cost_label: "Avg Cost",
+      quality_score: "Quality score",
+      use_case_flows: "Use Case Flows",
+      nodes: "{count} nodes",
+      edges: "{count} edges",
+      suggested_adjustment: "Suggested Adjustment",
+      adjustment_attempt: "(attempt {attempt}/3)",
+      dimension_completion: "Dimension Completion",
+      dimensions_score: "({score}/9 dimensions)",
+    },
+
+    // Review expanded detail
+    review_detail: {
+      design_unavailable: "Design data unavailable for this template.",
+      use_case_flows: "Use Case Flows",
+      view_diagram: "View diagram",
+      apply_rerun: "Apply & Re-run",
+      adopt_as_new_persona: "Adopt as New Persona",
+      view_raw_json: "View Raw JSON",
+      hide_raw_json: "Hide Raw JSON",
+      used_references: "This template used reference patterns from prior passing reviews",
+    },
+
+    // Rebuild modal
+    rebuild_modal: {
+      title: "Rebuild Template",
+      template_instruction: "Template Instruction",
+      custom_direction: "Custom Direction (optional)",
+      custom_direction_placeholder: "Add specific requirements, focus areas, or constraints for this rebuild...",
+      custom_direction_hint: "The rebuild will regenerate all 9 data dimensions using the Protocol System.",
+      rebuilding_with_cli: "Rebuilding template with Claude CLI...",
+      waiting_for_output: "Waiting for output...",
+      close_continues_bg: "You can close this dialog -- the rebuild will continue in the background.",
+      rebuild_complete: "Rebuild Complete",
+      rebuild_complete_hint: "The template has been regenerated with all data dimensions. The gallery will refresh to show updated scores.",
+      rebuild_failed: "Rebuild Failed",
+      unknown_error: "An unknown error occurred during rebuild.",
+      start_rebuild: "Start Rebuild",
+      cancel_rebuild: "Cancel Rebuild",
+      run_in_background: "Run in Background",
+    },
+
+    // Preview modal
+    preview_modal: {
+      preview_title: "Preview: {name}",
+      sandboxed_hint: "Sandboxed single-turn execution -- no persona created",
+      try_this_template: "Try this template",
+      try_description: "Run a sandboxed single-turn execution to see how this persona behaves. Uses the template's system prompt with mock inputs -- nothing is saved.",
+      run_preview: "Run Preview",
+      no_design_data: "No design data available for this template.",
+      ready: "Ready",
+      running: "Running...",
+      completed: "Completed",
+      execution_failed: "Execution failed",
+      run_again: "Run Again",
+      close_test_continues: "You can close -- test will continue in background",
+    },
+
+    // Expanded row content
+    expanded: {
+      adopt: "Adopt",
+      try_it: "Try It",
+      flows: "Flows",
+      use_cases: "Use Cases",
+      architecture: "Architecture",
+      events: "Events",
+      reviews_label: "Reviews",
+      notifications: "Notifications",
+    },
+
+    // Matrix command center
+    matrix_cmd: {
+      identity: "Identity",
+      instructions: "Instructions",
+      tool_guidance: "Tool Guidance",
+      examples: "Examples",
+      error_handling: "Error Handling",
+      initializing: "Initializing...",
+      initializing_hint: "Creating draft agent and starting CLI",
+      describe: "Describe",
+      import_label: "Import",
+      describe_placeholder: "Describe what your agent should do... (Enter to generate)",
+      additional_instructions: "Additional instructions...",
+      web_search: "Web Search",
+      web_browse: "Web Browse",
+      build_label: "Build",
+      adjust_placeholder: "Adjust anything...",
+      test_agent: "Test Agent",
+      save_version: "Save Version",
+    },
+
+    // Questionnaire modal
+    questionnaire: {
+      header: "{label} -- Question {current} of {total}",
+      answered: "{count} answered",
+      cancel_setup: "Cancel setup",
+      type_your_answer: "Type your answer...",
+      default_label: "Default: {value}",
+      select_project: "Select a codebase project...",
+      navigate_hint: "navigate",
+      skip_all: "Skip all",
+      submit_answers: "Submit Answers",
+      answer_remaining: "Answer remaining ({count})",
+      next: "Next",
+      setup: "Setup",
+    },
+
+    // Sandbox warning banner
+    sandbox_banner: {
+      community_sandbox: "Community Template -- Sandbox Mode",
+      event_emission_disabled: "Event emission disabled",
+      chain_triggers_disabled: "Chain triggers disabled",
+      webhook_triggers_disabled: "Webhook triggers disabled",
+      polling_triggers_disabled: "Polling triggers disabled",
+      human_review_required: "Human review required",
+      budget_cap_enforced: "Budget cap enforced",
+      max_concurrent_one: "Max {max} concurrent run",
+      max_concurrent_other: "Max {max} concurrent runs",
     },
   },
 

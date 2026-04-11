@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SearchAutocomplete } from './SearchAutocomplete';
@@ -28,6 +29,7 @@ export function SearchChipInput({
   autocompletePrefix, autocompleteQuery,
   aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,
 }: SearchChipInputProps) {
+  const { t } = useTranslation();
   const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
   const showAutocomplete = !!autocompletePrefix && !aiSearchMode;
 
@@ -97,9 +99,9 @@ export function SearchChipInput({
           }
         }}
         placeholder={
-          chips.length > 0 ? 'Add more filters or search...'
-            : aiSearchMode ? 'Describe what you need, then press Enter...'
-            : 'Search templates... (try category: difficulty: setup:)'
+          chips.length > 0 ? t.templates.search.placeholder_add_more
+            : aiSearchMode ? t.templates.search.placeholder_ai
+            : t.templates.search.placeholder_default
         }
         className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none"
       />

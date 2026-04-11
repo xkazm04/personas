@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
@@ -17,6 +18,7 @@ export function AiSearchStatusBar({
   aiCliLog?: string[];
   total: number;
 }) {
+  const { t } = useTranslation();
   const [showCliLog, setShowCliLog] = useState(false);
 
   if (!aiSearchMode || (!aiSearchLoading && !aiSearchRationale)) return null;
@@ -33,13 +35,13 @@ export function AiSearchStatusBar({
         {aiSearchLoading ? (
           <>
             <LoadingSpinner size="sm" className="text-indigo-400 flex-shrink-0" />
-            <span className="text-sm text-indigo-300/80">Searching with AI -- results will appear when ready...</span>
+            <span className="text-sm text-indigo-300/80">{t.templates.search.ai_searching}</span>
           </>
         ) : aiSearchActive ? (
           <>
             <Sparkles className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             <span className="text-sm text-emerald-300/80 flex-1">{aiSearchRationale}</span>
-            <span className="text-sm text-emerald-400/60 tabular-nums flex-shrink-0">{total} result{total !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-emerald-400/60 tabular-nums flex-shrink-0">{(total === 1 ? t.templates.search.ai_results_one : t.templates.search.ai_results_other).replace('{count}', String(total))}</span>
           </>
         ) : (
           <>
@@ -53,7 +55,7 @@ export function AiSearchStatusBar({
             onClick={() => setShowCliLog(!showCliLog)}
             className="text-sm px-1.5 py-0.5 rounded bg-primary/10 text-muted-foreground/60 hover:text-foreground/70 transition-colors flex-shrink-0"
           >
-            {showCliLog ? 'Hide Log' : 'Show Log'}
+            {showCliLog ? t.templates.search.hide_log : t.templates.search.show_log}
           </button>
         )}
       </div>

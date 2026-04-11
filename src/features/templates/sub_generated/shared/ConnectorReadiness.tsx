@@ -1,4 +1,5 @@
 import { CheckCircle2, AlertCircle, XCircle, HelpCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 
 interface ConnectorReadinessProps {
@@ -55,6 +56,7 @@ const STATUS_COLOR = {
  * Compact dot indicator or detailed readiness badge.
  */
 export function ConnectorReadiness({ statuses, compact = true, simplified = false }: ConnectorReadinessProps) {
+  const { t } = useTranslation();
   const overall = getOverallHealth(statuses);
   const config = HEALTH_CONFIG[overall];
   const StatusIcon = config.Icon;
@@ -63,7 +65,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     return (
       <span className={`inline-flex items-center gap-1 ${config.color}`} title={config.label}>
         <StatusIcon className="w-3.5 h-3.5" />
-        <span className="text-xs font-medium">{overall === 'ready' ? 'Ready' : overall === 'partial' ? 'Needs setup' : 'Not ready'}</span>
+        <span className="text-xs font-medium">{overall === 'ready' ? t.templates.connector_readiness.ready : overall === 'partial' ? t.templates.connector_readiness.needs_setup : t.templates.connector_readiness.not_ready}</span>
       </span>
     );
   }
@@ -94,10 +96,10 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
             <Icon className={`w-3.5 h-3.5 ${color}`} />
             <span className="text-sm text-foreground/80">{status.connector_name}</span>
             {!status.has_credential && status.installed && (
-              <span className="text-sm text-status-warning/60">needs credential</span>
+              <span className="text-sm text-status-warning/60">{t.templates.connector_readiness.needs_credential}</span>
             )}
             {!status.installed && (
-              <span className="text-sm text-status-warning/60">not installed</span>
+              <span className="text-sm text-status-warning/60">{t.templates.connector_readiness.not_installed}</span>
             )}
           </div>
         );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Wrench, Trash2, GitBranch, Puzzle } from 'lucide-react';
 
 export function AdminToolsDropdown({
@@ -16,6 +17,7 @@ export function AdminToolsDropdown({
   onBackfillTools?: () => void;
   isBackfillingTools?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export function AdminToolsDropdown({
       <button
         onClick={() => setOpen((v) => !v)}
         className="p-2 rounded-lg border border-primary/10 hover:bg-primary/5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-        title="Admin tools"
+        title={t.templates.search.admin_tools}
       >
         <Wrench className="w-4 h-4" />
       </button>
@@ -46,7 +48,7 @@ export function AdminToolsDropdown({
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-amber-400/80 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
             >
               <Trash2 className={`w-4 h-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
-              Deduplicate
+              {t.templates.search.deduplicate}
             </button>
           )}
           {onBackfillPipeline && (
@@ -56,7 +58,7 @@ export function AdminToolsDropdown({
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-violet-400/80 hover:bg-violet-500/10 transition-colors text-left disabled:opacity-50"
             >
               <GitBranch className={`w-4 h-4 ${isBackfillingPipeline ? 'animate-spin' : ''}`} />
-              Backfill Pipelines
+              {t.templates.search.backfill_pipelines}
             </button>
           )}
           {onBackfillTools && (
@@ -66,7 +68,7 @@ export function AdminToolsDropdown({
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-cyan-400/80 hover:bg-cyan-500/10 transition-colors text-left disabled:opacity-50"
             >
               <Puzzle className={`w-4 h-4 ${isBackfillingTools ? 'animate-spin' : ''}`} />
-              Backfill Tools
+              {t.templates.search.backfill_tools}
             </button>
           )}
         </div>

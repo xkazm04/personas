@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
 import { List, Compass } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DensityToggle, type Density } from './filters/DensityToggle';
 import { SortDropdown } from './filters/SortDropdown';
 import { FilterChips } from './filters/FilterChips';
@@ -57,6 +58,7 @@ export function TemplateSearchControls({
   hasRecommendations,
   onOpenRecommended,
 }: Pick<TemplateSearchFilterRowProps, 'viewMode' | 'onViewModeChange' | 'density' | 'onDensityChange' | 'sortBy' | 'onSortByChange' | 'sortDir' | 'onSortDirChange' | 'total' | 'loadedCount' | 'hasRecommendations' | 'onOpenRecommended'>) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Count */}
@@ -76,7 +78,7 @@ export function TemplateSearchControls({
                 ? 'bg-violet-500/20 text-violet-300'
                 : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
-            title="List view"
+            title={t.templates.search.list_view}
           >
             <List className="w-3.5 h-3.5" />
           </button>
@@ -87,7 +89,7 @@ export function TemplateSearchControls({
                 ? 'bg-violet-500/20 text-violet-300'
                 : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
-            title="Explore view"
+            title={t.templates.search.explore_view}
           >
             <Compass className="w-3.5 h-3.5" />
           </button>
@@ -116,7 +118,7 @@ export function TemplateSearchControls({
         <button
           onClick={onOpenRecommended}
           className="p-2 rounded-lg border border-primary/10 hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors flex-shrink-0"
-          title="Recommended for you"
+          title={t.templates.search.recommended_for_you}
         >
           <Star className="w-4 h-4" />
         </button>

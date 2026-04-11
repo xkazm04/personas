@@ -3,6 +3,7 @@ import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/di
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecommendedCarouselProps {
   recommendedTemplates: PersonaDesignReview[];
@@ -13,6 +14,7 @@ export function RecommendedCarousel({
   recommendedTemplates,
   onSelectTemplate,
 }: RecommendedCarouselProps) {
+  const { t } = useTranslation();
   if (recommendedTemplates.length === 0) return null;
 
   return (
@@ -20,26 +22,26 @@ export function RecommendedCarousel({
       <div className="flex items-center gap-2 mb-2.5">
         <Sparkles className="w-4 h-4 text-amber-400/70" />
         <SectionLabel as="span" className="mb-0">
-          Recommended for You
+          {t.templates.recommended.title}
         </SectionLabel>
         <span className="text-sm text-muted-foreground/60">
-          Based on your connectors
+          {t.templates.recommended.subtitle}
         </span>
       </div>
       <div className="flex gap-2.5 overflow-x-auto pb-1">
-        {recommendedTemplates.map((t) => {
-          const connectors: string[] = parseJsonSafe(t.connectors_used, []);
+        {recommendedTemplates.map((tmpl) => {
+          const connectors: string[] = parseJsonSafe(tmpl.connectors_used, []);
           return (
             <button
-              key={t.id}
-              onClick={() => onSelectTemplate(t)}
+              key={tmpl.id}
+              onClick={() => onSelectTemplate(tmpl)}
               className="flex-shrink-0 w-[220px] p-3 rounded-xl bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/25 hover:bg-amber-500/10 transition-all text-left group/rec"
             >
               <div className="text-sm font-medium text-foreground/80 group-hover/rec:text-amber-300 truncate">
-                {t.test_case_name}
+                {tmpl.test_case_name}
               </div>
               <div className="text-sm text-muted-foreground/50 truncate mt-0.5">
-                {t.instruction.length > 55 ? t.instruction.slice(0, 55) + '...' : t.instruction}
+                {tmpl.instruction.length > 55 ? tmpl.instruction.slice(0, 55) + '...' : tmpl.instruction}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 {connectors.slice(0, 3).map((c) => {
@@ -58,10 +60,10 @@ export function RecommendedCarousel({
                 {connectors.length > 3 && (
                   <span className="text-sm text-muted-foreground/60">+{connectors.length - 3}</span>
                 )}
-                {t.adoption_count > 0 && (
+                {tmpl.adoption_count > 0 && (
                   <span className="ml-auto inline-flex items-center gap-1 text-sm font-mono text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
-                    {t.adoption_count}
+                    {tmpl.adoption_count}
                   </span>
                 )}
               </div>

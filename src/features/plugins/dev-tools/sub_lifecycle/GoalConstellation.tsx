@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Target, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
@@ -205,15 +206,15 @@ export default function GoalConstellation() {
     <div className="space-y-3">
       {/* Controls */}
       <div className="flex items-center gap-2">
-        <button onClick={handleZoomIn} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title="Zoom in">
           <ZoomIn className="w-4 h-4" />
-        </button>
-        <button onClick={handleZoomOut} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title="Zoom out">
           <ZoomOut className="w-4 h-4" />
-        </button>
-        <button onClick={handleReset} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={handleReset} title="Reset view">
           <Maximize2 className="w-4 h-4" />
-        </button>
+        </Button>
         <span className="text-md text-muted-foreground/40 ml-2">{goals.length} goals, {edges.length} connections</span>
       </div>
 

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { GraduationCap, Clock } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CategoryWithCount } from '@/api/overview/reviews';
@@ -53,6 +54,7 @@ export function SearchAutocomplete({
   onDismiss,
   onFocusChange,
 }: SearchAutocompleteProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [focusIndex, setFocusIndex] = useState(-1);
 
@@ -131,10 +133,10 @@ export function SearchAutocomplete({
           aria-label="Search suggestions"
         >
           <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
-            {prefix.startsWith('category') ? 'Categories'
-              : prefix.startsWith('difficulty') ? 'Difficulty'
-              : prefix.startsWith('setup') ? 'Setup Time'
-              : 'Suggestions'}
+            {prefix.startsWith('category') ? t.templates.search.autocomplete_categories
+              : prefix.startsWith('difficulty') ? t.templates.search.autocomplete_difficulty
+              : prefix.startsWith('setup') ? t.templates.search.autocomplete_setup_time
+              : t.templates.search.autocomplete_suggestions}
           </div>
           <div className="max-h-64 overflow-y-auto py-1">
             {suggestions.map((suggestion, idx) => {

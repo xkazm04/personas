@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Lightbulb, RotateCcw, Download, Workflow } from 'lucide-react';
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
@@ -25,6 +26,7 @@ export function ReviewExpandedDetail({
   isAdopting?: boolean;
   onViewDiagram?: () => void;
 }) {
+  const { t } = useTranslation();
   const [showJson, setShowJson] = useState(false);
 
   const designResult = getCachedDesignResult(review);
@@ -38,7 +40,7 @@ export function ReviewExpandedDetail({
   if (!designResult) {
     return (
       <div className="flex items-center justify-center py-8 text-sm text-muted-foreground/80">
-        Design data unavailable for this template.
+        {t.templates.review_detail.design_unavailable}
       </div>
     );
   }
@@ -61,7 +63,7 @@ export function ReviewExpandedDetail({
       {/* 3.5. Use Case Flows Preview */}
       {flows.length > 0 && onViewDiagram && (
         <div>
-          <SectionLabel>Use Case Flows</SectionLabel>
+          <SectionLabel>{t.templates.review_detail.use_case_flows}</SectionLabel>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
               <button
@@ -76,11 +78,11 @@ export function ReviewExpandedDetail({
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground/80">
-                  <span>{flow.nodes.length} nodes</span>
-                  <span>{flow.edges.length} edges</span>
+                  <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
+                  <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
                 <div className="text-sm text-violet-400/50 mt-1.5 group-hover:text-violet-400/70 transition-colors">
-                  View diagram
+                  {t.templates.review_detail.view_diagram}
                 </div>
               </button>
             ))}
@@ -95,7 +97,7 @@ export function ReviewExpandedDetail({
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-amber-400/80" />
               <h4 className="text-sm font-medium text-amber-400/80 uppercase">
-                Suggested Adjustment
+                {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                   <span className="ml-1.5 text-muted-foreground/80 normal-case">
                     (attempt {review.adjustment_generation}/3)
@@ -109,7 +111,7 @@ export function ReviewExpandedDetail({
               className="px-3 py-1.5 text-sm rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             >
               <RotateCcw className="w-3 h-3" />
-              Apply &amp; Re-run
+              {t.templates.review_detail.apply_rerun}
             </button>
           </div>
           <p className="text-sm text-muted-foreground/90">{adjustment.reason}</p>
@@ -133,7 +135,7 @@ export function ReviewExpandedDetail({
       {review.had_references && (
         <div className="flex items-center gap-1.5 text-sm text-violet-400/50">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />
-          This template used reference patterns from prior passing reviews
+          {t.templates.review_detail.used_references}
         </div>
       )}
 
@@ -146,7 +148,7 @@ export function ReviewExpandedDetail({
             className={`px-4 py-2.5 text-sm rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
           >
             <Download className="w-4 h-4" />
-            Adopt as New Persona
+            {t.templates.review_detail.adopt_as_new_persona}
           </button>
         ) : (
           <div />
@@ -155,7 +157,7 @@ export function ReviewExpandedDetail({
           onClick={() => setShowJson(!showJson)}
           className="text-sm text-violet-400/60 hover:text-violet-400/80 transition-colors"
         >
-          {showJson ? 'Hide' : 'View'} Raw JSON
+          {showJson ? t.templates.review_detail.hide_raw_json : t.templates.review_detail.view_raw_json}
         </button>
       </div>
 

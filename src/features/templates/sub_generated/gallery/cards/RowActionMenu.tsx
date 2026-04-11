@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { MoreVertical, Eye, RefreshCw, Trash2 } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -17,6 +18,7 @@ export function RowActionMenu({
   onViewDetails,
   onRebuild,
 }: RowActionMenuProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -40,7 +42,7 @@ export function RowActionMenu({
           setOpen((prev) => !prev);
         }}
         className="p-1 rounded-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all"
-        aria-label="Row actions"
+        aria-label={t.templates.row_actions.row_actions_label}
       >
         <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />
       </button>
@@ -56,7 +58,7 @@ export function RowActionMenu({
             className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/80 hover:bg-primary/5 transition-colors text-left"
           >
             <Eye className="w-4 h-4" />
-            View Details
+            {t.templates.row_actions.view_details}
           </button>
           {import.meta.env.DEV && (
             <>
@@ -69,7 +71,7 @@ export function RowActionMenu({
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
               >
                 <RefreshCw className="w-4 h-4" />
-                Rebuild
+                {t.templates.row_actions.rebuild}
               </button>
               <button
                 onClick={(e) => {
@@ -80,7 +82,7 @@ export function RowActionMenu({
                 className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
               >
                 <Trash2 className="w-4 h-4" />
-                Delete template
+                {t.templates.row_actions.delete_template}
               </button>
             </>
           )}

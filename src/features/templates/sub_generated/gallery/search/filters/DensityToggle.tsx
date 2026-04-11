@@ -1,4 +1,5 @@
 import { LayoutList, AlignJustify } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type Density = 'comfortable' | 'compact';
 
@@ -8,6 +9,7 @@ interface DensityToggleProps {
 }
 
 export function DensityToggle({ density, onChange }: DensityToggleProps) {
+  const { t } = useTranslation();
   return (
     <div className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0">
       <button
@@ -17,7 +19,7 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
             ? 'bg-violet-500/20 text-violet-300'
             : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
         }`}
-        title="Comfortable view"
+        title={t.templates.search.comfortable_view}
       >
         <LayoutList className="w-3.5 h-3.5" />
       </button>
@@ -28,7 +30,7 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
             ? 'bg-violet-500/20 text-violet-300'
             : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
         }`}
-        title="Compact view"
+        title={t.templates.search.compact_view}
       >
         <AlignJustify className="w-3.5 h-3.5" />
       </button>

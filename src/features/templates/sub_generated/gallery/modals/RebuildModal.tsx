@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { RefreshCw, X, CheckCircle2, XCircle, Square } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { RebuildPhase } from '@/hooks/design/core/useBackgroundRebuild';
@@ -27,6 +28,7 @@ export function RebuildModal({
   onStartRebuild,
   onCancel,
 }: RebuildModalProps) {
+  const { t } = useTranslation();
   const [userDirection, setUserDirection] = useState('');
   const linesEndRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +65,7 @@ export function RebuildModal({
             </div>
             <div className="min-w-0">
               <h2 id="rebuild-modal-title" className="text-sm font-semibold text-foreground/90 truncate">
-                Rebuild Template
+                {t.templates.rebuild_modal.title}
               </h2>
               <p className="text-sm text-muted-foreground/60 truncate">
                 {review.test_case_name}
@@ -82,7 +84,7 @@ export function RebuildModal({
               {/* Instruction context */}
               <div className="bg-secondary/30 rounded-xl border border-primary/10 p-4">
                 <div className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wide mb-1.5">
-                  Template Instruction
+                  {t.templates.rebuild_modal.template_instruction}
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">
                   {review.instruction}
@@ -92,16 +94,16 @@ export function RebuildModal({
               {/* User direction */}
               <div>
                 <label className="block text-sm font-medium text-muted-foreground/70 mb-1.5">
-                  Custom Direction (optional)
+                  {t.templates.rebuild_modal.custom_direction}
                 </label>
                 <textarea
                   value={userDirection}
                   onChange={(e) => setUserDirection(e.target.value)}
-                  placeholder="Add specific requirements, focus areas, or constraints for this rebuild..."
+                  placeholder={t.templates.rebuild_modal.custom_direction_placeholder}
                   className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
                 />
                 <p className="text-sm text-muted-foreground/60 mt-1">
-                  The rebuild will regenerate all 9 data dimensions using the Protocol System.
+                  {t.templates.rebuild_modal.custom_direction_hint}
                 </p>
               </div>
             </div>
@@ -111,13 +113,13 @@ export function RebuildModal({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-blue-400/80">
                 <LoadingSpinner size="sm" />
-                <span>Rebuilding template with Claude CLI...</span>
+                <span>{t.templates.rebuild_modal.rebuilding_with_cli}</span>
               </div>
 
               {/* Streaming output */}
               <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
                 {lines.length === 0 && (
-                  <span className="text-muted-foreground/60">Waiting for output...</span>
+                  <span className="text-muted-foreground/60">{t.templates.rebuild_modal.waiting_for_output}</span>
                 )}
                 {lines.map((line, i) => {
                   const isMilestone = line.startsWith('[Milestone]');
@@ -138,7 +140,7 @@ export function RebuildModal({
               </div>
 
               <p className="text-sm text-muted-foreground/60 text-center">
-                You can close this dialog -- the rebuild will continue in the background.
+                {t.templates.rebuild_modal.close_continues_bg}
               </p>
             </div>
           )}
@@ -149,11 +151,10 @@ export function RebuildModal({
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
-                Rebuild Complete
+                {t.templates.rebuild_modal.rebuild_complete}
               </h3>
               <p className="text-sm text-muted-foreground/60 max-w-sm">
-                The template has been regenerated with all data dimensions.
-                The gallery will refresh to show updated scores.
+                {t.templates.rebuild_modal.rebuild_complete_hint}
               </p>
             </div>
           )}
@@ -164,10 +165,10 @@ export function RebuildModal({
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
-                Rebuild Failed
+                {t.templates.rebuild_modal.rebuild_failed}
               </h3>
               <p className="text-sm text-muted-foreground/60 max-w-sm">
-                {error || 'An unknown error occurred during rebuild.'}
+                {error || t.templates.rebuild_modal.unknown_error}
               </p>
             </div>
           )}
@@ -181,14 +182,14 @@ export function RebuildModal({
                 onClick={onClose}
                 className="px-4 py-2 text-sm rounded-xl text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
               <button
                 onClick={() => onStartRebuild(userDirection)}
                 className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Start Rebuild
+                {t.templates.rebuild_modal.start_rebuild}
               </button>
             </>
           )}
@@ -200,13 +201,13 @@ export function RebuildModal({
                 className="px-4 py-2 text-sm rounded-xl text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
                 <Square className="w-3 h-3" />
-                Cancel Rebuild
+                {t.templates.rebuild_modal.cancel_rebuild}
               </button>
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
               >
-                Run in Background
+                {t.templates.rebuild_modal.run_in_background}
               </button>
             </div>
           )}
@@ -216,7 +217,7 @@ export function RebuildModal({
               onClick={onClose}
               className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
             >
-              Close
+              {t.common.close}
             </button>
           )}
         </div>

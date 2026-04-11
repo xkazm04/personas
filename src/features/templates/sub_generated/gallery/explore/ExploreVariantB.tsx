@@ -22,6 +22,7 @@ import { useMemo } from 'react';
 import { Search, TrendingUp, Download, Zap, MessageSquare, Database, Shield, BarChart3, Bell, GitBranch } from 'lucide-react';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   availableCategories: CategoryWithCount[];
@@ -72,6 +73,7 @@ export function ExploreVariantB({
   onSelectTemplate,
   onSearchFocus,
 }: Props) {
+  const { t } = useTranslation();
   // Build lane data: templates per use case lane
   const laneData = useMemo(() => {
     return USE_CASE_LANES.map((lane) => {
@@ -96,16 +98,16 @@ export function ExploreVariantB({
     <div className="flex-1 overflow-y-auto">
       {/* Hero prompt */}
       <div className="px-6 pt-8 pb-6 text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">What do you want to automate?</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t.templates.explore.hero_title}</h2>
         <p className="text-sm text-muted-foreground/60 mb-5 max-w-md mx-auto">
-          Browse by use case or search for templates that match your workflow needs.
+          {t.templates.explore.hero_subtitle}
         </p>
         <button
           onClick={onSearchFocus}
           className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-primary/15 bg-secondary/20 text-muted-foreground/50 hover:bg-secondary/30 hover:border-primary/25 transition-all max-w-md w-full justify-center"
         >
           <Search className="w-4 h-4" />
-          <span className="text-sm">Search templates by keyword or describe your need...</span>
+          <span className="text-sm">{t.templates.explore.hero_search_placeholder}</span>
         </button>
       </div>
 
@@ -120,19 +122,19 @@ export function ExploreVariantB({
                   <Icon className="w-4 h-4" style={{ color: lane.color }} />
                 </div>
                 <h3 className="text-sm font-semibold text-foreground/80">{lane.title}</h3>
-                <span className="text-sm text-muted-foreground/40">{lane.templates.length} templates</span>
+                <span className="text-sm text-muted-foreground/40">{(lane.templates.length === 1 ? t.templates.explore.templates_count_one : t.templates.explore.templates_count_other).replace('{count}', String(lane.templates.length))}</span>
                 {lane.categories[0] && (
                   <button
                     onClick={() => onSelectCategory(lane.categories[0]!)}
                     className="ml-auto text-sm text-primary/60 hover:text-primary transition-colors"
                   >
-                    View all
+                    {t.templates.explore.view_all}
                   </button>
                 )}
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {lane.templates.map((t) => (
-                  <TemplateMiniCard key={t.id} template={t} onClick={() => onSelectTemplate(t)} />
+                {lane.templates.map((tmpl) => (
+                  <TemplateMiniCard key={tmpl.id} template={tmpl} onClick={() => onSelectTemplate(tmpl)} />
                 ))}
               </div>
             </div>
@@ -144,20 +146,20 @@ export function ExploreVariantB({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-              <h3 className="text-sm font-semibold text-foreground/80">Most Adopted</h3>
+              <h3 className="text-sm font-semibold text-foreground/80">{t.templates.explore.most_adopted}</h3>
               <Zap className="w-3 h-3 text-amber-400/50" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {mostAdopted.map((t) => (
+              {mostAdopted.map((tmpl) => (
                 <button
-                  key={t.id}
-                  onClick={() => onSelectTemplate(t)}
+                  key={tmpl.id}
+                  onClick={() => onSelectTemplate(tmpl)}
                   className="text-left p-3.5 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all"
                 >
-                  <div className="text-sm font-medium text-foreground/85 truncate">{t.test_case_name}</div>
-                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1">{t.instruction}</p>
+                  <div className="text-sm font-medium text-foreground/85 truncate">{tmpl.test_case_name}</div>
+                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1">{tmpl.instruction}</p>
                   <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/70 font-medium">
-                    <Download className="w-3 h-3" /> {t.adoption_count} adoption{t.adoption_count !== 1 ? 's' : ''}
+                    <Download className="w-3 h-3" /> {(tmpl.adoption_count === 1 ? t.templates.explore.adoption_count_one : t.templates.explore.adoption_count_other).replace('{count}', String(tmpl.adoption_count))}
                   </div>
                 </button>
               ))}

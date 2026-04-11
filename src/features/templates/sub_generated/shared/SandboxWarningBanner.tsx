@@ -5,6 +5,7 @@
  * Displays the restricted capabilities and explains why sandbox mode is active.
  */
 import { ShieldAlert, ShieldX, Lock, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import { ORIGIN_LABELS } from '@/lib/templates/templateVerification';
 
@@ -14,6 +15,7 @@ interface SandboxWarningBannerProps {
 }
 
 export function SandboxWarningBanner({ verification, className = '' }: SandboxWarningBannerProps) {
+  const { t } = useTranslation();
   const { origin, trustLevel, sandboxPolicy } = verification;
 
   // No banner needed for verified templates
@@ -29,13 +31,13 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
 
   const restrictions: string[] = [];
   if (sandboxPolicy) {
-    if (!sandboxPolicy.canEmitEvents) restrictions.push('Event emission disabled');
-    if (!sandboxPolicy.canChainTrigger) restrictions.push('Chain triggers disabled');
-    if (!sandboxPolicy.canUseWebhooks) restrictions.push('Webhook triggers disabled');
-    if (!sandboxPolicy.canUsePolling) restrictions.push('Polling triggers disabled');
-    if (sandboxPolicy.requireApproval) restrictions.push('Human review required');
-    if (sandboxPolicy.budgetEnforced) restrictions.push('Budget cap enforced');
-    if (sandboxPolicy.maxConcurrent < 5) restrictions.push(`Max ${sandboxPolicy.maxConcurrent} concurrent run${sandboxPolicy.maxConcurrent === 1 ? '' : 's'}`);
+    if (!sandboxPolicy.canEmitEvents) restrictions.push(t.templates.sandbox_banner.event_emission_disabled);
+    if (!sandboxPolicy.canChainTrigger) restrictions.push(t.templates.sandbox_banner.chain_triggers_disabled);
+    if (!sandboxPolicy.canUseWebhooks) restrictions.push(t.templates.sandbox_banner.webhook_triggers_disabled);
+    if (!sandboxPolicy.canUsePolling) restrictions.push(t.templates.sandbox_banner.polling_triggers_disabled);
+    if (sandboxPolicy.requireApproval) restrictions.push(t.templates.sandbox_banner.human_review_required);
+    if (sandboxPolicy.budgetEnforced) restrictions.push(t.templates.sandbox_banner.budget_cap_enforced);
+    if (sandboxPolicy.maxConcurrent < 5) restrictions.push((sandboxPolicy.maxConcurrent === 1 ? t.templates.sandbox_banner.max_concurrent_one : t.templates.sandbox_banner.max_concurrent_other).replace('{max}', String(sandboxPolicy.maxConcurrent)));
   }
 
   return (
@@ -47,7 +49,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className={`text-sm font-semibold ${titleColor}`}>
-              {isUntrusted ? 'Unverified Template' : 'Community Template -- Sandbox Mode'}
+              {isUntrusted ? t.templates.sandbox.title_unverified : t.templates.sandbox_banner.community_sandbox}
             </h4>
             <span className={`text-sm px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
               {ORIGIN_LABELS[origin]}
@@ -55,8 +57,8 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
           </div>
           <p className={`text-sm ${textColor} leading-relaxed mb-3`}>
             {isUntrusted
-              ? 'This template comes from an unknown source and has not been verified. It will run with restricted capabilities to protect your system.'
-              : 'This community template has not been officially verified. It will run in sandbox mode with restricted capabilities.'}
+              ? t.templates.sandbox.desc_unverified
+              : t.templates.sandbox.desc_community}
           </p>
 
           {restrictions.length > 0 && (
@@ -86,6 +88,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
  * Compact inline warning for use in template cards.
  */
 export function SandboxInlineWarning({ verification }: { verification: TemplateVerification }) {
+  const { t } = useTranslation();
   if (verification.trustLevel === 'verified') return null;
 
   const isUntrusted = verification.trustLevel === 'untrusted';
@@ -97,7 +100,7 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
         : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'
     }`}>
       <AlertTriangle className="w-3 h-3" />
-      {isUntrusted ? 'Unverified' : 'Sandbox Mode'}
+      {isUntrusted ? t.templates.sandbox.badge_unverified : t.templates.sandbox.badge_sandbox}
     </div>
   );
 }

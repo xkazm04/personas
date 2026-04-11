@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
@@ -28,6 +29,7 @@ export function ExploreView({
   onSelectCategory,
   onSelectTemplate,
 }: ExploreViewProps) {
+  const { t } = useTranslation();
   const opportunities = useAutomationDiscovery(allItems, userServiceTypes);
   // Build category count map
   const categoryCounts = useMemo(() => {
@@ -91,28 +93,28 @@ export function ExploreView({
         <div className="mb-6 max-w-5xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
-            <h2 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h2>
+            <h2 className="text-sm font-semibold text-foreground/80">{t.templates.explore.ready_to_deploy}</h2>
             {!isSimple && (
-            <span className="text-sm text-muted-foreground/60">Templates with all connectors configured</span>
+            <span className="text-sm text-muted-foreground/60">{t.templates.explore.ready_to_deploy_hint}</span>
             )}
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
-            {readyTemplates.map((t) => (
+            {readyTemplates.map((tmpl) => (
               <Button
-                key={t.id}
+                key={tmpl.id}
                 variant="ghost"
                 size="sm"
-                onClick={() => onSelectTemplate(t)}
+                onClick={() => onSelectTemplate(tmpl)}
                 className={`flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 ${CARD_PADDING.compact} text-left hover:border-emerald-500/30 hover:bg-secondary/30`}
               >
-                <div className="text-sm font-medium text-foreground/80 truncate">{t.test_case_name}</div>
+                <div className="text-sm font-medium text-foreground/80 truncate">{tmpl.test_case_name}</div>
                 <div className="text-sm text-muted-foreground/80 truncate mt-0.5">
-                  {t.instruction.length > 60 ? t.instruction.slice(0, 60) + '...' : t.instruction}
+                  {tmpl.instruction.length > 60 ? tmpl.instruction.slice(0, 60) + '...' : tmpl.instruction}
                 </div>
-                {!isSimple && t.adoption_count > 0 && (
+                {!isSimple && tmpl.adoption_count > 0 && (
                   <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
-                    {t.adoption_count} adoption{t.adoption_count !== 1 ? 's' : ''}
+                    {(tmpl.adoption_count === 1 ? t.templates.explore.adoption_count_one : t.templates.explore.adoption_count_other).replace('{count}', String(tmpl.adoption_count))}
                   </div>
                 )}
               </Button>

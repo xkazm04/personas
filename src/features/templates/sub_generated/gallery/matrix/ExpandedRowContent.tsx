@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Download, Workflow, Server, Zap, UserCheck, Bell } from 'lucide-react';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -36,6 +37,7 @@ export function ExpandedRowContent({
   onTryIt,
   onViewFlows,
 }: ExpandedRowContentProps) {
+  const { t } = useTranslation();
   const flows = useMemo(() => {
     const fromReview = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
     if (fromReview.length > 0) return fromReview;
@@ -71,11 +73,11 @@ export function ExpandedRowContent({
   }, [designResult, protocols]);
 
   const stats: StatDef[] = useMemo(() => [
-    { key: 'usecases',      label: 'Use Cases',     icon: Workflow,  color: '#a78bfa', count: flows.length },
-    { key: 'architecture',  label: 'Architecture',  icon: Server,    color: '#06b6d4', count: archCount },
-    { key: 'events',        label: 'Events',        icon: Zap,       color: '#f59e0b', count: eventCount },
-    { key: 'reviews',       label: 'Reviews',       icon: UserCheck, color: '#f97316', count: reviewCount },
-    { key: 'notifications', label: 'Notifications', icon: Bell,      color: '#10b981', count: notifCount },
+    { key: 'usecases',      label: t.templates.expanded.use_cases,     icon: Workflow,  color: '#a78bfa', count: flows.length },
+    { key: 'architecture',  label: t.templates.expanded.architecture,  icon: Server,    color: '#06b6d4', count: archCount },
+    { key: 'events',        label: t.templates.expanded.events,        icon: Zap,       color: '#f59e0b', count: eventCount },
+    { key: 'reviews',       label: t.templates.expanded.reviews_label, icon: UserCheck, color: '#f97316', count: reviewCount },
+    { key: 'notifications', label: t.templates.expanded.notifications, icon: Bell,      color: '#10b981', count: notifCount },
   ], [flows.length, archCount, eventCount, reviewCount, notifCount]);
 
   return (
@@ -87,7 +89,7 @@ export function ExpandedRowContent({
           className={`px-3 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
         >
           <Download className="w-3.5 h-3.5" />
-          Adopt
+          {t.templates.expanded.adopt}
         </button>
         {allConnectorsReady && (
           <button
@@ -95,7 +97,7 @@ export function ExpandedRowContent({
             className={`px-3 py-1.5 text-sm rounded-xl border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
           >
             <Play className="w-3.5 h-3.5" />
-            Try It
+            {t.templates.expanded.try_it}
           </button>
         )}
         {flows.length > 0 && onViewFlows && (
@@ -104,7 +106,7 @@ export function ExpandedRowContent({
             className="px-3 py-1.5 text-sm rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors inline-flex items-center gap-1.5"
           >
             <Workflow className="w-3.5 h-3.5" />
-            Flows
+            {t.templates.expanded.flows}
           </button>
         )}
       </div>

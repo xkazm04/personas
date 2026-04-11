@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-
+import { useTranslation } from '@/i18n/useTranslation';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SearchEmptyState } from '../explore/EmptyState';
 import { CompactRow } from './CompactRow';
@@ -58,6 +58,7 @@ export function TemplateVirtualList({
   isLoading,
   fetchMore,
 }: TemplateVirtualListProps) {
+  const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const estimateRowSize = density === 'compact' ? 40 : 72;
 
@@ -89,12 +90,12 @@ export function TemplateVirtualList({
       {/* Sticky header */}
       <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'hsl(var(--background))' }}>
         {density === 'comfortable' && <div className="w-14 px-6 py-3" />}
-        <div className="flex-1 text-left text-sm font-medium text-muted-foreground/70 px-4 py-2">Template Name</div>
+        <div className="flex-1 text-left text-sm font-medium text-muted-foreground/70 px-4 py-2">{t.templates.list.template_name}</div>
         <div className={`text-sm font-medium text-muted-foreground/70 px-4 py-2 flex-shrink-0 ${density === 'compact' ? 'w-32 text-center' : 'w-auto text-right'}`}>
-          Components
+          {t.templates.list.components}
         </div>
         {density === 'comfortable' && (
-          <div className="w-28 text-center text-sm font-medium text-muted-foreground/70 px-4 py-2">Adoptions</div>
+          <div className="w-28 text-center text-sm font-medium text-muted-foreground/70 px-4 py-2">{t.templates.list.adoptions}</div>
         )}
         {density === 'comfortable' && <div className="w-12 px-3 py-2" />}
       </div>
