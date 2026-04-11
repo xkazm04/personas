@@ -4,7 +4,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
 
 export function AgentCredentialDemands() {
@@ -35,7 +35,7 @@ export function AgentCredentialDemands() {
   const handleDesignComplete = useCallback(() => {
     setDesignOpen(false);
     setDesignInstruction('');
-    void fetchCredentials().catch(silentCatch("AgentCredentialDemands:fetchCredentialsOnDesignComplete"));
+    void fetchCredentials().catch(toastCatch("AgentCredentialDemands:fetchCredentialsOnDesignComplete", "Failed to refresh credentials after setup"));
   }, [fetchCredentials]);
 
   if (totalDemands === 0 || unfulfilledCount === 0) return null;

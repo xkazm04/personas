@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useAgentStore } from "@/stores/agentStore";
 import type { ModelTestConfig } from '@/api/agents/tests';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults } from './compareModels';
 import { ModelDropdown } from './ComparisonResults';
 import { ComparisonResults } from './ComparisonResults';
@@ -32,7 +32,7 @@ export function ModelABCompare() {
       fetchArenaResults(activeRunId).then(() => {
         const results = arenaResultsMap[activeRunId];
         if (results) setLastResults(results);
-      }).catch(silentCatch("ModelABCompare:fetchArenaResults"));
+      }).catch(toastCatch("ModelABCompare:fetchArenaResults", "Failed to load comparison results"));
     }
   }, [activeRunId, isLabRunning, labProgress, fetchArenaResults, arenaResultsMap]);
 

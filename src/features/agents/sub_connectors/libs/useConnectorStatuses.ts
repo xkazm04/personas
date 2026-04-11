@@ -3,7 +3,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { sendAppNotification } from '@/api/system/system';
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
@@ -72,7 +72,7 @@ export function useConnectorStatuses() {
     });
   }, [requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
 
-  useEffect(() => { void fetchCredentials().catch(silentCatch("useConnectorStatuses:initialFetchCredentials")); }, [fetchCredentials]);
+  useEffect(() => { void fetchCredentials().catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete.")); }, [fetchCredentials]);
 
   useEffect(() => {
     lastAutoTestedCredentialRef.current.clear();

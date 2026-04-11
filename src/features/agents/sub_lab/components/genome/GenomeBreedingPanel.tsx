@@ -16,7 +16,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { GenerationEvolutionChart } from './GenerationEvolutionChart';
 import { GenomeDiffView } from './GenomeDiffView';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
 
@@ -509,7 +509,7 @@ export function GenomeBreedingPanel() {
   };
 
   const handleDeleteRun = async (id: string) => {
-    await genomeApi.deleteBreedingRun(id).catch(silentCatch('genome:deleteBreedingRun'));
+    await genomeApi.deleteBreedingRun(id).catch(toastCatch('genome:deleteBreedingRun', 'Failed to delete breeding run'));
     setRuns((prev) => prev.filter((r) => r.id !== id));
     if (selectedRunId === id) {
       setSelectedRunId(null);

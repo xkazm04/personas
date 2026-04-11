@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { History, Calendar } from 'lucide-react';
 import { getCredentialAuditLog } from '@/api/vault/credentials';
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import { formatTimestamp } from '@/lib/utils/formatters';
 
@@ -27,7 +27,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
     setLoading(true);
     getCredentialAuditLog(credentialId, 10)
       .then((data) => { if (!cancelled) setEntries(data); })
-      .catch(silentCatch("ExecutionsTab:fetchAuditLog"))
+      .catch(toastCatch("ExecutionsTab:fetchAuditLog", "Failed to load audit history"))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [credentialId]);
