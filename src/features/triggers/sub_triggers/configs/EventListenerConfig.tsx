@@ -1,4 +1,5 @@
-import { EVENT_TYPE_OPTIONS_GROUPED, SOURCE_FILTER_HELP } from '@/lib/eventTypeTaxonomy';
+import { getEventTypeOptionsGrouped, getSourceFilterHelp } from '@/lib/eventTypeTaxonomy';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface EventListenerConfigProps {
   listenEventType: string;
@@ -14,6 +15,9 @@ export function EventListenerConfig({
   sourceFilter, setSourceFilter,
   validationError, setValidationError,
 }: EventListenerConfigProps) {
+  const { t } = useTranslation();
+  const groupedOptions = getEventTypeOptionsGrouped(t);
+  const sourceFilterHelp = getSourceFilterHelp(t);
   return (
     <div className="space-y-3">
       <div>
@@ -35,7 +39,7 @@ export function EventListenerConfig({
           }`}
         />
         <datalist id="event-type-suggestions">
-          {EVENT_TYPE_OPTIONS_GROUPED.map((group) =>
+          {groupedOptions.map((group) =>
             group.options.map((opt) => (
               <option key={opt.value} value={opt.value} label={`${opt.label} — ${opt.description}`} />
             ))
@@ -61,17 +65,17 @@ export function EventListenerConfig({
         />
         <details className="mt-1 group">
           <summary className="text-xs text-muted-foreground/60 cursor-pointer hover:text-muted-foreground/80 transition-colors">
-            {SOURCE_FILTER_HELP.title} — trailing * prefix wildcard supported
+            {sourceFilterHelp.title} — trailing * prefix wildcard supported
           </summary>
           <div className="mt-1 p-2 rounded-lg bg-background/40 border border-primary/10 text-xs text-muted-foreground/70 space-y-1">
-            {SOURCE_FILTER_HELP.rules.map((r) => (
+            {sourceFilterHelp.rules.map((r) => (
               <div key={r.pattern} className="flex gap-2">
                 <code className="text-primary/80 shrink-0">{r.pattern}</code>
                 <span>{r.explanation}</span>
               </div>
             ))}
             <ul className="list-disc list-inside mt-1 space-y-0.5">
-              {SOURCE_FILTER_HELP.constraints.map((c, i) => (
+              {sourceFilterHelp.constraints.map((c, i) => (
                 <li key={i}>{c}</li>
               ))}
             </ul>

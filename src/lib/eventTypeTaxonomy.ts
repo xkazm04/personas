@@ -23,6 +23,8 @@
  *   Allowed characters: `[a-zA-Z0-9_:\-.*]` — max 120 chars, max 3 wildcard chars.
  */
 
+import type { Translations } from '@/i18n/en';
+
 // ---------------------------------------------------------------------------
 // Category definitions
 // ---------------------------------------------------------------------------
@@ -32,10 +34,10 @@ export type EventTypeCategory = 'trigger' | 'execution' | 'system' | 'lifecycle'
 export interface EventTypeEntry {
   /** The event_type string used in subscriptions and event payloads */
   type: string;
-  /** Human-readable label for UI display */
-  label: string;
-  /** Short description of when this event fires */
-  description: string;
+  /** i18n key for the human-readable label (path inside event_types section) */
+  labelKey: keyof Translations['event_types'];
+  /** i18n key for the short description of when this event fires */
+  descriptionKey: keyof Translations['event_types'];
   /** Logical grouping */
   category: EventTypeCategory;
   /** Typical source_type values that emit this event */
@@ -50,71 +52,71 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
   // ── Trigger events ──────────────────────────────────────────────────────
   {
     type: 'webhook_received',
-    label: 'Webhook Received',
-    description: 'Fires when an external webhook POST arrives',
+    labelKey: 'webhook_received_label',
+    descriptionKey: 'webhook_received_description',
     category: 'trigger',
     typicalSources: ['webhook'],
   },
   {
     type: 'schedule_fired',
-    label: 'Schedule Fired',
-    description: 'Fires when a cron or interval trigger executes',
+    labelKey: 'schedule_fired_label',
+    descriptionKey: 'schedule_fired_description',
     category: 'trigger',
     typicalSources: ['scheduler'],
   },
   {
     type: 'polling_changed',
-    label: 'Polling Changed',
-    description: 'Fires when a polled endpoint returns new content',
+    labelKey: 'polling_changed_label',
+    descriptionKey: 'polling_changed_description',
     category: 'trigger',
     typicalSources: ['poller'],
   },
   {
     type: 'file_changed',
-    label: 'File Changed',
-    description: 'Fires when a watched file or directory changes',
+    labelKey: 'file_changed_label',
+    descriptionKey: 'file_changed_description',
     category: 'trigger',
     typicalSources: ['file_watcher'],
   },
   {
     type: 'clipboard_changed',
-    label: 'Clipboard Changed',
-    description: 'Fires when clipboard content changes',
+    labelKey: 'clipboard_changed_label',
+    descriptionKey: 'clipboard_changed_description',
     category: 'trigger',
     typicalSources: ['clipboard_watcher'],
   },
   {
     type: 'app_focus_changed',
-    label: 'App Focus Changed',
-    description: 'Fires when the foreground application changes',
+    labelKey: 'app_focus_changed_label',
+    descriptionKey: 'app_focus_changed_description',
     category: 'trigger',
     typicalSources: ['app_focus_watcher'],
   },
   {
     type: 'chain_completed',
-    label: 'Chain Completed',
-    description: 'Fires when a chained persona finishes execution',
+    labelKey: 'chain_completed_label',
+    descriptionKey: 'chain_completed_description',
     category: 'trigger',
     typicalSources: ['chain_engine'],
   },
   {
     type: 'composite_fired',
-    label: 'Composite Fired',
-    description: 'Fires when a multi-condition composite trigger matches',
+    labelKey: 'composite_fired_label',
+    descriptionKey: 'composite_fired_description',
     category: 'trigger',
     typicalSources: ['composite_engine'],
   },
   {
     type: 'trigger_fired',
-    label: 'Trigger Fired',
-    description: 'Generic event emitted when any trigger activates',
+    labelKey: 'trigger_fired_label',
+    descriptionKey: 'trigger_fired_description',
     category: 'trigger',
     typicalSources: ['trigger_engine'],
   },
   {
     type: 'schedule_triggered',
-    label: 'Schedule Triggered',
-    description: 'Alias for schedule_fired — emitted by legacy schedule triggers',
+    labelKey: 'schedule_triggered_label',
+    descriptionKey: 'schedule_triggered_description',
     category: 'trigger',
     typicalSources: ['scheduler'],
   },
@@ -122,15 +124,15 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
   // ── Execution events ────────────────────────────────────────────────────
   {
     type: 'execution_completed',
-    label: 'Execution Completed',
-    description: 'Fires when any persona execution completes successfully',
+    labelKey: 'execution_completed_label',
+    descriptionKey: 'execution_completed_description',
     category: 'execution',
     typicalSources: ['scheduler', 'runner'],
   },
   {
     type: 'execution_failed',
-    label: 'Execution Failed',
-    description: 'Fires when a persona execution fails',
+    labelKey: 'execution_failed_label',
+    descriptionKey: 'execution_failed_description',
     category: 'execution',
     typicalSources: ['scheduler', 'runner'],
   },
@@ -138,50 +140,50 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
   // ── System / persona events ─────────────────────────────────────────────
   {
     type: 'persona_action',
-    label: 'Persona Action',
-    description: 'Fires when a persona emits a custom action during execution',
+    labelKey: 'persona_action_label',
+    descriptionKey: 'persona_action_description',
     category: 'system',
     typicalSources: ['persona', 'runner'],
   },
   {
     type: 'emit_event',
-    label: 'Custom Emit',
-    description: 'Fires when a persona emits a custom event via EmitEvent protocol',
+    labelKey: 'emit_event_label',
+    descriptionKey: 'emit_event_description',
     category: 'system',
     typicalSources: ['persona'],
   },
   {
     type: 'credential_rotated',
-    label: 'Credential Rotated',
-    description: 'Fires when a credential is rotated in the vault',
+    labelKey: 'credential_rotated_label',
+    descriptionKey: 'credential_rotated_description',
     category: 'system',
     typicalSources: ['vault'],
   },
   {
     type: 'credential_event',
-    label: 'Credential Event',
-    description: 'General credential lifecycle event (provisioned, revoked, etc.)',
+    labelKey: 'credential_event_label',
+    descriptionKey: 'credential_event_description',
     category: 'system',
     typicalSources: ['vault'],
   },
   {
     type: 'credential_provisioned',
-    label: 'Credential Provisioned',
-    description: 'Fires when a new credential is provisioned and ready for use',
+    labelKey: 'credential_provisioned_label',
+    descriptionKey: 'credential_provisioned_description',
     category: 'system',
     typicalSources: ['vault'],
   },
   {
     type: 'memory_created',
-    label: 'Memory Created',
-    description: 'Fires when a new memory entry is created',
+    labelKey: 'memory_created_label',
+    descriptionKey: 'memory_created_description',
     category: 'system',
     typicalSources: ['memory_engine'],
   },
   {
     type: 'task_created',
-    label: 'Task Created',
-    description: 'Fires when a new task is created for a persona',
+    labelKey: 'task_created_label',
+    descriptionKey: 'task_created_description',
     category: 'system',
     typicalSources: ['task_engine'],
   },
@@ -189,50 +191,50 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
   // ── Lifecycle / deployment events ───────────────────────────────────────
   {
     type: 'health_check_failed',
-    label: 'Health Check Failed',
-    description: 'Fires when a persona health check fails',
+    labelKey: 'health_check_failed_label',
+    descriptionKey: 'health_check_failed_description',
     category: 'lifecycle',
     typicalSources: ['health_monitor'],
   },
   {
     type: 'deployment_started',
-    label: 'Deployment Started',
-    description: 'Fires when a cloud deployment begins',
+    labelKey: 'deployment_started_label',
+    descriptionKey: 'deployment_started_description',
     category: 'lifecycle',
     typicalSources: ['cloud_deploy'],
   },
   {
     type: 'deploy_started',
-    label: 'Deploy Started',
-    description: 'Fires when a deployment process starts',
+    labelKey: 'deploy_started_label',
+    descriptionKey: 'deploy_started_description',
     category: 'lifecycle',
     typicalSources: ['cloud_deploy'],
   },
   {
     type: 'deploy_succeeded',
-    label: 'Deploy Succeeded',
-    description: 'Fires when a deployment completes successfully',
+    labelKey: 'deploy_succeeded_label',
+    descriptionKey: 'deploy_succeeded_description',
     category: 'lifecycle',
     typicalSources: ['cloud_deploy'],
   },
   {
     type: 'deploy_failed',
-    label: 'Deploy Failed',
-    description: 'Fires when a deployment fails',
+    labelKey: 'deploy_failed_label',
+    descriptionKey: 'deploy_failed_description',
     category: 'lifecycle',
     typicalSources: ['cloud_deploy'],
   },
   {
     type: 'agent_undeployed',
-    label: 'Agent Undeployed',
-    description: 'Fires when an agent is removed from cloud deployment',
+    labelKey: 'agent_undeployed_label',
+    descriptionKey: 'agent_undeployed_description',
     category: 'lifecycle',
     typicalSources: ['cloud_deploy'],
   },
   {
     type: 'review_submitted',
-    label: 'Review Submitted',
-    description: 'Fires when a design or manual review is submitted',
+    labelKey: 'review_submitted_label',
+    descriptionKey: 'review_submitted_description',
     category: 'lifecycle',
     typicalSources: ['review_pipeline'],
   },
@@ -240,15 +242,15 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
   // ── Test / development ──────────────────────────────────────────────────
   {
     type: 'test_event',
-    label: 'Test Event',
-    description: 'Fires during test flows and dry-run executions',
+    labelKey: 'test_event_label',
+    descriptionKey: 'test_event_description',
     category: 'test',
     typicalSources: ['test'],
   },
   {
     type: 'custom',
-    label: 'Custom',
-    description: 'User-defined event type for ad-hoc integrations',
+    labelKey: 'custom_label',
+    descriptionKey: 'custom_description',
     category: 'system',
     typicalSources: [],
   },
@@ -273,54 +275,102 @@ export function getEventTypesByCategory(category: EventTypeCategory): EventTypeE
   return EVENT_TYPE_REGISTRY.filter((e) => e.category === category);
 }
 
-/** Category metadata for display. */
-export const EVENT_TYPE_CATEGORIES: Record<EventTypeCategory, { label: string; description: string }> = {
-  trigger:   { label: 'Trigger Events',    description: 'Events emitted by trigger sources (webhooks, schedules, file watchers, etc.)' },
-  execution: { label: 'Execution Events',  description: 'Events related to persona execution lifecycle' },
-  system:    { label: 'System Events',     description: 'Events from internal systems (vault, memory, custom persona actions)' },
-  lifecycle: { label: 'Lifecycle Events',  description: 'Events related to deployment, health checks, and reviews' },
-  test:      { label: 'Test Events',       description: 'Events used during testing and dry-run flows' },
+// ---------------------------------------------------------------------------
+// i18n resolution helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve the translated label for an event type entry. */
+export function getEventTypeLabel(t: Translations, entry: EventTypeEntry): string {
+  return t.event_types[entry.labelKey];
+}
+
+/** Resolve the translated description for an event type entry. */
+export function getEventTypeDescription(t: Translations, entry: EventTypeEntry): string {
+  return t.event_types[entry.descriptionKey];
+}
+
+/** Resolve the translated label for a category. */
+export function getCategoryLabel(t: Translations, category: EventTypeCategory): string {
+  return t.event_types[EVENT_TYPE_CATEGORIES[category].labelKey];
+}
+
+/** Resolve the translated description for a category. */
+export function getCategoryDescription(t: Translations, category: EventTypeCategory): string {
+  return t.event_types[EVENT_TYPE_CATEGORIES[category].descriptionKey];
+}
+
+// ---------------------------------------------------------------------------
+// Category metadata
+// ---------------------------------------------------------------------------
+
+/** Category metadata for display (uses i18n keys). */
+export const EVENT_TYPE_CATEGORIES: Record<EventTypeCategory, {
+  labelKey: keyof Translations['event_types'];
+  descriptionKey: keyof Translations['event_types'];
+}> = {
+  trigger:   { labelKey: 'category_trigger_label',    descriptionKey: 'category_trigger_description' },
+  execution: { labelKey: 'category_execution_label',  descriptionKey: 'category_execution_description' },
+  system:    { labelKey: 'category_system_label',     descriptionKey: 'category_system_description' },
+  lifecycle: { labelKey: 'category_lifecycle_label',  descriptionKey: 'category_lifecycle_description' },
+  test:      { labelKey: 'category_test_label',       descriptionKey: 'category_test_description' },
 };
 
 // ---------------------------------------------------------------------------
 // Subscription select options (for dropdowns)
 // ---------------------------------------------------------------------------
 
-/** Pre-built options list for <select> / dropdown components. */
-export const EVENT_TYPE_OPTIONS: { value: string; label: string; description: string }[] =
-  EVENT_TYPE_REGISTRY.map((e) => ({
+/** Build options list for <select> / dropdown components (requires translation tree). */
+export function getEventTypeOptions(t: Translations): { value: string; label: string; description: string }[] {
+  return EVENT_TYPE_REGISTRY.map((e) => ({
     value: e.type,
-    label: e.label,
-    description: e.description,
+    label: t.event_types[e.labelKey],
+    description: t.event_types[e.descriptionKey],
   }));
+}
 
-/** Grouped options by category for richer dropdown UIs. */
-export const EVENT_TYPE_OPTIONS_GROUPED = (
-  Object.keys(EVENT_TYPE_CATEGORIES) as EventTypeCategory[]
-).map((cat) => ({
-  category: cat,
-  label: EVENT_TYPE_CATEGORIES[cat].label,
-  options: getEventTypesByCategory(cat).map((e) => ({
-    value: e.type,
-    label: e.label,
-    description: e.description,
-  })),
-}));
+/** Build grouped options by category for richer dropdown UIs (requires translation tree). */
+export function getEventTypeOptionsGrouped(t: Translations): {
+  category: EventTypeCategory;
+  label: string;
+  options: { value: string; label: string; description: string }[];
+}[] {
+  return (Object.keys(EVENT_TYPE_CATEGORIES) as EventTypeCategory[]).map((cat) => ({
+    category: cat,
+    label: t.event_types[EVENT_TYPE_CATEGORIES[cat].labelKey],
+    options: getEventTypesByCategory(cat).map((e) => ({
+      value: e.type,
+      label: t.event_types[e.labelKey],
+      description: t.event_types[e.descriptionKey],
+    })),
+  }));
+}
 
 // ---------------------------------------------------------------------------
 // Source filter documentation (for UI help text)
 // ---------------------------------------------------------------------------
 
 export const SOURCE_FILTER_HELP = {
-  title: 'Source Filter Matching',
+  titleKey: 'source_filter_title' as keyof Translations['event_types'],
   rules: [
-    { pattern: 'webhook-1', explanation: 'Exact match — only events with source_id "webhook-1"' },
-    { pattern: 'watcher-*', explanation: 'Prefix wildcard — any source_id starting with "watcher-"' },
+    { pattern: 'webhook-1', explanationKey: 'source_filter_exact_match' as keyof Translations['event_types'] },
+    { pattern: 'watcher-*', explanationKey: 'source_filter_prefix_wildcard' as keyof Translations['event_types'] },
   ],
-  constraints: [
-    'Only trailing * is supported (no regex, no ? wildcards)',
-    'If source_filter is set but the event has no source_id, the filter will not match',
-    'Allowed characters: letters, numbers, _, -, :, ., and *',
-    'Maximum 120 characters, maximum 3 wildcard characters',
+  constraintKeys: [
+    'source_filter_no_regex' as keyof Translations['event_types'],
+    'source_filter_no_source_id' as keyof Translations['event_types'],
+    'source_filter_allowed_chars' as keyof Translations['event_types'],
+    'source_filter_max_length' as keyof Translations['event_types'],
   ],
 } as const;
+
+/** Resolve SOURCE_FILTER_HELP into display strings using translations. */
+export function getSourceFilterHelp(t: Translations) {
+  return {
+    title: t.event_types[SOURCE_FILTER_HELP.titleKey],
+    rules: SOURCE_FILTER_HELP.rules.map((r) => ({
+      pattern: r.pattern,
+      explanation: t.event_types[r.explanationKey],
+    })),
+    constraints: SOURCE_FILTER_HELP.constraintKeys.map((k) => t.event_types[k]),
+  };
+}

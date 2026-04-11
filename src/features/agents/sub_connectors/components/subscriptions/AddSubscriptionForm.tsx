@@ -4,7 +4,8 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { inputFieldClass } from '@/lib/utils/designTokens';
-import { EVENT_TYPE_OPTIONS_GROUPED, SOURCE_FILTER_HELP } from '@/lib/eventTypeTaxonomy';
+import { getEventTypeOptionsGrouped, getSourceFilterHelp } from '@/lib/eventTypeTaxonomy';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AddSubscriptionFormProps {
   onAdd: (eventType: string, sourceFilter: string) => Promise<void>;
@@ -12,10 +13,13 @@ interface AddSubscriptionFormProps {
 }
 
 export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProps) {
+  const { t } = useTranslation();
   const [newEventType, setNewEventType] = useState('');
   const [newSourceFilter, setNewSourceFilter] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const groupedOptions = getEventTypeOptionsGrouped(t);
+  const sourceFilterHelp = getSourceFilterHelp(t);
 
   const sanitizeSourceFilter = (value: string): string => {
     // Normalize visually-similar unicode and collapse wildcard runs.
@@ -63,10 +67,10 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
           className="py-1.5"
         >
           <option value="">Select event type...</option>
-          {EVENT_TYPE_OPTIONS_GROUPED.map((group) => (
+          {groupedOptions.map((group) => (
             <optgroup key={group.category} label={group.label}>
-              {group.options.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+              {group.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </optgroup>
           ))}
@@ -89,17 +93,17 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
             <details className="group">
               <summary className="flex items-center gap-1 text-xs text-muted-foreground/60 cursor-pointer hover:text-muted-foreground/80 transition-colors">
                 <HelpCircle className="w-3 h-3" />
-                {SOURCE_FILTER_HELP.title}
+                {sourceFilterHelp.title}
               </summary>
               <div className="mt-1 p-2 rounded-lg bg-background/40 border border-primary/10 text-xs text-muted-foreground/70 space-y-1">
-                {SOURCE_FILTER_HELP.rules.map((r) => (
+                {sourceFilterHelp.rules.map((r) => (
                   <div key={r.pattern} className="flex gap-2">
                     <code className="text-primary/80 shrink-0">{r.pattern}</code>
                     <span>{r.explanation}</span>
                   </div>
                 ))}
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  {SOURCE_FILTER_HELP.constraints.map((c, i) => (
+                  {sourceFilterHelp.constraints.map((c, i) => (
                     <li key={i}>{c}</li>
                   ))}
                 </ul>

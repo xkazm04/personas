@@ -72,6 +72,7 @@ export const en = {
     refresh: "Refresh",
     copy: "Copy",
     copied: "Copied",
+    duplicate: "Duplicate",
     configure: "Configure",
     continue: "Continue",
     skip: "Skip",
@@ -280,6 +281,7 @@ export const en = {
     idea_scanner: "Idea Scanner",
     idea_triage: "Idea Triage",
     task_runner: "Task Runner",
+    skills: "Skills",
 
     // Settings sub-nav
     // "Network" = network proxy and connectivity settings
@@ -2619,6 +2621,688 @@ export const en = {
       running: "Running",
       failed: "Failed",
     },
+  },
+  // ==========================================================================
+  // Project Overview — Dev Tools Overview tab
+  // ==========================================================================
+  project_overview: {
+    // Section headers — displayed as column titles
+    codebase: "Codebase",
+    monitoring: "Monitoring",
+
+    // Connection states
+    connected: "Connected",
+    not_connected: "Not connected",
+    // Prompt to add a credential to the vault (GitHub, GitLab, Sentry)
+    connect_to_see_stats: "Connect {{service}} to see {{category}} stats",
+    go_to_connections: "Go to Connections",
+    // Prompt when credential exists but not mapped to this project
+    credential_found: "{{service}} credential found",
+    set_repo_url: "Set a repository URL on your project to see stats.",
+    go_to_projects: "Go to Projects",
+    link_monitoring: "Link it to this project to see error tracking stats.",
+    link_to_project: "Link to Project",
+    // Monitoring link form
+    project_slug: "Project slug",
+    project_slug_placeholder: "my-project",
+    save: "Save",
+
+    // Stat labels — displayed under each stat number
+    open_issues: "Open issues",
+    open_prs: "Open PRs",
+    open_mrs: "Open MRs",
+    commits_this_week: "Commits this week",
+    default_branch: "Default branch",
+    last_push: "Last push",
+    unresolved_issues: "Unresolved issues",
+    events_24h: "Events (24h)",
+    events_7d: "Events (7d)",
+
+    // Loading & error
+    loading_stats: "Loading stats...",
+    failed_to_load: "Failed to load stats",
+    retry: "Retry",
+    no_project_selected: "No project selected",
+    select_project_hint: "Select a dev project to see its overview.",
+  },
+
+  // ==========================================================================
+  // Media Studio — Artist plugin video composition tab
+  // ==========================================================================
+  media_studio: {
+    // Tab and header
+    title: "Media Studio",
+    subtitle: "Compose videos with text, images, and audio layers",
+
+    // FFmpeg detection
+    ffmpeg_not_found: "FFmpeg not found",
+    ffmpeg_not_found_hint: "FFmpeg is required to export videos. Install it and restart the app.",
+    ffmpeg_install_windows: "Windows: winget install ffmpeg (or download from ffmpeg.org)",
+    ffmpeg_install_mac: "macOS: brew install ffmpeg",
+    ffmpeg_install_linux: "Linux: sudo apt install ffmpeg",
+    ffmpeg_found: "FFmpeg ready",
+    check_again: "Check again",
+
+    // Layers
+    layer_text: "Text",
+    layer_image: "Images",
+    layer_video: "Video",
+    layer_audio: "Audio",
+
+    // Timeline
+    add_text_beat: "Add beat",
+    add_image: "Add image",
+    add_video: "Add video",
+    add_audio: "Add audio",
+    empty_lane: "Drop or click + to add",
+    zoom_in: "Zoom in",
+    zoom_out: "Zoom out",
+    fit_to_view: "Fit to view",
+
+    // Beats/items
+    beat_word: "Beat word",
+    beat_description: "Description",
+    beat_word_placeholder: "Word",
+    beat_description_placeholder: "Describe this beat...",
+
+    // Inspector
+    inspector_title: "Properties",
+    no_selection: "Select an item on the timeline to edit its properties.",
+    start_time: "Start",
+    duration: "Duration",
+    trim_start: "Trim start",
+    trim_end: "Trim end",
+    volume: "Volume",
+    font_size: "Font size",
+    color: "Color",
+    position: "Position",
+    scale: "Scale",
+    transition: "Transition",
+    transition_cut: "Cut",
+    transition_crossfade: "Crossfade",
+    transition_fade_to_black: "Fade to black",
+    transition_duration: "Transition duration",
+
+    // Playback
+    play: "Play",
+    pause: "Pause",
+    stop: "Stop",
+    loop: "Loop",
+    current_time: "Current time",
+
+    // Export
+    export_title: "Export",
+    export_button: "Export to MP4",
+    exporting: "Exporting...",
+    export_complete: "Export complete",
+    export_failed: "Export failed",
+    export_cancel: "Cancel export",
+    output_settings: "Output settings",
+    resolution: "Resolution",
+    framerate: "Frame rate",
+    choose_output: "Choose output file",
+
+    // Empty state
+    empty_title: "Start composing",
+    empty_hint: "Add video or audio clips to the timeline to begin.",
+
+    // Context menu
+    split: "Split at playhead",
+
+    // File import
+    import_media: "Import media",
+    supported_video: "Video files",
+    supported_audio: "Audio files",
+    supported_images: "Image files",
+  },
+
+  // =========================================================================
+  // Research Lab plugin
+  // =========================================================================
+  research_lab: {
+    // Tab labels
+    dashboard: "Dashboard",
+    projects: "Projects",
+    literature: "Literature",
+    hypotheses: "Hypotheses",
+    experiments: "Experiments",
+    findings: "Findings",
+    reports: "Reports",
+
+    // Dashboard
+    active: "active",
+    sources: "Sources",
+    sources_count: "sources",
+
+    // Project list
+    no_projects: "No research projects yet",
+    no_projects_hint: "Create a research project to start organizing your literature, hypotheses, and experiments.",
+    create_project: "New Project",
+
+    // Project form
+    project_name: "Project name",
+    project_description: "Description",
+    project_thesis: "Research question or thesis",
+    project_domain: "Domain",
+    project_scope: "Scope constraints",
+
+    // Project status tokens
+    status_scoping: "Scoping",
+    status_literature_review: "Literature review",
+    status_hypothesis: "Hypothesis",
+    status_experiment: "Experiment",
+    status_analysis: "Analysis",
+    status_writing: "Writing",
+    status_review: "Review",
+    status_complete: "Complete",
+
+    // Literature
+    select_project_first: "Select a research project first",
+    no_sources: "No sources yet",
+    no_sources_hint: "Search arXiv, Semantic Scholar, or PubMed to find relevant papers, or add sources manually.",
+    relevance: "Relevance",
+    search_sources: "Search sources",
+    ingest: "Ingest",
+    ingesting: "Ingesting...",
+
+    // Hypotheses
+    no_hypotheses: "No hypotheses yet",
+    no_hypotheses_hint: "Add hypotheses manually or let an AI agent generate them from your literature corpus.",
+    add_hypothesis: "Add hypothesis",
+    generate_hypotheses: "Generate hypotheses",
+    confidence: "Confidence",
+    supporting: "Supporting",
+    counter: "Counter",
+
+    // Experiments
+    no_experiments: "No experiments yet",
+    no_experiments_hint: "Design an experiment to test a hypothesis.",
+    create_experiment: "New experiment",
+    methodology: "Methodology",
+    success_criteria: "Success criteria",
+    run_experiment: "Run",
+    run_count: "runs",
+
+    // Findings
+    no_findings: "No findings yet",
+    no_findings_hint: "Findings are extracted from experiment results by analysis agents.",
+
+    // Reports
+    no_reports: "No reports yet",
+    no_reports_hint: "Create a report to compile your findings into a structured document.",
+    create_report: "New report",
+    report_type: "Report type",
+    literature_review: "Literature review",
+    experiment_report: "Experiment report",
+    full_paper: "Full paper",
+    executive_summary: "Executive summary",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Event type taxonomy labels
+  // ---------------------------------------------------------------------------
+  event_types: {
+    // ── Trigger events ─────────────────────────────────────────────────────
+    webhook_received_label: "Webhook Received",
+    webhook_received_description: "Fires when an external webhook POST arrives",
+    schedule_fired_label: "Schedule Fired",
+    schedule_fired_description: "Fires when a cron or interval trigger executes",
+    polling_changed_label: "Polling Changed",
+    polling_changed_description: "Fires when a polled endpoint returns new content",
+    file_changed_label: "File Changed",
+    file_changed_description: "Fires when a watched file or directory changes",
+    clipboard_changed_label: "Clipboard Changed",
+    clipboard_changed_description: "Fires when clipboard content changes",
+    app_focus_changed_label: "App Focus Changed",
+    app_focus_changed_description: "Fires when the foreground application changes",
+    chain_completed_label: "Chain Completed",
+    chain_completed_description: "Fires when a chained persona finishes execution",
+    composite_fired_label: "Composite Fired",
+    composite_fired_description: "Fires when a multi-condition composite trigger matches",
+    trigger_fired_label: "Trigger Fired",
+    trigger_fired_description: "Generic event emitted when any trigger activates",
+    schedule_triggered_label: "Schedule Triggered",
+    schedule_triggered_description: "Alias for schedule_fired — emitted by legacy schedule triggers",
+
+    // ── Execution events ───────────────────────────────────────────────────
+    execution_completed_label: "Execution Completed",
+    execution_completed_description: "Fires when any persona execution completes successfully",
+    execution_failed_label: "Execution Failed",
+    execution_failed_description: "Fires when a persona execution fails",
+
+    // ── System / persona events ────────────────────────────────────────────
+    persona_action_label: "Persona Action",
+    persona_action_description: "Fires when a persona emits a custom action during execution",
+    emit_event_label: "Custom Emit",
+    emit_event_description: "Fires when a persona emits a custom event via EmitEvent protocol",
+    credential_rotated_label: "Credential Rotated",
+    credential_rotated_description: "Fires when a credential is rotated in the vault",
+    credential_event_label: "Credential Event",
+    credential_event_description: "General credential lifecycle event (provisioned, revoked, etc.)",
+    credential_provisioned_label: "Credential Provisioned",
+    credential_provisioned_description: "Fires when a new credential is provisioned and ready for use",
+    memory_created_label: "Memory Created",
+    memory_created_description: "Fires when a new memory entry is created",
+    task_created_label: "Task Created",
+    task_created_description: "Fires when a new task is created for a persona",
+
+    // ── Lifecycle / deployment events ──────────────────────────────────────
+    health_check_failed_label: "Health Check Failed",
+    health_check_failed_description: "Fires when a persona health check fails",
+    deployment_started_label: "Deployment Started",
+    deployment_started_description: "Fires when a cloud deployment begins",
+    deploy_started_label: "Deploy Started",
+    deploy_started_description: "Fires when a deployment process starts",
+    deploy_succeeded_label: "Deploy Succeeded",
+    deploy_succeeded_description: "Fires when a deployment completes successfully",
+    deploy_failed_label: "Deploy Failed",
+    deploy_failed_description: "Fires when a deployment fails",
+    agent_undeployed_label: "Agent Undeployed",
+    agent_undeployed_description: "Fires when an agent is removed from cloud deployment",
+    review_submitted_label: "Review Submitted",
+    review_submitted_description: "Fires when a design or manual review is submitted",
+
+    // ── Test / development ─────────────────────────────────────────────────
+    test_event_label: "Test Event",
+    test_event_description: "Fires during test flows and dry-run executions",
+    custom_label: "Custom",
+    custom_description: "User-defined event type for ad-hoc integrations",
+
+    // ── Category labels ────────────────────────────────────────────────────
+    category_trigger_label: "Trigger Events",
+    category_trigger_description: "Events emitted by trigger sources (webhooks, schedules, file watchers, etc.)",
+    category_execution_label: "Execution Events",
+    category_execution_description: "Events related to persona execution lifecycle",
+    category_system_label: "System Events",
+    category_system_description: "Events from internal systems (vault, memory, custom persona actions)",
+    category_lifecycle_label: "Lifecycle Events",
+    category_lifecycle_description: "Events related to deployment, health checks, and reviews",
+    category_test_label: "Test Events",
+    category_test_description: "Events used during testing and dry-run flows",
+
+    // ── Source filter help ─────────────────────────────────────────────────
+    source_filter_title: "Source Filter Matching",
+    source_filter_exact_match: 'Exact match — only events with source_id "webhook-1"',
+    source_filter_prefix_wildcard: 'Prefix wildcard — any source_id starting with "watcher-"',
+    source_filter_no_regex: "Only trailing * is supported (no regex, no ? wildcards)",
+    source_filter_no_source_id: "If source_filter is set but the event has no source_id, the filter will not match",
+    source_filter_allowed_chars: "Allowed characters: letters, numbers, _, -, :, ., and *",
+    source_filter_max_length: "Maximum 120 characters, maximum 3 wildcard characters",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Connector roles — functional role labels for connector interchangeability
+  // ---------------------------------------------------------------------------
+  connector_roles: {
+    // Role labels
+    chat_messaging: "Chat & Messaging",
+    email_delivery: "Email Delivery",
+    sms: "SMS",
+    source_control: "Source Control",
+    ci_cd: "CI/CD",
+    project_tracking: "Project Tracking",
+    knowledge_base: "Knowledge Base",
+    design: "Design",
+    feature_flags: "Feature Flags",
+    hosting: "Hosting & Deploy",
+    cloud_infra: "Cloud Infrastructure",
+    database: "Database",
+    cloud_storage: "Cloud Storage",
+    error_monitoring: "Error Monitoring",
+    incident_management: "Incident Management",
+    uptime_monitoring: "Uptime Monitoring",
+    security_scanning: "Security Scanning",
+    analytics: "Product Analytics",
+    spreadsheet: "Spreadsheets",
+    crm: "CRM",
+    support_ticketing: "Support Ticketing",
+    social_media: "Social Media",
+    cms: "CMS",
+    search_engine: "Search Engine",
+    video_comms: "Video & Comms",
+    payment_processing: "Payment Processing",
+    accounting: "Accounting",
+    banking_fintech: "Banking & Fintech",
+    market_data: "Market Data",
+    e_commerce: "E-Commerce",
+    scheduling: "Scheduling",
+    form_survey: "Forms & Surveys",
+    notifications: "Notifications",
+    auth_identity: "Auth & Identity",
+    ai_platform: "AI Platform",
+    advertising: "Advertising",
+    e_signature: "E-Signature",
+    hr_recruiting: "HR & Recruiting",
+    tool_gateway: "Tool Gateway",
+    code_editor: "Code Editor",
+    container_runtime: "Container Runtime",
+    shell: "Shell / Terminal",
+    note_taking: "Note Taking",
+    browser_automation: "Browser Automation",
+
+    // Purpose group labels
+    purpose_messaging: "Messaging",
+    purpose_email: "Email / SMS",
+    purpose_notifications: "Notifications",
+    purpose_devops: "DevOps / CI-CD",
+    purpose_project_mgmt: "Project Mgmt",
+    purpose_productivity: "Productivity",
+    purpose_design: "Design",
+    purpose_cloud: "Cloud",
+    purpose_database: "Database",
+    purpose_storage: "Storage",
+    purpose_monitoring: "Monitoring",
+    purpose_analytics: "Analytics",
+    purpose_crm: "CRM",
+    purpose_support: "Support",
+    purpose_social: "Social",
+    purpose_cms: "CMS",
+    purpose_finance: "Finance",
+    purpose_ecommerce: "E-Commerce",
+    purpose_scheduling: "Scheduling",
+    purpose_forms: "Forms",
+    purpose_ai: "AI",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Connector licensing — license tier labels
+  // ---------------------------------------------------------------------------
+  connector_licensing: {
+    personal: "Personal",
+    paid: "Paid",
+    enterprise: "Enterprise",
+  },
+
+  // -------------------------------------------------------------------
+  //  ALERTS -- alert metric & severity labels (alertSlice.ts)
+  // -------------------------------------------------------------------
+  alerts: {
+    // Alert metric option labels
+    metric_error_rate: "Error Rate",
+    metric_success_rate: "Success Rate",
+    metric_cost: "Total Cost",
+    metric_cost_spike: "Cost vs. Average",
+    metric_executions: "Executions",
+
+    // Alert severity labels
+    severity_info: "Info",
+    severity_warning: "Warning",
+    severity_critical: "Critical",
+
+    // Toast error prefixes
+    error_create_rule: "Failed to create alert rule:",
+    error_update_rule: "Failed to update alert rule:",
+    error_delete_rule: "Failed to delete alert rule:",
+    error_toggle_rule: "Failed to toggle alert rule:",
+    error_dismiss: "Failed to dismiss alert:",
+    error_clear_history: "Failed to clear alert history:",
+  },
+
+  // -------------------------------------------------------------------
+  //  DEPLOY ERRORS -- user-facing error messages (deployTarget.ts)
+  // -------------------------------------------------------------------
+  deploy_errors: {
+    // Shared connection / network errors
+    not_reachable: "Could not reach the server. Check the URL and your network connection.",
+    timed_out: "Connection timed out. The server may be down or the URL may be incorrect.",
+    dns_resolve: "Could not resolve the hostname. Double-check the URL for typos.",
+    unauthorized: "Invalid credentials. Please verify and try again.",
+    forbidden: "Access denied. Your credentials may not have the required permissions.",
+    internal_server_error: "The server returned an internal error. Try again in a few minutes.",
+    service_unavailable: "The server is temporarily unavailable. Try again shortly.",
+    not_connected: "Not connected. Please connect first.",
+    keyring: "Could not access stored credentials. You may need to reconnect.",
+
+    // Cloud-specific
+    oauth_expired: "OAuth token has expired. Please re-authorize.",
+    url_empty: "Please enter the orchestrator URL.",
+    api_key_empty: "Please enter your API key.",
+
+    // GitLab-specific
+    token_empty: "Please enter your GitLab personal access token.",
+  },
+
+  // -------------------------------------------------------------------
+  //  UI TIERS -- tier display labels (uiModes.ts)
+  // -------------------------------------------------------------------
+  tiers: {
+    starter_label: "Simple",
+    starter_desc: "Core features for everyday use",
+    team_label: "Power",
+    team_desc: "Full feature set",
+  },
+
+  // -------------------------------------------------------------------
+  //  TRIGGERS -- trigger type & category labels (triggerConstants.ts)
+  // -------------------------------------------------------------------
+  triggers: {
+    // Trigger type labels
+    type_manual: "Manual",
+    type_schedule: "Schedule",
+    type_polling: "Polling",
+    type_webhook: "Webhook",
+    type_event_listener: "Event Listener",
+    type_file_watcher: "File Watcher",
+    type_clipboard: "Clipboard",
+    type_app_focus: "App Focus",
+    type_chain: "Chain",
+    type_composite: "Composite",
+
+    // Trigger type descriptions
+    desc_manual: "Run on demand",
+    desc_schedule: "Run on a timer or cron",
+    desc_polling: "Check an endpoint",
+    desc_webhook: "HTTP webhook listener",
+    desc_event_listener: "React to internal events",
+    desc_file_watcher: "React to file system changes",
+    desc_clipboard: "React to clipboard changes",
+    desc_app_focus: "React to app focus changes",
+    desc_chain: "Trigger after another agent completes",
+    desc_composite: "Multiple conditions + time window",
+
+    // Trigger category labels
+    category_pull: "Watch",
+    category_push: "Listen",
+    category_compose: "Combine",
+
+    // Trigger category descriptions
+    category_pull_desc: "Poll for changes on an interval",
+    category_push_desc: "Receive external signals",
+    category_compose_desc: "Chain or compose triggers",
+
+    // Rate limit window labels
+    rate_per_minute: "Per minute",
+    rate_per_5_minutes: "Per 5 minutes",
+    rate_per_hour: "Per hour",
+
+    // Trigger template labels
+    tpl_fw_error_logs: "Auto-analyze error logs",
+    tpl_fw_error_logs_desc: "Triggers when new .log files appear or change in a folder",
+    tpl_fw_csv_data: "Process new CSV files",
+    tpl_fw_csv_data_desc: "Triggers when CSV files are added or modified",
+    tpl_fw_config_changes: "Watch config file changes",
+    tpl_fw_config_changes_desc: "Triggers on changes to JSON, YAML, or TOML config files",
+    tpl_cb_url_summarize: "Auto-summarize copied URLs",
+    tpl_cb_url_summarize_desc: "Triggers when you copy a URL to your clipboard",
+    tpl_cb_error_message: "Auto-diagnose error messages",
+    tpl_cb_error_message_desc: "Triggers when you copy text containing errors or exceptions",
+    tpl_cb_code_snippet: "Auto-format code snippets",
+    tpl_cb_code_snippet_desc: "Triggers when you copy code-like text (function definitions, imports)",
+  },
+
+  // -------------------------------------------------------------------
+  //  MODELS -- model catalog labels (modelCatalog.ts)
+  // -------------------------------------------------------------------
+  models: {
+    haiku: "Haiku",
+    sonnet: "Sonnet",
+    opus: "Opus",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Error explanation — user-facing summaries, guidance, and action labels
+  // for matched error patterns (errorExplanation.ts)
+  // ---------------------------------------------------------------------------
+  error_explanation: {
+    // Action labels (buttons that navigate to a section)
+    action_go_to_vault: "Go to Vault",
+    action_check_credentials: "Check Credentials",
+    action_edit_triggers: "Edit Triggers",
+    action_persona_settings: "Persona Settings",
+
+    // Error summaries (short, one-line description shown in the UI)
+    summary_api_key: "API key issue detected.",
+    summary_auth_failed: "Authentication failed.",
+    summary_credential: "Credential issue.",
+    summary_permission_denied: "Permission denied.",
+    summary_rate_limit: "Rate limit reached.",
+    summary_quota: "Account quota or billing issue.",
+    summary_budget: "Budget limit reached.",
+    summary_timeout: "The operation timed out.",
+    summary_network: "Network connection failed.",
+    summary_command_not_found: "Required command not found.",
+    summary_cli_missing: "The AI backend (Claude CLI) is not installed.",
+    summary_out_of_memory: "Out of memory.",
+    summary_server_error: "The remote server encountered an error.",
+    summary_decryption: "Decryption failed.",
+    summary_webhook: "Webhook delivery issue.",
+    summary_import_invalid: "Import file is invalid.",
+    summary_circular_chain: "Circular agent chain detected.",
+    summary_parse_error: "Failed to parse response data.",
+    summary_process_exit: "The process exited with an error.",
+
+    // Error guidance (longer explanation shown below the summary)
+    guidance_api_key: "Check that your API key is valid and hasn't expired.",
+    guidance_auth_failed: "Your API key may be invalid or expired.",
+    guidance_credential: "A required credential may be missing or invalid.",
+    guidance_permission_denied: "The tool or API denied access. Verify your credentials have the necessary permissions.",
+    guidance_rate_limit: "The API rate limit was hit. Try reducing the trigger frequency.",
+    guidance_quota: "Your API account may have reached its spending limit. Check your account billing status.",
+    guidance_budget: "This agent has reached its spending limit. Increase the budget in Settings or wait until the next billing cycle.",
+    guidance_timeout: "The request took too long. Adjust the timeout in persona settings.",
+    guidance_network: "Could not reach the server. Check your internet connection and that the target service is available.",
+    guidance_command_not_found: "A system command needed for this execution is not installed. Check that all required CLI tools are available on your system.",
+    guidance_cli_missing: "Install the Claude CLI and restart the app.",
+    guidance_out_of_memory: "The system ran out of memory. Try closing other applications or reducing the task complexity.",
+    guidance_server_error: "The API returned a server error. This is usually temporary -- try again in a few minutes.",
+    guidance_decryption: "Could not decrypt — the passphrase may be wrong or the file is corrupted. Double-check your passphrase and try again.",
+    guidance_webhook: "Check that the webhook URL is correct and the external service is available.",
+    guidance_import_invalid: "The import file is empty or damaged. Try re-exporting from the source and importing again.",
+    guidance_circular_chain: "This would create a loop where agents trigger each other endlessly. Review your agent chain and remove the circular reference.",
+    guidance_parse_error: "The response was not in the expected format. This may indicate an API change or malformed data.",
+    guidance_process_exit: "The underlying process reported a failure. Check the execution log for more details.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Process notification labels — human-readable names for background
+  // process types (notifyProcessComplete.ts, NotificationCenter.tsx)
+  // ---------------------------------------------------------------------------
+  process_labels: {
+    n8n_transform: "n8n Transform",
+    template_adopt: "Template Adoption",
+    rebuild: "Agent Rebuild",
+    template_test: "Template Test",
+    context_scan: "Context Map Scan",
+    idea_scan: "Idea Scan",
+    execution: "Agent Execution",
+    matrix_build: "Matrix Build",
+    lab_run: "Lab Run",
+    connector_test: "Connector Test",
+    creative_session: "Creative Session",
+
+    // Notification title suffixes
+    complete_suffix: "Complete",
+    failed_suffix: "Failed",
+
+    // Human review notification
+    pending_reviews_one: "{count} pending review awaiting approval",
+    pending_reviews_other: "{count} pending reviews awaiting approval",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Eval strategy metadata — labels and descriptions for evaluation
+  // strategies used in persona testing (evalFramework.ts)
+  // ---------------------------------------------------------------------------
+  eval_strategies: {
+    keyword_match_label: "Output Quality",
+    keyword_match_description: "Checks expected behavior terms in agent output",
+    tool_accuracy_label: "Tool Accuracy",
+    tool_accuracy_description: "Compares expected vs actual tool calls",
+    protocol_compliance_label: "Protocol Compliance",
+    protocol_compliance_description: "Checks for expected protocol message patterns",
+    confusion_detect_label: "Confusion Detection",
+    confusion_detect_description: "Checks for known confusion/failure phrases",
+    composite_label: "Composite",
+    composite_description: "Weighted combination of all strategies",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Design drift — labels for drift event kinds and generated event
+  // titles/descriptions/suggestions (designDrift.ts)
+  // ---------------------------------------------------------------------------
+  drift_labels: {
+    // Drift kind labels (badges)
+    kind_error_pattern: "Error Pattern",
+    kind_tool_mismatch: "Tool Issue",
+    kind_timeout: "Timeout Risk",
+    kind_cost_overrun: "Cost Alert",
+    kind_repeated_failure: "Repeated Failure",
+
+    // Drift event titles
+    title_tool_call_failure: "Tool call failure detected",
+    title_execution_timeout: "Execution timeout detected",
+    title_api_error: "API error pattern detected",
+    title_execution_failure: "Execution failure detected",
+    title_near_timeout: "Near-timeout execution",
+    title_high_cost: "High execution cost",
+    title_repeated_failures: "Repeated failures ({count} consecutive)",
+
+    // Drift event descriptions
+    desc_tool_error: "Execution failed with tool error: \"{message}\"",
+    desc_timeout: "Agent timed out: \"{message}\"",
+    desc_api_error: "API-related failure ({category}): \"{message}\"",
+    desc_generic_failure: "Failed with: \"{message}\"",
+    desc_near_timeout: "Execution took {seconds}s ({percent}% of timeout).",
+    desc_high_cost: "Single execution cost ${cost} ({percent}% of budget).",
+    desc_repeated_failure: "This agent has failed multiple times in a row. The design may need significant revision.",
+
+    // Drift event suggestions
+    suggestion_tool_guidance: "Update toolGuidance to add error recovery instructions or remove the failing tool.",
+    suggestion_timeout: "Increase timeout_ms or simplify instructions to reduce processing time.",
+    suggestion_rate_limit: "Add rate limiting guidance or retry instructions to errorHandling section.",
+    suggestion_error_handling: "Review errorHandling section and add handling for this failure pattern.",
+    suggestion_near_timeout: "Consider increasing timeout or simplifying the agent's task scope in instructions.",
+    suggestion_high_cost: "Tighten instructions to reduce token usage, or consider using a smaller model.",
+    suggestion_repeated_failure: "Consider running a new design analysis to rebuild the agent configuration.",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Template feedback — label text for feedback tags applied to
+  // template design reviews (templateFeedback.ts)
+  // ---------------------------------------------------------------------------
+  feedback_labels: {
+    accurate_prompt: "Accurate Prompt",
+    good_tool_selection: "Good Tool Selection",
+    reliable: "Reliable",
+    cost_efficient: "Cost Efficient",
+    wrong_tools: "Wrong Tools",
+    poor_instructions: "Poor Instructions",
+    missing_context: "Missing Context",
+    over_engineered: "Over-Engineered",
+    under_specified: "Under-Specified",
+    wrong_triggers: "Wrong Triggers",
+    credential_issues: "Credential Issues",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Protocol labels — human-readable names for protocol capabilities
+  // detected during workflow import (platformDefinitions.ts)
+  // ---------------------------------------------------------------------------
+  protocol_labels: {
+    manual_review: "Manual Review",
+    user_message: "User Notifications",
+    agent_memory: "Agent Memory",
+    emit_event: "Event Emission",
   },
 };
 
