@@ -35,13 +35,15 @@ fn scenario_cache_key(persona: &crate::db::models::Persona, tools: &[crate::db::
 }
 
 use crate::db::models::{
-    CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateMatrixResultInput,
-    CreateEvalResultInput, CreateLabResultBaseInput, LabRunStatus, Persona, PersonaToolDefinition,
+    CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateConsensusResultInput,
+    CreateMatrixResultInput, CreateEvalResultInput, CreateLabResultBaseInput, LabRunStatus,
+    Persona, PersonaToolDefinition,
 };
 use super::types::EphemeralPersona;
 use crate::db::repos::execution::test_runs as repo;
 use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
+use crate::db::repos::lab::consensus as consensus_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::DbPool;
@@ -635,6 +637,11 @@ pub(crate) async fn execute_scenario(
         effort: model.effort.clone(),
     };
 
+    // Native Ollama path: call HTTP API directly instead of spawning Claude CLI
+    if model.provider == super::types::providers::OLLAMA {
+        return execute_scenario_ollama(&final_prompt, &model_profile).await;
+    }
+
     let mut cli_args = prompt::build_cli_args(None, Some(&model_profile));
 
     // Limit turns for sandbox testing
@@ -643,6 +650,63 @@ pub(crate) async fn execute_scenario(
 
     // Run the CLI and collect structured output
     spawn_cli_and_collect_structured(&cli_args, &final_prompt).await
+}
+
+/// Execute a test scenario using native Ollama HTTP API.
+/// Bypasses CLI — calls `/api/chat` directly and returns structured output.
+async fn execute_scenario_ollama(
+    prompt: &str,
+    profile: &ModelProfile,
+) -> Result<ExecutionOutput, String> {
+    let base_url = profile.base_url.as_deref().unwrap_or("http://localhost:11434");
+    let model = profile.model.as_deref().unwrap_or("gemma4");
+    let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
+
+    let start = std::time::Instant::now();
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": [
+            { "role": "user", "content": prompt }
+        ],
+        "stream": false
+    });
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post(&url)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Ollama connection failed: {e}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("Ollama API error ({}): {}", status, &text[..text.len().min(200)]));
+    }
+
+    let json: serde_json::Value = response.json().await
+        .map_err(|e| format!("Ollama JSON parse failed: {e}"))?;
+
+    let duration_ms = start.elapsed().as_millis() as u64;
+    let assistant_text = json
+        .pointer("/message/content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let eval_count = json.get("eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
+    let prompt_eval_count = json.get("prompt_eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
+
+    Ok(ExecutionOutput {
+        assistant_text,
+        tool_calls: Vec::new(), // local models don't use tool protocol
+        input_tokens: prompt_eval_count,
+        output_tokens: eval_count,
+        cost_usd: 0.0,
+        duration_ms,
+        error: None,
+    })
 }
 
 fn build_sandbox_section(mock_tools: &[MockToolResponse]) -> String {
@@ -1374,6 +1438,129 @@ pub async fn run_arena_test(
     };
 
     run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+}
+
+// ============================================================================
+// Lab: Consensus (stochastic multi-run agreement)
+// ============================================================================
+
+/// Run the same persona N times per scenario with natural temperature variation,
+/// then compute agreement rate across samples. Uses the standard lab loop with
+/// N identical "sample" variants pointing to the same persona config.
+#[allow(clippy::too_many_arguments)]
+pub async fn run_consensus_test(
+    app: AppHandle,
+    pool: DbPool,
+    run_id: String,
+    ephemeral: EphemeralPersona,
+    model_config: TestModelConfig,
+    num_samples: i32,
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
+    use_case_filter: Option<String>,
+) {
+    let persona = &ephemeral.persona;
+    let tools = &ephemeral.tools;
+    let n = num_samples.clamp(2, 20) as usize;
+
+    // Create N identical variants labeled sample-0..sample-N
+    let variants: Vec<LabVariant<'_>> = (0..n)
+        .map(|i| LabVariant { persona, label: format!("sample-{i}"), tools: Vec::new() })
+        .collect();
+
+    // Track sample index from label
+    let _sample_counter = std::sync::Arc::new(std::sync::atomic::AtomicI32::new(0));
+
+    let cb = LabCallbacks {
+        event_name: "lab-consensus-status",
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = consensus_repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
+            let idx: i32 = variant.label.strip_prefix("sample-")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+            let base = make_common_result_fields(scenario, model, status, scores);
+            let _ = consensus_repo::create_result(pool, &CreateConsensusResultInput {
+                run_id: run_id.to_string(), sample_index: idx, base,
+            });
+        }),
+        build_summary: Box::new(build_consensus_summary),
+        update_llm_summary: Box::new(|pool, id, text| {
+            let _ = consensus_repo::update_llm_summary(pool, id, text);
+        }),
+    };
+
+    let model_configs = vec![model_config];
+    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+
+    // After the loop, compute and persist agreement rate
+    if let Ok(results) = consensus_repo::get_results_by_run(&pool, &run_id) {
+        let rate = compute_agreement_rate(&results);
+        let _ = consensus_repo::update_agreement_rate(&pool, &run_id, rate);
+    }
+}
+
+/// Compute agreement rate: for each scenario, check how many samples agree
+/// on the dominant output quality bucket (high/medium/low). Returns 0.0-1.0.
+fn compute_agreement_rate(results: &[crate::db::models::LabConsensusResult]) -> f64 {
+    use std::collections::HashMap;
+
+    // Group results by scenario
+    let mut by_scenario: HashMap<&str, Vec<&crate::db::models::LabConsensusResult>> = HashMap::new();
+    for r in results {
+        by_scenario.entry(&r.base.scenario_name).or_default().push(r);
+    }
+
+    if by_scenario.is_empty() {
+        return 0.0;
+    }
+
+    let mut total_agreement = 0.0;
+    for (_scenario, samples) in &by_scenario {
+        let n = samples.len() as f64;
+        if n <= 1.0 { total_agreement += 1.0; continue; }
+
+        // Bucket each sample by quality score tier: high(>=80), medium(50-79), low(<50)
+        let mut buckets = [0i32; 3]; // [low, medium, high]
+        for s in samples {
+            match s.base.output_quality_score.unwrap_or(0) {
+                80.. => buckets[2] += 1,
+                50..=79 => buckets[1] += 1,
+                _ => buckets[0] += 1,
+            }
+        }
+        let dominant = *buckets.iter().max().unwrap_or(&0) as f64;
+        total_agreement += dominant / n;
+    }
+
+    total_agreement / by_scenario.len() as f64
+}
+
+/// Build summary for consensus mode — reports per-scenario agreement.
+fn build_consensus_summary(
+    tracker: &HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
+    models: &[TestModelConfig],
+) -> serde_json::Value {
+    // For consensus, all "models" in tracker are actually sample labels.
+    // Flatten all results to compute aggregate stats.
+    let all_results: Vec<_> = tracker.values().flatten().collect();
+    let count = all_results.len() as f64;
+    if count == 0.0 {
+        return serde_json::json!({ "samples": 0, "agreement_note": "no results" });
+    }
+    let avg_oq = avg_scored(all_results.iter().map(|r| r.1)).unwrap_or(0.0);
+    let total_cost: f64 = all_results.iter().map(|r| r.3).sum();
+    let avg_duration = all_results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
+
+    serde_json::json!({
+        "mode": "consensus",
+        "total_samples": count as i32,
+        "num_models": models.len(),
+        "avg_output_quality": avg_oq.round() as i32,
+        "total_cost_usd": (total_cost * 1000.0).round() / 1000.0,
+        "avg_duration_ms": avg_duration.round() as i64,
+        "agreement_note": "agreement_rate is computed post-loop and stored on the run"
+    })
 }
 
 // ============================================================================

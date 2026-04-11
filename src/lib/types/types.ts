@@ -228,7 +228,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "personas" | "workflows" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "chat" | "assertions";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
@@ -243,7 +243,7 @@ export type ObsidianBrainTab = "setup" | "sync" | "browse" | "cloud";
 export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
-export type CliEngine = "claude_code";
+export type CliEngine = "claude_code" | "ollama";
 
 // -- Analytics Types (re-exported from ts-rs bindings) ---------------------
 

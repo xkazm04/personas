@@ -42,13 +42,21 @@ export function getAllModels(t: Translations = en): ModelOption[] {
   return [...getAnthropicModels(t), ...OLLAMA_MODELS];
 }
 
-export const OLLAMA_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
+export const OLLAMA_CLOUD_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
   id: p.value,
   label: p.label,
   provider: 'ollama',
   model: p.modelId,
   base_url: OLLAMA_CLOUD_BASE_URL,
 }));
+
+/** Local Ollama models — run on the user's machine via native HTTP path. */
+export const OLLAMA_LOCAL_MODELS: ModelOption[] = [
+  { id: 'ollama:gemma4', label: 'Gemma 4 (local)', provider: 'ollama', model: 'gemma4', base_url: 'http://localhost:11434' },
+  { id: 'ollama:qwen3.5', label: 'Qwen 3.5 (local)', provider: 'ollama', model: 'qwen3.5', base_url: 'http://localhost:11434' },
+];
+
+export const OLLAMA_MODELS: ModelOption[] = [...OLLAMA_LOCAL_MODELS, ...OLLAMA_CLOUD_MODELS];
 
 export const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS];
 
