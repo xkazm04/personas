@@ -97,6 +97,19 @@
 - Add workflow execution history to the Overview > Activity section
 - Consider i18n of the WorkflowList and WorkflowCanvas UI text (currently hardcoded English)
 
+## i18n System Architecture
+
+- [2026-04-11] Main i18n hook: `src/i18n/useTranslation.ts` — lazy-loads locale bundles, deep-merges with English fallback at all nesting depths (fixed from shallow 1-level merge)
+- [2026-04-11] 14 supported languages: en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs. English is always synchronous; others lazy-loaded on demand
+- [2026-04-11] Feature-scoped i18n hooks exist at `src/features/home/i18n/` and `src/features/home/components/releases/i18n/` — marked @deprecated, should be consolidated into main i18n in Phase 2
+- [2026-04-11] Main en.ts home section (line 310) and feature home en.ts have DIVERGED: main has `roadmap` subsection, feature has `nav` subsection. `operator` value differs ("User" vs "Operator")
+- [2026-04-11] `tokenMaps.ts` — Option A pattern for Rust backend tokens: machine tokens stay in DB/IPC, frontend resolves via `tokenLabel(t, category, token)`. 10 token categories covering all backend status enums
+- [2026-04-11] `useTranslatedError.ts` — i18n bridge for error registry. Wraps `resolveError()` pattern with translated messages. Old `resolveError()` in `errorRegistry.ts` kept for backward compat
+- [2026-04-11] ESLint rule `custom/no-hardcoded-jsx-text` (warn) — catches hardcoded JSX text and placeholder/title/aria-label attrs. Skips i18n/, test/, data/ directories
+- [2026-04-11] Locale parity: `scripts/check-locale-parity.mjs` — en.ts has 1,622 keys; non-English locales have ~1,014-1,032 (62-64% coverage). Major gaps: chrome, status_tokens, error_registry sections
+- [2026-04-11] ~3,800+ hardcoded English strings across 1,203 of 1,216 .tsx files. Only 17 files use useTranslation. Constants files (19+) have hardcoded English labels
+- [2026-04-11] Pre-existing TS errors in AccountSettings.tsx (missing Sparkles, TIERS, TIER_LABELS imports) — unrelated to i18n work
+
 ## Open follow-ups (from Run #2, 2026-04-11)
 
 - Ops panels don't persist their data across tab switches (each panel re-fetches on mount). Consider caching in agentStore if switching feels slow
@@ -104,3 +117,14 @@
 - Lab panel only shows quick-launch for Arena and Improve modes — Breed and Evolve modes exist but are left out of the compact panel (intentionally — they're advanced features)
 - The ops panels use `sendChatMessage` to trigger operations through the chat flow — this is convenient but means the user has to be in a chat session. A more direct invocation path via `chatOpsDispatch.ts` could bypass this
 - Health panel uses the global `healthDigest` (runs across ALL personas) — a per-persona health check would be more targeted but requires a different API call
+
+## Open follow-ups (from Run #3 — i18n Infrastructure, 2026-04-11)
+
+- **Phase 2: Constants & Registries migration** — Migrate 19+ constants files (STATUS_CONFIG, FILTER_LABELS, CATEGORY_META, etc.) from hardcoded English labels to i18n key references using tokenLabel() or tLabel() pattern
+- **Phase 3: Shared Components** — Translate 114 untranslated shared components (buttons, modals, forms, feedback) using useTranslation()
+- **Phase 4: Backend Token Bridge adoption** — Wire tokenLabel() into all components that display execution/event/automation/severity/healing status badges (currently still using raw English tokens)
+- **Phase 5-8: Feature module migration** — agents (303 files), vault (218), overview (152), then remaining features
+- **Consolidate feature i18n hooks** — Merge home/releases locale files into main locale files, remove feature-scoped i18n directories. Note: home section has diverged (main has `roadmap`, feature has `nav`)
+- **Backfill non-English locales** — 13 locales missing status_tokens (97 keys) and error_registry (89 keys) sections added in this run
+- **Add parity check to CI** — Wire `scripts/check-locale-parity.mjs` into the build/CI pipeline as a quality gate
+- **Rust backend error codes** — Replace hardcoded English format! strings in healing.rs, error.rs with error code tokens that the frontend can translate (currently Rust sends full English sentences over IPC)
