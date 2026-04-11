@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, Search, ExternalLink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 const Github = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -84,8 +85,14 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
     setSearch('');
   }, [onChange]);
 
-  // While loading, render nothing (avoids layout shift)
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-2 text-muted-foreground/60 typo-body">
+        <LoadingSpinner size="sm" label="Loading repositories" />
+        <span className="text-sm">Loading repositories...</span>
+      </div>
+    );
+  }
 
   // ---- Manual URL input (fallback when no credential) ----
   if (!hasSelector) {
