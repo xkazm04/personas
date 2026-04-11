@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface ActionZoneProps {
@@ -15,6 +16,7 @@ interface ActionZoneProps {
 }
 
 export function ActionZone({ active, onClick, icon, label, colorClasses, activeClasses, notes, onNotesChange, onConfirm, isProcessing, confirmColor }: ActionZoneProps) {
+  const { t } = useTranslation();
   return (
     <div className={`flex flex-col transition-colors ${active ? activeClasses : ''}`}>
       <button
@@ -38,7 +40,7 @@ export function ActionZone({ active, onClick, icon, label, colorClasses, activeC
               <textarea
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Add a note (optional)..."
+                placeholder={t.overview.review_extra.add_note}
                 rows={2}
                 className="w-full rounded-md border border-primary/10 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
                 autoFocus
@@ -48,7 +50,7 @@ export function ActionZone({ active, onClick, icon, label, colorClasses, activeC
                 disabled={isProcessing}
                 className={`w-full py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${confirmColor}`}
               >
-                {isProcessing ? 'Processing...' : 'Confirm'}
+                {isProcessing ? t.overview.review_extra.processing : t.overview.review_extra.confirm}
               </button>
             </div>
           </motion.div>

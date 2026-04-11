@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle,
   CheckCircle2, AlertCircle, XCircle, Circle,
@@ -41,6 +42,7 @@ const STATUS_HOVER_COLORS: Record<DayStatus, string> = {
 // ---------------------------------------------------------------------------
 
 export function StatusPageView() {
+  const { t } = useTranslation();
   const { entries, loading, error, globalScore, globalUptime, refresh, lastRefreshedAt } = useStatusPageData();
 
   const lastRefreshLabel = useMemo(() => {
@@ -95,7 +97,7 @@ export function StatusPageView() {
             onClick={() => void refresh()}
             disabled={loading}
             className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
-            title="Refresh status page"
+            title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -105,11 +107,11 @@ export function StatusPageView() {
       {/* Persona rows */}
       {loading && entries.length === 0 ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">
-          Loading status page data...
+          {t.overview.health_extra.loading_status}
         </div>
       ) : entries.length === 0 ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">
-          No personas to display.
+          {t.overview.health_extra.no_personas}
         </div>
       ) : (
         <div className="space-y-2">
@@ -121,11 +123,11 @@ export function StatusPageView() {
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground/50 pt-2">
-        <span className="font-medium text-muted-foreground/70">Legend:</span>
-        <LegendItem color="bg-emerald-400" label="Operational" />
-        <LegendItem color="bg-amber-400" label="Degraded" />
-        <LegendItem color="bg-red-400" label="Outage" />
-        <LegendItem color="bg-zinc-700" label="No data" />
+        <span className="font-medium text-muted-foreground/70">{t.overview.health_extra.legend}</span>
+        <LegendItem color="bg-emerald-400" label={t.overview.health_extra.operational} />
+        <LegendItem color="bg-amber-400" label={t.overview.health_extra.degraded} />
+        <LegendItem color="bg-red-400" label={t.overview.health_extra.outage} />
+        <LegendItem color="bg-zinc-700" label={t.overview.health_extra.no_data} />
       </div>
     </div>
   );

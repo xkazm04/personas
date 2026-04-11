@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, RefreshCw, Zap, MessageSquare } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -131,6 +132,7 @@ function TimelineItemRow({ item }: { item: TimelineItem }) {
 // -- Main component -------------------------------------------------------
 
 export default function UnifiedActivityTimeline() {
+  const { t, tx } = useTranslation();
   const { items, isLoading, refresh } = useActivityTimeline();
   const [filter, setFilter] = useState<TimelineFilter>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -151,16 +153,16 @@ export default function UnifiedActivityTimeline() {
   return (
     <ContentBox>
       <ContentHeader
-        title="Activity Timeline"
+        title={t.overview.activity_timeline.title}
         icon={<Activity className="w-4 h-4" />}
         iconColor="cyan"
-        subtitle={`${eventCount} events, ${messageCount} messages`}
+        subtitle={tx(t.overview.activity_timeline.subtitle, { events: eventCount, messages: messageCount })}
         actions={
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="p-1.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
-            title="Refresh"
+            title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -183,7 +185,7 @@ export default function UnifiedActivityTimeline() {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/60 gap-2">
             <Activity className="w-8 h-8 opacity-40" />
-            <p className="text-sm">No activity yet</p>
+            <p className="text-sm">{t.overview.activity_timeline.no_activity}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3 p-4 md:p-6 overflow-y-auto flex-1 min-h-0">

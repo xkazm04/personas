@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, Orbit, ArrowRightLeft } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -20,6 +21,7 @@ const VARIANT_META: Record<VisualizationVariant, { icon: typeof Activity; label:
 };
 
 export default function RealtimeVisualizerPage() {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [variant, setVariant] = useState<VisualizationVariant>('galaxy');
 
@@ -69,11 +71,11 @@ export default function RealtimeVisualizerPage() {
       <ContentHeader
         icon={<Activity className="w-5 h-5" />}
         iconColor="cyan"
-        title="Event Bus Monitor"
+        title={t.overview.realtime_page.title}
         subtitle={
           timeline.active
-            ? `Replaying ${timeline.range === '1d' ? 'last 24 hours' : 'last 7 days'} at ${timeline.speed}x speed`
-            : 'Live visualization of event flows and persona interactions'
+            ? (timeline.range === '1d' ? tx(t.overview.realtime_page.replay_subtitle_1d, { speed: timeline.speed }) : tx(t.overview.realtime_page.replay_subtitle_7d, { speed: timeline.speed }))
+            : t.overview.realtime_page.live_subtitle
         }
         actions={
           <div className="flex items-center gap-1 bg-secondary/30 border border-primary/10 rounded-xl p-0.5">

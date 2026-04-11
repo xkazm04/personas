@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -59,6 +60,7 @@ interface ConflictCardProps {
 }
 
 export default function ConflictCard({ conflict, personaMap, isActive, isProcessing, onToggle, onResolve }: ConflictCardProps) {
+  const { t } = useTranslation();
   const nameA = personaMap.get(conflict.memoryA.persona_id) ?? 'Unknown';
   const nameB = personaMap.get(conflict.memoryB.persona_id) ?? 'Unknown';
 
@@ -80,12 +82,12 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
           <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
             <p className="text-xs text-muted-foreground/70">{conflict.reason}</p>
             <div className="grid grid-cols-2 gap-2">
-              <MemoryPreview label="Memory A" memory={conflict.memoryA} agentName={nameA} accent="blue" />
-              <MemoryPreview label="Memory B" memory={conflict.memoryB} agentName={nameB} accent="amber" />
+              <MemoryPreview label={t.overview.memory_conflict.memory_a} memory={conflict.memoryA} agentName={nameA} accent="blue" />
+              <MemoryPreview label={t.overview.memory_conflict.memory_b} memory={conflict.memoryB} agentName={nameB} accent="amber" />
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {conflict.kind === 'duplicate' && (
-                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('merge')}>Merge</Button>
+                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
               )}
               <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_a')}>
                 Keep &ldquo;{stripHtml(conflict.memoryA.title).slice(0, 20)}...&rdquo;
@@ -93,7 +95,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
               <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_b')}>
                 Keep &ldquo;{stripHtml(conflict.memoryB.title).slice(0, 20)}...&rdquo;
               </Button>
-              <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('dismiss')}>Dismiss</Button>
+              <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('dismiss')}>{t.common.dismiss}</Button>
             </div>
           </div>
         </div>

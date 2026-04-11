@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
 import type { MemoryAction, MemoryActionKind } from '../libs/memoryActions';
 import { ACTION_KIND_META } from '../libs/memoryActions';
@@ -16,6 +17,7 @@ interface MemoryActionCardProps {
 }
 
 function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
+  const { t } = useTranslation();
   const meta = ACTION_KIND_META[action.kind];
   const Icon = KIND_ICONS[action.kind];
 
@@ -26,7 +28,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
       <button
         onClick={() => onDismiss(action.id)}
         className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/60 hover:text-foreground/80 transition-all"
-        title="Dismiss suggestion"
+        title={t.overview.memory_actions.dismiss_suggestion}
       >
         <X className="w-3 h-3" />
       </button>
@@ -56,6 +58,7 @@ interface MemoryActionsPanelProps {
 }
 
 export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelProps) {
+  const { t, tx } = useTranslation();
   const visible = actions.filter((a) => !a.dismissed);
   if (visible.length === 0) return null;
 
@@ -66,9 +69,9 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
           <Lightbulb className="w-3.5 h-3.5" />
         </div>
         <h3 className="typo-label text-foreground/80">
-          Memory Insights
+          {t.overview.memory_actions.memory_insights}
         </h3>
-        <span className="text-sm text-muted-foreground/50 ml-auto">{visible.length} suggestion{visible.length !== 1 ? 's' : ''}</span>
+        <span className="text-sm text-muted-foreground/50 ml-auto">{visible.length !== 1 ? tx(t.overview.memory_actions.suggestions, { count: visible.length }) : tx(t.overview.memory_actions.suggestions_one, { count: visible.length })}</span>
       </div>
       {visible.map((action) => (
           <MemoryActionCardItem key={action.id} action={action} onDismiss={onDismiss} />

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -29,37 +30,38 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
   chartData, compareEnabled, areaData, allToolNames,
   pieData, latencyData, barData, handleFailureBarClick,
 }: AnalyticsChartsProps) {
+  const { t } = useTranslation();
   const sf = useScaledFontSize();
   return (
     <>
       {/* Charts -- 2 column grid */}
       <div className={DASHBOARD_GRID}>
         {/* Cost Over Time */}
-        <MetricChart title="Cost Over Time" height={180}>
+        <MetricChart title={t.overview.analytics_dashboard.cost_over_time} height={180}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
             <XAxis dataKey="dateLabel" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
             <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             {compareEnabled && (
-              <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
+              <Area type="monotone" dataKey="prev_cost" name={t.overview.analytics_dashboard.prev_cost} stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
             )}
             <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
           </AreaChart>
         </MetricChart>
 
         {/* Execution Health */}
-        <MetricChart title="Execution Health" height={180}>
+        <MetricChart title={t.overview.analytics_dashboard.execution_health} height={180}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
             <XAxis dataKey="dateLabel" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
             <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
             <Tooltip content={<ChartTooltip />} cursor={false} />
             <Legend wrapperStyle={{ fontSize: sf(11) }} />
-            <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="success" name={t.overview.analytics_dashboard.successful} fill="#22c55e" radius={[2, 2, 0, 0]} />
             <Bar
               dataKey="failed"
-              name="Failed"
+              name={t.overview.analytics_dashboard.failed}
               fill="#ef4444"
               radius={[2, 2, 0, 0]}
               cursor="pointer"
@@ -68,10 +70,10 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
               }}
             />
             {compareEnabled && (
-              <Line type="monotone" dataKey="prev_success" name="Prev Successful" stroke="#22c55e" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+              <Line type="monotone" dataKey="prev_success" name={t.overview.analytics_dashboard.prev_successful} stroke="#22c55e" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
             )}
             {compareEnabled && (
-              <Line type="monotone" dataKey="prev_failed" name="Prev Failed" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+              <Line type="monotone" dataKey="prev_failed" name={t.overview.analytics_dashboard.prev_failed} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
             )}
           </ComposedChart>
         </MetricChart>
@@ -79,7 +81,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         {/* Tool Usage Over Time */}
         {areaData.length > 0 && (
           <LazyChart height={180}>
-            <MetricChart title="Tool Usage Over Time" height={180}>
+            <MetricChart title={t.overview.analytics_dashboard.tool_usage_over_time} height={180}>
               <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
                 <XAxis dataKey="dateLabel" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
@@ -96,10 +98,10 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         {/* Executions by Persona (donut) */}
         <LazyChart height={180}>
           <MetricChart
-            title="Executions by Persona"
+            title={t.overview.analytics_dashboard.executions_by_persona}
             height={180}
             emptySlot={pieData.length === 0 ? (
-              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground/80">No execution data</div>
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground/80">{t.overview.analytics_dashboard.no_execution_data}</div>
             ) : undefined}
           >
             <PieChart>
@@ -119,7 +121,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         {/* Latency Distribution */}
         {latencyData.length > 0 && (
           <LazyChart height={180}>
-            <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
+            <MetricChart title={t.overview.analytics_dashboard.latency_chart} height={180}>
               <LineChart data={latencyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
@@ -138,13 +140,13 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
       {/* Tool Invocations -- full width horizontal bar */}
       {barData.length > 0 && (
         <LazyChart height={Math.max(200, barData.length * 40)}>
-          <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
+          <MetricChart title={t.overview.analytics_dashboard.tool_invocations} height={Math.max(200, barData.length * 40)}>
             <BarChart data={barData} margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} horizontal={false} />
               <XAxis type="number" tick={{ fill: getAxisTickFill(), fontSize: sf(11) }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" width={120} tick={{ fill: getAxisTickFill(), fontSize: sf(11) }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
+              <Bar dataKey="invocations" name={t.overview.analytics_dashboard.invocations} fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </MetricChart>
         </LazyChart>

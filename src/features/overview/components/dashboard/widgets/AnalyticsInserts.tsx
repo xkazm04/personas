@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   Bar, ComposedChart,
@@ -24,26 +25,27 @@ const AnalyticsInserts = memo(function AnalyticsInserts({ position }: { position
 export default AnalyticsInserts;
 
 function CenterCharts() {
+  const { t } = useTranslation();
   const { chartData } = useChartSeries();
   const sf = useScaledFontSize();
 
   return (
     <>
       {/* Execution Health */}
-      <MetricChart title="Execution Health" height={160}>
+      <MetricChart title={t.overview.widgets_extra.execution_health_chart} height={160}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
           <XAxis dataKey="dateLabel" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
           <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
           <Tooltip content={<ChartTooltip />} cursor={false} />
           <Legend wrapperStyle={{ fontSize: sf(11) }} />
-          <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
-          <Bar dataKey="failed" name="Failed" fill="#ef4444" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="success" name={t.overview.widgets_extra.successful} fill="#22c55e" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="failed" name={t.overview.widgets_extra.failed} fill="#ef4444" radius={[2, 2, 0, 0]} />
         </ComposedChart>
       </MetricChart>
 
       {/* Cost Over Time */}
-      <MetricChart title="Cost Over Time" height={160}>
+      <MetricChart title={t.overview.widgets_extra.cost_over_time_chart} height={160}>
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
           <XAxis dataKey="dateLabel" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />

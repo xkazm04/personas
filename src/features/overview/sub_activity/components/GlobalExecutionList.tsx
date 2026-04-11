@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
@@ -29,6 +30,7 @@ type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 const FILTER_LABELS: Record<FilterStatus, string> = {
   all: 'All', running: 'Running', completed: 'Completed', failed: 'Failed',
 };
+// Note: FILTER_LABELS values are used at module scope; runtime t() calls below.
 
 const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 140px 120px';
 
@@ -45,6 +47,7 @@ interface GlobalExecutionListProps {
 }
 
 export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
+  const { t, tx } = useTranslation();
   const {
     globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
     globalExecutionsWarning, fetchGlobalExecutions,
@@ -156,27 +159,27 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       <ContentHeader
         icon={<Loader2 className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title="Activity"
-        subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
+        title={t.overview.activity.title}
+        subtitle={globalExecutionsTotal !== 1 ? tx(t.overview.activity.recorded, { count: globalExecutionsTotal }) : tx(t.overview.activity.recorded_one, { count: globalExecutionsTotal })}
         actions={
           <div className="flex items-center gap-2">
             {headerActions}
             <button
               onClick={() => setShowDashboard(!showDashboard)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
-              title={showDashboard ? 'Show execution list' : 'Show metrics dashboard'}
+              title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
             >
               <BarChart3 className="w-5 h-5" />
-              <span className="text-sm font-medium">{showDashboard ? 'List' : 'Metrics'}</span>
+              <span className="text-sm font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
             </button>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
-              title="Refresh"
+              title={t.common.refresh}
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">Refresh</span>
+              <span className="text-sm font-medium">{t.common.refresh}</span>
             </button>
           </div>
         }
@@ -196,7 +199,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             onChange={setFilter}
             badgeStyle="paren"
             layoutIdPrefix="execution-filter"
-            summary={`Showing ${filteredExecutions.length} of ${globalExecutionsTotal}`}
+            summary={tx(t.overview.activity.showing, { count: filteredExecutions.length, total: globalExecutionsTotal })}
           />
 
           {globalExecutionsWarning && (
@@ -212,10 +215,10 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
                 <EmptyState
                   icon={Bot}
-                  title={personas.length === 0 ? "No agents created yet" : "No executions yet"}
-                  subtitle={personas.length === 0 ? "Create your first persona to see execution activity here." : "Run an agent to see execution activity here."}
-                  action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-                  secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+                  title={personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions}
+                  subtitle={personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint}
+                  action={{ label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+                  secondaryAction={{ label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
                 />
               </div>
             ) : (
@@ -233,11 +236,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         onChange={(v) => setFilter(v as FilterStatus)}
                       />
                     </div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Duration</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.activity.col_duration}</div>
                     <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
-                      <SortableColumnHeader label="Started" direction={startedSort} onToggle={toggleStartedSort} />
+                      <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
                     </div>
-                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">ID</div>
+                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">{t.overview.activity.col_id}</div>
                   </div>
                 )}
 
@@ -301,7 +304,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 {hasMore && (
                   <div className="pt-3 pb-2 text-center">
                     <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all">
-                      Load More
+                      {t.overview.activity.load_more}
                     </button>
                   </div>
                 )}
@@ -312,7 +315,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       )}
 
       {selectedExec && (
-        <DetailModal title={`${selectedExec.persona_name || 'Unknown'} - Execution`} subtitle={`ID: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>
+        <DetailModal title={`${selectedExec.persona_name || t.overview.activity.unknown} - ${t.overview.activity.execution_label}`} subtitle={`${t.overview.activity.col_id}: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>
           <ExecutionDetail execution={selectedExec} />
         </DetailModal>
       )}

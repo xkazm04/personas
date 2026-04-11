@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   RotateCw, Shield, ShieldOff, AlertTriangle,
   CheckCircle2, Clock, TrendingDown, Timer,
@@ -79,6 +80,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
     }
   }, [credentials.length, fetchAllRotationStatuses]);
 
+  const { t, tx } = useTranslation();
   const stats = useMemo(() => summaryStats(rotationOverviewList), [rotationOverviewList]);
 
   if (rotationOverviewList.length === 0 && credentials.length > 0) {
@@ -93,7 +95,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
           <div className="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center">
             <RotateCw className="w-4 h-4 text-violet-400" />
           </div>
-          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Credential Rotation</h3>
+          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">{t.overview.analytics_dashboard.credential_rotation}</h3>
           {stats.total > 0 && (
             <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-elevation-1">
               {stats.total}
@@ -105,17 +107,17 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
         <div className="flex items-center gap-2">
           {stats.active > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Shield className="w-3 h-3" />{stats.active} active
+              <Shield className="w-3 h-3" />{tx(t.overview.analytics_dashboard.active_count, { count: stats.active })}
             </span>
           )}
           {stats.expiringSoon > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Clock className="w-3 h-3" />{stats.expiringSoon} soon
+              <Clock className="w-3 h-3" />{tx(t.overview.analytics_dashboard.soon_count, { count: stats.expiringSoon })}
             </span>
           )}
           {stats.anomalies > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-              <AlertTriangle className="w-3 h-3" />{stats.anomalies} issue{stats.anomalies !== 1 ? 's' : ''}
+              <AlertTriangle className="w-3 h-3" />{stats.anomalies !== 1 ? tx(t.overview.analytics_dashboard.issues_count, { count: stats.anomalies }) : tx(t.overview.analytics_dashboard.issues_count_one, { count: stats.anomalies })}
             </span>
           )}
         </div>
@@ -128,8 +130,8 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
             <div className="w-14 h-14 rounded-xl bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <RotateCw className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">No rotation policies</p>
-            <p className="text-sm text-muted-foreground mt-1">Configure rotation on credentials in the Vault.</p>
+            <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_rotation_policies}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t.overview.analytics_dashboard.no_rotation_hint}</p>
           </div>
         </div>
       ) : (
@@ -175,7 +177,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Last rotated */}
                 <span className="text-sm text-muted-foreground/60 w-16 text-right">
-                  {lastRotated ?? 'never'}
+                  {lastRotated ?? t.overview.analytics_dashboard.never}
                 </span>
 
                 {/* Consecutive failures */}

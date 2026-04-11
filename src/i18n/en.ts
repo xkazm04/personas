@@ -2223,6 +2223,399 @@ export const en = {
       // Knowledge hub (when used as subtab)
       knowledge_hub: "Knowledge Hub",
     },
+
+    // Activity / Execution metrics dashboard
+    activity: {
+      title: "Activity",
+      // {count} = total recorded executions
+      recorded: "{count} executions recorded",
+      recorded_one: "{count} execution recorded",
+      list: "List",
+      metrics: "Metrics",
+      show_list: "Show execution list",
+      show_metrics: "Show metrics dashboard",
+      // Execution metrics dashboard headings
+      execution_metrics: "Execution Metrics",
+      total_executions: "Total Executions",
+      total_cost: "Total Cost",
+      success_rate: "Success Rate",
+      avg_latency: "Avg Latency",
+      cost_anomalies: "Cost Anomalies Detected",
+      no_data: "No execution data for the selected period",
+      // Chart headings
+      cost_per_day: "Cost per Day",
+      executions_by_status: "Executions by Status",
+      success_rate_trend: "Success Rate Trend",
+      latency_distribution: "Latency Distribution (p50 / p95 / p99)",
+      top_personas_by_cost: "Top Personas by Cost",
+      // {count} = execution count
+      executions_label: "{count} executions",
+      // Chart legend labels
+      completed: "Completed",
+      failed: "Failed",
+      prev_completed: "Prev Completed",
+      prev_failed: "Prev Failed",
+      success_pct: "Success %",
+      prev_success_pct: "Prev Success %",
+      successful: "Successful",
+      // Status filter
+      all: "All",
+      running: "Running",
+      all_statuses: "All statuses",
+      // {count}/{total}
+      showing: "Showing {count} of {total}",
+      load_more: "Load More",
+      // Column headers
+      col_status: "Status",
+      col_duration: "Duration",
+      col_started: "Started",
+      col_id: "ID",
+      // Empty states
+      no_agents: "No agents created yet",
+      no_agents_hint: "Create your first persona to see execution activity here.",
+      no_executions: "No executions yet",
+      no_executions_hint: "Run an agent to see execution activity here.",
+      create_persona: "Create Persona",
+      from_templates: "From Templates",
+      // Execution detail modal
+      execution_label: "Execution",
+      unknown: "Unknown",
+    },
+
+    // Analytics dashboard
+    analytics_dashboard: {
+      title: "Analytics",
+      subtitle: "Unified cost, execution, and tool usage analytics",
+      metrics_unavailable: "Metrics unavailable",
+      auto_refresh_on: "Auto-refresh ON (30s)",
+      auto_refresh_off: "Auto-refresh OFF",
+      // {count} = number of anomalies
+      cost_anomalies_detected: "{count} cost anomalies detected",
+      cost_anomaly_detected: "{count} cost anomaly detected",
+      // Chart titles
+      cost_over_time: "Cost Over Time",
+      execution_health: "Execution Health",
+      tool_usage_over_time: "Tool Usage Over Time",
+      executions_by_persona: "Executions by Persona",
+      latency_chart: "Latency (p50 / p95 / p99)",
+      tool_invocations: "Tool Invocations",
+      no_execution_data: "No execution data",
+      // Chart legend
+      prev_cost: "Prev Cost",
+      successful: "Successful",
+      failed: "Failed",
+      prev_successful: "Prev Successful",
+      prev_failed: "Prev Failed",
+      invocations: "Invocations",
+      // Anomaly strip
+      anomaly_click_hint: "Click a diamond marker on the chart to investigate",
+      // Saved views
+      saved_views: "Saved Views",
+      save_current_view: "Save Current View",
+      smart_presets: "Smart Presets",
+      your_saved_views: "Your Saved Views",
+      view_name_placeholder: "View name...",
+      save_view: "Save view",
+      delete_view: "Delete view",
+      this_week_vs_last: "This Week vs Last Week",
+      this_month_vs_last: "This Month vs Last Month",
+      // Health issues panel
+      health_issues: "Health Issues",
+      run_analysis: "Run Analysis",
+      analyzing: "Analyzing...",
+      analysis_complete: "Analysis complete",
+      issues_found: "{count} issues found",
+      issues_found_one: "{count} issue found",
+      auto_fixed: "auto-fixed",
+      executions_scanned: "{count} executions scanned",
+      executions_scanned_one: "{count} execution scanned",
+      no_open_issues: "No open issues",
+      run_analysis_hint: "Run analysis to check for problems.",
+      // Issue filter chips
+      filter_all: "All",
+      filter_open: "Open",
+      filter_auto_fixed: "Auto-fixed",
+      resolve: "Resolve",
+      breaker: "breaker",
+      fixed: "fixed",
+      retry: "retry",
+      // Rotation overview
+      credential_rotation: "Credential Rotation",
+      no_rotation_policies: "No rotation policies",
+      no_rotation_hint: "Configure rotation on credentials in the Vault.",
+      // {count} = number of active items
+      active_count: "{count} active",
+      // {count} = number expiring soon
+      soon_count: "{count} soon",
+      // {count} = number of issues
+      issues_count: "{count} issues",
+      issues_count_one: "{count} issue",
+      never: "never",
+      fail_count: "{count}x fail",
+    },
+
+    // Cron agents page
+    cron: {
+      title: "Cron Agents",
+      subtitle: "Background agents running on scheduled intervals",
+      mock_schedule: "Mock Schedule",
+      seed_tooltip: "Seed a mock schedule (dev only)",
+      // {count} = scheduled count
+      scheduled_count: "{count} scheduled",
+      // {count} = headless count
+      headless_count: "{count} headless",
+      loading: "Loading cron agents...",
+      no_agents: "No scheduled agents found.",
+      no_agents_hint: "Create a schedule trigger on any agent to see it here.",
+      headless_section: "Headless Background Agents",
+      interactive_section: "Interactive Scheduled Agents",
+      scheduled_section: "Scheduled Agents",
+      headless_badge: "headless",
+      no_schedule: "no schedule",
+      // {interval} = formatted interval
+      every_interval: "every {interval}",
+      next: "next",
+      last: "last",
+    },
+
+    // Timeline
+    activity_timeline: {
+      title: "Activity Timeline",
+      // {events} = event count, {messages} = message count
+      subtitle: "{events} events, {messages} messages",
+      all: "All",
+      events: "Events",
+      messages: "Messages",
+      no_activity: "No activity yet",
+      high: "High",
+    },
+
+    // SLA card metrics
+    sla_card: {
+      successful: "Successful",
+      failed: "Failed",
+      avg_latency: "Avg Latency",
+      p95_latency: "P95 Latency",
+      cost: "Cost",
+      mtbf: "MTBF",
+      auto_healed: "Auto-Healed",
+      cancelled: "Cancelled",
+      // {count} = number of failing
+      failing: "{count} failing",
+      // {count} = number healed
+      healed: "{count} healed",
+    },
+
+    // Realtime visualizer
+    realtime_page: {
+      title: "Event Bus Monitor",
+      live_subtitle: "Live visualization of event flows and persona interactions",
+      // {range} = time range, {speed} = playback speed
+      replay_subtitle_1d: "Replaying last 24 hours at {speed}x speed",
+      replay_subtitle_7d: "Replaying last 7 days at {speed}x speed",
+      // Connection status
+      paused: "Paused",
+      live: "Live",
+      offline: "Offline",
+      connection_paused: "Connection status: Paused",
+      connection_live: "Connection status: Live",
+      connection_offline: "Connection status: Disconnected",
+      // Stats bar labels
+      events_per_min: "events/min",
+      pending: "pending",
+      success: "success",
+      in_window: "in window",
+      // Actions
+      test_flow: "Test Flow",
+      testing_flow: "Testing flow...",
+      test_event_flow: "Test event flow",
+      resume: "Resume",
+      pause: "Pause",
+      resume_stream: "Resume realtime stream",
+      pause_stream: "Pause realtime stream",
+      // Filter bar
+      search_events: "Search events...",
+      filter_type: "Type",
+      filter_status: "Status",
+      filter_source: "Source",
+      filter_agent: "Agent",
+      clear: "Clear",
+      // Saved views
+      views: "Views",
+      no_saved_views: "No saved views yet",
+      save_current_filter: "Save current filter",
+      view_name_placeholder: "View name...",
+      delete_saved_view: "Delete saved view",
+      // Event log sidebar
+      event_log: "Event Log",
+      // {count} = number of entries
+      entries: "{count} entries",
+      filter_events: "Filter events...",
+      no_events: "No events yet",
+      open_in_drawer: "Open in detail drawer",
+      // Event detail labels
+      event_label: "Event",
+      status_label: "Status",
+      source_label: "Source",
+      target_label: "Target",
+      id_label: "ID",
+      error_label: "Error",
+      payload_label: "Payload",
+      close_event_details: "Close event details",
+      // Timeline player
+      reset_to_start: "Reset to start",
+      cycle_speed: "Cycle playback speed",
+      exit_replay: "Exit replay",
+      // Variant labels
+      galaxy: "Galaxy",
+      galaxy_desc: "Orbital constellation with comet trails",
+      lanes: "Lanes",
+      lanes_desc: "Horizontal swim-lane flow diagram",
+    },
+
+    // Memories child components
+    memory_form: {
+      agent: "Agent",
+      category: "Category",
+      title: "Title",
+      title_placeholder: "e.g. Always use metric units",
+      content: "Content",
+      content_placeholder: "Describe what the agent should remember...",
+      importance: "Importance",
+      tags: "Tags",
+      tags_hint: "(comma-separated)",
+      tags_placeholder: "e.g. units, formatting, output",
+      save_memory: "Save Memory",
+      saving: "Saving...",
+      created_success: "Memory created successfully",
+      fill_required: "Fill in all required fields to save",
+      saving_memory: "Saving memory...",
+    },
+
+    // Memory filter bar
+    memory_filter: {
+      search_placeholder: "Search memories...",
+      all_agents: "All agents",
+      all_categories: "All categories",
+    },
+
+    // Memory action card
+    memory_actions: {
+      dismiss_suggestion: "Dismiss suggestion",
+      memory_insights: "Memory Insights",
+      // {count} = suggestion count
+      suggestions: "{count} suggestions",
+      suggestions_one: "{count} suggestion",
+    },
+
+    // Conflict card
+    memory_conflict: {
+      memory_a: "Memory A",
+      memory_b: "Memory B",
+      merge: "Merge",
+      keep: "Keep",
+      vs: "vs",
+    },
+
+    // Observability charts
+    observability_charts: {
+      cost_over_time: "Cost Over Time",
+      executions_by_persona: "Executions by Persona",
+      execution_health: "Execution Health",
+      successful: "Successful",
+      failed: "Failed",
+      anomalies_detected: "{count} cost anomalies detected",
+      anomaly_detected: "{count} cost anomaly detected",
+      anomaly_click_hint: "Click a diamond marker on the chart to investigate",
+      clear_traces: "Clear completed traces",
+      all_operations: "All operations",
+    },
+
+    // Health sub-module extra keys
+    health_extra: {
+      success: "Success",
+      burn: "Burn",
+      healing: "Healing",
+      rollbacks: "Rollbacks",
+      improving: "Improving",
+      degrading: "Degrading",
+      stable: "Stable",
+      // {pct}% = success percentage
+      success_pct: "{pct}% success",
+      // Budget exhaustion
+      budget_exhaustion: "Budget exhaustion in",
+      exhausted: "exhausted",
+      // Predicted failure
+      predicted_failure: "Predicted failure spike in",
+      // Status page
+      loading_status: "Loading status page data...",
+      no_personas: "No personas to display.",
+      score_label: "Score",
+      uptime_30d: "30d uptime",
+      updated: "Updated {time}",
+      legend: "Legend:",
+      operational: "Operational",
+      degraded: "Degraded",
+      outage: "Outage",
+      no_data: "No data",
+      // Score breakdown
+      success_rate_label: "Success Rate",
+      latency_p95: "Latency (p95)",
+      cost_anomalies: "Cost Anomalies",
+      // {count} = detected anomalies
+      detected: "{count} detected",
+      healing_issues: "Healing Issues",
+      // {count} = open issues
+      open: "{count} open",
+      sla_compliance: "SLA Compliance",
+      // {count} = consecutive failures
+      consecutive_failures: "{count} consecutive failures",
+      consecutive_failure: "{count} consecutive failure",
+    },
+
+    // System health panel
+    system_health: {
+      title: "System Checks",
+      subtitle: "Verifying your environment is ready",
+      re_run_checks: "Re-run checks",
+      ollama_title: "Ollama Cloud API Key",
+      ollama_subtitle: "Optional -- unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents.",
+      litellm_title: "LiteLLM Proxy Configuration",
+      litellm_subtitle: "Optional -- route agents through your LiteLLM proxy for model management and cost tracking.",
+      save_key: "Save Key",
+      save_configuration: "Save Configuration",
+      litellm_footer: "These settings are stored locally and shared across all agents configured to use the LiteLLM provider.",
+      ipc_error: "The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.",
+      issues_warning: "Some checks reported issues. You can still continue, but some features may not work correctly.",
+    },
+
+    // Manual review extra keys
+    review_extra: {
+      add_note: "Add a note (optional)...",
+      confirm: "Confirm",
+      processing: "Processing...",
+      clear_verdicts: "Clear all verdicts",
+      retry_with_changes: "Retry with changes",
+      reject_all: "Reject all",
+      quick_actions: "Quick Actions",
+      // {count} = accepted count
+      accepted: "{count} accepted",
+      // {count} = rejected count
+      rejected: "{count} rejected",
+      // {count} = undecided count
+      undecided: "{count} undecided",
+    },
+
+    // Dashboard widget extra keys
+    widgets_extra: {
+      execution_health_chart: "Execution Health",
+      cost_over_time_chart: "Cost Over Time",
+      successful: "Successful",
+      failed: "Failed",
+      close: "Close",
+      dismiss_help: "Dismiss help",
+      skip_tour: "Skip tour entirely",
+    },
   },
 
   // -------------------------------------------------------------------
@@ -2839,6 +3232,263 @@ export const en = {
       budget_cap_enforced: "Budget cap enforced",
       max_concurrent_one: "Max {max} concurrent run",
       max_concurrent_other: "Max {max} concurrent runs",
+    },
+
+    // N8n workflow import wizard
+    n8n: {
+      // ConnectorRow
+      credential_label: "Credential: {name}",
+      n8n_type_label: "n8n type: {type}",
+      test: "Test",
+      link_existing: "Link Existing",
+      add_new: "Add New",
+      // CredentialPicker
+      best_match: "Best match",
+      other_credentials: "Other credentials",
+      no_stored_credentials: "No stored credentials found",
+      // N8nEntitiesTab
+      no_entities_selected: "No entities selected.",
+      go_back_to_analyze: "Go back to the Analyze step to select tools and triggers.",
+      entities_generated: "Entities generated by the transformation.",
+      entities_from_workflow: "Items from your n8n workflow associated with this persona.",
+      ready_count: "{count} ready",
+      missing_count: "{count} missing",
+      edit_selection: "Edit Selection",
+      test_all: "Test All",
+      connectors_count: "Connectors ({count})",
+      general_tools_count: "General Tools ({count})",
+      triggers_count: "Triggers ({count})",
+      // N8nUseCasesTab
+      no_use_cases_design: "No structured use cases found in design context.",
+      no_use_cases_yet: "No use cases generated yet.",
+      use_adjustment_hint: "Use the adjustment input below to request use case generation.",
+      use_cases_identified: "{count} use case(s) identified",
+      informational_only: "This use case is informational only",
+      view_example_output: "View example output",
+      test_use_case: "Test this use case",
+      save_to_test: "Save to test",
+      example_output: "Example output:",
+      no_sample_data: "// No sample data provided",
+      capabilities_label: "Capabilities",
+      request_ai_adjustments: "Request AI Adjustments",
+      adjustment_placeholder: "Example: Add more use cases, make error handling stricter...",
+      apply: "Apply",
+      // N8nEditStep
+      use_cases_tab: "Use Cases",
+      tools_and_connectors_tab: "Tools & Connectors",
+      test_output: "Test Output",
+      lines_count: "{count} lines",
+      // N8nImportTab
+      import_error: "Import Error",
+      dismiss: "Dismiss",
+      partial_session_restore: "Partial Session Restore",
+      // N8nParserResults
+      analyzing_workflow: "Analyzing workflow and preparing transformation...",
+      usually_one_minute: "Usually takes about 1 minute",
+      import_another: "Import Another",
+      platform_confirm: "This looks like a {platform} workflow, but we're not 100% sure. Is that correct?",
+      yes_thats_right: "Yes, that's right",
+      no_reupload: "No, re-upload",
+      tools_count: "{count} tools",
+      triggers_count_summary: "{count} triggers",
+      connectors_count_summary: "{count} connectors",
+      selected_for_import: "selected for import",
+      // N8nParserResultsSections
+      tools_header: "Tools ({count})",
+      triggers_header: "Triggers ({count})",
+      connectors_header: "Connectors ({count})",
+      // N8nSessionList
+      previous_imports: "Previous Imports",
+      sessions_count: "{count} session(s)",
+      retry_label: "Retry",
+      delete_session: "Delete session",
+      failed_to_load_imports: "Failed to load previous imports. Please retry.",
+      failed_to_delete_session: "Failed to delete session. Please retry.",
+      failed_to_load_session: "Failed to load session. Please retry.",
+      // ConnectorHealthRail
+      connectors_ready: "{ready} of {total} connector(s) ready",
+      no_credential: "No credential",
+      // N8nConfirmStep / PersonaPreviewCard
+      persona_preview: "Persona Preview",
+      unnamed_persona: "Unnamed Persona",
+      no_description: "No description provided",
+      tools_label: "Tools",
+      triggers_label: "Triggers",
+      connectors_label: "Connectors",
+      reviews_label: "Reviews",
+      memory_label: "Memory",
+      events_label: "Events",
+      tools_require_credentials: "{count} tool(s) require credentials not yet configured:",
+      system_prompt_preview: "System Prompt Preview",
+      confirm_hint: "Review the details above, then click \"Confirm & Save Persona\" to create.",
+      // SuccessBanner
+      persona_created: "Persona Created Successfully",
+      persona_ready: "{name} is ready to use. Find it in the sidebar.",
+      entities_failed: "{count} entity/entities failed",
+      configure_connectors: "Configure connector(s): {names}",
+      // N8nUploadStep
+      upload_file: "Upload File",
+      paste_json: "Paste JSON",
+      from_url: "From URL",
+      drop_file_here: "Drop your workflow file here",
+      import_from_any_platform: "Import a workflow from any platform",
+      click_to_browse: "Click to browse or drag and drop your exported workflow",
+      continue_btn: "Continue",
+      press_enter_or_click: "Press Enter or click to continue",
+      paste_workflow_json: "Paste workflow JSON",
+      paste_placeholder: "Paste your exported workflow JSON here...",
+      import_btn: "Import",
+      import_from_url: "Import from URL",
+      url_description: "Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.",
+      fetching: "Fetching",
+      fetch: "Fetch",
+      accepts_label: "Accepts:",
+      // N8nTransformChat
+      customize_persona: "A few questions to customize your persona",
+      answer_then_generate: "Answer below, then click Generate",
+      list_view: "List",
+      focus_view: "Focus",
+      no_config_needed: "No configuration needed",
+      click_generate_defaults: "Click Generate to create your persona draft with defaults.",
+      your_answers: "Your answers",
+      // N8nWizardFooter
+      back: "Back",
+      review_and_confirm: "Review & Confirm",
+      persona_saved: "Persona Saved",
+      saving: "Saving...",
+      confirm_and_save: "Confirm & Save Persona",
+      connectors_need_credentials: "{count} connector(s) need credentials",
+      testing_btn: "Testing...",
+      test_passed: "Test Passed",
+      retest: "Retest",
+      test_persona: "Test Persona",
+      fix_and_regenerate: "Fix & Regenerate",
+      build_persona: "Build Persona",
+      analyzing_btn: "Analyzing...",
+      // N8nStepIndicator
+      upload_step: "Upload",
+      analyze_step: "Analyze",
+      // StreamingSections
+      streaming_sections: "Streaming Sections",
+      awaiting_next_section: "Awaiting next section...",
+      // TransformPhaseStepper
+      analyze_phase: "Analyze",
+      questions_phase: "Questions",
+      generate_phase: "Generate",
+      // N8nQuestionStepper
+      type_your_answer: "Type your answer...",
+      navigate_hint: "Use arrow keys to navigate",
+    },
+
+    // Activity diagram
+    diagram: {
+      no_flow_data: "No flow data available",
+      nodes_count: "{count} nodes",
+      edges_count: "{count} edges",
+      connectors_count: "{count} connector(s)",
+      decisions_count: "{count} decision(s)",
+      error_label: "Error",
+      request_label: "Request",
+      response_label: "Response",
+    },
+
+    // Design preview
+    design: {
+      connectors_and_tools: "Connectors & Tools",
+      general_tools: "General Tools",
+      credential_ready: "Credential ready",
+      configure_credential: "Configure credential",
+      events_and_triggers: "Events & Triggers",
+      what_activates: "What activates this persona",
+      triggers_section: "Triggers",
+      event_subscriptions: "Event Subscriptions",
+      messages_and_notifications: "Messages & Notifications",
+      how_communicates: "How this persona communicates",
+      requires_connector: "Requires {name}",
+      feasibility_assessment: "Feasibility Assessment",
+      confirmed_capabilities: "Confirmed Capabilities",
+      issues_label: "Issues",
+      suggested_next_steps: "Suggested Next Steps",
+    },
+
+    // Gallery card renderers
+    card: {
+      use_cases_label: "Use Cases",
+      connectors_label: "Connectors",
+      triggers_label: "Triggers",
+      no_flows: "No flows",
+      none_label: "None",
+      more_count: "+{count} more",
+      system_prompt: "System Prompt",
+    },
+
+    // Gallery matrix
+    matrix_grid: {
+      prerequisites: "Prerequisites",
+      all_set_start: "All set -- Start Adoption",
+      continue_to_adoption: "Continue to Adoption",
+      setup_in_wizard: "(setup in wizard)",
+      credential_configured: "Credential configured",
+      connector_not_installed: "Connector not installed",
+      needs_credential: "Needs credential",
+      setup_btn: "Setup",
+    },
+
+    // Adoption
+    adopt_modal: {
+      adopt_template: "Adopt Template",
+      loading_template: "Loading template into matrix...",
+      configure_your_persona: "Configure Your Persona",
+      cancel: "Cancel",
+      submit_all: "Submit All",
+      submit_remaining: "Submit All ({remaining} remaining)",
+      custom_btn: "Custom...",
+      type_custom_value: "Type your custom value...",
+    },
+
+    // Scan results
+    scan: {
+      scanning_draft: "Scanning persona draft...",
+      checking_unsafe: "Checking for malicious instructions and unsafe patterns",
+      scan_passed: "Safety scan passed",
+      no_concerns: "No security concerns detected in this persona draft",
+      info_notes: "{count} informational note(s) for review",
+      critical_issues: "Critical security issues detected",
+      security_warnings: "Security warnings detected",
+      review_findings: "review findings before creating this persona",
+      critical_label: "Critical",
+      warnings_label: "Warnings",
+      informational_label: "Informational",
+      source_label: "Source:",
+    },
+
+    // Team synthesis
+    team_synthesis: {
+      title: "Synthesize Team",
+      subtitle: "AI selects templates and assembles a connected team",
+      team_name_label: "Team Name",
+      team_name_placeholder: "e.g., Content Pipeline Team",
+      describe_team: "Describe what this team should do",
+      describe_placeholder: "e.g., Monitor social media mentions, analyze sentiment, generate reports, and send alerts to Slack when negative trends are detected",
+      synthesizing: "Synthesizing...",
+      synthesize_team: "Synthesize Team",
+      personas_created: "{count} personas created and connected",
+      done: "Done",
+    },
+
+    // Blueprint/Glass matrix variants
+    matrix_variants: {
+      processing: "Processing...",
+      run_test: "RUN TEST",
+      testing_dots: "TESTING...",
+      approve_label: "APPROVE",
+      view_agent_label: "VIEW AGENT",
+      no_data_yet: "No data yet",
+      completeness: "Completeness",
+      start_test: "Start Test",
+      testing_agent: "Testing agent...",
+      approve_and_promote: "Approve & Promote",
+      view_agent_btn: "View Agent",
     },
   },
 

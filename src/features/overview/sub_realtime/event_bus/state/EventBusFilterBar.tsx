@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X } from 'lucide-react';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import {
@@ -46,6 +47,7 @@ export default function EventBusFilterBar({
   filter, onFilterChange, savedViews, activeViewId, onApplyView, onSaveView, onDeleteView,
   personas, discoveredSources, filteredCount, totalCount,
 }: EventBusFilterBarProps) {
+  const { t } = useTranslation();
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const hasActiveFilter = isFilterActive(filter);
@@ -75,12 +77,12 @@ export default function EventBusFilterBar({
         <input
           type="text" value={filter.searchText}
           onChange={(e) => onFilterChange({ ...filter, searchText: e.target.value })}
-          placeholder="Search events..."
+          placeholder={t.overview.realtime_page.search_events}
           className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
         />
       </div>
 
-      <FilterDropdown label="Type" activeCount={filter.eventTypes.length}
+      <FilterDropdown label={t.overview.realtime_page.filter_type} activeCount={filter.eventTypes.length}
         isOpen={expandedDropdown === 'type'} onToggle={() => setExpandedDropdown(expandedDropdown === 'type' ? null : 'type')}>
         {KNOWN_EVENT_TYPES.map((type) => (
           <FilterOption key={type} label={EVENT_TYPE_LABELS[type] ?? type}
@@ -89,7 +91,7 @@ export default function EventBusFilterBar({
         ))}
       </FilterDropdown>
 
-      <FilterDropdown label="Status" activeCount={filter.statuses.length}
+      <FilterDropdown label={t.overview.realtime_page.filter_status} activeCount={filter.statuses.length}
         isOpen={expandedDropdown === 'status'} onToggle={() => setExpandedDropdown(expandedDropdown === 'status' ? null : 'status')}>
         {KNOWN_STATUSES.map((status) => (
           <FilterOption key={status} label={status.charAt(0).toUpperCase() + status.slice(1)}
@@ -99,7 +101,7 @@ export default function EventBusFilterBar({
       </FilterDropdown>
 
       {discoveredSources.length > 0 && (
-        <FilterDropdown label="Source" activeCount={filter.sources.length}
+        <FilterDropdown label={t.overview.realtime_page.filter_source} activeCount={filter.sources.length}
           isOpen={expandedDropdown === 'source'} onToggle={() => setExpandedDropdown(expandedDropdown === 'source' ? null : 'source')}>
           {discoveredSources.map((src) => (
             <FilterOption key={src} label={src} selected={filter.sources.includes(src)}
@@ -109,7 +111,7 @@ export default function EventBusFilterBar({
       )}
 
       {personas.length > 0 && (
-        <FilterDropdown label="Agent" activeCount={filter.targetPersonaIds.length}
+        <FilterDropdown label={t.overview.realtime_page.filter_agent} activeCount={filter.targetPersonaIds.length}
           isOpen={expandedDropdown === 'persona'} onToggle={() => setExpandedDropdown(expandedDropdown === 'persona' ? null : 'persona')}>
           {personas.map((p) => (
             <FilterOption key={p.id} label={p.name} selected={filter.targetPersonaIds.includes(p.id)}
@@ -123,7 +125,7 @@ export default function EventBusFilterBar({
           <span className="text-xs text-muted-foreground/60 font-mono">{filteredCount}/{totalCount}</span>
           <button onClick={() => onFilterChange(EMPTY_FILTER)}
             className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg border border-red-500/15 text-red-400/80 hover:bg-red-500/10 transition-colors">
-            <X className="w-3 h-3" />Clear
+            <X className="w-3 h-3" />{t.overview.realtime_page.clear}
           </button>
         </div>
       )}

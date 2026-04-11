@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Heart, TrendingDown, TrendingUp, Minus, DollarSign, AlertTriangle, Clock, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 
@@ -35,6 +36,7 @@ const GRADE_BG = {
 };
 
 export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const TrendIcon = TREND_ICON[signal.failureTrend];
 
@@ -54,7 +56,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
           <div className="flex items-center gap-1.5 mt-0.5">
             <TrendIcon className={`w-3 h-3 ${TREND_COLOR[signal.failureTrend]}`} />
             <span className={`text-xs ${TREND_COLOR[signal.failureTrend]}`}>
-              {signal.failureTrend === 'improving' ? 'Improving' : signal.failureTrend === 'degrading' ? 'Degrading' : 'Stable'}
+              {signal.failureTrend === 'improving' ? t.overview.health_extra.improving : signal.failureTrend === 'degrading' ? t.overview.health_extra.degrading : t.overview.health_extra.stable}
             </span>
             <span className="text-xs text-foreground/40 ml-1">{signal.successRate.toFixed(0)}% success</span>
           </div>
@@ -75,25 +77,25 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
               <div className="grid grid-cols-2 gap-2 border-t border-primary/10 pt-3">
                 <MetricCell
                   icon={Heart}
-                  label="Success"
+                  label={t.overview.health_extra.success}
                   value={`${signal.successRate.toFixed(1)}%`}
                   color={signal.successRate >= 90 ? 'text-emerald-400' : signal.successRate >= 70 ? 'text-amber-400' : 'text-red-400'}
                 />
                 <MetricCell
                   icon={DollarSign}
-                  label="Burn"
+                  label={t.overview.health_extra.burn}
                   value={`$${signal.dailyBurnRate.toFixed(2)}/d`}
                   color={signal.budgetRatio > 0.8 ? 'text-red-400' : signal.budgetRatio > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
                 />
                 <MetricCell
                   icon={Wrench}
-                  label="Healing"
+                  label={t.overview.health_extra.healing}
                   value={`${signal.healingFrequency.toFixed(1)}/d`}
                   color={signal.healingFrequency > 2 ? 'text-red-400' : signal.healingFrequency > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
                 />
                 <MetricCell
                   icon={AlertTriangle}
-                  label="Rollbacks"
+                  label={t.overview.health_extra.rollbacks}
                   value={String(signal.rollbackCount)}
                   color={signal.rollbackCount > 2 ? 'text-red-400' : signal.rollbackCount > 0 ? 'text-amber-400' : 'text-emerald-400'}
                 />

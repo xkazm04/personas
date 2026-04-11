@@ -1,4 +1,5 @@
 import { memo, useMemo, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -32,6 +33,7 @@ export interface MetricsChartsProps {
 }
 
 export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+  const { t, tx } = useTranslation();
   const sf = useScaledFontSize();
   const { shouldAnimate } = useMotion();
   const visibleAnnotations = useMemo(() => {
@@ -52,7 +54,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Cost Over Time */}
-        <MetricChart title="Cost Over Time" height={240}>
+        <MetricChart title={t.overview.observability_charts.cost_over_time} height={240}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
             <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
@@ -121,7 +123,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
 
         {/* Execution Distribution */}
         <MetricChart
-          title="Executions by Persona"
+          title={t.overview.observability_charts.executions_by_persona}
           height={240}
           emptySlot={
             pieData.length === 0 ? (
@@ -144,26 +146,26 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       {costAnomalies.length > 0 && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
           <span className="text-xs text-amber-400/80 font-medium">
-            {costAnomalies.length} cost anomal{costAnomalies.length === 1 ? 'y' : 'ies'} detected
+            {costAnomalies.length === 1 ? tx(t.overview.observability_charts.anomaly_detected, { count: 1 }) : tx(t.overview.observability_charts.anomalies_detected, { count: costAnomalies.length })}
           </span>
           <span className="text-[10px] text-muted-foreground/50">
-            Click a diamond marker on the chart to investigate
+            {t.overview.observability_charts.anomaly_click_hint}
           </span>
         </div>
       )}
 
       {/* Charts Row 2 */}
-      <MetricChart title="Execution Health" height={240}>
+      <MetricChart title={t.overview.observability_charts.execution_health} height={240}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
           <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
           <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
           <Tooltip content={<ChartTooltip />} cursor={false} />
           <Legend wrapperStyle={{ fontSize: sf(11) }} />
-          <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="success" name={t.overview.observability_charts.successful} fill="#22c55e" radius={[2, 2, 0, 0]} />
           <Bar
             dataKey="failed"
-            name="Failed"
+            name={t.overview.observability_charts.failed}
             fill="#ef4444"
             radius={[2, 2, 0, 0]}
             cursor={onFailureBarClick ? 'pointer' : undefined}

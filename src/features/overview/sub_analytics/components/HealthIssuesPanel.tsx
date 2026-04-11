@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   Stethoscope, CheckCircle, CheckCircle2, X,
   AlertTriangle, Zap, RefreshCw,
@@ -46,6 +47,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
     }
     return map;
   }, [sortedFilteredIssues]);
+  const { t, tx } = useTranslation();
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
@@ -53,7 +55,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
           <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
+          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">{t.overview.analytics_dashboard.health_issues}</h3>
           {healingIssues.length > 0 && (
             <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
@@ -66,9 +68,9 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
           className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1"
         >
           {healingRunning ? (
-            <><div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />Analyzing...</>
+            <><div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />{t.overview.analytics_dashboard.analyzing}</>
           ) : (
-            <><Stethoscope className="w-4 h-4" />Run Analysis</>
+            <><Stethoscope className="w-4 h-4" />{t.overview.analytics_dashboard.run_analysis}</>
           )}
         </button>
       </div>
@@ -79,9 +81,9 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-sm text-cyan-300">
-              Analysis complete: {analysisResult.issues_created} issue{analysisResult.issues_created !== 1 ? 's' : ''} found
-              {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} auto-fixed)`}
-              , {analysisResult.failures_analyzed} execution{analysisResult.failures_analyzed !== 1 ? 's' : ''} scanned
+              {t.overview.analytics_dashboard.analysis_complete}: {analysisResult.issues_created !== 1 ? tx(t.overview.analytics_dashboard.issues_found, { count: analysisResult.issues_created }) : tx(t.overview.analytics_dashboard.issues_found_one, { count: analysisResult.issues_created })}
+              {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} ${t.overview.analytics_dashboard.auto_fixed})`}
+              , {analysisResult.failures_analyzed !== 1 ? tx(t.overview.analytics_dashboard.executions_scanned, { count: analysisResult.failures_analyzed }) : tx(t.overview.analytics_dashboard.executions_scanned_one, { count: analysisResult.failures_analyzed })}
             </span>
           </div>
           <button onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">
@@ -106,9 +108,9 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
       {healingIssues.length > 0 && (
         <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1">
           {([
-            { key: 'all' as const, label: 'All', count: issueCounts.all },
-            { key: 'open' as const, label: 'Open', count: issueCounts.open },
-            { key: 'auto-fixed' as const, label: 'Auto-fixed', count: issueCounts.autoFixed },
+            { key: 'all' as const, label: t.overview.analytics_dashboard.filter_all, count: issueCounts.all },
+            { key: 'open' as const, label: t.overview.analytics_dashboard.filter_open, count: issueCounts.open },
+            { key: 'auto-fixed' as const, label: t.overview.analytics_dashboard.filter_auto_fixed, count: issueCounts.autoFixed },
           ]).map((chip) => (
             <button
               key={chip.key}
@@ -135,8 +137,8 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
             <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">No open issues</p>
-            <p className="text-sm text-muted-foreground mt-1">Run analysis to check for problems.</p>
+            <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_open_issues}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t.overview.analytics_dashboard.run_analysis_hint}</p>
           </div>
         </div>
       ) : (
@@ -179,7 +181,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
                     onClick={() => resolveHealingIssue(issue.id)}
                     className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                   >
-                    Resolve
+                    {t.overview.analytics_dashboard.resolve}
                   </button>
                 )}
               </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
 import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
@@ -30,6 +31,7 @@ export function SlaCard({ label, value, sub, color, icon }: {
 export function PersonaRow({ stats, expanded, onToggle }: {
   stats: PersonaSlaStats; expanded: boolean; onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const rateHealth = HEALTH_STATUS_TOKEN[rateToHealth(stats.success_rate)];
   const rateColor = rateHealth.text;
   const rateBg = `${rateHealth.bg} ${rateHealth.border}`;
@@ -49,14 +51,14 @@ export function PersonaRow({ stats, expanded, onToggle }: {
 
       {expanded && (
         <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MiniStat icon={<Activity className="w-3.5 h-3.5" />} label="Successful" value={String(stats.successful)} />
-          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Failed" value={String(stats.failed)} />
-          <MiniStat icon={<Clock className="w-3.5 h-3.5" />} label="Avg Latency" value={formatDuration(stats.avg_duration_ms)} />
-          <MiniStat icon={<Zap className="w-3.5 h-3.5" />} label="P95 Latency" value={formatDuration(stats.p95_duration_ms)} />
-          <MiniStat icon={<TrendingUp className="w-3.5 h-3.5" />} label="Cost" value={`$${stats.total_cost_usd.toFixed(2)}`} />
-          <MiniStat icon={<TrendingDown className="w-3.5 h-3.5" />} label="MTBF" value={stats.mtbf_seconds != null ? formatMtbf(stats.mtbf_seconds) : 'N/A'} />
-          <MiniStat icon={<Wrench className="w-3.5 h-3.5" />} label="Auto-Healed" value={String(stats.auto_healed_count)} />
-          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label="Cancelled" value={String(stats.cancelled)} />
+          <MiniStat icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.sla_card.successful} value={String(stats.successful)} />
+          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label={t.overview.sla_card.failed} value={String(stats.failed)} />
+          <MiniStat icon={<Clock className="w-3.5 h-3.5" />} label={t.overview.sla_card.avg_latency} value={formatDuration(stats.avg_duration_ms)} />
+          <MiniStat icon={<Zap className="w-3.5 h-3.5" />} label={t.overview.sla_card.p95_latency} value={formatDuration(stats.p95_duration_ms)} />
+          <MiniStat icon={<TrendingUp className="w-3.5 h-3.5" />} label={t.overview.sla_card.cost} value={`$${stats.total_cost_usd.toFixed(2)}`} />
+          <MiniStat icon={<TrendingDown className="w-3.5 h-3.5" />} label={t.overview.sla_card.mtbf} value={stats.mtbf_seconds != null ? formatMtbf(stats.mtbf_seconds) : 'N/A'} />
+          <MiniStat icon={<Wrench className="w-3.5 h-3.5" />} label={t.overview.sla_card.auto_healed} value={String(stats.auto_healed_count)} />
+          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label={t.overview.sla_card.cancelled} value={String(stats.cancelled)} />
         </div>
       )}
     </div>

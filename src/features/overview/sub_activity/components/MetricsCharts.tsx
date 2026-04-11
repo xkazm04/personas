@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   AreaChart, Area, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -25,12 +26,13 @@ export function MetricsCharts({
   data, comparedChartData, personaCostData, personaNames,
   chartData, anomalyDates, compareEnabled,
 }: MetricsChartsProps) {
+  const { t, tx } = useTranslation();
   const sf = useScaledFontSize();
   return (
     <>
       {/* Cost per Day */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Cost per Day</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.cost_per_day}</h4>
         <div className="h-48 2xl:h-56 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -54,7 +56,7 @@ export function MetricsCharts({
 
       {/* Execution Count by Status */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Executions by Status</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.executions_by_status}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -64,10 +66,10 @@ export function MetricsCharts({
                 <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: sf(10) }} />
-                <Bar dataKey="completed" name="Completed" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="failed" name="Failed" stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
-                {compareEnabled && <Line type="monotone" dataKey="prev_completed" name="Prev Completed" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
-                {compareEnabled && <Line type="monotone" dataKey="prev_failed" name="Prev Failed" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
+                <Bar dataKey="completed" name={t.overview.activity.completed} stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="failed" name={t.overview.activity.failed} stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                {compareEnabled && <Line type="monotone" dataKey="prev_completed" name={t.overview.activity.prev_completed} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
+                {compareEnabled && <Line type="monotone" dataKey="prev_failed" name={t.overview.activity.prev_failed} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
               </ComposedChart>
             </ResponsiveContainer>
           </ChartErrorBoundary>
@@ -76,7 +78,7 @@ export function MetricsCharts({
 
       {/* Success Rate Trend */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Success Rate Trend</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.success_rate_trend}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -85,8 +87,8 @@ export function MetricsCharts({
                 <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
                 <YAxis domain={[0, 100]} tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} tickFormatter={(v: number) => `${v}%`} />
                 <Tooltip content={<ChartTooltipContent />} />
-                {compareEnabled && <Line type="monotone" dataKey="prev_successRate" name="Prev Success %" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
-                <Line type="monotone" dataKey="successRate" name="Success %" stroke="#10b981" strokeWidth={2} dot={false} />
+                {compareEnabled && <Line type="monotone" dataKey="prev_successRate" name={t.overview.activity.prev_success_pct} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                <Line type="monotone" dataKey="successRate" name={t.overview.activity.success_pct} stroke="#10b981" strokeWidth={2} dot={false} />
                 <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: getAxisTickFill(), fontSize: sf(9) }} />
               </LineChart>
             </ResponsiveContainer>
@@ -96,7 +98,7 @@ export function MetricsCharts({
 
       {/* Latency Distribution */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">Latency Distribution (p50 / p95 / p99)</h4>
+        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.latency_distribution}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -120,7 +122,7 @@ export function MetricsCharts({
       {/* Top Personas by Cost */}
       {data.top_personas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="typo-heading text-muted-foreground/70">Top Personas by Cost</h4>
+          <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.top_personas_by_cost}</h4>
           <div className="space-y-1.5">
             {data.top_personas.map((p: { persona_id: string; persona_name: string; total_cost: number; total_executions: number; avg_cost_per_exec: number }, i: number) => {
               const maxCost = data.top_personas[0]?.total_cost || 1;
@@ -137,7 +139,7 @@ export function MetricsCharts({
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground/60">
-                      <span>{p.total_executions} executions</span>
+                      <span>{tx(t.overview.activity.executions_label, { count: p.total_executions })}</span>
                       <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
                     </div>
                   </div>

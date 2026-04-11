@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Bookmark, Check, Plus, Trash2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViews, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
@@ -48,6 +49,7 @@ export function SavedViewsDropdown({
   currentCompareEnabled,
   onApplyPreset,
 }: SavedViewsDropdownProps) {
+  const { t } = useTranslation();
   const [views, setViews] = useState<SavedView[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -135,7 +137,7 @@ export function SavedViewsDropdown({
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-all"
       >
         <Bookmark className="w-4 h-4" />
-        <span className="hidden sm:inline">Saved Views</span>
+        <span className="hidden sm:inline">{t.overview.analytics_dashboard.saved_views}</span>
       </button>
 
       {isOpen && (
@@ -145,7 +147,7 @@ export function SavedViewsDropdown({
               <input
                 autoFocus
                 type="text"
-                placeholder="View name..."
+                placeholder={t.overview.analytics_dashboard.view_name_placeholder}
                 className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
                 value={newViewName}
                 onChange={(e) => setNewViewName(e.target.value)}
@@ -154,10 +156,10 @@ export function SavedViewsDropdown({
                   if (e.key === 'Escape') setIsSaving(false);
                 }}
               />
-              <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason="Enter a view name to save" title="Save view" className="text-green-500 hover:bg-green-500/10">
+              <Button variant="ghost" size="icon-sm" onClick={handleSave} disabled={!newViewName.trim()} disabledReason="Enter a view name to save" title={t.overview.analytics_dashboard.save_view} className="text-green-500 hover:bg-green-500/10">
                 <Check className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon-sm" onClick={() => setIsSaving(false)} title="Cancel" aria-label="Cancel saving view">
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsSaving(false)} title={t.common.cancel} aria-label={t.common.cancel}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -167,13 +169,13 @@ export function SavedViewsDropdown({
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
             >
               <Plus className="w-4 h-4" />
-              Save Current View
+              {t.overview.analytics_dashboard.save_current_view}
             </button>
           )}
 
           <div className="max-h-64 overflow-y-auto py-1">
             <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
-              Smart Presets
+              {t.overview.analytics_dashboard.smart_presets}
             </div>
             {SMART_PRESETS.map((preset) => (
               <button
@@ -188,7 +190,7 @@ export function SavedViewsDropdown({
             {views.length > 0 && (
               <>
                 <div className="px-3 py-1 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold border-t border-primary/10 pt-2">
-                  Your Saved Views
+                  {t.overview.analytics_dashboard.your_saved_views}
                 </div>
                 {views.map((view) => (
                   <div key={view.id} className="group flex items-center justify-between px-3 py-1.5 hover:bg-secondary transition-colors cursor-pointer" onClick={() => applyView(view)}>
@@ -197,7 +199,7 @@ export function SavedViewsDropdown({
                       variant="ghost" size="icon-sm"
                       onClick={(e) => handleDelete(view.id, e)}
                       className="opacity-0 group-hover:opacity-100 text-destructive/70 hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                      title="Delete view"
+                      title={t.overview.analytics_dashboard.delete_view}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

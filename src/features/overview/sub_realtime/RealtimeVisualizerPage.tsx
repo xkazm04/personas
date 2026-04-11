@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Activity } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -12,6 +13,7 @@ import EventBusFilterBar from '@/features/overview/sub_realtime/event_bus/state/
 import { useEventBusFilter } from '@/features/overview/sub_realtime/useEventBusFilter';
 
 export default function RealtimeVisualizerPage() {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
 
   // -- Live event stream --------------------------------------------
@@ -81,11 +83,11 @@ export default function RealtimeVisualizerPage() {
       <ContentHeader
         icon={<Activity className="w-5 h-5" />}
         iconColor="cyan"
-        title="Event Bus Monitor"
+        title={t.overview.realtime_page.title}
         subtitle={
           timeline.active
-            ? `Replaying ${timeline.range === '1d' ? 'last 24 hours' : 'last 7 days'} at ${timeline.speed}x speed`
-            : 'Live visualization of event flows and persona interactions'
+            ? (timeline.range === '1d' ? tx(t.overview.realtime_page.replay_subtitle_1d, { speed: timeline.speed }) : tx(t.overview.realtime_page.replay_subtitle_7d, { speed: timeline.speed }))
+            : t.overview.realtime_page.live_subtitle
         }
       />
 

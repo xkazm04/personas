@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, Monitor } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConfigurationPopup } from '@/features/agents/components/onboarding/ConfigurationPopup';
-import { useAgentStore } from "@/stores/agentStore";
-import { useSystemStore } from "@/stores/systemStore";
 
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
 import { OLLAMA_FIELDS, OLLAMA_FOOTER, LITELLM_FIELDS } from './popupFieldConfigs';
@@ -16,6 +15,7 @@ import { FooterActions } from './FooterActions';
 import { useHealthChecks } from './useHealthChecks';
 
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
+  const { t } = useTranslation();
   const { sections, loading, hasIssues, ipcError, runChecks } = useHealthChecks();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -24,10 +24,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
-  const personas = useAgentStore((s) => s.personas);
-  const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
-  const onboardingActive = useSystemStore((s) => s.onboardingActive);
-  const startOnboarding = useSystemStore((s) => s.startOnboarding);
 
   useEffect(() => {
     if (!loading && !ipcError) {
@@ -63,8 +59,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       <ContentHeader
         icon={<Monitor className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="System Checks"
-        subtitle="Verifying your environment is ready"
+        title={t.overview.system_health.title}
+        subtitle={t.overview.system_health.subtitle}
         actions={
           !loading ? (
             <Button
@@ -73,7 +69,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               onClick={runChecks}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               className="text-muted-foreground/80 hover:text-muted-foreground"
-              title="Re-run checks"
+              title={t.overview.system_health.re_run_checks}
             />
           ) : undefined
         }
@@ -119,8 +115,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
           {hasIssues && !loading && (
             <p className="typo-body text-amber-400/80">
               {ipcError
-                ? 'The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.'
-                : 'Some checks reported issues. You can still continue, but some features may not work correctly.'}
+                ? t.overview.system_health.ipc_error
+                : t.overview.system_health.issues_warning}
             </p>
           )}
 
@@ -130,22 +126,17 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             hasNodeIssue={hasNodeIssue}
             hasClaudeIssue={hasClaudeIssue}
             anyInstalling={anyInstalling}
-            hasIssues={hasIssues}
-            personas={personas}
-            onboardingCompleted={onboardingCompleted}
-            onboardingActive={onboardingActive}
             install={install}
-            startOnboarding={startOnboarding}
             onNext={onNext}
           />
 
           {showOllamaPopup && (
               <ConfigurationPopup
-                title="Ollama Cloud API Key"
-                subtitle="Optional \u2014 unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
+                title={t.overview.system_health.ollama_title}
+                subtitle={t.overview.system_health.ollama_subtitle}
                 accent="emerald"
                 fields={OLLAMA_FIELDS}
-                saveLabel="Save Key"
+                saveLabel={t.overview.system_health.save_key}
                 footerText={OLLAMA_FOOTER}
                 onClose={() => setShowOllamaPopup(false)}
                 onSaved={() => { setShowOllamaPopup(false); runChecks(); }}
@@ -154,12 +145,12 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
 
           {showLiteLLMPopup && (
               <ConfigurationPopup
-                title="LiteLLM Proxy Configuration"
-                subtitle="Optional \u2014 route agents through your LiteLLM proxy for model management and cost tracking."
+                title={t.overview.system_health.litellm_title}
+                subtitle={t.overview.system_health.litellm_subtitle}
                 accent="sky"
                 fields={LITELLM_FIELDS}
-                saveLabel="Save Configuration"
-                footerText="These settings are stored locally and shared across all agents configured to use the LiteLLM provider."
+                saveLabel={t.overview.system_health.save_configuration}
+                footerText={t.overview.system_health.litellm_footer}
                 onClose={() => setShowLiteLLMPopup(false)}
                 onSaved={() => { setShowLiteLLMPopup(false); runChecks(); }}
               />

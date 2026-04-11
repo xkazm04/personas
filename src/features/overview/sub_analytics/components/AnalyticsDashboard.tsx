@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, BarChart3, AlertTriangle } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -14,6 +15,7 @@ import { HealthIssuesPanel } from './HealthIssuesPanel';
 import { RotationOverviewPanel } from './RotationOverviewPanel';
 
 export default function AnalyticsDashboard() {
+  const { t, tx } = useTranslation();
   const metrics = useOverviewMetrics();
   const charts = useChartSeries();
   const healing = useHealingWorkflow();
@@ -34,8 +36,8 @@ export default function AnalyticsDashboard() {
       <ContentHeader
         icon={<BarChart3 className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Analytics"
-        subtitle="Unified cost, execution, and tool usage analytics"
+        title={t.overview.analytics_dashboard.title}
+        subtitle={t.overview.analytics_dashboard.subtitle}
         actions={
           <div className="flex items-center gap-2 flex-shrink-0">
             <AnalyticsSummaryCards
@@ -47,7 +49,7 @@ export default function AnalyticsDashboard() {
             <button
               onClick={() => { void metrics.refreshAllSafe(); }}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title="Refresh"
+              title={t.common.refresh}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -56,7 +58,7 @@ export default function AnalyticsDashboard() {
               className={`p-1.5 rounded-lg border transition-colors ${
                 metrics.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
               }`}
-              title={metrics.autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
+              title={metrics.autoRefresh ? t.overview.analytics_dashboard.auto_refresh_on : t.overview.analytics_dashboard.auto_refresh_off}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${metrics.autoRefresh ? 'animate-spin' : ''}`} style={metrics.autoRefresh ? { animationDuration: '3s' } : {}} />
             </button>
@@ -82,7 +84,7 @@ export default function AnalyticsDashboard() {
           {metrics.observabilityError && (
             <InlineErrorBanner
               severity="error"
-              title="Metrics unavailable"
+              title={t.overview.analytics_dashboard.metrics_unavailable}
               message={metrics.observabilityError}
               onRetry={() => { void metrics.refreshAllSafe(); }}
             />
@@ -95,7 +97,7 @@ export default function AnalyticsDashboard() {
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-300">
-                    {metrics.costAnomalies.length} cost anomal{metrics.costAnomalies.length === 1 ? 'y' : 'ies'} detected
+                    {metrics.costAnomalies.length === 1 ? tx(t.overview.analytics_dashboard.cost_anomaly_detected, { count: 1 }) : tx(t.overview.analytics_dashboard.cost_anomalies_detected, { count: metrics.costAnomalies.length })}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {metrics.costAnomalies.map((a, i) => (
