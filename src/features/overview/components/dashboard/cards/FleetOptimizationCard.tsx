@@ -107,7 +107,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <span className="typo-heading text-foreground/90">
               {rec.title}
             </span>
-            <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${config.badge} border`}>
+            <span className={`typo-label px-1.5 py-0.5 rounded-md ${config.badge} border`}>
               {SEVERITY_LABEL[rec.severity] ?? rec.severity}
             </span>
           </div>
@@ -127,7 +127,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <div className="px-4 pb-3 pt-1 border-t border-primary/5 space-y-2.5">
               {/* Impact */}
               <div className="flex items-start gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                   Impact
                 </span>
                 <span className="typo-body text-foreground/80">{rec.impact}</span>
@@ -135,7 +135,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
               {/* Action */}
               <div className="flex items-start gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                   Action
                 </span>
                 <span className="typo-body text-foreground/80">{rec.suggestedAction}</span>
@@ -144,7 +144,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {/* Affected agents */}
               {rec.personaNames.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                  <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                     Agent
                   </span>
                   <span className="typo-body text-foreground/80">
@@ -180,7 +180,7 @@ export default function FleetOptimizationCard() {
 
   return (
     <div className="space-y-1.5">
-      <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-1 flex items-center gap-1.5">
+      <h3 className="typo-label text-muted-foreground/60 px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
         Fleet Optimization
       </h3>

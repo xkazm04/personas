@@ -122,7 +122,7 @@ export default function DashboardHome() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
             <div>
               <h2
-                className={`animate-fade-slide-in motion-reduce:opacity-100 ${IS_MOBILE ? 'typo-heading-lg' : 'text-3xl font-bold'} bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
+                className={`animate-fade-slide-in motion-reduce:opacity-100 typo-heading-lg bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
               >
                 {greeting}, {displayName}
               </h2>
