@@ -5,6 +5,8 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useLeaderboardData, type LeaderboardEntry } from '../libs/useLeaderboardData';
 import { LeaderboardCard } from './LeaderboardCard';
 import { ScoreRadar } from './ScoreRadar';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 export default function LeaderboardPage() {
   const { leaderboard, loading, isEmpty, fleetAvgScore, refresh } = useLeaderboardData();
@@ -25,6 +27,11 @@ export default function LeaderboardPage() {
 
   const handleCardClick = useCallback((id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleNavigateToAgent = useCallback((personaId: string) => {
+    useSystemStore.getState().setSidebarSection('personas');
+    useAgentStore.getState().selectPersona(personaId);
   }, []);
 
   const selectedEntry = leaderboard.find((e) => e.personaId === selectedId) ?? null;
@@ -87,6 +94,7 @@ export default function LeaderboardPage() {
                   entry={entry}
                   selected={selectedId === entry.personaId}
                   onClick={() => handleCardClick(entry.personaId)}
+                  onNavigateToAgent={handleNavigateToAgent}
                 />
               ))}
             </div>

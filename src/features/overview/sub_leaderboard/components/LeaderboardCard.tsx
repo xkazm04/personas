@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry, Medal, PerformanceTier } from '../libs/leaderboardScoring';
 
@@ -70,9 +70,10 @@ interface LeaderboardCardProps {
   entry: LeaderboardEntry;
   selected?: boolean;
   onClick?: () => void;
+  onNavigateToAgent?: (personaId: string) => void;
 }
 
-export function LeaderboardCard({ entry, selected, onClick }: LeaderboardCardProps) {
+export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }: LeaderboardCardProps) {
   const medalCfg = entry.medal ? MEDAL_CONFIG[entry.medal] : null;
   const tierCfg = TIER_CONFIG[entry.tier];
   const trendCfg = TREND_ICON[entry.trend];
@@ -122,6 +123,22 @@ export function LeaderboardCard({ entry, selected, onClick }: LeaderboardCardPro
           <DimensionBar key={dim.label} label={dim.label} value={dim.value} raw={dim.raw} />
         ))}
       </div>
+
+      {/* Open Agent link */}
+      {onNavigateToAgent && (
+        <div className="mt-2 pl-11">
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onNavigateToAgent(entry.personaId); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onNavigateToAgent(entry.personaId); } }}
+            className="inline-flex items-center gap-1 text-[11px] text-primary/60 hover:text-primary transition-colors cursor-pointer"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Open Agent
+          </span>
+        </div>
+      )}
     </button>
   );
 }

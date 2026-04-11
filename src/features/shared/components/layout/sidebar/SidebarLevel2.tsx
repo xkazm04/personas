@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette, CalendarClock, Brain } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette, CalendarClock, Brain, BookOpen } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -16,7 +16,7 @@ import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
-  cloudItems, devToolsItems, eventBusItems, getSettingsItems,
+  cloudItems, devToolsItems, researchLabItems, eventBusItems, getSettingsItems,
 } from './sidebarData';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from './sidebarData';
@@ -322,6 +322,26 @@ function SchedulesSidebarNav() {
 
 // -- Simplified agents sidebar (persona list removed, lives in table view now) --
 
+// ── Health grade dot for agent sidebar items ──────────────────────────
+
+const HEALTH_DOT: Record<string, string> = {
+  healthy: 'bg-emerald-400',
+  degraded: 'bg-amber-400',
+  critical: 'bg-red-400',
+  unhealthy: 'bg-red-400',
+};
+
+function HealthDot({ grade }: { grade: string | undefined }) {
+  if (!grade || !HEALTH_DOT[grade]) return null;
+  return (
+    <span
+      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${HEALTH_DOT[grade]}`}
+      title={`Health: ${grade}`}
+      aria-label={`Health: ${grade}`}
+    />
+  );
+}
+
 function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const personas = useAgentStore((s) => s.personas);
@@ -340,6 +360,22 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
   const [recentsCollapsed, setRecentsCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+
+  // Health grades for per-agent dots (lazy-loaded from overviewStore)
+  const [healthGrades, setHealthGrades] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      const update = (signals: Array<{ personaId: string; grade: string }>) => {
+        const map: Record<string, string> = {};
+        for (const s of signals) map[s.personaId] = s.grade;
+        setHealthGrades(map);
+      };
+      update(useOverviewStore.getState().healthSignals);
+      unsub = useOverviewStore.subscribe((s) => update(s.healthSignals));
+    });
+    return () => unsub?.();
+  }, []);
 
   // Set of persona IDs that are currently executing (foreground + background)
   const executingPersonaIds = useMemo(() => {
@@ -474,6 +510,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                   >
                     <PersonaIcon icon={p.icon} color={p.color} />
                     <span className="text-foreground/90 truncate text-[13px] min-w-0">{p.name}</span>
+                    <HealthDot grade={healthGrades[p.id]} />
                     <span
                       role="button"
                       tabIndex={0}
@@ -534,6 +571,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                       <span className={`truncate text-[13px] min-w-0 ${
                         isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground/70'
                       }`}>{p.name}</span>
+                      {!isRunning && <HealthDot grade={healthGrades[p.id]} />}
                       <span
                         role="button"
                         tabIndex={0}
@@ -613,6 +651,8 @@ function PluginsSidebarNav() {
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const researchLabTab = useSystemStore((s) => s.researchLabTab);
+  const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -755,6 +795,42 @@ function PluginsSidebarNav() {
             <ScanLine className="w-4 h-4 flex-shrink-0" />
             OCR
           </button>
+        )}
+
+        {/* Research Lab */}
+        {enabledPlugins.has('research-lab') && (
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('research-lab')}
+              aria-current={pluginTab === 'research-lab' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'research-lab'
+                  ? 'bg-primary/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 flex-shrink-0" />
+              Research Lab
+            </button>
+            {pluginTab === 'research-lab' && (
+              <div className="ml-4 space-y-0.5">
+                {researchLabItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setResearchLabTab(item.id as import('@/lib/types/types').ResearchLabTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      researchLabTab === item.id
+                        ? 'bg-primary/10 text-foreground/80'
+                        : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

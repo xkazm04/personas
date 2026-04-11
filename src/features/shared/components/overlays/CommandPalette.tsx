@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } f
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
   Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy, Puzzle,
-  HeartPulse, Pencil,
+  HeartPulse, Pencil, Trophy,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -176,6 +176,16 @@ export default function CommandPalette() {
         id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
         icon: <Plus className="w-4 h-4" />,
         onSelect: () => { setSidebarSection('personas'); setIsCreatingPersona(true); },
+      },
+      {
+        id: 'cmd:leaderboard', kind: 'action', label: 'Agent Leaderboard',
+        icon: <Trophy className="w-4 h-4" />,
+        onSelect: () => {
+          setSidebarSection('overview');
+          void import('@/stores/overviewStore').then(({ useOverviewStore }) =>
+            useOverviewStore.getState().setOverviewTab('leaderboard'),
+          );
+        },
       },
       ...NAV_ITEMS.map(nav => ({
         id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,

@@ -1,5 +1,6 @@
-import { CheckCircle2, Heart, Clock, DollarSign, Activity } from 'lucide-react';
+import { CheckCircle2, Heart, Clock, DollarSign, Activity, Trophy } from 'lucide-react';
 import { useQuickStats } from '../hooks/useQuickStats';
+import { useSystemStore } from '@/stores/systemStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 
 interface QuickStatsBarProps {
@@ -61,6 +62,19 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
           color={stats.lastRunStatus === 'completed' || stats.lastRunStatus === 'success' ? 'emerald' : stats.lastRunStatus === 'failed' ? 'red' : 'slate'}
         />
       )}
+      <button
+        onClick={() => {
+          useSystemStore.getState().setSidebarSection('overview');
+          void import('@/stores/overviewStore').then(({ useOverviewStore }) =>
+            useOverviewStore.getState().setOverviewTab('leaderboard'),
+          );
+        }}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] text-amber-400/70 bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10 hover:text-amber-400 transition-colors"
+        title="View in Leaderboard"
+      >
+        <Trophy className="w-3 h-3" />
+        Rank
+      </button>
     </div>
   );
 }
