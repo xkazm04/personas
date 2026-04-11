@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap,
+  GraduationCap, BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -32,6 +32,7 @@ export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
+  { id: 'workflows', icon: GitBranch, label: 'Workflows' },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
@@ -100,6 +101,7 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
+  { id: 'skills', label: 'Skills', icon: BookOpen },
 ];
 
 export const cloudItems: SubNavItem[] = [

@@ -228,7 +228,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "personas" | "workflows" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "chat" | "assertions";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability";
