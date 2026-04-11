@@ -81,9 +81,26 @@
 - [2026-04-11] Workflow execution walks topological order, executing persona nodes via `agentStore.executePersona()` with polling (500ms, 5min timeout). Tracks cost/tokens per node
 - [2026-04-11] Custom sidebar icons are in `SidebarIcons.tsx` — each section has a hand-crafted animated SVG using `pi-breathe`, `pi-pulse`, `pi-flow`, `pi-scan` CSS animation classes
 
+## Chat / Operations Hub
+
+- [2026-04-11] Chat tab now has `OpsSidebar` wrapping `SessionSidebar` — icon rail at `src/features/agents/sub_chat/OpsSidebar.tsx` with 5 panels: Sessions, Run, Lab, Health, Assertions
+- [2026-04-11] Compact ops panels live in `src/features/agents/sub_chat/panels/Ops*.tsx` — each panel is lazy-loaded
+- [2026-04-11] `chatOpsDispatch.ts` handles operation JSON dispatch (health_check, list_executions, execute, edit_prompt, create_assertion, start_arena, start_matrix, list_reviews, approve/reject_review)
+- [2026-04-11] `OpsLaunchpad.tsx` has 8 preset cards for chat operations; `AdvisoryLaunchpad.tsx` has 4 advisory-mode presets (Improve, Experiment, Analyze, Test Run)
+- [2026-04-11] `SessionSidebar` no longer has its own width — `OpsSidebar` controls the outer 28rem width and SessionSidebar fills the remaining space after the icon rail
+- [2026-04-11] Keyboard shortcuts: Ctrl+1-5 switch between ops sidebar panels
+
 ## Open follow-ups (from Run #1, 2026-04-11)
 
 - Migrate composition workflows from localStorage to SQLite backend table (compositionSlice currently uses `localStorage.getItem('__personas_workflows')`)
 - Add workflow items to the CommandPalette (currently only automation items from vaultStore are surfaced; composition workflows are not)
 - Add workflow execution history to the Overview > Activity section
 - Consider i18n of the WorkflowList and WorkflowCanvas UI text (currently hardcoded English)
+
+## Open follow-ups (from Run #2, 2026-04-11)
+
+- Ops panels don't persist their data across tab switches (each panel re-fetches on mount). Consider caching in agentStore if switching feels slow
+- The Assertions panel shows enable/disable toggles but doesn't show individual pass/fail rates per assertion — the `OutputAssertion` type has `passCount`/`failCount` fields that could be displayed
+- Lab panel only shows quick-launch for Arena and Improve modes — Breed and Evolve modes exist but are left out of the compact panel (intentionally — they're advanced features)
+- The ops panels use `sendChatMessage` to trigger operations through the chat flow — this is convenient but means the user has to be in a chat session. A more direct invocation path via `chatOpsDispatch.ts` could bypass this
+- Health panel uses the global `healthDigest` (runs across ALL personas) — a per-persona health check would be more targeted but requires a different API call
