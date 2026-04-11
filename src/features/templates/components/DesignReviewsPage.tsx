@@ -51,20 +51,22 @@ export default function DesignReviewsPage() {
 
       {/* Tab content */}
       <ContentBody noPadding>
-        {activeTab === 'n8n' && (
-          <ErrorBoundary name="n8n Import">
-            <N8nImportTab />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'generated' && (
-          <GeneratedReviewsTab
-            credentials={credentials}
-            connectorDefinitions={connectorDefinitions}
-            onPersonaCreated={refresh}
-            onViewFlows={setDiagramReview}
-            onTotalChange={setGalleryTotal}
-          />
-        )}
+        <div key={activeTab} className="animate-fade-slide-in flex-1 min-h-0 flex flex-col">
+          {activeTab === 'n8n' && (
+            <ErrorBoundary name="n8n Import">
+              <N8nImportTab />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'generated' && (
+            <GeneratedReviewsTab
+              credentials={credentials}
+              connectorDefinitions={connectorDefinitions}
+              onPersonaCreated={refresh}
+              onViewFlows={setDiagramReview}
+              onTotalChange={setGalleryTotal}
+            />
+          )}
+        </div>
       </ContentBody>
 
       {/* Activity diagram modal */}

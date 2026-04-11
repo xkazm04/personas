@@ -160,7 +160,7 @@ export function TriggersPage() {
         actions={header.renderActions?.()}
       />
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div key={eventBusTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
         {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
