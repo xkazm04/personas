@@ -4,7 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useAgentStore } from '@/stores/agentStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
-import { SessionSidebar } from './SessionSidebar';
+import { OpsSidebar } from './OpsSidebar';
 import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
 
@@ -93,7 +93,7 @@ export function ChatTab() {
 
   return (
     <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-xl border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
-      <SessionSidebar personaId={personaId} onNewSession={handleNewSession} />
+      <OpsSidebar personaId={personaId} onNewSession={handleNewSession} />
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Messages area */}
