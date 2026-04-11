@@ -244,3 +244,20 @@
 - [2026-04-11] Rendered via ContentHeader's `children` slot in PersonaEditorHeader — no layout component changes needed
 - [2026-04-11] Stats are computed client-side from 10 most recent executions — lightweight, no new API calls to Rust backend
 - [2026-04-11] Color-coded: emerald (>=80% success / healthy), amber (>=50% / degraded), red (<50% / unhealthy)
+
+## Workflow Persistence (localStorage → SQLite)
+
+- [2026-04-11] **Migration complete**: compositionSlice now uses Tauri IPC (`api/composition/`) instead of localStorage. All CRUD is async with optimistic local updates
+- [2026-04-11] Rust backend: `composition_workflows` table with JSON columns (nodes_json, edges_json, input_schema_json). Repo + commands at `src-tauri/src/db/repos/resources/composition_workflows.rs` and `src-tauri/src/commands/core/composition_workflows.rs`
+- [2026-04-11] Auto-migration on first fetch: if backend returns empty but `__personas_workflows` localStorage has data, bulk-imports via `import_composition_workflows` command, then clears localStorage
+- [2026-04-11] Falls back to localStorage if backend is unavailable (offline resilience)
+- [2026-04-11] CommandPalette now includes composition workflows — searchable by name/description with blue styling, navigates to Workflows sidebar section on select
+- [2026-04-11] `commandNames.generated.ts` is auto-generated from `lib.rs` — manually adding command names gets overwritten on regeneration. The Rust commands MUST be registered in `lib.rs` `generate_handler!()` for the TS types to pick them up
+
+## Open follow-ups (from Run #8 — Workflow Persistence, 2026-04-11)
+
+- **Register composition workflow commands in lib.rs**: `list_composition_workflows`, `get_composition_workflow`, `create_composition_workflow`, `update_composition_workflow`, `delete_composition_workflow`, `import_composition_workflows` — until registered, TS shows command name errors
+- The `createWorkflow` in compositionSlice generates a UUID client-side but the backend also generates one — the IDs will diverge. Consider passing the client ID to the backend `create` call, or using the backend-returned ID
+- Workflow execution history is still ephemeral (in-memory WorkflowExecution state) — not persisted to any table. Future work: add `composition_workflow_executions` table for execution replay
+- The compiled workflow path (`compileWorkflow`) creates a workflow locally then persists — but uses a client-generated ID that won't match the backend's. Need to use the backend's returned ID
+- Consider adding a `composition_workflows` sidebar badge showing workflow count (like the automations count badge)
