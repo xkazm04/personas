@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Clock, Hand, Webhook, X } from 'lucide-react';
 import type { TriggerPreset } from '../../steps/builder/types';
 import { TRIGGER_PRESETS } from '../../steps/builder/types';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 export const triggerIcons: Record<string, typeof Clock> = {
   manual: Hand,
@@ -18,6 +19,8 @@ export function TriggerPopover({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { isStarter: isSimple } = useTier();
+  const presets = isSimple ? TRIGGER_PRESETS.filter((p) => p.type === 'manual') : TRIGGER_PRESETS;
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +57,7 @@ export function TriggerPopover({
             <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider px-1.5 mb-1">
               Trigger
             </p>
-            {TRIGGER_PRESETS.map((preset) => {
+            {presets.map((preset) => {
               const PresetIcon = triggerIcons[preset.type] ?? Clock;
               const active = value?.label === preset.label;
               return (

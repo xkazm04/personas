@@ -21,6 +21,7 @@ import { UnsavedChangesModal } from '@/features/shared/components/overlays/Unsav
 import { useEditorDraft } from '../hooks/useEditorDraft';
 import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 export function EditorBody() {
   const {
@@ -75,6 +76,15 @@ export function EditorBody() {
   }, [isDirty, setEditorDirty]);
 
   useEditorKeyboard(undo, redo);
+
+  // Redirect away from tabs hidden by the current tier
+  const { isStarter } = useTier();
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  useEffect(() => {
+    if (isStarter && (editorTab === 'activity' || editorTab === 'matrix' || editorTab === 'lab')) {
+      setEditorTab('use-cases');
+    }
+  }, [isStarter, editorTab, setEditorTab]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedPersona) return;

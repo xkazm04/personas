@@ -3,6 +3,7 @@ import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManager
 import { VectorKbModal } from '@/features/vault/shared/vector/VectorKbModal';
 import { GatewayMembersModal } from '@/features/vault/sub_credentials/components/gateway/GatewayMembersModal';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 interface CredentialDetailModalsProps {
   selectedCredential: CredentialMetadata | undefined;
@@ -19,7 +20,11 @@ export function CredentialDetailModals({
   onClose,
   onDelete,
 }: CredentialDetailModalsProps) {
+  const { isStarter: isSimple } = useTier();
   if (!selectedCredential) return null;
+
+  // Simple mode: skip complex playground/schema/vector modals
+  if (isSimple) return null;
 
   if (selectedIsDatabase && selectedCredential.service_type === 'personas_vector_db') {
     return (

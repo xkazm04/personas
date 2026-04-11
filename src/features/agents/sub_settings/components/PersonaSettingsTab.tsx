@@ -9,6 +9,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -34,6 +35,7 @@ export function PersonaSettingsTab({
   onDelete,
 }: PersonaSettingsTabProps) {
   const personaId = useAgentStore((s) => s.selectedPersonaId);
+  const { isStarter: isSimple } = useTier();
   const [retentionMonths, setRetentionMonths] = useState<number>(2);
 
   useEffect(() => {
@@ -107,70 +109,74 @@ export function PersonaSettingsTab({
           Execution
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">
-                Max Concurrent
-                <FieldHint
-                  text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
-                  range="1--10"
-                  example="3"
+          {!isSimple && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-foreground/80 mb-1">
+                  Max Concurrent
+                  <FieldHint
+                    text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
+                    range="1--10"
+                    example="3"
+                  />
+                </label>
+                <input
+                  type="number"
+                  value={draft.maxConcurrent}
+                  onChange={(e) => patch({ maxConcurrent: Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
+                  min={1}
+                  max={50}
+                  className={INPUT_FIELD}
                 />
-              </label>
-              <input
-                type="number"
-                value={draft.maxConcurrent}
-                onChange={(e) => patch({ maxConcurrent: Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
-                min={1}
-                max={50}
-                className={INPUT_FIELD}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">
-                Timeout (sec)
-                <FieldHint
-                  text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
-                  range="10--1800 seconds"
-                  example="300"
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-foreground/80 mb-1">
+                  Timeout (sec)
+                  <FieldHint
+                    text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
+                    range="10--1800 seconds"
+                    example="300"
+                  />
+                </label>
+                <input
+                  type="number"
+                  value={Math.round(draft.timeout / 1000)}
+                  onChange={(e) => {
+                    const raw = parseInt(e.target.value, 10) || 10;
+                    patch({ timeout: Math.min(raw, 1800) * 1000 });
+                  }}
+                  min={10}
+                  max={1800}
+                  step={10}
+                  className={INPUT_FIELD}
                 />
-              </label>
-              <input
-                type="number"
-                value={Math.round(draft.timeout / 1000)}
-                onChange={(e) => {
-                  const raw = parseInt(e.target.value, 10) || 10;
-                  patch({ timeout: Math.min(raw, 1800) * 1000 });
-                }}
-                min={10}
-                max={1800}
-                step={10}
-                className={INPUT_FIELD}
-              />
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-foreground/80 mb-1">
-              Execution Retention
-              <FieldHint
-                text="How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space."
-                range="1--24 months"
-                example="2"
-              />
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={retentionMonths}
-                onChange={(e) => handleRetentionChange(parseInt(e.target.value, 10) || 2)}
-                min={1}
-                max={24}
-                className={`${INPUT_FIELD} w-20`}
-              />
-              <span className="text-sm text-muted-foreground/60">months</span>
+          {!isSimple && (
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
+                Execution Retention
+                <FieldHint
+                  text="How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space."
+                  range="1--24 months"
+                  example="2"
+                />
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={retentionMonths}
+                  onChange={(e) => handleRetentionChange(parseInt(e.target.value, 10) || 2)}
+                  min={1}
+                  max={24}
+                  className={`${INPUT_FIELD} w-20`}
+                />
+                <span className="text-sm text-muted-foreground/60">months</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center justify-between py-1">
             <span className="text-sm font-medium text-foreground/80">Persona Enabled</span>
@@ -183,18 +189,20 @@ export function PersonaSettingsTab({
             />
           </div>
 
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <span className="text-sm font-medium text-foreground/80">Sensitive Preview</span>
-              <p className="text-sm text-muted-foreground/70">Mask hover preview details until revealed.</p>
+          {!isSimple && (
+            <div className="flex items-center justify-between py-1">
+              <div>
+                <span className="text-sm font-medium text-foreground/80">Sensitive Preview</span>
+                <p className="text-sm text-muted-foreground/70">Mask hover preview details until revealed.</p>
+              </div>
+              <AccessibleToggle
+                checked={draft.sensitive}
+                onChange={() => patch({ sensitive: !draft.sensitive })}
+                label="Sensitive Preview"
+                size="md"
+              />
             </div>
-            <AccessibleToggle
-              checked={draft.sensitive}
-              onChange={() => patch({ sensitive: !draft.sensitive })}
-              label="Sensitive Preview"
-              size="md"
-            />
-          </div>
+          )}
         </div>
       </div>
 

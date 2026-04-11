@@ -4,6 +4,7 @@ import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 export function GroupedToolRow({
   tool,
@@ -23,8 +24,9 @@ export function GroupedToolRow({
   onToggle: (id: string, name: string, assigned: boolean) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { isStarter: isSimple } = useTier();
   const usageCount = usageByTool.get(tool.name) ?? 0;
-  const hasImpact = impactData && (
+  const hasImpact = !isSimple && impactData && (
     impactData.useCaseRefs.length > 0 ||
     (impactData.usage && impactData.usage.total_invocations > 0) ||
     impactData.coUsedTools.length > 0

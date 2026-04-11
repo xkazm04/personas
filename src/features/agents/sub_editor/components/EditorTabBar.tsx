@@ -4,12 +4,15 @@ import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import type { Tier } from '@/lib/constants/uiModes';
+import { TIERS } from '@/lib/constants/uiModes';
 
-const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devOnly?: boolean }> = [
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'matrix', label: 'Matrix', icon: Grid3X3 },
+const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devOnly?: boolean; minTier?: Tier }> = [
+  { id: 'activity', label: 'Activity', icon: Activity, minTier: TIERS.TEAM },
+  { id: 'matrix', label: 'Matrix', icon: Grid3X3, minTier: TIERS.TEAM },
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
-  { id: 'lab', label: 'Lab', icon: FlaskConical },
+  { id: 'lab', label: 'Lab', icon: FlaskConical, minTier: TIERS.TEAM },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -51,10 +54,11 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
 export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const tier = useTier();
   return (
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex overflow-x-auto ${IS_MOBILE ? 'px-1 gap-0' : 'px-6 gap-1'} scrollbar-none`}>
-        {tabDefs.filter((t) => !t.devOnly || import.meta.env.DEV).map((tab) => {
+        {tabDefs.filter((t) => (!t.devOnly || import.meta.env.DEV) && (!t.minTier || tier.isVisible(t.minTier))).map((tab) => {
           const Icon = tab.icon;
           const isActive = editorTab === tab.id;
           const tabDirty = isTabDirty(tab.id, dirtyTabs);

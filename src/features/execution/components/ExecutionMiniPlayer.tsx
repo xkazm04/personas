@@ -8,6 +8,8 @@ import {
   Timer,
   Terminal,
   PinOff,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -19,6 +21,84 @@ import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
+
+/** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
+function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, executionOutput }: {
+  isExecuting: boolean;
+  error: string | null;
+  stageProgress: { label: string; fraction: number };
+  elapsed: number;
+  executionOutput: string[];
+}) {
+  const [copied, setCopied] = useState(false);
+
+  // Extract the last non-empty meaningful output lines as the "result"
+  const resultText = useMemo(() => {
+    const meaningful = executionOutput.filter((l) => l.trim().length > 0);
+    return meaningful.slice(-6).join('\n');
+  }, [executionOutput]);
+
+  const handleCopy = useCallback(() => {
+    const full = executionOutput.join('\n');
+    navigator.clipboard.writeText(full).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [executionOutput]);
+
+  if (isExecuting) {
+    return (
+      <div className="px-3 py-3">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-sm text-foreground/80">
+            {error ? 'Something went wrong' : stageProgress.label}
+          </span>
+          {!error && (
+            <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+              {Math.round(stageProgress.fraction * 100)}%
+            </span>
+          )}
+        </div>
+        <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-red-400' : 'bg-blue-400'}`}
+            style={{ width: `${stageProgress.fraction * 100}%` }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Completed state
+  return (
+    <div className="px-3 py-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-sm font-medium ${error ? 'text-red-400' : 'text-emerald-400'}`}>
+          {error ? 'Failed' : 'Complete'}
+        </span>
+        <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+          {formatElapsed(elapsed)}
+        </span>
+      </div>
+      {resultText && (
+        <div className="rounded-lg bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
+          <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">
+            {resultText}
+          </p>
+        </div>
+      )}
+      {executionOutput.length > 0 && (
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+        >
+          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copied ? 'Copied' : 'Copy full output'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function ExecutionMiniPlayer() {
   const { isStarter: isSimple } = useTier();
@@ -209,36 +289,15 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* Simple mode: friendly progress bar with stage label */}
+        {/* Simple mode: friendly progress bar → result summary */}
         {isSimple && (
-          <div className="px-3 py-3">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-sm text-foreground/80">
-                {isExecuting
-                  ? error ? 'Something went wrong' : stageProgress.label
-                  : error ? 'Failed' : 'Complete'}
-              </span>
-              {isExecuting && !error && (
-                <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
-                  {Math.round(stageProgress.fraction * 100)}%
-                </span>
-              )}
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ease-out ${
-                  error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'
-                }`}
-                style={{
-                  width: error && !isExecuting
-                    ? '100%'
-                    : isExecuting
-                      ? `${stageProgress.fraction * 100}%`
-                      : '100%',
-                }}
-              />
-            </div>
-          </div>
+          <SimpleExecutionView
+            isExecuting={isExecuting}
+            error={error}
+            stageProgress={stageProgress}
+            elapsed={elapsed}
+            executionOutput={executionOutput}
+          />
         )}
 
         {/* Full mode: Pipeline stage dots */}

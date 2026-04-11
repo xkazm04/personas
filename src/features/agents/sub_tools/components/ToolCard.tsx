@@ -6,6 +6,7 @@ import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
 import { TOOLS_BORDER, TOOLS_BTN_COMPACT } from '@/lib/utils/designTokens';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
 export const ToolCard = memo(function ToolCard({
   tool,
@@ -31,8 +32,9 @@ export const ToolCard = memo(function ToolCard({
   onAddCredential: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { isStarter: isSimple } = useTier();
   const usageCount = usageByTool.get(tool.name) ?? 0;
-  const hasImpact = impactData && (
+  const hasImpact = !isSimple && impactData && (
     impactData.useCaseRefs.length > 0 ||
     (impactData.usage && impactData.usage.total_invocations > 0) ||
     impactData.coUsedTools.length > 0
