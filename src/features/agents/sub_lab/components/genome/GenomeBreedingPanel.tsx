@@ -17,6 +17,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { GenerationEvolutionChart } from './GenerationEvolutionChart';
 import { GenomeDiffView } from './GenomeDiffView';
 import { toastCatch } from '@/lib/silentCatch';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
 
@@ -160,7 +161,7 @@ function FitnessDisplay({ score }: { score: FitnessScore }) {
 // ============================================================================
 
 function parseGenome(json: string): PersonaGenome | null {
-  try { return JSON.parse(json); } catch { return null; }
+  return parseJsonOrDefault<PersonaGenome | null>(json, null);
 }
 
 function OffspringCard({
@@ -177,14 +178,10 @@ function OffspringCard({
   const [showDiff, setShowDiff] = useState(false);
   const genome = parseGenome(result.genomeJson);
 
-  const fitness: FitnessScore | null = (() => {
-    try { return result.fitnessJson ? JSON.parse(result.fitnessJson) : null; } catch { return null; }
-  })();
+  const fitness = parseJsonOrDefault<FitnessScore | null>(result.fitnessJson, null);
 
   // Find first parent genome for diff
-  const parentIds: string[] = (() => {
-    try { return JSON.parse(result.parentIds); } catch { return []; }
-  })();
+  const parentIds: string[] = parseJsonOrDefault(result.parentIds, []);
   const firstParentId = parentIds[0];
   const firstParentGenome = firstParentId ? parentGenomes.get(firstParentId) : undefined;
 
@@ -284,9 +281,7 @@ function RunCard({
   onDelete: () => void;
   isSelected: boolean;
 }) {
-  const parentCount = (() => {
-    try { return JSON.parse(run.parentIds).length; } catch { return 0; }
-  })();
+  const parentCount = parseJsonOrDefault<string[]>(run.parentIds, []).length;
 
   const statusColor = {
     generating: 'text-blue-400',
@@ -411,9 +406,7 @@ export function GenomeBreedingPanel() {
     // Extract parent genomes for diff view
     const run = runs.find((r) => r.id === runId);
     if (run) {
-      const parentIds: string[] = (() => {
-        try { return JSON.parse(run.parentIds); } catch { return []; }
-      })();
+      const parentIds: string[] = parseJsonOrDefault(run.parentIds, []);
       const genomeMap = new Map<string, PersonaGenome>();
       for (const pid of parentIds) {
         try {
