@@ -3,170 +3,41 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
   X,
-  AlertTriangle,
-  Info,
-  AlertCircle,
   Clock,
   Zap,
-  CheckCircle2,
-  XCircle,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Image as ImageIcon,
-  Video,
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
 import { parseSuggestedActions } from '../libs/reviewHelpers';
+import {
+  type TriageReview,
+  type DecisionVerdict,
+  type ActionType,
+  parseDecisions,
+  getDecisionImage,
+  isVideoUrl,
+  getSevCfg,
+  sevDot,
+  SEV_BADGE_COLORS,
+  cardVariants,
+  decisionVariants,
+} from './reviewFocusHelpers';
+import { FocusedDecisionCard } from './FocusedDecisionCard';
+import { ActionZone } from './ActionZone';
 
 // ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface TriageReview {
-  id: string;
-  title: string;
-  description?: string | null;
-  severity: string;
-  persona_name?: string;
-  persona_icon?: string;
-  persona_color?: string;
-  context_data?: string | null;
-  suggested_actions?: string | null;
-  created_at: string;
-  status: string;
-}
-
-interface ReviewFocusFlowProps {
-  reviews: TriageReview[];
-  onApprove: (id: string, notes?: string) => void;
-  onReject: (id: string, notes?: string) => void;
-  isProcessing: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Decision type — extended with image support
-// ---------------------------------------------------------------------------
-
-interface DecisionItem {
-  id: string;
-  label: string;
-  description?: string;
-  category?: string;
-  /** Direct image URL for visual decisions */
-  image_url?: string;
-  /** Gallery asset reference (resolved to local file path) */
-  gallery_image_ref?: string;
-  /** Any additional image URLs embedded in metadata */
-  preview_url?: string;
-}
-
-function parseDecisions(contextData: string | null | undefined): { decisions: DecisionItem[]; galleryImage: string | null; raw: Record<string, unknown> | null } {
-  if (!contextData) return { decisions: [], galleryImage: null, raw: null };
-  try {
-    const parsed = JSON.parse(contextData);
-    if (!parsed || typeof parsed !== 'object') return { decisions: [], galleryImage: null, raw: null };
-    const decisions: DecisionItem[] = Array.isArray(parsed.decisions) ? parsed.decisions : [];
-    const galleryImage = parsed.gallery_image_ref ?? parsed.image_url ?? null;
-    return { decisions, galleryImage, raw: parsed };
-  } catch {
-    return { decisions: [], galleryImage: null, raw: null };
-  }
-}
-
-/** Check if a decision has any visual content */
-function getDecisionImage(d: DecisionItem): string | null {
-  return d.image_url || d.gallery_image_ref || d.preview_url || null;
-}
-
-/** Detect video URLs by extension */
-const VIDEO_EXT_RE = /\.(mp4|webm|mov|avi|mkv|ogv)(\?.*)?$/i;
-function isVideoUrl(url: string): boolean {
-  return VIDEO_EXT_RE.test(url);
-}
-
-// ---------------------------------------------------------------------------
-// Severity helpers
-// ---------------------------------------------------------------------------
-
-const SEVERITY_CONFIG: Record<string, { gradient: string; icon: React.ReactNode; label: string; shadow: string; ring: string }> = {
-  critical: {
-    gradient: 'from-red-500 via-red-400 to-red-500',
-    icon: <AlertCircle className="w-4 h-4" />,
-    label: 'Critical',
-    shadow: '0 0 40px -12px rgba(239,68,68,0.20)',
-    ring: 'ring-red-500/10',
-  },
-  warning: {
-    gradient: 'from-amber-500 via-amber-400 to-amber-500',
-    icon: <AlertTriangle className="w-4 h-4" />,
-    label: 'Warning',
-    shadow: '0 0 40px -12px rgba(245,158,11,0.20)',
-    ring: 'ring-amber-500/10',
-  },
-  info: {
-    gradient: 'from-emerald-500 via-emerald-400 to-emerald-500',
-    icon: <Info className="w-4 h-4" />,
-    label: 'Info',
-    shadow: '0 0 40px -12px rgba(16,185,129,0.20)',
-    ring: 'ring-emerald-500/10',
-  },
-};
-
-function getSevCfg(severity: string) {
-  return SEVERITY_CONFIG[severity] ?? SEVERITY_CONFIG.info!;
-}
-
-// ---------------------------------------------------------------------------
-// Category colors for decision cards
-// ---------------------------------------------------------------------------
-
-const CAT_STYLE: Record<string, string> = {
-  security: 'border-l-red-500',
-  performance: 'border-l-amber-500',
-  architecture: 'border-l-blue-500',
-  data: 'border-l-purple-500',
-  ux: 'border-l-emerald-500',
-  workflow: 'border-l-cyan-500',
-  content: 'border-l-violet-500',
-  default: 'border-l-primary/40',
-};
-
-function catBorder(cat?: string) {
-  if (!cat) return CAT_STYLE.default!;
-  return CAT_STYLE[cat.toLowerCase()] ?? CAT_STYLE.default!;
-}
-
-// ---------------------------------------------------------------------------
-// Severity dot color for queue sidebar
-// ---------------------------------------------------------------------------
-
-const SEV_DOT: Record<string, string> = {
-  critical: 'bg-red-400',
-  warning: 'bg-amber-400',
-  high: 'bg-amber-400',
-  info: 'bg-blue-400',
-  low: 'bg-foreground/40',
-};
-
-function sevDot(severity: string) { return SEV_DOT[severity] ?? SEV_DOT.info!; }
-
-// ---------------------------------------------------------------------------
-// Severity badge
+// Severity badge (local — only used in this view)
 // ---------------------------------------------------------------------------
 
 function SeverityBadge({ severity }: { severity: string }) {
   const cfg = getSevCfg(severity);
-  const bgMap: Record<string, string> = {
-    critical: 'bg-red-500/15 text-red-400 border-red-500/20',
-    warning: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-    info: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
-  };
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${bgMap[severity] ?? bgMap.info!}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
       {cfg.icon}
       {cfg.label}
     </span>
@@ -174,32 +45,15 @@ function SeverityBadge({ severity }: { severity: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Decision verdict type
+// Props
 // ---------------------------------------------------------------------------
 
-type DecisionVerdict = 'accept' | 'reject' | undefined;
-
-// ---------------------------------------------------------------------------
-// Animated card variants
-// ---------------------------------------------------------------------------
-
-const cardVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0, scale: 0.96 }),
-  center: { x: 0, opacity: 1, scale: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0, scale: 0.96 }),
-};
-
-const decisionVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
-};
-
-// ---------------------------------------------------------------------------
-// Action type
-// ---------------------------------------------------------------------------
-
-type ActionType = 'reject' | 'retry' | 'approve' | null;
+interface ReviewFocusFlowProps {
+  reviews: TriageReview[];
+  onApprove: (id: string, notes?: string) => void;
+  onReject: (id: string, notes?: string) => void;
+  isProcessing: boolean;
+}
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -707,197 +561,3 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   );
 }
 
-// ---------------------------------------------------------------------------
-// Focused Decision Card — adaptive layout for text, image, or mixed
-// ---------------------------------------------------------------------------
-
-interface FocusedDecisionCardProps {
-  decision: DecisionItem;
-  verdict: DecisionVerdict;
-  onToggle: (v: DecisionVerdict) => void;
-  imageUrl: string | null;
-}
-
-function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: FocusedDecisionCardProps) {
-  const hasImage = !!imageUrl;
-
-  return (
-    <div className={`rounded-lg border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
-      {hasImage ? (
-        /* ---- Image + Text side-by-side layout ---- */
-        <div className="flex flex-col md:flex-row">
-          {/* Media panel (image or video) */}
-          <div className="md:w-1/2 bg-black/20 flex items-center justify-center min-h-[200px] max-h-[400px] overflow-hidden">
-            {isVideoUrl(imageUrl!) ? (
-              <video
-                src={imageUrl!}
-                controls
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLVideoElement).style.display = 'none';
-                  (e.target as HTMLVideoElement).parentElement!.innerHTML = '<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg><span class="text-sm">Video unavailable</span></div>';
-                }}
-              >
-                Your browser does not support video playback.
-              </video>
-            ) : (
-              <img
-                src={imageUrl!}
-                alt={decision.label}
-                className="w-full h-full object-contain"
-                loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25a1.5 1.5 0 001.5 1.5z" /></svg><span class="text-sm">Image unavailable</span></div>';
-                }}
-              />
-            )}
-          </div>
-          {/* Text panel */}
-          <div className="md:w-1/2 p-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {decision.category && (
-                  <span className="text-xs font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{decision.category}</span>
-                )}
-                {isVideoUrl(imageUrl!) ? (
-                  <Video className="w-3 h-3 text-foreground/30" />
-                ) : (
-                  <ImageIcon className="w-3 h-3 text-foreground/30" />
-                )}
-              </div>
-              <h3 className="text-base font-semibold text-foreground mb-2">{decision.label}</h3>
-              {decision.description && (
-                <p className="text-sm text-foreground/80 leading-relaxed">{decision.description}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-primary/10">
-              <button
-                onClick={() => onToggle('accept')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${verdict === 'accept'
-                    ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-                    : 'bg-secondary/30 text-foreground/60 hover:bg-emerald-500/10 hover:text-emerald-400'
-                  }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Accept
-              </button>
-              <button
-                onClick={() => onToggle('reject')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${verdict === 'reject'
-                    ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-                    : 'bg-secondary/30 text-foreground/60 hover:bg-red-500/10 hover:text-red-400'
-                  }`}
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ---- Text-only layout (full width, spacious) ---- */
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                {decision.category && (
-                  <span className="text-xs font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{decision.category}</span>
-                )}
-              </div>
-              <h3 className="text-base font-semibold text-foreground mb-1">{decision.label}</h3>
-              {decision.description && (
-                <p className="text-sm text-foreground/80 leading-relaxed">{decision.description}</p>
-              )}
-            </div>
-            {/* Prominent accept/reject buttons */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 pt-1">
-              <button
-                onClick={() => onToggle('accept')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${verdict === 'accept'
-                    ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-                    : 'bg-secondary/30 text-foreground/50 hover:bg-emerald-500/10 hover:text-emerald-400'
-                  }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Accept
-              </button>
-              <button
-                onClick={() => onToggle('reject')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${verdict === 'reject'
-                    ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-                    : 'bg-secondary/30 text-foreground/50 hover:bg-red-500/10 hover:text-red-400'
-                  }`}
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Action Zone sub-component
-// ---------------------------------------------------------------------------
-
-interface ActionZoneProps {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  colorClasses: string;
-  activeClasses: string;
-  notes: string;
-  onNotesChange: (v: string) => void;
-  onConfirm: () => void;
-  isProcessing: boolean;
-  confirmColor: string;
-}
-
-function ActionZone({ active, onClick, icon, label, colorClasses, activeClasses, notes, onNotesChange, onConfirm, isProcessing, confirmColor }: ActionZoneProps) {
-  return (
-    <div className={`flex flex-col transition-colors ${active ? activeClasses : ''}`}>
-      <button
-        onClick={onClick}
-        disabled={isProcessing}
-        className={`flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors disabled:opacity-50 ${colorClasses}`}
-      >
-        {icon}
-        <span>{label}</span>
-      </button>
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 space-y-2">
-              <textarea
-                value={notes}
-                onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Add a note (optional)..."
-                rows={2}
-                className="w-full rounded-md border border-primary/10 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
-                autoFocus
-              />
-              <button
-                onClick={onConfirm}
-                disabled={isProcessing}
-                className={`w-full py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${confirmColor}`}
-              >
-                {isProcessing ? 'Processing...' : 'Confirm'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
