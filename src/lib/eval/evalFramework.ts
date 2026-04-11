@@ -10,6 +10,7 @@
  */
 
 import type { EvalStrategyKind } from '@/lib/bindings/EvalStrategyKind';
+import { en, type Translations } from '@/i18n/en';
 
 // Re-export for convenience
 export type { EvalStrategyKind };
@@ -92,30 +93,27 @@ interface StrategyMeta {
   weight: number | null;
 }
 
-export const STRATEGY_META: Record<EvalStrategyKind, StrategyMeta> = {
-  keyword_match: {
-    label: 'Output Quality',
-    description: 'Checks expected behavior terms in agent output',
-    weight: WEIGHT_OUTPUT_QUALITY,
-  },
-  tool_accuracy: {
-    label: 'Tool Accuracy',
-    description: 'Compares expected vs actual tool calls',
-    weight: WEIGHT_TOOL_ACCURACY,
-  },
-  protocol_compliance: {
-    label: 'Protocol Compliance',
-    description: 'Checks for expected protocol message patterns',
-    weight: WEIGHT_PROTOCOL_COMPLIANCE,
-  },
-  confusion_detect: {
-    label: 'Confusion Detection',
-    description: 'Checks for known confusion/failure phrases',
-    weight: null,
-  },
-  composite: {
-    label: 'Composite',
-    description: 'Weighted combination of all strategies',
-    weight: null,
-  },
+/** i18n keys for each strategy's label and description. */
+const STRATEGY_KEYS: Record<EvalStrategyKind, { labelKey: keyof Translations['eval_strategies']; descKey: keyof Translations['eval_strategies']; weight: number | null }> = {
+  keyword_match:        { labelKey: 'keyword_match_label',        descKey: 'keyword_match_description',        weight: WEIGHT_OUTPUT_QUALITY },
+  tool_accuracy:        { labelKey: 'tool_accuracy_label',        descKey: 'tool_accuracy_description',        weight: WEIGHT_TOOL_ACCURACY },
+  protocol_compliance:  { labelKey: 'protocol_compliance_label',  descKey: 'protocol_compliance_description',  weight: WEIGHT_PROTOCOL_COMPLIANCE },
+  confusion_detect:     { labelKey: 'confusion_detect_label',     descKey: 'confusion_detect_description',     weight: null },
+  composite:            { labelKey: 'composite_label',            descKey: 'composite_description',            weight: null },
 };
+
+/** Resolve STRATEGY_META from the given translation bundle (defaults to English). */
+export function getStrategyMeta(t: Translations = en): Record<EvalStrategyKind, StrategyMeta> {
+  const result = {} as Record<EvalStrategyKind, StrategyMeta>;
+  for (const [kind, keys] of Object.entries(STRATEGY_KEYS) as [EvalStrategyKind, typeof STRATEGY_KEYS[EvalStrategyKind]][]) {
+    result[kind] = {
+      label: t.eval_strategies[keys.labelKey] as string,
+      description: t.eval_strategies[keys.descKey] as string,
+      weight: keys.weight,
+    };
+  }
+  return result;
+}
+
+/** Pre-resolved English STRATEGY_META for backward-compatible direct access. */
+export const STRATEGY_META: Record<EvalStrategyKind, StrategyMeta> = getStrategyMeta(en);

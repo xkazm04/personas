@@ -5,20 +5,28 @@ import {
 } from '@tauri-apps/plugin-notification';
 import { useNotificationCenterStore } from '../../stores/notificationCenterStore';
 import type { ProcessType } from '../../stores/notificationCenterStore';
+import { en, type Translations } from '@/i18n/en';
 
-const PROCESS_LABELS: Record<ProcessType, string> = {
-  'n8n-transform': 'n8n Transform',
-  'template-adopt': 'Template Adoption',
-  'rebuild': 'Agent Rebuild',
-  'template-test': 'Template Test',
-  'context-scan': 'Context Map Scan',
-  'idea-scan': 'Idea Scan',
-  'execution': 'Agent Execution',
-  'matrix-build': 'Matrix Build',
-  'lab-run': 'Lab Run',
-  'connector-test': 'Connector Test',
-  'creative-session': 'Creative Session',
+/** Map ProcessType (kebab-case) to the corresponding i18n key (snake_case). */
+const PROCESS_LABEL_KEYS: Record<ProcessType, keyof Translations['process_labels']> = {
+  'n8n-transform': 'n8n_transform',
+  'template-adopt': 'template_adopt',
+  'rebuild': 'rebuild',
+  'template-test': 'template_test',
+  'context-scan': 'context_scan',
+  'idea-scan': 'idea_scan',
+  'execution': 'execution',
+  'matrix-build': 'matrix_build',
+  'lab-run': 'lab_run',
+  'connector-test': 'connector_test',
+  'creative-session': 'creative_session',
 };
+
+/** Resolve a ProcessType to its human-readable label from the given translations. */
+export function getProcessLabel(processType: ProcessType, t: Translations = en): string {
+  const key = PROCESS_LABEL_KEYS[processType];
+  return (t.process_labels[key] as string) ?? processType;
+}
 
 export async function notifyProcessComplete(opts: {
   processType: ProcessType;
@@ -28,10 +36,13 @@ export async function notifyProcessComplete(opts: {
   summary: string;
   redirectSection: string;
   redirectTab?: string | null;
-}): Promise<void> {
-  const label = PROCESS_LABELS[opts.processType];
+}, t: Translations = en): Promise<void> {
+  const label = getProcessLabel(opts.processType, t);
   const status = opts.success ? 'success' : 'failed';
-  const title = opts.success ? `${label} Complete` : `${label} Failed`;
+  const suffix = opts.success
+    ? t.process_labels.complete_suffix
+    : t.process_labels.failed_suffix;
+  const title = `${label} ${suffix}`;
   const body = opts.personaName ? `${opts.personaName}: ${opts.summary}` : opts.summary;
 
   // OS notification
