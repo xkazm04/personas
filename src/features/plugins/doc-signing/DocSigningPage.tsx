@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  FileSignature, ShieldCheck, History, Upload, CheckCircle2,
+  FileSignature, ShieldCheck, Upload, CheckCircle2,
   XCircle, Trash2, Download, Copy, FileText, Clock
 } from 'lucide-react';
 import { open, save } from '@tauri-apps/plugin-dialog';
@@ -17,52 +17,45 @@ import {
   type DocumentSignature,
   type VerifyDocumentResult,
 } from '@/api/signing';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
 
 type Tab = 'sign' | 'verify' | 'history';
+
+const DOC_TABS: { id: Tab; label: string }[] = [
+  { id: 'sign', label: 'Sign' },
+  { id: 'verify', label: 'Verify' },
+  { id: 'history', label: 'History' },
+];
 
 export default function DocSigningPage() {
   const [tab, setTab] = useState<Tab>('sign');
 
-  const tabs: { id: Tab; label: string; icon: typeof FileSignature }[] = [
-    { id: 'sign', label: 'Sign', icon: FileSignature },
-    { id: 'verify', label: 'Verify', icon: ShieldCheck },
-    { id: 'history', label: 'History', icon: History },
-  ];
-
   return (
-    <div className="h-full flex flex-col">
-      {/* Tab bar */}
-      <div className="flex items-center gap-1 px-4 pt-4 pb-2">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg typo-heading transition-colors ${
-                active
-                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<FileSignature className="w-5 h-5 text-rose-400" />}
+        iconColor="red"
+        title="Document Signing"
+        subtitle="Ed25519 digital signatures with portable sidecar verification"
+      >
+        <PanelTabBar
+          tabs={DOC_TABS}
+          activeTab={tab}
+          onTabChange={setTab}
+          underlineClass="bg-rose-400"
+          layoutIdPrefix="doc-signing"
+        />
+      </ContentHeader>
 
-      {/* Content */}
-      <div
-          key={tab}
-          className="animate-fade-slide-in flex-1 min-h-0 overflow-y-auto px-4 pb-4"
-        >
+      <ContentBody centered>
+        <div key={tab} className="animate-fade-slide-in">
           {tab === 'sign' && <SignPanel />}
           {tab === 'verify' && <VerifyPanel />}
           {tab === 'history' && <HistoryPanel />}
         </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
 
