@@ -161,3 +161,24 @@
 - The BYOM "Test Connection" button is a stub — implement real connectivity tests (especially for Ollama: `GET http://localhost:11434/api/tags`)
 - Consider adding a "recommended models" list to the BYOM UI that shows which Ollama models are known to work well with agent tasks
 - Persona tags are not passed to BYOM compliance evaluation (runner.rs:625 passes `&[]`) — compliance rules based on workflow_tags will never match
+
+## Obsidian Brain Plugin
+
+- [2026-04-11] Frontend: `src/features/plugins/obsidian-brain/` — 4 sub-panels: Setup, Sync, Browse, Cloud. Now uses ContentLayout, SectionCard, AccessibleToggle, EmptyState, LoadingSpinner
+- [2026-04-11] Backend: `src-tauri/src/commands/obsidian_brain/` — 5 module files: mod.rs (13 commands), conflict.rs, lint.rs, markdown.rs, semantic_lint.rs, drive.rs (new)
+- [2026-04-11] Google Drive cloud sync via `drive.rs` — uses reqwest to call Google Drive REST API v3. Files stored in `Personas/ObsidianSync/<vault>/` in user's Google Drive
+- [2026-04-11] Sync manifest (`.sync-manifest.json`) tracks content hashes per file — same hash-based comparison strategy as local vault sync
+- [2026-04-11] Auth extension: `provider_token` from Supabase OAuth callback gives raw Google access token. Stored in `AuthStateInner.google_provider_token`. `provider_refresh_token` persisted in OS keyring
+- [2026-04-11] `login_with_google_drive` command: separate re-auth with `drive.file` scope (incremental consent). Does NOT replace the base `login_with_google` — additive
+- [2026-04-11] Supabase's `scopes=` query parameter on the authorize URL is how additional Google scopes get requested from code — no Supabase console change needed
+- [2026-04-11] `ObsidianBrainTab` type extended to include `"cloud"` — stored in systemStore
+
+## Open follow-ups (from Run #5 — Obsidian Brain, 2026-04-11)
+
+- Google provider token refresh: currently only stored on initial OAuth; needs a refresh mechanism when the token expires (~1 hour). Should use `google_provider_refresh_token` from keyring
+- Auto-sync to Drive: the local vault auto-sync flag exists but Drive auto-push is not wired up. Consider triggering Drive push after each local push
+- Supabase Google provider must have the correct OAuth Client ID/Secret configured for the `drive.file` scope to appear in the consent screen
+- Drive sync currently handles only flat files per folder — nested subdirectories within sync folders are skipped during pull (push handles them via recursive walk)
+- The `obsidian_drive_status` and `obsidian_drive_push/pull_sync` Tauri commands need to be registered in `lib.rs` `generate_handler!()` macro to be callable from frontend
+- BrowsePanel markdown rendering uses `prose-invert` — needs light theme override for `[data-theme^="light"]` to avoid invisible text
+- No i18n for any Obsidian Brain UI text (all 4 panels hardcoded English)
