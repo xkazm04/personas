@@ -2,8 +2,11 @@ import { useMemo } from 'react';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import { formatDuration } from '@/lib/utils/formatters';
 import { Clock, DollarSign, Zap, AlertCircle, Activity, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const stats = useMemo(() => {
     const rootSpan = trace.spans.find(s => s.span_type === 'execution');
     const toolCalls = trace.spans.filter(s => s.span_type === 'tool_call');
@@ -22,7 +25,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
-          Duration
+          {e.duration}
         </div>
         <div className="typo-code text-foreground/90">
           {formatDuration(trace.total_duration_ms)}
@@ -32,7 +35,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
-          Cost
+          {e.cost}
         </div>
         <div className="typo-code text-foreground/90">
           {stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'}
@@ -42,7 +45,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" />
-          Tokens
+          {e.tokens}
         </div>
         <div className="typo-code text-foreground/90">
           {(stats.totalInput + stats.totalOutput).toLocaleString()}
@@ -52,7 +55,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
-          Spans
+          {e.spans}
         </div>
         <div className="typo-code text-foreground/90">
           {trace.spans.length}
@@ -62,7 +65,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
-          Errors
+          {e.errors}
         </div>
         <div className={`typo-code ${stats.errorCount > 0 ? 'text-red-400' : 'text-foreground/90'}`}>
           {stats.errorCount}

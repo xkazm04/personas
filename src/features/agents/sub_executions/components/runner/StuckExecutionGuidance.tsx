@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, Clock, ChevronDown, ChevronRight, HelpCircle, RotateCw, FileText, XCircle } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { SilenceLevel } from '../../libs/useRunnerState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StuckExecutionGuidanceProps {
   silenceLevel: SilenceLevel;
@@ -16,6 +17,8 @@ export function StuckExecutionGuidance({
   executionId,
   onViewLog,
 }: StuckExecutionGuidanceProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
 
   if (silenceLevel === 'active') return null;
@@ -46,14 +49,14 @@ export function StuckExecutionGuidance({
           }`}
         >
           {isStuck
-            ? 'Execution appears stuck'
-            : 'No new output for a while'}
+            ? e.execution_stuck
+            : e.no_new_output}
         </span>
         <Tooltip
           content={
             isStuck
-              ? 'The agent has not produced output for 2+ minutes. It may be waiting on an external API or encountering an issue.'
-              : 'The agent has been silent for over a minute. This can happen during long API calls or complex reasoning.'
+              ? e.stuck_tooltip
+              : e.silent_tooltip
           }
         >
           <HelpCircle
@@ -75,14 +78,14 @@ export function StuckExecutionGuidance({
           {/* Explanation */}
           <p className="text-xs text-muted-foreground/80 leading-relaxed">
             {isStuck
-              ? 'The agent has not produced any output for over 2 minutes. This usually means it is waiting on a slow external API, the connected service is unresponsive, or the execution process has stalled.'
-              : 'The agent has been silent for over a minute. Long pauses can occur during complex reasoning or when waiting for API responses. If the silence continues, the status will escalate.'}
+              ? e.stuck_detail
+              : e.silent_detail}
           </p>
 
           {/* Suggested actions */}
           <div className="space-y-2">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
-              Suggested actions
+              {e.suggested_actions}
             </p>
             <div className="flex flex-wrap gap-2">
               {isStuck && (
@@ -91,7 +94,7 @@ export function StuckExecutionGuidance({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
                 >
                   <XCircle className="w-3 h-3" />
-                  Cancel &amp; retry
+                  {e.cancel_retry}
                 </button>
               )}
               {executionId && onViewLog && (
@@ -104,13 +107,13 @@ export function StuckExecutionGuidance({
                   }`}
                 >
                   <FileText className="w-3 h-3" />
-                  View execution log
+                  {e.view_execution_log}
                 </button>
               )}
               {!isStuck && (
                 <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground/60">
                   <RotateCw className="w-3 h-3" />
-                  You can also wait — some operations take time
+                  {e.wait_hint}
                 </span>
               )}
             </div>
@@ -119,8 +122,7 @@ export function StuckExecutionGuidance({
           {/* Connectivity hint */}
           {isStuck && (
             <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
-              Tip: Check if the connected API or service is responding. Network
-              issues or rate limits can cause prolonged silence.
+              {e.connectivity_tip}
             </p>
           )}
         </div>

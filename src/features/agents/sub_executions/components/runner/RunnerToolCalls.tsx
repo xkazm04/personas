@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../../libs/runnerHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Inline Healing Notification Card */
 export function HealingCard({
@@ -11,6 +12,8 @@ export function HealingCard({
   notification: HealingEventPayload;
   onDismiss: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const isRetry = notification.auto_fixed && notification.backoff_seconds != null;
   const isIssue = !notification.auto_fixed;
@@ -44,7 +47,7 @@ export function HealingCard({
             </div>
           </div>
           <button onClick={onDismiss} className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
-            <span className="typo-body">dismiss</span>
+            <span className="typo-body">{e.dismiss}</span>
           </button>
         </div>
 
@@ -60,17 +63,17 @@ export function HealingCard({
             {countdown > 0 && (
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-400/60 animate-pulse" />
-                <span className="typo-code text-amber-300/90">Retrying in {countdown}s...</span>
+                <span className="typo-code text-amber-300/90">{tx(e.retrying_in, { seconds: countdown })}</span>
               </div>
             )}
             {countdown === 0 && (
               <div className="flex items-center gap-1.5">
                 <RotateCw className="w-3.5 h-3.5 text-blue-400/70 animate-spin" />
-                <span className="typo-code text-blue-300/90">Retrying now...</span>
+                <span className="typo-code text-blue-300/90">{e.retrying_now}</span>
               </div>
             )}
             <span className="ml-auto typo-code text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
-              Attempt {notification.retry_number} of {notification.max_retries}
+              {tx(e.attempt_of, { current: notification.retry_number, max: notification.max_retries })}
             </span>
           </div>
         )}
@@ -83,7 +86,7 @@ export function HealingCard({
 
         {isIssue && (
           <button onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors">
-            <ExternalLink className="w-3 h-3" />View in healing issues
+            <ExternalLink className="w-3 h-3" />{e.view_healing_issues}
           </button>
         )}
 
@@ -105,16 +108,18 @@ export function AiHealingCounters({
   fixCount: number;
   shouldRetry: boolean;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const label = (() => {
     switch (phase) {
-      case 'started': return 'AI Healing started';
-      case 'diagnosing': return 'Diagnosing...';
-      case 'applying': return `Applying ${fixCount} fix${fixCount !== 1 ? 'es' : ''}...`;
+      case 'started': return e.healing_started;
+      case 'diagnosing': return e.healing_diagnosing;
+      case 'applying': return fixCount !== 1 ? tx(e.healing_applying_other, { count: fixCount }) : tx(e.healing_applying_one, { count: fixCount });
       case 'completed':
         return fixCount > 0
-          ? `${fixCount} fix${fixCount !== 1 ? 'es' : ''} applied${shouldRetry ? ' -- retrying' : ''}`
-          : 'No fixes needed';
-      case 'failed': return 'Healing failed';
+          ? (fixCount !== 1 ? tx(e.healing_completed_fixes_other, { count: fixCount }) : tx(e.healing_completed_fixes_one, { count: fixCount })) + (shouldRetry ? e.healing_completed_retrying : '')
+          : e.healing_no_fixes;
+      case 'failed': return e.healing_failed;
       default: return '';
     }
   })();

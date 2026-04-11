@@ -14,6 +14,7 @@ import { ReplayTerminalPanel } from './ReplayTerminalPanel';
 import { ReplayToolPanel } from './ReplayToolPanel';
 import { ReplayCostPanel } from './ReplayCostPanel';
 import { ReplayTransportControls } from './ReplayTransportControls';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Main Component -------------------------------------------------------
 
@@ -22,6 +23,8 @@ interface ReplaySandboxProps {
 }
 
 export function ReplaySandbox({ execution }: ReplaySandboxProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -91,7 +94,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     try {
       parsedInput = JSON.parse(execution.input_data || '{}');
     } catch {
-      addToast('Original input data could not be parsed — using empty input', 'error');
+      addToast(e.fork_input_parse_error, 'error');
     }
 
     const forkInput = JSON.stringify({
@@ -108,7 +111,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground/60">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="typo-body">Loading execution data...</span>
+        <span className="typo-body">{e.loading_execution_data}</span>
       </div>
     );
   }

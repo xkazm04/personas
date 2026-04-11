@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { RunningIcon } from '../components/ExecutionLifecycleIcons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Try to syntax-highlight a line if it contains JSON or protocol messages. */
 function highlightLine(text: string): React.ReactNode {
@@ -93,6 +94,8 @@ export function ReplayTerminalPanel({
   visibleLines: Array<{ index: number; text: string; timestamp_ms: number }>;
   totalLines: number;
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,7 +108,7 @@ export function ReplayTerminalPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <RunningIcon size={14} className="opacity-60" />
-        <span className="typo-heading text-muted-foreground/70">Output</span>
+        <span className="typo-heading text-muted-foreground/70">{e.output_panel}</span>
         <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
           {visibleLines.length}/{totalLines} lines
         </span>
@@ -153,7 +156,7 @@ export function ReplayTerminalPanel({
               <path d="M55 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.5" />
               <path d="M65 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.35" />
             </svg>
-            <span className="typo-body text-muted-foreground/50">Scrub forward to see output...</span>
+            <span className="typo-body text-muted-foreground/50">{e.scrub_forward}</span>
           </div>
         )}
       </div>

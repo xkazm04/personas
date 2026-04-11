@@ -15,6 +15,7 @@ import {
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import { formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReplayTracePanelProps {
   /** All trace spans from the backend execution trace. */
@@ -45,6 +46,8 @@ const SPAN_CONFIG: Record<SpanType, { icon: typeof Activity; label: string; colo
  * Provides insight into what the engine was doing at each moment.
  */
 export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   // Categorize spans at current position
   const { activeSpans, completedSpans, pendingSpans } = useMemo(() => {
     const active: TraceSpan[] = [];
@@ -76,10 +79,10 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
           <Activity className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="typo-heading text-muted-foreground/70">Trace Spans</span>
+          <span className="typo-heading text-muted-foreground/70">{e.trace_spans}</span>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="typo-body text-muted-foreground/50 italic">No trace data available</p>
+          <p className="typo-body text-muted-foreground/50 italic">{e.no_trace_available}</p>
         </div>
       </div>
     );
@@ -89,9 +92,9 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Activity className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">Engine Activity</span>
+        <span className="typo-heading text-muted-foreground/70">{e.engine_activity}</span>
         <span className="ml-auto typo-body tabular-nums text-muted-foreground/50">
-          {activeSpans.length} active
+          {tx(e.active_count, { count: activeSpans.length })}
         </span>
       </div>
 
@@ -100,7 +103,7 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
         {activeSpans.length > 0 && (
           <div className="space-y-1">
             <div className="text-[10px] font-mono text-blue-400/60 uppercase tracking-wider px-1">
-              Active Now
+              {e.active_now}
             </div>
             {activeSpans.map((span) => (
               <SpanCard key={span.span_id} span={span} variant="active" currentMs={currentMs} />
@@ -112,7 +115,7 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
         {completedSpans.length > 0 && (
           <div className="space-y-1">
             <div className="text-[10px] font-mono text-emerald-400/60 uppercase tracking-wider px-1">
-              Recently Completed
+              {e.recently_completed}
             </div>
             {completedSpans.map((span) => (
               <SpanCard key={span.span_id} span={span} variant="completed" currentMs={currentMs} />
@@ -124,7 +127,7 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
         {pendingSpans.length > 0 && (
           <div className="space-y-1">
             <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider px-1">
-              Upcoming
+              {e.upcoming}
             </div>
             {pendingSpans.map((span) => (
               <SpanCard key={span.span_id} span={span} variant="pending" currentMs={currentMs} />

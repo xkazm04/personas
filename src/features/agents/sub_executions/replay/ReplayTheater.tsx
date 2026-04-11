@@ -20,6 +20,7 @@ import { ExpandableToolStep } from '../components/replay/ExpandableToolStep';
 import { ReplayTracePanel } from '../components/replay/ReplayTracePanel';
 import { HealingOverlay } from '../components/replay/HealingOverlay';
 import { ChainCascadeTimeline } from '../components/replay/ChainCascadeTimeline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReplayTheaterProps {
   execution: PersonaExecution;
@@ -39,6 +40,8 @@ type TheaterPanel = 'terminal' | 'tools' | 'trace';
  * - Fork-at-any-point for what-if branching
  */
 export function ReplayTheater({ execution }: ReplayTheaterProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const addToast = useToastStore((s) => s.addToast);
   const {
@@ -108,7 +111,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
     try {
       parsedInput = JSON.parse(execution.input_data || '{}');
     } catch {
-      addToast('Original input data could not be parsed — using empty input', 'error');
+      addToast(e.fork_input_parse_error, 'error');
     }
 
     const forkInput = JSON.stringify(
@@ -135,7 +138,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground/60">
         <LoadingSpinner size="lg" className="mr-2" />
-        <span className="typo-body">Loading execution theater...</span>
+        <span className="typo-body">{e.loading_theater}</span>
       </div>
     );
   }
@@ -148,7 +151,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
       <div className="px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center gap-2 mb-2">
           <Film className="w-4 h-4 text-violet-400" />
-          <span className="typo-heading text-foreground/80">Execution Theater</span>
+          <span className="typo-heading text-foreground/80">{e.execution_theater}</span>
           {execution.model_used && (
             <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">
               {execution.model_used}
@@ -250,7 +253,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
                   })
                 ) : (
                   <div className="flex items-center justify-center h-full typo-body text-muted-foreground/50 italic">
-                    No tool calls recorded
+                    {e.no_tool_calls_recorded}
                   </div>
                 )}
               </div>

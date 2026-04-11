@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Wrench, GitFork } from 'lucide-react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Tool inspector panel -- tool cards with active/completed/pending states. */
 export function ReplayToolPanel({
@@ -17,13 +18,15 @@ export function ReplayToolPanel({
   forkPoint: number | null;
   onFork: (idx: number | null) => void;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const completedSet = useMemo(() => new Set(completedSteps.map((s) => s.step_index)), [completedSteps]);
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">Tool Steps</span>
+        <span className="typo-heading text-muted-foreground/70">{e.tool_steps}</span>
         <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
           {completedSteps.length}/{toolSteps.length}
         </span>
@@ -90,14 +93,14 @@ export function ReplayToolPanel({
                 <button
                   onClick={() => onFork(isFork ? null : step.step_index)}
                   className="absolute inset-0 rounded-lg"
-                  title={isFork ? 'Clear fork point' : `Fork after step ${step.step_index + 1}`}
+                  title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index + 1 })}
                 />
               )}
             </div>
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 typo-body text-muted-foreground/60">No tool calls recorded</div>
+          <div className="text-center py-6 typo-body text-muted-foreground/60">{e.no_tool_calls_recorded}</div>
         )}
       </div>
     </div>

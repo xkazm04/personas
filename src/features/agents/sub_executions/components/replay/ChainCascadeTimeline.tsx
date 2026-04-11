@@ -12,6 +12,7 @@ import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import { getChainTrace } from '@/api/agents/executions';
 import { toastCatch } from "@/lib/silentCatch";
 import { formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ChainCascadeTimelineProps {
   /** The chain trace ID (from execution trace). */
@@ -35,6 +36,8 @@ export function ChainCascadeTimeline({
   callerPersonaId,
   currentExecutionId,
 }: ChainCascadeTimelineProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const [chainTraces, setChainTraces] = useState<ExecutionTrace[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
@@ -64,7 +67,7 @@ export function ChainCascadeTimeline({
     return (
       <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground/60">
         <LoadingSpinner size="sm" />
-        <span className="typo-body">Loading chain cascade...</span>
+        <span className="typo-body">{e.loading_chain_cascade}</span>
       </div>
     );
   }
@@ -96,10 +99,10 @@ export function ChainCascadeTimeline({
         )}
         <Link2 className="w-4 h-4 text-orange-400" />
         <span className="typo-heading text-orange-300">
-          Chain Cascade
+          {e.chain_cascade}
         </span>
         <span className="ml-auto typo-code text-muted-foreground/50">
-          {sortedTraces.length} executions
+          {tx(e.chain_executions, { count: sortedTraces.length })}
         </span>
       </button>
 

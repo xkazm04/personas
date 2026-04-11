@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { PipelineTraceEntry } from '@/lib/execution/pipeline';
 import { DollarSign } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Cost Accrual Overlay (SVG curve on the waterfall)
@@ -17,6 +18,8 @@ export function CostAccrualOverlay({
   pipelineStartMs: number;
   totalCostUsd: number;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   if (totalCostUsd <= 0 || totalDurationMs <= 0) return null;
 
   // Build cost accrual points: cost accrues during stream_output and finalize_status
@@ -67,7 +70,7 @@ export function CostAccrualOverlay({
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
         <span className="typo-code text-muted-foreground/60 uppercase tracking-wider">
-          Cost Accrual -- ${totalCostUsd.toFixed(4)}
+          {tx(e.cost_accrual, { cost: totalCostUsd.toFixed(4) })}
         </span>
       </div>
       <div className="h-5 bg-primary/5 rounded overflow-hidden">

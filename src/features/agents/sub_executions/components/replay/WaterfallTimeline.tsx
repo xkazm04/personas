@@ -5,6 +5,7 @@ import { PIPELINE_STAGES, isPipelineStage } from '@/lib/execution/pipeline';
 import { Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { STAGE_COLORS } from '../../libs/waterfallHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Cost Accrual Overlay (SVG curve on the waterfall)
 
@@ -17,6 +18,8 @@ export function CostAccrualOverlay({
   totalDurationMs: number;
   totalCostUsd: number;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   if (totalCostUsd <= 0 || totalDurationMs <= 0) return null;
 
   const points = useMemo(() => {
@@ -64,7 +67,7 @@ export function CostAccrualOverlay({
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
         <span className="typo-code text-muted-foreground/60 uppercase tracking-wider">
-          Cost Accrual -- ${totalCostUsd.toFixed(4)}
+          {tx(e.cost_accrual, { cost: totalCostUsd.toFixed(4) })}
         </span>
       </div>
       <div className="h-5 bg-primary/5 rounded overflow-hidden">
@@ -84,6 +87,8 @@ export function CostAccrualOverlay({
 // Summary row
 
 export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; execution: PersonaExecution }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
   const stageSpans = trace.spans.filter((s) => isPipelineStage(s.span_type));
   const stagesHit = stageSpans.length;
@@ -93,13 +98,13 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 3xl:gap-4 4xl:gap-5">
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-          <Clock className="w-2.5 h-2.5" /> Total Duration
+          <Clock className="w-2.5 h-2.5" /> {e.total_duration}
         </div>
         <div className="typo-code text-foreground/90">{formatDuration(totalMs)}</div>
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-          <DollarSign className="w-2.5 h-2.5" /> Cost
+          <DollarSign className="w-2.5 h-2.5" /> {e.cost}
         </div>
         <div className="typo-code text-foreground/90">
           {execution.cost_usd > 0 ? `$${execution.cost_usd.toFixed(4)}` : '-'}
@@ -107,13 +112,13 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-          <Zap className="w-2.5 h-2.5" /> Stages
+          <Zap className="w-2.5 h-2.5" /> {e.stages}
         </div>
         <div className="typo-code text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-          <AlertCircle className="w-2.5 h-2.5" /> Errors
+          <AlertCircle className="w-2.5 h-2.5" /> {e.errors}
         </div>
         <div className={`typo-code ${errors > 0 ? 'text-red-400' : 'text-foreground/90'}`}>{errors}</div>
       </div>
@@ -124,13 +129,15 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
 // Waterfall error details
 
 export function WaterfallErrors({ entries }: { entries: UnifiedSpan[] }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const errorEntries = entries.filter(e => e.error && isPipelineStage(e.span_type));
   if (errorEntries.length === 0) return null;
 
   return (
     <div className="space-y-2">
       <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-        <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
+        <AlertCircle className="w-2.5 h-2.5 text-red-400" /> {e.stage_errors}
       </div>
       {errorEntries.map((entry) => {
         const stage = entry.span_type as PipelineStage;

@@ -14,6 +14,7 @@ import type { PersonaExecution } from '@/lib/types/types';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { listHealingIssues } from '@/api/overview/healing';
 import { getRetryChain } from '@/api/overview/healing';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingOverlayProps {
   execution: PersonaExecution;
@@ -27,6 +28,8 @@ interface HealingOverlayProps {
  * healing issues created, and the retry chain diff.
  */
 export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlayProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const [issues, setIssues] = useState<PersonaHealingIssue[]>([]);
   const [retryChain, setRetryChain] = useState<PersonaExecution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,12 +82,12 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-red-500/15">
             <Stethoscope className="w-4 h-4 text-red-400" />
             <span className="typo-heading text-red-300">
-              AI Healing Diagnosis
+              {e.ai_healing_diagnosis}
             </span>
             {execution.retry_count > 0 && (
               <span className="ml-auto flex items-center gap-1 typo-code text-cyan-400/80">
                 <RefreshCw className="w-3 h-3" />
-                Retry #{execution.retry_count}
+                {tx(e.retry_count, { count: execution.retry_count })}
               </span>
             )}
           </div>
@@ -92,7 +95,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
           {loading ? (
             <div className="flex items-center justify-center py-6 text-muted-foreground/60">
               <LoadingSpinner className="mr-2" />
-              <span className="typo-body">Loading healing data...</span>
+              <span className="typo-body">{e.loading_healing_data}</span>
             </div>
           ) : (
             <div className="p-4 space-y-3">
@@ -102,7 +105,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <AlertTriangle className="w-3 h-3 text-red-400" />
                     <span className="text-[10px] font-mono text-red-400/70 uppercase tracking-wider">
-                      Failure Point
+                      {e.failure_point}
                     </span>
                   </div>
                   <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
@@ -115,7 +118,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {issues.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
-                    Healing Issues ({issues.length})
+                    {tx(e.healing_issues_count, { count: issues.length })}
                   </div>
                   {issues.map((issue) => {
                     const isExpanded = expandedIssue === issue.id;
@@ -146,13 +149,13 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           {issue.auto_fixed && (
                             <span className="ml-auto flex items-center gap-1 text-[10px] font-mono text-emerald-400 shrink-0">
                               <CheckCircle2 className="w-2.5 h-2.5" />
-                              Auto-fixed
+                              {e.auto_fixed}
                             </span>
                           )}
                           {issue.is_circuit_breaker && (
                             <span className="ml-auto flex items-center gap-1 text-[10px] font-mono text-amber-400 shrink-0">
                               <Shield className="w-2.5 h-2.5" />
-                              Circuit Breaker
+                              {e.circuit_breaker}
                             </span>
                           )}
                         </button>
@@ -171,7 +174,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                                     <div className="flex items-center gap-1 mb-1">
                                       <Wrench className="w-2.5 h-2.5 text-muted-foreground/50" />
                                       <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
-                                        Suggested Fix
+                                        {e.suggested_fix}
                                       </span>
                                     </div>
                                     <p className="typo-code text-foreground/70">
@@ -197,7 +200,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {retryChain.length > 1 && (
                 <div className="space-y-1.5">
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
-                    Retry Chain
+                    {e.retry_chain}
                   </div>
                   <div className="flex items-center gap-1">
                     {retryChain.map((exec, i) => (
@@ -226,7 +229,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {/* No issues found */}
               {issues.length === 0 && !loading && (
                 <p className="typo-body text-muted-foreground/50 italic">
-                  No healing issues recorded for this execution.
+                  {e.no_healing_issues}
                 </p>
               )}
             </div>

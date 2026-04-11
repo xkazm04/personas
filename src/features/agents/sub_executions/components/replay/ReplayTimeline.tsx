@@ -4,6 +4,7 @@ import {
   Hash,
 } from 'lucide-react';
 import { formatMs, formatCost } from '../../libs/useReplayState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Cost accumulator panel. */
 export function ReplayCostPanel({
@@ -21,6 +22,8 @@ export function ReplayCostPanel({
   completedSteps: number;
   totalSteps: number;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const costPct = totalCost > 0 ? (accumulatedCost / totalCost) * 100 : 0;
   const timePct = totalMs > 0 ? (currentMs / totalMs) * 100 : 0;
 
@@ -60,7 +63,7 @@ export function ReplayCostPanel({
       <div className="flex items-center gap-1.5">
         <Hash className="w-3 h-3 text-muted-foreground/50" />
         <span className="typo-code tabular-nums text-muted-foreground/60">
-          {completedSteps}/{totalSteps} steps
+          {tx(e.steps_count, { completed: completedSteps, total: totalSteps })}
         </span>
       </div>
     </div>

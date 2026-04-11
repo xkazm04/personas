@@ -12,6 +12,7 @@ import { StageBar } from '../trace/StageBar';
 import { SubSpanBar } from '../trace/SubSpanBar';
 import { CostAccrualOverlay } from './CostAccrualOverlay';
 import { PipelineSummary } from './PipelineSummary';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -22,6 +23,8 @@ interface PipelineWaterfallProps {
 }
 
 export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const liveTrace = useAgentStore((s) => s.pipelineTrace);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
 
@@ -50,8 +53,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <p className="typo-body text-muted-foreground/80">No pipeline trace available</p>
-        <p className="typo-body text-muted-foreground/60 mt-1">Pipeline traces are captured for new executions</p>
+        <p className="typo-body text-muted-foreground/80">{e.no_pipeline_trace}</p>
+        <p className="typo-body text-muted-foreground/60 mt-1">{e.pipeline_traces_captured}</p>
       </div>
     );
   }
@@ -69,23 +72,23 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       {/* Legend */}
       <div className="flex items-center gap-4 typo-body text-muted-foreground/60">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> Frontend
+          <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> {e.legend_frontend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-emerald-500/50" /> Backend
+          <span className="w-2.5 h-2.5 rounded bg-emerald-500/50" /> {e.legend_backend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-amber-500/50" /> Engine
+          <span className="w-2.5 h-2.5 rounded bg-amber-500/50" /> {e.legend_engine}
         </div>
         {toolSteps.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-cyan-500/35" /> Tool Call
+            <span className="w-2.5 h-2.5 rounded bg-cyan-500/35" /> {e.legend_tool_call}
           </div>
         )}
         {isLive && (
           <span className="ml-auto flex items-center gap-1 text-blue-400">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            Live
+            {e.live}
           </span>
         )}
       </div>
@@ -97,14 +100,14 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         {/* Time axis header */}
         <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
           <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
-            Stage
+            {e.stage}
           </div>
           <div className="flex justify-between typo-code text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
           <div className="typo-code text-muted-foreground/60 uppercase tracking-wider text-right">
-            Duration
+            {e.duration}
           </div>
         </div>
 
@@ -162,7 +165,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       {trace.spans.some(e => e.error) && (
         <div className="space-y-2">
           <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-            <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
+            <AlertCircle className="w-2.5 h-2.5 text-red-400" /> {e.stage_errors}
           </div>
           {trace.spans
             .filter(e => e.error)

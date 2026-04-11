@@ -3,8 +3,11 @@ import { Wrench, Clock, ChevronDown, ChevronRight, Hash } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { ToolCallStep } from './inspectorTypes';
 import { durationColor } from './inspectorTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ToolCallCard({ step }: { step: ToolCallStep }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [showInput, setShowInput] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
 
@@ -25,7 +28,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="ml-auto">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-code border ${durationColor(step.duration_ms)}`}>
             <Clock className="w-3 h-3" />
-            {step.duration_ms != null ? formatDuration(step.duration_ms) : 'pending'}
+            {step.duration_ms != null ? formatDuration(step.duration_ms) : e.pending}
           </span>
         </div>
       </div>
@@ -38,7 +41,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showInput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Input
+            {e.input}
           </button>
           {showInput && (
               <div className="animate-fade-slide-in"
@@ -59,7 +62,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showOutput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Output
+            {e.output}
           </button>
           {showOutput && (
               <div className="animate-fade-slide-in"

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Eye, DollarSign, Brain, Wrench, Zap, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { previewExecution, type ExecutionPreview } from '@/api/agents/executions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionPreviewPanelProps {
   personaId: string;
@@ -21,6 +22,8 @@ function fmtTokens(n: number): string {
 }
 
 export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: ExecutionPreviewPanelProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const [preview, setPreview] = useState<ExecutionPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +51,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         title="Preview execution cost and prompt"
       >
         <Eye className="w-3 h-3" />
-        Preview
+        {e.preview}
       </button>
     );
   }
@@ -57,7 +60,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
     return (
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground/60">
         <div className="w-3 h-3 border border-primary/30 border-t-primary rounded-full animate-spin" />
-        Estimating...
+        {e.estimating}
       </div>
     );
   }
@@ -89,7 +92,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         <div className="flex items-center gap-1.5 text-foreground/80">
           <DollarSign className="w-3 h-3 text-emerald-400" />
           <span className="font-mono font-medium">{fmtCost(preview.estimated_total_cost)}</span>
-          <span className="text-muted-foreground/50">est.</span>
+          <span className="text-muted-foreground/50">{e.est}</span>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground/60">
           <Zap className="w-3 h-3" />
@@ -109,7 +112,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         {(overBudget || nearBudget) && (
           <div className={`flex items-center gap-1 ${overBudget ? 'text-red-400' : 'text-amber-400'}`}>
             <AlertTriangle className="w-3 h-3" />
-            <span>{Math.round(budgetPct)}% of budget</span>
+            <span>{tx(e.of_budget, { percent: Math.round(budgetPct) })}</span>
           </div>
         )}
         <div className="ml-auto text-muted-foreground/40">
@@ -122,26 +125,26 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         <div className="px-3 py-2 border-t border-primary/5 space-y-2">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">Model</span>
+              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.model}</span>
               <div className="text-foreground/80 font-mono truncate">{preview.model}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">Monthly Spend</span>
-              <div className="text-foreground/80 font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : 'unlimited'}</div>
+              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.monthly_spend}</span>
+              <div className="text-foreground/80 font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : e.unlimited}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">Input Cost</span>
+              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.input_cost}</span>
               <div className="text-foreground/80 font-mono">{fmtCost(preview.estimated_input_cost)}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">Output Cost (est.)</span>
+              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.output_cost_est}</span>
               <div className="text-foreground/80 font-mono">{fmtCost(preview.estimated_output_cost)}</div>
             </div>
           </div>
 
           {/* Prompt preview (first 500 chars) */}
           <div>
-            <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">Prompt Preview</span>
+            <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.prompt_preview}</span>
             <pre className="mt-1 text-[11px] font-mono text-muted-foreground/60 leading-relaxed bg-black/10 rounded-md p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
               {preview.prompt_preview.slice(0, 500)}{preview.prompt_preview.length > 500 ? '...' : ''}
             </pre>

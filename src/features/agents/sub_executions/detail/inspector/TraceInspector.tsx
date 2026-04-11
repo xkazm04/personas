@@ -6,12 +6,15 @@ import { getSpanTypeConfig } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TraceInspectorProps {
   execution: PersonaExecution;
 }
 
 export function TraceInspector({ execution }: TraceInspectorProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const { trace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap } =
     useTraceData(execution.id, execution.persona_id);
 
@@ -26,7 +29,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (error) {
     return (
       <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl typo-code text-red-300/80">
-        Failed to load trace: {error}
+        {tx(e.failed_to_load_trace, { error })}
       </div>
     );
   }
@@ -37,8 +40,8 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <p className="typo-body text-muted-foreground/80">No trace data recorded</p>
-        <p className="typo-body text-muted-foreground/60 mt-1">Trace spans appear during execution</p>
+        <p className="typo-body text-muted-foreground/80">{e.no_trace_data}</p>
+        <p className="typo-body text-muted-foreground/60 mt-1">{e.trace_spans_appear}</p>
       </div>
     );
   }
@@ -51,7 +54,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
         <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
           <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
-            Span
+            {e.span}
           </div>
           <div className="flex justify-between typo-code text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
@@ -82,7 +85,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
         <div className="space-y-2">
           <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" />
-            Errors
+            {e.errors}
           </div>
           {trace.spans
             .filter(s => s.error)

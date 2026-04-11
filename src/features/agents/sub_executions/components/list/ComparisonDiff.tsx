@@ -4,6 +4,7 @@ import { getExecutionLog } from '@/api/agents/executions';
 import { useToastStore } from '@/stores/toastStore';
 import { diffLines, jsonDiff } from '../../libs/comparisonHelpers';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function OutputDiffSection({
   leftId,
@@ -14,6 +15,8 @@ export function OutputDiffSection({
   rightId: string;
   personaId: string;
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [logLeft, setLogLeft] = useState<string | null>(null);
   const [logRight, setLogRight] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,7 @@ export function OutputDiffSection({
       setLogLeft(l);
       setLogRight(r);
     } catch {
-      useToastStore.getState().addToast('Failed to load execution logs for comparison', 'error');
+      useToastStore.getState().addToast(e.failed_to_load_logs, 'error');
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ export function OutputDiffSection({
         className="flex items-center gap-2 typo-body text-foreground/80 hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        Terminal Output Diff
+        {e.terminal_output_diff}
         {diff.length > 0 && (
           <span className="typo-body text-muted-foreground/50">
             ({diff.filter(d => d.type !== 'same').length} differences)
@@ -70,7 +73,7 @@ export function OutputDiffSection({
             {loading ? (
               <ContentLoader variant="panel" hint="comparison" />
             ) : diff.length === 0 ? (
-              <p className="typo-body text-muted-foreground/50 py-3">No log data available</p>
+              <p className="typo-body text-muted-foreground/50 py-3">{e.no_log_data}</p>
             ) : (
               <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 typo-code">
                 {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
@@ -121,6 +124,8 @@ export function JsonDiffSection({
   leftData: string | null;
   rightData: string | null;
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
   const diffs = useMemo(() => jsonDiff(leftData, rightData), [leftData, rightData]);
 
@@ -137,7 +142,7 @@ export function JsonDiffSection({
         {diffs.length > 0 ? (
           <span className="typo-body text-amber-400/70">{diffs.length} diff{diffs.length > 1 ? 's' : ''}</span>
         ) : (
-          <span className="typo-body text-muted-foreground/60">identical</span>
+          <span className="typo-body text-muted-foreground/60">{e.identical}</span>
         )}
       </button>
 
@@ -146,7 +151,7 @@ export function JsonDiffSection({
             className="animate-fade-slide-in mt-2 overflow-hidden"
           >
             {diffs.length === 0 ? (
-              <p className="typo-body text-muted-foreground/50 py-2">No differences</p>
+              <p className="typo-body text-muted-foreground/50 py-2">{e.no_differences}</p>
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {diffs.map((d, i) => (

@@ -1,6 +1,7 @@
 import { ShieldAlert, Settings, CalendarClock, PlayCircle, RefreshCw } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PersonaBudgetState, BudgetStatus } from '@/stores/slices/agents/budgetEnforcementSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface BudgetRecoveryCardProps {
   budgetStatus: BudgetStatus;
@@ -24,6 +25,8 @@ export function BudgetRecoveryCard({
   onOverrideBudget,
   onOverrideStale,
 }: BudgetRecoveryCardProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   if (budgetStatus === 'warning') {
@@ -31,7 +34,7 @@ export function BudgetRecoveryCard({
       <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-amber-500/15 bg-amber-500/5">
         <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
         <p className="typo-body text-amber-400/80">
-          Approaching budget limit
+          {e.approaching_budget}
           {budgetEntry && <span className="text-amber-400/60"> -- ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
         </p>
       </div>
@@ -44,7 +47,7 @@ export function BudgetRecoveryCard({
         <div className="flex items-start gap-2.5 px-3.5 pt-3 pb-2">
           <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 space-y-1">
-            <p className="typo-heading text-red-400/90">Monthly budget exceeded</p>
+            <p className="typo-heading text-red-400/90">{e.budget_exceeded}</p>
             {budgetEntry && (
               <p className="typo-body text-red-400/60">
                 This agent has spent ${budgetEntry.spend.toFixed(2)} of its ${budgetEntry.maxBudget?.toFixed(2)} monthly limit ({Math.round(budgetEntry.ratio * 100)}%).
@@ -61,18 +64,18 @@ export function BudgetRecoveryCard({
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <PlayCircle className="w-3.5 h-3.5" />
-              Run anyway (this session)
+              {e.run_anyway_session}
             </button>
             <button
               onClick={() => setEditorTab('settings')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-border/30 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
-              Raise budget
+              {e.raise_budget}
             </button>
             <span className="flex items-center gap-1.5 typo-body text-muted-foreground/50">
               <CalendarClock className="w-3.5 h-3.5" />
-              Resets {getResetDate()}
+              {tx(e.resets_in, { days: getResetDate() })}
             </span>
           </div>
         )}
@@ -86,9 +89,9 @@ export function BudgetRecoveryCard({
         <div className="flex items-start gap-2.5 px-3.5 pt-3 pb-2">
           <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 space-y-1">
-            <p className="typo-heading text-amber-400/90">Budget data unavailable</p>
+            <p className="typo-heading text-amber-400/90">{e.budget_unavailable}</p>
             <p className="typo-body text-amber-400/60">
-              Could not verify current spend. Execution is blocked as a safety precaution until budget data refreshes.
+              {e.budget_unavailable_detail}
             </p>
           </div>
         </div>
@@ -99,11 +102,11 @@ export function BudgetRecoveryCard({
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
             >
               <PlayCircle className="w-3.5 h-3.5" />
-              Run anyway
+              {e.run_anyway}
             </button>
             <span className="flex items-center gap-1.5 typo-body text-muted-foreground/50 animate-pulse">
               <RefreshCw className="w-3.5 h-3.5" />
-              Retrying automatically...
+              {e.retrying_automatically}
             </span>
           </div>
         )}

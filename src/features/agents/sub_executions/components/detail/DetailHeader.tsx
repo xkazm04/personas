@@ -5,6 +5,7 @@ import { SEVERITY_ICONS, SEVERITY_TO_TOKEN } from '../../libs/useExecutionDetail
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ErrorDisplayProps {
   errorMessage: string;
@@ -13,6 +14,8 @@ interface ErrorDisplayProps {
 }
 
 export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisplayProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const errorDisplay = showRaw ? errorMessage : sanitizeErrorForDisplay(errorMessage, 'detail-header');
   const classified = classifyErrorFull(errorMessage);
   const explanation = classified.explanation;
@@ -57,7 +60,7 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
         <div className="flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="typo-code font-medium text-red-400 mb-1.5 uppercase tracking-wider">Error</div>
+            <div className="typo-code font-medium text-red-400 mb-1.5 uppercase tracking-wider">{e.error_label}</div>
             <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
               {errorDisplay}
             </pre>

@@ -1,6 +1,7 @@
 import { Hash } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { ToolCallStep } from '../../libs/comparisonHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ToolTimelineComparison({
   stepsLeft,
@@ -9,9 +10,11 @@ export function ToolTimelineComparison({
   stepsLeft: ToolCallStep[];
   stepsRight: ToolCallStep[];
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const maxSteps = Math.max(stepsLeft.length, stepsRight.length);
   if (maxSteps === 0) {
-    return <p className="typo-body text-muted-foreground/50 text-center py-4">No tool calls</p>;
+    return <p className="typo-body text-muted-foreground/50 text-center py-4">{e.no_tool_calls_short}</p>;
   }
 
   return (

@@ -3,10 +3,13 @@ import type { UnifiedTrace } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import { Clock, DollarSign, AlertCircle, Activity } from 'lucide-react';
 import { getSpanConfig } from '../../libs/traceHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Trace summary cards
 
 export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const stats = useMemo(() => {
     const rootSpan = trace.spans.find(s => s.span_type === 'execution');
     const toolCalls = trace.spans.filter(s => s.span_type === 'tool_call');
@@ -23,7 +26,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
-          Duration
+          {e.duration}
         </div>
         <div className="typo-code text-foreground/90">
           {formatDuration(totalMs)}
@@ -33,7 +36,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
-          Cost
+          {e.cost}
         </div>
         <div className="typo-code text-foreground/90">
           {stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'}
@@ -43,7 +46,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
-          Spans
+          {e.spans}
         </div>
         <div className="typo-code text-foreground/90">
           {trace.spans.length}
@@ -53,7 +56,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
-          Errors
+          {e.errors}
         </div>
         <div className={`typo-code ${stats.errorCount > 0 ? 'text-red-400' : 'text-foreground/90'}`}>
           {stats.errorCount}
@@ -66,6 +69,8 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
 // Trace error details section
 
 export function TraceErrors({ trace }: { trace: UnifiedTrace }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const errorSpans = trace.spans.filter(s => s.error);
   if (errorSpans.length === 0) return null;
 
@@ -73,7 +78,7 @@ export function TraceErrors({ trace }: { trace: UnifiedTrace }) {
     <div className="space-y-2">
       <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
         <AlertCircle className="w-2.5 h-2.5 text-red-400" />
-        Errors
+        {e.errors}
       </div>
       {errorSpans.map((span) => {
         const config = getSpanConfig(span.span_type);

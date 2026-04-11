@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { SPEED_OPTIONS } from '../../libs/useReplayState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReplayTransportProps {
   isPlaying: boolean;
@@ -39,12 +40,14 @@ export function ReplayTransport({
   onClearFork,
   onFork,
 }: ReplayTransportProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   return (
     <div className="flex items-center gap-1.5">
-      <Button variant="ghost" size="icon-sm" onClick={onJumpToStart} title="Jump to start (Home)">
+      <Button variant="ghost" size="icon-sm" onClick={onJumpToStart} title={e.jump_to_start}>
         <ChevronsLeft className="w-3.5 h-3.5" />
       </Button>
-      <Button variant="ghost" size="icon-sm" onClick={onStepBackward} title="Previous step (Shift+Left)">
+      <Button variant="ghost" size="icon-sm" onClick={onStepBackward} title={e.previous_step}>
         <SkipBack className="w-3.5 h-3.5" />
       </Button>
       <Button
@@ -52,14 +55,14 @@ export function ReplayTransport({
         accentColor={isPlaying ? 'blue' : undefined}
         size="icon-md"
         onClick={onTogglePlay}
-        title="Play/Pause (Space)"
+        title={e.play_pause}
       >
         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
       </Button>
-      <Button variant="ghost" size="icon-sm" onClick={onStepForward} title="Next step (Shift+Right)">
+      <Button variant="ghost" size="icon-sm" onClick={onStepForward} title={e.next_step}>
         <SkipForward className="w-3.5 h-3.5" />
       </Button>
-      <Button variant="ghost" size="icon-sm" onClick={onJumpToEnd} title="Jump to end (End)">
+      <Button variant="ghost" size="icon-sm" onClick={onJumpToEnd} title={e.jump_to_end}>
         <ChevronsRight className="w-3.5 h-3.5" />
       </Button>
 
@@ -85,7 +88,7 @@ export function ReplayTransport({
           <div
             className="animate-fade-slide-in ml-auto flex items-center gap-2"
           >
-            <Button variant="ghost" size="icon-sm" onClick={onClearFork} title="Clear fork point">
+            <Button variant="ghost" size="icon-sm" onClick={onClearFork} title={e.clear_fork_point}>
               <X className="w-3 h-3" />
             </Button>
             <button

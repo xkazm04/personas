@@ -4,12 +4,15 @@ import { Wrench, Clock, DollarSign, Zap } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { parseToolSteps, formatCost, formatTimeGap } from '../../libs/inspectorHelpers';
 import { ToolCallCard, CostBreakdownBar } from './InspectorPayload';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface InspectorTabsProps {
   execution: PersonaExecution;
 }
 
 export function InspectorTabs({ execution }: InspectorTabsProps) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const steps = useMemo(() => parseToolSteps(execution.tool_steps ?? null), [execution.tool_steps]);
   const model = execution.model_used || 'claude-sonnet-4';
 
@@ -35,7 +38,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
-            Input Tokens
+            {e.input_tokens}
           </div>
           <div className="typo-body-lg font-mono text-foreground/90">
             {execution.input_tokens.toLocaleString()}
@@ -45,7 +48,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
-            Output Tokens
+            {e.output_tokens}
           </div>
           <div className="typo-body-lg font-mono text-foreground/90">
             {execution.output_tokens.toLocaleString()}
@@ -55,7 +58,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
-            Cost
+            {e.cost}
           </div>
           <div className="typo-body-lg font-mono text-foreground/90">
             {formatCost(execution.cost_usd)}
@@ -65,7 +68,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Duration
+            {e.duration}
           </div>
           <div className="typo-body-lg font-mono text-foreground/90">
             {formatDuration(execution.duration_ms)}
@@ -83,7 +86,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
         <div className="space-y-3">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
             <Wrench className="w-3 h-3" />
-            Tool Call Timeline ({steps.length} steps)
+            {tx(e.tool_call_timeline_steps, { count: steps.length })}
           </div>
 
           <div className="relative pl-7">
@@ -147,8 +150,8 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
             <Wrench className="w-6 h-6 text-muted-foreground/80" />
           </div>
-          <p className="typo-body text-muted-foreground/90">No tool calls recorded</p>
-          <p className="typo-body text-muted-foreground/80 mt-1">Tool steps appear after execution completes</p>
+          <p className="typo-body text-muted-foreground/90">{e.no_tool_calls}</p>
+          <p className="typo-body text-muted-foreground/80 mt-1">{e.tool_steps_appear}</p>
         </div>
       )}
     </div>

@@ -5,8 +5,11 @@ import { estimateCost } from '@/lib/utils/platform/pricing';
 import type { ToolCallStep } from '../../libs/inspectorHelpers';
 import { durationColor, formatCost } from '../../libs/inspectorHelpers';
 import { Wrench, Hash } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ToolCallCard({ step }: { step: ToolCallStep }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [showInput, setShowInput] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
 
@@ -27,7 +30,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="ml-auto">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-code border ${durationColor(step.duration_ms)}`}>
             <Clock className="w-3 h-3" />
-            {step.duration_ms != null ? formatDuration(step.duration_ms) : 'pending'}
+            {step.duration_ms != null ? formatDuration(step.duration_ms) : e.pending}
           </span>
         </div>
       </div>
@@ -40,7 +43,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showInput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Input
+            {e.input}
           </button>
           {showInput && (
               <div className="animate-fade-slide-in"
@@ -61,7 +64,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showOutput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Output
+            {e.output}
           </button>
           {showOutput && (
               <div className="animate-fade-slide-in"
@@ -78,6 +81,8 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
 }
 
 export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: string; inputTokens: number; outputTokens: number }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const { inputCost, outputCost, totalCost, estimated } = estimateCost(model, inputTokens, outputTokens);
   const inputPct = totalCost > 0 ? (inputCost / totalCost) * 100 : 50;
   const outputPct = totalCost > 0 ? (outputCost / totalCost) * 100 : 50;
@@ -85,19 +90,19 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
+        <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">{e.cost_breakdown}</div>
         {estimated && (
           <span className="typo-heading px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
-            Unknown model -- no pricing data
+            {e.unknown_model_pricing}
           </span>
         )}
       </div>
       <div className="flex items-center gap-3 typo-code">
-        <span className="text-blue-400">Input: {formatCost(inputCost)}</span>
+        <span className="text-blue-400">{tx(e.input_label, { cost: formatCost(inputCost) })}</span>
         <span className="text-muted-foreground/80">|</span>
-        <span className="text-amber-400">Output: {formatCost(outputCost)}</span>
+        <span className="text-amber-400">{tx(e.output_label, { cost: formatCost(outputCost) })}</span>
         <span className="text-muted-foreground/80">|</span>
-        <span className="text-foreground/90">Total: {formatCost(totalCost)}</span>
+        <span className="text-foreground/90">{tx(e.total_label, { cost: formatCost(totalCost) })}</span>
       </div>
       <div className="h-2.5 rounded-full overflow-hidden bg-secondary/60 border border-primary/10 flex">
         <div
@@ -110,8 +115,8 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
         />
       </div>
       <div className="flex justify-between typo-code text-muted-foreground/80">
-        <span>Input ({inputPct.toFixed(0)}%)</span>
-        <span>Output ({outputPct.toFixed(0)}%)</span>
+        <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
+        <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
       </div>
     </div>
   );

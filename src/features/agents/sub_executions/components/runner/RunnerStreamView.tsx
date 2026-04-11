@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, Zap } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { PHASE_META, dotColor, type PhaseEntry } from '../../libs/runnerHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RunnerPhaseTimelineProps {
   phases: PhaseEntry[];
@@ -18,6 +19,8 @@ export function RunnerPhaseTimeline({
   isExecuting,
   elapsedMs,
 }: RunnerPhaseTimelineProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   if (phases.length === 0) return null;
 
   return (
@@ -27,7 +30,7 @@ export function RunnerPhaseTimeline({
         className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-muted-foreground/80 hover:text-muted-foreground transition-colors uppercase tracking-wider"
       >
         {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        Phases
+        {e.phases}
       </button>
       {showPhases && (
           <div

@@ -5,6 +5,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { getCircuitBreakerStatus } from '@/api/agents/executions';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -14,12 +15,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   global: 'Global',
 };
 
-const STATE_LABELS: Record<string, string> = {
-  closed: 'Connected',
-  open: 'Disconnected',
-  half_open: 'Reconnecting',
-  paused: 'Paused',
-};
+// State labels are resolved via useTranslation inside the component
 
 function formatTransitionTime(timestamp: string): string {
   try {
@@ -36,9 +32,18 @@ function formatTransitionTime(timestamp: string): string {
 }
 
 export function CircuitBreakerIndicator() {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const [status, setStatus] = useState<CircuitBreakerStatus | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  const STATE_LABELS: Record<string, string> = {
+    closed: e.cb_connected,
+    open: e.cb_disconnected,
+    half_open: e.cb_reconnecting,
+    paused: e.cb_paused,
+  };
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -112,10 +117,10 @@ export function CircuitBreakerIndicator() {
               : 'text-muted-foreground/60 font-medium'
         }>
           {status.globalPaused
-            ? 'All providers paused'
+            ? e.cb_all_paused
             : hasIssue
-              ? `${openProviders.length} provider${openProviders.length > 1 ? 's' : ''} temporarily unavailable`
-              : `${totalTrips1h} interruption${totalTrips1h !== 1 ? 's' : ''} in last hour`}
+              ? tx(openProviders.length > 1 ? e.cb_providers_unavailable_other : e.cb_providers_unavailable_one, { count: openProviders.length })
+              : tx(totalTrips1h !== 1 ? e.cb_interruptions_other : e.cb_interruptions_one, { count: totalTrips1h })}
         </span>
 
         <span className="ml-auto text-muted-foreground/50">
@@ -140,7 +145,7 @@ export function CircuitBreakerIndicator() {
                   <ShieldAlert className="w-3 h-3 text-red-400" />
                   <span className="text-red-400 font-mono">{label}</span>
                   <span className="text-muted-foreground/60">
-                    {p.consecutiveFailures} error{p.consecutiveFailures !== 1 ? 's' : ''} — retrying in {Math.ceil(p.cooldownRemainingSecs)}s
+                    {tx(e.cb_errors_retrying, { count: p.consecutiveFailures, seconds: Math.ceil(p.cooldownRemainingSecs) })}
                   </span>
                   {tripBadge}
                 </div>
@@ -152,7 +157,7 @@ export function CircuitBreakerIndicator() {
                   <ShieldCheck className="w-3 h-3 text-amber-400" />
                   <span className="text-amber-400 font-mono">{label}</span>
                   <span className="text-muted-foreground/60">
-                    {p.consecutiveFailures} error{p.consecutiveFailures > 1 ? 's' : ''}
+                    {tx(e.cb_errors, { count: p.consecutiveFailures })}
                   </span>
                   {tripBadge}
                 </div>
@@ -162,7 +167,7 @@ export function CircuitBreakerIndicator() {
               <div key={p.provider} className="flex items-center gap-2 typo-body">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                 <span className="text-emerald-400 font-mono">{label}</span>
-                <span className="text-muted-foreground/60">healthy</span>
+                <span className="text-muted-foreground/60">{e.cb_healthy}</span>
                 {tripBadge}
               </div>
             );
@@ -170,9 +175,9 @@ export function CircuitBreakerIndicator() {
 
           {status.globalPaused && (
             <div className="mt-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/15 rounded-lg typo-body text-red-400">
-              All providers paused due to repeated errors ({status.globalFailureCount} total).
+              {tx(e.cb_global_paused_detail, { count: status.globalFailureCount })}
               {status.globalCooldownRemainingSecs > 0 &&
-                ` Resuming automatically in ${Math.ceil(status.globalCooldownRemainingSecs)}s.`}
+                ` ${tx(e.cb_resuming_in, { seconds: Math.ceil(status.globalCooldownRemainingSecs) })}`}
             </div>
           )}
 
@@ -184,7 +189,7 @@ export function CircuitBreakerIndicator() {
                 className="flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/70 mt-1"
               >
                 <History className="w-3 h-3" />
-                {showHistory ? 'Hide' : 'Show'} recent activity ({status.recentTransitions.length})
+                {showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}
               </button>
 
               {showHistory && (

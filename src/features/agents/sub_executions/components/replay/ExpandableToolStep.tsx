@@ -10,6 +10,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExpandableToolStepProps {
   step: ToolCallStep;
@@ -24,6 +25,8 @@ interface ExpandableToolStepProps {
  * the input parameters and output preview.
  */
 export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableToolStepProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
 
   const canExpand = state !== 'pending' && (step.input_preview || step.output_preview);
@@ -91,7 +94,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
         {/* Active progress */}
         {state === 'active' && step.started_at_ms != null && (
           <span className="ml-auto typo-code text-blue-400/70 tabular-nums shrink-0">
-            running...
+            {e.running_ellipsis}
           </span>
         )}
 
@@ -111,7 +114,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
               {step.input_preview && (
                 <div>
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
-                    Input
+                    {e.input}
                   </div>
                   <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-lg p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.input_preview)}
@@ -123,7 +126,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
               {step.output_preview && state !== 'active' && (
                 <div>
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
-                    Output
+                    {e.output}
                   </div>
                   <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-lg p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.output_preview)}
@@ -145,7 +148,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                   }`}
                 >
                   <GitFork className="w-3 h-3" />
-                  {isFork ? 'Clear fork point' : `Fork after this step`}
+                  {isFork ? e.clear_fork_point : e.fork_after_this}
                 </button>
               )}
             </div>

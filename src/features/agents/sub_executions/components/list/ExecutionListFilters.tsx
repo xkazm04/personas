@@ -1,5 +1,6 @@
 import { ArrowLeftRight, X, Shield } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionListFiltersProps {
   showRaw: boolean;
@@ -28,6 +29,8 @@ export function ExecutionListFilters({
   canCompare,
   onShowComparison,
 }: ExecutionListFiltersProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   return (
     <>
       {hasExecutions && (
@@ -41,7 +44,7 @@ export function ExecutionListFilters({
             }`}
           >
             <Shield className="w-3 h-3" />
-            {showRaw ? 'Raw' : 'Masked'}
+            {showRaw ? e.raw : e.masked}
           </button>
         </Tooltip>
       )}
@@ -55,7 +58,7 @@ export function ExecutionListFilters({
           }`}
         >
           {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
-          {compareMode ? 'Cancel' : 'Compare'}
+          {compareMode ? e.cancel : e.compare}
         </button>
       )}
 
@@ -65,17 +68,17 @@ export function ExecutionListFilters({
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft
-              ? 'Select the first execution to compare'
+              ? e.select_first
               : !compareRight
-                ? 'Now select the second execution'
-                : 'Ready to compare'}
+                ? e.select_second
+                : e.ready_to_compare}
           </span>
           {compareLeft && (
             <span className="ml-auto flex items-center gap-1.5">
               <span className="typo-code text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
-                  <span className="text-muted-foreground/40">vs</span>
+                  <span className="text-muted-foreground/40">{e.vs}</span>
                   <span className="typo-code text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}

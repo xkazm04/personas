@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { Terminal } from 'lucide-react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Timeline scrub bar with tool step markers. */
 export function TimelineScrubber({
@@ -106,6 +107,8 @@ export function ReplayTerminalPanel({
   visibleLines: Array<{ index: number; text: string; timestamp_ms: number }>;
   totalLines: number;
 }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,9 +121,9 @@ export function ReplayTerminalPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Terminal className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">Output</span>
+        <span className="typo-heading text-muted-foreground/70">{e.output_panel}</span>
         <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
-          {visibleLines.length}/{totalLines} lines
+          {tx(e.lines_count, { visible: visibleLines.length, total: totalLines })}
         </span>
       </div>
       <div
@@ -137,7 +140,7 @@ export function ReplayTerminalPanel({
           );
         })}
         {visibleLines.length === 0 && (
-          <div className="text-muted-foreground/60 italic">Scrub forward to see output...</div>
+          <div className="text-muted-foreground/60 italic">{e.scrub_forward}</div>
         )}
       </div>
     </div>

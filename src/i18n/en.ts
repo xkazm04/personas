@@ -1111,9 +1111,6 @@ export const en = {
       // {index}/{total} = frame position
       frame_count: "Frame {index}/{total}",
 
-      // RunnerStreamView -- phase labels
-      phases: "Phases",
-
       // Phase labels (shared across runner)
       phase_initializing: "Initializing",
       phase_thinking: "Thinking",

@@ -12,6 +12,7 @@ import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeHljsHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import hljs from 'highlight.js/lib/core';
 import jsonLang from 'highlight.js/lib/languages/json';
+import { useTranslation } from '@/i18n/useTranslation';
 
 hljs.registerLanguage('json', jsonLang);
 
@@ -51,6 +52,8 @@ export function DetailDataSections({
   hasInputData: boolean;
   hasOutputData: boolean;
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [showInputData, setShowInputData] = useState(false);
   const [showOutputData, setShowOutputData] = useState(false);
 
@@ -60,7 +63,7 @@ export function DetailDataSections({
         <div>
           <button onClick={() => setShowInputData(!showInputData)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2">
             {showInputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            Input Data
+            {e.input_data}
           </button>
           {showInputData && (
               <div className="animate-fade-slide-in">
@@ -74,7 +77,7 @@ export function DetailDataSections({
         <div>
           <button onClick={() => setShowOutputData(!showOutputData)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2">
             {showOutputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            Output Data
+            {e.output_data}
           </button>
           {showOutputData && (
               <div className="animate-fade-slide-in">
@@ -88,6 +91,8 @@ export function DetailDataSections({
 }
 
 export function DetailMemories({ execution }: { execution: PersonaExecution }) {
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
   const [executionMemories, setExecutionMemories] = useState<PersonaMemory[]>([]);
   const [showMemories, setShowMemories] = useState(false);
   const [memoriesLoaded, setMemoriesLoaded] = useState(false);
@@ -107,7 +112,7 @@ export function DetailMemories({ execution }: { execution: PersonaExecution }) {
       <button onClick={() => setShowMemories(!showMemories)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2">
         {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         <Brain className="w-4 h-4 text-violet-400" />
-        Memories Created ({executionMemories.length})
+        {tx(e.memories_created, { count: executionMemories.length })}
       </button>
       {showMemories && (
           <div className="animate-fade-slide-in space-y-1.5">
@@ -129,6 +134,8 @@ export function DetailMemories({ execution }: { execution: PersonaExecution }) {
 }
 
 export function DetailLogSection({ execution }: { execution: PersonaExecution }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [showLog, setShowLog] = useState(false);
   const [logContent, setLogContent] = useState<string | null>(null);
   const [logLoading, setLogLoading] = useState(false);
@@ -157,13 +164,13 @@ export function DetailLogSection({ execution }: { execution: PersonaExecution })
       <button onClick={handleToggleLog} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2">
         {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         <FileText className="w-4 h-4" />
-        Execution Log
+        {e.execution_log}
       </button>
       {showLog && (
           <div>
             {logLoading && (
               <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
-                <Loader2 className="w-4 h-4 animate-spin" />Loading log...
+                <Loader2 className="w-4 h-4 animate-spin" />{e.loading_log}
               </div>
             )}
             {logError && (

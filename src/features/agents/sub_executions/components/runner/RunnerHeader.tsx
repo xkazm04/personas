@@ -2,14 +2,17 @@ import { useAgentStore } from "@/stores/agentStore";
 import { Pin, PinOff } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getStatusEntry } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function MiniPlayerPinButton() {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const pinned = useAgentStore((s) => s.miniPlayerPinned);
   const pin = useAgentStore((s) => s.pinMiniPlayer);
   const unpin = useAgentStore((s) => s.unpinMiniPlayer);
 
   return (
-    <Tooltip content={pinned ? 'Unpin mini-player' : 'Pin to mini-player'}>
+    <Tooltip content={pinned ? e.unpin_mini_player : e.pin_to_mini_player}>
       <button
         onClick={pinned ? unpin : pin}
         className={`p-1.5 rounded-lg typo-body transition-colors flex items-center gap-1.5 ${
@@ -19,7 +22,7 @@ export function MiniPlayerPinButton() {
         }`}
       >
         {pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-        <span className="typo-body">{pinned ? 'Pinned' : 'Pin'}</span>
+        <span className="typo-body">{pinned ? e.pinned : e.pin}</span>
       </button>
     </Tooltip>
   );

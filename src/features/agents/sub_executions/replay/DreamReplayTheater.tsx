@@ -32,6 +32,7 @@ import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import { useDreamReplay } from '@/hooks/execution/useDreamReplay';
 import { formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DreamReplayTheaterProps {
   execution: PersonaExecution;
@@ -65,6 +66,8 @@ const SPAN_CONFIG: Record<SpanType, { icon: typeof Activity; label: string; colo
  * - Error frame navigation
  */
 export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const [state, actions] = useDreamReplay(execution);
   const [rightPanel, setRightPanel] = useState<'state' | 'tree' | 'history'>('state');
 
@@ -125,7 +128,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground/60">
         <LoadingSpinner size="lg" className="mr-2" />
-        <span className="typo-body">Loading dream replay...</span>
+        <span className="typo-body">{e.loading_dream_replay}</span>
       </div>
     );
   }
@@ -147,7 +150,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
       <div className="px-4 py-2.5 border-b border-violet-500/15 bg-violet-500/5">
         <div className="flex items-center gap-2">
           <Moon className="w-4 h-4 text-violet-400" />
-          <span className="typo-heading text-foreground/80">Dream Replay</span>
+          <span className="typo-heading text-foreground/80">{e.dream_replay}</span>
           <span className="text-[10px] font-mono text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded">
             0 tokens
           </span>
@@ -193,19 +196,19 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
 
         {/* Transport controls */}
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToStart} title="Jump to start (Shift+Left)">
+          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToStart} title={e.jump_to_start}>
             <ChevronsLeft className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={actions.stepBackward} title="Previous frame (Left)">
+          <Button variant="ghost" size="icon-sm" onClick={actions.stepBackward} title={e.previous_step}>
             <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="accent" accentColor="violet" size="icon-sm" onClick={actions.togglePlay} title="Play/Pause (Space)">
+          <Button variant="accent" accentColor="violet" size="icon-sm" onClick={actions.togglePlay} title={e.play_pause}>
             {state.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={actions.stepForward} title="Next frame (Right)">
+          <Button variant="ghost" size="icon-sm" onClick={actions.stepForward} title={e.next_step}>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToEnd} title="Jump to end (Shift+Right)">
+          <Button variant="ghost" size="icon-sm" onClick={actions.jumpToEnd} title={e.jump_to_end}>
             <ChevronsRight className="w-3.5 h-3.5" />
           </Button>
 
