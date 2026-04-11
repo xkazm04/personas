@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   GitBranch, ArrowLeftRight, Shield,
-  RotateCcw, ShieldCheck, Star,
+  RotateCcw, ShieldCheck, Star, List, Clock,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { ScoreTrendCard } from './ScoreTrendCard';
+import { PromptTimeline } from './PromptTimeline';
+
+type VersionView = 'list' | 'timeline';
+const VIEW_KEY = 'dac-version-view';
 
 export function VersionsPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -30,6 +34,7 @@ export function VersionsPanel() {
   const [healthLoading, setHealthLoading] = useState(false);
   const [activeActions, setActiveActions] = useState<Record<string, VersionAction>>({});
   const [actionErrors, setActionErrors] = useState<Record<string, string | null>>({});
+  const [view, setView] = useState<VersionView>(() => (localStorage.getItem(VIEW_KEY) as VersionView) || 'timeline');
 
   const personaId = selectedPersona?.id;
 
@@ -87,6 +92,23 @@ export function VersionsPanel() {
     return <div className="text-sm text-muted-foreground/60 text-center py-8">No persona selected</div>;
   }
 
+  const handleViewChange = (v: VersionView) => {
+    setView(v);
+    localStorage.setItem(VIEW_KEY, v);
+  };
+
+  if (view === 'timeline') {
+    return (
+      <div className="space-y-3">
+        {/* View toggle */}
+        <div className="flex items-center justify-end">
+          <ViewToggle view={view} onChange={handleViewChange} />
+        </div>
+        <PromptTimeline />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 gap-4">
       {/* Left: Version list */}
@@ -97,6 +119,7 @@ export function VersionsPanel() {
             <h3 className="text-sm font-medium text-foreground/80">Persona Versions</h3>
             <p className="text-[10px] text-muted-foreground/40">Prompts, tools, and settings</p>
           </div>
+          <ViewToggle view={view} onChange={handleViewChange} />
           <span className="ml-auto text-sm text-muted-foreground/60">{promptVersions.length}</span>
         </div>
 
@@ -221,6 +244,35 @@ export function VersionsPanel() {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── View toggle ───────────────────────────────────────────────────────
+
+function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: VersionView) => void }) {
+  return (
+    <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/[0.06]">
+      <button
+        onClick={() => onChange('timeline')}
+        className={`p-1.5 rounded-md transition-colors ${
+          view === 'timeline' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+        }`}
+        title="Timeline view"
+        aria-label="Timeline view"
+      >
+        <Clock className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => onChange('list')}
+        className={`p-1.5 rounded-md transition-colors ${
+          view === 'list' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+        }`}
+        title="List view"
+        aria-label="List view"
+      >
+        <List className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }
