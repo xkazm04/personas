@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue } from './types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Severity icon map --------------------------------------------
 
@@ -26,6 +27,7 @@ export interface HealthIssueCardProps {
 }
 
 export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCardProps) {
+  const { t, tx } = useTranslation();
   const style = SEVERITY_STYLES[issue.severity];
   const Icon = SEVERITY_ICONS[issue.severity];
 
@@ -64,11 +66,11 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
               className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
             >
               <Wrench className="w-3 h-3" />
-              Apply Fix: {issue.proposal.label}
+              {tx(t.agents.health_issue.apply_fix, { label: issue.proposal.label })}
             </button>
           ) : (
             <p className="mt-1.5 text-sm text-muted-foreground/50 italic">
-              Manual action needed
+              {t.agents.health_issue.manual_action}
             </p>
           )}
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FlaskConical, Wand2, Dna, Sparkles, RotateCcw, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface LabRunSummary {
   mode: string;
@@ -26,6 +27,7 @@ const STATUS_ICON: Record<string, { icon: typeof CheckCircle2; color: string }> 
 };
 
 export default function OpsLabPanel({ personaId }: { personaId: string }) {
+  const { t } = useTranslation();
   const [labRuns, setLabRuns] = useState<LabRunSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const sendMessage = useAgentStore((s) => s.sendChatMessage);
@@ -71,12 +73,12 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
     <div className="p-3 space-y-3" data-testid="ops-lab-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">Lab</h3>
+        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.lab}</h3>
         <button
           onClick={fetchLabHistory}
           className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
-          title="Refresh"
-          aria-label="Refresh lab history"
+          title={t.common.refresh}
+          aria-label={t.agents.ops_lab.refresh_lab}
         >
           <RotateCcw className="w-3 h-3" />
         </button>
@@ -103,13 +105,13 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
 
       {/* Recent lab runs */}
       <div className="space-y-1.5">
-        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">History</h4>
+        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_lab.history}</h4>
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : labRuns.length === 0 ? (
-          <p className="text-xs text-muted-foreground/40 text-center py-4">No lab runs yet</p>
+          <p className="text-xs text-muted-foreground/40 text-center py-4">{t.agents.ops_lab.no_lab_runs}</p>
         ) : (
           labRuns.map((run, i) => {
             const modeCfg = MODE_CONFIG[run.mode] ?? MODE_CONFIG['matrix']!;

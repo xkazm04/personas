@@ -1,4 +1,5 @@
 import { Undo2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ToolSearchFilter } from './ToolSearchFilter';
 import { ToolCategoryList } from './ToolCategoryList';
 import { useToolSelectorPersona } from '../libs/useToolSelectorPersona';
@@ -7,6 +8,7 @@ import { useToolSelectorActions } from '../libs/useToolSelectorActions';
 import { useToolImpactData } from '../libs/useToolImpactData';
 
 export function ToolSelector() {
+  const { t } = useTranslation();
   const persona = useToolSelectorPersona();
   const search = useToolSelectorSearch();
   const actions = useToolSelectorActions(persona.personaId, persona.assignedToolIds, persona.assignedTools);
@@ -15,7 +17,7 @@ export function ToolSelector() {
   if (!persona.selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+        {t.agents.tools.no_persona}
       </div>
     );
   }
@@ -62,14 +64,14 @@ export function ToolSelector() {
             className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-elevation-3"
           >
             <span className="text-sm text-foreground/80">
-              Removed <span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
+              {t.agents.tools.removed.split('{name}')[0]}<span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
             </span>
             <button
               onClick={actions.handleUndo}
               className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />
-              Undo
+              {t.agents.tools.undo}
             </button>
           </div>
         )}

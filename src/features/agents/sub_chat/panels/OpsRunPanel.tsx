@@ -3,6 +3,7 @@ import { Play, CheckCircle2, XCircle, Clock, Loader2, RotateCcw } from 'lucide-r
 import { listExecutions } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STATUS_STYLES: Record<string, { icon: typeof CheckCircle2; color: string; bg: string }> = {
   completed: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
@@ -16,6 +17,7 @@ const STATUS_STYLES: Record<string, { icon: typeof CheckCircle2; color: string; 
 const DEFAULT_STYLE = { icon: Clock, color: 'text-muted-foreground/60', bg: 'bg-secondary/30' };
 
 export default function OpsRunPanel({ personaId }: { personaId: string }) {
+  const { t } = useTranslation();
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [loading, setLoading] = useState(true);
   const isExecuting = useAgentStore((s) => s.isExecuting);
@@ -57,12 +59,12 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
     <div className="p-3 space-y-3" data-testid="ops-run-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">Run</h3>
+        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.run}</h3>
         <button
           onClick={fetchRecent}
           className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
-          title="Refresh"
-          aria-label="Refresh executions"
+          title={t.common.refresh}
+          aria-label={t.agents.ops_run.refresh_executions}
         >
           <RotateCcw className="w-3 h-3" />
         </button>
@@ -78,25 +80,25 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
         {isExecuting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Running...
+            {t.agents.ops_run.running}
           </>
         ) : (
           <>
             <Play className="w-4 h-4" />
-            Execute Agent
+            {t.agents.ops_run.execute_agent}
           </>
         )}
       </button>
 
       {/* Recent executions */}
       <div className="space-y-1.5">
-        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">Recent</h4>
+        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_run.recent}</h4>
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : executions.length === 0 ? (
-          <p className="text-xs text-muted-foreground/40 text-center py-4">No executions yet</p>
+          <p className="text-xs text-muted-foreground/40 text-center py-4">{t.agents.ops_run.no_executions}</p>
         ) : (
           executions.map((exec) => {
             const style = STATUS_STYLES[exec.status] ?? DEFAULT_STYLE;

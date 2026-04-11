@@ -1,5 +1,6 @@
 import { useState, memo } from 'react';
 import { CheckCircle, AlertCircle, ArrowRight, BarChart3, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
@@ -31,6 +32,7 @@ export const ToolCard = memo(function ToolCard({
   onToggle: (id: string, name: string, assigned: boolean) => void;
   onAddCredential: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { isStarter: isSimple } = useTier();
   const usageCount = usageByTool.get(tool.name) ?? 0;
@@ -81,13 +83,13 @@ export const ToolCard = memo(function ToolCard({
           {missingCredential && tool.requires_credential_type && (
             <div className="mt-2 space-y-1">
               <p className="text-sm text-amber-400/80">
-                Requires a <span className="font-medium">{credentialLabel(tool.requires_credential_type)}</span> credential to connect
+                {tx(t.agents.tools.requires_cred, { label: credentialLabel(tool.requires_credential_type) })}
               </p>
               <button
                 onClick={(e) => { e.stopPropagation(); onAddCredential(); }}
                 className="inline-flex items-center gap-1 text-sm text-primary/80 hover:text-primary transition-colors group"
               >
-                Add credential
+                {t.agents.tools.add_credential}
                 <ArrowRight className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
               </button>
             </div>
@@ -101,7 +103,7 @@ export const ToolCard = memo(function ToolCard({
             {usageCount > 0 && (
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/5 text-muted-foreground/90 border ${TOOLS_BORDER}`}>
                 <BarChart3 className="w-3 h-3" />
-                {usageCount.toLocaleString()} calls
+                {tx(t.agents.tools.calls, { count: usageCount.toLocaleString() })}
               </span>
             )}
             {hasImpact && (
@@ -110,7 +112,7 @@ export const ToolCard = memo(function ToolCard({
                 className={`ml-auto inline-flex items-center gap-1 ${TOOLS_BTN_COMPACT} rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:${TOOLS_BORDER} transition-all`}
                 title={expanded ? 'Hide impact analysis' : 'Show impact analysis'}
               >
-                Impact
+                {t.agents.tools.impact_label}
                 <motion.span animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
                   <ChevronDown className="w-3 h-3" />
                 </motion.span>

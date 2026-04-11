@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Search, LayoutGrid, List, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ToolSearchFilterProps {
   searchQuery: string;
@@ -30,6 +31,7 @@ export function ToolSearchFilter({
   totalToolCount,
   onClearAll,
 }: ToolSearchFilterProps) {
+  const { t, tx } = useTranslation();
   return (
     <>
       {/* Search Input + View Toggle */}
@@ -40,7 +42,7 @@ export function ToolSearchFilter({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search tools..."
+            placeholder={t.agents.tools.search_placeholder}
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary/20 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
         </div>
@@ -52,7 +54,7 @@ export function ToolSearchFilter({
                 ? 'bg-primary/15 text-foreground/80'
                 : 'text-muted-foreground/80 hover:text-foreground/95'
             }`}
-            title="Category view"
+            title={t.agents.tools.category_view}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
           </button>
@@ -63,7 +65,7 @@ export function ToolSearchFilter({
                 ? 'bg-primary/15 text-foreground/80'
                 : 'text-muted-foreground/80 hover:text-foreground/95'
             }`}
-            title="Connector view"
+            title={t.agents.tools.connector_view}
           >
             <List className="w-3.5 h-3.5" />
           </button>
@@ -105,7 +107,7 @@ export function ToolSearchFilter({
       {assignedTools.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
           <span className="text-sm text-muted-foreground/80 flex-shrink-0">
-            <span className="font-semibold text-foreground/90">{assignedTools.length}</span> of {totalToolCount} tools assigned
+            {tx(t.agents.tools.assigned_summary, { assigned: assignedTools.length, total: totalToolCount })}
           </span>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden ml-2">
             {assignedTools.slice(0, 5).map((tool) => (
@@ -118,7 +120,7 @@ export function ToolSearchFilter({
             ))}
             {assignedTools.length > 5 && (
               <span className="text-sm text-muted-foreground/80 flex-shrink-0">
-                +{assignedTools.length - 5} more
+                {tx(t.agents.tools.more, { count: assignedTools.length - 5 })}
               </span>
             )}
           </div>
@@ -127,7 +129,7 @@ export function ToolSearchFilter({
             className="flex-shrink-0 text-sm text-muted-foreground/90 hover:text-red-400 transition-colors flex items-center gap-1"
           >
             <X className="w-3 h-3" />
-            Clear all
+            {t.agents.tools.clear_all}
           </button>
         </div>
       )}

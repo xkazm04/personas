@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, CheckCircle2, XCircle, RotateCcw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { listOutputAssertions, updateOutputAssertion } from '@/api/agents/outputAssertions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AssertionRow {
   id: string;
@@ -17,6 +18,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 export default function OpsAssertionsPanel({ personaId }: { personaId: string }) {
+  const { t, tx } = useTranslation();
   const [assertions, setAssertions] = useState<AssertionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,12 +60,12 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
     <div className="p-3 space-y-3" data-testid="ops-assertions-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">Assertions</h3>
+        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.assertions}</h3>
         <button
           onClick={fetchAssertions}
           className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
-          title="Refresh"
-          aria-label="Refresh assertions"
+          title={t.common.refresh}
+          aria-label={t.agents.ops_assertions.refresh_assertions}
         >
           <RotateCcw className="w-3 h-3" />
         </button>
@@ -74,7 +76,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
         <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/20">
           <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-xs text-foreground/70 font-medium">
-            {enabledCount}/{totalCount} active
+            {tx(t.agents.ops_assertions.active_count, { enabled: enabledCount, total: totalCount })}
           </span>
         </div>
       )}
@@ -88,7 +90,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
         ) : assertions.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-4">
             <ShieldCheck className="w-6 h-6 text-muted-foreground/20" />
-            <p className="text-xs text-muted-foreground/40 text-center">No assertions configured</p>
+            <p className="text-xs text-muted-foreground/40 text-center">{t.agents.ops_assertions.no_assertions}</p>
           </div>
         ) : (
           assertions.map((assertion) => {
@@ -118,8 +120,8 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
                 <button
                   onClick={() => handleToggle(assertion.id, assertion.enabled)}
                   className="flex-shrink-0 p-0.5 rounded transition-colors hover:bg-primary/5"
-                  title={assertion.enabled ? 'Disable' : 'Enable'}
-                  aria-label={`${assertion.enabled ? 'Disable' : 'Enable'} ${assertion.name}`}
+                  title={assertion.enabled ? t.common.disabled : t.common.enabled}
+                  aria-label={tx(assertion.enabled ? t.agents.ops_assertions.disable_assertion : t.agents.ops_assertions.enable_assertion, { name: assertion.name })}
                 >
                   {assertion.enabled ? (
                     <ToggleRight className="w-5 h-5 text-emerald-400" />

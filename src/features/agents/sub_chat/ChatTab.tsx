@@ -7,10 +7,12 @@ import { ChatBubble, StreamingBubble } from './ChatBubbles';
 import { OpsSidebar, type OpsBadges } from './OpsSidebar';
 import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ── Main Chat Tab ───────────────────────────────────────────────────────
 
 export function ChatTab() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const messages = useAgentStore((s) => s.chatMessages);
   const activeChatSessionId = useAgentStore((s) => s.activeChatSessionId);
@@ -101,7 +103,7 @@ export function ChatTab() {
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
-        Select a persona to start chatting
+        {t.agents.chat.select_persona}
       </div>
     );
   }
@@ -137,7 +139,7 @@ export function ChatTab() {
             <button
               onClick={scrollToBottom}
               className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border border-primary/15 shadow-elevation-2 flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:border-primary/25 transition-all z-10"
-              title="Scroll to bottom"
+              title={t.agents.chat.scroll_to_bottom}
             >
               <ArrowDown className="w-4 h-4" />
             </button>
@@ -149,7 +151,7 @@ export function ChatTab() {
           <div className="border-t border-violet-500/15 bg-violet-500/5 px-6 py-2" data-testid="chat-experiments-pending">
             <div className="max-w-3xl mx-auto flex items-center gap-2 text-xs text-violet-400/70">
               <FlaskConical className="w-3.5 h-3.5 animate-pulse" />
-              <span>{pendingExperiments.length} experiment{pendingExperiments.length > 1 ? 's' : ''} running — results will appear here when ready</span>
+              <span>{tx(pendingExperiments.length === 1 ? t.agents.chat.experiments_running_one : t.agents.chat.experiments_running_other, { count: pendingExperiments.length })}</span>
             </div>
           </div>
         )}
@@ -164,7 +166,7 @@ export function ChatTab() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={chatStreaming ? 'Waiting for response...' : 'Ask anything about this agent...'}
+                placeholder={chatStreaming ? t.agents.chat.waiting : t.agents.chat.ask_anything}
                 disabled={chatStreaming || isExecuting}
                 rows={1}
                 className="flex-1 resize-none rounded-xl border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
@@ -185,7 +187,7 @@ export function ChatTab() {
               </button>
             </div>
             <p className="text-[11px] text-muted-foreground/30 mt-1.5 text-center select-none">
-              Enter to send, Shift+Enter for new line
+              {t.agents.chat.enter_to_send}
             </p>
           </div>
         </div>

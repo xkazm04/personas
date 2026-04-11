@@ -2,6 +2,7 @@ import {
   Activity, AlertTriangle, CheckCircle2, DollarSign,
   GitBranch, Layers, XCircle,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
 import { TOOLS_BORDER, TOOLS_INNER_SPACE, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 
@@ -14,10 +15,11 @@ import { formatCost as _formatCost } from '@/lib/utils/formatters';
 const formatCost = (usd: number) => _formatCost(usd, { precision: 'auto' });
 
 export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
+  const { t, tx } = useTranslation();
   if (!impact) {
     return (
       <div className="px-3 pb-3 pt-1">
-        <p className="text-sm text-muted-foreground/60 italic">No impact data available</p>
+        <p className="text-sm text-muted-foreground/60 italic">{t.agents.tools.no_impact}</p>
       </div>
     );
   }
@@ -33,56 +35,56 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
         className="animate-fade-slide-in overflow-hidden"
       >
         <div className={`px-3 pb-3 pt-1 ${TOOLS_INNER_SPACE} border-t ${TOOLS_BORDER} ${TOOLS_SECTION_GAP}`}>
-          <ImpactSection icon={<Layers className="w-3 h-3" />} label="Use Cases" badge={hasUseCases ? String(useCaseRefs.length) : undefined}>
+          <ImpactSection icon={<Layers className="w-3 h-3" />} label={t.agents.tools.uc_section} badge={hasUseCases ? String(useCaseRefs.length) : undefined}>
             {hasUseCases ? (
               <div className="space-y-1">
                 {useCaseRefs.slice(0, 4).map((uc) => (
                   <div key={uc.useCaseId} className="flex items-center justify-between gap-2">
                     <span className="text-sm text-foreground/70 truncate">{uc.title}</span>
                     <span className="text-sm text-muted-foreground/60 flex-shrink-0 tabular-nums">
-                      {uc.executionCount} run{uc.executionCount !== 1 ? 's' : ''}
+                      {tx(t.agents.tools.runs, { count: uc.executionCount })}
                     </span>
                   </div>
                 ))}
                 {useCaseRefs.length > 4 && (
-                  <p className="text-sm text-muted-foreground/50">+{useCaseRefs.length - 4} more</p>
+                  <p className="text-sm text-muted-foreground/50">{tx(t.agents.tools.more_uc, { count: useCaseRefs.length - 4 })}</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground/50">No use cases have executed this tool yet</p>
+              <p className="text-sm text-muted-foreground/50">{t.agents.tools.no_uc}</p>
             )}
             {isAssigned && hasUseCases && (
               <div className="flex items-center gap-1.5 mt-1 px-1.5 py-0.5 rounded bg-amber-500/8 border border-amber-500/15">
                 <AlertTriangle className="w-3 h-3 text-amber-400/70 flex-shrink-0" />
                 <span className="text-sm text-amber-400/80">
-                  Removing this tool affects {useCaseRefs.length} use case{useCaseRefs.length > 1 ? 's' : ''}
+                  {tx(t.agents.tools.removing_affects, { count: useCaseRefs.length })}
                 </span>
               </div>
             )}
           </ImpactSection>
-          <ImpactSection icon={<Activity className="w-3 h-3" />} label="Usage (30d)">
+          <ImpactSection icon={<Activity className="w-3 h-3" />} label={t.agents.tools.usage_30d}>
             {hasUsage ? (
               <div className="grid grid-cols-3 gap-2">
-                <StatPill label="Calls" value={usage.total_invocations.toLocaleString()} />
-                <StatPill label="Runs" value={usage.unique_executions.toLocaleString()} />
-                <StatPill label="Agents" value={usage.unique_personas.toLocaleString()} />
+                <StatPill label={t.agents.tools.stat_calls} value={usage.total_invocations.toLocaleString()} />
+                <StatPill label={t.agents.tools.stat_runs} value={usage.unique_executions.toLocaleString()} />
+                <StatPill label={t.agents.tools.stat_agents} value={usage.unique_personas.toLocaleString()} />
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground/50">No usage recorded</p>
+              <p className="text-sm text-muted-foreground/50">{t.agents.tools.no_usage}</p>
             )}
           </ImpactSection>
           {hasCost && (
-            <ImpactSection icon={<DollarSign className="w-3 h-3" />} label="Cost Impact">
+            <ImpactSection icon={<DollarSign className="w-3 h-3" />} label={t.agents.tools.cost_impact}>
               <div className="flex items-center gap-3">
                 {avgCostPerInvocation !== null && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground/60">Per call:</span>
+                    <span className="text-sm text-muted-foreground/60">{t.agents.tools.per_call}</span>
                     <span className="text-sm font-mono text-foreground/70">{formatCost(avgCostPerInvocation)}</span>
                   </div>
                 )}
                 {totalCost > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground/60">Total:</span>
+                    <span className="text-sm text-muted-foreground/60">{t.agents.tools.total_cost}</span>
                     <span className="text-sm font-mono text-foreground/70">{formatCost(totalCost)}</span>
                   </div>
                 )}
@@ -93,19 +95,19 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
             <ImpactSection icon={credentialLinked
               ? <CheckCircle2 className="w-3 h-3 text-emerald-400/80" />
               : <XCircle className="w-3 h-3 text-red-400/80" />
-            } label="Credential">
+            } label={t.agents.tools.credential}>
               <div className="flex items-center gap-1.5">
                 <span className={`text-sm ${credentialLinked ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
                   {credentialType}
                 </span>
                 <span className="text-sm text-muted-foreground/50">
-                  {credentialLinked ? '-- linked' : '-- missing'}
+                  {credentialLinked ? t.agents.tools.linked : t.agents.tools.cred_missing}
                 </span>
               </div>
             </ImpactSection>
           )}
           {hasCo && (
-            <ImpactSection icon={<GitBranch className="w-3 h-3" />} label="Often Used With">
+            <ImpactSection icon={<GitBranch className="w-3 h-3" />} label={t.agents.tools.often_used}>
               <div className="flex flex-wrap gap-1.5">
                 {coUsedTools.map((co) => (
                   <span

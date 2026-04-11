@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import { useTabSection } from '@/features/agents/sub_editor';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
@@ -16,6 +17,7 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 export function PersonaPromptEditor() {
+  const { t, tx } = useTranslation();
   const applyPersonaOp = useAgentStore((state) => state.applyPersonaOp);
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
 
@@ -82,7 +84,7 @@ export function PersonaPromptEditor() {
   const addCustomSection = useCallback(() => {
     setSp((prev) => {
       setSelectedCustomIndex(prev.customSections.length);
-      return { ...prev, customSections: [...prev.customSections, { title: 'New Section', content: '' }] };
+      return { ...prev, customSections: [...prev.customSections, { title: t.agents.prompt_editor.new_section, content: '' }] };
     });
     setActiveTab('custom');
   }, [setSp]);
@@ -117,7 +119,7 @@ export function PersonaPromptEditor() {
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+        {t.agents.prompt_editor.no_persona}
       </div>
     );
   }
@@ -140,8 +142,8 @@ export function PersonaPromptEditor() {
           <SectionEditor
             value={sp[activeTab]}
             onChange={(v) => updateField(activeTab, v)}
-            label={STANDARD_TABS.find((t) => t.key === activeTab)?.label ?? activeTab}
-            placeholder={`Enter ${STANDARD_TABS.find((t) => t.key === activeTab)?.label.toLowerCase()} content...`}
+            label={STANDARD_TABS.find((st) => st.key === activeTab)?.label ?? activeTab}
+            placeholder={tx(t.agents.prompt_editor.enter_content, { section: STANDARD_TABS.find((st) => st.key === activeTab)?.label.toLowerCase() ?? activeTab })}
           />
         )}
         {activeTab === 'custom' && (

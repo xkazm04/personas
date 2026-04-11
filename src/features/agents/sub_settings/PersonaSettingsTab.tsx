@@ -1,6 +1,7 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
@@ -31,38 +32,37 @@ export function PersonaSettingsTab({
   isSaving,
   onDelete,
 }: PersonaSettingsTabProps) {
+  const { t, tx } = useTranslation();
   return (
     <div className="max-w-3xl space-y-4">
       {/* Identity -- relative z-10 so icon/color picker popups render above cards below */}
       <div className="space-y-3 relative z-10">
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-          Identity
+          {t.agents.settings_status.identity}
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1">Name</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_name}</label>
             <input
               type="text"
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
-              placeholder="Name your agent — e.g. Invoice Processor, Weekly Report Bot"
               className={INPUT_FIELD}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1">Description</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
-              placeholder="What does this agent do? — e.g. Monitors Slack for support questions and drafts replies"
               rows={4}
               className={`${INPUT_FIELD} resize-none`}
             />
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-2">Icon</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-2">{t.agents.settings_status.label_icon}</label>
               <PopupIconSelector
                 value={draft.icon}
                 onChange={(icon) => patch({ icon })}
@@ -71,7 +71,7 @@ export function PersonaSettingsTab({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-2">Color</label>
+              <label className="block text-sm font-medium text-foreground/80 mb-2">{t.agents.settings_status.label_color}</label>
               <PopupColorPicker
                 value={draft.color}
                 onChange={(color) => patch({ color })}
@@ -86,13 +86,13 @@ export function PersonaSettingsTab({
       <div className="space-y-3">
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-          Execution
+          {t.agents.settings_status.execution}
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-foreground/80 mb-1">
-                Max Concurrent
+                {t.agents.settings_status.max_concurrent}
                 <FieldHint
                   text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
                   range="1--10"
@@ -103,7 +103,6 @@ export function PersonaSettingsTab({
                 type="number"
                 value={draft.maxConcurrent}
                 onChange={(e) => patch({ maxConcurrent: Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
-                placeholder="Parallel runs — e.g. 3"
                 min={1}
                 max={50}
                 className={INPUT_FIELD}
@@ -111,7 +110,7 @@ export function PersonaSettingsTab({
             </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-foreground/80 mb-1">
-                Timeout (sec)
+                {t.agents.settings_status.timeout_sec}
                 <FieldHint
                   text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
                   range="10--1800 seconds"
@@ -125,7 +124,6 @@ export function PersonaSettingsTab({
                   const raw = parseInt(e.target.value, 10) || 10;
                   patch({ timeout: Math.min(raw, 1800) * 1000 });
                 }}
-                placeholder="Seconds — e.g. 120"
                 min={10}
                 max={1800}
                 step={10}
@@ -135,24 +133,24 @@ export function PersonaSettingsTab({
           </div>
 
           <div className="flex items-center justify-between py-1">
-            <span className="text-sm font-medium text-foreground/80">Persona Enabled</span>
+            <span className="text-sm font-medium text-foreground/80">{t.agents.settings_status.persona_enabled}</span>
             <AccessibleToggle
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
-              label="Persona Enabled"
+              label={t.agents.settings_status.persona_enabled}
               size="md"
             />
           </div>
 
           <div className="flex items-center justify-between py-1">
             <div>
-              <span className="text-sm font-medium text-foreground/80">Sensitive Preview</span>
-              <p className="text-sm text-muted-foreground/70">Mask hover preview details until revealed.</p>
+              <span className="text-sm font-medium text-foreground/80">{t.agents.settings_status.sensitive_preview}</span>
+              <p className="text-sm text-muted-foreground/70">{t.agents.settings_status.sensitive_preview_desc}</p>
             </div>
             <AccessibleToggle
               checked={draft.sensitive}
               onChange={() => patch({ sensitive: !draft.sensitive })}
-              label="Sensitive Preview"
+              label={t.agents.settings_status.sensitive_preview}
               size="md"
             />
           </div>
@@ -165,17 +163,17 @@ export function PersonaSettingsTab({
           {isSaving ? (
             <>
               <LoadingSpinner size="sm" className="text-primary/70" />
-              <span>Saving {changedSections.join(' + ').toLowerCase()}...</span>
+              <span>{tx(t.agents.settings_status.saving, { sections: changedSections.join(' + ').toLowerCase() })}</span>
             </>
           ) : isDirty ? (
             <>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span>{changedSections.join(' + ')} changed</span>
+              <span>{tx(t.agents.settings_status.changed, { sections: changedSections.join(' + ') })}</span>
             </>
           ) : (
             <>
               <Check className="w-3.5 h-3.5 text-emerald-400/70" />
-              <span className="text-muted-foreground/60">All changes saved</span>
+              <span className="text-muted-foreground/60">{t.agents.settings_status.all_saved}</span>
             </>
           )}
         </div>
@@ -186,25 +184,25 @@ export function PersonaSettingsTab({
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Delete
+            {t.common.delete}
           </button>
         ) : (
           <div className="flex items-center gap-2">
             <span className="text-sm text-amber-400/70 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" />
-              Irreversible
+              {t.agents.settings_status.irreversible}
             </span>
             <button
               onClick={onDelete}
               className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-sm font-medium transition-colors"
             >
-              Confirm
+              {t.common.confirm}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
               className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-xl text-sm transition-colors hover:bg-secondary/70"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         )}

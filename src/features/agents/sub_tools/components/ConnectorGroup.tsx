@@ -1,5 +1,6 @@
 import { Check, CheckCircle, AlertCircle } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 import { GroupedToolRow } from './GroupedToolRow';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
@@ -21,9 +22,10 @@ export function ConnectorGroup({
   onBulkToggle: (tools: ToolDef[], allAssigned: boolean) => void;
   onAddCredential: () => void;
 }) {
+  const { t } = useTranslation();
   const isGeneral = connectorKey === '__general__';
   const meta = isGeneral ? null : getConnectorMeta(connectorKey);
-  const label = isGeneral ? 'General' : credentialLabel(connectorKey);
+  const label = isGeneral ? t.agents.tools.general : credentialLabel(connectorKey);
   const hasCredential = isGeneral || credentialTypeSet.has(connectorKey);
   const missingCredential = !isGeneral && !hasCredential;
   const assignableTools = missingCredential ? [] : tools;
@@ -72,7 +74,7 @@ export function ConnectorGroup({
               title={`Needs ${label} credential`}
             >
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="hidden sm:inline">Add credential</span>
+              <span className="hidden sm:inline">{t.agents.tools.add_credential}</span>
             </button>
           )
         )}

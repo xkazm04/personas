@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CustomSection {
   title: string;
@@ -23,24 +24,25 @@ export function CustomSectionsPanel({
   onUpdate,
   onRemove,
 }: CustomSectionsPanelProps) {
+  const { t, tx } = useTranslation();
   const currentCustom = sections[selectedIndex];
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-2">
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-sm font-medium text-foreground/80">Custom Sections</span>
+        <span className="text-sm font-medium text-foreground/80">{t.agents.custom_sections.title}</span>
         <button
           onClick={onAdd}
           className="px-2 py-1 text-sm rounded-lg border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 flex items-center gap-1 ml-auto"
         >
           <Plus className="w-3 h-3" />
-          Add
+          {t.agents.custom_sections.add}
         </button>
       </div>
 
       {sections.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground/80">No custom sections yet</p>
+          <p className="text-sm text-muted-foreground/80">{t.agents.custom_sections.no_sections}</p>
         </div>
       ) : (
         <div className="flex flex-1 min-h-0 gap-2">
@@ -57,12 +59,12 @@ export function CustomSectionsPanel({
                 onClick={() => onSelectIndex(index)}
               >
                 <span className="truncate flex-1">
-                  {section.title || `Section ${index + 1}`}
+                  {section.title || tx(t.agents.custom_sections.section_fallback, { index: index + 1 })}
                 </span>
                 <button
                   onClick={(e) => { e.stopPropagation(); onRemove(index); }}
                   className="p-0.5 text-muted-foreground/80 hover:text-red-400 flex-shrink-0"
-                  title="Remove section"
+                  title={t.agents.custom_sections.remove_section}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -78,14 +80,14 @@ export function CustomSectionsPanel({
                 value={currentCustom.title}
                 onChange={(e) => onUpdate(selectedIndex, 'title', e.target.value)}
                 className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0"
-                placeholder="Section title..."
+                placeholder={t.agents.custom_sections.title_placeholder}
               />
               <div className="flex-1 min-h-0">
                 <SectionEditor
                   value={currentCustom.content}
                   onChange={(v) => onUpdate(selectedIndex, 'content', v)}
-                  label={currentCustom.title || 'Custom Section'}
-                  placeholder="Section content..."
+                  label={currentCustom.title || t.agents.custom_sections.custom_section}
+                  placeholder={t.agents.custom_sections.content_placeholder}
                 />
               </div>
             </div>

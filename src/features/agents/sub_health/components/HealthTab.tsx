@@ -3,8 +3,10 @@ import { Activity } from 'lucide-react';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import { useAgentStore } from "@/stores/agentStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function HealthTab() {
+  const { t } = useTranslation();
   const healthCheck = useHealthCheck();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const autoRefreshed = useRef(false);
@@ -29,13 +31,11 @@ export function HealthTab() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-2">
         <Activity className="w-5 h-5 text-primary/60" aria-hidden="true" />
-        <h2 className="text-base font-semibold text-foreground/80">Health Check</h2>
+        <h2 className="text-base font-semibold text-foreground/80">{t.agents.health_tab.title}</h2>
       </div>
 
       <p className="text-sm text-muted-foreground/70">
-        Run a dry-run analysis against this agent's current configuration to detect missing credentials,
-        disconnected connectors, incompatible tool combinations, and underspecified use cases.
-        Issues are surfaced as actionable cards with one-click fixes.
+        {t.agents.health_tab.description}
       </p>
 
       <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4">

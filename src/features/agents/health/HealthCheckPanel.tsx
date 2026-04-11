@@ -17,6 +17,7 @@ import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, DryRunResult } from './types';
 import type { UseHealthCheckReturn } from './useHealthCheck';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { ScoreBadge, ScoreRing } from './HealthScoreDisplay';
 import { HealthIssueCard } from './HealthIssueCard';
@@ -27,6 +28,7 @@ interface HealthCheckPanelProps {
 }
 
 export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
+  const { t, tx } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const { phase, result, score, error, runHealthCheck, markIssueResolved, reset } = healthCheck;
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -68,19 +70,18 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <circle cx="66" cy="58" r="1.5" fill="#c4b5fd" fillOpacity="0.4" />
             <circle cx="94" cy="58" r="1.5" fill="#c4b5fd" fillOpacity="0.4" />
           </svg>
-          <h3 className="text-sm font-medium text-foreground/80 mb-1">Agent Health Check</h3>
+          <h3 className="text-sm font-medium text-foreground/80 mb-1">{t.agents.health_check.title}</h3>
           <p className="text-sm text-muted-foreground/80 mb-4 max-w-sm mx-auto">
-            Run a dry-run analysis to detect missing credentials,
-            disconnected connectors, and underspecified use cases.
+            {t.agents.health_check.idle_description}
           </p>
           <Button
             type="button" onClick={handleRun} disabled={!selectedPersona}
-            disabledReason="Select an agent to run health check"
+            disabledReason={t.agents.health_check.select_agent}
             variant="primary"
             size="md"
             icon={<Activity className="w-4 h-4" />}
           >
-            Run Check
+            {t.agents.health_check.run_check}
           </Button>
         </div>
       </div>
@@ -115,8 +116,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <circle cx="140" cy="50" r="3" fill="#a78bfa" fillOpacity="0.4" />
           <circle cx="80" cy="35" r="2" fill="#c4b5fd" fillOpacity="0.3" />
         </svg>
-        <p className="text-sm font-medium text-foreground/70">Scanning agent configuration...</p>
-        <p className="text-xs text-muted-foreground/50 mt-1">Checking credentials, connectors, and use cases</p>
+        <p className="text-sm font-medium text-foreground/70">{t.agents.health_check.scanning}</p>
+        <p className="text-xs text-muted-foreground/50 mt-1">{t.agents.health_check.scanning_detail}</p>
       </div>
     );
   }
@@ -128,7 +129,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <div className="flex items-start gap-2">
             <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-red-400">Health check failed</p>
+              <p className="text-sm font-medium text-red-400">{t.agents.health_check.check_failed}</p>
               <p className="text-sm text-muted-foreground/80 mt-0.5">{error}</p>
             </div>
           </div>
@@ -139,7 +140,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           size="sm"
           icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          Retry
+          {t.common.retry}
         </Button>
       </div>
     );
@@ -165,12 +166,12 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             </div>
           </div>
           <p className="text-sm text-muted-foreground/80">
-            {remainingIssues > 0 ? `${remainingIssues} issue${remainingIssues !== 1 ? 's' : ''} found` : 'No issues detected'}
+            {remainingIssues > 0 ? tx(remainingIssues === 1 ? t.agents.health_check.issues_found_one : t.agents.health_check.issues_found_other, { count: remainingIssues }) : t.agents.health_check.no_issues}
             {' \u00b7 '}Checked {new Date(result.checkedAt).toLocaleTimeString()}
             {isStale && (
               <span className="inline-flex items-center gap-1 ml-1.5 text-amber-400/90">
                 <Clock className="w-3 h-3" />
-                <span className="text-xs">Stale</span>
+                <span className="text-xs">{t.agents.health_check.stale}</span>
               </span>
             )}
           </p>
@@ -180,13 +181,13 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           size="sm"
           icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          Re-run
+          {t.agents.health_check.rerun}
         </Button>
       </div>
 
       {!isSimple && dryRun.capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">Capabilities</p>
+          <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">{t.agents.health_check.capabilities}</p>
           <div className="space-y-1">
             {dryRun.capabilities.map((cap: string, i: number) => (
               <div key={i} className="flex items-center gap-2 text-sm text-emerald-400/80">
@@ -200,7 +201,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
       {dryRun.issues.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">Issues</p>
+            <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">{t.agents.ops_health.issues}</p>
             <div className="space-y-2">
               {dryRun.issues.map((issue: DryRunIssue) => (
                 <HealthIssueCard key={issue.id} issue={issue} personaId={result.personaId}
@@ -216,8 +217,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <path d="M24 2L4 12v16c0 14 8.5 22 20 26 11.5-4 20-12 20-26V12L24 2z" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.4" strokeLinejoin="round" />
             <path d="M16 28l6 6 10-12" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="text-sm font-medium text-emerald-400/80">All systems healthy</p>
-          <p className="text-xs text-muted-foreground/50 mt-0.5">No issues detected in agent configuration</p>
+          <p className="text-sm font-medium text-emerald-400/80">{t.agents.health_check.all_healthy}</p>
+          <p className="text-xs text-muted-foreground/50 mt-0.5">{t.agents.health_check.all_healthy_detail}</p>
         </div>
       )}
     </div>
@@ -225,6 +226,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 }
 
 function HealthWatchToggle() {
+  const { t } = useTranslation();
   const persona = useAgentStore((s) => s.selectedPersona);
   const addToast = useToastStore((s) => s.addToast);
   const [enabled, setEnabled] = useState(false);
@@ -250,10 +252,10 @@ function HealthWatchToggle() {
       if (r.ok) {
         setEnabled(!enabled);
       } else {
-        addToast('Failed to update health watch setting', 'error');
+        addToast(t.agents.settings_status.failed_health_watch, 'error');
       }
     } catch {
-      addToast('Failed to update health watch setting', 'error');
+      addToast(t.agents.settings_status.failed_health_watch, 'error');
     }
     setLoading(false);
   };
@@ -269,10 +271,10 @@ function HealthWatchToggle() {
             ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
             : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
         }`}
-        title={enabled ? "Health monitoring active (every 6h)" : "Enable continuous health monitoring"}
+        title={enabled ? t.agents.settings_status.health_watch_active : t.agents.settings_status.health_watch_enable}
       >
         <Eye className={`w-3 h-3 ${enabled ? 'text-cyan-400' : ''}`} />
-        Health Watch
+        {t.agents.settings_status.health_watch}
         <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-cyan-400' : 'bg-muted-foreground/30'}`} />
       </button>
     </div>

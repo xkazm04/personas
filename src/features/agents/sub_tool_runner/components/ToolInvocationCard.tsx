@@ -13,6 +13,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ToolInvocationCardProps {
   tool: PersonaToolDefinition;
@@ -23,6 +24,7 @@ interface ToolInvocationCardProps {
 }
 
 export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
+  const { t } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
 
@@ -72,7 +74,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {/* Input */}
               <div>
                 <label className="text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1 block">
-                  Input JSON
+                  {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
                   value={inputJson}
@@ -90,7 +92,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                 className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
               >
                 {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-                {isRunning ? 'Running...' : 'Run'}
+                {isRunning ? t.agents.tool_runner.running : t.agents.tool_runner.run}
               </button>
 
               {/* Result */}
@@ -103,12 +105,13 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
 }
 
 function ResultDisplay({ result, error }: { result: ToolInvocationResult | null; error: string | null }) {
+  const { t } = useTranslation();
   if (error) {
     return (
       <div className="rounded-xl border border-red-500/15 bg-red-500/5 px-3 py-2 text-sm text-red-400">
         <div className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
-          <span className="font-medium">Error</span>
+          <span className="font-medium">{t.agents.tool_runner.error}</span>
         </div>
         <pre className="text-sm font-mono whitespace-pre-wrap break-all opacity-80">{error}</pre>
       </div>
@@ -130,7 +133,7 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
           <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
         )}
         <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
-          {result.success ? 'Success' : 'Failed'}
+          {result.success ? t.agents.tool_runner.success : t.agents.tool_runner.failed}
         </span>
         <span className="ml-auto flex items-center gap-1 text-muted-foreground/50 text-sm">
           <Clock className="w-2.5 h-2.5" />

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
 import { createLogger } from '@/lib/log';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("matrix-tab");
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
@@ -23,6 +24,7 @@ interface BuildSessionSummary {
 const DIMENSION_ORDER = ['use-cases', 'connectors', 'triggers', 'messages', 'human-review', 'memory', 'error-handling', 'events'];
 
 export function MatrixTab() {
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [session, setSession] = useState<BuildSessionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -219,7 +221,7 @@ export function MatrixTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground/60">
-        <LoadingSpinner size="lg" label="Loading matrix" />
+        <LoadingSpinner size="lg" label={t.agents.matrix_tab.loading} />
       </div>
     );
   }
@@ -228,7 +230,7 @@ export function MatrixTab() {
   if (!hasData) {
     return (
       <div className="py-8 text-center text-muted-foreground/50 text-sm">
-        No matrix data available. Build or rebuild this persona to generate dimensions.
+        {t.agents.matrix_tab.no_data}
       </div>
     );
   }

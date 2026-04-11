@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { listExecutions } from '@/api/agents/executions';
 import { listMemories } from '@/api/overview/memories';
@@ -16,6 +17,7 @@ import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
 
 export function ActivityTab() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [filter, setFilter] = useState<ActivityType>('all');
@@ -44,8 +46,8 @@ export function ActivityTab() {
       const allItems: ActivityItem[] = [
         ...executions.map((e): ActivityItem => ({
           type: 'execution', id: e.id,
-          title: `Execution ${e.status}`,
-          subtitle: e.output_data?.slice(0, 80) || 'No output',
+          title: tx(t.agents.activity.execution_status, { status: e.status }),
+          subtitle: e.output_data?.slice(0, 80) || t.agents.activity.no_output,
           status: e.status,
           timestamp: e.started_at || e.created_at,
           raw: e,
@@ -76,7 +78,7 @@ export function ActivityTab() {
         })),
         ...personaMessages.map((m): ActivityItem => ({
           type: 'message', id: m.id,
-          title: m.title || 'Message',
+          title: m.title || t.agents.activity.message_title,
           subtitle: m.content?.slice(0, 80) || '',
           status: m.priority || 'normal',
           timestamp: m.created_at,
@@ -119,7 +121,7 @@ export function ActivityTab() {
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
-        Select a persona to view activity
+        {t.agents.activity.select_persona}
       </div>
     );
   }

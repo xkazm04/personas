@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, useCallback } from 'react';
 import { Check, Save } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 export type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | 'webSearch' | 'custom';
 
 export interface SidebarEntry {
@@ -25,6 +26,7 @@ export function PromptSectionSidebar({
   showSaved,
   isSaving,
 }: PromptSectionSidebarProps) {
+  const { t } = useTranslation();
   const tabRefs = useRef<Partial<Record<SubTab, HTMLButtonElement | null>>>({});
 
   const { filled, total } = useMemo(() => {
@@ -133,7 +135,7 @@ export function PromptSectionSidebar({
             {filled}/{total}
           </text>
         </svg>
-        <span className="text-xs text-muted-foreground/50">sections</span>
+        <span className="text-xs text-muted-foreground/50">{t.agents.prompt_editor.sections}</span>
         <style>{`
           @keyframes prompt-gauge-glow {
             0%, 100% { filter: drop-shadow(0 0 0px transparent); }
@@ -152,13 +154,13 @@ export function PromptSectionSidebar({
               className="animate-fade-slide-in flex items-center gap-1 text-sm text-emerald-400"
             >
               <Check className="w-3 h-3" />
-              Saved
+              {t.agents.prompt_editor.saved}
             </div>
           )}
         {isSaving && (
           <div className="flex items-center gap-1 text-sm text-muted-foreground/90">
             <Save className="w-3 h-3 animate-pulse" />
-            Saving...
+            {t.common.saving}
           </div>
         )}
       </div>

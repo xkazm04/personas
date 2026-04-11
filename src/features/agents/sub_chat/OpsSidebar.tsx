@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { MessageSquare, Play, FlaskConical, Activity, ShieldCheck } from 'lucide-react';
 import { SessionSidebar } from './SessionSidebar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const OpsRunPanel = lazy(() => import('./panels/OpsRunPanel'));
 const OpsLabPanel = lazy(() => import('./panels/OpsLabPanel'));
@@ -18,13 +19,16 @@ interface PanelDef {
   color: string;
 }
 
-const PANELS: PanelDef[] = [
-  { id: 'sessions', icon: MessageSquare, label: 'Sessions', color: 'text-primary' },
-  { id: 'run', icon: Play, label: 'Run', color: 'text-emerald-400' },
-  { id: 'lab', icon: FlaskConical, label: 'Lab', color: 'text-violet-400' },
-  { id: 'health', icon: Activity, label: 'Health', color: 'text-amber-400' },
-  { id: 'assertions', icon: ShieldCheck, label: 'Assertions', color: 'text-cyan-400' },
-];
+function usePanels(): PanelDef[] {
+  const { t } = useTranslation();
+  return [
+    { id: 'sessions', icon: MessageSquare, label: t.agents.ops.sessions, color: 'text-primary' },
+    { id: 'run', icon: Play, label: t.agents.ops.run, color: 'text-emerald-400' },
+    { id: 'lab', icon: FlaskConical, label: t.agents.ops.lab, color: 'text-violet-400' },
+    { id: 'health', icon: Activity, label: t.agents.ops.health, color: 'text-amber-400' },
+    { id: 'assertions', icon: ShieldCheck, label: t.agents.ops.assertions, color: 'text-cyan-400' },
+  ];
+}
 
 // ── Badge props for icon rail ──────────────────────────────────────────
 
@@ -45,6 +49,8 @@ interface OpsSidebarProps {
 const PANEL_ORDER: OpsPanel[] = ['sessions', 'run', 'lab', 'health', 'assertions'];
 
 export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps) {
+  const { t, tx } = useTranslation();
+  const PANELS = usePanels();
   const [activePanel, setActivePanel] = useState<OpsPanel>('sessions');
 
   const handlePanelClick = useCallback((id: OpsPanel) => {
@@ -79,7 +85,7 @@ export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps)
               onClick={() => handlePanelClick(panel.id)}
               data-testid={`ops-panel-btn-${panel.id}`}
               title={panel.label}
-              aria-label={`Switch to ${panel.label} panel`}
+              aria-label={tx(t.agents.ops.switch_panel, { panel: panel.label })}
               className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 focus-ring ${
                 isActive
                   ? `bg-primary/12 ${panel.color}`

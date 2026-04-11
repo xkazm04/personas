@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useShallow } from 'zustand/react/shallow';
 import { computeHealthScore } from '@/features/agents/health/useHealthCheck';
 import type { HealthScore } from '@/features/agents/health/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function MiniScoreRing({ score }: { score: HealthScore }) {
   const radius = 28;
@@ -33,11 +34,7 @@ function MiniScoreRing({ score }: { score: HealthScore }) {
   );
 }
 
-const GRADE_LABELS: Record<string, string> = {
-  healthy: 'Healthy',
-  degraded: 'Degraded',
-  unhealthy: 'Unhealthy',
-};
+// Grade labels now come from i18n
 
 const GRADE_COLORS: Record<string, string> = {
   healthy: 'text-emerald-400',
@@ -46,6 +43,12 @@ const GRADE_COLORS: Record<string, string> = {
 };
 
 export default function OpsHealthPanel({ personaId }: { personaId: string }) {
+  const { t, tx } = useTranslation();
+  const GRADE_LABELS: Record<string, string> = {
+    healthy: t.agents.ops_health.healthy,
+    degraded: t.agents.ops_health.degraded,
+    unhealthy: t.agents.ops_health.unhealthy,
+  };
   const { healthDigest, healthDigestRunning, runFullHealthDigest } = useAgentStore(useShallow((s) => ({
     healthDigest: s.healthDigest,
     healthDigestRunning: s.healthDigestRunning,
@@ -69,13 +72,13 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
     <div className="p-3 space-y-3" data-testid="ops-health-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">Health</h3>
+        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.health}</h3>
         <button
           onClick={handleRunCheck}
           disabled={healthDigestRunning}
           className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
-          title="Run health check"
-          aria-label="Run health check"
+          title={t.agents.ops_health.run_health_check}
+          aria-label={t.agents.ops_health.run_check_aria}
         >
           {healthDigestRunning ? (
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -95,15 +98,15 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
             </p>
             <p className="text-[11px] text-muted-foreground/50">
               {personaHealth?.checkedAt
-                ? `Checked ${new Date(personaHealth.checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                : 'Last check'}
+                ? tx(t.agents.ops_health.checked_at, { time: new Date(personaHealth.checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+                : t.agents.ops_health.last_check}
             </p>
           </div>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 py-4">
           <Activity className="w-6 h-6 text-muted-foreground/20" />
-          <p className="text-xs text-muted-foreground/40 text-center">No health data</p>
+          <p className="text-xs text-muted-foreground/40 text-center">{t.agents.ops_health.no_health_data}</p>
         </div>
       )}
 
@@ -117,12 +120,12 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
         {healthDigestRunning ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Checking...
+            {t.agents.ops_health.checking}
           </>
         ) : (
           <>
             <Activity className="w-3.5 h-3.5" />
-            Run Health Check
+            {t.agents.ops_health.run_health_check}
           </>
         )}
       </button>
@@ -130,7 +133,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
       {/* Issue summary */}
       {(errorCount > 0 || warningCount > 0 || infoCount > 0) && (
         <div className="space-y-1">
-          <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">Issues</h4>
+          <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_health.issues}</h4>
           <div className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-secondary/20">
             {errorCount > 0 && (
               <div className="flex items-center gap-1">

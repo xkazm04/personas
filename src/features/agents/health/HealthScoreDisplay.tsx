@@ -1,9 +1,11 @@
 import { Activity } from 'lucide-react';
 import type { HealthScore } from './types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Score badge --------------------------------------------------
 
 export function ScoreBadge({ score }: { score: HealthScore }) {
+  const { t } = useTranslation();
   const gradeColors = {
     healthy: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
     degraded: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
@@ -11,9 +13,9 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
   };
 
   const gradeLabels = {
-    healthy: 'Healthy',
-    degraded: 'Degraded',
-    unhealthy: 'Unhealthy',
+    healthy: t.agents.health_score.healthy,
+    degraded: t.agents.health_score.degraded,
+    unhealthy: t.agents.health_score.unhealthy,
   };
 
   return (

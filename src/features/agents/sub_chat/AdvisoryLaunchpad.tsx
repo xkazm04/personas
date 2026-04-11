@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Play, FlaskConical, Wand2, TrendingUp } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ── Advisory Preset Cards ──────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; hove
 };
 
 export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string; onSend: (prompt: string) => void }) {
+  const { t } = useTranslation();
   const [selectedPreset, setSelectedPreset] = useState<AdvisoryPreset | null>(null);
   const [optionValues, setOptionValues] = useState<Record<string, string>>({});
 
@@ -106,7 +108,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
           <p className="text-xl font-semibold text-foreground/80" data-testid="chat-launchpad-title">
             <span className="text-primary">{personaName}</span>
           </p>
-          <p className="text-sm text-muted-foreground/40 mt-1">How can this agent work better for you?</p>
+          <p className="text-sm text-muted-foreground/40 mt-1">{t.agents.advisory.how_can_improve}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
           {ADVISORY_PRESETS.map((preset) => {
@@ -145,14 +147,14 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
                   data-testid="chat-preset-cancel"
                   className="px-2.5 py-1 text-sm text-muted-foreground/60 hover:text-muted-foreground/80 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   onClick={handleOptionSend}
                   data-testid="chat-preset-run"
                   className="flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
                 >
-                  <Send className="w-3 h-3" /> Go
+                  <Send className="w-3 h-3" /> {t.agents.advisory.go}
                 </button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Play, FlaskConical, Brain, Wand2, History, Zap, ListChecks, ClipboardCheck } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ── Ops Preset Cards ────────────────────────────────────────────────────
 
@@ -79,6 +80,7 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; hove
 };
 
 export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onSelect?: (prompt: string) => void; onSend: (prompt: string) => void }) {
+  const { t } = useTranslation();
   const [selectedPreset, setSelectedPreset] = useState<OpsPreset | null>(null);
   const [optionValues, setOptionValues] = useState<Record<string, string>>({});
 
@@ -130,7 +132,7 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
           <p className="text-xl font-semibold text-foreground/80" data-testid="chat-launchpad-title">
             <span className="text-primary">{personaName}</span>
           </p>
-          <p className="text-sm text-muted-foreground/40 mt-1">Choose an action or type a message below</p>
+          <p className="text-sm text-muted-foreground/40 mt-1">{t.agents.ops.choose_action}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-3xl mx-auto">
           {OPS_PRESETS.map((preset) => {
@@ -169,14 +171,14 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
                   data-testid="chat-preset-cancel"
                   className="px-2.5 py-1 text-sm text-muted-foreground/60 hover:text-muted-foreground/80 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   onClick={handleOptionSend}
                   data-testid="chat-preset-run"
                   className="flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
                 >
-                  <Send className="w-3 h-3" /> Run
+                  <Send className="w-3 h-3" /> {t.agents.ops.run}
                 </button>
               </div>
             </div>

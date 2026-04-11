@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
@@ -20,6 +21,7 @@ interface ActivityModalsProps {
 }
 
 export function useActivityModals({ personaName, personaColor, onDataChanged }: ActivityModalsProps) {
+  const { t, tx } = useTranslation();
   const [selectedExecution, setSelectedExecution] = useState<PersonaExecution | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
@@ -53,8 +55,8 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
     <>
       {selectedExecution && (
         <DetailModal
-          title={`${personaName} - Execution`}
-          subtitle={`ID: ${selectedExecution.id}`}
+          title={tx(t.agents.activity.modal_execution_title, { name: personaName })}
+          subtitle={tx(t.agents.activity.modal_execution_subtitle, { id: selectedExecution.id })}
           onClose={() => setSelectedExecution(null)}
         >
           <ExecutionDetail execution={selectedExecution} />
@@ -89,20 +91,20 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
 
       {selectedReview && (
         <DetailModal
-          title={`Review: ${selectedReview.title}`}
-          subtitle={`Severity: ${selectedReview.severity} · Status: ${selectedReview.status}`}
+          title={tx(t.agents.activity.modal_review_title, { title: selectedReview.title })}
+          subtitle={tx(t.agents.activity.modal_review_subtitle, { severity: selectedReview.severity, status: selectedReview.status })}
           onClose={() => setSelectedReview(null)}
         >
           <div className="p-4 space-y-3">
             {selectedReview.description && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">Description</div>
+                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.description}</div>
                 <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedReview.description}</p>
               </div>
             )}
             {selectedReview.context_data && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">Context</div>
+                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.context}</div>
                 <pre className="text-sm text-foreground/60 bg-secondary/30 rounded-lg p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
@@ -113,20 +115,20 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                   disabled={reviewProcessing}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
                 >
-                  Approve
+                  {t.agents.activity.approve}
                 </button>
                 <button
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                 >
-                  Reject
+                  {t.agents.activity.reject}
                 </button>
               </div>
             )}
             {selectedReview.reviewer_notes && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">Reviewer Notes</div>
+                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
                 <p className="text-sm text-foreground/70 italic">{selectedReview.reviewer_notes}</p>
               </div>
             )}
