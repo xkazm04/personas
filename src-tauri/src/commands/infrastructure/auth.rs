@@ -18,6 +18,7 @@ use crate::AppState;
 const KEYRING_SERVICE: &str = "personas-desktop";
 const KEYRING_REFRESH: &str = "supabase-refresh-token";
 const KEYRING_USER_CACHE: &str = "supabase-user-cache";
+const KEYRING_GOOGLE_PROVIDER_REFRESH: &str = "google-provider-refresh-token";
 
 // ---------------------------------------------------------------------------
 // Public types (exported to TypeScript via ts-rs)
@@ -67,6 +68,12 @@ pub struct AuthStateInner {
     /// Validated against the `state` parameter returned in the deep-link callback
     /// to prevent token injection via crafted deep links (RFC 6749 §10.12).
     pub pending_oauth_state: Option<String>,
+    /// Google's raw OAuth access token (the `provider_token` from Supabase callback).
+    /// Used for Google Drive API calls when the user authenticates with `drive.file` scope.
+    /// This is NOT the Supabase JWT — it's the actual Google token.
+    pub google_provider_token: Option<SecureString>,
+    /// Google's refresh token for the provider token (allows re-requesting Drive access).
+    pub google_provider_refresh_token: Option<String>,
 }
 
 impl AuthStateInner {
@@ -211,6 +218,9 @@ fn clear_tokens() {
     if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER_CACHE) {
         let _ = entry.delete_credential();
     }
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_GOOGLE_PROVIDER_REFRESH) {
+        let _ = entry.delete_credential();
+    }
 }
 
 #[cfg(not(feature = "desktop"))]
@@ -237,6 +247,32 @@ fn load_cached_user() -> Option<AuthUser> {
 
 #[cfg(not(feature = "desktop"))]
 fn load_cached_user() -> Option<AuthUser> {
+    None
+}
+
+#[cfg(feature = "desktop")]
+fn store_google_provider_refresh_token(token: &str) -> Result<(), AppError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_GOOGLE_PROVIDER_REFRESH)
+        .map_err(|e| AppError::Auth(format!("Keyring entry error: {e}")))?;
+    entry
+        .set_password(token)
+        .map_err(|e| AppError::Auth(format!("Failed to store Google provider refresh token: {e}")))?;
+    Ok(())
+}
+
+#[cfg(not(feature = "desktop"))]
+fn store_google_provider_refresh_token(_token: &str) -> Result<(), AppError> {
+    Ok(())
+}
+
+#[cfg(feature = "desktop")]
+fn load_google_provider_refresh_token() -> Option<String> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_GOOGLE_PROVIDER_REFRESH).ok()?;
+    entry.get_password().ok()
+}
+
+#[cfg(not(feature = "desktop"))]
+fn load_google_provider_refresh_token() -> Option<String> {
     None
 }
 
@@ -441,6 +477,106 @@ pub async fn login_with_google(
     Ok(())
 }
 
+/// Re-authenticate with Google requesting the `drive.file` scope.
+///
+/// This triggers a new OAuth flow that includes Google Drive permissions.
+/// The `provider_token` from the callback gives direct Google Drive API access.
+/// If the user has already granted basic Google sign-in, Google shows an
+/// incremental consent screen for just the Drive scope.
+#[tauri::command]
+pub async fn login_with_google_drive(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    use rand::Rng;
+    use tauri::WebviewWindowBuilder;
+
+    {
+        let auth = state.auth.read().await;
+        if auth.pending_oauth_state.is_some() {
+            return Err(AppError::Auth(
+                "An OAuth sign-in is already in progress".into(),
+            ));
+        }
+    }
+
+    let mut buf = [0u8; 32];
+    rand::thread_rng().fill(&mut buf);
+    let oauth_state = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(buf);
+
+    {
+        let mut auth = state.auth.write().await;
+        auth.pending_oauth_state = Some(oauth_state.clone());
+    }
+
+    let base_url = supabase_url()?;
+    let anon_key = supabase_anon_key()?;
+
+    let redirect_to = format!(
+        "personas://auth/callback?app_state={}",
+        urlencoding::encode(&oauth_state),
+    );
+
+    // Include drive.file scope for Google Drive access.
+    // Supabase passes this to Google's OAuth consent screen.
+    let oauth_url = format!(
+        "{}/auth/v1/authorize?provider=google&redirect_to={}&apikey={}&scopes={}",
+        base_url,
+        urlencoding::encode(&redirect_to),
+        urlencoding::encode(anon_key),
+        urlencoding::encode("https://www.googleapis.com/auth/drive.file"),
+    );
+
+    if let Some(existing) = app.get_webview_window("oauth") {
+        let _ = existing.close();
+    }
+
+    let nav_handle = app.clone();
+    WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
+        oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
+    ))
+    .title("Personas \u{2014} Connect Google Drive")
+    .inner_size(480.0, 680.0)
+    .center()
+    .resizable(false)
+    .minimizable(false)
+    .closable(true)
+    .on_navigation(move |url| {
+        let url_str = url.as_str();
+        if url_str.starts_with("personas://auth/callback") {
+            let callback_url = url_str.to_string();
+            let handle = nav_handle.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Some(win) = handle.get_webview_window("oauth") {
+                    let _ = win.close();
+                }
+                if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
+                    tracing::error!("Drive OAuth callback failed: {}", e);
+                    let _ = handle.emit(event_name::AUTH_ERROR, serde_json::json!({
+                        "error": format!("{}", e)
+                    }));
+                }
+            });
+            return false;
+        }
+        true
+    })
+    .build()
+    .map_err(|e| AppError::Auth(format!("Failed to open Drive sign-in window: {e}")))?;
+
+    tracing::info!("Opened Google Drive OAuth sign-in window");
+    Ok(())
+}
+
+/// Check whether a Google Drive provider token is available.
+#[tauri::command]
+pub async fn get_google_drive_status(
+    state: tauri::State<'_, Arc<AppState>>,
+) -> Result<bool, AppError> {
+    let auth = state.auth.read().await;
+    Ok(auth.google_provider_token.is_some())
+}
+
 /// Return the current authentication state.
 #[tauri::command]
 pub async fn get_auth_state(
@@ -635,8 +771,21 @@ pub async fn handle_auth_callback(
         .and_then(|s| s.parse().ok())
         .unwrap_or(3600);
 
+    // Extract Google provider tokens (for Drive API access, if drive.file scope was granted)
+    let provider_token = params.get("provider_token").cloned();
+    let provider_refresh_token = params.get("provider_refresh_token").cloned();
+
+    if provider_token.is_some() {
+        tracing::info!("Google provider token captured (Drive API access available)");
+    }
+
     // Store refresh token in OS keyring
     store_refresh_token(refresh_token)?;
+
+    // Store Google provider refresh token in keyring for persistence across restarts
+    if let Some(ref prt) = provider_refresh_token {
+        store_google_provider_refresh_token(prt).ok();
+    }
 
     // Fetch full user profile from Supabase
     let user = fetch_user_profile(&access_token).await?;
@@ -654,6 +803,11 @@ pub async fn handle_auth_callback(
         auth.subscription = None; // Fetched lazily or in Phase 12
         auth.is_offline = false;
         auth.token_expires_at = Some(expires_at);
+        // Store Google provider tokens for Drive API access
+        if let Some(pt) = provider_token {
+            auth.google_provider_token = Some(SecureString::new(pt));
+        }
+        auth.google_provider_refresh_token = provider_refresh_token;
         auth.to_response()
     };
 
