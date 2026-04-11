@@ -111,19 +111,19 @@ export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean
  *
  * Claude Sonnet 4.6: 9/9 (100%) -- all A grades
  *
- * Codex CLI is excluded (deprecated/untested).
+ * Codex CLI removed — all execution uses Claude Code CLI only.
  */
 export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
-  design_analysis:        { claude_code: true,  codex_cli: false },
-  credential_design:      { claude_code: true,  codex_cli: false },
-  credential_healthcheck: { claude_code: true,  codex_cli: false },
-  n8n_transform:          { claude_code: true,  codex_cli: false },
-  test_generation:        { claude_code: true,  codex_cli: false },
-  persona_execution:      { claude_code: true,  codex_cli: false },
-  template_adopt:         { claude_code: true,  codex_cli: false },
-  query_debug:            { claude_code: true,  codex_cli: false },
-  healing_analysis:       { claude_code: true,  codex_cli: false },
-  recipe_execution:       { claude_code: true,  codex_cli: false },
+  design_analysis:        { claude_code: true },
+  credential_design:      { claude_code: true },
+  credential_healthcheck: { claude_code: true },
+  n8n_transform:          { claude_code: true },
+  test_generation:        { claude_code: true },
+  persona_execution:      { claude_code: true },
+  template_adopt:         { claude_code: true },
+  query_debug:            { claude_code: true },
+  healing_analysis:       { claude_code: true },
+  recipe_execution:       { claude_code: true },
 };
 
 /** Settings key for the persisted capability map */

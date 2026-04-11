@@ -237,12 +237,13 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "quality-gates";
 export type DevToolsTab = "overview" | "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills";
 export type AgentTab = "all" | "create" | "team" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr" | "artist" | "obsidian-brain";
+export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr" | "artist" | "obsidian-brain" | "research-lab";
+export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "cloud";
-export type ArtistTab = "blender" | "gallery";
+export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
-export type CliEngine = "claude_code" | "codex_cli";
+export type CliEngine = "claude_code";
 
 // -- Analytics Types (re-exported from ts-rs bindings) ---------------------
 

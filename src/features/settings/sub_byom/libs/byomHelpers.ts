@@ -3,7 +3,6 @@ import type { TaskComplexity, ByomPolicy } from '@/api/system/byom';
 
 export const PROVIDER_OPTIONS: { id: CliEngine; label: string }[] = [
   { id: 'claude_code', label: 'Claude Code' },
-  { id: 'codex_cli', label: 'Codex CLI' },
 ];
 
 const KNOWN_PROVIDERS = new Set<string>(PROVIDER_OPTIONS.map((p) => p.id));
@@ -16,7 +15,6 @@ export const COMPLEXITY_OPTIONS: { id: TaskComplexity; label: string; descriptio
 
 export const ENGINE_LABELS: Record<string, string> = {
   claude_code: 'Claude Code',
-  codex_cli: 'Codex CLI',
 };
 
 // =============================================================================

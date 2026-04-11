@@ -57,7 +57,6 @@ export function useEngineCapabilities(): UseEngineCapabilitiesResult {
         for (const item of localSection.items) {
           if (item.status === 'ok') {
             if (item.id === 'claude_cli') installed.add('claude_code');
-            else if (item.id === 'codex_cli') installed.add('codex_cli');
           }
         }
         setInstalledProviders(installed);
