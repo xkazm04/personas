@@ -168,12 +168,17 @@
 - [2026-04-11] LiteLLM proxy (pip install litellm[proxy]) successfully bridges Anthropic Messages API → Ollama, but the model responses are garbage because the model doesn't understand the protocol
 - [2026-04-11] Codex CLI path is irrelevant — user confirmed the entire app is built around Claude Code CLI. Codex is dead code
 - [2026-04-11] Ollama model quality for DIRECT API calls (not through Claude Code) is good — structured JSON, code review, multi-tool orchestration, planning all work. But this requires a separate execution path that bypasses Claude Code entirely
-- [2026-04-11] **Conclusion: BYOM stays hidden.** To make local models work, the app would need a native Rust execution path that calls Ollama's API directly (building its own prompt, parsing its own responses) — this is a new feature, not a configuration change. Estimated 2000+ LOC in Rust
+- [2026-04-11] **Native Ollama path IMPLEMENTED** in `src-tauri/src/engine/ollama.rs` (~240 LOC). When `model_profile.provider == "ollama"`, the runner bypasses CLI spawn and calls Ollama's `/api/chat` directly via reqwest streaming. Uses simplified prompt format (system + user, no tool-use protocol). Emits same `EXECUTION_OUTPUT` / `EXECUTION_STATUS` events as CLI path
+- [2026-04-11] Integration point: `runner.rs` checks provider before the failover loop. If "ollama" → native HTTP path, else → CLI failover as before
+- [2026-04-11] Frontend already has "Ollama (local)" in per-persona model config (`CustomModelConfigForm.tsx` line 30). Setting provider=ollama + base_url=http://localhost:11434 + model=gemma4 triggers the native path
+- [2026-04-11] Pre-existing build errors in `commands/artist/ffmpeg.rs` (6 type mismatches) prevent `cargo build` but `cargo check` passes — native Ollama code is correct
 
 ## Open follow-ups (from Run #4 — BYOM, 2026-04-11)
 
 - **Remove Codex CLI entirely** — dead code, user confirmed all app functionality is Claude Code only. Remove `src-tauri/src/engine/provider/codex.rs`, `EngineKind::CodexCli`, and all related frontend types/options
-- **Remove dead Ollama env-var injection** — `apply_provider_env` (prompt.rs:758) sets OLLAMA_BASE_URL but Claude Code never reads it. This is misleading dead code
+- **Remove dead Ollama env-var injection** — `apply_provider_env` (prompt.rs:758) sets OLLAMA_BASE_URL but Claude Code never reads it. Misleading dead code (native path uses reqwest directly now)
+- **Test native Ollama path end-to-end** — requires running the Tauri app, creating a persona with provider=ollama, and executing it. The Rust code compiles but needs runtime validation
+- **Add Ollama health check** — before execution, `GET /api/tags` to verify Ollama is running and the model is available. Currently fails at request time with a generic error
 - **If local models are ever wanted**: build a native Rust execution path in the engine that calls Ollama's `/api/chat` directly with a custom prompt format (not Claude Code's tool-use protocol). Estimated 2000+ LOC
 - Persona tags are not passed to BYOM compliance evaluation (runner.rs:625 passes `&[]`) — compliance rules based on workflow_tags will never match
 
