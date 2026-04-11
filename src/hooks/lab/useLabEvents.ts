@@ -24,6 +24,7 @@ const MODE_LABELS: Record<LabMode, string> = {
   breed: "Breed",
   evolve: "Evolution",
   versions: "Versions",
+  regression: "Regression",
 };
 
 function notifyTerminal(mode: LabMode, phase: string) {
