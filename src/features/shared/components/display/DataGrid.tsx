@@ -270,9 +270,9 @@ export function DataGrid<T>({
               variants={rowVariants}
               {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${rowCls} ${
+              className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.08] ${accent} ${rowCls} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+              } ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {columns.map((col) => (

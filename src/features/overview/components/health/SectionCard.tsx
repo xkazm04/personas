@@ -70,7 +70,7 @@ export function SectionCard({
           </div>
         ) : (
           section.items.map((check) => (
-            <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
+            <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-primary/[0.04] transition-colors">
               {getStatusIcon(check.status)}
               <div className="flex-1 min-w-0">
                 <p className="typo-body text-foreground/80">{check.label}</p>

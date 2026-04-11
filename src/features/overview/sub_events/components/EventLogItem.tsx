@@ -158,7 +158,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       key={event.id}
       data-testid={`event-row-${event.id}`}
       onClick={onClick}
-      className={`cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+      className={`cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-primary/[0.08] ${index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
       style={{
         position: 'absolute', top: 0, left: 0, width: '100%',
         height: `${size}px`, transform: `translateY(${start}px)`,
@@ -226,7 +226,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
     <div
       data-testid={`event-row-${event.id}`}
       onClick={onClick}
-      className={`grid ${gridCols} gap-0 cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+      className={`grid ${gridCols} gap-0 cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-primary/[0.08] ${index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
     >
       <div className="px-4 py-2.5 flex items-center min-w-0">
         <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>
