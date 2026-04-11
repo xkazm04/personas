@@ -5,7 +5,7 @@
 > without exposure to developer-oriented features.
 
 **Created:** 2026-04-11
-**Status:** Phase 0 (infrastructure) complete. Phases 1-4 are the roadmap.
+**Status:** Phases 0-3 complete. Phase 4 (Home/Onboarding) is the remaining roadmap.
 
 ---
 

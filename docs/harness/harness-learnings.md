@@ -73,6 +73,17 @@
 - [2026-04-02] State management: Zustand with slice pattern in `src/stores/slices/`
 - [2026-04-02] The app uses Tauri v2 APIs — imports from `@tauri-apps/api/*` and `@tauri-apps/plugin-*`
 
+## Tier / Simple Mode System
+
+- [2026-04-11] Three tiers: `starter` (Simple), `team` (Power), `builder` (compile-time devOnly). Internal values unchanged, only UI labels renamed
+- [2026-04-11] `TIER_CYCLE` now `[starter, team]` — builder removed from runtime cycle. `TIER_LABELS` in `uiModes.ts` maps to display names
+- [2026-04-11] Interface Mode selector moved from devOnly AccountSettings to Appearance settings (accessible in prod)
+- [2026-04-11] `useTier().isStarter` (aliased `isSimple`) is the standard guard pattern — ~20 components use it
+- [2026-04-11] Simple mode sidebar: Home, Agents, Connections, Settings. Hidden: Overview, Workflows, Events, Templates, Plugins (all `minTier: TIERS.TEAM`)
+- [2026-04-11] Agent editor tabs hidden in Simple: Activity, Matrix, Lab (via `minTier` on tab defs in `EditorTabBar.tsx`)
+- [2026-04-11] `CredentialDetailModals.tsx` returns null in Simple mode — no playground/vector/schema modals
+- [2026-04-11] `ExecutionMiniPlayer.tsx` has `SimpleExecutionView` — progress bar during execution, result summary + copy button on completion
+
 ## Composition / Workflow System
 
 - [2026-04-11] Multi-agent workflow feature lives at `src/features/composition/` — ReactFlow canvas, DAG execution, NL composer. Now wired into sidebar as "Workflows" section
