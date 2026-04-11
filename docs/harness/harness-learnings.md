@@ -142,24 +142,21 @@
 
 ## BYOM / Local Models
 
-- [2026-04-11] BYOM Settings UI at `src/features/settings/sub_byom/` — 5 tabs: Providers, API Keys, Cost Routing, Compliance, Audit Log. Now promoted from devOnly to production
-- [2026-04-11] Claude Code CLI DOES NOT support non-Anthropic models — `--model` validates against Anthropic model IDs only. OLLAMA_BASE_URL env var is set by the engine but Claude Code ignores it
-- [2026-04-11] Codex CLI DOES support OpenAI-compatible endpoints — set `OPENAI_BASE_URL=http://localhost:11434/v1` and `OPENAI_API_KEY=dummy`, then `--model qwen3.5:latest`. Successfully connects to Ollama
-- [2026-04-11] To use local models: engine must be `codex_cli`, provider should be `custom`, base_url `http://localhost:11434/v1`, model includes `:latest` tag
-- [2026-04-11] Ollama model quality (tested 2026-04-11 with qwen3.5 9.7B and gemma4 12B):
-  - **Viable for**: structured JSON output, code review, multi-tool orchestration, planning/decomposition, email/notification drafting, DB migration analysis
-  - **NOT viable for**: complex multi-step code changes, nuanced architectural decisions, long-context reasoning, interactive speed (gemma4 code review: 43s)
-  - **qwen3.5 is more consistent** — 7-13s per response; gemma4 varies 6-43s
-  - **Neither replaces Anthropic models** for the primary Claude Code execution path
-- [2026-04-11] `PROVIDER_OPTIONS` in `byomHelpers.ts` only lists `claude_code` and `codex_cli` (EngineKind, not ModelProvider). The BYOM routing UI manages CLI engine selection, not model provider selection
-- [2026-04-11] Per-persona model config via `CustomModelConfigForm.tsx` in agent editor sub_model_config — this is where users set provider/model/base_url per agent
+- [2026-04-11] BYOM Settings UI at `src/features/settings/sub_byom/` — 5 tabs: Providers, API Keys, Cost Routing, Compliance, Audit Log. STAYS devOnly — local models don't work
+- [2026-04-11] **DEFINITIVE: Local models CANNOT work with Claude Code CLI.** Two separate failure modes:
+  1. Claude Code validates model names against Anthropic's list — rejects non-Anthropic model IDs before making any API call
+  2. Even with LiteLLM proxy bridging the API format, local models (gemma4, qwen3.5) cannot handle Claude Code's internal tool-use system prompt — they output malformed tool-call JSON instead of text responses
+- [2026-04-11] The failure is a MODEL CAPABILITY gap, not connectivity. Claude Code sends complex multi-tool system prompts (Bash/Read/Write/Edit tool definitions) that require Anthropic-level instruction following. Local 9-12B models cannot reliably follow this protocol
+- [2026-04-11] LiteLLM proxy (pip install litellm[proxy]) successfully bridges Anthropic Messages API → Ollama, but the model responses are garbage because the model doesn't understand the protocol
+- [2026-04-11] Codex CLI path is irrelevant — user confirmed the entire app is built around Claude Code CLI. Codex is dead code
+- [2026-04-11] Ollama model quality for DIRECT API calls (not through Claude Code) is good — structured JSON, code review, multi-tool orchestration, planning all work. But this requires a separate execution path that bypasses Claude Code entirely
+- [2026-04-11] **Conclusion: BYOM stays hidden.** To make local models work, the app would need a native Rust execution path that calls Ollama's API directly (building its own prompt, parsing its own responses) — this is a new feature, not a configuration change. Estimated 2000+ LOC in Rust
 
 ## Open follow-ups (from Run #4 — BYOM, 2026-04-11)
 
-- The Ollama provider path in `apply_provider_env` (prompt.rs:758) sets OLLAMA_BASE_URL, but Claude Code CLI doesn't read it. This code only works if a future Claude Code version adds Ollama support, or if the engine is switched to Codex CLI with the `custom` provider path instead
-- Add "Ollama (local)" as a visible provider option in the BYOM UI alongside claude_code and codex_cli
-- The BYOM "Test Connection" button is a stub — implement real connectivity tests (especially for Ollama: `GET http://localhost:11434/api/tags`)
-- Consider adding a "recommended models" list to the BYOM UI that shows which Ollama models are known to work well with agent tasks
+- **Remove Codex CLI entirely** — dead code, user confirmed all app functionality is Claude Code only. Remove `src-tauri/src/engine/provider/codex.rs`, `EngineKind::CodexCli`, and all related frontend types/options
+- **Remove dead Ollama env-var injection** — `apply_provider_env` (prompt.rs:758) sets OLLAMA_BASE_URL but Claude Code never reads it. This is misleading dead code
+- **If local models are ever wanted**: build a native Rust execution path in the engine that calls Ollama's `/api/chat` directly with a custom prompt format (not Claude Code's tool-use protocol). Estimated 2000+ LOC
 - Persona tags are not passed to BYOM compliance evaluation (runner.rs:625 passes `&[]`) — compliance rules based on workflow_tags will never match
 
 ## Obsidian Brain Plugin
