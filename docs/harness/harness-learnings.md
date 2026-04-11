@@ -158,9 +158,13 @@
 - Radar chart doesn't support touch/hover tooltips — each axis vertex shows the dimension score value but not the raw metric. SVG title elements could help
 - No comparison mode yet — the radar supports 2 overlaid entries but the UI only shows 1 at a time (the selected card). A "compare" checkbox or multi-select would enable side-by-side comparison
 
-## BYOM / Local Models
+## BYOM / Local Models (Dead Code Cleanup Done)
 
 - [2026-04-11] BYOM Settings UI at `src/features/settings/sub_byom/` — 5 tabs: Providers, API Keys, Cost Routing, Compliance, Audit Log. STAYS devOnly — local models don't work
+- [2026-04-11] **Codex CLI REMOVED**: `codex.rs` deleted (490 LOC), `EngineKind::CodexCli` variant removed. `EngineKind::ALL` now single-element `[ClaudeCode]`. Legacy `"codex_cli"` in FromStr maps to ClaudeCode for backwards compat with stored settings
+- [2026-04-11] **Dead env-var injection REMOVED**: Ollama, LiteLLM, Custom match arms removed from `apply_provider_env()` in prompt.rs. Claude Code CLI ignores all of these
+- [2026-04-11] Frontend: `CliEngine` type simplified to just `"claude_code"`. `codex_cli` removed from PROVIDER_OPTIONS, ENGINE_LABELS, DEFAULT_CAPABILITIES, useEngineCapabilities hook
+- [2026-04-11] Test fixtures (COPILOT_EXECUTION_LINES, etc.) kept — they test the stream parser's ability to handle varied output formats, not the engine
 - [2026-04-11] **DEFINITIVE: Local models CANNOT work with Claude Code CLI.** Two separate failure modes:
   1. Claude Code validates model names against Anthropic's list — rejects non-Anthropic model IDs before making any API call
   2. Even with LiteLLM proxy bridging the API format, local models (gemma4, qwen3.5) cannot handle Claude Code's internal tool-use system prompt — they output malformed tool-call JSON instead of text responses
