@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
-import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap } from 'lucide-react';
+import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
@@ -10,6 +10,7 @@ const MatrixPanel = lazy(() => import('../matrix/MatrixPanel').then((m) => ({ de
 const VersionsPanel = lazy(() => import('./VersionsPanel').then((m) => ({ default: m.VersionsPanel })));
 const GenomeBreedingPanel = lazy(() => import('../genome/GenomeBreedingPanel').then((m) => ({ default: m.GenomeBreedingPanel })));
 const EvolutionPanel = lazy(() => import('../evolution/EvolutionPanel').then((m) => ({ default: m.EvolutionPanel })));
+const RegressionPanel = lazy(() => import('../regression/RegressionPanel').then((m) => ({ default: m.RegressionPanel })));
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 
@@ -19,6 +20,7 @@ const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof F
   { id: 'breed', label: 'Breed', desc: 'Cross-breed top performers', icon: Dna },
   { id: 'evolve', label: 'Evolve', desc: 'Auto-evolving optimization', icon: Sparkles },
   { id: 'versions', label: 'Versions', desc: 'Track prompt evolution', icon: GitBranch },
+  { id: 'regression', label: 'Regression', desc: 'Test against baseline', icon: ShieldCheck },
 ];
 
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
@@ -94,6 +96,7 @@ export function LabTab() {
         {labMode === 'breed' && <GenomeBreedingPanel />}
         {labMode === 'evolve' && <EvolutionPanel />}
         {labMode === 'versions' && <VersionsPanel />}
+        {labMode === 'regression' && <RegressionPanel />}
       </Suspense>
     </div>
   );
