@@ -119,7 +119,7 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
-    { id: 'byom', label: 'Custom Models', icon: Network },
+    { id: 'byom', label: 'Custom Models', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
     { id: 'quality-gates', label: 'Quality Gates', icon: FlaskConical, devOnly: true },
