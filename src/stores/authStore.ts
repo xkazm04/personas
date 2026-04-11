@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
 import { clearCryptoCache } from "@/lib/utils/platform/crypto";
+import { en } from "@/i18n/en";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };
@@ -75,7 +76,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
           void invoke("clear_pending_oauth");
           set({
             isLoading: false,
-            error: "Login timed out. Please try again.",
+            error: en.auth.login_timed_out,
           });
         }
       }, 120_000);

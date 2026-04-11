@@ -28,6 +28,7 @@ import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
 import { classifyLine } from "@/lib/utils/terminalColors";
 import { createRunLifecycle } from "./runLifecycle";
 import { trackRecentAgent } from "@/hooks/agents/useRecentAgents";
+import { en } from "@/i18n/en";
 
 const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress');
 
@@ -205,7 +206,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // Budget enforcement: block execution when monthly spend exceeds budget
     // unless user has explicitly overridden for this session.
     if (get().isBudgetBlocked(personaId)) {
-      set({ error: "Monthly budget exceeded for this agent. Override the budget pause in the agent settings or increase the budget to continue." });
+      set({ error: en.execution.budget_exceeded });
       return null;
     }
 

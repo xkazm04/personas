@@ -154,6 +154,151 @@ export const en = {
     all: "All",
     // Generic "none" label
     none: "None",
+
+    // -- Shared feedback strings (ErrorBanner, InlineErrorBanner, etc.) --
+    // Button text shown on error panels alongside a back-arrow icon
+    go_back: "Go back",
+    // Accessible label for the dismiss button (close icon) on banners
+    dismiss_notification: "Dismiss notification",
+    // Shown next to a spinner while reconnecting to real-time services
+    connecting: "Connecting...",
+    // Label for a successfully connected real-time channel
+    connected: "Connected",
+    // Label for a disconnected real-time channel
+    disconnected: "Disconnected",
+    // Shown while a reconnection attempt is in progress; {seconds} = countdown
+    reconnecting: "Reconnecting",
+    // Title for reconnection tooltip; {attempt} = attempt number, {seconds} = seconds
+    reconnect_attempt: "Reconnection attempt {attempt} -- retrying in {seconds}s",
+
+    // -- ErrorBoundary recovery UI --
+    // Title when a component crashes (with name); {name} = component name
+    error_boundary_title_named: "Something unexpected happened in {name}",
+    // Title when a component crashes (no name available)
+    error_boundary_title: "Something unexpected happened",
+    // Reassuring subtitle shown below the crash title
+    error_boundary_subtitle: "Don't worry -- your data is safe. You can try again or head back to the dashboard.",
+    // Button: attempt to recover the crashed component
+    try_again: "Try Again",
+    // Button: navigate back to the main dashboard
+    go_to_dashboard: "Go to Dashboard",
+    // Button: copy the crash report for support
+    copy_report: "Copy report for support",
+    // Shown after the crash report is copied
+    copied_to_clipboard: "Copied to clipboard",
+    // Label for collapsible developer-only crash details
+    for_developers: "For developers",
+    // Fallback when no stack trace is available
+    no_stack_trace: "No stack trace available",
+
+    // -- Toast/notification strings --
+    // Healing-toast action: mark an issue as resolved
+    resolve: "Resolve",
+    // Toast overflow indicator; {count} = number of hidden toasts
+    toast_overflow: "+{count} more",
+
+    // -- Unsaved-changes modal --
+    // Modal title asking to save before navigating away
+    unsaved_title: "Save changes before leaving?",
+    // Body text when specific sections have changes; {sections} = comma-separated list
+    unsaved_body_sections: "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
+    // Body text when no specific sections are identified
+    unsaved_body: "You have unsaved changes that will be lost if you leave without saving.",
+    // Button: save and proceed with navigation
+    save_and_continue: "Save and continue",
+    // Button: discard changes and proceed
+    discard_changes: "Discard changes",
+    // Button: stay on the current page
+    stay_on_page: "Stay on page",
+
+    // -- ConfirmDestructiveModal --
+    // Instruction above the type-to-confirm input; {name} = text to type
+    type_to_confirm: "Type {name} to confirm",
+
+    // -- QuickEditPanel --
+    // Label shown in the quick-edit inline panel header
+    quick_edit: "Quick Edit",
+    // Form field labels
+    description_label: "Description",
+    model_label: "Model",
+    // Placeholder for the agent description textarea
+    agent_description_placeholder: "Agent description...",
+
+    // -- KeyValueEditor --
+    // Toggle button to switch to simple key-value mode
+    simple_mode: "Simple mode",
+    // Toggle button to switch to advanced JSON editing mode
+    advanced_json: "Advanced (JSON)",
+    // Placeholder for the key/label column in key-value editor
+    label_placeholder: "Label",
+    // Placeholder for the value column in key-value editor
+    value_placeholder: "Value",
+    // Warning shown when a key-value row has a duplicate key
+    duplicate_key: "Duplicate key",
+    // Button: add a new key-value row
+    add_field: "Add field",
+
+    // -- DirectoryPickerInput --
+    // Default placeholder for the directory picker input
+    select_directory: "Select a directory...",
+    // Title for the native directory picker dialog
+    select_output_directory: "Select output directory",
+    // Button: open the native directory browser
+    browse: "Browse",
+
+    // -- PersonaSelector --
+    // Default placeholder text for the persona selector trigger
+    select_persona: "Select persona",
+    // "All" option label in persona selector dropdowns
+    all_personas: "All Personas",
+    // Search input placeholder inside the persona selector
+    search_ellipsis: "Search...",
+    // Shown when no personas match the search query; {query} = search text
+    no_personas_matching: "No personas matching \"{query}\"",
+
+    // -- AccessibleToggle sr-only labels --
+    // Screen-reader label when a toggle is in the ON state (already have enabled/disabled above)
+
+    // -- DesignInput --
+    // Drag-and-drop overlay label
+    drop_file_here: "Drop file here",
+    // Button: attach a file to the design input
+    attach: "Attach",
+    // Button: toggle the references URL section
+    references: "References",
+    // File count indicator; {count} = number of attached files
+    files_attached_one: "{count} file attached",
+    files_attached_other: "{count} files attached",
+    // Help text below the design input textarea
+    press_enter_to_submit: "Press Enter to submit, Shift+Enter for new line.",
+
+    // -- StalenessIndicator --
+    // Age label: less than 1 minute old
+    staleness_just_now: "just now",
+    // Age label with minutes; {minutes} = number of minutes
+    staleness_minutes_ago: "{minutes}m ago",
+    // Age label with hours; {hours} = number of hours
+    staleness_hours_ago: "{hours}h ago",
+    // Age label with days; {days} = number of days
+    staleness_days_ago: "{days}d ago",
+    // Tooltip showing stale data with label; {label} = section, {age} = formatted age
+    staleness_tooltip_labeled: "{label} data last updated {age}",
+    // Tooltip showing stale data without label; {age} = formatted age
+    staleness_tooltip: "Data last updated {age}",
+    // Suffix appended when refresh failed
+    staleness_refresh_failed: "(refresh failed)",
+
+    // -- CommandPalette --
+    // Search input placeholder for the command palette
+    command_palette_placeholder: "Search agents, credentials, templates... (type \">\" for commands)",
+    // Keyboard hint labels
+    command_palette_navigate: "navigate",
+    command_palette_select: "select",
+    command_palette_commands: "commands",
+
+    // -- SuspenseFallback --
+    // Default label for the suspense loading spinner (accessible)
+    loading_label: "Loading",
   },
 
   // -------------------------------------------------------------------
@@ -3343,6 +3488,299 @@ export const en = {
     tpl_cb_error_message_desc: "Triggers when you copy text containing errors or exceptions",
     tpl_cb_code_snippet: "Auto-format code snippets",
     tpl_cb_code_snippet_desc: "Triggers when you copy code-like text (function definitions, imports)",
+  },
+
+  // -------------------------------------------------------------------
+  //  EXECUTION -- user-facing execution messages (executionSlice.ts)
+  // -------------------------------------------------------------------
+  execution: {
+    budget_exceeded: "Monthly budget exceeded for this agent. Override the budget pause in the agent settings or increase the budget to continue.",
+  },
+
+  // -------------------------------------------------------------------
+  //  AUTH -- authentication messages (authStore.ts)
+  // -------------------------------------------------------------------
+  auth: {
+    login_timed_out: "Login timed out. Please try again.",
+  },
+
+  // -------------------------------------------------------------------
+  //  SHARED -- shared UI components (src/features/shared/components/)
+  // -------------------------------------------------------------------
+  shared: {
+    // -- display/BlastRadiusPanel --
+    // Shown while computing which resources are affected by a deletion
+    blast_checking_impact: "Checking impact...",
+    // Shown when no resources depend on the item being deleted
+    blast_safe_to_delete: "No dependent resources found. Safe to delete.",
+    // Header label for the impact list
+    blast_impact: "Impact",
+
+    // -- display/DataGrid --
+    // Default loading text shown while the grid fetches data
+    grid_loading: "Loading...",
+    // Default empty-state heading when no rows match
+    grid_no_data: "No data",
+    // Label shown next to the page-size selector
+    grid_rows: "Rows",
+    // Pagination summary: "Showing {start}--{end} of {total} items"
+    grid_showing: "Showing {start}\u2013{end} of {total} items",
+    // Accessible label for the page-size select element
+    grid_rows_per_page: "Rows per page",
+
+    // -- display/EmptyState (display) --
+    // Empty-state variant headings and descriptions
+    empty_chart_heading: "No traffic data yet",
+    empty_chart_description: "Traffic and error metrics will appear here once your agents start processing requests.",
+    empty_activity_heading: "No recent activity",
+    empty_activity_description: "Run an agent to see execution activity here.",
+    empty_alerts_heading: "No alerts triggered",
+    empty_alerts_description: "Alerts will appear here when your monitoring rules fire.",
+    empty_metrics_heading: "No execution data",
+    empty_metrics_description: "Charts will populate once agents have completed executions.",
+
+    // -- display/DesignConnectorGrid --
+    // Section labels in the design connector grid
+    connectors_and_tools: "Connectors & Tools",
+    general_tools: "General Tools",
+    events_and_triggers: "Events & Triggers",
+    activates_persona: "What activates this persona",
+    triggers: "Triggers",
+    event_subscriptions: "Event Subscriptions",
+    messages_and_notifications: "Messages & Notifications",
+    communicates_persona: "How this persona communicates",
+    // {connector} = the required connector name
+    requires_connector: "Requires {connector}",
+
+    // -- display/FieldHint --
+    // Accessible label for the info icon button
+    field_info: "Field info",
+    // Labels inside the hint tooltip
+    hint_range: "Range:",
+    hint_example: "Example:",
+
+    // -- display/GlossaryTooltip --
+    // Plain-language definitions for technical terms
+    glossary_webhook: "A URL that receives automatic notifications when something happens \u2014 like a mailbox for your app.",
+    glossary_schema: "The expected shape of incoming data \u2014 which fields are required and what type they should be.",
+    glossary_payload: "The actual data sent along with a request or event.",
+    glossary_endpoint: "A specific address where your agent can be reached or send data.",
+    glossary_json: "A common text format for structured data, using curly braces and key-value pairs.",
+    glossary_api: "A way for two programs to talk to each other automatically.",
+    glossary_credential: "A saved login or access key that lets the agent connect to an external service.",
+    glossary_oauth: "A secure way to grant access without sharing your password.",
+
+    // -- display/UnifiedTable --
+    // Accessible title for the sort button: "Sort by {label}"
+    sort_by: "Sort by {label}",
+    // Accessible title for the filter button: "Filter {label}"
+    filter_label: "Filter {label}",
+    // Placeholder inside inline column search
+    search_ellipsis: "Search...",
+    // Accessible title for the search button: "Search {label}"
+    search_label: "Search {label}",
+
+    // -- display/UuidLabel --
+    // Tooltip shown on the copy-ID button
+    copy_full_id: "Copy full ID",
+
+    // -- buttons/CopyButton --
+    // Default tooltip for the copy button (idle state)
+    copy_tooltip: "Copy",
+    // Shown as label and tooltip in copied state
+    copy_copied: "Copied",
+    // Tooltip shown briefly after copying
+    copy_copied_bang: "Copied!",
+
+    // -- feedback/ConnectionStatusBadge --
+    // Label when the connection is established
+    connection_connected: "Connected",
+    // Label when the connection is lost
+    connection_disconnected: "Disconnected",
+    // Shown during initial connection attempt
+    connection_connecting: "Connecting...",
+    // Shown during reconnection; {seconds} = countdown
+    connection_reconnecting: "Reconnecting",
+    // Title tooltip: "Reconnection attempt {attempt} -- retrying in {seconds}s"
+    connection_reconnecting_title: "Reconnection attempt {attempt} \u2014 retrying in {seconds}s",
+
+    // -- feedback/ErrorBanner --
+    // Button label to navigate backwards
+    go_back: "Go back",
+
+    // -- feedback/ErrorBoundary --
+    // Heading when a named component crashes: "Something unexpected happened in {name}"
+    error_boundary_heading_named: "Something unexpected happened in {name}",
+    // Heading when an unnamed component crashes
+    error_boundary_heading: "Something unexpected happened",
+    // Reassurance message below the heading
+    error_boundary_reassurance: "Don't worry \u2014 your data is safe. You can try again or head back to the dashboard.",
+    // Button to retry rendering
+    error_boundary_try_again: "Try Again",
+    // Button to navigate to the dashboard
+    error_boundary_go_dashboard: "Go to Dashboard",
+    // Label shown after copying crash report
+    error_boundary_copied: "Copied to clipboard",
+    // Label for copying crash report
+    error_boundary_copy_report: "Copy report for support",
+    // Toggle label for developer details
+    error_boundary_for_devs: "For developers",
+    // Fallback when no stack trace is available
+    error_boundary_no_stack: "No stack trace available",
+
+    // -- feedback/InlineErrorBanner --
+    // Accessible label for the dismiss button
+    inline_dismiss: "Dismiss",
+
+    // -- feedback/SuspenseFallback --
+    // Screen-reader label while lazy-loaded content is loading
+    suspense_loading: "Loading",
+
+    // -- feedback/ToastContainer --
+    // Accessible label for the toast dismiss button
+    toast_dismiss: "Dismiss notification",
+    // Button label to resolve a healing issue
+    toast_resolve: "Resolve",
+    // Overflow count label: "+{count} more"
+    toast_overflow: "+{count} more",
+
+    // -- feedback/StalenessIndicator --
+    // Time labels for staleness display
+    staleness_just_now: "just now",
+    // Title tooltip when a data section is stale
+    // {label} = data section name, {age} = age string, {suffix} = " (refresh failed)" or ""
+    staleness_title_labeled: "{label} data last updated {age}{suffix}",
+    staleness_title: "Data last updated {age}{suffix}",
+    staleness_refresh_failed: " (refresh failed)",
+
+    // -- forms/KeyValueEditor --
+    // Mode toggle labels
+    kv_simple_mode: "Simple mode",
+    kv_advanced_json: "Advanced (JSON)",
+    // Placeholder for key and value inputs
+    kv_label_placeholder: "Label",
+    kv_value_placeholder: "Value",
+    // Shown when duplicate keys are detected
+    kv_duplicate_key: "Duplicate key",
+    // Button to add a new key-value pair
+    kv_add_field: "Add field",
+
+    // -- forms/PersonaSelector --
+    // Default placeholder for the persona selector
+    persona_select: "Select persona",
+    // Label for the "show all" option
+    persona_all: "All Personas",
+    // No results message: "No personas matching \"{query}\""
+    persona_no_match: "No personas matching \u201c{query}\u201d",
+
+    // -- forms/PersonaSelectorModal --
+    // Modal header
+    persona_modal_title: "Select Persona",
+
+    // -- forms/DirectoryPickerInput --
+    // Default placeholder for the directory input
+    dir_placeholder: "Select a directory...",
+    // Title for the native directory picker dialog
+    dir_dialog_title: "Select output directory",
+    // Button label
+    dir_browse: "Browse",
+
+    // -- forms/TableSelector --
+    // Placeholder in the table filter input
+    table_filter: "Filter tables...",
+    // Toggle-all button labels
+    table_deselect_all: "Deselect all",
+    table_select_all: "Select all",
+    // Loading state
+    table_loading: "Loading tables...",
+    // Empty states
+    table_none_found: "No tables found",
+    table_no_match: "No matching tables",
+    // Footer summary: "{selected} of {total} table(s) selected"
+    table_selected: "{selected} of {total} table selected",
+    table_selected_plural: "{selected} of {total} tables selected",
+
+    // -- forms/IconSelector --
+    // Section headings in the icon picker
+    icon_agent_icons: "Agent Icons",
+    icon_connectors: "Connectors",
+    icon_emoji: "Emoji",
+    // Tooltip for the clear-icon button
+    icon_clear: "Clear icon",
+
+    // -- forms/AccessibleToggle --
+    // Screen-reader text for toggle state
+    toggle_enabled: "Enabled",
+    toggle_disabled: "Disabled",
+
+    // -- forms/DesignInput --
+    // Drag overlay label
+    design_drop_file: "Drop file here",
+    // Textarea placeholder
+    design_placeholder: "Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies",
+    // Action bar button labels
+    design_attach: "Attach",
+    design_references: "References",
+    // File count: "{count} file(s) attached"
+    design_files_attached_one: "{count} file attached",
+    design_files_attached_other: "{count} files attached",
+    // Submit hint
+    design_submit_hint: "Press Enter to submit, Shift+Enter for new line.",
+
+    // -- forms/DevToolsProjectDropdown --
+    // Default placeholder
+    devtools_select_project: "Select a project...",
+    // Loading state labels
+    devtools_loading_projects: "Loading projects...",
+    devtools_loading: "Loading...",
+    // Error message
+    devtools_load_failed: "Failed to load projects",
+    // Empty state
+    devtools_no_projects: "No projects found",
+    devtools_no_projects_hint: "Add a codebase project in Dev Tools first, then return here to select it.",
+    devtools_no_projects_nav: "Navigate to Plugins \u2192 Dev Tools to create a project.",
+
+    // -- layout/ProcessActivityDrawer --
+    // Drawer header
+    process_activity: "Process Activity",
+    // Section labels
+    process_action_required: "Action Required",
+    process_active: "Active",
+    process_queued: "Queued",
+    process_recent: "Recent",
+    // Empty state
+    process_empty: "No active or recent processes",
+    // Status labels
+    process_in_queue: "#{position} in queue",
+    process_input_required: "Input required",
+    process_draft_ready: "Draft ready",
+    // Cost detail: "{count} tool calls"
+    process_tool_calls: "{count} tool calls",
+
+    // -- overlays/ConfirmDestructiveModal --
+    // Type-to-confirm instruction: "Type {name} to confirm"
+    confirm_type_to_confirm: "Type {name} to confirm",
+
+    // -- overlays/UnsavedChangesModal --
+    // Modal heading
+    unsaved_heading: "Save changes before leaving?",
+    // Body text with sections named
+    unsaved_body_sections: "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
+    // Body text without section names
+    unsaved_body: "You have unsaved changes that will be lost if you leave without saving.",
+    // Button labels
+    unsaved_save: "Save and continue",
+    unsaved_saving: "Saving\u2026",
+    unsaved_discard: "Discard changes",
+    unsaved_stay: "Stay on page",
+
+    // -- overlays/CommandPalette --
+    // Search input placeholder
+    cmd_placeholder: "Search agents, credentials, templates... (type \">\" for commands)",
+    // Footer navigation hints
+    cmd_navigate: "navigate",
+    cmd_select: "select",
+    cmd_commands: "commands",
   },
 };
 

@@ -9,6 +9,8 @@
 
 // -- Shared error translation ----------------------------------------
 
+import { en } from "@/i18n/en";
+
 interface ErrorRule {
   patterns: string[];
   message: string;
@@ -17,19 +19,19 @@ interface ErrorRule {
 /** Error rules shared across all deploy targets. */
 const SHARED_ERROR_RULES: ErrorRule[] = [
   // Connection / network
-  { patterns: ['not reachable', 'connection refused', 'connect error'], message: 'Could not reach the server. Check the URL and your network connection.' },   // i18n: resolve via t.deploy_errors.not_reachable in components
-  { patterns: ['timed out', 'timeout'], message: 'Connection timed out. The server may be down or the URL may be incorrect.' },                                 // i18n: resolve via t.deploy_errors.timed_out in components
-  { patterns: ['dns', 'resolve', 'no such host'], message: 'Could not resolve the hostname. Double-check the URL for typos.' },                                 // i18n: resolve via t.deploy_errors.dns_resolve in components
+  { patterns: ['not reachable', 'connection refused', 'connect error'], message: en.deploy_errors.not_reachable },
+  { patterns: ['timed out', 'timeout'], message: en.deploy_errors.timed_out },
+  { patterns: ['dns', 'resolve', 'no such host'], message: en.deploy_errors.dns_resolve },
   // Auth
-  { patterns: ['401', 'unauthorized'], message: 'Invalid credentials. Please verify and try again.' },                                                          // i18n: resolve via t.deploy_errors.unauthorized in components
-  { patterns: ['403', 'forbidden'], message: 'Access denied. Your credentials may not have the required permissions.' },                                         // i18n: resolve via t.deploy_errors.forbidden in components
+  { patterns: ['401', 'unauthorized'], message: en.deploy_errors.unauthorized },
+  { patterns: ['403', 'forbidden'], message: en.deploy_errors.forbidden },
   // Server
-  { patterns: ['500', 'internal server error'], message: 'The server returned an internal error. Try again in a few minutes.' },                                 // i18n: resolve via t.deploy_errors.internal_server_error in components
-  { patterns: ['502', '503', '504', 'bad gateway', 'service unavailable'], message: 'The server is temporarily unavailable. Try again shortly.' },               // i18n: resolve via t.deploy_errors.service_unavailable in components
+  { patterns: ['500', 'internal server error'], message: en.deploy_errors.internal_server_error },
+  { patterns: ['502', '503', '504', 'bad gateway', 'service unavailable'], message: en.deploy_errors.service_unavailable },
   // Not connected
-  { patterns: ['not connected'], message: 'Not connected. Please connect first.' },                                                                              // i18n: resolve via t.deploy_errors.not_connected in components
+  { patterns: ['not connected'], message: en.deploy_errors.not_connected },
   // Keyring
-  { patterns: ['keyring'], message: 'Could not access stored credentials. You may need to reconnect.' },                                                         // i18n: resolve via t.deploy_errors.keyring in components
+  { patterns: ['keyring'], message: en.deploy_errors.keyring },
 ];
 
 /**
@@ -62,9 +64,9 @@ export function translateDeployError(
 // -- Cloud-specific error rules --------------------------------------
 
 export const CLOUD_ERROR_RULES: ErrorRule[] = [
-  { patterns: ['oauth', 'expired'], message: 'OAuth token has expired. Please re-authorize.' },       // i18n: resolve via t.deploy_errors.oauth_expired in components
-  { patterns: ['url must not be empty'], message: 'Please enter the orchestrator URL.' },              // i18n: resolve via t.deploy_errors.url_empty in components
-  { patterns: ['api key must not be empty'], message: 'Please enter your API key.' },                  // i18n: resolve via t.deploy_errors.api_key_empty in components
+  { patterns: ['oauth', 'expired'], message: en.deploy_errors.oauth_expired },
+  { patterns: ['url must not be empty'], message: en.deploy_errors.url_empty },
+  { patterns: ['api key must not be empty'], message: en.deploy_errors.api_key_empty },
 ];
 
 export const CLOUD_ERROR_PREFIX = /^Cloud error:\s*/i;
@@ -76,7 +78,7 @@ export function translateCloudError(err: unknown): string {
 // -- GitLab-specific error rules -------------------------------------
 
 export const GITLAB_ERROR_RULES: ErrorRule[] = [
-  { patterns: ['token must not be empty'], message: 'Please enter your GitLab personal access token.' }, // i18n: resolve via t.deploy_errors.token_empty in components
+  { patterns: ['token must not be empty'], message: en.deploy_errors.token_empty },
 ];
 
 export const GITLAB_ERROR_PREFIX = /^GitLab error:\s*/i;
