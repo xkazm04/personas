@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { CostSparkline } from './CostSparkline';
 import { ExecutionExpandedDetail } from './ExecutionExpandedDetail';
@@ -45,6 +46,7 @@ export function ExecutionRow({
   handleAutoCompareRetry,
 }: ExecutionRowProps) {
   const isExpanded = expandedId === execution.id && !compareMode;
+  const { t, tx } = useTranslation();
   const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
 
@@ -62,7 +64,7 @@ export function ExecutionRow({
   );
 
   const retryBadge = execution.retry_count > 0 ? (
-    <Tooltip content={`Healing retry #${execution.retry_count}`}>
+    <Tooltip content={tx(t.agents.executions.healing_retry, { count: execution.retry_count })}>
       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
         <RefreshCw className="w-2.5 h-2.5" />
         #{execution.retry_count}
@@ -114,9 +116,9 @@ export function ExecutionRow({
           {formatTimestamp(execution.started_at)}
         </div>
         <div className="col-span-2 typo-code text-foreground/90 flex items-center">
-          <Tooltip content="Input tokens"><span>{formatTokens(execution.input_tokens)}</span></Tooltip>
+          <Tooltip content={t.agents.executions.input_tokens}><span>{formatTokens(execution.input_tokens)}</span></Tooltip>
           {' / '}
-          <Tooltip content="Output tokens"><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
+          <Tooltip content={t.agents.executions.output_tokens}><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
         </div>
         <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} flex items-center gap-2`}>
           <span className="typo-code text-foreground/90">

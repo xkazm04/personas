@@ -4,6 +4,7 @@ import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor, AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { BudgetRecoveryCard } from './BudgetRecoveryCard';
+import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { KeyValueEditor } from '@/features/shared/components/forms/KeyValueEditor';
@@ -47,8 +48,10 @@ export function PersonaRunner() {
     setIsTerminalFullscreen: state.setIsTerminalFullscreen as (fn: (prev: boolean) => boolean) => void,
   });
 
+  const { t, tx } = useTranslation();
+
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">No persona selected</div>;
+    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">{t.agents.executions.no_persona_selected}</div>;
   }
 
   const summaryPresentation = getStatusEntry(state.executionSummary?.status ?? 'failed');
@@ -57,7 +60,7 @@ export function PersonaRunner() {
     <div ref={state.runnerRef} className="space-y-4">
       <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-        <Play className="w-3.5 h-3.5" />Run Persona
+        <Play className="w-3.5 h-3.5" />{t.agents.executions.run_persona}
       </h4>
 
       {/* Input & Execute Card */}
@@ -65,7 +68,7 @@ export function PersonaRunner() {
         <div className="space-y-2">
           <button data-testid="runner-toggle-input" onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors">
             {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            Input Data (Optional)
+            {t.agents.executions.input_data_optional}
           </button>
           {state.showInputEditor && (
               <div className="animate-fade-slide-in">
@@ -90,13 +93,13 @@ export function PersonaRunner() {
             className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-elevation-3 shadow-cyan-500/20"
           >
             <Monitor className="w-5 h-5" />
-            Connect via Remote Control
+            {t.agents.executions.connect_remote}
           </button>
         ) : (
           <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
             className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
-            {isExecuting ? (<><Square className="w-5 h-5" />Stop Execution</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}</>)}
+            {isExecuting ? (<><Square className="w-5 h-5" />{t.agents.executions.stop_execution}</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? t.agents.executions.execute_on_cloud : t.agents.executions.execute_persona}</>)}
           </button>
         )}
       </div>
@@ -106,12 +109,12 @@ export function PersonaRunner() {
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
           <span className="text-sm text-amber-200/90 flex-1">
-            Could not verify a previously running execution. It may still be active on the backend.
+            {t.agents.executions.verification_failed}
           </span>
           <button onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
             <RefreshCw className="w-3 h-3" /> Retry
           </button>
-          <button onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title="Dismiss and abandon execution">
+          <button onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title={t.agents.executions.dismiss_abandon}>
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -126,14 +129,14 @@ export function PersonaRunner() {
             {state.typicalDurationMs ? (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between typo-body">
-                  <span className="text-muted-foreground/80">{formatElapsed(state.elapsedMs)} elapsed</span>
-                  <span className="text-muted-foreground/80">{state.elapsedMs < state.typicalDurationMs ? `Typically completes in ~${formatElapsed(state.typicalDurationMs)}` : 'Taking longer than usual...'}</span>
+                  <span className="text-muted-foreground/80">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>
+                  <span className="text-muted-foreground/80">{state.elapsedMs < state.typicalDurationMs ? tx(t.agents.executions.typically_completes, { elapsed: formatElapsed(state.typicalDurationMs) }) : t.agents.executions.taking_longer}</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
                   <div className="animate-fade-in h-full rounded-full bg-primary/40" style={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} />
                 </div>
               </div>
-            ) : <span className="typo-body text-muted-foreground/90">{formatElapsed(state.elapsedMs)} elapsed</span>}
+            ) : <span className="typo-body text-muted-foreground/90">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>}
           </div>
         </div>
       )}
@@ -157,8 +160,8 @@ export function PersonaRunner() {
           </div>
           {state.executionSummary.status === 'cancelled' && (
             <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
-              {state.executionSummary.last_tool && <div className="flex items-center gap-2 typo-body text-muted-foreground/90"><Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" /><span>Stopped while running</span><code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 typo-code">{state.executionSummary.last_tool}</code></div>}
-              <button onClick={exec.handleResume} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"><RotateCw className="w-3.5 h-3.5" />Resume from here</button>
+              {state.executionSummary.last_tool && <div className="flex items-center gap-2 typo-body text-muted-foreground/90"><Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" /><span>{t.agents.executions.stopped_while_running}</span><code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 typo-code">{state.executionSummary.last_tool}</code></div>}
+              <button onClick={exec.handleResume} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"><RotateCw className="w-3.5 h-3.5" />{t.agents.executions.resume_from_here}</button>
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { Timer, DollarSign, Wrench, RotateCw } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { StatusIcon } from '../../runnerTypes';
 
@@ -13,6 +14,7 @@ interface ExecutionSummaryCardProps {
 }
 
 export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSummaryCardProps) {
+  const { t } = useTranslation();
   const summaryPresentation = getStatusEntry(executionSummary.status);
 
   return (
@@ -48,7 +50,7 @@ export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSu
           {executionSummary.last_tool && (
             <div className="flex items-center gap-2 typo-body text-muted-foreground/90">
               <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-              <span>Stopped while running</span>
+              <span>{t.agents.executions.stopped_while_running}</span>
               <code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 typo-code">
                 {executionSummary.last_tool}
               </code>
@@ -59,7 +61,7 @@ export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSu
             className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
           >
             <RotateCw className="w-3.5 h-3.5" />
-            Resume from here
+            {t.agents.executions.resume_from_here}
           </button>
         </div>
       )}

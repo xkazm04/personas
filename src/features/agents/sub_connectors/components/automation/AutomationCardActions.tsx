@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Pause, Play, Trash2, MoreHorizontal } from 'lucide-react';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutomationCardActionsProps {
   automation: PersonaAutomation;
@@ -12,6 +13,7 @@ interface AutomationCardActionsProps {
 export function AutomationCardActions({
   automation, onEdit, onToggleStatus, onDelete,
 }: AutomationCardActionsProps) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -43,7 +45,7 @@ export function AutomationCardActions({
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
             >
-              <Pencil className="w-3 h-3" /> Edit
+              <Pencil className="w-3 h-3" /> {t.common.edit}
             </button>
 
             {automation.deploymentStatus === 'active' && (
@@ -51,7 +53,7 @@ export function AutomationCardActions({
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
                 className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
               >
-                <Pause className="w-3 h-3" /> Pause
+                <Pause className="w-3 h-3" /> {t.agents.connectors.auto_pause}
               </button>
             )}
 
@@ -60,7 +62,7 @@ export function AutomationCardActions({
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
                 className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
               >
-                <Play className="w-3 h-3" /> Activate
+                <Play className="w-3 h-3" /> {t.agents.connectors.auto_activate}
               </button>
             )}
 
@@ -71,7 +73,7 @@ export function AutomationCardActions({
               className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-brand-rose hover:bg-brand-rose/10"
             >
               <Trash2 className="w-3 h-3" />
-              {confirmDelete ? 'Confirm?' : 'Delete'}
+              {confirmDelete ? t.agents.connectors.auto_confirm : t.common.delete}
             </button>
           </div>
         )}

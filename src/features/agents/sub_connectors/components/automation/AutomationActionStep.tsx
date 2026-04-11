@@ -2,6 +2,7 @@ import { Clock, Check, Circle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { STAGE_DEFS } from '../../libs/useAutomationSetup';
 import type { RefObject } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutomationActionStepProps {
   elapsed: number;
@@ -15,16 +16,17 @@ interface AutomationActionStepProps {
 export function AutomationActionStep({
   elapsed, stageIndex, tailLines, outputLinesLength, tailRef, onCancel,
 }: AutomationActionStepProps) {
+  const { t } = useTranslation();
   return (
     <div key="analyzing" className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between px-1">
         {elapsed >= 3 ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="w-3 h-3" />
-            <span>{elapsed}s elapsed</span>
+            <span>{t.agents.connectors.auto_elapsed.replace('{elapsed}', String(elapsed))}</span>
           </div>
         ) : <div />}
-        <span className="text-sm text-muted-foreground">Typically 15-30 seconds</span>
+        <span className="text-sm text-muted-foreground">{t.agents.connectors.auto_typically}</span>
       </div>
 
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
@@ -70,7 +72,7 @@ export function AutomationActionStep({
 
       <div className="flex justify-end">
         <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

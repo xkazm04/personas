@@ -760,6 +760,1141 @@ export const en = {
       failing: "Failing",
       building: "Building",
     },
+
+    // -----------------------------------------------------------------
+    //  EXECUTIONS -- execution list, detail, runner, replay, inspector
+    // -----------------------------------------------------------------
+    executions: {
+      // ExecutionList -- no persona selected / loading / empty state
+      no_persona_selected: "No persona selected",
+      loading_executions: "Loading executions",
+      agent_ready: "Your agent is ready to go",
+      agent_ready_subtitle: "Run it to see results here. Each execution will appear in this timeline.",
+      try_it_now: "Try it now",
+
+      // ExecutionListHeader -- table column headers & controls
+      history: "History",
+      sensitive_visible: "Sensitive values are visible",
+      sensitive_masked: "Sensitive values are masked",
+      raw: "Raw",
+      masked: "Masked",
+      compare: "Compare",
+      // Compare mode toolbar
+      select_first: "Select the first execution to compare",
+      select_second: "Now select the second execution",
+      ready_to_compare: "Ready to compare",
+      vs: "vs",
+
+      // Table column headers
+      col_status: "Status",
+      col_duration: "Duration",
+      col_started: "Started",
+      col_tokens: "Tokens",
+      col_cost: "Cost",
+
+      // ExecutionRow -- tooltips
+      input_tokens: "Input tokens",
+      output_tokens: "Output tokens",
+      // {count} = retry count
+      healing_retry: "Healing retry #{count}",
+
+      // ExecutionExpandedDetail -- field labels
+      execution_id: "Execution ID",
+      model: "Model",
+      model_default: "default",
+      cost: "Cost",
+      completed: "Completed",
+      input_data: "Input Data",
+      error: "Error",
+      rerun_with_same_input: "Re-run with same input",
+      compare_with_original: "Compare with original",
+
+      // ExecutionLogViewer -- collapsible log
+      execution_log: "Execution Log",
+      copy_log_tooltip: "Copy log to clipboard",
+      loading_log: "Loading log...",
+      log_empty: "Log file is empty or was not found.",
+      failed_to_load_log: "Failed to load log",
+
+      // ExecutionMemories -- memories created during an execution
+      loading_memories: "Loading memories",
+      // {count} = number of memories
+      memories_created: "Memories Created ({count})",
+
+      // ExecutionDetailTabs -- tab labels
+      tab_detail: "Detail",
+      tab_inspector: "Inspector",
+      tab_trace: "Trace",
+      tab_pipeline: "Pipeline",
+      tab_replay: "Replay",
+
+      // ExecutionSummaryCard -- cancelled execution
+      stopped_while_running: "Stopped while running",
+      resume_from_here: "Resume from here",
+
+      // ErrorExplanationCard
+      error_label: "Error",
+
+      // AiHealingCounters -- healing phase labels
+      healing_started: "AI Healing started",
+      healing_diagnosing: "Diagnosing...",
+      // {count} = number of fixes
+      healing_applying_one: "Applying {count} fix...",
+      healing_applying_other: "Applying {count} fixes...",
+      // {count} = fixes applied
+      healing_completed_fixes_one: "{count} fix applied",
+      healing_completed_fixes_other: "{count} fixes applied",
+      healing_completed_retrying: " -- retrying",
+      healing_no_fixes: "No fixes needed",
+      healing_failed: "Healing failed",
+
+      // HealingCard -- inline notification
+      dismiss: "dismiss",
+      // {seconds} = countdown value
+      retrying_in: "Retrying in {seconds}s...",
+      retrying_now: "Retrying now...",
+      // {current}/{max} attempt counter
+      attempt_of: "Attempt {current} of {max}",
+      view_healing_issues: "View in healing issues",
+
+      // PersonaRunner -- runner controls
+      run_persona: "Run Persona",
+      input_data_optional: "Input Data (Optional)",
+      connect_remote: "Connect via Remote Control",
+      stop_execution: "Stop Execution",
+      execute_on_cloud: "Execute on Cloud",
+      execute_persona: "Execute Persona",
+      verification_failed: "Could not verify a previously running execution. It may still be active on the backend.",
+      dismiss_abandon: "Dismiss and abandon execution",
+      // {elapsed} = formatted elapsed time
+      elapsed: "{elapsed} elapsed",
+      // {elapsed} = formatted typical duration
+      typically_completes: "Typically completes in ~{elapsed}",
+      taking_longer: "Taking longer than usual...",
+      // {name} = persona name
+      ready_to_execute: "Ready to execute \u2014 click Run or press",
+      // Queue position
+      // {position} = queue position, {depth} = queue depth
+      queued_position: "Queued -- position {position}",
+      queued_position_of: "Queued -- position {position} of {depth}",
+      phases: "Phases",
+
+      // BudgetRecoveryCard
+      approaching_budget: "Approaching budget limit",
+      budget_exceeded: "Monthly budget exceeded",
+      // {spend}/{limit} = dollar amounts, {percent} = usage percentage
+      budget_spend_detail: "This agent has spent ${spend} of its ${limit} monthly limit ({percent}%). Execution is paused to prevent unexpected costs.",
+      run_anyway_session: "Run anyway (this session)",
+      raise_budget: "Raise budget",
+      // {days} = days until reset
+      resets_in: "Resets {days}",
+      budget_unavailable: "Budget data unavailable",
+      budget_unavailable_detail: "Could not verify current spend. Execution is blocked as a safety precaution until budget data refreshes.",
+      run_anyway: "Run anyway",
+      retrying_automatically: "Retrying automatically...",
+
+      // StuckExecutionGuidance
+      execution_stuck: "Execution appears stuck",
+      no_new_output: "No new output for a while",
+      stuck_tooltip: "The agent has not produced output for 2+ minutes. It may be waiting on an external API or encountering an issue.",
+      silent_tooltip: "The agent has been silent for over a minute. This can happen during long API calls or complex reasoning.",
+      stuck_detail: "The agent has not produced any output for over 2 minutes. This usually means it is waiting on a slow external API, the connected service is unresponsive, or the execution process has stalled.",
+      silent_detail: "The agent has been silent for over a minute. Long pauses can occur during complex reasoning or when waiting for API responses. If the silence continues, the status will escalate.",
+      suggested_actions: "Suggested actions",
+      cancel_retry: "Cancel & retry",
+      view_execution_log: "View execution log",
+      wait_hint: "You can also wait \u2014 some operations take time",
+      connectivity_tip: "Tip: Check if the connected API or service is responding. Network issues or rate limits can cause prolonged silence.",
+
+      // ExecutionPreviewPanel
+      preview: "Preview",
+      estimating: "Estimating...",
+      est: "est.",
+      of_budget: "{percent}% of budget",
+      monthly_spend: "Monthly Spend",
+      unlimited: "unlimited",
+      input_cost: "Input Cost",
+      output_cost_est: "Output Cost (est.)",
+      prompt_preview: "Prompt Preview",
+
+      // ExecutionComparison
+      execution_comparison: "Execution Comparison",
+      what_changed: "What Changed",
+      left: "Left",
+      right: "Right",
+      // {count} = retry count
+      retry_count: "retry #{count}",
+      tool_call_timeline: "Tool Call Timeline",
+      input_data_diff: "Input Data Diff",
+      output_data_diff: "Output Data Diff",
+
+      // ExecutionInspector
+      // {count} = step count
+      tool_call_timeline_steps: "Tool Call Timeline ({count} steps)",
+      no_tool_calls: "No tool calls recorded",
+      tool_steps_appear: "Tool steps appear after execution completes",
+      cost_breakdown: "Cost Breakdown",
+      unknown_model_pricing: "Unknown model -- no pricing data",
+      // CostBreakdownBar labels
+      input_label: "Input: {cost}",
+      output_label: "Output: {cost}",
+      total_label: "Total: {cost}",
+      input_pct: "Input ({percent}%)",
+      output_pct: "Output ({percent}%)",
+
+      // ToolCallCard
+      input: "Input",
+      output: "Output",
+      pending: "pending",
+
+      // TraceInspector
+      loading_trace: "Loading trace",
+      failed_to_load_trace: "Failed to load trace: {error}",
+      no_trace_data: "No trace data recorded",
+      trace_spans_appear: "Trace spans appear during execution",
+      span: "Span",
+      errors: "Errors",
+
+      // TraceSummary
+      duration: "Duration",
+      tokens: "Tokens",
+      spans: "Spans",
+      // {count} = evicted span count
+      trace_incomplete: "Trace incomplete: {count} span evicted (limit: 10,000)",
+      trace_incomplete_other: "Trace incomplete: {count} spans evicted (limit: 10,000)",
+
+      // PipelineWaterfall
+      no_pipeline_trace: "No pipeline trace available",
+      pipeline_traces_captured: "Pipeline traces are captured for new executions",
+      legend_frontend: "Frontend",
+      legend_backend: "Backend",
+      legend_engine: "Engine",
+      legend_tool_call: "Tool Call",
+      live: "Live",
+      stage: "Stage",
+      stage_errors: "Stage Errors",
+      // PipelineSummary
+      total_duration: "Total Duration",
+      stages: "Stages",
+
+      // CostAccrualOverlay
+      cost_accrual: "Cost Accrual -- ${cost}",
+
+      // ReplayTheater / ReplaySandbox
+      execution_theater: "Execution Theater",
+      loading_theater: "Loading execution theater...",
+      loading_execution_data: "Loading execution data...",
+      tools: "Tools",
+      trace: "Trace",
+      // ReplayTransportControls
+      jump_to_start: "Jump to start (Home)",
+      previous_step: "Previous step (Shift+Left)",
+      play_pause: "Play/Pause (Space)",
+      next_step: "Next step (Shift+Right)",
+      jump_to_end: "Jump to end (End)",
+      clear_fork_point: "Clear fork point",
+      // {step} = step number
+      fork_after_step: "Fork after step {step}",
+      fork_input_parse_error: "Original input data could not be parsed \u2014 using empty input",
+
+      // ReplayToolPanel
+      tool_steps: "Tool Steps",
+      no_tool_calls_recorded: "No tool calls recorded",
+
+      // ReplayTerminalPanel
+      // {visible}/{total} = line counts
+      lines_count: "{visible}/{total} lines",
+      scrub_forward: "Scrub forward to see output...",
+
+      // ReplayCostPanel
+      // {completed}/{total} = step counts
+      steps_count: "{completed}/{total} steps",
+
+      // MiniPlayerPinButton
+      unpin_mini_player: "Unpin mini-player",
+      pin_to_mini_player: "Pin to mini-player",
+      pinned: "Pinned",
+      pin: "Pin",
+    },
+
+    // -----------------------------------------------------------------
+    //  LAB -- arena, improve, breed, evolve, versions, regression
+    // -----------------------------------------------------------------
+    lab: {
+      // LabTab -- mode tabs
+      mode_arena: "Arena",
+      mode_arena_desc: "Compare models head-to-head",
+      mode_improve: "Improve",
+      mode_improve_desc: "AI-driven prompt improvement",
+      mode_breed: "Breed",
+      mode_breed_desc: "Cross-breed top performers",
+      mode_evolve: "Evolve",
+      mode_evolve_desc: "Auto-evolving optimization",
+      mode_versions: "Versions",
+      mode_versions_desc: "Track prompt evolution",
+      mode_regression: "Regression",
+      mode_regression_desc: "Test against baseline",
+      loading: "Loading...",
+      auto_optimize: "Auto-Optimize",
+      auto_optimize_enabled: "Auto-optimization enabled (weekly arena + improve)",
+      auto_optimize_disabled: "Enable automatic prompt optimization",
+
+      // LabProgress -- phase labels
+      phase_drafting: "Drafting",
+      phase_generating: "Generating",
+      phase_executing: "Executing",
+      phase_summarizing: "Summarizing",
+      // Phase detail messages
+      generating_draft: "Generating draft persona...",
+      generating_scenarios: "Generating test scenarios...",
+      generating_summary: "Generating test summary...",
+      // {modelId} = model name, {scenario} = scenario name
+      testing_model: "Testing {modelId} \u2014 {scenario}",
+      // Score labels
+      score_tool: "Tool: {score}",
+      score_output: "Output: {score}",
+      score_protocol: "Protocol: {score}",
+
+      // LabHistoryTable
+      delete_run: "Delete run",
+
+      // ArenaPanel
+      no_prompt_warning: "This persona has no prompt configured. Add a prompt first.",
+      no_tools_warning: "This persona has no tools assigned. Add tools for richer testing.",
+      add_prompt_first: "Add a prompt to this persona first",
+      select_model: "Select at least one model",
+      // {count} = model count, {useCase} = optional use case name
+      run_arena: "Run Arena ({count} model{count, plural, one {} other {s}})",
+      cancel_test: "Cancel Test",
+      focus_use_case: "Focus on Use Case",
+
+      // MatrixPanel
+      describe_changes: "Describe your desired changes",
+      describe_changes_placeholder: "e.g. Make the greeting more formal and add multi-language support for German and French",
+      describe_changes_hint: "Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.",
+      generate_test_draft: "Generate & Test Draft",
+      cancel_matrix_test: "Cancel Matrix Test",
+    },
+
+    // -----------------------------------------------------------------
+    //  DESIGN -- AI design wizard, design conversations, drift
+    // -----------------------------------------------------------------
+    design: {
+      // DesignTab -- empty state
+      select_agent: "Select an agent to start design analysis",
+
+      // DesignPhasePanel -- mode toggle buttons
+      mode_design: "Design",
+      mode_intent: "Intent Compiler",
+      mode_example: "Show by Example",
+      compile_from_examples: "Compile from Examples",
+      compile_intent: "Compile Intent",
+      analyze_build: "Analyze & Build",
+      // Intent compiler
+      intent_placeholder: "Describe what you want this agent to do in plain language...\n\ne.g. \"Monitor our Stripe account for failed payments over $100 and notify the finance team on Slack with a summary\"",
+      intent_submit_hint: "Press Enter to submit, Shift+Enter for new line.",
+      intent_detail: "The compiler will generate a complete configuration: prompt, tools, triggers, use cases, model recommendation, and test scenarios.",
+      // Example mode
+      example_context_placeholder: "Optional: add context or constraints (e.g. \"always prioritize P1 tickets\", \"post to #alerts channel\")",
+
+      // DesignQuestionPanel
+      clarification_needed: "Clarification Needed",
+      or_type_answer: "or type your answer",
+      type_custom_answer: "Type a custom answer...",
+      answer: "Answer",
+      ctrl_enter_submit: "Ctrl+Enter to submit",
+      cancel_design: "Cancel Design",
+
+      // DesignPhaseAnalyzing
+      updating_design: "Updating design...",
+
+      // DesignPhaseRefining
+      current_design: "Current design",
+
+      // DesignPhaseApplying
+      applying_changes: "Applying changes...",
+
+      // DesignPhasePreview
+      will_apply: "Will apply: ",
+      apply_changes: "Apply Changes",
+      refine: "Refine",
+      discard: "Discard",
+      confirm_discard: "Confirm discard?",
+      describe_changes_to_refine: "Describe what to change...",
+      enter_submit_hint: "Press Enter to submit, Shift+Enter for new line.",
+
+      // DesignPhaseError
+      design_failed: "Design analysis failed",
+
+      // DesignPhaseApplied
+      // {count} = number of warnings
+      applied_with_warnings_one: "Applied with {count} warning",
+      applied_with_warnings_other: "Applied with {count} warnings",
+      agent_configured: "Agent configured!",
+      // {count} = number of failed operations
+      operations_failed_one: "{count} operation failed",
+      operations_failed_other: "{count} operations failed",
+      retrying: "Retrying...",
+      // {count} = number of failed operations
+      retry_failed: "Retry {count} failed",
+      next_steps: "Next steps",
+      // Applied details -- next step cards
+      configure_credentials: "Configure Credentials",
+      configure_credentials_desc: "Connect the services your agent needs",
+      set_up_triggers: "Set Up Triggers",
+      set_up_triggers_desc: "Configure when your agent should run",
+      run_test_execution: "Run Test Execution",
+      run_test_execution_desc: "Verify your agent works as expected",
+      review_prompt: "Review Prompt",
+      review_prompt_desc: "Fine-tune the generated prompt",
+
+      // DesignWizard
+      switch_to_manual: "Switch to manual",
+      generate_design: "Generate Design",
+      next: "Next",
+      go_back_hint: "Go back and answer the questions to configure your agent.",
+      additional_instructions: "Additional instructions or context (optional)",
+      additional_instructions_placeholder: "Add any specific requirements, domain knowledge, or constraints...",
+    },
+
+    // -----------------------------------------------------------------
+    //  CONNECTORS -- connector assignment, automations, notifications
+    // -----------------------------------------------------------------
+    connectors: {
+      // Section label shown above the connector icon row
+      connectors_label: "Connectors",
+      // View mode buttons
+      list_view: "List view",
+      graph_view: "Dependency graph",
+      no_persona: "No persona selected",
+
+      // -- Automation --
+      auto_title: "Automations",
+      auto_active: "{count} active",
+      auto_add: "Add",
+      auto_add_from_platforms: "Add automation from n8n, Zapier, or GitHub Actions",
+      auto_delete_title: "Delete Automation",
+      auto_delete_msg: "Permanently delete {name}.",
+      auto_edit: "Edit",
+      auto_pause: "Pause",
+      auto_activate: "Activate",
+      auto_confirm: "Confirm?",
+      auto_test: "Test",
+      auto_configure: "Configure",
+      auto_fallback: "Fallback",
+      auto_last_run: "Last run: {time}",
+      auto_never_triggered: "Never triggered",
+      auto_not_deployed: "Not deployed",
+      // Modal titles
+      auto_modal_add: "Add Automation",
+      auto_modal_configure: "Configure Automation",
+      auto_modal_designing: "Designing Automation...",
+      auto_modal_review: "Review Automation",
+      auto_modal_deploying: "Deploying...",
+      auto_modal_deployed: "Automation Deployed",
+      auto_modal_failed: "Deployment Failed",
+      // Modal footer
+      auto_start_over: "Start over",
+      auto_deploy_save: "Deploy & Save",
+      auto_name_required: "Enter a name to continue",
+      auto_cred_required: "Select a credential before deploying",
+      // Trigger step
+      auto_describe: "Describe what you want this automation to do. AI will design and deploy the workflow automatically.",
+      auto_describe_placeholder: "e.g. Process uploaded CSV files, extract key data, and push results to Google Sheets",
+      auto_target_platform: "Target platform:",
+      auto_creds_required: "{label} credentials required",
+      auto_add_key_hint: "Add your {label} API key in the Vault to enable direct workflow management and deployment.",
+      auto_add_creds: "Add {label} Credentials",
+      auto_connected: "{label} connected",
+      auto_missing_perms: "Missing GitHub permissions",
+      auto_repo_required: "Repository (required)",
+      auto_loading_repos: "Loading repositories...",
+      auto_select_repo: "Select a repository...",
+      auto_no_repos: "No repositories found. Check your token permissions.",
+      auto_your_zaps: "Your existing Zaps",
+      auto_loading_zaps: "Loading your Zaps...",
+      auto_no_zaps: "No existing Zaps found. A new Zap will be created during deployment.",
+      auto_zaps_ref: "AI will design a new Zap with a catch hook for your agent. Existing Zaps are shown for reference.",
+      auto_ctrl_enter: "Ctrl+Enter to submit",
+      auto_complete_fields: "Complete all required fields first",
+      auto_design_ai: "Design with AI",
+      // Action step (progress)
+      auto_elapsed: "{elapsed}s elapsed",
+      auto_typically: "Typically 15-30 seconds",
+      // Condition step
+      auto_ai_recommendation: "AI recommendation:",
+      auto_name_label: "Name",
+      auto_platform_label: "Platform",
+      auto_credential_label: "Credential",
+      auto_none_selected: "None selected",
+      auto_what_will_happen: "What will happen",
+      auto_replaces: "Replaces connectors",
+      auto_show_advanced: "Show advanced settings",
+      auto_hide_advanced: "Hide advanced settings",
+      auto_input_schema: "Input Schema",
+      auto_on_failure: "On failure",
+      auto_timeout: "Timeout",
+      auto_seconds: "seconds",
+      auto_deploy_failed: "Deployment failed",
+      // Review step
+      auto_deploying_to: "Deploying to {platform}...",
+      auto_deploy_n8n: "Creating workflow and activating on your n8n instance",
+      auto_deploy_github: "Setting up repository dispatch integration",
+      auto_deploy_zapier: "Validating and connecting catch hook",
+      auto_deploy_custom: "Saving automation configuration",
+      auto_deployed_warning: "Automation deployed with warning",
+      auto_deployed_ok: "Automation deployed successfully",
+      auto_view_on: "View on {platform}",
+      auto_done: "Done",
+      auto_design_failed: "Design failed",
+      auto_unknown_error: "Unknown error",
+      auto_try_again: "Try Again",
+      // Platform hints
+      auto_n8n_hint: "Workflow will be created and activated on your n8n instance automatically.",
+      auto_github_hint: "Repository dispatch configured for {repo}",
+      auto_event_type: "Event type: {eventType}",
+      auto_zapier_hint: "Catch hook will be validated and connected.",
+      auto_custom_hint: "Manual setup required. Automation will be saved as draft.",
+
+      // -- Notification channels --
+      ch_title: "Notification Channels",
+      ch_add: "Add Channel",
+      ch_all_added: "All channel types added",
+      ch_in_app: "In-App Messages",
+      ch_always_active: "Always active",
+      ch_enable: "Enable {type} notifications",
+      ch_credential: "Credential",
+      ch_connected: "Connected",
+      ch_cred_needed: "Credential needed",
+      ch_sending: "Sending...",
+      ch_delivered: "Delivered",
+      ch_failed: "Failed",
+      ch_test: "Test Notification",
+      ch_saving: "Saving...",
+      ch_save: "Save Channels",
+      ch_delivery_health: "Delivery Health",
+      ch_no_deliveries: "No deliveries yet",
+
+      // -- Connector status --
+      st_test: "Test",
+      st_test_all: "Test All",
+      st_link_existing: "Link Existing",
+      st_add_new: "Add New",
+      st_credential: "Credential: {name}",
+      st_best_match: "Best match",
+      st_other_creds: "Other credentials",
+      st_swap_alt: "Swap to alternative",
+      st_unlinked_warn: "{count} connector(s) missing credentials -- execution blocked",
+      st_unlinked_hint: "Link or create credentials for all connectors to enable execution.",
+      st_unhealthy_warn: "{count} connector(s) failed healthcheck -- execution may fail at runtime",
+      st_unhealthy_hint: "Re-test or re-link credentials for failing connectors.",
+      st_required: "{count} connector(s) required",
+      st_healthy: "{count} healthy",
+      st_failed: "{count} failed",
+      st_missing: "{count} missing",
+
+      // -- Tools section (within connectors tab) --
+      ts_configured: "{count} tool(s) configured",
+      ts_no_tools: "No tools configured.",
+      ts_hide_runner: "Hide Tool Runner",
+      ts_try_tools: "Try Tools ({count})",
+
+      // -- Dependency graph --
+      dg_no_deps: "No dependencies to display.",
+      dg_broken: "{count} broken",
+      dg_blast_radius: "Blast Radius",
+      dg_dependencies: "Dependencies",
+      dg_select_cred: "Select a credential to see what breaks when it expires",
+      dg_relationships: "Relationships ({count})",
+      dg_more: "+{count} more",
+      dg_affected_tools: "Affected Tools",
+      dg_affected_auto: "Affected Automations",
+      dg_low_risk: "Low Risk",
+      dg_medium_risk: "Medium Risk",
+      dg_high_risk: "High Risk",
+
+      // -- Agent credential demands --
+      dm_needed: "{count} credential(s) needed",
+      dm_fulfilled: "{fulfilled}/{total} connector(s) fulfilled",
+      dm_reuse_hint: "{count} can reuse existing credentials",
+      dm_required_by: "Required by tools -- no credential linked",
+      dm_reuse: "Reuse ({count})",
+      dm_create: "Create",
+      dm_link_existing: "Link an existing credential:",
+
+      // -- Subscriptions --
+      sub_title: "Event Subscriptions",
+      sub_active: "{count} active",
+      sub_add: "Add Subscription",
+      sub_confirm: "Confirm?",
+      sub_triggers_title: "Triggers & Subscriptions",
+      sub_suggested: "{count} suggested",
+      sub_filter: "filter: {filter}",
+    },
+
+    // -----------------------------------------------------------------
+    //  EDITOR CHROME -- tab bar, banners, header, quick stats
+    // -----------------------------------------------------------------
+    editor_chrome: {
+      tab_activity: "Activity",
+      tab_matrix: "Matrix",
+      tab_use_cases: "Use Cases",
+      tab_lab: "Lab",
+      tab_connectors: "Connectors",
+      tab_chat: "Chat",
+      tab_settings: "Settings",
+      select_agent: "Select an agent to get started",
+      choose_sidebar: "Choose from the sidebar or create a new agent",
+      save_failed_retry: "Save failed -- will retry on next edit",
+      unsaved_changes: "Unsaved changes",
+      unsaved_detail: "Unsaved changes: {sections}",
+      save_switch: "Save & Switch",
+      discard: "Discard",
+      partial_load: "Partial load: {warnings}",
+      cloud_connect: "Connect a cloud orchestrator to run personas remotely",
+      cloud_signin: "Sign in to unlock cloud features and remote execution",
+      sign_in: "Sign In",
+      set_up_cloud: "Set up Cloud",
+      active: "Active",
+      off: "Off",
+      execute: "Execute",
+      running: "Running\u2026",
+      execution_in_progress: "Execution in progress",
+      cannot_enable: "Cannot enable agent",
+      success_label: "Success",
+      health_label: "Health",
+      latency_label: "Latency",
+      cost_run_label: "Cost/run",
+      last_run_label: "Last run",
+      rank: "Rank",
+    },
+
+    // -----------------------------------------------------------------
+    //  MODEL CONFIG -- model selection, budget, comparison
+    // -----------------------------------------------------------------
+    model_config: {
+      model_provider: "Model & Provider",
+      unsaved_changes: "Unsaved changes",
+      max_budget: "Max Budget (USD)",
+      max_turns: "Max Turns",
+      prompt_caching: "Prompt Caching",
+      cache_off: "Off",
+      cache_off_desc: "No caching",
+      cache_short: "5 min",
+      cache_short_desc: "Short retention",
+      cache_long: "1 hr",
+      cache_long_desc: "Long retention",
+      provider_label: "Provider",
+      model_name: "Model Name",
+      base_url: "Base URL",
+      auth_token: "Auth Token",
+      effective_config: "Effective Config",
+      inherited: "{count} inherited",
+      overridden: "{count} overridden",
+      source_agent: "Agent",
+      source_workspace: "Workspace",
+      source_global: "Global",
+      source_default: "Default",
+      tooltip_workspace: "Inherited from workspace \"{name}\"",
+      tooltip_global: "Inherited from global defaults",
+      tooltip_agent_override: "Overrides workspace/global default",
+      tooltip_agent_set: "Set on this agent",
+      tooltip_no_value: "No value configured",
+      tooltip_overriding: "Overriding inherited value",
+      saved: "Saved",
+      workspace_prefix: "Workspace: {label}",
+      field_model: "Model",
+      field_provider: "Provider",
+      field_base_url: "Base URL",
+      field_auth_token: "Auth Token",
+      field_max_budget: "Max Budget",
+      field_max_turns: "Max Turns",
+      field_prompt_cache: "Prompt Cache",
+    },
+
+    // -----------------------------------------------------------------
+    //  USE CASES -- use case flows, schedule, detail
+    // -----------------------------------------------------------------
+    use_cases: {
+      no_persona: "No persona selected",
+      identified: "{count} use case(s) identified",
+      default_model: "Persona Default Model",
+      inherit_hint: "All use cases inherit this model unless overridden below.",
+      test: "Test",
+      run_with: "Run with {model}",
+      fixture_inputs: "Fixture inputs:",
+      test_use_case: "Test Use Case",
+      view_history: "View full test history",
+      generating: "Generating scenarios...",
+      testing_scenario: "Testing {name}...",
+      active_triggers: "Active Triggers",
+      active_subs: "Active Subscriptions",
+      general_history: "General History",
+      unlinked_execs: "({count} unlinked execution(s))",
+      no_unlinked: "No unlinked executions found.",
+    },
+
+    // -----------------------------------------------------------------
+    //  TOOLS -- tool selector and impact analysis
+    // -----------------------------------------------------------------
+    tools: {
+      no_persona: "No persona selected",
+      search_placeholder: "Search tools...",
+      category_view: "Category view",
+      connector_view: "Connector view",
+      assigned_summary: "{assigned} of {total} tools assigned",
+      more: "+{count} more",
+      clear_all: "Clear all",
+      no_matching: "No tools matching query",
+      clear_filter: "Clear filter",
+      no_assigned: "No tools assigned yet",
+      browse_tools: "Browse available tools",
+      no_available: "No tools available",
+      add_credential: "Add credential",
+      requires_cred: "Requires a {label} credential to connect",
+      calls: "{count} calls",
+      impact_label: "Impact",
+      removed: "Removed {name}",
+      undo: "Undo",
+      general: "General",
+      no_impact: "No impact data available",
+      uc_section: "Use Cases",
+      runs: "{count} run(s)",
+      more_uc: "+{count} more",
+      no_uc: "No use cases have executed this tool yet",
+      removing_affects: "Removing this tool affects {count} use case(s)",
+      usage_30d: "Usage (30d)",
+      stat_calls: "Calls",
+      stat_runs: "Runs",
+      stat_agents: "Agents",
+      no_usage: "No usage recorded",
+      cost_impact: "Cost Impact",
+      per_call: "Per call:",
+      total_cost: "Total:",
+      credential: "Credential",
+      linked: "-- linked",
+      cred_missing: "-- missing",
+      often_used: "Often Used With",
+    },
+
+    // -- Chat thread (design wizard conversation) --
+    chat_thread: {
+      welcome: "Tell me what you need this agent to do. I'll build the full configuration -- prompt, tools, triggers -- from your description.",
+      welcome_example: 'Example: "Watch my GitHub PRs and post a summary to Slack every morning"',
+    },
+
+    // -- Assign modal (component role assignment) --
+    assign: {
+      assign_to: "Assign to {role}",
+      saved_credentials: "Saved Credentials ({count})",
+      all_connectors: "All Connectors ({count})",
+      search_credentials: "Search credentials...",
+      search_connectors: "Search connectors...",
+      no_saved_credentials: "No saved credentials yet",
+      no_credentials_match: "No credentials match your search",
+      vault_hint: "Save credentials in the Vault, or use the Connectors tab",
+      no_connectors_match: "No connectors match your search",
+    },
+
+    credential_coverage: "{matched}/{total} credentials",
+
+    role_card: {
+      no_credential: "No credential",
+      edit_tables: "edit",
+      select_tables: "select tables",
+      assign: "Assign",
+    },
+
+    channel_picker: {
+      in_app_messaging: "In-app Messaging",
+      vault_hint: "Save communication credentials (Slack, Email, etc.) in the Vault to see them here.",
+    },
+
+    connector_picker: {
+      no_connectors: "No connectors available",
+      search: "Search connectors...",
+      no_match: 'No connectors match "{search}"',
+    },
+
+    policy_picker: {
+      error_handling: "Error Handling",
+      manual_review: "Manual Review",
+    },
+
+    table_selector: {
+      title: "Select Tables",
+      subtitle: "{label} -- choose tables to watch",
+      tables_selected_one: "{count} table selected",
+      tables_selected_other: "{count} tables selected",
+      no_tables_selected: "No tables selected -- agent watches all",
+    },
+
+    trigger_popover: {
+      trigger: "Trigger",
+      clear_override: "Clear override",
+    },
+
+    use_case: {
+      add: "Add use case",
+      title_placeholder: "Use case title -- e.g. Handle refund requests, Summarize daily tickets",
+      description_placeholder: "Describe the steps -- e.g. When a refund request arrives, verify the order, check policy, and send approval or denial",
+    },
+
+    builder_action: {
+      processing: "Processing...",
+      error_retry: "Something went wrong. Please try again.",
+      enhancing: "Enhancing...",
+      enhance_with_ai: "Enhance with AI",
+      describe_agent: "Describe what your agent should do",
+    },
+
+    builder_preview: {
+      title: "Preview",
+      start_building: "Start building to see a preview",
+      intent: "Intent",
+      use_cases: "Use Cases",
+      none_yet: "None yet",
+      components: "Components",
+      none: "None",
+      credentials_covered: "Credentials: {matched}/{total} covered",
+      schedule: "Schedule",
+      manual_only: "Manual only",
+      errors: "Errors",
+      review: "Review",
+    },
+
+    dry_run: {
+      ready: "Ready",
+      blocked: "Blocked",
+      partial: "Partial",
+      issues_remaining_one: "{count} issue remaining",
+      issues_remaining_other: "{count} issues remaining",
+      capabilities: "Capabilities",
+      issues: "Issues",
+      apply_fix: "Apply Fix: {label}",
+      manual_action_needed: "Manual action needed",
+      no_issues: "No issues found. Your agent configuration looks good.",
+    },
+
+    identity_preview: {
+      title: "Preview",
+      agent_name_placeholder: "Agent Name",
+      description_placeholder: "Description",
+      use_cases: "Use Cases",
+      more: "+{count} more",
+      components: "Components",
+      schedule_label: "Schedule:",
+      errors_label: "Errors:",
+      review_label: "Review:",
+    },
+
+    build_review: {
+      agent_name: "Agent name",
+      all_dimensions: "All 8 dimensions",
+      prompt_generated: "Prompt generated",
+      connectors_ready: "Connectors ready",
+      promote_agent: "Promote Agent",
+      testing: "Testing...",
+      test_agent: "Test Agent",
+    },
+
+    connectors_cell: {
+      add_in_keys: "Add in Keys",
+      linked: "Linked",
+      link: "Link",
+      no_credential_found: "No {name} credential found. Add one in Keys to continue.",
+      swap_to: "Swap to:",
+      recalculating: "Recalculating...",
+      recalculate_dimensions: "Recalculate Dimensions",
+      rebuilding: "Rebuilding with new connector...",
+    },
+
+    dimension_edit: {
+      add_item: "Add item...",
+      add_connector: "Add connector...",
+      add_trigger: "Add trigger...",
+      add_task: "Add task...",
+      add_channel: "Add notification channel...",
+      add_memory: "Add memory item...",
+      add_error_strategy: "Add error strategy...",
+      add_review_rule: "Add review rule...",
+      replace: "Replace",
+      replace_connector: "Replace: {name}",
+      pick_credential: "Pick one of your connected credentials",
+      no_connected_credentials: "No connected credentials yet",
+      add_credentials_hint: "Add credentials in the Keys module first.",
+      open_keys: "Open Keys",
+      add_credential_in_keys: "Add credential in Keys",
+      healthy: "healthy",
+      check_failed: "check failed",
+      not_tested: "not tested",
+      credential_warning: "Some connectors need healthy credentials before this dimension can be finalized",
+      approval_required: "Approval Required",
+      fully_automated: "Fully Automated",
+      cron_label: "Cron:",
+      every_label: "Every:",
+      done: "Done",
+    },
+
+    quick_config: {
+      title: "Quick Setup",
+      start_conditions: "Start Conditions",
+      apps_and_services: "Apps & Services",
+      time_schedule: "Time Schedule",
+      event_triggers: "Event Triggers",
+      frequency: "Frequency",
+      daily: "Daily",
+      weekly: "Weekly",
+      monthly: "Monthly",
+      days: "Days",
+      day_of_month: "Day of Month",
+      time: "Time",
+    },
+
+    events_panel: {
+      source_agent: "Source Agent",
+      no_agents: "No agents available",
+      events_from: "Events from {name}",
+      select_agent: "Select an agent",
+      loading_events: "Loading events...",
+      no_subscriptions: "No event subscriptions found",
+      choose_agent: "Choose an agent to see its events",
+    },
+
+    matrix_cred_picker: {
+      no_stored: "No stored credentials",
+      best_match: "Best match",
+      other: "Other",
+    },
+
+    services_panel: {
+      no_connectors: "No connectors with healthy API keys found. Add credentials in the Vault first.",
+      select_table: "Select table",
+    },
+
+    spatial_question: {
+      agent_configuration: "Agent Configuration",
+      or_custom_answer: "Or type a custom answer",
+      type_answer: "Type your answer...",
+      submit: "Submit",
+      press_to_select: "Press 1-{count} to select instantly",
+    },
+
+    table_picker: {
+      title: "Select Table",
+      search: "Search tables...",
+      loading: "Loading tables...",
+      no_tables: "No tables found for this connector",
+      clear_selection: "Clear selection",
+      no_match: 'No tables matching "{search}"',
+    },
+
+    matrix_entry: {
+      new_agent: "New Agent",
+      failed_to_create: "Failed to create draft agent.",
+      build_failed: "Build failed to start. Check CLI configuration.",
+    },
+
+    workflow_upload: {
+      build_hint: "Press Build to transform this workflow into a persona agent.",
+      paste_placeholder: "Paste your workflow JSON here...",
+      parse: "Parse",
+      drop_file: "Drop a workflow file here",
+      file_types: "n8n, Zapier, Make, or GitHub Actions (.json, .yaml)",
+      paste_json: "Or paste JSON directly",
+    },
+
+    config_popup: {
+      load_error: "Could not load saved values -- you may need to re-enter them.",
+      fill_hint: "Fill in at least one field to save",
+      failed_to_save: "Failed to save configuration",
+    },
+
+    onboarding: {
+      setup_complete: "Setup {score}% complete",
+      steps_done: "{completed}/{total} steps done",
+      dismiss_checklist: "Dismiss checklist",
+    },
+
+    template_picker: {
+      title: "Choose a Template",
+      subtitle: "Pick a template to pre-fill your agent, or start from scratch.",
+      start_from_scratch: "Start from scratch",
+    },
+
+    persona_overview: {
+      no_match: "No personas match",
+      no_connectors: "No connectors",
+      never: "Never",
+      description_copied: "Description copied to clipboard",
+      failed_copy: "Failed to copy description",
+      no_connectors_configured: "No connectors configured",
+      click_to_copy: "Click to copy",
+    },
+
+    overview_empty: {
+      title: "No personas match these filters",
+      subtitle: "Try adjusting your search or filter chips, or reset the view to see all personas.",
+      clear_all_filters: "Clear all filters",
+    },
+
+    overview_batch: {
+      selected: "{count} selected",
+    },
+
+    overview_menu: {
+      more_actions: "More actions",
+      settings: "Settings",
+    },
+
+    overview_toolbar: {
+      search_placeholder: "Search personas...",
+      show_all: "Show all personas",
+      show_favorites: "Show only favorites",
+      favorites: "Favorites",
+      clear_search: "Clear search",
+    },
+
+    overview_columns: {
+      persona: "Persona",
+      connectors: "Connectors",
+      trust: "Trust",
+      triggers: "Triggers",
+      last_run: "Last Run",
+      all_statuses: "All Statuses",
+      active_only: "Active only",
+      disabled_only: "Disabled only",
+      building_drafts: "Building / Drafts",
+      all_health: "All Health",
+      all_connectors: "All Connectors",
+      active_triggers: "{count} active trigger(s)",
+    },
+
+    health_indicator: {
+      last: "last {count}",
+    },
+
+    view_presets: {
+      views: "Views",
+      save_current: "Save Current View",
+      smart_presets: "Smart Presets",
+      your_views: "Your Views",
+      custom_view: "Custom View",
+      custom_filters: "Custom filters",
+      reset_defaults: "Reset to defaults",
+      view_name_placeholder: "View name...",
+      enter_view_name: "Enter a view name",
+      delete_view: "Delete view",
+      active_healthy: "Active & Healthy",
+      needs_attention: "Needs Attention",
+      failing_agents: "Failing Agents",
+      my_favorites: "My Favorites",
+      recently_active: "Recently Active",
+    },
+
+    activity: {
+      title: "Activity",
+      items: "{count} items",
+      all_statuses: "All statuses",
+      select_persona: "Select a persona to view activity",
+      no_activity: "No activity yet",
+      execution: "Execution",
+      description: "Description",
+      context: "Context",
+      reviewer_notes: "Reviewer Notes",
+      approve: "Approve",
+      reject: "Reject",
+    },
+
+    chat: {
+      select_persona: "Select a persona to start chatting",
+      waiting: "Waiting for response...",
+      ask_anything: "Ask anything about this agent...",
+      enter_to_send: "Enter to send, Shift+Enter for new line",
+      scroll_to_bottom: "Scroll to bottom",
+      experiments_running_one: "{count} experiment running -- results will appear here when ready",
+      experiments_running_other: "{count} experiments running -- results will appear here when ready",
+      you: "You",
+      assistant: "Assistant",
+      thinking: "thinking...",
+      copy_message: "Copy message",
+      no_conversations: "No conversations yet",
+      new_chat: "New Chat",
+      confirm_delete: "Delete?",
+    },
+
+    advisory: {
+      how_can_improve: "How can this agent work better for you?",
+      go: "Go",
+    },
+
+    ops: {
+      sessions: "Sessions",
+      run: "Run",
+      lab: "Lab",
+      health: "Health",
+      assertions: "Assertions",
+      switch_panel: "Switch to {panel} panel",
+    },
+
+    ops_run: {
+      execute_agent: "Execute Agent",
+      running: "Running...",
+      recent: "Recent",
+      no_executions: "No executions yet",
+    },
+
+    ops_lab: {
+      history: "History",
+      no_lab_runs: "No lab runs yet",
+    },
+
+    ops_health: {
+      no_health_data: "No health data",
+      run_health_check: "Run Health Check",
+      checking: "Checking...",
+      last_check: "Last check",
+      checked_at: "Checked {time}",
+      issues: "Issues",
+    },
+
+    ops_assertions: {
+      active_count: "{enabled}/{total} active",
+      no_assertions: "No assertions configured",
+    },
+
+    health_tab: {
+      title: "Health Check",
+    },
+
+    matrix_tab: {
+      loading: "Loading matrix",
+      no_data: "No matrix data available. Build or rebuild this persona to generate dimensions.",
+    },
+
+    settings_status: {
+      saving: "Saving {sections}...",
+      changed: "{sections} changed",
+      all_saved: "All changes saved",
+      irreversible: "Irreversible",
+    },
+
+    tool_runner: {
+      no_tools: "No tools assigned to this persona.",
+      input_json: "Input JSON",
+      run: "Run",
+      success: "Success",
+      failed: "Failed",
+    },
+
+    overview_actions: {
+      delete_agent: "Delete Agent",
+      delete_agent_message: "This agent and all its configuration will be permanently removed.",
+      delete_agents: "Delete {count} Agent(s)",
+      delete_agents_message: "{count} agent(s) and all their configuration will be permanently removed.",
+      delete_drafts: "Delete {count} Draft(s)",
+      delete_drafts_message: "{count} draft agent(s) will be permanently removed.",
+    },
   },
 
   // -------------------------------------------------------------------

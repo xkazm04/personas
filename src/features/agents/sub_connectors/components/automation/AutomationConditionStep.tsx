@@ -6,6 +6,7 @@ import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { FALLBACK_OPTIONS } from '../../libs/useAutomationSetup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignResult {
   platform_reasoning?: string;
@@ -40,12 +41,13 @@ export function AutomationConditionStep({
   showAdvanced, setShowAdvanced, inputSchema, setInputSchema,
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
+  const { t } = useTranslation();
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
         <div className="px-3.5 py-2.5 rounded-xl bg-accent/5 border border-accent/15">
           <p className="text-sm text-foreground/80">
-            <span className="font-medium text-accent">AI recommendation:</span>{' '}
+            <span className="font-medium text-accent">{t.agents.connectors.auto_ai_recommendation}</span>{' '}
             {designResult.platform_reasoning}
           </p>
         </div>
@@ -54,12 +56,12 @@ export function AutomationConditionStep({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Name</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus-ring" />
           </div>
           <div>
-            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Platform</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t.agents.connectors.auto_platform_label}</label>
             <div className="mt-1.5">
               <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-xl border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
                 {PLATFORM_CONFIG[platform]?.label ?? platform}
@@ -68,7 +70,7 @@ export function AutomationConditionStep({
           </div>
           {platform === 'n8n' && (
             <div className="px-3 py-2.5 rounded-xl bg-brand-amber/5 border border-brand-amber/15">
-              <p className="text-sm text-foreground/80"><Rocket className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />Workflow will be created and activated on your n8n instance automatically.</p>
+              <p className="text-sm text-foreground/80"><Rocket className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_n8n_hint}</p>
             </div>
           )}
           {platform === 'github_actions' && githubRepo && (
@@ -81,30 +83,30 @@ export function AutomationConditionStep({
           )}
           {platform === 'zapier' && (
             <div className="px-3 py-2.5 rounded-xl bg-brand-amber/5 border border-brand-amber/15">
-              <p className="text-sm text-foreground/80"><Zap className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />Catch hook will be validated and connected.</p>
+              <p className="text-sm text-foreground/80"><Zap className="w-3.5 h-3.5 inline mr-1 text-brand-amber" />{t.agents.connectors.auto_zapier_hint}</p>
             </div>
           )}
           {platform === 'custom' && (
             <div className="px-3 py-2.5 rounded-xl bg-secondary/20 border border-border/40">
-              <p className="text-sm text-muted-foreground">Manual setup required. Automation will be saved as draft.</p>
+              <p className="text-sm text-muted-foreground">{t.agents.connectors.auto_custom_hint}</p>
             </div>
           )}
           <div>
-            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Credential</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t.agents.connectors.auto_credential_label}</label>
             {hasPlatformCredential ? (
               <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-emerald/5 border border-brand-emerald/15">
                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
                 <span className="text-sm text-foreground/80">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? platformCredentials[0]?.name}</span>
               </div>
             ) : (
-              <p className="mt-1.5 text-sm text-muted-foreground">None selected</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">{t.agents.connectors.auto_none_selected}</p>
             )}
           </div>
         </div>
         <div className="space-y-4">
           {designResult.setup_steps && designResult.setup_steps.length > 0 && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">What will happen</label>
+              <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t.agents.connectors.auto_what_will_happen}</label>
               <div className="mt-1.5 space-y-1.5">
                 {designResult.setup_steps.map((step, i) => (
                   <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-secondary/20 border border-border/40">
@@ -117,7 +119,7 @@ export function AutomationConditionStep({
           )}
           {designResult.handles_connectors && designResult.handles_connectors.length > 0 && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Replaces connectors</label>
+              <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t.agents.connectors.auto_replaces}</label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {designResult.handles_connectors.map((c) => (
                   <span key={c} className="px-2 py-0.5 text-sm rounded-lg bg-secondary/40 border border-border/40 text-muted-foreground">{c}</span>
@@ -131,7 +133,7 @@ export function AutomationConditionStep({
       <button onClick={() => setShowAdvanced(!showAdvanced)}
         className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
         <Pencil className="w-3.5 h-3.5" />
-        {showAdvanced ? 'Hide' : 'Show'} advanced settings
+        {showAdvanced ? t.agents.connectors.auto_hide_advanced : t.agents.connectors.auto_show_advanced}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
       </button>
 

@@ -4,6 +4,7 @@ import {
   User,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 
 interface ChatThreadProps {
@@ -15,6 +16,7 @@ interface ChatThreadProps {
 
 export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
   function ChatThread({ messages, isThinking, thinkingLabel, error }, ref) {
+    const { t } = useTranslation();
     return (
       <div ref={ref} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {/* Welcome message */}
@@ -25,10 +27,10 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             </div>
             <div className="space-y-1.5">
               <p className="text-sm text-foreground/80">
-                Tell me what you need this agent to do. I'll build the full configuration -- prompt, tools, triggers -- from your description.
+                {t.agents.chat_thread.welcome}
               </p>
               <p className="text-sm text-muted-foreground/80">
-                Example: "Watch my GitHub PRs and post a summary to Slack every morning"
+                {t.agents.chat_thread.welcome_example}
               </p>
             </div>
           </div>

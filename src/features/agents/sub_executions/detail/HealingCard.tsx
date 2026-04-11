@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../runnerTypes';
 
@@ -10,6 +11,7 @@ export function HealingCard({
   notification: HealingEventPayload;
   onDismiss: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const isRetry = notification.auto_fixed && notification.backoff_seconds != null;
   const isIssue = !notification.auto_fixed;
@@ -62,7 +64,7 @@ export function HealingCard({
             onClick={onDismiss}
             className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5"
           >
-            <span className="typo-body">dismiss</span>
+            <span className="typo-body">{t.agents.executions.dismiss}</span>
           </button>
         </div>
 
@@ -82,7 +84,7 @@ export function HealingCard({
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-400/60 animate-pulse" />
                 <span className="typo-code text-amber-300/90">
-                  Retrying in {countdown}s...
+                  {tx(t.agents.executions.retrying_in, { seconds: countdown })}
                 </span>
               </div>
             )}
@@ -90,13 +92,13 @@ export function HealingCard({
               <div className="flex items-center gap-1.5">
                 <RotateCw className="w-3.5 h-3.5 text-blue-400/70 animate-spin" />
                 <span className="typo-code text-blue-300/90">
-                  Retrying now...
+                  {t.agents.executions.retrying_now}
                 </span>
               </div>
             )}
             {/* Attempt badge */}
             <span className="ml-auto typo-code text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
-              Attempt {notification.retry_number} of {notification.max_retries}
+              {tx(t.agents.executions.attempt_of, { current: notification.retry_number!, max: notification.max_retries! })}
             </span>
           </div>
         )}
@@ -117,7 +119,7 @@ export function HealingCard({
             className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
-            View in healing issues
+            {t.agents.executions.view_healing_issues}
           </button>
         )}
 

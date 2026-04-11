@@ -1,4 +1,5 @@
 import { ListTree, Search, Activity, Zap, Play } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { isTerminalState } from '@/lib/execution/executionState';
 
 export type DetailTab = 'detail' | 'inspector' | 'trace' | 'pipeline' | 'replay';
@@ -11,6 +12,7 @@ interface ExecutionDetailTabsProps {
 }
 
 export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, executionStatus }: ExecutionDetailTabsProps) {
+  const { t } = useTranslation();
   const tabClass = (tab: DetailTab, special?: boolean) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
       activeTab === tab
@@ -24,26 +26,26 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, exe
     <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
       <button onClick={() => setActiveTab('detail')} className={tabClass('detail')}>
         <ListTree className="w-3.5 h-3.5" />
-        Detail
+        {t.agents.executions.tab_detail}
       </button>
       {hasToolSteps && (
         <button onClick={() => setActiveTab('inspector')} className={tabClass('inspector')}>
           <Search className="w-3.5 h-3.5" />
-          Inspector
+          {t.agents.executions.tab_inspector}
         </button>
       )}
       <button onClick={() => setActiveTab('trace')} className={tabClass('trace')}>
         <Activity className="w-3.5 h-3.5" />
-        Trace
+        {t.agents.executions.tab_trace}
       </button>
       <button onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
         <Zap className="w-3.5 h-3.5" />
-        Pipeline
+        {t.agents.executions.tab_pipeline}
       </button>
       {isTerminalState(executionStatus) && (
         <button onClick={() => setActiveTab('replay')} className={tabClass('replay', true)}>
           <Play className="w-3.5 h-3.5" />
-          Replay
+          {t.agents.executions.tab_replay}
         </button>
       )}
     </div>

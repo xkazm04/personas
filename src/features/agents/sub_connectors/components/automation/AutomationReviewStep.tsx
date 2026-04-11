@@ -4,6 +4,7 @@ import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutomationReviewStepProps {
   platform: AutomationPlatform;
@@ -19,6 +20,7 @@ export function AutomationReviewStep({
   platform, deployResult, designError,
   onComplete, onClose, onReset, phase,
 }: AutomationReviewStepProps) {
+  const { t } = useTranslation();
   if (phase === 'deploying') {
     return (
       <div key="deploying" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
@@ -27,13 +29,13 @@ export function AutomationReviewStep({
         </div>
         <div className="text-center">
           <p className="text-sm font-medium text-foreground/90">
-            Deploying to {PLATFORM_CONFIG[platform]?.label}...
+            {t.agents.connectors.auto_deploying_to.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {platform === 'n8n' && 'Creating workflow and activating on your n8n instance'}
-            {platform === 'github_actions' && 'Setting up repository dispatch integration'}
-            {platform === 'zapier' && 'Validating and connecting catch hook'}
-            {platform === 'custom' && 'Saving automation configuration'}
+            {platform === 'n8n' && t.agents.connectors.auto_deploy_n8n}
+            {platform === 'github_actions' && t.agents.connectors.auto_deploy_github}
+            {platform === 'zapier' && t.agents.connectors.auto_deploy_zapier}
+            {platform === 'custom' && t.agents.connectors.auto_deploy_custom}
           </p>
         </div>
       </div>
@@ -51,7 +53,7 @@ export function AutomationReviewStep({
         </div>
         <div className="text-center max-w-md">
           <p className="text-sm font-medium text-foreground/90">
-            {hasWarning ? 'Automation deployed with warning' : 'Automation deployed successfully'}
+            {hasWarning ? t.agents.connectors.auto_deployed_warning : t.agents.connectors.auto_deployed_ok}
           </p>
           <p className="text-sm text-muted-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
@@ -68,7 +70,7 @@ export function AutomationReviewStep({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
           >
-            View on {PLATFORM_CONFIG[platform]?.label}
+            {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -76,7 +78,7 @@ export function AutomationReviewStep({
           onClick={() => { onComplete(); onClose(); }}
           className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
         >
-          Done
+          {t.agents.connectors.auto_done}
         </button>
       </div>
     );
@@ -88,16 +90,16 @@ export function AutomationReviewStep({
       <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-brand-rose/5 border border-brand-rose/15">
         <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-brand-rose/80">Design failed</p>
-          <p className="text-sm text-brand-rose/50 mt-0.5">{designError || 'Unknown error'}</p>
+          <p className="text-sm font-medium text-brand-rose/80">{t.agents.connectors.auto_design_failed}</p>
+          <p className="text-sm text-brand-rose/50 mt-0.5">{designError || t.agents.connectors.auto_unknown_error}</p>
         </div>
       </div>
       <div className="flex justify-end gap-2">
         <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
-          Close
+          {t.common.close}
         </button>
         <button onClick={onReset} className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
-          Try Again
+          {t.agents.connectors.auto_try_again}
         </button>
       </div>
     </div>

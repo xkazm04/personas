@@ -12,6 +12,7 @@ import { AutomationCardActions } from './AutomationCardActions';
 import { AutomationStatusBadge } from './AutomationStatusBadge';
 import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutomationCardProps {
   automation: PersonaAutomation;
@@ -27,6 +28,7 @@ interface AutomationCardProps {
 export function AutomationCard({
   automation, onTest, onEdit, onToggleStatus, onDelete, isTesting, isTransitioning, testResult,
 }: AutomationCardProps) {
+  const { t } = useTranslation();
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
 
   return (
@@ -56,12 +58,12 @@ export function AutomationCard({
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`inline-flex items-center px-1.5 py-0 text-sm font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>
-            {automation.lastTriggeredAt && <span className="text-sm text-muted-foreground/60">Last run: {formatRelativeTime(automation.lastTriggeredAt)}</span>}
-            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="text-sm text-muted-foreground/50">Never triggered</span>}
-            {automation.deploymentStatus === 'draft' && <span className="text-sm text-muted-foreground/50">Not deployed</span>}
+            {automation.lastTriggeredAt && <span className="text-sm text-muted-foreground/60">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
+            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="text-sm text-muted-foreground/50">{t.agents.connectors.auto_never_triggered}</span>}
+            {automation.deploymentStatus === 'draft' && <span className="text-sm text-muted-foreground/50">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
               <span className="inline-flex items-center gap-0.5 text-sm text-muted-foreground/60" title="Falls back to direct connector on failure">
-                <ShieldCheck className="w-3 h-3" /> Fallback
+                <ShieldCheck className="w-3 h-3" /> {t.agents.connectors.auto_fallback}
               </span>
             )}
           </div>
@@ -71,12 +73,12 @@ export function AutomationCard({
             <button onClick={() => onTest(automation.id)} disabled={isTesting}
               title={isTesting ? 'Test is already running' : undefined}
               className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
-              {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} Test
+              {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
             </button>
           )}
           {automation.deploymentStatus === 'draft' && (
             <button onClick={() => onEdit(automation.id)}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}>Configure</button>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"

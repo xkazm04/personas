@@ -1,5 +1,6 @@
 import { Rocket, Play } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ExecutionComparison } from '../../components/list/ExecutionComparison';
 import { ExecutionListHeader } from './ExecutionListHeader';
 import { ExecutionRow } from './ExecutionRow';
@@ -33,11 +34,12 @@ export function ExecutionList() {
     handleRowClick,
     setRerunInputData,
   } = useExecutionListState();
+  const { t } = useTranslation();
 
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+        {t.agents.executions.no_persona_selected}
       </div>
     );
   }
@@ -45,7 +47,7 @@ export function ExecutionList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground/60">
-        <LoadingSpinner size="lg" label="Loading executions" />
+        <LoadingSpinner size="lg" label={t.agents.executions.loading_executions} />
       </div>
     );
   }
@@ -86,17 +88,17 @@ export function ExecutionList() {
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
           </div>
           <p className="typo-heading text-foreground/80">
-            Your agent is ready to go
+            {t.agents.executions.agent_ready}
           </p>
           <p className="typo-body text-muted-foreground/80 mt-1 max-w-[260px]">
-            Run it to see results here. Each execution will appear in this timeline.
+            {t.agents.executions.agent_ready_subtitle}
           </p>
           <button
             onClick={handleTryIt}
             className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
           >
             <Play className="w-3.5 h-3.5" />
-            Try it now
+            {t.agents.executions.try_it_now}
           </button>
         </div>
       ) : (
@@ -104,11 +106,11 @@ export function ExecutionList() {
           {/* Header (desktop only) */}
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-muted-foreground/80 uppercase tracking-wider">
             {compareMode && <div className="col-span-1" />}
-            <div className={compareMode ? 'col-span-2' : 'col-span-2'}>Status</div>
-            <div className="col-span-2">Duration</div>
-            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>Started</div>
-            <div className="col-span-2">Tokens</div>
-            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>Cost</div>
+            <div className={compareMode ? 'col-span-2' : 'col-span-2'}>{t.agents.executions.col_status}</div>
+            <div className="col-span-2">{t.agents.executions.col_duration}</div>
+            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>{t.agents.executions.col_started}</div>
+            <div className="col-span-2">{t.agents.executions.col_tokens}</div>
+            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>{t.agents.executions.col_cost}</div>
           </div>
 
           {/* Rows */}

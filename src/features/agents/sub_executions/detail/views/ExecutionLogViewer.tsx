@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLog } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 
@@ -10,6 +11,7 @@ interface ExecutionLogViewerProps {
 }
 
 export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewerProps) {
+  const { t } = useTranslation();
   const [showLog, setShowLog] = useState(false);
   const [logContent, setLogContent] = useState<string | null>(null);
   const [logLoading, setLogLoading] = useState(false);
@@ -46,9 +48,9 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
     setLogError(null);
     try {
       const content = await getExecutionLog(executionId, personaId ?? '');
-      setLogContent(content ?? 'Log file is empty or was not found.');
+      setLogContent(content ?? t.agents.executions.log_empty);
     } catch (err) {
-      setLogError(err instanceof Error ? err.message : 'Failed to load log');
+      setLogError(err instanceof Error ? err.message : t.agents.executions.failed_to_load_log);
     } finally {
       setLogLoading(false);
     }
@@ -63,16 +65,16 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
         >
           {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           <FileText className="w-4 h-4" />
-          Execution Log
+          {t.agents.executions.execution_log}
         </button>
-        <CopyButton copied={copied} onCopy={handleCopyLog} tooltip="Copy log to clipboard" />
+        <CopyButton copied={copied} onCopy={handleCopyLog} tooltip={t.agents.executions.copy_log_tooltip} />
       </div>
       {showLog && (
           <div>
             {logLoading && (
               <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Loading log...
+                {t.agents.executions.loading_log}
               </div>
             )}
             {logError && (

@@ -1,6 +1,7 @@
 import { X, Zap, Rocket } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAutomationSetup } from '../../libs/useAutomationSetup';
 import { AutomationTriggerStep } from './AutomationTriggerStep';
 import { AutomationActionStep } from './AutomationActionStep';
@@ -18,6 +19,7 @@ interface AutomationSetupModalProps {
 export function AutomationSetupModal({
   open, personaId, onClose, onComplete, editAutomationId,
 }: AutomationSetupModalProps) {
+  const { t } = useTranslation();
   const s = useAutomationSetup(personaId, editAutomationId);
 
   const handleClose = () => { s.handleClose(); onClose(); };
@@ -35,12 +37,12 @@ export function AutomationSetupModal({
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-accent" />
           <h2 id="automation-setup-title" className="text-sm font-semibold text-foreground/90">
-            {s.phase === 'idle' && (s.editAutomation ? 'Configure Automation' : 'Add Automation')}
-            {s.phase === 'analyzing' && 'Designing Automation...'}
-            {s.phase === 'preview' && 'Review Automation'}
-            {s.phase === 'deploying' && 'Deploying...'}
-            {s.phase === 'success' && 'Automation Deployed'}
-            {s.phase === 'error' && 'Deployment Failed'}
+            {s.phase === 'idle' && (s.editAutomation ? t.agents.connectors.auto_modal_configure : t.agents.connectors.auto_modal_add)}
+            {s.phase === 'analyzing' && t.agents.connectors.auto_modal_designing}
+            {s.phase === 'preview' && t.agents.connectors.auto_modal_review}
+            {s.phase === 'deploying' && t.agents.connectors.auto_modal_deploying}
+            {s.phase === 'success' && t.agents.connectors.auto_modal_deployed}
+            {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
         <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -106,15 +108,15 @@ export function AutomationSetupModal({
           <button
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >Start over</button>
+          >{t.agents.connectors.auto_start_over}</button>
           <div className="flex items-center gap-2">
-            <button onClick={handleClose} className="btn-md border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">Cancel</button>
+            <button onClick={handleClose} className="btn-md border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
             <Tooltip
               content={
                 !s.name.trim()
-                  ? 'Enter a name to continue'
+                  ? t.agents.connectors.auto_name_required
                   : !s.hasPlatformCredential && s.needsCredential
-                    ? 'Select a credential before deploying'
+                    ? t.agents.connectors.auto_cred_required
                     : ''
               }
               placement="top"
@@ -126,7 +128,7 @@ export function AutomationSetupModal({
                 className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Rocket className="w-3.5 h-3.5" />
-                Deploy & Save
+                {t.agents.connectors.auto_deploy_save}
               </button>
             </Tooltip>
           </div>

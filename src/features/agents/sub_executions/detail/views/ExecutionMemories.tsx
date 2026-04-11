@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Brain } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -13,6 +14,7 @@ interface ExecutionMemoriesProps {
 }
 
 export function ExecutionMemories({ executionId, executionStatus }: ExecutionMemoriesProps) {
+  const { t, tx } = useTranslation();
   const [executionMemories, setExecutionMemories] = useState<PersonaMemory[]>([]);
   const [showMemories, setShowMemories] = useState(false);
   const [memoriesLoaded, setMemoriesLoaded] = useState(false);
@@ -31,7 +33,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
   if (!memoriesLoaded) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground/50 typo-body py-1">
-        <LoadingSpinner size="sm" label="Loading memories" />
+        <LoadingSpinner size="sm" label={t.agents.executions.loading_memories} />
       </div>
     );
   }
@@ -46,7 +48,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
       >
         {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         <Brain className="w-4 h-4 text-violet-400" />
-        Memories Created ({executionMemories.length})
+        {tx(t.agents.executions.memories_created, { count: executionMemories.length })}
       </button>
       {showMemories && (
           <div className="animate-fade-slide-in space-y-1.5">

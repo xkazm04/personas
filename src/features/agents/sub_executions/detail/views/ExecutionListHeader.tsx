@@ -1,5 +1,6 @@
 import { Clock, Shield, ArrowLeftRight, X } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionListHeaderProps {
   executionCount: number;
@@ -26,16 +27,18 @@ export function ExecutionListHeader({
   canCompare,
   setShowComparison,
 }: ExecutionListHeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <>
       <div className="flex items-center gap-2">
         <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
           <Clock className="w-3.5 h-3.5" />
-          History
+          {t.agents.executions.history}
         </h4>
         {executionCount > 0 && (
-          <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
+          <Tooltip content={showRaw ? t.agents.executions.sensitive_visible : t.agents.executions.sensitive_masked}>
             <button
               onClick={() => setShowRaw(!showRaw)}
               className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
@@ -45,7 +48,7 @@ export function ExecutionListHeader({
               }`}
             >
               <Shield className="w-3 h-3" />
-              {showRaw ? 'Raw' : 'Masked'}
+              {showRaw ? t.agents.executions.raw : t.agents.executions.masked}
             </button>
           </Tooltip>
         )}
@@ -59,7 +62,7 @@ export function ExecutionListHeader({
             }`}
           >
             {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
-            {compareMode ? 'Cancel' : 'Compare'}
+            {compareMode ? t.common.cancel : t.agents.executions.compare}
           </button>
         )}
       </div>
@@ -70,17 +73,17 @@ export function ExecutionListHeader({
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft
-              ? 'Select the first execution to compare'
+              ? t.agents.executions.select_first
               : !compareRight
-                ? 'Now select the second execution'
-                : 'Ready to compare'}
+                ? t.agents.executions.select_second
+                : t.agents.executions.ready_to_compare}
           </span>
           {compareLeft && (
             <span className="ml-auto flex items-center gap-1.5">
               <span className="typo-code text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
-                  <span className="text-muted-foreground/70">vs</span>
+                  <span className="text-muted-foreground/70">{t.agents.executions.vs}</span>
                   <span className="typo-code text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}
@@ -91,7 +94,7 @@ export function ExecutionListHeader({
               onClick={() => setShowComparison(true)}
               className="ml-2 px-2.5 py-1 typo-heading rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
-              Compare
+              {t.agents.executions.compare}
             </button>
           )}
         </div>

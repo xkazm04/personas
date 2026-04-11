@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 export function AiHealingCounters({
   phase,
   fixCount,
@@ -7,20 +9,21 @@ export function AiHealingCounters({
   fixCount: number;
   shouldRetry: boolean;
 }) {
+  const { t, tx } = useTranslation();
   const label = (() => {
     switch (phase) {
       case 'started':
-        return 'AI Healing started';
+        return t.agents.executions.healing_started;
       case 'diagnosing':
-        return 'Diagnosing...';
+        return t.agents.executions.healing_diagnosing;
       case 'applying':
-        return `Applying ${fixCount} fix${fixCount !== 1 ? 'es' : ''}...`;
+        return tx(fixCount !== 1 ? t.agents.executions.healing_applying_other : t.agents.executions.healing_applying_one, { count: fixCount });
       case 'completed':
         return fixCount > 0
-          ? `${fixCount} fix${fixCount !== 1 ? 'es' : ''} applied${shouldRetry ? ' -- retrying' : ''}`
-          : 'No fixes needed';
+          ? tx(fixCount !== 1 ? t.agents.executions.healing_completed_fixes_other : t.agents.executions.healing_completed_fixes_one, { count: fixCount }) + (shouldRetry ? t.agents.executions.healing_completed_retrying : '')
+          : t.agents.executions.healing_no_fixes;
       case 'failed':
-        return 'Healing failed';
+        return t.agents.executions.healing_failed;
       default:
         return '';
     }
