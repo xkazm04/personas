@@ -7,7 +7,6 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
-import { sections } from '@/features/shared/components/layout/sidebar/sidebarData';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
@@ -34,20 +33,12 @@ const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSign
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
+const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
-const CompositionEditor = lazy(() => import('@/features/composition/components/CompositionEditor'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
-
-// Direction-aware cross-fade variants — re-enable with AnimatePresence when freeze is fully resolved.
-// const sectionFadeVariants = {
-//   initial: (dir: number) => ({ opacity: 0, y: dir * 12 }),
-//   animate: { opacity: 1, y: 0 },
-//   exit: (dir: number) => ({ opacity: 0, y: -dir * 12 }),
-// };
-
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
@@ -98,9 +89,8 @@ export default function PersonasPage() {
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchWorkflows()),
     ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups', 'workflows'] as const;
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
     secondaryResults.forEach((r, i) => {
       if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
     });
@@ -138,7 +128,6 @@ export default function PersonasPage() {
       import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
       import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
       import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
-      import('@/features/composition/components/CompositionEditor').catch(silentCatch("PersonasPage:prefetchComposition"));
     });
     return () => {
       cancelIdleCallback(id);
@@ -153,18 +142,6 @@ export default function PersonasPage() {
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted' && buildPhase !== 'failed' && buildPhase !== 'cancelled';
   const prevSectionRef = useRef(sidebarSection);
 
-  // Direction-aware cross-fade: track section index order for slide direction
-  const navSectionRef = useRef(sidebarSection);
-  const navDirectionRef = useRef(1);
-  if (sidebarSection !== navSectionRef.current) {
-    const prevIdx = sections.findIndex(s => s.id === navSectionRef.current);
-    const currIdx = sections.findIndex(s => s.id === sidebarSection);
-    navDirectionRef.current = currIdx >= prevIdx ? 1 : -1;
-    navSectionRef.current = sidebarSection;
-  }
-  // Re-enable with AnimatePresence:
-  // const sectionDir = shouldAnimate ? navDirectionRef.current : 0;
-  // const sectionTransition = { ...transition, duration: shouldAnimate ? 0.15 : 0.01 };
 
   useEffect(() => {
     const wasElsewhere = prevSectionRef.current !== 'personas';
@@ -221,7 +198,6 @@ export default function PersonasPage() {
     if (sidebarSection === 'overview') {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'workflows') return <ErrorBoundary name="Workflows"><Suspense fallback={SectionFallback}><CompositionEditor /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
@@ -240,6 +216,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'obsidian-brain') {
         return <ErrorBoundary name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'research-lab') {
+        return <ErrorBoundary name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
