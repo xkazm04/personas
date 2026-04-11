@@ -116,3 +116,22 @@ The autonomous backlog generated 3 candidates: (1) Surface hidden Event Bus feat
 - The PersonaHealthSignal type is a goldmine for data-driven features — it aggregates execution stats, cost data, health scores, and failure predictions per persona. Any future analytics feature should build on this data
 - Pure SVG charts work well for single visualizations — avoid pulling in Recharts for one chart component
 - The leaderboard is a natural cross-sell for the health dashboard — users who care about health scores will want rankings
+
+## Run #7 — 2026-04-11
+
+**Mode:** improve (autonomous)
+**Health scan:** 0 TS errors (5 pre-existing obsidianBrain), 0 lint, 675/675 tests
+**Selected goal:** Prompt Version Timeline with Diffs
+**Source:** user selection from autonomous backlog
+**Confidence at selection:** high (existing VersionsPanel + DiffViewer provide all primitives)
+**Quality score:** 100/100
+**User verdict:** accepted (chose this over surfacing orphaned dashboards and agent dependency graph)
+
+**Key discovery during this run:**
+Discovered 10,658 LOC of orphaned overview dashboards (Analytics 1,280, Observability 3,665, Realtime 4,366, Workflows 647, CronAgents 410, Timeline 290) — previously accessible as subtabs but orphaned when DashboardWithSubtabs was consolidated to just DashboardHome. User declined surfacing them, preferring a novel feature.
+
+**Lessons for future ranking:**
+- User has now declined "surface hidden features" twice in a row (Run #6 and #7) — this pattern has diminishing returns after the initial Run #1 success. Future backlog should deprioritize it
+- Novel features that enhance existing UX (timeline view of existing versions) are more attractive than surfacing separate pages
+- The existing lab primitives (diffStrings, getSectionSummary, TAG_STYLES, formatRelative) are well-designed building blocks — new views can compose them without duplication
+- 10,658 LOC of orphaned overview features remains a significant cleanup/surfacing opportunity for a future run — but should be offered only when the user specifically asks for it

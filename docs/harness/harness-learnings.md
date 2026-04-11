@@ -216,3 +216,18 @@
 - Regression results are ephemeral — they exist as normal eval runs, not tagged specially. Consider adding a `regression_check` tag to eval runs started from the Regression panel for filtering/history
 - The compositeScore weighting (0.4/0.4/0.2) is hardcoded — consider making weights configurable per persona for specialized use cases
 - No i18n for any regression panel text
+
+## Prompt Version Timeline
+
+- [2026-04-11] Timeline view at `src/features/agents/sub_lab/components/shared/PromptTimeline.tsx` — vertical connected timeline with version nodes, inline diffs between consecutive versions
+- [2026-04-11] `TimelineEntry.tsx` — individual timeline node with expand/collapse, actions (promote/archive/rollback), tag badges, baseline indicator
+- [2026-04-11] `InlineDiffPreview.tsx` — compact diff showing changed sections with word counts (added/removed). Uses existing `diffStrings` + `getSectionSummary` from labPrimitives
+- [2026-04-11] VersionsPanel now has list/timeline toggle (persisted to localStorage as `dac-version-view`, default: timeline)
+- [2026-04-11] Timeline renders versions newest-first, looks up previous version by `version_number - 1` for diff computation
+
+## Open follow-ups (from Run #7 — Prompt Timeline, 2026-04-11)
+
+- Timeline doesn't support multi-select for A/B comparison — the list view still has the A/B buttons for that workflow. Consider adding "Compare" action to timeline entries that switches to list view with pre-selected versions
+- InlineDiffPreview only shows section-level changes (which sections changed + word counts) — doesn't show the actual text diff inline. Users need to switch to list view for full DiffViewer. Consider adding an "expand full diff" option per section
+- No integration with the regression testing panel — timeline entries don't show whether a regression check was run against that version. The `baselinePin` is shown but not linked to regression results
+- Timeline animations use `framer-motion` (already a dependency) — entrance animation has a staggered delay per entry. May need `layout` animations for smooth expand/collapse if performance becomes an issue with many versions
