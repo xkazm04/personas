@@ -140,6 +140,24 @@
 - **Add parity check to CI** — Wire `scripts/check-locale-parity.mjs` into the build/CI pipeline as a quality gate
 - **Rust backend error codes** — Replace hardcoded English format! strings in healing.rs, error.rs with error code tokens that the frontend can translate (currently Rust sends full English sentences over IPC)
 
+## Agent Leaderboard
+
+- [2026-04-11] Leaderboard feature at `src/features/overview/sub_leaderboard/` — 6 files: scoring engine, data hook, page, card, radar chart, index
+- [2026-04-11] Composite score formula: Success (30%) + Health (20%) + Speed (20%) + Cost Efficiency (20%) + Activity (10%). All normalized to 0-100
+- [2026-04-11] Data source: `PersonaHealthSignal[]` from `overviewStore.healthSignals` — already computed by the health dashboard pipeline. No new API calls needed
+- [2026-04-11] Speed and Cost scores use fleet-average normalization (ratio to average, clamped 0-100). Activity uses max-relative normalization
+- [2026-04-11] Medals: gold (#1), silver (#2), bronze (#3). Tiers: elite (80+), strong (60+), average (40+), developing (<40)
+- [2026-04-11] SVG radar chart is pure SVG — no Recharts dependency. Supports 1-2 overlaid entries for comparison
+- [2026-04-11] Wired as `OverviewTab = "leaderboard"` in sidebar with Trophy icon. Lazy-loaded via `lazyRetry()`
+
+## Open follow-ups (from Run #6 — Leaderboard, 2026-04-11)
+
+- The leaderboard auto-triggers `refreshHealthDashboard()` on first visit if health data is empty — this is expensive (~400ms). Consider adding a staleness check instead of always refreshing
+- No per-agent drill-down from the leaderboard card — clicking shows the radar but doesn't navigate to the agent editor. Consider adding a "View Agent" link
+- The cost scoring uses `dailyBurnRate` as proxy for cost-per-execution — this is imprecise for agents with variable execution frequency. A proper cost-per-success metric would be more accurate
+- Radar chart doesn't support touch/hover tooltips — each axis vertex shows the dimension score value but not the raw metric. SVG title elements could help
+- No comparison mode yet — the radar supports 2 overlaid entries but the UI only shows 1 at a time (the selected card). A "compare" checkbox or multi-select would enable side-by-side comparison
+
 ## BYOM / Local Models
 
 - [2026-04-11] BYOM Settings UI at `src/features/settings/sub_byom/` — 5 tabs: Providers, API Keys, Cost Routing, Compliance, Audit Log. STAYS devOnly — local models don't work

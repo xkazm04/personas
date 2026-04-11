@@ -91,3 +91,28 @@ Run #1 lesson said "check devOnly items for promotion." The devOnly scan found B
 - The BYOM → Ollama path requires engine=codex_cli, not claude_code. This architectural constraint limits which personas can use local models
 - Local models are viable for SECONDARY tasks (review, planning, notifications) but not PRIMARY execution (code generation, complex reasoning). BYOM should be positioned as "cost optimization for simple tasks" not "run everything locally"
 - Future BYOM work should focus on the Codex CLI path and make the engine/provider distinction clearer in the UI
+
+## Run #6 — 2026-04-11
+
+**Mode:** improve (autonomous)
+**Health scan:** 0 TS errors, 0 lint, 675/675 tests, 17 TODOs, largest file 1294 LOC
+**Selected goal:** Agent Performance Leaderboard
+**Source:** competitive research (no competitor has fleet-wide agent ranking as a feature)
+**Confidence at selection:** medium (novel feature, no precedent in codebase)
+**Quality score:** 100/100
+**User verdict:** accepted (chose this over surfacing devOnly features and onboarding enhancement)
+
+**Why this goal was selected:**
+The autonomous backlog generated 3 candidates: (1) Surface hidden Event Bus features (Chain Studio, Dead Letter, Cloud Webhooks, Marketplace — all devOnly), (2) Agent Performance Leaderboard (novel), (3) Onboarding Enhancement. The user explicitly chose #2, rejecting the proven "surface hidden features" pattern in favor of a novel feature. This signals preference for new capabilities over polishing existing ones.
+
+**Key implementation decisions:**
+1. Composite score uses PersonaHealthSignal data (already computed by health pipeline) — zero new API calls
+2. Scoring: Success 30% + Health 20% + Speed 20% + Cost 20% + Activity 10%
+3. SVG radar chart is pure SVG (no Recharts dependency) — keeps bundle size small for a single chart
+4. Fleet-average normalization for speed/cost — fair comparison regardless of absolute scale
+
+**Lessons for future ranking:**
+- Users may prefer NOVEL features over surfacing hidden ones — "surface devOnly" is a proven high-confidence pattern but doesn't excite as much after Run #1 already did it
+- The PersonaHealthSignal type is a goldmine for data-driven features — it aggregates execution stats, cost data, health scores, and failure predictions per persona. Any future analytics feature should build on this data
+- Pure SVG charts work well for single visualizations — avoid pulling in Recharts for one chart component
+- The leaderboard is a natural cross-sell for the health dashboard — users who care about health scores will want rankings
