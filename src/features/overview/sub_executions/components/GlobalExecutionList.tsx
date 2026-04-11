@@ -246,7 +246,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         key={exec.id} role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px` }}
-                        className="px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
+                        className="px-3 py-2 border-b border-primary/[0.06] active:bg-primary/[0.08]"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -269,7 +269,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         onClick={() => setSelectedExec(exec)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: EXEC_GRID_COLUMNS }}
-                        className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+                        className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-primary/[0.08] ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />

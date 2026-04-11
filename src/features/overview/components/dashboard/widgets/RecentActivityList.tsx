@@ -39,7 +39,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
             keys={recentExecs.map((e) => e.id)}
           >
             {recentExecs.map((exec) => (
-              <div key={exec.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewAll(); } }} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-white/[0.03] transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={onViewAll}>
+              <div key={exec.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewAll(); } }} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-primary/[0.05] transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={onViewAll}>
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   exec.status === 'completed' ? 'text-emerald-400' :
                   exec.status === 'failed' ? 'text-rose-400' :

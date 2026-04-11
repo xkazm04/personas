@@ -97,7 +97,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
       >
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
           <Icon className="w-4 h-4" />
