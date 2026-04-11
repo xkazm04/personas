@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AccessibleToggleProps {
   checked: boolean;
@@ -20,6 +21,7 @@ export function AccessibleToggle({
   className = '',
   'data-testid': dataTestId,
 }: AccessibleToggleProps) {
+  const { t } = useTranslation();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -49,7 +51,7 @@ export function AccessibleToggle({
           checked ? (size === 'sm' ? 'translate-x-3' : 'translate-x-4') : 'translate-x-0'
         }`}
       />
-      <span className="sr-only">{checked ? 'Enabled' : 'Disabled'}</span>
+      <span className="sr-only">{checked ? t.common.enabled : t.common.disabled}</span>
     </button>
   );
 }

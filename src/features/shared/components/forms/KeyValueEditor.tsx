@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Code, List } from 'lucide-react';
 import { JsonEditor } from '../editors/JsonEditor';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface KeyValuePair {
   key: string;
@@ -43,6 +44,7 @@ function rowsToJson(rows: KeyValuePair[]): string {
 }
 
 export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorProps) {
+  const { t } = useTranslation();
   const [isAdvanced, setIsAdvanced] = useState(false);
   const [rows, setRows] = useState<KeyValuePair[]>(() => jsonToRows(value) ?? [{ key: '', value: '' }]);
 
@@ -125,7 +127,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
             className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <List className="w-3 h-3" />
-            Simple mode
+            {t.common.simple_mode}
           </button>
         ) : (
           <button
@@ -134,7 +136,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
             className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-foreground hover:text-foreground transition-colors"
           >
             <Code className="w-3 h-3" />
-            Advanced (JSON)
+            {t.common.advanced_json}
           </button>
         )}
       </div>
@@ -152,7 +154,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                     type="text"
                     value={row.key}
                     onChange={(e) => updateRow(i, 'key', e.target.value)}
-                    placeholder="Label"
+                    placeholder={t.common.label_placeholder}
                     className={`flex-1 px-3 py-2 typo-body rounded-lg border bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-1 transition-all ${
                       isDupe
                         ? 'border-amber-500/40 focus-visible:border-amber-500/60 focus-visible:ring-amber-500/30'
@@ -163,7 +165,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                     type="text"
                     value={row.value}
                     onChange={(e) => updateRow(i, 'value', e.target.value)}
-                    placeholder="Value"
+                    placeholder={t.common.value_placeholder}
                     className="flex-1 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
                   />
                   <button
@@ -175,7 +177,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                   </button>
                 </div>
                 {isDupe && (
-                  <p className="text-amber-500/80 typo-caption pl-1">Duplicate key</p>
+                  <p className="text-amber-500/80 typo-caption pl-1">{t.common.duplicate_key}</p>
                 )}
               </div>
             );
@@ -186,7 +188,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
             className="flex items-center gap-1.5 px-3 py-1.5 typo-caption text-foreground hover:text-foreground border border-dashed border-primary/15 hover:border-primary/30 rounded-lg transition-colors w-full justify-center"
           >
             <Plus className="w-3 h-3" />
-            Add field
+            {t.common.add_field}
           </button>
         </div>
       )}

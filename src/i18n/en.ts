@@ -3433,63 +3433,6 @@ export const en = {
     emit_event: "Event Emission",
   },
 
-  // ---------------------------------------------------------------------------
-  // Trigger labels — type names, descriptions, categories, rate-limit windows,
-  // and pre-built template labels (triggerConstants.ts)
-  // ---------------------------------------------------------------------------
-  triggers: {
-    // Trigger type labels
-    type_manual: "Manual",
-    type_schedule: "Schedule",
-    type_polling: "Polling",
-    type_webhook: "Webhook",
-    type_event_listener: "Event Listener",
-    type_file_watcher: "File Watcher",
-    type_clipboard: "Clipboard",
-    type_app_focus: "App Focus",
-    type_chain: "Chain",
-    type_composite: "Composite",
-
-    // Trigger type descriptions
-    desc_manual: "Run on demand",
-    desc_schedule: "Run on a timer or cron",
-    desc_polling: "Check an endpoint",
-    desc_webhook: "HTTP webhook listener",
-    desc_event_listener: "React to internal events",
-    desc_file_watcher: "React to file system changes",
-    desc_clipboard: "React to clipboard changes",
-    desc_app_focus: "React to app focus changes",
-    desc_chain: "Trigger after another agent completes",
-    desc_composite: "Multiple conditions + time window",
-
-    // Trigger category labels
-    category_pull: "Watch",
-    category_pull_desc: "Poll for changes on an interval",
-    category_push: "Listen",
-    category_push_desc: "Receive external signals",
-    category_compose: "Combine",
-    category_compose_desc: "Chain or compose triggers",
-
-    // Rate limit window labels
-    rate_per_minute: "Per minute",
-    rate_per_5_minutes: "Per 5 minutes",
-    rate_per_hour: "Per hour",
-
-    // Template labels
-    tpl_fw_error_logs: "Auto-analyze error logs",
-    tpl_fw_error_logs_desc: "Triggers when new .log files appear or change in a folder",
-    tpl_fw_csv_data: "Process new CSV files",
-    tpl_fw_csv_data_desc: "Triggers when CSV files are added or modified",
-    tpl_fw_config_changes: "Watch config file changes",
-    tpl_fw_config_changes_desc: "Triggers on changes to JSON, YAML, or TOML config files",
-    tpl_cb_url_summarize: "Auto-summarize copied URLs",
-    tpl_cb_url_summarize_desc: "Triggers when you copy a URL to your clipboard",
-    tpl_cb_error_message: "Auto-diagnose error messages",
-    tpl_cb_error_message_desc: "Triggers when you copy text containing errors or exceptions",
-    tpl_cb_code_snippet: "Auto-format code snippets",
-    tpl_cb_code_snippet_desc: "Triggers when you copy code-like text (function definitions, imports)",
-  },
-
   // -------------------------------------------------------------------
   //  EXECUTION -- user-facing execution messages (executionSlice.ts)
   // -------------------------------------------------------------------

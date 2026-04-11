@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, RefreshCw, Table2, CheckSquare, Square } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { IntrospectedTable } from '@/hooks/database/useTableIntrospection';
 
 interface TableSelectorProps {
@@ -22,6 +23,7 @@ export function TableSelector({
   onRefresh,
   maxHeight = '240px',
 }: TableSelectorProps) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState('');
 
   const selectedSet = useMemo(() => new Set(selectedTables), [selectedTables]);
@@ -66,7 +68,7 @@ export function TableSelector({
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter tables..."
+            placeholder={t.shared.table_filter}
             className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 typo-body text-foreground placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
         </div>
@@ -94,7 +96,7 @@ export function TableSelector({
           ) : (
             <Square className="w-3 h-3" />
           )}
-          {allFilteredSelected ? 'Deselect all' : 'Select all'}
+          {allFilteredSelected ? t.shared.table_deselect_all : t.shared.table_select_all}
           <span className="ml-auto text-foreground">{filteredTables.length}</span>
         </button>
       )}
@@ -104,7 +106,7 @@ export function TableSelector({
         {loading && tables.length === 0 && (
           <div className="flex items-center justify-center py-6 gap-1.5">
             <LoadingSpinner size="sm" className="text-foreground" />
-            <span className="typo-body text-foreground">Loading tables...</span>
+            <span className="typo-body text-foreground">{t.shared.table_loading}</span>
           </div>
         )}
 
@@ -116,13 +118,13 @@ export function TableSelector({
 
         {!loading && !error && filteredTables.length === 0 && tables.length === 0 && (
           <p className="typo-body text-foreground text-center py-6">
-            No tables found
+            {t.shared.table_none_found}
           </p>
         )}
 
         {!loading && !error && filteredTables.length === 0 && tables.length > 0 && (
           <p className="typo-body text-foreground text-center py-6">
-            No matching tables
+            {t.shared.table_no_match}
           </p>
         )}
 
@@ -161,7 +163,9 @@ export function TableSelector({
       {/* Footer */}
       {selectedTables.length > 0 && (
         <div className="px-2.5 py-1.5 border-t border-primary/5 typo-body text-foreground">
-          {selectedTables.length} of {tables.length} table{tables.length !== 1 ? 's' : ''} selected
+          {(tables.length !== 1 ? t.shared.table_selected_plural : t.shared.table_selected)
+            .replace('{selected}', String(selectedTables.length))
+            .replace('{total}', String(tables.length))}
         </div>
       )}
     </div>

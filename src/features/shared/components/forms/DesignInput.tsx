@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import type { DesignFileType, DesignFile, DesignContext } from '@/lib/types/frontendTypes';
 import { ACCEPTED_EXTENSIONS, detectFileType } from './designInputHelpers';
 import { TypeSelectorModal, AttachedFilesRow, ReferencesTextarea } from './DesignInputAttachments';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("design-input");
@@ -25,6 +26,7 @@ export function DesignInput({
   disabled = false,
   onSubmit,
 }: DesignInputProps) {
+  const { t } = useTranslation();
   const [showReferences, setShowReferences] = useState((designContext?.references?.length ?? 0) > 0);
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ name: string; content: string } | null>(null);
@@ -164,7 +166,7 @@ export function DesignInput({
       >
         {isDragging && (
           <div className="absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl pointer-events-none">
-            <span className="typo-heading text-primary/50">Drop file here</span>
+            <span className="typo-heading text-primary/50">{t.common.drop_file_here}</span>
           </div>
         )}
 
@@ -191,7 +193,7 @@ export function DesignInput({
             className="text-foreground hover:text-foreground"
             title="Attach file (API spec, schema, MCP config)"
           >
-            Attach
+            {t.common.attach}
           </Button>
           <input
             ref={fileInputRef}
@@ -213,13 +215,13 @@ export function DesignInput({
             }
             title="Add reference URLs or connection strings"
           >
-            References
+            {t.common.references}
           </Button>
 
           <span className="ml-auto flex items-center gap-2">
             {(designContext?.files?.length ?? 0) > 0 && (
               <span className="typo-body text-foreground">
-                {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
+                {(designContext.files.length === 1 ? t.common.files_attached_one : t.common.files_attached_other).replace('{count}', String(designContext.files.length))}
               </span>
             )}
             <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-muted-foreground/50'}`}>
@@ -228,7 +230,7 @@ export function DesignInput({
           </span>
         </div>
       </div>
-      <p className="typo-body text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="typo-body text-foreground px-1">{t.common.press_enter_to_submit}</p>
 
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (

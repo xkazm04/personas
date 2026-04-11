@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { BlastRadiusItem } from '@/api/agents/personas';
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -23,11 +24,12 @@ interface BlastRadiusPanelProps {
 }
 
 export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
         <LoadingSpinner size="sm" />
-        <span>Checking impact...</span>
+        <span>{t.shared.blast_checking_impact}</span>
       </div>
     );
   }
@@ -35,7 +37,7 @@ export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
   if (items.length === 0) {
     return (
       <div className="px-3 py-2 typo-body text-foreground">
-        No dependent resources found. Safe to delete.
+        {t.shared.blast_safe_to_delete}
       </div>
     );
   }
@@ -44,7 +46,7 @@ export function BlastRadiusPanel({ items, loading }: BlastRadiusPanelProps) {
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 px-1">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400/80" />
-        <span className="typo-heading text-amber-400/80">Impact</span>
+        <span className="typo-heading text-amber-400/80">{t.shared.blast_impact}</span>
       </div>
       <ul className="space-y-1">
         {items.map((item, i) => {

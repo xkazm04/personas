@@ -3,6 +3,7 @@ import { motion, type Variants } from 'framer-motion';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* -- Types ----------------------------------------------------------- */
 
@@ -108,6 +109,7 @@ export function DataGrid<T>({
   selectAll,
   onSelectAll,
 }: DataGridProps<T>) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [internalPageSize, setInternalPageSize] = useState(
     simplified && pageSize === 0 ? 5 : pageSize,
@@ -295,7 +297,7 @@ export function DataGrid<T>({
           {/* Left: page-size selector + item range */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="typo-code text-foreground/90 text-[11px]">Rows</span>
+              <span className="typo-code text-foreground/90 text-[11px]">{t.shared.grid_rows}</span>
               <select
                 value={effectivePageSize}
                 onChange={(e) => {
@@ -305,7 +307,7 @@ export function DataGrid<T>({
                   onPageSizeChange?.(newSize);
                 }}
                 data-testid="page-size-select"
-                aria-label="Rows per page"
+                aria-label={t.shared.grid_rows_per_page}
                 className="typo-code text-[11px] bg-secondary/30 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground hover:bg-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer appearance-auto"
               >
                 {pageSizeOptions.map((opt) => (
@@ -314,7 +316,10 @@ export function DataGrid<T>({
               </select>
             </div>
             <span className="typo-code text-foreground/90 text-[11px]">
-              Showing {Math.min((page - 1) * effectivePageSize + 1, data.length)}–{Math.min(page * effectivePageSize, data.length)} of {data.length} items
+              {t.shared.grid_showing
+                .replace('{start}', String(Math.min((page - 1) * effectivePageSize + 1, data.length)))
+                .replace('{end}', String(Math.min(page * effectivePageSize, data.length)))
+                .replace('{total}', String(data.length))}
             </span>
           </div>
           {/* Right: page buttons */}

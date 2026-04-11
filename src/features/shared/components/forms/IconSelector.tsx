@@ -3,6 +3,7 @@ import type { ConnectorDefinition } from '@/lib/types/types';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { AGENT_ICONS, toAgentIconValue, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export const EMOJI_PRESETS = ['\u{1F916}', '\u{1F9E0}', '\u{26A1}', '\u{1F527}', '\u{1F4E7}', '\u{1F4CA}', '\u{1F6E1}\u{FE0F}', '\u{1F50D}'];
 
@@ -19,6 +20,7 @@ interface IconSelectorProps {
 }
 
 export function IconSelector({ value, onChange, connectors = [], size = 'md' }: IconSelectorProps) {
+  const { t } = useTranslation();
   const s = SIZE_STYLES[size];
   const isDark = useIsDarkTheme();
   const connectorsWithIcon = connectors.filter((c) => c.icon_url);
@@ -27,7 +29,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
     <div className="space-y-3">
       {/* Agent Icons */}
       <div>
-        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Agent Icons</div>
+        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">{t.shared.icon_agent_icons}</div>
         <div className={`flex flex-wrap ${s.gap}`}>
           {AGENT_ICONS.map((entry) => {
             const iconValue = toAgentIconValue(entry.id);
@@ -55,7 +57,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
       {/* Connector Icons */}
       {connectorsWithIcon.length > 0 && (
         <div>
-          <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Connectors</div>
+          <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">{t.shared.icon_connectors}</div>
           <div className={`flex flex-wrap ${s.gap}`}>
             {connectorsWithIcon.map((c) => {
               const isSelected = value === c.icon_url;
@@ -81,7 +83,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
 
       {/* Emoji Presets */}
       <div>
-        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">Emoji</div>
+        <div className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1.5">{t.shared.icon_emoji}</div>
         <div className={`flex flex-wrap ${s.gap}`}>
           {EMOJI_PRESETS.map((emoji) => {
             const isSelected = value === emoji;
@@ -105,7 +107,7 @@ export function IconSelector({ value, onChange, connectors = [], size = 'md' }: 
               type="button"
               onClick={() => onChange('')}
               className={`${s.btn} rounded-lg border border-dashed border-primary/20 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/30 transition-all`}
-              title="Clear icon"
+              title={t.shared.icon_clear}
             >
               <X className="w-3.5 h-3.5" />
             </button>

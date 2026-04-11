@@ -12,6 +12,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { AgentIR, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
 
 // ============================================================================
@@ -52,6 +53,7 @@ const SECTION_LABEL = 'typo-heading uppercase tracking-wider text-foreground fle
 // ============================================================================
 
 function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
+  const { t } = useTranslation();
   const suggestedConnectors = designResult.suggested_connectors ?? [];
 
   const connectorRows = useMemo(() => {
@@ -79,7 +81,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Plug className="w-4 h-4 text-emerald-400" />
-        Connectors & Tools
+        {t.shared.connectors_and_tools}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {connectorRows.map((row, idx) => {
@@ -103,7 +105,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
                   </div>
                 )}
                 <span className="typo-heading text-foreground truncate flex-1">
-                  {isGeneral ? 'General Tools' : meta.label}
+                  {isGeneral ? t.shared.general_tools : meta.label}
                 </span>
               </div>
               {row.tools.length > 0 && (
@@ -129,6 +131,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
 // ============================================================================
 
 function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
+  const { t } = useTranslation();
   const triggers = designResult.suggested_triggers ?? [];
   const subscriptions = designResult.suggested_event_subscriptions ?? [];
 
@@ -138,14 +141,14 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
-        Events & Triggers
-        <span className="typo-body text-foreground ml-1">What activates this persona</span>
+        {t.shared.events_and_triggers}
+        <span className="typo-body text-foreground ml-1">{t.shared.activates_persona}</span>
       </div>
 
       <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
         {triggers.length > 0 && (
           <div className="p-3.5 space-y-2">
-            <span className="typo-code uppercase tracking-wider text-foreground">Triggers</span>
+            <span className="typo-code uppercase tracking-wider text-foreground">{t.shared.triggers}</span>
             {triggers.map((trigger, idx) => (
               <div key={idx} className="flex items-start gap-2.5 py-1">
                 <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
@@ -162,7 +165,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
           <div className="p-3.5 space-y-2">
             <span className="typo-code uppercase tracking-wider text-foreground flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
-              Event Subscriptions
+              {t.shared.event_subscriptions}
             </span>
             {subscriptions.map((sub, idx) => (
               <div key={idx} className="flex items-start gap-2.5 py-1">
@@ -185,6 +188,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
 // ============================================================================
 
 function MessagesNotificationsSection({ designResult }: { designResult: AgentIR }) {
+  const { t } = useTranslation();
   const channels = Array.isArray(designResult.suggested_notification_channels) ? designResult.suggested_notification_channels : [];
 
   if (channels.length === 0) return null;
@@ -193,8 +197,8 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
-        Messages & Notifications
-        <span className="typo-body text-foreground ml-1">How this persona communicates</span>
+        {t.shared.messages_and_notifications}
+        <span className="typo-body text-foreground ml-1">{t.shared.communicates_persona}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -210,7 +214,7 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
                 {channel.required_connector && (
                   <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-foreground border border-primary/10">
                     <Plug className="w-2.5 h-2.5" />
-                    Requires {channel.required_connector}
+                    {t.shared.requires_connector.replace('{connector}', channel.required_connector)}
                   </span>
                 )}
               </div>

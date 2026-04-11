@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UuidLabelProps {
   value: string;
@@ -8,6 +9,7 @@ interface UuidLabelProps {
 }
 
 export function UuidLabel({ value, label }: UuidLabelProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback((e: React.MouseEvent) => {
@@ -29,7 +31,7 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
           {!label && <span className="text-foreground/90">&hellip;</span>}
         </span>
       </Tooltip>
-      <Tooltip content="Copy full ID">
+      <Tooltip content={t.shared.copy_full_id}>
         <button
           onClick={handleCopy}
           className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-foreground hover:text-foreground"

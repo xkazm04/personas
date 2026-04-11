@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FolderOpen, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DirectoryPickerInputProps {
   value: string;
@@ -12,9 +13,11 @@ interface DirectoryPickerInputProps {
 export function DirectoryPickerInput({
   value,
   onChange,
-  placeholder = 'Select a directory...',
+  placeholder: placeholderProp,
   className,
 }: DirectoryPickerInputProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t.common.select_directory;
   const [browsing, setBrowsing] = useState(false);
 
   const handleBrowse = async () => {
@@ -23,7 +26,7 @@ export function DirectoryPickerInput({
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Select output directory',
+        title: t.common.select_output_directory,
       });
       if (selected && typeof selected === 'string') {
         onChange(selected);
@@ -58,7 +61,7 @@ export function DirectoryPickerInput({
         ) : (
           <FolderOpen className="w-3.5 h-3.5" />
         )}
-        Browse
+        {t.common.browse}
       </button>
     </div>
   );

@@ -3,6 +3,7 @@ import { ChevronDown, FolderGit2, Check, Loader2, Wrench } from 'lucide-react';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { Listbox } from './Listbox';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('devtools-project-dropdown');
@@ -31,9 +32,11 @@ export function DevToolsProjectDropdown({
   value,
   onSelect,
   status,
-  placeholder = 'Select a project...',
+  placeholder: placeholderProp,
   className,
 }: DevToolsProjectDropdownProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t.shared.devtools_select_project;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,10 +97,10 @@ export function DevToolsProjectDropdown({
             {loading ? (
               <span className="flex items-center gap-2 text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Loading projects...
+                {t.shared.devtools_loading_projects}
               </span>
             ) : error ? (
-              <span className="text-rose-400/80 text-xs">Failed to load projects</span>
+              <span className="text-rose-400/80 text-xs">{t.shared.devtools_load_failed}</span>
             ) : selected ? (
               <div className="min-w-0">
                 <span className="font-medium">{selected.name}</span>
@@ -124,11 +127,11 @@ export function DevToolsProjectDropdown({
           {loading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Loading...
+              {t.shared.devtools_loading}
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-rose-400/80 mb-1">Failed to load projects</p>
+              <p className="text-sm text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
               <p className="text-xs text-foreground">{error}</p>
             </div>
           ) : projects.length === 0 ? (
@@ -136,12 +139,12 @@ export function DevToolsProjectDropdown({
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Wrench className="w-5 h-5 text-primary/60" />
               </div>
-              <p className="text-sm font-medium text-foreground mb-1">No projects found</p>
+              <p className="text-sm font-medium text-foreground mb-1">{t.shared.devtools_no_projects}</p>
               <p className="text-xs text-foreground mb-3">
-                Add a codebase project in Dev Tools first, then return here to select it.
+                {t.shared.devtools_no_projects_hint}
               </p>
               <p className="text-xs text-foreground">
-                Navigate to <span className="font-medium text-primary/70">Plugins &rarr; Dev Tools</span> to create a project.
+                {t.shared.devtools_no_projects_nav}
               </p>
             </div>
           ) : (

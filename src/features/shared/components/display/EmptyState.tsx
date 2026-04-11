@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ── Inline SVG illustrations (48×48, indigo/violet palette) ─────────── */
 
@@ -72,28 +73,22 @@ function BarChartEmptySvg() {
 
 export type EmptyStateVariant = 'chart' | 'activity' | 'alerts' | 'metrics';
 
-const VARIANT_MAP: Record<EmptyStateVariant, { Svg: () => ReactNode; heading: string; description: string }> = {
-  chart: {
-    Svg: ChartWaveSvg,
-    heading: 'No traffic data yet',
-    description: 'Traffic and error metrics will appear here once your agents start processing requests.',
-  },
-  activity: {
-    Svg: ActivityPulseSvg,
-    heading: 'No recent activity',
-    description: 'Run an agent to see execution activity here.',
-  },
-  alerts: {
-    Svg: BellSilentSvg,
-    heading: 'No alerts triggered',
-    description: 'Alerts will appear here when your monitoring rules fire.',
-  },
-  metrics: {
-    Svg: BarChartEmptySvg,
-    heading: 'No execution data',
-    description: 'Charts will populate once agents have completed executions.',
-  },
+const VARIANT_SVG: Record<EmptyStateVariant, () => ReactNode> = {
+  chart: ChartWaveSvg,
+  activity: ActivityPulseSvg,
+  alerts: BellSilentSvg,
+  metrics: BarChartEmptySvg,
 };
+
+function useVariantMap(): Record<EmptyStateVariant, { Svg: () => ReactNode; heading: string; description: string }> {
+  const { t } = useTranslation();
+  return {
+    chart: { Svg: VARIANT_SVG.chart, heading: t.shared.empty_chart_heading, description: t.shared.empty_chart_description },
+    activity: { Svg: VARIANT_SVG.activity, heading: t.shared.empty_activity_heading, description: t.shared.empty_activity_description },
+    alerts: { Svg: VARIANT_SVG.alerts, heading: t.shared.empty_alerts_heading, description: t.shared.empty_alerts_description },
+    metrics: { Svg: VARIANT_SVG.metrics, heading: t.shared.empty_metrics_heading, description: t.shared.empty_metrics_description },
+  };
+}
 
 interface EmptyStateProps {
   /** Predefined variant with built-in illustration, heading, and description. */
@@ -107,7 +102,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ variant = 'chart', heading, description, className = '' }: EmptyStateProps) {
-  const preset = VARIANT_MAP[variant];
+  const variantMap = useVariantMap();
+  const preset = variantMap[variant];
   const { Svg } = preset;
 
   return (

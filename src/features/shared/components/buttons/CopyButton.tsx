@@ -3,6 +3,7 @@ import { Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Tooltip } from '../display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CopyButtonProps {
   /** Text to copy — mutually exclusive with `copied`/`onCopy` (managed mode). */
@@ -36,7 +37,7 @@ export function CopyButton({
   copied: externalCopied,
   onCopy: externalOnCopy,
   label,
-  copiedLabel = 'Copied',
+  copiedLabel: copiedLabelProp,
   tooltip,
   iconSize = 'w-3.5 h-3.5',
   className = '',
@@ -44,9 +45,11 @@ export function CopyButton({
   copiedIcon,
   disabled,
 }: CopyButtonProps) {
+  const { t } = useTranslation();
   const internal = useCopyToClipboard(2000);
   const isManaged = externalCopied !== undefined;
   const copied = isManaged ? externalCopied : internal.copied;
+  const copiedLabel = copiedLabelProp ?? t.shared.copy_copied;
 
   const handleClick = () => {
     if (disabled) return;
@@ -58,7 +61,7 @@ export function CopyButton({
   };
 
   const hasLabel = !!label;
-  const resolvedTooltip = tooltip ?? (hasLabel ? undefined : 'Copy');
+  const resolvedTooltip = tooltip ?? (hasLabel ? undefined : t.shared.copy_tooltip);
 
   const btn = (
     <button
@@ -127,7 +130,7 @@ export function CopyButton({
 
   if (resolvedTooltip) {
     return (
-      <Tooltip content={copied ? 'Copied!' : resolvedTooltip}>
+      <Tooltip content={copied ? t.shared.copy_copied_bang : resolvedTooltip}>
         {btn}
       </Tooltip>
     );

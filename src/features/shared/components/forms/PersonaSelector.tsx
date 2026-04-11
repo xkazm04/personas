@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, Search, Check, Bot, X } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaSelectorProps {
   value: string;
@@ -19,9 +20,11 @@ export function PersonaSelector({
   value,
   onChange,
   personas,
-  placeholder = 'Select persona',
+  placeholder: placeholderProp,
   showAll = true,
 }: PersonaSelectorProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t.common.select_persona;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +83,7 @@ export function PersonaSelector({
         ) : (
           <>
             <Bot className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-            <span className="text-sm text-foreground flex-1 text-left">{showAll ? 'All Personas' : placeholder}</span>
+            <span className="text-sm text-foreground flex-1 text-left">{showAll ? t.common.all_personas : placeholder}</span>
           </>
         )}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -99,7 +102,7 @@ export function PersonaSelector({
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..."
+                  placeholder={t.common.search_ellipsis}
                   className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
                 />
                 {search && (
@@ -122,7 +125,7 @@ export function PersonaSelector({
                   }`}
               >
                 <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
-                <span className="text-sm font-medium flex-1">All Personas</span>
+                <span className="text-sm font-medium flex-1">{t.common.all_personas}</span>
                 {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
               </button>
             )}
@@ -151,7 +154,7 @@ export function PersonaSelector({
             })}
 
             {filtered.length === 0 && search && (
-              <div className="px-3 py-4 text-xs text-foreground text-center">No personas matching &quot;{search}&quot;</div>
+              <div className="px-3 py-4 text-xs text-foreground text-center">{t.common.no_personas_matching.replace('{query}', search)}</div>
             )}
           </div>
         </div>

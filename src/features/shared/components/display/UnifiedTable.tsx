@@ -8,6 +8,7 @@
 import { useState, useMemo, useRef, useCallback, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,6 +71,7 @@ function ColumnHeader<T>({
   sortDir: 'asc' | 'desc';
   onSort: (key: string) => void;
 }) {
+  const { t } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ function ColumnHeader<T>({
         <button
           onClick={() => onSort(col.key)}
           className={`p-0.5 rounded transition-colors ${isSorted ? 'text-primary' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}
-          title={`Sort by ${col.label}`}
+          title={t.shared.sort_by.replace('{label}', col.label)}
         >
           {isSorted ? (
             sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
@@ -121,7 +123,7 @@ function ColumnHeader<T>({
           <button
             onClick={() => { setShowFilter(!showFilter); setShowSearch(false); }}
             className={`p-0.5 rounded transition-colors ${isFiltered ? 'text-primary' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}
-            title={`Filter ${col.label}`}
+            title={t.shared.filter_label.replace('{label}', col.label)}
           >
             <Filter className="w-3.5 h-3.5" />
           </button>
@@ -152,7 +154,7 @@ function ColumnHeader<T>({
                 type="text"
                 value={col.searchValue ?? ''}
                 onChange={(e) => col.onSearchChange!(e.target.value)}
-                placeholder={`Search...`}
+                placeholder={t.shared.search_ellipsis}
                 autoFocus
                 className="w-24 px-2 py-0.5 rounded-lg text-sm bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/90 outline-none focus-visible:border-primary/25"
               />
@@ -167,7 +169,7 @@ function ColumnHeader<T>({
             <button
               onClick={() => { setShowSearch(true); setShowFilter(false); }}
               className={`p-0.5 rounded transition-colors ${isSearched ? 'text-primary' : 'text-muted-foreground/30 hover:text-muted-foreground/60'}`}
-              title={`Search ${col.label}`}
+              title={t.shared.search_label.replace('{label}', col.label)}
             >
               <Search className="w-3.5 h-3.5" />
             </button>
@@ -230,8 +232,10 @@ export function UnifiedTable<T>({
   const useVirtual = rowHeight > 0;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
 
+  const { t } = useTranslation();
+
   if (isLoading) {
-    return <div className="py-8 text-center text-foreground text-sm">Loading...</div>;
+    return <div className="py-8 text-center text-foreground text-sm">{t.common.loading}</div>;
   }
 
   return (

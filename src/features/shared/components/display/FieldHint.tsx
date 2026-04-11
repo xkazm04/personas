@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Info } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface FieldHintProps {
   /** Plain-English explanation of the field */
@@ -15,6 +16,7 @@ interface FieldHintProps {
  * Displays: explanation, valid range, and a concrete example.
  */
 export function FieldHint({ text, range, example }: FieldHintProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [above, setAbove] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -36,7 +38,7 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         className="text-foreground hover:text-foreground transition-colors focus-ring rounded-sm"
-        aria-label="Field info"
+        aria-label={t.shared.field_info}
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -50,12 +52,12 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
           <p className="text-foreground">{text}</p>
           {range && (
             <p className="mt-1 text-foreground">
-              <span className="font-semibold text-foreground/90">Range:</span> {range}
+              <span className="font-semibold text-foreground/90">{t.shared.hint_range}</span> {range}
             </p>
           )}
           {example && (
             <p className="mt-0.5 text-foreground">
-              <span className="font-semibold text-foreground/90">Example:</span>{' '}
+              <span className="font-semibold text-foreground/90">{t.shared.hint_example}</span>{' '}
               <code className="px-1 py-0.5 rounded bg-secondary/50 text-foreground font-mono">{example}</code>
             </p>
           )}

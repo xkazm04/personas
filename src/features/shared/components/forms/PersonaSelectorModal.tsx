@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Check, X, ChevronDown } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaSelectorModalProps {
   value: string;
@@ -23,11 +24,13 @@ export function PersonaSelectorModal({
   value,
   onChange,
   personas,
-  placeholder = 'Select persona',
+  placeholder: placeholderProp,
   showAll = true,
   defaultOpen = false,
   onExternalClose,
 }: PersonaSelectorModalProps) {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t.shared.persona_select;
   const [open, setOpen] = useState(defaultOpen);
   const [search, setSearch] = useState('');
 
@@ -65,7 +68,7 @@ export function PersonaSelectorModal({
           className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/15 bg-secondary/20 hover:border-primary/25 hover:bg-secondary/30 transition-all min-w-[180px]"
         >
           <span className="text-sm text-foreground/85 truncate flex-1 text-left">
-            {selected ? selected.name : showAll ? 'All Personas' : placeholder}
+            {selected ? selected.name : showAll ? t.shared.persona_all : placeholder}
           </span>
           <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         </button>
@@ -83,7 +86,7 @@ export function PersonaSelectorModal({
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 id="persona-selector-modal" className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Persona</h3>
+            <h3 id="persona-selector-modal" className="text-sm font-semibold text-foreground uppercase tracking-wider">{t.shared.persona_modal_title}</h3>
             <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -94,7 +97,7 @@ export function PersonaSelectorModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
+              placeholder={t.shared.search_ellipsis}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
               autoFocus
             />
@@ -145,7 +148,7 @@ export function PersonaSelectorModal({
           </div>
 
           {filtered.length === 0 && search && (
-            <div className="py-6 text-center text-sm text-foreground">No personas matching &ldquo;{search}&rdquo;</div>
+            <div className="py-6 text-center text-sm text-foreground">{t.shared.persona_no_match.replace('{query}', search)}</div>
           )}
         </div>
       </BaseModal>

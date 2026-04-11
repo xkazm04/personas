@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBounda
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { useReasoningTrace } from "@/hooks/execution/useReasoningTrace";
 import ReasoningTrace from "./ReasoningTrace";
@@ -47,14 +48,17 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
   return <span className="text-foreground shrink-0 text-xs">{"\u2014"}</span>;
 }
 
-function statusLabel(status: ActiveProcess["status"], queuePosition?: number): string {
-  switch (status) {
-    case "running": return "";          // elapsed timer shown instead
-    case "queued": return `#${(queuePosition ?? 0) + 1} in queue`;
-    case "input_required": return "Input required";
-    case "draft_ready": return "Draft ready";
-    default: return status;
-  }
+function useStatusLabel() {
+  const { t } = useTranslation();
+  return (status: ActiveProcess["status"], queuePosition?: number): string => {
+    switch (status) {
+      case "running": return "";          // elapsed timer shown instead
+      case "queued": return t.shared.process_in_queue.replace('{position}', String((queuePosition ?? 0) + 1));
+      case "input_required": return t.shared.process_input_required;
+      case "draft_ready": return t.shared.process_draft_ready;
+      default: return status;
+    }
+  };
 }
 
 function ProcessRow({
@@ -65,6 +69,8 @@ function ProcessRow({
   processKey: string;
   onNavigate?: () => void;
 }) {
+  const { t } = useTranslation();
+  const statusLabel = useStatusLabel();
   const [expanded, setExpanded] = useState(false);
   const isExecution = process.domain === "execution";
   const executionId = isExecution && expanded ? (process.runId ?? null) : null;
@@ -118,7 +124,7 @@ function ProcessRow({
           <ReasoningTrace entries={entries} isLive={isLive} startTime={process.startedAt} />
           {process.costUsd > 0 && (
             <div className="px-3 pb-2 typo-caption text-foreground">
-              {process.toolCallCount} tool calls &middot; ${process.costUsd.toFixed(4)}
+              {t.shared.process_tool_calls.replace('{count}', String(process.toolCallCount))} &middot; ${process.costUsd.toFixed(4)}
             </div>
           )}
         </div>
@@ -132,6 +138,7 @@ function ProcessRow({
 // ---------------------------------------------------------------------------
 
 function DrawerContent({ onClose }: DrawerProps) {
+  const { t } = useTranslation();
   const { activeProcesses, recentProcesses } = useOverviewStore(
     useShallow((s) => ({
       activeProcesses: s.activeProcesses,
@@ -186,7 +193,7 @@ function DrawerContent({ onClose }: DrawerProps) {
       <div className="fixed top-[var(--titlebar-height,40px)] right-0 bottom-0 w-[380px] z-50 bg-background border-l border-primary/10 flex flex-col shadow-elevation-3 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <h3 className="typo-body font-semibold">Process Activity</h3>
+          <h3 className="typo-body font-semibold">{t.shared.process_activity}</h3>
           <div className="flex items-center gap-1">
             {(actionEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0) && (
               <button
@@ -194,13 +201,13 @@ function DrawerContent({ onClose }: DrawerProps) {
                 onClick={() => useOverviewStore.getState().clearNonActive()}
                 title="Clear completed and queued items"
               >
-                Clear
+                {t.common.clear}
               </button>
             )}
             <button
               className="p-1 rounded hover:bg-primary/10 transition-colors"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t.common.close}
             >
               <X size={16} />
             </button>
@@ -211,7 +218,7 @@ function DrawerContent({ onClose }: DrawerProps) {
         <div className="flex-1 overflow-y-auto">
           {!hasContent && (
             <div className="flex items-center justify-center h-full typo-caption text-foreground">
-              No active or recent processes
+              {t.shared.process_empty}
             </div>
           )}
 
@@ -219,7 +226,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {actionEntries.length > 0 && (
             <div>
               <div className="px-3 pt-3 pb-1 typo-caption text-orange-400 uppercase tracking-wide">
-                Action Required ({actionEntries.length})
+                {t.shared.process_action_required} ({actionEntries.length})
               </div>
               {actionEntries.map(([key, proc]) => (
                 <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
@@ -231,7 +238,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {runningEntries.length > 0 && (
             <div>
               <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
-                Active ({runningEntries.length})
+                {t.shared.process_active} ({runningEntries.length})
               </div>
               {runningEntries.map(([key, proc]) => (
                 <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
@@ -243,7 +250,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {queuedEntries.length > 0 && (
             <div>
               <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
-                Queued ({queuedEntries.length})
+                {t.shared.process_queued} ({queuedEntries.length})
               </div>
               {queuedEntries.map(([key, proc]) => (
                 <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
@@ -255,7 +262,7 @@ function DrawerContent({ onClose }: DrawerProps) {
           {recentProcesses.length > 0 && (
             <div>
               <div className="px-3 pt-3 pb-1 typo-caption text-foreground uppercase tracking-wide">
-                Recent
+                {t.shared.process_recent}
               </div>
               {recentProcesses.map((proc, i) => (
                 <ProcessRow
