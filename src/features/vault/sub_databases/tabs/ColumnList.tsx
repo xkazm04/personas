@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 
 interface ColumnListProps {
@@ -18,11 +19,14 @@ export function ColumnList({
   columnLabel,
   typeLabel,
 }: ColumnListProps) {
+  const { t, tx } = useTranslation();
+  const db = t.vault.databases;
+
   if (columnsLoading) {
     return (
       <div className="flex items-center gap-2 py-8 justify-center">
         <LoadingSpinner className="text-muted-foreground/60" />
-        <span className="text-sm text-muted-foreground/60">Loading columns...</span>
+        <span className="text-sm text-muted-foreground/60">{db.loading_columns}</span>
       </div>
     );
   }
@@ -38,7 +42,7 @@ export function ColumnList({
   if (columns.length === 0) {
     return (
       <p className="text-sm text-muted-foreground/60 text-center py-8">
-        {isApi ? 'No properties found' : 'No columns found'}
+        {isApi ? db.no_properties : db.no_columns}
       </p>
     );
   }
@@ -51,8 +55,8 @@ export function ColumnList({
             <tr className="bg-secondary/40 border-b border-primary/10">
               <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">{columnLabel}</th>
               <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/4">{typeLabel}</th>
-              {!isApi && <th className="px-3 py-2 text-center font-semibold text-foreground/70 w-20">Nullable</th>}
-              {!isApi && <th className="px-3 py-2 text-left font-semibold text-foreground/70">Default</th>}
+              {!isApi && <th className="px-3 py-2 text-center font-semibold text-foreground/70 w-20">{db.nullable}</th>}
+              {!isApi && <th className="px-3 py-2 text-left font-semibold text-foreground/70">{db.default_val}</th>}
             </tr>
           </thead>
           <tbody>
@@ -90,7 +94,9 @@ export function ColumnList({
       </div>
 
       <div className="mt-3 text-sm text-muted-foreground/60">
-        {columns.length} {isApi ? 'propert' : 'column'}{columns.length !== 1 ? (isApi ? 'ies' : 's') : (isApi ? 'y' : '')}
+        {isApi
+          ? tx(columns.length !== 1 ? db.property_count_other : db.property_count_one, { count: columns.length })
+          : tx(columns.length !== 1 ? db.column_count_other : db.column_count_one, { count: columns.length })}
       </div>
     </>
   );

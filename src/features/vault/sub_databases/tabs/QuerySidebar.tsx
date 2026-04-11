@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface QuerySidebarProps {
   credentialId: string;
@@ -11,6 +12,8 @@ interface QuerySidebarProps {
 }
 
 export function QuerySidebar({ credentialId, language, selectedId, onSelect }: QuerySidebarProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   const queries = useVaultStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
   const createQuery = useVaultStore((s) => s.createDbSavedQuery);
   const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
@@ -50,7 +53,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
-                placeholder="Query title"
+                placeholder={db.query_title_placeholder}
                 className="flex-1 px-2.5 py-1.5 rounded-xl text-sm bg-background/50 border border-primary/15 text-foreground/80 focus-ring placeholder:text-muted-foreground/30"
               />
               <Button variant="ghost" size="icon-sm" onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
@@ -67,7 +70,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              New Query
+              {db.new_query}
             </button>
           )}
       </div>
@@ -110,7 +113,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center">
               <Plus className="w-4 h-4 text-muted-foreground/50" />
             </div>
-            <p className="text-sm text-muted-foreground/60">No saved queries</p>
+            <p className="text-sm text-muted-foreground/60">{db.no_saved_queries}</p>
           </div>
         )}
       </div>

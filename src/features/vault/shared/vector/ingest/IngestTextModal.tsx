@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Type } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestText } from '@/api/vault/database/vectorKb';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface IngestTextModalProps {
   kbId: string;
@@ -10,6 +11,8 @@ interface IngestTextModalProps {
 }
 
 export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [ingesting, setIngesting] = useState(false);
@@ -46,7 +49,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
           <Type className="w-3.5 h-3.5 text-violet-400" />
         </div>
-        <h2 id="ingest-text-title" className="text-sm font-semibold text-foreground/90 flex-1">Paste Text</h2>
+        <h2 id="ingest-text-title" className="text-sm font-semibold text-foreground/90 flex-1">{sh.paste_text}</h2>
         <button
           onClick={onClose}
           className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
@@ -58,12 +61,12 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       {/* Body */}
       <div className="p-5 space-y-4">
         <div>
-          <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">Title</label>
+          <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">{sh.title_label}</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Product Requirements, Meeting Notes..."
+            placeholder={sh.title_placeholder}
             className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
             autoFocus
           />
@@ -71,7 +74,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
 
         <div>
           <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">
-            Content
+            {sh.content_label}
             {text.length > 0 && (
               <span className="ml-2 text-muted-foreground/40">{text.length.toLocaleString()} chars</span>
             )}
@@ -79,7 +82,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Paste your text content here..."
+            placeholder={sh.content_placeholder}
             rows={12}
             className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
           />
@@ -98,7 +101,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           onClick={onClose}
           className="px-4 py-2 text-sm rounded-lg hover:bg-secondary/50 text-foreground/70 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
         <button
           onClick={() => void handleSubmit()}
@@ -108,10 +111,10 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           {ingesting ? (
             <span className="flex items-center gap-2">
               <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Ingesting...
+              {sh.ingesting}
             </span>
           ) : (
-            'Ingest'
+            sh.ingest
           )}
         </button>
       </div>

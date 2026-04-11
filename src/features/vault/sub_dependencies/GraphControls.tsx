@@ -1,4 +1,5 @@
-import { KIND_ICONS, KIND_LABELS } from './graphConstants';
+import { KIND_ICONS, getKindLabels } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { GraphNodeKind } from './credentialGraph';
 
 interface GraphControlsProps {
@@ -8,9 +9,12 @@ interface GraphControlsProps {
 }
 
 export function GraphControls({ stats, filterKind, onFilterChange }: GraphControlsProps) {
+  const { t } = useTranslation();
+  const kindLabels = getKindLabels(t);
+
   return (
     <div className="grid grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-6 gap-2">
-      {(Object.keys(KIND_LABELS) as GraphNodeKind[]).map((kind) => {
+      {(Object.keys(kindLabels) as GraphNodeKind[]).map((kind) => {
         const Icon = KIND_ICONS[kind];
         const active = filterKind === kind;
         return (
@@ -27,7 +31,7 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
             <div>
               <span className="text-lg font-semibold leading-none">{stats[kind]}</span>
-              <span className="text-xs ml-1.5">{KIND_LABELS[kind]}</span>
+              <span className="text-xs ml-1.5">{kindLabels[kind]}</span>
             </div>
           </button>
         );

@@ -3,6 +3,7 @@ import { Database } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { SchemaManagerModal } from './SchemaManagerModal';
 import { useDbGridColumns, type DbRow } from './DBGrid';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -14,6 +15,8 @@ interface DatabaseListViewProps {
 type SortDir = 'asc' | 'desc';
 
 export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
+  const { t, tx } = useTranslation();
+  const db = t.vault.databases;
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const dbSchemaTables = useVaultStore((s) => s.dbSchemaTables);
@@ -51,7 +54,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       types.set(r.credential.service_type, label);
     }
     return [
-      { value: '', label: `All Types (${types.size})` },
+      { value: '', label: tx(db.all_types, { count: types.size }) },
       ...Array.from(types.entries()).sort(([, a], [, b]) => a.localeCompare(b)).map(([val, lab]) => ({ value: val, label: lab })),
     ];
   }, [allRows]);
@@ -86,8 +89,8 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       <div className="animate-fade-slide-in">
         <EmptyIllustration
           icon={Database}
-          heading="No database credentials"
-          description="Add database credentials from the Catalog to manage schemas and run queries."
+          heading={db.no_credentials}
+          description={db.no_credentials_hint}
           className="py-20"
         />
       </div>
@@ -106,8 +109,8 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           sortDirection={sortDir}
           onSort={handleSort}
           emptyIcon={Database}
-          emptyTitle="No matching databases"
-          emptyDescription="Try changing the type filter"
+          emptyTitle={db.no_matching}
+          emptyDescription={db.no_matching_hint}
           className="flex-1"
         />
       </div>

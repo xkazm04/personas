@@ -1,5 +1,6 @@
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import { TableSearch, SidebarTestConnection } from './TableSearch';
 import type { IntrospectedTable, RedisKeyInfo } from '@/hooks/database/useTableIntrospection';
 
@@ -41,6 +42,8 @@ export function TableListSidebar({
   onContextMenu,
   credentialId,
 }: TableListSidebarProps) {
+  const { t, tx } = useTranslation();
+  const dbt = t.vault.databases;
   const q = filter.trim().toLowerCase();
   const filteredTables = q
     ? tables.filter((t) => {
@@ -68,7 +71,7 @@ export function TableListSidebar({
         {loading && tables.length === 0 && redisKeys.length === 0 && (
           <div className="flex items-center justify-center py-12 gap-2">
             <LoadingSpinner className="text-muted-foreground/60" />
-            <span className="text-sm text-muted-foreground/60">Loading...</span>
+            <span className="text-sm text-muted-foreground/60">{dbt.loading}</span>
           </div>
         )}
 
@@ -85,14 +88,14 @@ export function TableListSidebar({
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length === 0 && (
           <div className="flex flex-col items-center py-8 gap-1">
             <p className="text-sm text-muted-foreground/60 text-center">
-              {isApi ? 'No databases found' : 'No tables found'}
+              {isApi ? dbt.no_databases_found : dbt.no_tables_found}
             </p>
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
           </div>
         )}
 
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-8">No matching tables</p>
+          <p className="text-sm text-muted-foreground/60 text-center py-8">{dbt.no_matching_tables}</p>
         )}
 
         {!isRedis && filteredTables.map((table) => {
@@ -128,11 +131,11 @@ export function TableListSidebar({
 
         {/* Redis keys */}
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length === 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-8">No keys found</p>
+          <p className="text-sm text-muted-foreground/60 text-center py-8">{dbt.no_keys_found}</p>
         )}
 
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length > 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-8">No matching keys</p>
+          <p className="text-sm text-muted-foreground/60 text-center py-8">{dbt.no_matching_keys}</p>
         )}
 
         {isRedis && filteredKeys.map((keyInfo) => {
@@ -159,10 +162,10 @@ export function TableListSidebar({
       {!loading && !error && (
         <div className="px-3 py-2 border-t border-primary/5 text-sm text-muted-foreground/60">
           {isRedis
-            ? `${redisKeys.length} key${redisKeys.length !== 1 ? 's' : ''}`
+            ? tx(redisKeys.length !== 1 ? dbt.key_count_other : dbt.key_count_one, { count: redisKeys.length })
             : isApi
-              ? `${tables.length} database${tables.length !== 1 ? 's' : ''}`
-              : `${tables.length} table${tables.length !== 1 ? 's' : ''}`}
+              ? tx(tables.length !== 1 ? dbt.database_count_other : dbt.database_count_one, { count: tables.length })
+              : tx(tables.length !== 1 ? dbt.table_count_other : dbt.table_count_one, { count: tables.length })}
         </div>
       )}
     </div>

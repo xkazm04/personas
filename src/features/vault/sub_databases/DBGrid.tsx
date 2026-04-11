@@ -3,6 +3,7 @@ import { Database, Table2, Code2 } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 
 export interface DbRow {
@@ -17,10 +18,12 @@ export function useDbGridColumns(
   typeFilter: string,
   setTypeFilter: (v: string) => void,
 ): DataGridColumn<DbRow>[] {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   return useMemo(() => [
     {
       key: 'name',
-      label: 'Database',
+      label: db.col_database,
       width: '1.5fr',
       sortable: true,
       render: (row) => (
@@ -41,7 +44,7 @@ export function useDbGridColumns(
     },
     {
       key: 'type',
-      label: 'Type',
+      label: db.col_type,
       width: '0.8fr',
       filterOptions: typeOptions,
       filterValue: typeFilter,
@@ -52,7 +55,7 @@ export function useDbGridColumns(
     },
     {
       key: 'tables',
-      label: 'Tables',
+      label: db.col_tables,
       width: '0.5fr',
       sortable: true,
       render: (row) => row.tableCount > 0 ? (
@@ -66,7 +69,7 @@ export function useDbGridColumns(
     },
     {
       key: 'queries',
-      label: 'Queries',
+      label: db.col_queries,
       width: '0.5fr',
       sortable: true,
       render: (row) => row.queryCount > 0 ? (
@@ -80,7 +83,7 @@ export function useDbGridColumns(
     },
     {
       key: 'created',
-      label: 'Created',
+      label: db.col_created,
       width: '0.7fr',
       sortable: true,
       align: 'right' as const,
@@ -88,5 +91,5 @@ export function useDbGridColumns(
         <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
       ),
     },
-  ], [typeOptions, typeFilter, setTypeFilter]);
+  ], [typeOptions, typeFilter, setTypeFilter, db]);
 }

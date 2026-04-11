@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NodeDetailPanelProps {
   node: GraphNode | null;
@@ -11,6 +12,8 @@ interface NodeDetailPanelProps {
 }
 
 export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }: NodeDetailPanelProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   if (!node) return null;
   const Icon = KIND_ICONS[node.kind];
 
@@ -36,7 +39,7 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
 
       <div className="p-3 space-y-2">
         <div className="text-xs text-muted-foreground/60">
-          {connections.length} connection{connections.length !== 1 ? 's' : ''}
+          {tx(connections.length !== 1 ? dep.connection_count_other : dep.connection_count_one, { count: connections.length })}
         </div>
 
         <div className="space-y-1 max-h-[250px] overflow-y-auto">

@@ -1,5 +1,6 @@
 import { Play, Wand2, Save, Check, Shield, ShieldOff } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface QueryToolbarProps {
   selectedTitle: string;
@@ -28,6 +29,9 @@ export function QueryToolbar({
   onAiRun,
   onToggleSafeMode,
 }: QueryToolbarProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
+
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
       <span className="text-sm font-semibold text-foreground/70 flex-1 truncate">{selectedTitle}</span>
@@ -47,7 +51,7 @@ export function QueryToolbar({
         }`}
       >
         {saveState === 'saved' ? <Check className="w-3 h-3" /> : saveState === 'saving' ? <LoadingSpinner size="xs" /> : <Save className="w-3 h-3" />}
-        {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving...' : 'Save'}
+        {saveState === 'saved' ? db.saved : saveState === 'saving' ? db.saving : db.save}
       </button>
 
       <button
@@ -56,7 +60,7 @@ export function QueryToolbar({
         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
       >
         {executing ? <LoadingSpinner size="xs" /> : <Play className="w-3 h-3" />}
-        {executing ? 'Running...' : 'Run'}
+        {executing ? db.running : db.run}
       </button>
 
       <button
@@ -65,7 +69,7 @@ export function QueryToolbar({
         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-elevation-1 shadow-violet-500/5"
       >
         {isAiRunning ? <LoadingSpinner size="xs" /> : <Wand2 className="w-3 h-3" />}
-        {isAiRunning ? 'Debugging...' : 'AI Run'}
+        {isAiRunning ? db.debugging : db.ai_run}
       </button>
 
       <button
@@ -75,10 +79,10 @@ export function QueryToolbar({
             ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
             : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
         }`}
-        title={safeMode ? 'Safe mode ON: write queries require confirmation' : 'Safe mode OFF: all queries execute directly'}
+        title={safeMode ? db.safe_mode_on : db.safe_mode_off}
       >
         {safeMode ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
-        {safeMode ? 'Safe' : 'Write'}
+        {safeMode ? db.safe : db.write}
       </button>
     </div>
   );

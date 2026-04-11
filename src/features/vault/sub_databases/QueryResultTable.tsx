@@ -4,6 +4,7 @@ import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { silentCatch } from "@/lib/silentCatch";
 import { AlertTriangle, Clock, Copy, Check, CheckCircle2 } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ROW_HEIGHT = 32;
 
@@ -12,6 +13,8 @@ interface QueryResultTableProps {
 }
 
 export function QueryResultTable({ result }: QueryResultTableProps) {
+  const { t, tx } = useTranslation();
+  const db = t.vault.databases;
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,8 +48,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
     return (
       <EmptyIllustration
         icon={CheckCircle2}
-        heading="Query executed successfully"
-        description="No rows returned."
+        heading={db.query_success}
+        description={db.no_rows}
         className="py-8"
       />
     );
@@ -67,13 +70,13 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       key={i}
                       onClick={() => handleColumnClick(col, i)}
                       className="px-3 py-2 text-left font-semibold text-foreground/70 whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 transition-colors group relative"
-                      title={`Click to copy column name: ${col}`}
+                      title={tx(db.click_copy_column, { name: col })}
                     >
                       <span className="flex items-center gap-1.5">
                         {isColCopied ? (
                           <>
                             <Check className="w-3 h-3 text-emerald-400 shrink-0" />
-                            <span className="text-emerald-400">Copied</span>
+                            <span className="text-emerald-400">{db.copied}</span>
                           </>
                         ) : (
                           <>
@@ -132,13 +135,13 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                                   ? 'text-muted-foreground/50 italic'
                                   : 'text-foreground/75 hover:bg-primary/5'
                             }`}
-                            title={isCellCopied ? 'Copied!' : `Click to copy: ${formatCell(cell)}`}
+                            title={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell) })}
                           >
                             <span className="block truncate">
                               {isCellCopied ? (
                                 <span className="flex items-center gap-1">
                                   <Check className="w-2.5 h-2.5 shrink-0" />
-                                  Copied
+                                  {db.copied}
                                 </span>
                               ) : (
                                 cellText
@@ -158,7 +161,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
 
       {/* Status bar */}
       <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
-        <span>{result.row_count} row{result.row_count !== 1 ? 's' : ''}</span>
+        <span>{tx(result.row_count !== 1 ? db.row_count_other : db.row_count_one, { count: result.row_count })}</span>
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {result.duration_ms}ms
@@ -166,7 +169,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
         {result.truncated && (
           <span className="flex items-center gap-1 text-amber-400/70">
             <AlertTriangle className="w-3 h-3" />
-            Results truncated to 500 rows
+            {db.results_truncated}
           </span>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { FlaskConical, X } from 'lucide-react';
 import type { SimulationResult } from './credentialGraph';
-import { SEVERITY_STYLES } from './graphConstants';
+import { getSeverityStyles } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   AffectedPersonas,
   AffectedWorkflows,
@@ -14,7 +15,9 @@ interface SimulationPanelProps {
 }
 
 export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
-  const sev = SEVERITY_STYLES[simulation.severity];
+  const { t } = useTranslation();
+  const dep = t.vault.dependencies;
+  const sev = getSeverityStyles(t)[simulation.severity];
 
   return (
     <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden">
@@ -22,7 +25,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-fuchsia-400/80" />
-          <span className="text-sm font-medium text-foreground/85">Revocation Simulation</span>
+          <span className="text-sm font-medium text-foreground/85">{dep.revocation_simulation}</span>
           <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-md border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sev.label}
           </span>
@@ -37,21 +40,21 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedPersonas}</div>
-            <div className="text-[10px] text-muted-foreground/60">Personas Affected</div>
+            <div className="text-[10px] text-muted-foreground/60">{dep.personas_affected}</div>
           </div>
           <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedWorkflows}</div>
-            <div className="text-[10px] text-muted-foreground/60">Workflows Broken</div>
+            <div className="text-[10px] text-muted-foreground/60">{dep.workflows_broken}</div>
           </div>
           <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
-            <div className="text-[10px] text-muted-foreground/60">Daily Execs Lost</div>
+            <div className="text-[10px] text-muted-foreground/60">{dep.daily_execs_lost}</div>
           </div>
           <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">
               ${simulation.estimatedDailyRevenueLost.toFixed(2)}
             </div>
-            <div className="text-[10px] text-muted-foreground/60">Daily Cost Impact</div>
+            <div className="text-[10px] text-muted-foreground/60">{dep.daily_cost_impact}</div>
           </div>
         </div>
 
@@ -73,7 +76,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
               Revoking <strong className="text-amber-400">{simulation.credentialName}</strong> has limited blast radius.
             </span>
           ) : (
-            <span>No personas or workflows depend on this credential. Safe to revoke.</span>
+            <span>{dep.sim_low}</span>
           )}
         </div>
 

@@ -1,4 +1,5 @@
 import { Brain, Cpu, Layers, Hash, Calendar } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
 
 interface SettingsTabProps {
@@ -6,33 +7,35 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ kb }: SettingsTabProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Info card */}
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
           <Brain className="w-4 h-4 text-violet-400" />
-          Knowledge Base Info
+          {sh.kb_info}
         </h3>
 
         <div className="grid grid-cols-2 gap-4">
-          <InfoRow icon={Hash} label="ID" value={kb.id} mono />
-          <InfoRow icon={Layers} label="Status" value={kb.status} />
-          <InfoRow icon={Cpu} label="Embedding Model" value={kb.embeddingModel} mono />
-          <InfoRow icon={Hash} label="Dimensions" value={String(kb.embeddingDims)} />
-          <InfoRow icon={Layers} label="Chunk Size" value={`${kb.chunkSize} chars`} />
-          <InfoRow icon={Layers} label="Chunk Overlap" value={`${kb.chunkOverlap} chars`} />
-          <InfoRow icon={Calendar} label="Created" value={formatDate(kb.createdAt)} />
-          <InfoRow icon={Calendar} label="Updated" value={formatDate(kb.updatedAt)} />
+          <InfoRow icon={Hash} label={sh.label_id} value={kb.id} mono />
+          <InfoRow icon={Layers} label={sh.label_status} value={kb.status} />
+          <InfoRow icon={Cpu} label={sh.label_embedding_model} value={kb.embeddingModel} mono />
+          <InfoRow icon={Hash} label={sh.label_dimensions} value={String(kb.embeddingDims)} />
+          <InfoRow icon={Layers} label={sh.label_chunk_size} value={`${kb.chunkSize} chars`} />
+          <InfoRow icon={Layers} label={sh.label_chunk_overlap} value={`${kb.chunkOverlap} chars`} />
+          <InfoRow icon={Calendar} label={sh.label_created} value={formatDate(kb.createdAt)} />
+          <InfoRow icon={Calendar} label={sh.label_updated} value={formatDate(kb.updatedAt)} />
         </div>
       </div>
 
       {/* Stats */}
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground/90">Statistics</h3>
+        <h3 className="text-sm font-semibold text-foreground/90">{sh.statistics}</h3>
         <div className="grid grid-cols-2 gap-4">
-          <StatCard label="Documents" value={kb.documentCount} />
-          <StatCard label="Chunks" value={kb.chunkCount} />
+          <StatCard label={sh.label_documents} value={kb.documentCount} />
+          <StatCard label={sh.label_chunks} value={kb.chunkCount} />
         </div>
       </div>
 
@@ -40,7 +43,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
       <div className="rounded-xl border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
         <h3 className="text-sm font-semibold text-violet-300/90 flex items-center gap-2">
           <Cpu className="w-4 h-4" />
-          Local Embedding
+          {sh.local_embedding}
         </h3>
         <p className="text-xs text-muted-foreground/60 leading-relaxed">
           Embeddings are generated locally using {kb.embeddingModel} ({kb.embeddingDims}-dim).

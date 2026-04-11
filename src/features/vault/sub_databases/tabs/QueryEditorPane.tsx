@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { useQueryDebug } from '@/hooks/database/useQueryDebug';
@@ -29,6 +30,8 @@ export function QueryEditorPane({
   editorValue,
   onEditorChange,
 }: QueryEditorPaneProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
 
@@ -124,9 +127,9 @@ export function QueryEditorPane({
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300/90">This query modifies data</p>
+              <p className="text-sm font-medium text-amber-300/90">{db.modifies_data}</p>
               <p className="text-sm text-muted-foreground/60">
-                The statement appears to be a write operation. Are you sure you want to execute it?
+                {db.modifies_data_hint_short}
               </p>
               <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/30 rounded-lg px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
                 {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
@@ -138,13 +141,13 @@ export function QueryEditorPane({
               onClick={handleConfirmMutation}
               className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
-              Execute Anyway
+              {db.execute_anyway}
             </button>
             <button
               onClick={handleCancelMutation}
               className="px-3 py-1.5 rounded-xl text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-modal');
 import { X, FileText, Search, Settings, Brain, Pencil, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
@@ -30,6 +31,8 @@ interface VectorKbModalProps {
 }
 
 export function VectorKbModal({ credential, connector, onClose }: VectorKbModalProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [activeTab, setActiveTab] = useState<VectorTab>('documents');
   const [visited, setVisited] = useState<Set<VectorTab>>(() => new Set(['documents']));
   const [kb, setKb] = useState<KnowledgeBase | null>(null);
@@ -123,7 +126,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                 <button
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
                   className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                  title="Save name"
+                  title={sh.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
@@ -136,7 +139,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                 <button
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
                   className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
-                  title="Rename credential"
+                  title={sh.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
@@ -144,7 +147,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             )}
           </div>
           <p className="text-sm text-muted-foreground/60">
-            Vector Knowledge Base
+            {sh.vector_kb}
             {kb && (
               <span className="ml-2 text-xs">
                 -- {kb.documentCount} docs, {kb.chunkCount} chunks
@@ -221,7 +224,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
               <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground/60">Knowledge base not found</p>
+              <p className="text-sm text-muted-foreground/60">{sh.kb_not_found}</p>
             </div>
           </div>
         )}

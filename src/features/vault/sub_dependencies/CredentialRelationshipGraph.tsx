@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Network } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { usePipelineStore } from "@/stores/pipelineStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { getCredentialDependents } from '@/api/vault/credentials';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
@@ -25,8 +25,8 @@ export function CredentialRelationshipGraph() {
   const credentialEvents = useVaultStore((s) => s.credentialEvents);
   const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
 
-  const workflows = usePipelineStore((s) => s.workflows);
-  const fetchWorkflows = usePipelineStore((s) => s.fetchWorkflows);
+  const { t } = useTranslation();
+  const dep = t.vault.dependencies;
   const healthSignals = useOverviewStore((s) => s.healthSignals);
 
   const [dependentsMap, setDependentsMap] = useState<Map<string, CredentialDependent[]>>(new Map());
@@ -57,8 +57,6 @@ export function CredentialRelationshipGraph() {
     return () => { cancelled = true; };
   }, [credentials, fetchCredentialEvents]);
 
-  useEffect(() => { fetchWorkflows(); }, [fetchWorkflows]);
-
   const graph = useMemo(
     () => buildCredentialGraph(credentials, connectorDefinitions, personas, credentialEvents, dependentsMap),
     [credentials, connectorDefinitions, personas, credentialEvents, dependentsMap],
@@ -85,8 +83,8 @@ export function CredentialRelationshipGraph() {
     if (!simulationMode || !selectedNodeId) return null;
     const node = graph.nodes.find((n) => n.id === selectedNodeId);
     if (!node || node.kind !== 'credential') return null;
-    return simulateRevocation(selectedNodeId, graph, workflows, healthSignals, credentials);
-  }, [simulationMode, selectedNodeId, graph, workflows, healthSignals, credentials]);
+    return simulateRevocation(selectedNodeId, graph, [], healthSignals, credentials);
+  }, [simulationMode, selectedNodeId, graph, healthSignals, credentials]);
 
   const stats = useMemo(() => {
     const counts: Record<GraphNodeKind, number> = { credential: 0, agent: 0, event: 0 };
@@ -114,8 +112,8 @@ export function CredentialRelationshipGraph() {
     return (
       <EmptyIllustration
         icon={Network}
-        heading="No credentials to graph"
-        description="Add credentials to visualize their relationships and dependencies."
+        heading={dep.no_credentials_graph}
+        description={dep.no_credentials_graph_hint}
         className="py-10"
       />
     );
@@ -143,8 +141,8 @@ export function CredentialRelationshipGraph() {
     <div key="empty" className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-6">
       <EmptyIllustration
         icon={Network}
-        heading="No credential selected"
-        description="Select a credential to see its blast radius and dependencies."
+        heading={dep.no_credential_selected}
+        description={dep.no_credential_selected_hint}
       />
     </div>
   );

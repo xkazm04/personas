@@ -1,6 +1,7 @@
 import { Loader2, Play, Copy, Check } from 'lucide-react';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from './ChatMessages';
 
 interface AssistantSqlBlockProps {
@@ -20,6 +21,9 @@ export function AssistantSqlBlock({
   onEditSql,
   onExecuteSql,
 }: AssistantSqlBlockProps) {
+  const { t, tx } = useTranslation();
+  const db = t.vault.databases;
+
   return (
     <div className="space-y-3">
       {msg.explanation && (
@@ -29,13 +33,13 @@ export function AssistantSqlBlock({
       <div className="rounded-xl border border-primary/10 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
           <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wide">
-            Generated {language === 'sql' ? 'SQL' : language}
+            {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onCopySql(msg.sql!, msg.id)}
               className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
-              title="Copy SQL"
+              title={db.copy_sql}
             >
               {copiedSql === msg.id ? (
                 <Check className="w-3 h-3 text-emerald-400" />
@@ -61,14 +65,14 @@ export function AssistantSqlBlock({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >
           <Play className="w-3 h-3" />
-          {msg.result ? 'Re-run Query' : 'Run Query'}
+          {msg.result ? db.rerun_query : db.run_query}
         </button>
       )}
 
       {msg.status === 'executing' && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          <span>Executing...</span>
+          <span>{db.executing}</span>
         </div>
       )}
 

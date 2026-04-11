@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
 
 interface SearchResultCardProps {
@@ -9,6 +10,8 @@ interface SearchResultCardProps {
 }
 
 export function SearchResultCard({ result, rank }: SearchResultCardProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [expanded, setExpanded] = useState(false);
 
   const preview = result.content.length > 300 && !expanded
@@ -51,7 +54,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
             className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-400 mt-2 transition-colors"
           >
             {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {expanded ? 'Show less' : 'Show full chunk'}
+            {expanded ? sh.show_less : sh.show_full_chunk}
           </button>
         )}
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import type { KbIngestProgress } from '@/api/vault/database/vectorKb';
@@ -12,6 +13,8 @@ interface IngestProgressBarProps {
 }
 
 export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps) {
+  const { t, tx } = useTranslation();
+  const sh = t.vault.shared;
   const [progress, setProgress] = useState<KbIngestProgress | null>(null);
   const [done, setDone] = useState(false);
   const onCompleteRef = useRef(onComplete);
@@ -51,7 +54,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
         <LoadingSpinner className="text-violet-400" />
-        <span>Preparing ingestion...</span>
+        <span>{sh.preparing_ingestion}</span>
       </div>
     );
   }
@@ -75,16 +78,16 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
 
         <span className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground/70'}`}>
           {hasError
-            ? (progress.error || 'Ingestion failed')
+            ? (progress.error || sh.ingestion_failed)
             : done
-            ? `Done! ${progress.chunksCreated} chunks from ${progress.documentsDone} files`
+            ? tx(sh.ingestion_done, { chunks: progress.chunksCreated, docs: progress.documentsDone })
             : progress.currentFile
-            ? `Processing: ${truncateFile(progress.currentFile)}`
-            : 'Processing...'}
+            ? tx(sh.processing_file, { file: truncateFile(progress.currentFile) })
+            : sh.processing}
         </span>
 
         <span className="text-xs text-muted-foreground/50 shrink-0">
-          {progress.documentsDone}/{progress.documentsTotal} files
+          {tx(sh.file_progress, { done: progress.documentsDone, total: progress.documentsTotal })}
         </span>
       </div>
 

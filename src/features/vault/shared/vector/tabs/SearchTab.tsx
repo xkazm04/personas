@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { kbSearch } from '@/api/vault/database/vectorKb';
 import { SearchResultCard } from '../search/SearchResultCard';
@@ -10,6 +11,8 @@ interface SearchTabProps {
 }
 
 export function SearchTab({ kb }: SearchTabProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [query, setQuery] = useState('');
   const [topK, setTopK] = useState(10);
   const [results, setResults] = useState<VectorSearchResult[] | null>(null);
@@ -69,7 +72,7 @@ export function SearchTab({ kb }: SearchTabProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a question or describe what you're looking for..."
+              placeholder={sh.search_placeholder}
               className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
               autoFocus
             />
@@ -84,13 +87,13 @@ export function SearchTab({ kb }: SearchTabProps) {
             ) : (
               <ArrowRight className="w-3.5 h-3.5" />
             )}
-            Search
+            {sh.search}
           </button>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground/50">
           <label className="flex items-center gap-1.5">
-            Results:
+            {sh.results_label}
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
@@ -101,7 +104,7 @@ export function SearchTab({ kb }: SearchTabProps) {
               ))}
             </select>
           </label>
-          <span>Press Enter to search</span>
+          <span>{sh.press_enter}</span>
         </div>
       </div>
 
@@ -116,8 +119,8 @@ export function SearchTab({ kb }: SearchTabProps) {
         {results === null && !error && (
           <EmptyIllustration
             icon={Search}
-            heading="Search your knowledge base"
-            description="Use natural language to find relevant content across your documents."
+            heading={sh.search_kb}
+            description={sh.search_kb_hint}
             className="py-20"
           />
         )}
@@ -125,8 +128,8 @@ export function SearchTab({ kb }: SearchTabProps) {
         {results !== null && results.length === 0 && (
           <EmptyIllustration
             icon={FileText}
-            heading="No results found"
-            description="Try rephrasing your query or using different keywords."
+            heading={sh.no_results}
+            description={sh.no_results_hint}
             className="py-20"
           />
         )}

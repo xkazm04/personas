@@ -1,5 +1,6 @@
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { AssistantSqlBlock } from './AssistantSqlBlock';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 export interface ChatMessage {
@@ -38,6 +39,8 @@ export function ChatMessages({
   onEditSql,
   onSuggestionClick,
 }: ChatMessagesProps) {
+  const { t } = useTranslation();
+
   return (
     <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
       {messages.length === 0 && (
@@ -64,7 +67,7 @@ export function ChatMessages({
             {msg.role === 'assistant' && msg.status === 'generating' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Generating query...</span>
+                <span>{t.vault.databases.generating_query}</span>
                 <button
                   onClick={onCancel}
                   className="ml-2 p-1 rounded-lg hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
@@ -105,16 +108,17 @@ function EmptyState({
   suggestions: string[];
   onSuggestionClick: (s: string) => void;
 }) {
+  const { t, tx } = useTranslation();
+  const db = t.vault.databases;
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
       <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
         <Sparkles className="w-6 h-6 text-violet-400" />
       </div>
       <div>
-        <p className="text-sm font-medium text-foreground/80">Ask in plain English</p>
+        <p className="text-sm font-medium text-foreground/80">{db.ask_plain_english}</p>
         <p className="text-sm text-muted-foreground/50 mt-1 max-w-md">
-          Describe what you want to query and I'll generate the {language === 'sql' ? 'SQL' : language} for you.
-          You can review, edit, and execute the generated query.
+          {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
         </p>
       </div>
       {suggestions.length > 0 && (

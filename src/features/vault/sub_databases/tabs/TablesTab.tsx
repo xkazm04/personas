@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
@@ -79,11 +80,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
     navigator.clipboard.writeText(tableName);
   }, []);
 
+  const { t } = useTranslation();
+
   if (family === 'unsupported') {
     return (
       <div className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
         <p className="text-sm text-muted-foreground/50">
-          Table introspection is not available for this connector type.
+          {t.vault.databases.introspection_unavailable}
         </p>
         <TestConnectionButton credentialId={credentialId} />
       </div>

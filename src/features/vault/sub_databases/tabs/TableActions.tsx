@@ -1,9 +1,12 @@
 import { Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Inline test-connection widget reused in empty/unsupported states. */
 export function TestConnectionButton({ credentialId }: { credentialId: string }) {
   const { result, isHealthchecking, checkStored } = useCredentialHealth(credentialId);
+  const { t } = useTranslation();
+  const db = t.vault.databases;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -17,7 +20,7 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
         ) : (
           <Zap className="w-3.5 h-3.5" />
         )}
-        {isHealthchecking ? 'Testing...' : 'Test Connection'}
+        {isHealthchecking ? db.testing : db.test_connection}
       </button>
 
       {result && !isHealthchecking && (

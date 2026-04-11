@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { QueryResultTable } from '../QueryResultTable';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 interface ConsoleOutputProps {
@@ -11,6 +12,8 @@ interface ConsoleOutputProps {
 }
 
 export function ConsoleOutput({ result, error, executing, pendingMutation, language }: ConsoleOutputProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
       {error && (
@@ -28,7 +31,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
       {!result && !error && !executing && !pendingMutation && (
         <div className="flex items-center justify-center h-full">
           <p className="text-sm text-muted-foreground/60">
-            {language === 'redis' ? 'Enter a Redis command and click Run' : 'Write a query and press Run or Ctrl+Enter'}
+            {language === 'redis' ? db.redis_hint : db.sql_hint}
           </p>
         </div>
       )}
@@ -36,7 +39,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
       {executing && (
         <div className="flex items-center justify-center h-full gap-2">
           <LoadingSpinner className="text-muted-foreground/60" />
-          <span className="text-sm text-muted-foreground/60">Executing query...</span>
+          <span className="text-sm text-muted-foreground/60">{db.executing_query}</span>
         </div>
       )}
     </div>

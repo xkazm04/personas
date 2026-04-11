@@ -1,5 +1,6 @@
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
@@ -34,14 +35,16 @@ export function TableDetailPanel({
   onPinTable,
   family,
 }: TableDetailPanelProps) {
+  const { t } = useTranslation();
+  const dbt = t.vault.databases;
   const tableEntry = selectedTable ? tables.find((t) => t.table_name === selectedTable) : null;
   const displayName = tableEntry?.display_label || selectedTable;
   const HeaderIcon = isApi ? Database : Table2;
 
-  const columnLabel = isApi ? 'Property' : 'Column';
+  const columnLabel = isApi ? dbt.col_property : dbt.col_column;
   const typeLabel = isApi
-    ? (family === 'notion' ? 'Notion Type' : family === 'airtable' ? 'Field Type' : 'Type')
-    : 'Type';
+    ? (family === 'notion' ? dbt.col_notion_type : family === 'airtable' ? dbt.col_field_type : dbt.col_type)
+    : dbt.col_type;
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -60,16 +63,16 @@ export function TableDetailPanel({
               <button
                 onClick={() => onPinTable(selectedTable)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-sm font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
-                title="Pin this table"
+                title={dbt.pin_table}
               >
                 <Pin className="w-3 h-3" />
-                Pin
+                {dbt.pin}
               </button>
             )}
             {isPinned && (
               <span className="flex items-center gap-1 px-2.5 py-1 text-sm text-blue-400/50">
                 <Pin className="w-3 h-3" />
-                Pinned
+                {dbt.pinned}
               </span>
             )}
           </div>
@@ -98,18 +101,18 @@ export function TableDetailPanel({
             {keyTypeResult === null ? (
               <div className="flex items-center gap-2 py-4">
                 <LoadingSpinner className="text-muted-foreground/60" />
-                <span className="text-sm text-muted-foreground/60">Loading key info...</span>
+                <span className="text-sm text-muted-foreground/60">{dbt.loading_key_info}</span>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground/50">Type:</span>
+                  <span className="text-sm text-muted-foreground/50">{dbt.type_label}</span>
                   <span className="px-2 py-0.5 rounded text-sm font-mono font-medium bg-amber-500/10 text-amber-400/70">
                     {keyTypeResult}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground/60">
-                  Use the Console tab to inspect this key's value.
+                  {dbt.use_console_hint}
                 </p>
               </div>
             )}
@@ -126,7 +129,7 @@ export function TableDetailPanel({
             <Eye className="w-6 h-6 text-muted-foreground/15" />
           )}
           <p className="text-sm text-muted-foreground/60">
-            {isApi ? 'Select a database to view its properties' : 'Select a table to view its schema'}
+            {isApi ? dbt.select_db_hint : dbt.select_table_hint}
           </p>
         </div>
       )}
@@ -134,7 +137,7 @@ export function TableDetailPanel({
       {isRedis && !selectedKey && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
           <Key className="w-6 h-6 text-muted-foreground/15" />
-          <p className="text-sm text-muted-foreground/60">Select a key to view its type</p>
+          <p className="text-sm text-muted-foreground/60">{dbt.select_key_hint}</p>
         </div>
       )}
     </div>

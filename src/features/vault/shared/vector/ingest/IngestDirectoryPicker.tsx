@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, FolderOpen, Plus, Minus } from 'lucide-react';
 import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface IngestDirectoryPickerProps {
   kbId: string;
@@ -11,6 +12,8 @@ interface IngestDirectoryPickerProps {
 const DEFAULT_PATTERNS = ['*.txt', '*.md', '*.html', '*.csv', '*.json', '*.yaml', '*.rs', '*.py', '*.js', '*.ts'];
 
 export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: IngestDirectoryPickerProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [dirPath, setDirPath] = useState('');
   const [patterns, setPatterns] = useState<string[]>([]);
   const [customPattern, setCustomPattern] = useState('');
@@ -84,7 +87,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
             <FolderOpen className="w-3.5 h-3.5 text-violet-400" />
           </div>
-          <h2 className="text-sm font-semibold text-foreground/90 flex-1">Scan Directory</h2>
+          <h2 className="text-sm font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
@@ -96,13 +99,13 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         {/* Body */}
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">Directory Path</label>
+            <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">{sh.directory_path}</label>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono min-h-[36px] flex items-center">
                 {dirPath ? (
                   <span className="truncate">{dirPath}</span>
                 ) : (
-                  <span className="text-muted-foreground/40">No directory selected</span>
+                  <span className="text-muted-foreground/40">{sh.no_directory}</span>
                 )}
               </div>
               <button
@@ -111,15 +114,15 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 className="px-3 py-2 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary/70 text-foreground/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
-                {browsing ? 'Browsing...' : 'Browse'}
+                {browsing ? sh.browsing : sh.browse}
               </button>
             </div>
           </div>
 
           <div>
             <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">
-              File Patterns
-              <span className="text-muted-foreground/40 font-normal ml-1">(empty = all supported)</span>
+              {sh.file_patterns}
+              <span className="text-muted-foreground/40 font-normal ml-1">{sh.file_patterns_hint}</span>
             </label>
 
             {/* Default patterns hint */}
@@ -176,7 +179,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             onClick={onClose}
             className="px-4 py-2 text-sm rounded-lg hover:bg-secondary/50 text-foreground/70 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             onClick={() => void handleSubmit()}
@@ -186,10 +189,10 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             {ingesting ? (
               <span className="flex items-center gap-2">
                 <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Scanning...
+                {sh.scanning}
               </span>
             ) : (
-              'Scan & Ingest'
+              sh.scan_ingest
             )}
           </button>
         </div>

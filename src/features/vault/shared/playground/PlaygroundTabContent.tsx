@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { TabTransition } from '@/features/templates/sub_generated/shared/TabTransition';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
@@ -47,6 +48,7 @@ export function PlaygroundTabContent({
   onOAuthConsent,
   onDelete,
 }: PlaygroundTabContentProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
       <TabTransition tabKey={activeTab}>
@@ -70,7 +72,7 @@ export function PlaygroundTabContent({
         )}
         {activeTab === 'overview' && !connector && (
           <div className="p-6 text-sm text-muted-foreground/80">
-            No connector definition available for this credential type.
+            {t.vault.shared.no_connector_available}
           </div>
         )}
         {activeTab === 'executions' && (

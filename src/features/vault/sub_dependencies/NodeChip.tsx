@@ -1,5 +1,6 @@
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NodeChipProps {
   node: GraphNode;
@@ -9,6 +10,8 @@ interface NodeChipProps {
 }
 
 export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   const Icon = KIND_ICONS[node.kind];
 
   return (
@@ -32,7 +35,7 @@ export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
         <span className="text-xs text-muted-foreground/60 font-mono truncate max-w-[80px]">{node.meta.serviceType}</span>
       )}
       {node.meta.dependentCount != null && node.meta.dependentCount > 0 && (
-        <span className="text-xs text-blue-400/60">{node.meta.dependentCount} dep{node.meta.dependentCount !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-blue-400/60">{tx(node.meta.dependentCount !== 1 ? dep.dep_count_other : dep.dep_count_one, { count: node.meta.dependentCount })}</span>
       )}
       {extra}
     </button>
@@ -40,11 +43,13 @@ export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
 }
 
 export function HealthDot({ success }: { success: boolean | null }) {
-  if (success === null) return <div className="w-2 h-2 rounded-full bg-gray-500/40 flex-shrink-0" title="Not tested" />;
+  const { t } = useTranslation();
+  const dep = t.vault.dependencies;
+  if (success === null) return <div className="w-2 h-2 rounded-full bg-gray-500/40 flex-shrink-0" title={dep.not_tested} />;
   return (
     <div
       className={`w-2 h-2 rounded-full flex-shrink-0 ${success ? 'bg-emerald-400' : 'bg-red-400'}`}
-      title={success ? 'Healthy' : 'Unhealthy'}
+      title={success ? dep.healthy : dep.unhealthy}
     />
   );
 }

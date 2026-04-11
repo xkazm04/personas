@@ -1,5 +1,6 @@
 import { RefreshCw, Search, Zap, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TableSearchProps {
   filter: string;
@@ -18,6 +19,9 @@ export function TableSearch({
   isApi,
   onRefresh,
 }: TableSearchProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
+
   return (
     <div className="p-3 border-b border-primary/5 space-y-2">
       <div className="flex items-center gap-2">
@@ -27,7 +31,7 @@ export function TableSearch({
             type="text"
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
-            placeholder={isRedis ? 'Filter keys...' : isApi ? 'Filter databases...' : 'Filter tables...'}
+            placeholder={isRedis ? db.filter_keys : isApi ? db.filter_databases : db.filter_tables}
             className="w-full pl-7 pr-2 py-1.5 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
           />
         </div>
@@ -35,7 +39,7 @@ export function TableSearch({
           onClick={onRefresh}
           disabled={loading}
           className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
-          title="Refresh"
+          title={db.refresh}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -47,6 +51,8 @@ export function TableSearch({
 /** Compact inline test connection for the sidebar empty state. */
 export function SidebarTestConnection({ credentialId }: { credentialId: string }) {
   const { result, isHealthchecking, checkStored } = useCredentialHealth(credentialId);
+  const { t } = useTranslation();
+  const db = t.vault.databases;
 
   return (
     <div className="flex flex-col items-center gap-2 mt-2">
@@ -60,7 +66,7 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
         ) : (
           <Zap className="w-3 h-3" />
         )}
-        {isHealthchecking ? 'Testing...' : 'Test Connection'}
+        {isHealthchecking ? db.testing : db.test_connection}
       </button>
       {result && !isHealthchecking && (
         <div

@@ -1,6 +1,7 @@
 import { useState, useCallback, type ReactNode } from 'react';
 import { Upload } from 'lucide-react';
 import { kbIngestFiles } from '@/api/vault/database/vectorKb';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface IngestDropZoneProps {
   kbId: string;
@@ -9,6 +10,8 @@ interface IngestDropZoneProps {
 }
 
 export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZoneProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [isDragOver, setIsDragOver] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [dropError, setDropError] = useState<string | null>(null);
@@ -84,8 +87,8 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
             <div className="w-12 h-12 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="text-sm font-medium text-violet-300">Drop files to ingest</p>
-            <p className="text-xs text-muted-foreground/50">Supported: txt, md, html, csv, json, yaml, code files</p>
+            <p className="text-sm font-medium text-violet-300">{sh.drop_to_ingest}</p>
+            <p className="text-xs text-muted-foreground/50">{sh.drop_supported}</p>
           </div>
         </div>
       )}
@@ -95,7 +98,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-            <span className="text-sm text-foreground/70">Starting ingestion...</span>
+            <span className="text-sm text-foreground/70">{sh.starting_ingestion}</span>
           </div>
         </div>
       )}

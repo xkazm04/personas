@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Copy, Table2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TableContextMenuState {
   x: number;
@@ -15,6 +16,8 @@ interface TableContextMenuProps {
 }
 
 export function TableContextMenu({ menu, onCopyQuery, onCopyName, onClose }: TableContextMenuProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,14 +54,14 @@ export function TableContextMenu({ menu, onCopyQuery, onCopyName, onClose }: Tab
         onClick={() => { onCopyQuery(menu.tableName); onClose(); }}
       >
         <Copy className="w-3 h-3 text-muted-foreground/40" />
-        Copy SELECT query
+        {db.copy_select_query}
       </button>
       <button
         className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/70 hover:bg-secondary/50 transition-colors text-left"
         onClick={() => { onCopyName(menu.tableName); onClose(); }}
       >
         <Table2 className="w-3 h-3 text-muted-foreground/40" />
-        Copy table name
+        {db.copy_table_name}
       </button>
     </div>
   );

@@ -5,6 +5,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';
@@ -14,12 +15,13 @@ import { ChatTab } from './tabs/ChatTab';
 
 type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
-const TABS: { id: SchemaTab; label: string; icon: typeof Table2 }[] = [
-  { id: 'tables', label: 'Tables', icon: Table2 },
-  { id: 'queries', label: 'Queries', icon: Code2 },
-  { id: 'console', label: 'Console', icon: Terminal },
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-];
+const TAB_ICONS: Record<SchemaTab, typeof Table2> = {
+  tables: Table2,
+  queries: Code2,
+  console: Terminal,
+  chat: MessageSquare,
+};
+const TAB_ORDER: SchemaTab[] = ['tables', 'queries', 'console', 'chat'];
 
 interface SchemaManagerModalProps {
   credential: CredentialMetadata;
@@ -28,6 +30,14 @@ interface SchemaManagerModalProps {
 }
 
 export function SchemaManagerModal({ credential, connector, onClose }: SchemaManagerModalProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
+  const TAB_LABELS: Record<SchemaTab, string> = {
+    tables: db.tab_tables,
+    queries: db.tab_queries,
+    console: db.tab_console,
+    chat: db.tab_chat,
+  };
   const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
   // Track which tabs have been visited -- mount lazily, keep mounted
   const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
@@ -106,7 +116,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                 <button
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
                   className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                  title="Save name"
+                  title={db.save_name}
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
@@ -119,7 +129,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                 <button
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
                   className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
-                  title="Rename credential"
+                  title={db.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
@@ -127,7 +137,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             )}
           </div>
           <p className="text-sm text-muted-foreground/60">
-            Schema Manager -- {connector?.label || credential.service_type}
+            {db.schema_manager} -- {connector?.label || credential.service_type}
           </p>
         </div>
         <button
@@ -140,13 +150,13 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = tab.id === activeTab;
+        {TAB_ORDER.map((tabId) => {
+          const Icon = TAB_ICONS[tabId];
+          const isActive = tabId === activeTab;
           return (
             <button
-              key={tab.id}
-              onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
+              key={tabId}
+              onClick={() => { setVisited((prev) => new Set([...prev, tabId])); setActiveTab(tabId); }}
               className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'text-foreground/90'
@@ -154,7 +164,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tab.label}
+              {TAB_LABELS[tabId]}
               {isActive && (
                 <motion.div
                   layoutId="schemaManagerTab"

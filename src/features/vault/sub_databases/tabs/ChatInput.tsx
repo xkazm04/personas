@@ -1,4 +1,5 @@
 import { Send, X, CornerDownLeft } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ChatInputProps {
   input: string;
@@ -21,6 +22,9 @@ export function ChatInput({
   onSubmit,
   onCancel,
 }: ChatInputProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
+
   return (
     <div className="shrink-0 border-t border-primary/10 px-4 py-3 bg-secondary/10">
       <div className="flex items-end gap-2">
@@ -32,8 +36,8 @@ export function ChatInput({
             onKeyDown={onKeyDown}
             placeholder={
               !hasMessages
-                ? 'e.g. "Show me all users who signed up last week"'
-                : 'Ask a follow-up question...'
+                ? db.placeholder_initial
+                : db.placeholder_followup
             }
             disabled={generating}
             rows={1}

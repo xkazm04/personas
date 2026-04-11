@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Wand2 } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { QuerySidebar } from './QuerySidebar';
 import { QueryEditorPane } from './QueryEditorPane';
 
@@ -11,6 +12,7 @@ interface QueriesTabProps {
 }
 
 export function QueriesTab({ credentialId, language, serviceType }: QueriesTabProps) {
+  const { t } = useTranslation();
   const queries = useVaultStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
             <div className="w-12 h-12 rounded-xl bg-secondary/20 border border-primary/10 flex items-center justify-center">
               <Wand2 className="w-5 h-5 text-muted-foreground/20" />
             </div>
-            <p className="text-sm text-muted-foreground/35">Select or create a query</p>
+            <p className="text-sm text-muted-foreground/35">{t.vault.databases.select_or_create}</p>
           </div>
         )}
       </div>

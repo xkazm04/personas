@@ -8,6 +8,7 @@ import {
   HelpCircle,
   AlertTriangle,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { SimulationResult } from './credentialGraph';
 
 const GRADE_ICON: Record<string, typeof CheckCircle2> = {
@@ -29,13 +30,15 @@ interface AffectedPersonasProps {
 }
 
 export function AffectedPersonas({ personas }: AffectedPersonasProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   if (personas.length === 0) return null;
 
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
         <Bot className="w-3 h-3" />
-        Personas That Would Stop ({personas.length})
+        {tx(dep.personas_would_stop, { count: personas.length })}
       </div>
       <div className="space-y-1 max-h-[140px] overflow-y-auto">
         {personas.map((persona) => {
@@ -67,13 +70,15 @@ interface AffectedWorkflowsProps {
 }
 
 export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   if (workflows.length === 0) return null;
 
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
         <Workflow className="w-3 h-3" />
-        Workflows That Would Break ({workflows.length})
+        {tx(dep.workflows_would_break, { count: workflows.length })}
       </div>
       <div className="space-y-1 max-h-[100px] overflow-y-auto">
         {workflows.map((wf) => (
@@ -85,7 +90,7 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
             <div className="flex-1 min-w-0">
               <span className="text-xs text-foreground/80 block truncate">{wf.workflowName}</span>
               <span className="text-[10px] text-muted-foreground/50">
-                {wf.brokenNodeLabels.length}/{wf.totalNodes} nodes broken
+                {tx(dep.nodes_broken, { broken: wf.brokenNodeLabels.length, total: wf.totalNodes })}
               </span>
             </div>
           </div>
@@ -100,13 +105,15 @@ interface FailoverSuggestionsProps {
 }
 
 export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   if (suggestions.length === 0) return null;
 
   return (
     <div>
       <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
         <ArrowRightLeft className="w-3 h-3" />
-        Failover Credentials ({suggestions.length})
+        {tx(dep.failover_credentials, { count: suggestions.length })}
       </div>
       <div className="space-y-1">
         {suggestions.map((fo) => (
@@ -135,23 +142,25 @@ interface MitigationSummaryProps {
 }
 
 export function MitigationSummary({ simulation }: MitigationSummaryProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
   if (simulation.severity === 'low') return null;
 
   return (
     <div className="rounded-lg bg-primary/5 border border-primary/10 p-2">
-      <div className="text-[10px] font-medium text-muted-foreground/60 mb-1">Suggested Mitigations</div>
+      <div className="text-[10px] font-medium text-muted-foreground/60 mb-1">{dep.suggested_mitigations}</div>
       <ul className="text-xs text-muted-foreground/70 space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
-          <li>Switch affected personas to a healthy failover credential</li>
+          <li>{dep.mitigation_failover}</li>
         )}
         {simulation.affectedWorkflows.length > 0 && (
-          <li>Pause affected workflows before revoking</li>
+          <li>{dep.mitigation_pause}</li>
         )}
         {simulation.estimatedDailyExecutionsLost > 10 && (
-          <li>Schedule revocation during low-traffic hours</li>
+          <li>{dep.mitigation_schedule}</li>
         )}
         {simulation.failoverSuggestions.length === 0 && (
-          <li>Create a replacement credential for <strong>{simulation.serviceType}</strong> before revoking</li>
+          <li>{tx(dep.mitigation_create, { serviceType: simulation.serviceType })}</li>
         )}
       </ul>
     </div>

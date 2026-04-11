@@ -1,4 +1,5 @@
 import { QueryResultTable } from '../QueryResultTable';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 interface ResultsTableProps {
@@ -9,6 +10,8 @@ interface ResultsTableProps {
 }
 
 export function ResultsTable({ result, error, executing, language }: ResultsTableProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
       {error && (
@@ -27,7 +30,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       {!result && !error && !executing && (
         <div key="hint" className="animate-fade-slide-in flex items-center justify-center pt-8">
           <p className="text-sm text-muted-foreground/25">
-            {language === 'redis' ? 'Enter a Redis command and press Run or Ctrl+Enter' : 'Write a query and press Run or Ctrl+Enter'}
+            {language === 'redis' ? db.redis_run_hint : db.sql_run_hint}
           </p>
         </div>
       )}
@@ -37,7 +40,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
             <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
             <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
-          <span className="text-sm text-muted-foreground/60">Executing query...</span>
+          <span className="text-sm text-muted-foreground/60">{db.executing_query}</span>
         </div>
       )}
     </div>

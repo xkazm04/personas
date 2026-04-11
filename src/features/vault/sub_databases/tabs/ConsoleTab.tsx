@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Play, Shield, ShieldOff, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { ConsoleOutput } from './ConsoleOutput';
@@ -28,6 +29,8 @@ interface HistoryEntry {
 }
 
 export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
+  const { t } = useTranslation();
+  const db = t.vault.databases;
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
 
   const [query, setQuery] = useState('');
@@ -72,10 +75,10 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           language={language}
           placeholder={
             language === 'redis'
-              ? 'Enter Redis command (e.g. GET mykey, HGETALL users:1)'
+              ? db.redis_placeholder
               : language === 'convex'
-                ? 'Enter table name to browse, or JSON body: {"path": "func:name", "args": {}}'
-                : 'Enter SQL query (Ctrl+Enter to execute)'
+                ? db.convex_placeholder
+                : db.sql_placeholder
           }
           onExecute={handleExecute}
           minHeight="100px"
@@ -88,7 +91,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-            {executing ? 'Running...' : 'Run Query'}
+            {executing ? db.running : db.run_query}
           </button>
           <span className="text-sm text-muted-foreground/60">Ctrl+Enter</span>
           <div className="ml-auto flex items-center gap-2">
@@ -99,17 +102,17 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
                   ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
                   : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
               }`}
-              title={safeMode ? 'Safe mode ON: write queries require confirmation' : 'Safe mode OFF: all queries execute directly'}
+              title={safeMode ? db.safe_mode_on : db.safe_mode_off}
             >
               {safeMode ? <Shield className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
-              {safeMode ? 'Safe Mode' : 'Write Mode'}
+              {safeMode ? db.safe_mode : db.write_mode}
             </button>
           </div>
         </div>
 
         {history.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-muted-foreground/60">Recent:</span>
+            <span className="text-sm text-muted-foreground/60">{db.recent}</span>
             {history.map((h, i) => (
               <button
                 key={i}
@@ -130,10 +133,9 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300/90">This query modifies data</p>
+              <p className="text-sm font-medium text-amber-300/90">{db.modifies_data}</p>
               <p className="text-sm text-muted-foreground/60">
-                The statement appears to be a write operation (INSERT, UPDATE, DELETE, DROP, etc.).
-                Are you sure you want to execute it?
+                {db.modifies_data_hint}
               </p>
               <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/30 rounded-lg px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
                 {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
@@ -145,13 +147,13 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
               onClick={handleConfirmMutation}
               className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
-              Execute Anyway
+              {db.execute_anyway}
             </button>
             <button
               onClick={handleCancelMutation}
               className="px-3 py-1.5 rounded-xl text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </div>

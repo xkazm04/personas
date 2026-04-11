@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Types --------------------------------------------------------
 
@@ -69,14 +70,21 @@ export function KeyValueEditor({
           </button>
         </div>
       ))}
-      <button
-        onClick={add}
-        className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
-      >
-        <Plus className="w-3 h-3" />
-        Add
-      </button>
+      <AddButton onClick={add} />
     </div>
+  );
+}
+
+function AddButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
+    >
+      <Plus className="w-3 h-3" />
+      {t.vault.shared.add}
+    </button>
   );
 }
 

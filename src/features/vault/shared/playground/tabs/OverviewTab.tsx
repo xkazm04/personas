@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Key, Pencil, Copy, Check } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -43,6 +44,8 @@ export function OverviewTab({
   onOAuthConsent,
   onDelete,
 }: OverviewTabProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [isEditing, setIsEditing] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,7 +82,7 @@ export function OverviewTab({
               googleOAuth.reset();
               setIsEditing(false);
             } catch (err) {
-              setEditError(err instanceof Error ? err.message : 'Failed to update credential');
+              setEditError(err instanceof Error ? err.message : sh.failed_update);
             }
           }}
           onOAuthConsent={isGoogleOAuthFlow ? onOAuthConsent : undefined}
@@ -109,7 +112,7 @@ export function OverviewTab({
               icon={!isHealthchecking ? <Key className="w-3.5 h-3.5" /> : undefined}
               className="min-h-[36px]"
             >
-              Test Connection
+              {sh.test_connection}
             </Button>
             <Button
               onClick={() => setIsEditing(true)}
@@ -118,7 +121,7 @@ export function OverviewTab({
               icon={<Pencil className="w-3.5 h-3.5" />}
               className="min-h-[36px]"
             >
-              Edit Fields
+              {sh.edit_fields}
             </Button>
           </div>
 

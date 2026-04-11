@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Wrench, Zap, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialEventConfig } from '@/features/vault/sub_credentials/components/features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_credentials/components/features/CredentialIntelligence';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -12,6 +13,8 @@ interface OverviewSectionsProps {
 }
 
 export function OverviewSections({ credential, connector, onDelete }: OverviewSectionsProps) {
+  const { t, tx } = useTranslation();
+  const sh = t.vault.shared;
   const [expandedSection, setExpandedSection] = useState<'services' | 'events' | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -22,14 +25,14 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
         <div className="ml-auto">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-red-400/80">Delete this credential?</span>
+              <span className="text-sm text-red-400/80">{sh.delete_credential_confirm}</span>
               <Button
                 onClick={() => onDelete(credential.id)}
                 variant="danger"
                 size="sm"
                 className="bg-red-500/15 hover:bg-red-500/25 border-red-500/25 text-red-400"
               >
-                Confirm
+                {sh.confirm}
               </Button>
               <Button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -37,7 +40,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
                 size="sm"
                 className="text-foreground/70"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           ) : (
@@ -45,7 +48,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
               onClick={() => setShowDeleteConfirm(true)}
               variant="ghost"
               size="icon-sm"
-              title="Delete credential"
+              title={sh.delete_credential}
               icon={<Trash2 className="w-4 h-4 text-red-400/50 hover:text-red-400/80" />}
             />
           )}
@@ -64,7 +67,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
             iconRight={expandedSection === 'services' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="text-sm font-medium text-foreground/80 flex-1">Services ({connector.services.length})</span>
+            <span className="text-sm font-medium text-foreground/80 flex-1">{tx(sh.services, { count: connector.services.length })}</span>
           </Button>
           {expandedSection === 'services' && (
             <div className="px-4 pb-3 space-y-2">
@@ -97,7 +100,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
             iconRight={expandedSection === 'events' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="text-sm font-medium text-foreground/80 flex-1">Events ({connector.events.length})</span>
+            <span className="text-sm font-medium text-foreground/80 flex-1">{tx(sh.events, { count: connector.events.length })}</span>
           </Button>
           {expandedSection === 'events' && (
             <div className="px-4 pb-3">

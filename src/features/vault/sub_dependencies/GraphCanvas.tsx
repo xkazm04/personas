@@ -1,7 +1,8 @@
 import { ArrowRight } from 'lucide-react';
 import { NodeChip, HealthDot } from './NodeChip';
 import type { GraphNode, GraphEdge, GraphNodeKind } from './credentialGraph';
-import { KIND_LABELS } from './graphConstants';
+import { getKindLabels } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 interface GraphCanvasProps {
@@ -26,6 +27,10 @@ export function GraphCanvas({
   onNodeClick,
   detailPanel,
 }: GraphCanvasProps) {
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
+  const kindLabels = getKindLabels(t);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-3">
       {/* Left: node lists */}
@@ -33,7 +38,7 @@ export function GraphCanvas({
         {(filterKind === 'all' || filterKind === 'credential') && (
           <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
             <div className="text-xs font-medium text-muted-foreground/60 mb-2">
-              Credentials ({nodes.filter((n) => n.kind === 'credential').length})
+              {tx(dep.credentials_label, { count: nodes.filter((n) => n.kind === 'credential').length })}
             </div>
             <div className="space-y-1">
               {nodes
@@ -62,7 +67,7 @@ export function GraphCanvas({
         {filterKind !== 'all' && filterKind !== 'credential' && (
           <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
             <div className="text-xs font-medium text-muted-foreground/60 mb-2">
-              {KIND_LABELS[filterKind]} ({filteredNodes.length})
+              {kindLabels[filterKind]} ({filteredNodes.length})
             </div>
             <div className="space-y-1">
               {[...filteredNodes].sort((a, b) => a.label.localeCompare(b.label)).map((node) => (
@@ -85,7 +90,7 @@ export function GraphCanvas({
         {/* Edge summary */}
         <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
           <div className="text-xs font-medium text-muted-foreground/60 mb-2">
-            Relationships ({filteredEdges.length})
+            {tx(dep.relationships, { count: filteredEdges.length })}
           </div>
           <div className="space-y-1 max-h-[200px] overflow-y-auto">
             {filteredEdges.slice(0, 30).map((edge) => {
@@ -104,7 +109,7 @@ export function GraphCanvas({
             })}
             {filteredEdges.length > 30 && (
               <div className="text-xs text-muted-foreground/60 pt-1">
-                +{filteredEdges.length - 30} more
+                {tx(dep.more_relationships, { count: filteredEdges.length - 30 })}
               </div>
             )}
           </div>

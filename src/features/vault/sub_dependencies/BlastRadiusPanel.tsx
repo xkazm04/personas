@@ -1,7 +1,8 @@
 import { Key, Bot, Zap, X, Shield, FlaskConical } from 'lucide-react';
 import type { BlastRadius } from './credentialGraph';
 import type { SimulationResult } from './credentialGraph';
-import { SEVERITY_STYLES } from './graphConstants';
+import { getSeverityStyles } from './graphConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationPanel } from './SimulationPanel';
 
 interface BlastRadiusPanelProps {
@@ -19,7 +20,9 @@ export function BlastRadiusPanel({
   simulationMode,
   onToggleSimulation,
 }: BlastRadiusPanelProps) {
-  const sev = SEVERITY_STYLES[blast.severity];
+  const { t, tx } = useTranslation();
+  const dep = t.vault.dependencies;
+  const sev = getSeverityStyles(t)[blast.severity];
 
   return (
     <div className="space-y-2">
@@ -28,7 +31,7 @@ export function BlastRadiusPanel({
         <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20">
           <div className="flex items-center gap-2">
             <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-muted-foreground/50'}`} />
-            <span className="text-xs text-muted-foreground/70">Simulate Revocation</span>
+            <span className="text-xs text-muted-foreground/70">{dep.simulate_revocation}</span>
           </div>
           <button
             type="button"
@@ -64,7 +67,7 @@ export function BlastRadiusPanel({
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-muted-foreground/60" />
-                <span className="text-sm font-medium text-foreground/85">Blast Radius</span>
+                <span className="text-sm font-medium text-foreground/85">{dep.blast_radius}</span>
               </div>
               <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
                 <X className="w-3.5 h-3.5 text-muted-foreground/50" />
@@ -86,18 +89,18 @@ export function BlastRadiusPanel({
               {/* Impact summary */}
               <div className="text-xs text-muted-foreground/70 leading-relaxed">
                 {blast.severity === 'high' ? (
-                  <span>Removing this credential would impact <strong className="text-red-400">{blast.affectedAgents.length} agents</strong>. Consider rotating instead of deleting.</span>
+                  <span>{tx(dep.impact_high, { count: blast.affectedAgents.length })}</span>
                 ) : blast.severity === 'medium' ? (
-                  <span>This credential is used by <strong className="text-amber-400">{blast.affectedAgents.length} agent{blast.affectedAgents.length !== 1 ? 's' : ''}</strong>. Review dependencies before changes.</span>
+                  <span>{tx(dep.impact_medium, { count: blast.affectedAgents.length })}</span>
                 ) : (
-                  <span>No agents depend on this credential. Safe to modify or remove.</span>
+                  <span>{dep.impact_low}</span>
                 )}
               </div>
 
               {/* Affected agents */}
               {blast.affectedAgents.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">Affected Agents</div>
+                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{dep.affected_agents}</div>
                   <div className="space-y-1">
                     {blast.affectedAgents.map((agent) => (
                       <div key={agent.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
@@ -115,7 +118,7 @@ export function BlastRadiusPanel({
               {/* Affected events */}
               {blast.affectedEvents.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">Affected Events</div>
+                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{dep.affected_events}</div>
                   <div className="space-y-1">
                     {blast.affectedEvents.map((evt) => (
                       <div key={evt.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
