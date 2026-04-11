@@ -1,5 +1,6 @@
 import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio, FolderSearch, ClipboardPaste, AppWindow, Combine } from 'lucide-react';
 import { createLogger } from "@/lib/log";
+import { en, type Translations } from '@/i18n/en';
 
 const logger = createLogger("trigger-constants");
 
@@ -132,6 +133,76 @@ export const TRIGGER_CATEGORY_I18N: Record<string, { label: string; desc: string
   push:    { label: 'triggers.category_push',    desc: 'triggers.category_push_desc' },
   compose: { label: 'triggers.category_compose', desc: 'triggers.category_compose_desc' },
 };
+
+/** Resolve trigger type options with translated labels. Defaults to English. */
+export function getTriggerTypeOptions(t: Translations = en): TriggerTypeOption[] {
+  return TRIGGER_TYPE_OPTIONS.map((opt) => {
+    const i18n = TRIGGER_TYPE_I18N[opt.type];
+    if (!i18n) return opt;
+    const labelKey = `type_${opt.type}` as keyof Translations['triggers'];
+    const descKey = `desc_${opt.type}` as keyof Translations['triggers'];
+    return {
+      ...opt,
+      label: (t.triggers[labelKey] as string) ?? opt.label,
+      description: (t.triggers[descKey] as string) ?? opt.description,
+    };
+  });
+}
+
+/** Resolve trigger category metadata with translated labels. Defaults to English. */
+export function getTriggerCategories(t: Translations = en): TriggerCategoryMeta[] {
+  const catKeyMap: Record<string, { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] }> = {
+    pull:    { label: 'category_pull',    desc: 'category_pull_desc' },
+    push:    { label: 'category_push',    desc: 'category_push_desc' },
+    compose: { label: 'category_compose', desc: 'category_compose_desc' },
+  };
+  return TRIGGER_CATEGORIES.map((cat) => {
+    const keys = catKeyMap[cat.id];
+    if (!keys) return cat;
+    return {
+      ...cat,
+      label: (t.triggers[keys.label] as string) ?? cat.label,
+      description: (t.triggers[keys.desc] as string) ?? cat.description,
+    };
+  });
+}
+
+/** Resolve rate-limit window options with translated labels. Defaults to English. */
+export function getRateLimitWindowOptions(t: Translations = en): readonly { label: string; value: number }[] {
+  const keyMap: Record<number, keyof Translations['triggers']> = {
+    60:   'rate_per_minute',
+    300:  'rate_per_5_minutes',
+    3600: 'rate_per_hour',
+  };
+  return RATE_LIMIT_WINDOW_OPTIONS.map((opt) => {
+    const key = keyMap[opt.value];
+    return {
+      ...opt,
+      label: key ? ((t.triggers[key] as string) ?? opt.label) : opt.label,
+    };
+  });
+}
+
+/** Resolve trigger template labels with translations. Defaults to English. */
+export function getTriggerTemplates(t: Translations = en): TriggerTemplate[] {
+  const tplKeyMap: Record<string, { label: keyof Translations['triggers']; desc: keyof Translations['triggers'] }> = {
+    'fw-error-logs':     { label: 'tpl_fw_error_logs',     desc: 'tpl_fw_error_logs_desc' },
+    'fw-csv-data':       { label: 'tpl_fw_csv_data',       desc: 'tpl_fw_csv_data_desc' },
+    'fw-config-changes': { label: 'tpl_fw_config_changes', desc: 'tpl_fw_config_changes_desc' },
+    'cb-url-summarize':  { label: 'tpl_cb_url_summarize',  desc: 'tpl_cb_url_summarize_desc' },
+    'cb-error-message':  { label: 'tpl_cb_error_message',  desc: 'tpl_cb_error_message_desc' },
+    'cb-code-snippet':   { label: 'tpl_cb_code_snippet',   desc: 'tpl_cb_code_snippet_desc' },
+  };
+  return TRIGGER_TEMPLATES.map((tpl) => {
+    const keys = tplKeyMap[tpl.id];
+    if (!keys) return tpl;
+    return {
+      ...tpl,
+      label: (t.triggers[keys.label] as string) ?? tpl.label,
+      description: (t.triggers[keys.desc] as string) ?? tpl.description,
+    };
+  });
+}
 
 // -- Webhook URL configuration ----------------------------------------
 

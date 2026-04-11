@@ -3,6 +3,7 @@ import {
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 import type { ModelTestConfig } from '@/api/agents/tests';
+import { en, type Translations } from '@/i18n/en';
 
 export interface ModelOption {
   id: string;
@@ -24,6 +25,22 @@ export const MODEL_I18N_KEYS: Record<string, string> = {
   sonnet: 'models.sonnet',
   opus: 'models.opus',
 };
+
+/** Resolve Anthropic model options with translated labels. Defaults to English. */
+export function getAnthropicModels(t: Translations = en): ModelOption[] {
+  return ANTHROPIC_MODELS.map((m) => {
+    const key = m.id as keyof Translations['models'];
+    return {
+      ...m,
+      label: (t.models[key] as string) ?? m.label,
+    };
+  });
+}
+
+/** Resolve all model options with translated Anthropic labels. Defaults to English. */
+export function getAllModels(t: Translations = en): ModelOption[] {
+  return [...getAnthropicModels(t), ...OLLAMA_MODELS];
+}
 
 export const OLLAMA_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
   id: p.value,

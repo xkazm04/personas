@@ -5,6 +5,7 @@
  * and the derived union types for type annotations. This gives consumers
  * autocomplete, exhaustiveness checking, and single-source refactor safety.
  */
+import { en, type Translations } from '@/i18n/en';
 
 // ---------------------------------------------------------------------------
 // Tiered feature gate system
@@ -71,6 +72,20 @@ export const TIER_I18N_KEYS: Partial<Record<Tier, { label: string; desc: string 
   [TIERS.STARTER]: { label: 'tiers.starter_label', desc: 'tiers.starter_desc' },
   [TIERS.TEAM]:    { label: 'tiers.team_label',    desc: 'tiers.team_desc' },
 };
+
+/** Resolve tier labels from the given translation bundle. Defaults to English. */
+export function getTierLabels(t: Translations = en): Partial<Record<Tier, { label: string; desc: string }>> {
+  return {
+    [TIERS.STARTER]: {
+      label: t.tiers.starter_label ?? TIER_LABELS[TIERS.STARTER]?.label ?? 'Simple',
+      desc: t.tiers.starter_desc ?? TIER_LABELS[TIERS.STARTER]?.desc ?? '',
+    },
+    [TIERS.TEAM]: {
+      label: t.tiers.team_label ?? TIER_LABELS[TIERS.TEAM]?.label ?? 'Power',
+      desc: t.tiers.team_desc ?? TIER_LABELS[TIERS.TEAM]?.desc ?? '',
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Backward-compatible aliases (VIEW_MODES → TIERS mapping)
