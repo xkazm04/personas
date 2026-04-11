@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
@@ -21,7 +21,7 @@ export default function SLADashboard() {
     setLoading(true);
     getSlaDashboard(debouncedDays)
       .then((d) => { if (!cancelled) setData(d); })
-      .catch(silentCatch("SLADashboard:fetchSlaDashboard"))
+      .catch(toastCatch("SLADashboard:fetchSlaDashboard", "Failed to load SLA metrics"))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [debouncedDays]);

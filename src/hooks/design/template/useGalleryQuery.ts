@@ -3,7 +3,7 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('gallery-query');
 import { useSystemStore } from "@/stores/systemStore";
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import {
   listDesignReviewsPaginated,
   listReviewConnectors,
@@ -302,7 +302,7 @@ export function useGalleryQuery(
       );
     }
 
-    Promise.all(fetches).catch(silentCatch("galleryQuery:mountBatch"));
+    Promise.all(fetches).catch(toastCatch("galleryQuery:mountBatch", "Failed to load template gallery"));
 
     return () => { cancelled.current = true; };
   }, [stableCoverageServiceTypes, fetchSidebarData]);

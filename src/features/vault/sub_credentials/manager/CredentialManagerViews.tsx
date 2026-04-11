@@ -5,7 +5,7 @@ import { CatalogAutoSetup } from '@/features/vault/sub_catalog/components/autoCr
 import { CredentialRelationshipGraph } from '@/features/vault/sub_dependencies/CredentialRelationshipGraph';
 import { isUniversalOAuthConnector, isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { CredentialAddViews } from './CredentialAddViews';
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import type { useCredentialManagerState } from './useCredentialManagerState';
 
 type ManagerState = ReturnType<typeof useCredentialManagerState>;
@@ -89,7 +89,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
               if (templateHealth.result) templateHealth.invalidate();
             }}
             onMcpComplete={() => {
-              void fetchCredentials().catch(silentCatch("CredentialManagerViews:fetchCredentialsOnMcpComplete"));
+              void fetchCredentials().catch(toastCatch("CredentialManagerViews:fetchCredentialsOnMcpComplete", "Failed to refresh credentials"));
               fetchConnectorDefinitions();
               dispatch({ type: 'GO_LIST' });
             }}

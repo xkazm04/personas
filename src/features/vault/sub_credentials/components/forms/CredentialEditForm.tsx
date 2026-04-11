@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { vaultStatus, type VaultStatus } from "@/api/vault/credentials";
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 
 import { OAuthSection } from './OAuthSection';
 import { ConnectionTestSection } from './ConnectionTestSection';
@@ -65,7 +65,7 @@ export function CredentialEditForm({
   const { validateField, validateAll } = useFieldValidation(fields);
 
   useEffect(() => {
-    vaultStatus().then(setVault).catch(silentCatch("CredentialEditForm:fetchVaultStatus"));
+    vaultStatus().then(setVault).catch(toastCatch("CredentialEditForm:fetchVaultStatus", "Failed to check vault status"));
   }, []);
 
   useEffect(() => {

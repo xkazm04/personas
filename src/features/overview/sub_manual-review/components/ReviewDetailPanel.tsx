@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { toastCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -37,7 +37,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
     let cancelled = false;
     listReviewMessages(review.id).then((msgs) => {
       if (!cancelled) setMessages(msgs);
-    }).catch(silentCatch("ReviewDetailPanel:listReviewMessages"));
+    }).catch(toastCatch("ReviewDetailPanel:listReviewMessages", "Failed to load review messages"));
     return () => { cancelled = true; };
   }, [review.id, isCloud]);
 
