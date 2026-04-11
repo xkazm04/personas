@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { Globe, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw, Activity } from 'lucide-react';
+import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAuthStore } from '@/stores/authStore';
-import { useSystemStore } from '@/stores/systemStore';
-import { TIERS, TIER_CYCLE } from '@/lib/constants/uiModes';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 
@@ -15,8 +13,6 @@ export default function AccountSettings() {
   const error = useAuthStore((s) => s.error);
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const logout = useAuthStore((s) => s.logout);
-  const viewMode = useSystemStore((s) => s.viewMode);
-  const setViewMode = useSystemStore((s) => s.setViewMode);
 
   const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
   const [telemetryChanged, setTelemetryChanged] = useState(false);
@@ -33,38 +29,6 @@ export default function AccountSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-        {/* Interface mode */}
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-          <SectionHeading title="Interface Mode" icon={<Sparkles className="text-violet-400" />} />
-          <div className="grid grid-cols-3 gap-3">
-            {([
-              { mode: TIERS.STARTER, icon: Sparkles, label: 'Starter', desc: 'Clean, focused UI', color: 'violet' },
-              { mode: TIERS.TEAM, icon: LayoutGrid, label: 'Team', desc: 'Pipelines & analytics', color: 'primary' },
-              { mode: TIERS.BUILDER, icon: Wrench, label: 'Builder', desc: 'Dev tools & lab', color: 'amber' },
-            ] as const).filter(({ mode }) => TIER_CYCLE.includes(mode)).map(({ mode, icon: Icon, label, desc, color }) => {
-              const isActive = viewMode === mode;
-              return (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${
-                    isActive
-                      ? `border-${color}-500/30 bg-${color}-500/5`
-                      : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-muted-foreground/50'}`} />
-                  <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{label}</span>
-                  <span className="text-[11px] text-muted-foreground/50 text-center">{desc}</span>
-                  {isActive && (
-                    <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Telemetry */}
         <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
           <SectionHeading title="Troubleshooting Telemetry" icon={<Activity className="text-rose-400" />} />

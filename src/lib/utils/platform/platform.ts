@@ -78,13 +78,11 @@ export const MOBILE_SECTIONS = new Set<string>([
   'credentials',
 ]);
 
-/** Sidebar sections available in simple mode. */
+/** Sidebar sections available in Simple mode (non-technical users). */
 export const SIMPLE_SECTIONS = new Set<string>([
   'home',
-  'overview',
   'personas',
   'credentials',
-  'design-reviews',
   'settings',
 ]);
 

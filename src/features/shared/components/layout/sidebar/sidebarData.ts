@@ -30,13 +30,13 @@ export interface SectionDef {
 
 export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
-  { id: 'overview', icon: BarChart3, label: 'Overview' },
+  { id: 'overview', icon: BarChart3, label: 'Overview', minTier: TIERS.TEAM },
   { id: 'personas', icon: Bot, label: 'Agents' },
-  { id: 'workflows', icon: GitBranch, label: 'Workflows' },
+  { id: 'workflows', icon: GitBranch, label: 'Workflows', minTier: TIERS.TEAM },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
-  { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
-  { id: 'plugins', icon: Puzzle, label: 'Plugins' },
+  { id: 'design-reviews', icon: FlaskConical, label: 'Templates', minTier: TIERS.TEAM },
+  { id: 'plugins', icon: Puzzle, label: 'Plugins', minTier: TIERS.TEAM },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 

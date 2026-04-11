@@ -49,12 +49,19 @@ export function isTierVisible(minTier: Tier, activeTier: Tier): boolean {
   return TIER_RANK[activeTier] >= TIER_RANK[minTier];
 }
 
-/** Ordered cycle for toggling, filtered to tiers available in this build. */
+/** Ordered cycle for toggling — runtime UI only exposes starter/team.
+ *  Builder features use compile-time `devOnly` gating, not the runtime tier. */
 export const TIER_CYCLE: readonly Tier[] =
-  ([TIERS.STARTER, TIERS.TEAM, TIERS.BUILDER] as const).filter(isTierAvailable);
+  ([TIERS.STARTER, TIERS.TEAM] as const).filter(isTierAvailable);
 
 /** Default tier for fresh installs. */
 export const DEFAULT_TIER: Tier = TIERS.TEAM;
+
+/** Human-readable labels for the runtime-visible tiers. */
+export const TIER_LABELS: Partial<Record<Tier, { label: string; desc: string }>> = {
+  [TIERS.STARTER]: { label: 'Simple', desc: 'Core features for everyday use' },
+  [TIERS.TEAM]:    { label: 'Power',  desc: 'Full feature set' },
+};
 
 // ---------------------------------------------------------------------------
 // Backward-compatible aliases (VIEW_MODES → TIERS mapping)

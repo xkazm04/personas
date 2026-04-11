@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
+import { Check, Globe, Palette, Sun, Type, Sparkles, LayoutGrid } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
@@ -7,6 +7,8 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
+import { useSystemStore } from '@/stores/systemStore';
+import { TIERS, TIER_CYCLE, TIER_LABELS } from '@/lib/constants/uiModes';
 
 const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -165,6 +167,9 @@ export default function AppearanceSettings() {
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
 
+  const viewMode = useSystemStore((s) => s.viewMode);
+  const setViewMode = useSystemStore((s) => s.setViewMode);
+
   const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);
   const { darkWithCustom, lightWithCustom } = useMemo(() => {
     const dark = THEMES.filter((t) => !t.isLight);
@@ -186,6 +191,41 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
+          {/* Interface mode */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <SectionHeading title="Interface Mode" icon={<Sparkles className="text-violet-400" />} />
+            <p className="text-xs text-muted-foreground/60">
+              Simple mode shows only core features. Power mode unlocks the full interface.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { mode: TIERS.STARTER, icon: Sparkles, color: 'violet' },
+                { mode: TIERS.TEAM, icon: LayoutGrid, color: 'primary' },
+              ] as const).filter(({ mode }) => TIER_CYCLE.includes(mode)).map(({ mode, icon: Icon, color }) => {
+                const isActive = viewMode === mode;
+                const meta = TIER_LABELS[mode];
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${
+                      isActive
+                        ? `border-${color}-500/30 bg-${color}-500/5`
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-muted-foreground/50'}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{meta?.label ?? mode}</span>
+                    <span className="text-[11px] text-muted-foreground/50 text-center">{meta?.desc ?? ''}</span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title="Text Size" icon={<Type />} />
