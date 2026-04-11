@@ -1,11 +1,12 @@
 import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Step = 'input' | 'preview' | 'generated';
 
-const STEP_DESCRIPTIONS: Record<Step, string> = {
-  input: 'Paste an OpenAPI spec URL or content to auto-generate a connector',
-  preview: 'Review the parsed API and select which endpoints to include',
-  generated: 'Your connector has been generated successfully',
+const STEP_KEYS: Record<Step, 'input_hint' | 'preview_hint' | 'generated_hint'> = {
+  input: 'input_hint',
+  preview: 'preview_hint',
+  generated: 'generated_hint',
 };
 
 interface AutopilotHeaderProps {
@@ -15,6 +16,7 @@ interface AutopilotHeaderProps {
 }
 
 export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex items-center gap-3">
@@ -26,8 +28,8 @@ export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">API Autopilot</h3>
-          <p className="text-sm text-muted-foreground/60">{STEP_DESCRIPTIONS[step]}</p>
+          <h3 className="text-sm font-semibold text-foreground">{t.vault.autopilot.title}</h3>
+          <p className="text-sm text-muted-foreground/60">{t.vault.autopilot[STEP_KEYS[step]]}</p>
         </div>
         <div className="flex items-center gap-1.5">
           {(['input', 'preview', 'generated'] as const).map((s, i) => (

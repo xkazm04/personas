@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import type { ExtraFieldDef } from './schemaFormTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function ExtraFieldRenderer({
   def,
@@ -61,6 +62,7 @@ function KeyValueListField({
   state: Record<string, unknown>;
   setState: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
+  const { t } = useTranslation();
   const pairs = (state[def.key] as { key: string; value: string }[]) ?? [];
   const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
 
@@ -98,7 +100,7 @@ function KeyValueListField({
         </div>
 
         {pairs.length === 0 && (
-          <p className="text-sm text-muted-foreground/60 italic">{def.emptyMessage ?? 'None configured.'}</p>
+          <p className="text-sm text-muted-foreground/60 italic">{def.emptyMessage ?? t.vault.schemas.none_configured}</p>
         )}
 
         <div className="space-y-2">

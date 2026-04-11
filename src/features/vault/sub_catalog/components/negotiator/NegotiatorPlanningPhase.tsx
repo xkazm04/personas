@@ -1,5 +1,6 @@
 import { Check, Brain } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface NegotiatorPlanningPhaseProps {
   progressLines: string[];
@@ -7,6 +8,7 @@ interface NegotiatorPlanningPhaseProps {
 }
 
 export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorPlanningPhaseProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="negotiator-planning"
@@ -41,7 +43,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
         {progressLines.length === 0 && (
           <div className="flex items-center gap-3 py-1.5">
             <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
-            <span className="text-sm text-muted-foreground/90">Initializing negotiator...</span>
+            <span className="text-sm text-muted-foreground/90">{t.vault.negotiator.initializing}</span>
           </div>
         )}
       </div>

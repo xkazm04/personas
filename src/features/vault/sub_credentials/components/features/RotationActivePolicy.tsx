@@ -8,6 +8,7 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 import { RotationCountdownRing } from './RotationCountdownRing';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
 
@@ -30,6 +31,7 @@ export function RotationActivePolicy({
   onHealthcheck,
   onError,
 }: RotationActivePolicyProps) {
+  const { t, tx } = useTranslation();
   const [isRotating, setIsRotating] = useState(false);
   const [isRemovingPolicy, setIsRemovingPolicy] = useState(false);
   const [rotationDays, setRotationDays] = useState(rotationStatus.rotation_interval_days ?? (isOAuth ? 1 : 90));
@@ -44,9 +46,9 @@ export function RotationActivePolicy({
             <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.text} font-medium` : 'text-muted-foreground/90'}>
               {rotationStatus.policy_enabled
                 ? (isOAuth
-                  ? `OAuth token refresh active${rotationStatus.policy_type === 'oauth_keepalive' ? ' (auto)' : ''}`
-                  : 'Auto-rotation active')
-                : 'Rotation paused'}
+                  ? (rotationStatus.policy_type === 'oauth_keepalive' ? t.vault.rotation_section.oauth_refresh_active_auto : t.vault.rotation_section.oauth_refresh_active)
+                  : t.vault.rotation_section.auto_rotation_active)
+                : t.vault.rotation_section.rotation_paused}
             </span>
           </div>
         </div>
@@ -70,7 +72,7 @@ export function RotationActivePolicy({
                 await onRefresh();
                 onHealthcheck(credentialId);
               } catch (err) {
-                onError(`Rotation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                onError(tx(t.vault.rotation_section.rotation_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
               } finally {
                 setIsRotating(false);
               }
@@ -95,21 +97,21 @@ export function RotationActivePolicy({
                 }
                 await onRefresh();
               } catch (err) {
-                onError(`Failed to remove policy: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                onError(tx(t.vault.rotation_section.remove_policy_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
               } finally {
                 setIsRemovingPolicy(false);
               }
             }}
             disabled={isRemovingPolicy}
             data-testid="rotation-delete-policy-btn"
-            title="Remove rotation policy"
+            title={t.vault.rotation_section.remove_policy_tooltip}
             className="hover:bg-red-500/10"
           />
         </div>
       </div>
       {/* Rotation period editor */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground/80">Rotate every</span>
+        <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.rotate_every}</span>
         {isEditingPeriod ? (
           <div className="flex items-center gap-1.5">
             <PillGroup
@@ -132,7 +134,7 @@ export function RotationActivePolicy({
               }
               data-testid="rotation-edit-presets"
             />
-            <span className="text-sm text-muted-foreground/80">days</span>
+            <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.days}</span>
             <Button
               variant="accent"
               size="xs"
@@ -146,7 +148,7 @@ export function RotationActivePolicy({
                   await onRefresh();
                   setIsEditingPeriod(false);
                 } catch (err) {
-                  onError(`Failed to update rotation period: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                  onError(tx(t.vault.rotation_section.update_period_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
                 }
               }}
               data-testid="rotation-save-period-btn"

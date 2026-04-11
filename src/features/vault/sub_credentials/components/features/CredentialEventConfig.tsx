@@ -12,6 +12,7 @@ import {
   getDefaultConfig,
 } from '@/features/vault/sub_credentials/components/features/EventConfigSubPanels';
 import { EventTemplateCard } from './EventTemplateCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CredentialEventConfigProps {
   credentialId: string;
@@ -19,6 +20,7 @@ interface CredentialEventConfigProps {
 }
 
 export function CredentialEventConfig({ credentialId, events: eventsProp }: CredentialEventConfigProps) {
+  const { t } = useTranslation();
   const credentialEvents = useVaultStore((s) => s.credentialEvents);
   const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
   const createCredentialEvent = useVaultStore((s) => s.createCredentialEvent);
@@ -112,7 +114,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="w-3.5 h-3.5 text-amber-400/70" />
-        <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">Event Triggers</span>
+        <span className="text-sm font-medium text-foreground/80 uppercase tracking-wider">{t.vault.event_config.event_triggers}</span>
       </div>
 
       {eventTemplates.map((et) => (

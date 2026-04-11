@@ -5,12 +5,14 @@ import { useVaultStore } from "@/stores/vaultStore";
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WizardServiceSelectProps {
   onSelect: (connector: ConnectorDefinition) => void;
 }
 
 export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
+  const { t, tx } = useTranslation();
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
@@ -53,7 +55,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search services..."
+          placeholder={t.vault.wizard_detect.search_services}
           autoFocus
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
@@ -102,7 +104,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                     </span>
                     <span className="text-sm text-muted-foreground/60 block truncate">
                       {isDesktopBridge(connector)
-                        ? 'Desktop bridge -- auto-detected'
+                        ? t.vault.wizard_detect.desktop_bridge
                         : `${connector.fields.length} field${connector.fields.length !== 1 ? 's' : ''} required`}
                     </span>
                   </div>
@@ -115,7 +117,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
 
         {grouped.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-sm text-muted-foreground/60">No services match "{search}"</p>
+            <p className="text-sm text-muted-foreground/60">{tx(t.vault.wizard_detect.no_services, { search })}</p>
           </div>
         )}
       </div>

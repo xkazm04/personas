@@ -2,6 +2,7 @@ import { Clock, AlertTriangle, Lightbulb, CheckCircle, SkipForward } from 'lucid
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
 import { NegotiatorStepCard } from './NegotiatorStepCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GuidingProgressBarProps {
   plan: NegotiationPlan;
@@ -78,13 +79,14 @@ interface GuidingPrerequisitesProps {
 }
 
 export function GuidingPrerequisites({ prerequisites }: GuidingPrerequisitesProps) {
+  const { t } = useTranslation();
   if (prerequisites.length === 0) return null;
 
   return (
     <div className="px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-xl">
       <div className="flex items-center gap-2 mb-1.5">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-sm font-medium text-amber-300/80">Prerequisites</span>
+        <span className="text-sm font-medium text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
       </div>
       <ul className="space-y-0.5">
         {prerequisites.map((prereq, i) => (
@@ -177,6 +179,7 @@ interface GuidingCompletionBannerProps {
 }
 
 export function GuidingCompletionBanner({ allDone, verificationHint }: GuidingCompletionBannerProps) {
+  const { t } = useTranslation();
   if (!allDone || !verificationHint) return null;
 
   return (
@@ -185,7 +188,7 @@ export function GuidingCompletionBanner({ allDone, verificationHint }: GuidingCo
     >
       <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
       <div>
-        <p className="text-sm text-emerald-300 font-medium">All steps completed</p>
+        <p className="text-sm text-emerald-300 font-medium">{t.vault.negotiator.all_steps_completed}</p>
         <p className="text-sm text-emerald-200/60 mt-0.5">{verificationHint}</p>
       </div>
     </div>

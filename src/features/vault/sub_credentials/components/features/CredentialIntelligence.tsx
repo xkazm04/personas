@@ -18,6 +18,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { StatCard } from './IntelligenceStatCard';
 import { AuditLogTable } from './AuditLogTable';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const AI_STATUS = STATUS_COLORS.ai!;
@@ -31,6 +32,7 @@ interface CredentialIntelligenceProps {
 type IntelTab = 'overview' | 'dependents' | 'audit';
 
 export function CredentialIntelligence({ credentialId }: CredentialIntelligenceProps) {
+  const { t, tx } = useTranslation();
   const [tab, setTab] = useState<IntelTab>('overview');
   const [stats, setStats] = useState<CredentialUsageStats | null>(null);
   const [dependents, setDependents] = useState<CredentialDependent[]>([]);
@@ -63,7 +65,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-        <LoadingSpinner size="lg" label="Loading intelligence data" />
+        <LoadingSpinner size="lg" label={t.vault.intelligence_tab.loading} />
       </div>
     );
   }
@@ -88,7 +90,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
               : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
             }
           >
-            {t === 'overview' && 'Overview'}
+            -- placeholder
             {t === 'dependents' && `Dependents (${dependents.length})`}
             {t === 'audit' && `Audit Log (${auditLog.length})`}
           </Button>
@@ -101,22 +103,22 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.text}`} />}
-              label="Total Accesses"
+              label={t.vault.intelligence_tab.total_accesses}
               value={stats.total_accesses.toString()}
             />
             <StatCard
               icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.text}`} />}
-              label="Distinct Personas"
+              label={t.vault.intelligence_tab.distinct_personas}
               value={stats.distinct_personas.toString()}
             />
             <StatCard
               icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.text}`} />}
-              label="Last 24h"
+              label={t.vault.intelligence_tab.last_24h}
               value={stats.accesses_last_24h.toString()}
             />
             <StatCard
               icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.text}`} />}
-              label="Last 7 Days"
+              label={t.vault.intelligence_tab.last_7d}
               value={stats.accesses_last_7d.toString()}
             />
           </div>
@@ -124,13 +126,13 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           {!hasActivity && (
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              No recorded usage. This credential may be unused.
+              {t.vault.intelligence_tab.no_usage}
             </div>
           )}
           {unusedDays !== null && unusedDays > 30 && (
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              Last accessed {unusedDays} days ago. Consider reviewing if still needed.
+              {tx(t.vault.intelligence_tab.last_accessed_days, { days: unusedDays })}
             </div>
           )}
 
@@ -149,8 +151,8 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           {dependents.length === 0 ? (
             <EmptyIllustration
               icon={Link2}
-              heading="No known dependents"
-              description="Changes to this credential are low-risk."
+              heading={t.vault.intelligence_tab.no_dependents}
+              description={t.vault.intelligence_tab.no_dependents_hint}
               className="py-6"
             />
           ) : (

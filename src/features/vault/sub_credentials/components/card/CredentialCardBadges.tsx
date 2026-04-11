@@ -7,6 +7,7 @@ import { getAuthBadgeClasses } from '@/features/vault/shared/utils/authMethodSty
 import { getCredentialTags, getTagStyle } from '@/features/vault/shared/utils/credentialTags';
 import type { RotationStatus } from '@/api/vault/rotation';
 import { BadgeOverflowPill, type BadgeEntry } from './badges/BadgeOverflowPill';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Determine the single auth method actually used for this credential. */
 function getAdoptedAuthMethod(credential: CredentialMetadata, connector: ConnectorDefinition): ConnectorAuthMethod | null {
@@ -37,20 +38,21 @@ export function BadgeRow({
   rotationStatus,
   rotationCountdown,
 }: BadgeRowProps) {
+  const { t } = useTranslation();
   const badges: BadgeEntry[] = [];
 
   // Priority 0: corrupted healthcheck metadata
   if (rotationStatus?.healthcheck_corrupted) {
     badges.push({
       key: 'hc-corrupted',
-      label: 'Healthcheck Data Corrupted',
+      label: t.vault.credential_card.corrupted_tooltip,
       node: (
         <span
           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-orange-500/10 border-orange-500/20 text-orange-400"
-          title="Healthcheck ring buffer metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data."
+          title={t.vault.credential_card.corrupted_tooltip}
         >
           <DatabaseZap className="w-2.5 h-2.5" />
-          <span className="text-sm font-medium">Corrupted</span>
+          <span className="text-sm font-medium">{t.vault.credential_card.corrupted}</span>
         </span>
       ),
     });

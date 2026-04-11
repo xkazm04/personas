@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbSegment, CredentialViewAction } from '@/features/vault/shared/hooks/useCredentialViewFSM';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface VaultBreadcrumbProps {
   segments: BreadcrumbSegment[];
@@ -11,11 +12,12 @@ interface VaultBreadcrumbProps {
  * Only renders when navigation depth > 1 (i.e. not on root views).
  */
 export function VaultBreadcrumb({ segments, dispatch }: VaultBreadcrumbProps) {
+  const { t } = useTranslation();
   if (segments.length <= 1) return null;
 
   return (
     <nav
-      aria-label="Vault breadcrumb"
+      aria-label={t.vault.breadcrumb.aria_label}
       className="flex items-center gap-1 px-4 md:px-6 xl:px-8 py-1.5 text-xs text-muted-foreground/70 border-b border-primary/5 bg-secondary/10"
     >
       {segments.map((seg, i) => {

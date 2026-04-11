@@ -6,6 +6,7 @@ const logger = createLogger('codebase-project-picker');
 import { listProjects } from '@/api/devTools/devTools';
 import { useSystemStore } from '@/stores/systemStore';
 import { ProjectList } from './ProjectList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DevProject {
   id: string;
@@ -26,6 +27,7 @@ interface CodebaseProjectPickerProps {
 }
 
 export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCredentialNameChange, multiSelect }: CodebaseProjectPickerProps) {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <Code2 className="w-7 h-7 text-indigo-400/60" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground/80">No projects found</p>
+          <p className="text-sm font-medium text-foreground/80">{t.common.no_results}</p>
           <p className="text-xs text-muted-foreground/60 max-w-xs">
             Add a project in Dev Tools first to connect a codebase to your agents.
           </p>

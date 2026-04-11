@@ -14,6 +14,7 @@ import { useStepProgress } from '@/hooks/useStepProgress';
 import { parseSteps, simpleHash, readPersistedSteps, ProgressRingBadge } from '@/features/vault/sub_catalog/components/design/setup/setupInstructionHelpers';
 import { buildComponents } from '@/features/vault/sub_catalog/components/design/setup/setupMarkdownComponents';
 import { SetupStepCard } from '@/features/vault/sub_catalog/components/design/setup/SetupStepCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface InteractiveSetupInstructionsProps {
   markdown: string;
@@ -26,6 +27,7 @@ export function InteractiveSetupInstructions({
   markdown,
   firstSetupUrl,
 }: InteractiveSetupInstructionsProps) {
+  const { t } = useTranslation();
   const { preamble, steps } = useMemo(() => parseSteps(markdown), [markdown]);
   const hasSteps = steps.length > 0;
 
@@ -110,7 +112,7 @@ export function InteractiveSetupInstructions({
               await handleOpenUrl(firstSetupUrl);
             }}
             className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded text-sm text-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-            title="Open setup page in browser"
+            title={t.vault.design_phases.open_setup_page}
           >
             <ExternalLink className="w-2.5 h-2.5" />
             Open

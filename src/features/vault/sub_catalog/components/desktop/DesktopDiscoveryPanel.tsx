@@ -15,6 +15,7 @@ import {
 } from '@/api/system/desktop';
 import { DiscoveryAppList } from './DiscoveryAppList';
 import { DiscoveryMcpList } from './DiscoveryMcpList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesktopDiscoveryPanelProps {
   onBack: () => void;
@@ -24,6 +25,7 @@ interface DesktopDiscoveryPanelProps {
 type Tab = 'apps' | 'mcp-import';
 
 export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDiscoveryPanelProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('apps');
   const [apps, setApps] = useState<DiscoveredApp[]>([]);
   const [mcpServers, setMcpServers] = useState<ImportedMcpServer[]>([]);
@@ -120,7 +122,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">Desktop Apps</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
           <p className="text-sm text-muted-foreground/60">
             Connect local applications or import Claude Desktop MCP servers
           </p>

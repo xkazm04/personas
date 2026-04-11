@@ -1,4 +1,5 @@
 import { AlertTriangle, Lightbulb, RefreshCw, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ErrorPhaseProps {
   error: string | null;
@@ -61,6 +62,7 @@ function recoveryTips(error: string | null, instruction: string | undefined): st
 }
 
 export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPhaseProps) {
+  const { t } = useTranslation();
   const friendly = friendlyError(error);
   const tips = recoveryTips(error, instruction);
   const hasInstruction = Boolean(instruction?.trim());
@@ -92,7 +94,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/15 rounded-xl space-y-2">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-sm font-medium text-amber-300/80">How to fix this</span>
+          <span className="text-sm font-medium text-amber-300/80">{t.vault.design_modal.how_to_fix}</span>
         </div>
         <ul className="space-y-1.5 pl-6">
           {tips.map((tip, i) => (
@@ -104,7 +106,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       {/* Show preserved instruction */}
       {hasInstruction && (
         <div className="px-4 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
-          <p className="text-sm text-muted-foreground/80 mb-1">Your original request (preserved):</p>
+          <p className="text-sm text-muted-foreground/80 mb-1">{t.vault.design_modal.original_request}</p>
           <p className="text-sm text-foreground/90 italic">"{instruction}"</p>
         </div>
       )}
@@ -123,7 +125,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
           className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground/80 rounded-xl text-sm font-medium transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          {hasInstruction ? 'Try again with your request' : 'Try Again'}
+          {hasInstruction ? t.vault.design_modal.try_again_with : t.common.try_again}
         </button>
       </div>
     </div>

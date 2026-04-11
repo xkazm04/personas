@@ -3,18 +3,14 @@ import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { formatElapsed as _formatElapsed } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AnalyzingPhaseProps {
   outputLines: string[];
   onCancel: () => void;
 }
 
-const STAGE_DEFS = [
-  { label: 'Connecting', description: 'Establishing connection to AI' },
-  { label: 'Analyzing requirements', description: 'Identifying authentication patterns' },
-  { label: 'Designing connector', description: 'Generating fields and validation rules' },
-  { label: 'Generating healthcheck', description: 'Building test endpoint configuration' },
-] as const;
+const STAGE_KEYS = ['step_connecting', 'step_analyzing', 'step_designing', 'step_healthcheck'] as const;
 
 /** Map raw backend output lines to a stage index (0--4). */
 function deriveStageIndex(lines: string[]): number {
@@ -31,6 +27,11 @@ function deriveStageIndex(lines: string[]): number {
 const formatElapsed = (seconds: number) => _formatElapsed(seconds, { unit: 's' });
 
 export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
+  const { t } = useTranslation();
+  const stageDefs = useMemo(() => STAGE_KEYS.map((key) => ({
+    label: t.vault.design_phases[key] as string,
+    description: t.vault.design_phases[`${key}_desc` as keyof typeof t.vault.design_phases] as string,
+  })), [t]);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
 
   const derivedIdx = useMemo(() => deriveStageIndex(outputLines), [outputLines]);
 
-  const sp = useStepProgress(STAGE_DEFS.length);
+  const sp = useStepProgress(STAGE_KEYS.length);
 
   // Drive step progress from derived index
   useEffect(() => {
@@ -55,7 +56,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   }, [outputLines.length]);
 
   // Progress: use derived index directly against total (4) for smooth 0->100
-  const progress = Math.min((derivedIdx / STAGE_DEFS.length) * 100, 100);
+  const progress = Math.min((derivedIdx / STAGE_KEYS.length) * 100, 100);
 
   return (
     <div
@@ -72,7 +73,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         ) : (
           <div />
         )}
-        <span className="text-sm text-muted-foreground/80">Typically 15--30 seconds</span>
+        <span className="text-sm text-muted-foreground/80">{t.vault.design_phases.typical_time}</span>
       </div>
 
       {/* Progress bar */}
@@ -85,7 +86,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       {/* Stage indicators */}
       <div className="space-y-1 px-1" aria-live="polite" aria-atomic="false">
         {sp.steps.map((step, i) => {
-          const def = STAGE_DEFS[i]!;
+          const def = stageDefs[i]!;
           return (
             <div
               key={i}

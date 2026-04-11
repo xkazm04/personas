@@ -2,6 +2,7 @@ import { RotateCw, CheckCircle2, Play, Square, CircleCheck, CircleX } from 'luci
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function RotateAllButton({
   isRotatingAll,
@@ -14,6 +15,7 @@ export function RotateAllButton({
   rotatableCount: number;
   onRotateAll: () => void;
 }) {
+  const { t, tx } = useTranslation();
   return (
     <button
       onClick={onRotateAll}
@@ -27,7 +29,7 @@ export function RotateAllButton({
               : 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-600/25 dark:border-emerald-500/20'
             : 'border-cyan-600/25 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400/80 hover:bg-cyan-600/10 dark:hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-cyan-400'
       }`}
-      title={rotatableCount === 0 ? 'No credentials support automatic rotation' : `Refresh ${rotatableCount} OAuth credential${rotatableCount !== 1 ? 's' : ''}`}
+      title={rotatableCount === 0 ? t.vault.manager.no_rotation_support : tx(rotatableCount === 1 ? t.vault.manager.refresh_oauth_one : t.vault.manager.refresh_oauth_other, { count: rotatableCount })}
     >
       {isRotatingAll ? (
         <LoadingSpinner size="xs" />
@@ -37,12 +39,12 @@ export function RotateAllButton({
         <RotateCw className="w-3 h-3" />
       )}
       {isRotatingAll
-        ? 'Refreshing...'
+        ? t.vault.manager.refreshing
         : rotateAllResult
           ? `${rotateAllResult.rotated} refreshed${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}${rotateAllResult.skipped > 0 ? ` \u00b7 ${rotateAllResult.skipped} skipped` : ''}`
           : rotatableCount > 0
-            ? `Rotate (${rotatableCount})`
-            : 'Rotate'}
+            ? tx(t.vault.manager.rotate_count, { count: rotatableCount })
+            : t.vault.manager.rotate}
     </button>
   );
 }
@@ -56,6 +58,7 @@ export function TestAllButton({
   credentials: CredentialMetadata[];
   isDailyRun?: boolean;
 }) {
+  const { t, tx } = useTranslation();
   const hasSummary = !!bulk.summary;
   const passed = bulk.summary?.passed ?? 0;
   const failed = bulk.summary?.failed ?? 0;
@@ -72,7 +75,7 @@ export function TestAllButton({
               : 'bg-emerald-600/8 text-foreground/80 border-emerald-600/25 dark:border-emerald-500/20'
             : 'border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80'
       }`}
-      title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
+      title={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}
     >
       {/* Play/Stop icon + label */}
       <span className="flex items-center gap-1.5 px-2 py-1.5">
@@ -81,7 +84,7 @@ export function TestAllButton({
         ) : (
           <Play className="w-3 h-3 fill-current" />
         )}
-        <span>Test All</span>
+        <span>{t.vault.manager.test_all}</span>
       </span>
 
       {/* Divider */}
@@ -99,7 +102,7 @@ export function TestAllButton({
           <>
             <LoadingSpinner size="xs" />
             <span>
-              {isDailyRun ? 'Daily' : 'Testing'} {bulk.progress.done}/{bulk.progress.total}
+              {tx(isDailyRun ? t.vault.manager.daily_progress : t.vault.manager.testing_progress, { done: bulk.progress.done, total: bulk.progress.total })}
             </span>
           </>
         ) : hasSummary ? (

@@ -7,6 +7,7 @@ import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCre
 import type { SuggestedConnector } from '@/lib/types/designTypes';
 import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectorCredentialModalProps {
   connector: SuggestedConnector;
@@ -23,6 +24,7 @@ export function ConnectorCredentialModal({
   onSave,
   onClose,
 }: ConnectorCredentialModalProps) {
+  const { t } = useTranslation();
   const health = useCredentialHealth(`connector:${connector.name}`);
 
   // Merge field definitions: DB connector fields take priority, then CLI-generated ones
@@ -106,7 +108,7 @@ export function ConnectorCredentialModal({
               1
             </span>
             <div className="flex-1 min-w-0">
-              <span className="font-semibold text-foreground/90">Get your credentials</span>
+              <span className="font-semibold text-foreground/90">{t.vault.credential_forms.get_credentials}</span>
               <span className="text-sm text-muted-foreground/90 block truncate mt-0.5">
                 Open {label} to generate an API key or token
               </span>
@@ -123,7 +125,7 @@ export function ConnectorCredentialModal({
           >
             <ExternalLink className="w-4 h-4 flex-shrink-0 group-hover:scale-105 transition-transform" />
             <div className="flex-1 min-w-0">
-              <span className="font-medium">How to get credentials</span>
+              <span className="font-medium">{t.vault.credential_forms.how_to_get_credentials}</span>
               <span className="text-sm text-muted-foreground/80 block truncate mt-0.5">
                 {connector.setup_url}
               </span>
@@ -154,7 +156,7 @@ export function ConnectorCredentialModal({
             healthcheckResult={health.result}
             onValuesChanged={() => health.invalidate()}
             saveDisabled={hasHealthcheck ? !health.result?.success : false}
-            saveDisabledReason={hasHealthcheck ? "Run a successful connection test before saving." : undefined}
+            saveDisabledReason={hasHealthcheck ? t.vault.credential_forms.healthcheck_required : undefined}
           />
         ) : (
           <div className="text-center py-6">

@@ -5,6 +5,7 @@ import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { CaptureFieldRow, HelpSection } from './NegotiatorStepCardHelpers';
 import type { NegotiatorStepCardProps } from './NegotiatorStepCardHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type StepExpandedContentProps = Pick<NegotiatorStepCardProps,
   'step' | 'stepIndex' | 'isCompleted' | 'capturedValues' | 'onComplete' | 'onCaptureValue' | 'onRequestHelp' | 'stepHelp' | 'isLoadingHelp'
@@ -21,6 +22,7 @@ export function StepExpandedContent({
   stepHelp,
   isLoadingHelp,
 }: StepExpandedContentProps) {
+  const { t } = useTranslation();
   const allFieldsCaptured = step.field_fills
     ? Object.keys(step.field_fills).every((key) => capturedValues[key]?.trim())
     : true;
@@ -124,7 +126,7 @@ export function StepExpandedContent({
             data-testid={`negotiator-step-${stepIndex}-complete-btn`}
           >
             <Check className="w-3.5 h-3.5" />
-            {step.field_fills ? 'Step complete -- values captured' : 'Mark step complete'}
+            {step.field_fills ? t.vault.negotiator.step_complete_captured : t.vault.negotiator.mark_complete}
           </button>
         )}
         {isCompleted && (

@@ -1,5 +1,6 @@
 import { Globe, Sparkles, ArrowRight, Link2, MessageSquareText } from 'lucide-react';
 import type { AutoCredMode } from '../helpers/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UniversalAutoCredInputPhaseProps {
   serviceUrl: string;
@@ -26,6 +27,7 @@ export function UniversalAutoCredInputPhase({
   onCancel,
   onKeyDown,
 }: UniversalAutoCredInputPhaseProps) {
+  const { t } = useTranslation();
   return (
     <div className="animate-fade-slide-in space-y-5">
       {/* Header */}
@@ -59,7 +61,7 @@ export function UniversalAutoCredInputPhase({
           autoFocus
         />
         {serviceUrl && !isValidUrl && (
-          <p className="text-xs text-red-400/80">Please enter a valid URL starting with http:// or https://</p>
+          <p className="text-xs text-red-400/80">{t.vault.auto_cred_extra.invalid_url}</p>
         )}
       </div>
 
@@ -84,8 +86,8 @@ export function UniversalAutoCredInputPhase({
         <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
           <Globe className="w-3 h-3" />
           {mode === 'playwright'
-            ? 'Playwright browser automation available'
-            : 'Guided mode (no browser automation)'}
+            ? t.vault.auto_cred_extra.playwright_available
+            : t.vault.auto_cred_extra.guided_mode}
         </div>
       )}
 

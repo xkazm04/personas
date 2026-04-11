@@ -8,6 +8,7 @@ import { openapiPlaygroundTest } from '@/api/vault/openapiAutopilot';
 import { MethodBadge } from './AutopilotShared';
 import { PlaygroundRequestBuilder } from './PlaygroundRequestBuilder';
 import { PlaygroundOutput } from './PlaygroundOutput';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutopilotPlaygroundProps {
   parseResult: OpenApiParseResult;
@@ -16,6 +17,7 @@ interface AutopilotPlaygroundProps {
 }
 
 export function AutopilotPlayground({ parseResult, generatedResult, onBack }: AutopilotPlaygroundProps) {
+  const { t } = useTranslation();
   const [selectedTool, setSelectedTool] = useState<GeneratedToolDefinition | null>(
     generatedResult.tools[0] ?? null,
   );
@@ -81,8 +83,8 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">API Playground</h3>
-          <p className="text-sm text-muted-foreground/60">Test your generated API tools before using them</p>
+          <h3 className="text-sm font-semibold text-foreground">{t.vault.autopilot.api_playground}</h3>
+          <p className="text-sm text-muted-foreground/60">{t.vault.autopilot.api_playground_hint}</p>
         </div>
       </div>
 

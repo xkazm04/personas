@@ -3,10 +3,12 @@ import { Timer, AlertTriangle, TrendingDown, RefreshCw, ArrowDown } from 'lucide
 import { getOAuthTokenLifetimeSummary, getOAuthTokenMetrics } from '@/api/vault/rotation';
 import type { OAuthTokenLifetimeSummary, OAuthTokenMetric } from '@/api/vault/rotation';
 import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const formatDuration = (secs: number) => _formatDuration(secs, { unit: 's' });
 
 export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string }) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<OAuthTokenLifetimeSummary | null>(null);
   const [recentMetrics, setRecentMetrics] = useState<OAuthTokenMetric[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
     return (
       <div className="flex items-center justify-center py-6 text-muted-foreground/60 text-sm">
         <div className="w-3.5 h-3.5 border border-primary/30 border-t-transparent rounded-full animate-spin mr-2" />
-        Loading metrics...
+        {t.vault.token_metrics.loading}
       </div>
     );
   }
@@ -41,7 +43,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
   if (!summary || summary.totalRefreshes === 0) {
     return (
       <div className="text-sm text-muted-foreground/60 py-4 text-center">
-        No token refresh metrics recorded yet. Metrics will appear after the first OAuth token refresh.
+        {t.vault.token_metrics.no_metrics}
       </div>
     );
   }
@@ -60,30 +62,30 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
       {summary.lifetimeTrendingShorter && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-          <span>Token lifetime is trending shorter — possible provider throttling or policy change.</span>
+          <span>{t.vault.token_metrics.trend_warning}</span>
         </div>
       )}
 
       {/* Summary stats grid */}
       <div className="grid grid-cols-2 gap-2">
         <StatBox
-          label="Total Refreshes"
+          label={t.vault.token_metrics.total_refreshes}
           value={String(summary.totalRefreshes)}
           icon={<RefreshCw className="w-3 h-3" />}
         />
         <StatBox
-          label="Failure Rate"
+          label={t.vault.token_metrics.failure_rate}
           value={`${failureRate}%`}
           icon={<AlertTriangle className="w-3 h-3" />}
           alert={summary.failureCount > 0}
         />
         <StatBox
-          label="Avg Lifetime"
+          label={t.vault.token_metrics.avg_lifetime}
           value={summary.avgPredictedLifetimeSecs != null ? formatDuration(Math.round(summary.avgPredictedLifetimeSecs)) : '—'}
           icon={<Timer className="w-3 h-3" />}
         />
         <StatBox
-          label="Avg Drift"
+          label={t.vault.token_metrics.avg_drift}
           value={summary.avgDriftSecs != null ? `${summary.avgDriftSecs > 0 ? '+' : ''}${formatDuration(Math.round(Math.abs(summary.avgDriftSecs)))}` : '—'}
           icon={<TrendingDown className="w-3 h-3" />}
           alert={summary.avgDriftSecs != null && summary.avgDriftSecs < -300}
@@ -104,7 +106,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
       {/* Lifetime trend sparkline */}
       {summary.recentPredictedLifetimes.length >= 2 && (
         <div className="space-y-1">
-          <span className="text-sm text-muted-foreground/60">Recent provider TTLs (newest first)</span>
+          <span className="text-sm text-muted-foreground/60">{t.vault.token_metrics.recent_ttls}</span>
           <div className="flex items-end gap-1 h-8">
             {summary.recentPredictedLifetimes.map((secs, i) => {
               const max = Math.max(...summary.recentPredictedLifetimes);
@@ -126,7 +128,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
       {/* Recent refresh history */}
       {recentMetrics.length > 0 && (
         <div className="space-y-1">
-          <span className="text-sm text-muted-foreground/60">Recent refreshes</span>
+          <span className="text-sm text-muted-foreground/60">{t.vault.token_metrics.recent_refreshes}</span>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {recentMetrics.slice(0, 5).map((m) => (
               <div

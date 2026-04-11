@@ -24,6 +24,7 @@ import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { CARD_PADDING, SECTION_GAP } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface PendingAuthDetails {
   credential_id: string;
@@ -46,6 +47,7 @@ interface PendingAuthModalProps {
 }
 
 export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthModalProps) {
+  const { t } = useTranslation();
   const [urlOpened, setUrlOpened] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
@@ -71,7 +73,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
       // Preserve modal state so the user can click retry again after, e.g.,
       // completing the consent grant if they hadn't yet.
       setRetryError(
-        e instanceof Error ? e.message : typeof e === 'string' ? e : 'Retry failed',
+        e instanceof Error ? e.message : typeof e === 'string' ? e : t.vault.pending_auth.retry_failed,
       );
     } finally {
       setIsRetrying(false);
@@ -146,7 +148,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
               onClick={handleOpenUrl}
               disabled={isRetrying}
             >
-              {urlOpened ? 'Re-open URL' : 'Open authorization URL'}
+              {urlOpened ? t.vault.pending_auth.reopen_url : t.vault.pending_auth.open_auth_url}
             </Button>
             <Button
               variant="primary"
@@ -154,9 +156,9 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
               icon={isRetrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : undefined}
               onClick={handleRetry}
               disabled={!urlOpened || isRetrying}
-              disabledReason={!urlOpened ? 'Open the URL and grant consent first' : undefined}
+              disabledReason={!urlOpened ? t.vault.pending_auth.open_first : undefined}
             >
-              {isRetrying ? 'Retrying…' : "I've authorized — retry"}
+              {isRetrying ? t.vault.pending_auth.retrying : t.vault.pending_auth.retry_authorized}
             </Button>
           </div>
         </div>

@@ -7,6 +7,7 @@ import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNeg
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const AI_STATUS = STATUS_COLORS.ai!;
@@ -122,6 +123,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
   stepIndex: number; onRequestHelp: (question: string) => void;
   stepHelp: { answer: string; stepIndex: number } | null; isLoadingHelp: boolean;
 }) {
+  const { t } = useTranslation();
   const [helpQuestion, setHelpQuestion] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const handleAskHelp = () => {
@@ -141,7 +143,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
       >
         <HelpCircle className="w-3 h-3" />
-        {showHelp ? 'Hide help' : 'Need help with this step?'}
+        {showHelp ? t.vault.negotiator_extra.hide_help : t.vault.negotiator_extra.need_help}
       </button>
       <AnimatePresence>
         {showHelp && (
@@ -158,7 +160,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 value={helpQuestion}
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
-                placeholder="Ask a question about this step..."
+                placeholder={t.vault.negotiator_extra.ask_question}
                 className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />

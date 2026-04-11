@@ -5,6 +5,7 @@ import { createRotationPolicy } from '@/api/vault/rotation';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import { PillGroup } from '@/features/shared/components/forms/PillGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
 
@@ -23,16 +24,17 @@ export function RotationNewPolicy({
   onRefresh,
   onError,
 }: RotationNewPolicyProps) {
+  const { t, tx } = useTranslation();
   const [rotationDays, setRotationDays] = useState(initialDays);
   const [isEnablingPolicy, setIsEnablingPolicy] = useState(false);
   const [customFocused, setCustomFocused] = useState(false);
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground/80">No rotation policy configured.</p>
+      <p className="text-sm text-muted-foreground/80">{t.vault.rotation_section.no_policy}</p>
       {/* Period selection */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground/80">Rotate every</span>
+        <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.rotate_every}</span>
         <PillGroup
           options={(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => ({ value: d, label: `${d}d` }))}
           value={rotationDays}
@@ -56,7 +58,7 @@ export function RotationNewPolicy({
           customInputActive={customFocused}
           data-testid="rotation-presets"
         />
-        <span className="text-sm text-muted-foreground/60">days</span>
+        <span className="text-sm text-muted-foreground/60">{t.vault.rotation_section.days}</span>
       </div>
       <Button
         variant="accent"
@@ -74,7 +76,7 @@ export function RotationNewPolicy({
             });
             await onRefresh();
           } catch (err) {
-            onError(`Failed to enable rotation: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            onError(tx(t.vault.rotation_section.enable_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
           } finally {
             setIsEnablingPolicy(false);
           }
@@ -84,7 +86,7 @@ export function RotationNewPolicy({
         data-testid="rotation-enable-btn"
         className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
       >
-        {isEnablingPolicy ? 'Enabling...' : 'Enable Rotation'}
+        {isEnablingPolicy ? t.vault.rotation_section.enabling : t.vault.rotation_section.enable_rotation}
       </Button>
     </div>
   );

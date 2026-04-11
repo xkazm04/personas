@@ -15,6 +15,7 @@ import {
   ErrorLine, CopyLogButton,
 } from '../display/AutoCredLogEntries';
 import { BrowserStatusBanner } from './BrowserDetail';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
   connecting: { text: 'text-muted-foreground/30', line: 'bg-primary/8' },
@@ -30,6 +31,7 @@ interface AutoCredBrowserProps {
 }
 
 export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCredBrowserProps) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isGuided = mode === 'guided';
   const sessionState = deriveSessionState(logs);
@@ -141,7 +143,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
           <div className="text-muted-foreground/60 text-center py-10 space-y-2">
             <LoadingSpinner size="xl" className="mx-auto text-muted-foreground/50" />
             <p className="text-sm">
-              {isGuided ? 'Preparing guided setup instructions...' : 'Starting browser session...'}
+              {isGuided ? t.vault.auto_cred_extra.preparing_guided : t.vault.auto_cred_extra.starting_browser}
             </p>
           </div>
         )}

@@ -4,6 +4,7 @@ import { Radar } from 'lucide-react';
 import { ForagingResultCard } from './ForagingResultCard';
 import { Button } from '@/features/shared/components/buttons';
 import type { useCredentialForaging } from '@/hooks/design/credential/useCredentialForaging';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Forage = ReturnType<typeof useCredentialForaging>;
 
@@ -14,6 +15,7 @@ interface ForagingResultsProps {
 }
 
 export function ForagingResults({ forage, importableCount, onImport }: ForagingResultsProps) {
+  const { t } = useTranslation();
   if (!forage.scanResult) return null;
 
   return (
@@ -62,8 +64,8 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
         <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6">
           <EmptyIllustration
             icon={Radar}
-            heading="No credentials found"
-            description="Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials."
+            heading={t.vault.foraging.no_credentials_found}
+            description={t.vault.foraging.no_credentials_hint}
           />
         </div>
       )}

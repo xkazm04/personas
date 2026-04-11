@@ -9,6 +9,7 @@ import { AutoCredPanel } from '@/features/vault/sub_catalog/components/autoCred/
 import { ImportSourcePicker, ImportInputPhase, ImportPreview } from '@/features/vault/sub_credentials/components/import';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { useCredentialDesignModal } from '@/features/vault/sub_catalog/components/design/useCredentialDesignModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type ModalHook = ReturnType<typeof useCredentialDesignModal>;
 
@@ -59,6 +60,7 @@ export function CredentialDesignModalBody({
   applyTemplate,
   onComplete,
 }: CredentialDesignModalBodyProps) {
+  const { t } = useTranslation();
   return (
     <div className="p-6 space-y-6">
       {autoSetupResult ? (
@@ -148,7 +150,7 @@ export function CredentialDesignModalBody({
               className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
             >
               <LoadingSpinner size="2xl" className="text-primary" />
-              <p className="text-sm text-muted-foreground/90">Saving credential...</p>
+              <p className="text-sm text-muted-foreground/90">{t.vault.design_phases.saving}</p>
             </div>
           )}
 

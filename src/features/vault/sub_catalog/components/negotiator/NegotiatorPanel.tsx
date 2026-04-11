@@ -7,6 +7,7 @@ import { detectAuthenticatedServices } from '@/api/auth/authDetect';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 import { NegotiatorIdlePhase, NegotiatorDonePhase, NegotiatorErrorPhase } from './NegotiatorPhases';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const PHASE_VARIANTS = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 } };
 const PHASE_TRANSITION = { duration: 0.2 };
@@ -20,6 +21,7 @@ interface NegotiatorPanelProps {
 }
 
 export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues, prefetchedAuthDetections }: NegotiatorPanelProps) {
+  const { t } = useTranslation();
   const hasPrefetched = prefetchedAuthDetections !== undefined;
   const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>(hasPrefetched ? prefetchedAuthDetections : []);
   const [authDetectLoading, setAuthDetectLoading] = useState(!hasPrefetched);
@@ -98,11 +100,11 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             <div>
               <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
               <p className="text-sm text-muted-foreground">
-                {negotiator.phase === 'idle' && (authDetectLoading ? 'Checking existing authentications...' : 'Automated API key provisioning')}
-                {negotiator.phase === 'planning' && 'Generating provisioning plan...'}
+                {negotiator.phase === 'idle' && (authDetectLoading ? t.vault.negotiator_extra.checking_auth : t.vault.negotiator_extra.auto_provisioning)}
+                {negotiator.phase === 'planning' && t.vault.negotiator_extra.generating_plan}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
-                {negotiator.phase === 'done' && 'Credentials captured'}
-                {negotiator.phase === 'error' && 'Something went wrong'}
+                {negotiator.phase === 'done' && t.vault.negotiator.captured}
+                {negotiator.phase === 'error' && t.vault.negotiator.error_title}
               </p>
             </div>
           </div>

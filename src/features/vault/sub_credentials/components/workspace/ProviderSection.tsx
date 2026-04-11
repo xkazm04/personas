@@ -10,6 +10,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useWorkspaceConnect } from './useWorkspaceConnect';
 import type { WorkspaceProvider } from './workspaceProviders';
 import { ServiceCheckbox, ProvisionProgress } from './WorkspaceSubComponents';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProviderSectionProps {
   provider: WorkspaceProvider;
@@ -22,6 +23,7 @@ export function ProviderSection({
   onBack,
   onComplete,
 }: ProviderSectionProps) {
+  const { t } = useTranslation();
   const ws = useWorkspaceConnect(provider);
 
   const isSelectPhase = ws.phase === 'select';
@@ -48,11 +50,11 @@ export function ProviderSection({
           <div>
             <h3 className="text-sm font-semibold text-foreground">{provider.label}</h3>
             <p className="text-xs text-muted-foreground/60">
-              {isSelectPhase && 'Select services to connect'}
-              {ws.phase === 'authorizing' && 'Complete sign-in in your browser...'}
-              {ws.phase === 'provisioning' && 'Creating credentials...'}
-              {isDone && 'All credentials created'}
-              {isError && 'Some credentials failed'}
+              {isSelectPhase && t.vault.workspace_panel.select_services}
+              {ws.phase === 'authorizing' && t.vault.workspace_panel.browser_sign_in}
+              {ws.phase === 'provisioning' && t.vault.workspace_panel.creating_credentials}
+              {isDone && t.vault.workspace_panel.all_created}
+              {isError && t.vault.workspace_panel.some_failed}
             </p>
           </div>
         </div>

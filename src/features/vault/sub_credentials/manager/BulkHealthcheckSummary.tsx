@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, Clock, HeartPulse, X, XCircle } from 'lucide-react';
 import type { BulkSummary } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface BulkHealthcheckSummaryProps {
   summary: BulkSummary | null;
@@ -7,6 +8,7 @@ interface BulkHealthcheckSummaryProps {
 }
 
 export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSummaryProps) {
+  const { t } = useTranslation();
   return (
     <>
       {summary && (
@@ -24,7 +26,7 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
               <button
                 onClick={onDismiss}
                 className="p-1 hover:bg-secondary/60 rounded-lg transition-colors"
-                title="Dismiss"
+                title={t.common.dismiss}
               >
                 <X className="w-3.5 h-3.5 text-muted-foreground/60" />
               </button>

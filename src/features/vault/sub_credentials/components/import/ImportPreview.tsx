@@ -8,6 +8,7 @@ import {
   groupByService,
 } from './importTypes';
 import { ImportSyncConfig } from './ImportSyncConfig';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImportPreviewProps {
   sourceId: ImportSourceId;
@@ -38,6 +39,7 @@ export function ImportPreview({
   onSyncConfigChange,
   onBack,
 }: ImportPreviewProps) {
+  const { t } = useTranslation();
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
   const groups = groupByService(secrets, mappings);
   const selectedCount = selectedKeys.size;
@@ -62,9 +64,9 @@ export function ImportPreview({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onSelectAll} className="text-sm text-primary hover:underline">Select all</button>
+          <button onClick={onSelectAll} className="text-sm text-primary hover:underline">{t.vault.import.select_all}</button>
           <span className="text-muted-foreground/40">|</span>
-          <button onClick={onDeselectAll} className="text-sm text-muted-foreground hover:text-foreground hover:underline">None</button>
+          <button onClick={onDeselectAll} className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
         </div>
       </div>
 

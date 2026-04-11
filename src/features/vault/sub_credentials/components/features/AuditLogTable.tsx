@@ -4,6 +4,7 @@ import { EmptyIllustration } from '@/features/shared/components/display/EmptyIll
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
@@ -22,6 +23,7 @@ const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthch
 const AUDIT_PAGE_SIZE = 20;
 
 export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }) {
+  const { t } = useTranslation();
   const [auditFilter, setAuditFilter] = useState('all');
   const [auditPage, setAuditPage] = useState(0);
 
@@ -43,8 +45,8 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
       <div data-testid="audit-log-empty">
         <EmptyIllustration
           icon={ScrollText}
-          heading="No audit entries yet"
-          description="Operations will be logged as they occur."
+          heading={t.vault.audit_log.empty}
+          description={t.vault.audit_log.empty_hint}
           className="py-6"
         />
       </div>
@@ -76,9 +78,9 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Operation</th>
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Detail</th>
-              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Time</th>
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>

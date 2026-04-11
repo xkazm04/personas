@@ -13,6 +13,7 @@ import type { CredentialUsageStats } from '@/lib/bindings/CredentialUsageStats';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { detectAnomalies } from './auditAnomalies';
 import { AuditTimelineEntries } from './AuditTimelineEntries';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const WARNING_STATUS = STATUS_COLORS.warning!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
@@ -22,6 +23,7 @@ interface CredentialAuditTimelineProps {
 }
 
 export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelineProps) {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<CredentialAuditEntry[]>([]);
   const [stats, setStats] = useState<CredentialUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,8 +99,8 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       {entries.length === 0 ? (
         <EmptyIllustration
           icon={ScrollText}
-          heading="No audit entries yet"
-          description="Access events will appear here."
+          heading={t.vault.audit_log.empty}
+          description={t.vault.audit_log.access_events_hint}
           className="py-6"
         />
       ) : (

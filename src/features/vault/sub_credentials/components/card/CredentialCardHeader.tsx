@@ -8,6 +8,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { CompositeHealthDot } from './badges/CompositeHealthDot';
 import { BadgeRow } from './CredentialCardBadges';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CredentialCardHeaderProps {
   credential: CredentialMetadata;
@@ -28,6 +29,7 @@ export function CredentialCardHeader({
   onSelect,
   onDelete,
 }: CredentialCardHeaderProps) {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
 
   return (
@@ -89,7 +91,7 @@ export function CredentialCardHeader({
               onDelete(credential.id);
             }}
             className="hover:bg-red-500/10"
-            title="Delete credential"
+            title={t.vault.credential_card.delete_credential}
           />
         </div>
         )}

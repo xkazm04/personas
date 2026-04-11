@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
 
@@ -51,6 +52,7 @@ export function FieldActionButtons({
   testIdBase,
   onChange,
 }: FieldActionButtonsProps) {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,7 +113,7 @@ export function FieldActionButtons({
               onClick={handleCopy}
               disabled={!value}
               className="p-0.5 text-muted-foreground/60 hover:text-foreground/80 disabled:opacity-30 transition-colors"
-              title="Copy value"
+              title={t.vault.credential_forms.copy_value}
               data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
             >
               {copied ? (
@@ -134,7 +136,7 @@ export function FieldActionButtons({
             type="button"
             onClick={handlePaste}
             className="p-0.5 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
-            title="Paste from clipboard"
+            title={t.vault.credential_forms.paste_from_clipboard}
             data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
           >
             <ClipboardPaste className="w-3.5 h-3.5" />

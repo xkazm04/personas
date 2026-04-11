@@ -2,6 +2,7 @@ import { CheckCircle2, XCircle, Loader2, SkipForward, Plug } from 'lucide-react'
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Button } from '@/features/shared/components/buttons';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type ItemStatus = 'pending' | 'running' | 'done' | 'failed' | 'skipped';
 
@@ -56,13 +57,14 @@ interface BatchSummaryProps {
 }
 
 export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDone }: BatchSummaryProps) {
+  const { t } = useTranslation();
   return (
     <div className="animate-fade-slide-in space-y-5">
       <div className="text-center py-6">
         <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center mb-3">
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
-        <h3 className="text-sm font-bold text-foreground">Batch setup complete</h3>
+        <h3 className="text-sm font-bold text-foreground">{t.vault.wizard_detect.batch_complete}</h3>
         <p className="text-sm text-muted-foreground/80 mt-1">
           {doneCount} added
           {failedCount > 0 ? `, ${failedCount} failed` : ''}

@@ -3,6 +3,7 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { Code2, HeadsetIcon, Briefcase } from 'lucide-react';
 import type { RolePreset } from './catalogRolePresets';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
@@ -39,6 +40,7 @@ export function CredentialPickerFilters({
   activeRole,
   onRoleToggle,
 }: CredentialPickerFiltersProps) {
+  const { t } = useTranslation();
   return (
     <div className={`flex ${IS_MOBILE ? 'flex-col' : 'flex-row items-center'} gap-2`}>
       <div className={`flex ${IS_MOBILE ? 'flex-wrap' : ''} gap-2`}>
@@ -47,7 +49,7 @@ export function CredentialPickerFilters({
           options={connectedOptions}
           value={connectedFilter}
           onValueChange={(v) => onConnectedFilterChange((v || 'all') as ConnectedFilter)}
-          placeholder="Status"
+          placeholder={t.vault.picker_section.filter_status}
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[150px]'}
           className="!py-1.5 !text-sm"
         />
@@ -56,7 +58,7 @@ export function CredentialPickerFilters({
           options={purposeOptions}
           value={activePurpose ?? ''}
           onValueChange={(v) => onPurposeChange(v || null)}
-          placeholder="Purpose"
+          placeholder={t.vault.picker_section.filter_purpose}
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[195px]'}
           className="!py-1.5 !text-sm"
         />
@@ -67,7 +69,7 @@ export function CredentialPickerFilters({
           options={categoryOptions}
           value={activeCategory ?? ''}
           onValueChange={(v) => onCategoryChange(v || null)}
-          placeholder="Category"
+          placeholder={t.vault.picker_section.filter_category}
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[175px]'}
           className="!py-1.5 !text-sm"
         />
@@ -76,7 +78,7 @@ export function CredentialPickerFilters({
           options={licenseOptions}
           value={activeLicense ?? ''}
           onValueChange={(v) => onLicenseChange(v || null)}
-          placeholder="License"
+          placeholder={t.vault.picker_section.filter_license}
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[170px]'}
           className="!py-1.5 !text-sm"
         />

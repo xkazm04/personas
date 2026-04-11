@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { VaultStatus } from "@/api/vault/credentials";
 import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from "@/api/vault/credentials";
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface VaultStatusBadgeProps {
@@ -12,6 +13,7 @@ interface VaultStatusBadgeProps {
 }
 
 export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProps) {
+  const { t, tx } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const [open, setOpen] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -59,7 +61,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
           : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
       }`}>
         {hasPlaintext ? <ShieldAlert className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-        {hasPlaintext ? 'Needs attention' : 'Secure'}
+        {hasPlaintext ? t.vault.vault_badge.needs_attention : t.vault.vault_badge.secure}
       </span>
     );
   }
@@ -80,11 +82,11 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
         className={badgeClass}
       >
         {hasPlaintext ? (
-          <><ShieldAlert className="w-3 h-3" />{vault.plaintext} unencrypted</>
+          <><ShieldAlert className="w-3 h-3" />{tx(t.vault.vault_badge.unencrypted, { count: vault.plaintext })}</>
         ) : isKeychain ? (
-          <><Shield className="w-3 h-3" />Encrypted</>
+          <><Shield className="w-3 h-3" />{t.vault.vault_badge.encrypted}</>
         ) : (
-          <><Shield className="w-3 h-3" />Encrypted (fallback key)</>
+          <><Shield className="w-3 h-3" />{t.vault.vault_badge.encrypted_fallback}</>
         )}
         <ChevronDown className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -106,7 +108,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
               )}
               <span className="text-sm font-medium text-foreground">
-                {hasPlaintext ? 'Vault needs attention' : 'Vault is secure'}
+                {hasPlaintext ? t.vault.vault_badge.vault_needs_attention : t.vault.vault_badge.vault_secure}
               </span>
             </div>
           </div>
@@ -124,20 +126,20 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
           <div className="px-4 py-3 space-y-2.5">
             <ExplainerRow
               icon={<Lock className="w-3.5 h-3.5 text-primary/50" />}
-              title="AES-256-GCM encryption"
-              detail="Each credential is encrypted with a unique random nonce, producing tamper-proof ciphertext that only this app can decrypt."
+              title={t.vault.vault_badge.aes_title}
+              detail={t.vault.vault_badge.aes_detail}
             />
             <ExplainerRow
               icon={<KeyRound className="w-3.5 h-3.5 text-primary/50" />}
-              title={isKeychain ? 'Master key in OS Keychain' : 'Fallback master key'}
+              title={isKeychain ? t.vault.vault_badge.keychain_title : t.vault.vault_badge.fallback_key_title}
               detail={isKeychain
-                ? 'Your master encryption key is stored in the Windows Credential Manager (or macOS Keychain), protected by your OS login.'
-                : 'The OS keychain was unavailable, so the master key is derived from your machine identity. Credentials are still encrypted, but OS-level key storage is preferred.'}
+                ? t.vault.vault_badge.keychain_detail
+                : t.vault.vault_badge.fallback_key_detail}
             />
             <ExplainerRow
               icon={<HardDrive className="w-3.5 h-3.5 text-primary/50" />}
-              title="Credentials never leave this device"
-              detail="All secrets are stored in a local SQLite database. Nothing is sent to any server or cloud."
+              title={t.vault.vault_badge.local_title}
+              detail={t.vault.vault_badge.local_detail}
             />
           </div>
 
@@ -150,9 +152,9 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
-                  <><LoadingSpinner size="sm" />Encrypting...</>
+                  <><LoadingSpinner size="sm" />{t.vault.vault_badge.encrypting}</>
                 ) : (
-                  <><Lock className="w-3.5 h-3.5" />Encrypt {vault.plaintext} unencrypted credential{vault.plaintext !== 1 ? 's' : ''} now</>
+                  <><Lock className="w-3.5 h-3.5" />{tx(vault.plaintext === 1 ? t.vault.vault_badge.encrypt_now_one : t.vault.vault_badge.encrypt_now_other, { count: vault.plaintext })}</>
                 )}
               </button>
             </div>

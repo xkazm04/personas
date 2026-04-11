@@ -1,5 +1,6 @@
 import { ArrowLeft, Radar, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CredentialTypePickerProps {
   onSelectAiGuide: () => void;
@@ -61,6 +62,7 @@ export function CredentialTypePicker({
   onForage,
   onBack,
 }: CredentialTypePickerProps) {
+  const { t } = useTranslation();
   const handlers: Record<string, () => void> = {
     'ai-guide': onSelectAiGuide,
     'mcp': onSelectMcp,
@@ -83,8 +85,8 @@ export function CredentialTypePicker({
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Add Credential</h3>
-          <p className="text-sm text-muted-foreground/60">Choose the type of connection</p>
+          <h3 className="text-sm font-semibold text-foreground">{t.vault.type_picker.title}</h3>
+          <p className="text-sm text-muted-foreground/60">{t.vault.type_picker.subtitle}</p>
         </div>
       </div>
 
@@ -127,7 +129,7 @@ export function CredentialTypePicker({
             <Globe className="w-4.5 h-4.5 text-blue-400" />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-foreground">Workspace Connect</h4>
+            <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
             <p className="text-sm text-muted-foreground/60">
               One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
             </p>
@@ -147,7 +149,7 @@ export function CredentialTypePicker({
               <Radar className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-foreground">Auto-Discover Credentials</h4>
+              <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
               <p className="text-sm text-muted-foreground/60">
                 Scan your filesystem for existing API keys, AWS profiles, env vars, and more
               </p>

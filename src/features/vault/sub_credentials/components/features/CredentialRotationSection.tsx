@@ -4,6 +4,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { AnomalyScorePanel } from '@/features/vault/sub_credentials/components/features/AnomalyScorePanel';
 import { RotationPolicyControls } from '@/features/vault/sub_credentials/components/features/RotationPolicyControls';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CredentialRotationSectionProps {
   credentialId: string;
@@ -22,6 +23,7 @@ export function CredentialRotationSection({
   onRefresh,
   onHealthcheck,
 }: CredentialRotationSectionProps) {
+  const { t } = useTranslation();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const anomalyScore = rotationStatus?.anomaly_score ?? null;
@@ -33,7 +35,7 @@ export function CredentialRotationSection({
       {rotationStatus?.healthcheck_corrupted && (
         <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-sm text-orange-400">
           <DatabaseZap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <span>Healthcheck metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data.</span>
+          <span>{t.vault.rotation_section.corrupted_warning}</span>
         </div>
       )}
 
@@ -49,7 +51,7 @@ export function CredentialRotationSection({
       {!showAnomalyPanel && rotationStatus?.anomaly_detected && (
         <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <span>Anomaly detected: credential suddenly failing after previous success. Possible revocation.</span>
+          <span>{t.vault.rotation_section.anomaly_warning}</span>
         </div>
       )}
 
@@ -96,7 +98,7 @@ export function CredentialRotationSection({
         <>
           <div className="border-t border-primary/10" />
           <div className="space-y-1.5">
-            <p className="text-sm text-muted-foreground/60 uppercase tracking-wider font-semibold">History</p>
+            <p className="text-sm text-muted-foreground/60 uppercase tracking-wider font-semibold">{t.vault.rotation_section.history}</p>
             <div className="space-y-1 max-h-[160px] overflow-y-auto">
               {rotationStatus.recent_history.map((entry) => (
                 <div key={entry.id} className="flex items-start gap-2 text-sm" data-testid={`rotation-history-${entry.id}`}>

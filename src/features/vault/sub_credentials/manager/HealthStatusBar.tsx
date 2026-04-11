@@ -3,6 +3,7 @@ import { HeartPulse, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react'
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ── Compact SVG progress ring (24×24) ── */
 
@@ -63,6 +64,7 @@ interface HealthStatusBarProps {
 }
 
 export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusBarProps) {
+  const { t } = useTranslation();
   const counts = useMemo(() => {
     let healthy = 0;
     let failing = 0;
@@ -90,21 +92,21 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
           <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-3 h-3" />
             <span className="font-medium">{counts.healthy}</span>
-            <span className="text-foreground/50">healthy</span>
+            <span className="text-foreground/50">{t.vault.health_bar.healthy}</span>
           </span>
         )}
         {counts.failing > 0 && (
           <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
             <AlertCircle className="w-3 h-3" />
             <span className="font-medium">{counts.failing}</span>
-            <span className="text-foreground/50">needs attention</span>
+            <span className="text-foreground/50">{t.vault.health_bar.needs_attention}</span>
           </span>
         )}
         {counts.untested > 0 && (
           <span className="flex items-center gap-1.5 text-foreground/60">
             <HelpCircle className="w-3 h-3" />
             <span className="font-medium">{counts.untested}</span>
-            <span className="text-foreground/50">untested</span>
+            <span className="text-foreground/50">{t.vault.health_bar.untested}</span>
           </span>
         )}
       </div>
@@ -121,7 +123,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
                 : 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border-emerald-600/25 dark:border-emerald-500/20'
               : 'border-violet-600/25 dark:border-violet-500/20 text-violet-700 dark:text-violet-400/80 hover:bg-violet-600/10 dark:hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-400'
         }`}
-        title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
+        title={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}
       >
         {bulk.isRunning ? (
           <HealthProgressRing
@@ -140,7 +142,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
             : `Testing ${bulk.progress.done}/${bulk.progress.total}...`
           : bulk.summary
             ? `${bulk.summary.passed} passed${bulk.summary.failed > 0 ? `, ${bulk.summary.failed} failed` : ''}`
-            : 'Test All'}
+            : t.vault.manager.test_all}
       </button>
     </div>
   );

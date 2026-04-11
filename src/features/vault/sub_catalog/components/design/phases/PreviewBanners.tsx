@@ -2,6 +2,7 @@ import { Plug, ListChecks, KeyRound, CircleHelp, PackagePlus, PenLine } from 'lu
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const INFO_STATUS = STATUS_COLORS.info!;
 const AI_STATUS = STATUS_COLORS.ai!;
@@ -15,6 +16,7 @@ interface PreviewBannersProps {
 }
 
 export function PreviewBanners({ result, fields, requiredCount, optionalCount, onRefine }: PreviewBannersProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Match existing banner */}
@@ -22,7 +24,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
         <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${INFO_STATUS.bg} ${INFO_STATUS.border}`}>
           <Plug className={`w-4 h-4 mt-0.5 shrink-0 ${INFO_STATUS.text}`} />
           <div className="text-sm">
-            <span className={`${INFO_STATUS.text} font-medium`}>Existing connector found: </span>
+            <span className={`${INFO_STATUS.text} font-medium`}>{t.vault.design_phases.existing_connector}</span>
             <span className={INFO_STATUS.text}>{result.match_existing}</span>
             <p className="text-foreground/70 text-sm mt-1">
               Your credential will be linked to the existing connector definition.
@@ -36,7 +38,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
         <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${AI_STATUS.bg} ${AI_STATUS.border}`}>
           <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.text}`} />
           <div className="text-sm">
-            <span className={`${AI_STATUS.text} font-medium`}>New connector discovered </span>
+            <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.new_connector}</span>
             <span className="text-foreground/80">
               -- no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
             </span>

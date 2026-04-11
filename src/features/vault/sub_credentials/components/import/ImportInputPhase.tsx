@@ -1,5 +1,6 @@
 import { ArrowLeft, Upload, Terminal } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImportInputPhaseProps {
   sourceId: ImportSourceId;
@@ -10,6 +11,7 @@ interface ImportInputPhaseProps {
 }
 
 export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, onBack }: ImportInputPhaseProps) {
+  const { t, tx } = useTranslation();
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
 
   const placeholder = sourceId === 'env_file'
@@ -44,7 +46,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
           <Terminal className="w-3.5 h-3.5" style={{ color: source.color }} />
         </div>
         <div>
-          <h3 className="text-sm font-medium text-foreground">Import from {source.label}</h3>
+          <h3 className="text-sm font-medium text-foreground">{tx(t.vault.credential_import.import_from, { source: source.label })}</h3>
           <p className="text-sm text-muted-foreground/70">{cliHint}</p>
         </div>
       </div>

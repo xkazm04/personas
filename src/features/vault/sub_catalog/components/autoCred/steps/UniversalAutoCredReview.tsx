@@ -3,6 +3,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { ExtractedValues, DiscoveredField, DiscoveredConnector } from '../helpers/types';
 import { UniversalFieldRow } from './ReviewTable';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UniversalAutoCredReviewProps {
   designResult: CredentialDesignResult;
@@ -32,6 +33,7 @@ export function UniversalAutoCredReview({
   discoveredFields,
   discoveredConnector,
 }: UniversalAutoCredReviewProps) {
+  const { t } = useTranslation();
   // Derive fields from discovered_fields or from extracted_values keys
   const fields: DiscoveredField[] = (discoveredFields ?? Object.keys(extractedValues)
     .filter((k) => !k.startsWith('__'))
@@ -76,7 +78,7 @@ export function UniversalAutoCredReview({
         {isPartial && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
-            <span className="text-xs font-medium text-amber-400">Partial</span>
+            <span className="text-xs font-medium text-amber-400">{t.vault.auto_cred_extra.partial_badge}</span>
           </div>
         )}
       </div>

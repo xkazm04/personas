@@ -3,6 +3,7 @@ import { Clock, Globe, ChevronDown, ChevronUp, Wrench, AlertTriangle } from 'luc
 import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from './AutoCredLogEntries';
 import { ERROR_KIND_CONFIG } from '../helpers/autoCredErrorConfig';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoCredErrorDisplayProps {
   error: AutoCredErrorInfo;
@@ -17,6 +18,7 @@ export function AutoCredErrorDisplay({
   onRetry,
   onCancel,
 }: AutoCredErrorDisplayProps) {
+  const { t } = useTranslation();
   const [contextOpen, setContextOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
@@ -35,7 +37,7 @@ export function AutoCredErrorDisplay({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">Auto-Setup Failed</p>
+            <p className="text-sm font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
             <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
@@ -54,7 +56,7 @@ export function AutoCredErrorDisplay({
             onClick={() => setContextOpen((v) => !v)}
             className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
           >
-            <span>What happened</span>
+            <span>{t.vault.auto_cred.what_happened}</span>
             {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {contextOpen && (
@@ -80,12 +82,12 @@ export function AutoCredErrorDisplay({
               {ctx.had_waiting_prompt && (
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-3 h-3 shrink-0 text-amber-400/70" />
-                  <span>A login/CAPTCHA prompt was encountered</span>
+                  <span>{t.vault.auto_cred.captcha_encountered}</span>
                 </div>
               )}
               {ctx.last_actions.length > 0 && (
                 <div className="mt-1 pt-1 border-t border-primary/8">
-                  <p className="text-muted-foreground/50 mb-1">Last actions:</p>
+                  <p className="text-muted-foreground/50 mb-1">{t.vault.auto_cred.last_actions}</p>
                   <ul className="space-y-0.5 pl-4">
                     {ctx.last_actions.map((action, i) => (
                       <li key={i} className="list-disc text-muted-foreground/60">{action}</li>

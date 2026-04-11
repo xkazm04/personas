@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { MethodBadge } from './AutopilotShared';
 import type { GeneratedToolDefinition } from '@/lib/bindings/GeneratedToolDefinition';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PlaygroundRequestBuilderProps {
   selectedTool: GeneratedToolDefinition;
@@ -33,11 +34,12 @@ export function PlaygroundRequestBuilder({
   body,
   setBody,
 }: PlaygroundRequestBuilderProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Base URL */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/60">Base URL</label>
+        <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.base_url}</label>
         <input
           type="url"
           value={baseUrl}
@@ -57,7 +59,7 @@ export function PlaygroundRequestBuilder({
       {/* Headers */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs text-muted-foreground/60">Headers</label>
+          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.headers_label}</label>
           <button onClick={addHeader} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
             <Plus className="w-3 h-3" /> Add
           </button>
@@ -67,7 +69,7 @@ export function PlaygroundRequestBuilder({
             <input
               value={h.key}
               onChange={(e) => updateHeader(i, 'key', e.target.value)}
-              placeholder="Header name"
+              placeholder={t.vault.autopilot.header_name_placeholder}
               className="flex-1 px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-lg text-xs font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
             <input
@@ -86,7 +88,7 @@ export function PlaygroundRequestBuilder({
       {/* Query Params */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs text-muted-foreground/60">Query Parameters</label>
+          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.query_parameters}</label>
           <button onClick={addQueryParam} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
             <Plus className="w-3 h-3" /> Add
           </button>
@@ -96,7 +98,7 @@ export function PlaygroundRequestBuilder({
             <input
               value={q.key}
               onChange={(e) => updateQueryParam(i, 'key', e.target.value)}
-              placeholder="Param name"
+              placeholder={t.vault.autopilot.param_name_placeholder}
               className="flex-1 px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-lg text-xs font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
             <input
@@ -115,7 +117,7 @@ export function PlaygroundRequestBuilder({
       {/* Body (for POST/PUT/PATCH) */}
       {['POST', 'PUT', 'PATCH'].includes(selectedTool.method) && (
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">Request Body (JSON)</label>
+          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.request_body}</label>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}

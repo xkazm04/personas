@@ -2,6 +2,7 @@ import { Monitor, Plug, ArrowLeft, Bot, MessageSquare } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { AutoCredMode } from '../helpers/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesktopBridgeBlockProps {
   connector: ConnectorDefinition;
@@ -44,6 +45,7 @@ interface SetupHeaderProps {
 }
 
 export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
       <button
@@ -68,18 +70,18 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
       <div className="flex-1">
         <h4 className="font-medium text-foreground">Auto-Setup {connector.label}</h4>
         <p className="text-sm text-muted-foreground/80">
-          {phase === 'analyzing' ? 'Analyzing connector setup procedures...' : 'Browser automation will guide credential creation'}
+          {phase === 'analyzing' ? t.vault.auto_cred_extra.analyzing_setup : t.vault.auto_cred_extra.browser_hint}
         </p>
       </div>
       {mode === 'guided' ? (
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
           <MessageSquare className="w-3 h-3 text-violet-400" />
-          <span className="text-xs font-medium text-violet-400">Guided</span>
+          <span className="text-xs font-medium text-violet-400">{t.vault.auto_cred_extra.guided_badge}</span>
         </div>
       ) : (
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
           <Bot className="w-3 h-3 text-cyan-400" />
-          <span className="text-xs font-medium text-cyan-400">Playwright MCP</span>
+          <span className="text-xs font-medium text-cyan-400">{t.vault.auto_cred_extra.playwright_badge}</span>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { SearchX } from 'lucide-react';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ConnectorCard } from './ConnectorCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PickerGridProps {
   filteredConnectors: ConnectorDefinition[];
@@ -10,6 +11,7 @@ interface PickerGridProps {
 }
 
 export function PickerGrid({ filteredConnectors, ownedServiceTypes, onPickType }: PickerGridProps) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="grid [grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))] gap-2.5">
@@ -26,8 +28,8 @@ export function PickerGrid({ filteredConnectors, ownedServiceTypes, onPickType }
       {filteredConnectors.length === 0 && (
         <EmptyIllustration
           icon={SearchX}
-          heading="No connectors found"
-          description="Try adjusting your filters or search term."
+          heading={t.vault.picker_section.no_connectors}
+          description={t.vault.picker_section.no_connectors_hint}
           className="py-6"
         />
       )}

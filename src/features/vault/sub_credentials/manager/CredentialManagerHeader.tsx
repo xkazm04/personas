@@ -2,6 +2,7 @@ import { type RefObject } from 'react';
 import { Search, Key, X } from 'lucide-react';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { useTranslation } from '@/i18n/useTranslation';
 import { VaultStatusBadge } from '@/features/vault/sub_credentials/components/card/badges/VaultStatusBadge';
 import type { VaultStatus } from "@/api/vault/credentials";
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -15,12 +16,13 @@ interface CredentialManagerHeaderProps {
 }
 
 export function CredentialManagerHeader({ credentialCount }: CredentialManagerHeaderProps) {
+  const { t, tx } = useTranslation();
   return (
     <ContentHeader
       icon={<Key className="w-5 h-5 text-emerald-400" />}
       iconColor="emerald"
-      title="Credentials"
-      subtitle={`${credentialCount} credential${credentialCount !== 1 ? 's' : ''} stored`}
+      title={t.vault.manager.title}
+      subtitle={tx(credentialCount === 1 ? t.vault.manager.credentials_stored_one : t.vault.manager.credentials_stored_other, { count: credentialCount })}
     />
   );
 }
@@ -62,6 +64,7 @@ export function CredentialToolbar({
   bulk,
   isDailyRun,
 }: CredentialToolbarProps) {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
 
   return (
@@ -78,8 +81,8 @@ export function CredentialToolbar({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               isCatalogView
-                ? 'Search catalog...'
-                : 'Search credentials...'
+                ? t.vault.manager.search_catalog
+                : t.vault.manager.search_credentials
             }
             className="w-full pl-8 pr-8 py-1.5 rounded-lg border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
@@ -87,7 +90,7 @@ export function CredentialToolbar({
             <button
               onClick={() => onSearchChange('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
-              title="Clear search"
+              title={t.vault.manager.clear_search}
             >
               <X className="w-3 h-3" />
             </button>

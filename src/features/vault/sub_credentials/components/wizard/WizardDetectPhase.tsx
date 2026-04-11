@@ -6,12 +6,14 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { WizardDetectGrid } from './WizardDetectGrid';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WizardDetectPhaseProps {
   onSelect: (connectors: ConnectorDefinition[]) => void;
 }
 
 export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
+  const { t } = useTranslation();
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const existingCredentials = useVaultStore((s) => s.credentials);
 
@@ -115,7 +117,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
         <p className="text-sm text-muted-foreground/80 mt-1">
           {hasDetected && detected.length > 0
             ? `Found ${detected.length} service${detected.length !== 1 ? 's' : ''} you're signed into. Select which to add.`
-            : 'Select services to add credentials for, or scan to auto-detect.'}
+            : t.vault.wizard_detect.select_services}
         </p>
       </div>
 
@@ -131,7 +133,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           disabled={isDetecting}
           onClick={handleDetect}
         >
-          {isDetecting ? 'Scanning CLI tools and browser sessions...' : 'Scan for authenticated services'}
+          {isDetecting ? t.vault.wizard_detect.scanning : t.vault.wizard_detect.scan_button}
         </Button>
       )}
 
@@ -139,7 +141,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
       {hasDetected && detected.length === 0 && (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
           <Radar className="w-4 h-4 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">No authenticated services detected. Select manually below.</p>
+          <p className="text-sm text-muted-foreground/80">{t.vault.list.no_credentials}</p>
         </div>
       )}
 
@@ -150,7 +152,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search services..."
+          placeholder={t.vault.wizard_detect.search_services}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>

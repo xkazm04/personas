@@ -5,6 +5,7 @@ import {
   type DiscoveredApp,
   type DesktopConnectorManifest,
 } from '@/api/system/desktop';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CapabilityApprovalCardProps {
   manifest: DesktopConnectorManifest;
@@ -15,6 +16,7 @@ interface CapabilityApprovalCardProps {
 }
 
 export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, approving }: CapabilityApprovalCardProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in overflow-hidden"
@@ -71,7 +73,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
 
         {manifest.allowed_binaries.length > 0 && (
           <div className="text-xs text-muted-foreground/60">
-            <span className="font-medium">Allowed binaries: </span>
+            <span className="font-medium">{t.vault.desktop_discovery.allowed_binaries}</span>
             {manifest.allowed_binaries.join(', ')}
           </div>
         )}

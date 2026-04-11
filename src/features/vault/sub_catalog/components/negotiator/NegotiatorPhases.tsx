@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Loader2, Zap } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const phaseVariants = {
   initial: { opacity: 0, y: 12 },
@@ -16,6 +17,7 @@ interface NegotiatorIdlePhaseProps {
 }
 
 export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart }: NegotiatorIdlePhaseProps) {
+  const { t } = useTranslation();
   return (
     <motion.div
       key="neg-idle"
@@ -41,7 +43,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
           ) : (
             <Zap className="w-4 h-4" />
           )}
-          {authDetectLoading ? 'Detecting existing auth...' : 'Start auto-provisioning'}
+          {authDetectLoading ? t.vault.negotiator_extra.detecting_auth : t.vault.negotiator_extra.start_auto}
         </button>
         {!authDetectLoading && (
           <span className="text-sm text-muted-foreground/80">
@@ -59,6 +61,7 @@ interface NegotiatorDonePhaseProps {
 }
 
 export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: NegotiatorDonePhaseProps) {
+  const { t } = useTranslation();
   return (
     <motion.div
       key="neg-done"
@@ -72,7 +75,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
         <Zap className="w-5 h-5 text-emerald-400" />
       </div>
-      <p className="text-sm text-foreground font-medium">Credentials captured</p>
+      <p className="text-sm text-foreground font-medium">{t.vault.negotiator.captured}</p>
       <p className="text-sm text-muted-foreground/90">
         {capturedValuesCount} field(s) auto-filled from the provisioning flow.
       </p>

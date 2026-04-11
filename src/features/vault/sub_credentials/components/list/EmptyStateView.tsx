@@ -4,6 +4,7 @@ import { ThemedConnectorIcon } from '@/features/shared/components/display/Connec
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { QUICK_START_SERVICES } from './credentialListTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EmptyStateViewProps {
   connectorDefinitions: ConnectorDefinition[];
@@ -14,6 +15,7 @@ interface EmptyStateViewProps {
 }
 
 export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatalog, onGoToAddNew, onWorkspaceConnect }: EmptyStateViewProps) {
+  const { t } = useTranslation();
   const quickConnectors = QUICK_START_SERVICES
     .map((name) => connectorDefinitions.find((c) => c.name.toLowerCase().includes(name)))
     .filter((c): c is ConnectorDefinition => c != null);
@@ -26,8 +28,8 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       <div className="pt-6 pb-2">
         <EmptyIllustration
           icon={Key}
-          heading="Connect your first service"
-          description="Choose how you want to add a credential"
+          heading={t.vault.empty_state.heading}
+          description={t.vault.empty_state.description}
         />
       </div>
 
@@ -41,9 +43,9 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
             <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
           </div>
-          <p className="text-sm font-medium text-foreground/80 mb-1">Add from catalog</p>
+          <p className="text-sm font-medium text-foreground/80 mb-1">{t.vault.empty_state.catalog_heading}</p>
           <p className="text-sm text-muted-foreground/90 leading-relaxed">
-            Pick a known service like Slack, GitHub, or OpenAI. Pre-configured fields and healthchecks.
+            {t.vault.empty_state.catalog_description}
           </p>
           <div className="flex items-center gap-1.5 mt-3">
             {connectorDefinitions.slice(0, 4).map((c) => (
@@ -78,12 +80,12 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
-          <p className="text-sm font-medium text-foreground/80 mb-1">AI-designed credential</p>
+          <p className="text-sm font-medium text-foreground/80 mb-1">{t.vault.empty_state.ai_heading}</p>
           <p className="text-sm text-muted-foreground/90 leading-relaxed">
-            Describe any service and AI will configure the fields, auth type, and healthcheck for you.
+            {t.vault.empty_state.ai_description}
           </p>
           <span className="inline-flex items-center gap-1 mt-3 text-sm text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
-            Works with any API <ArrowRight className="w-3 h-3" />
+            {t.vault.empty_state.works_with_any} <ArrowRight className="w-3 h-3" />
           </span>
         </button>
       </div>
@@ -99,9 +101,9 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
               <Globe className="w-4.5 h-4.5 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground/80">Workspace Connect</p>
+              <p className="text-sm font-medium text-foreground/80">{t.vault.workspace_connect}</p>
               <p className="text-sm text-muted-foreground/60">
-                One Google login creates Gmail, Calendar, Drive, and Sheets credentials
+                {t.vault.type_picker.workspace_connect_hint}
               </p>
             </div>
           </div>
@@ -111,7 +113,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       {/* Quick-start row */}
       {quickConnectors.length > 0 && onQuickStart && (
         <div className="space-y-2">
-          <p className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 text-center">Quick start</p>
+          <p className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 text-center">{t.vault.quick_start}</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {quickConnectors.map((connector) => (
               <button

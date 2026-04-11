@@ -5,8 +5,10 @@ import { computeSubtitle } from '@/features/vault/sub_catalog/components/design/
 import type { CredentialDesignModalProps } from '@/features/vault/sub_catalog/components/design/credentialDesignModalTypes';
 import { useCredentialDesignModal } from '@/features/vault/sub_catalog/components/design/useCredentialDesignModal';
 import { CredentialDesignModalBody } from '@/features/vault/sub_catalog/components/design/CredentialDesignModalBody';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function CredentialDesignModal({ open, embedded = false, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
+  const { t } = useTranslation();
   const modal = useCredentialDesignModal({ open, embedded, initialInstruction, onClose, onComplete });
 
   if (!open) return null;
@@ -37,7 +39,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 id="credential-design-title" className="text-base font-semibold text-foreground">Design Credential</h2>
+            <h2 id="credential-design-title" className="text-base font-semibold text-foreground">{t.vault.design_modal.title}</h2>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
         </div>

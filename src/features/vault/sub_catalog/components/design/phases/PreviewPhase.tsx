@@ -15,11 +15,13 @@ import {
   getSaveDisabledReason,
 } from '../CredentialDesignHelpers';
 import { PreviewBanners } from './PreviewBanners';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const AI_STATUS = STATUS_COLORS.ai!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
 
 export function PreviewPhase() {
+  const { t } = useTranslation();
   const {
     result,
     credentialName,
@@ -88,7 +90,7 @@ export function PreviewPhase() {
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground/90">
-                  <span className={`${AI_STATUS.text} font-medium`}>Auto-provision available</span>{' '}
+                  <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.auto_provision}</span>{' '}
                   -- let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
                 </p>
               </div>

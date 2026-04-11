@@ -3,6 +3,7 @@ import { CopyButton } from '@/features/shared/components/buttons';
 import { getTagStyle } from '@/features/vault/shared/utils/credentialTags';
 import { Button } from '@/features/shared/components/buttons';
 import type { useCredentialTags } from '@/features/vault/shared/hooks/useCredentialTags';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type TagsHook = ReturnType<typeof useCredentialTags>;
 
@@ -11,6 +12,7 @@ interface CredentialTagsRowProps {
 }
 
 export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
+  const { t } = useTranslation();
   const {
     currentTags,
     tagInput,
@@ -60,7 +62,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
             onKeyDown={(e) => onTagInputKeyDown(e.key)}
             onBlur={onTagInputBlur}
             autoFocus
-            placeholder="Add tag..."
+            placeholder={t.vault.credential_card.add_tag_placeholder}
             className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
           />
           {showSuggestions && filteredSuggestions.length > 0 && (
@@ -85,7 +87,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
           size="icon-sm"
           icon={<Plus className="w-2.5 h-2.5" />}
           onClick={startTagInput}
-          title="Add tag"
+          title={t.vault.credential_card.add_tag_button}
           className="text-muted-foreground/40 hover:text-muted-foreground/70 p-0"
         />
       )}
@@ -93,7 +95,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
         copied={copiedCredentialId}
         onCopy={copyCredentialId}
         label="id"
-        tooltip="Copy credential ID"
+        tooltip={t.vault.credential_card.copy_credential_id}
         className="border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80 px-2 py-0.5 text-xs font-mono"
       />
     </div>

@@ -41,6 +41,7 @@ import {
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { CredentialMetadata } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GatewayMembersModalProps {
   credential: CredentialMetadata;
@@ -48,6 +49,7 @@ interface GatewayMembersModalProps {
 }
 
 export function GatewayMembersModal({ credential, onClose }: GatewayMembersModalProps) {
+  const { t } = useTranslation();
   const [members, setMembers] = useState<GatewayMember[]>([]);
   const [allCreds, setAllCreds] = useState<PersonaCredential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +100,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
   const handleAdd = useCallback(async () => {
     if (!newMemberCredentialId || !newMemberDisplayName.trim()) {
-      setActionError('Pick a credential and give it a short display name');
+      setActionError(t.vault.gateway.pick_error);
       return;
     }
     setIsAdding(true);
@@ -186,7 +188,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
           {isLoading ? (
             <div className="flex items-center gap-2 text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="typo-body">Loading members…</span>
+              <span className="typo-body">{t.vault.gateway.loading_members}</span>
             </div>
           ) : loadError ? (
             <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
@@ -233,7 +235,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             onClick={() => handleToggle(m.memberCredentialId, !m.enabled)}
                             disabled={isPending}
                           >
-                            {m.enabled ? 'Disable' : 'Enable'}
+                            {m.enabled ? t.common.disabled : t.common.enabled}
                           </Button>
                           <Button
                             variant="ghost"
@@ -268,7 +270,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                         onChange={(e) => setNewMemberCredentialId(e.target.value)}
                         disabled={isAdding}
                       >
-                        <option value="">Pick a credential…</option>
+                        <option value="">{t.vault.gateway.pick_credential}</option>
                         {eligibleCreds.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.service_type})
@@ -305,7 +307,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                           !newMemberDisplayName.trim()
                         }
                       >
-                        {isAdding ? 'Adding…' : 'Add member'}
+                        {isAdding ? t.vault.gateway.adding : t.vault.gateway.add_member}
                       </Button>
                     </div>
                   </div>

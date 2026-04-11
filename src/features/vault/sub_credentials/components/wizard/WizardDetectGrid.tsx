@@ -5,6 +5,7 @@ import type { AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer } from '@/features/templates/animationPresets';
 import { WizardDetectConnectorRow } from './WizardDetectConnectorRow';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WizardDetectGridProps {
   detected: ConnectorDefinition[];
@@ -27,6 +28,7 @@ export function WizardDetectGrid({
   detectionMap,
   onToggle,
 }: WizardDetectGridProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-1 -mr-1">
       {/* Detected services */}
@@ -109,7 +111,7 @@ export function WizardDetectGrid({
         <EmptyIllustration
           icon={SearchX}
           heading={`No services match "${search}"`}
-          description="Try a different search term or clear your filter."
+          description={t.vault.wizard_detect.no_filter_match}
           className="py-10"
         />
       )}

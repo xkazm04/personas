@@ -8,6 +8,7 @@ import { useCredentialTags } from '@/features/vault/shared/hooks/useCredentialTa
 import { Button } from '@/features/shared/components/buttons';
 import { CredentialTagsRow } from './CredentialTagsRow';
 import { CredentialSectionContent } from './CredentialSectionContent';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | 'token_lifetime' | 'audit' | null;
 
@@ -36,6 +37,7 @@ export function CredentialCardDetails({
   fetchRotationStatus,
   onStartEditing,
 }: CredentialCardDetailsProps) {
+  const { t, tx } = useTranslation();
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
   const tags = useCredentialTags(credential);
 
@@ -55,7 +57,7 @@ export function CredentialCardDetails({
           disabled={isHealthchecking}
           className="min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
         >
-          Test
+          {t.common.test}
         </Button>
         <Button
           variant="secondary"
@@ -64,7 +66,7 @@ export function CredentialCardDetails({
           onClick={onStartEditing}
           className="min-h-[36px] bg-secondary/60 hover:bg-secondary border-primary/15 text-foreground/90"
         >
-          Edit
+          {t.common.edit}
         </Button>
       </div>
 
@@ -74,12 +76,12 @@ export function CredentialCardDetails({
       {/* Secondary actions -- segmented tab bar */}
       <div className="flex items-center gap-1 border-b border-primary/10">
         {([
-          { key: 'intelligence' as const, icon: BarChart3, label: 'Intelligence', show: true },
-          { key: 'rotation' as const, icon: RotateCw, label: 'Rotation', show: true, badge: rotationStatus?.anomaly_score && rotationStatus.anomaly_score.remediation !== 'healthy' },
-          { key: 'token_lifetime' as const, icon: Timer, label: 'Token Lifetime', show: (credential.oauth_token_expires_at != null) || (credential.oauth_refresh_count > 0) },
-          { key: 'services' as const, icon: Wrench, label: `Services (${connector.services.length})`, show: connector.services.length > 0 },
-          { key: 'events' as const, icon: Zap, label: `Events (${connector.events.length})`, show: connector.events.length > 0 },
-          { key: 'audit' as const, icon: Shield, label: 'Audit', show: true },
+          { key: 'intelligence' as const, icon: BarChart3, label: t.vault.card_details.tab_intelligence, show: true },
+          { key: 'rotation' as const, icon: RotateCw, label: t.vault.card_details.tab_rotation, show: true, badge: rotationStatus?.anomaly_score && rotationStatus.anomaly_score.remediation !== 'healthy' },
+          { key: 'token_lifetime' as const, icon: Timer, label: t.vault.card_details.tab_token_lifetime, show: (credential.oauth_token_expires_at != null) || (credential.oauth_refresh_count > 0) },
+          { key: 'services' as const, icon: Wrench, label: tx(t.vault.card_details.tab_services, { count: connector.services.length }), show: connector.services.length > 0 },
+          { key: 'events' as const, icon: Zap, label: tx(t.vault.card_details.tab_events, { count: connector.events.length }), show: connector.events.length > 0 },
+          { key: 'audit' as const, icon: Shield, label: t.vault.card_details.tab_audit, show: true },
         ] as const).filter((t) => t.show).map((tab) => (
           <Button
             key={tab.key}

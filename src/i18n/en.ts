@@ -3617,6 +3617,10 @@ export const en = {
       needs_attention: "needs attention",
       untested: "untested",
     },
+    // Vault breadcrumb
+    breadcrumb: {
+      aria_label: "Vault breadcrumb",
+    },
     // Credential card
     credential_card: {
       deleting: "Deleting {name}...",

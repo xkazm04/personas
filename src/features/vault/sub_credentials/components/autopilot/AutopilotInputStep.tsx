@@ -1,6 +1,7 @@
 import { Loader2, Globe, FileText, Zap } from 'lucide-react';
 import { useFieldValidation } from '@/features/shared/components/forms/useFieldValidation';
 import { SuccessCheck } from '@/features/shared/components/forms/SuccessCheck';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutopilotInputStepProps {
   inputMode: 'url' | 'paste';
@@ -25,6 +26,7 @@ export function AutopilotInputStep({
   onParse,
   urlValidation,
 }: AutopilotInputStepProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {/* Mode Toggle */}
@@ -89,7 +91,7 @@ export function AutopilotInputStep({
         </div>
       ) : (
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground/80">Paste OpenAPI Spec (JSON or YAML)</label>
+          <label className="text-sm text-muted-foreground/80">{t.vault.autopilot.paste_spec}</label>
           <textarea
             value={specContent}
             onChange={(e) => setSpecContent(e.target.value)}

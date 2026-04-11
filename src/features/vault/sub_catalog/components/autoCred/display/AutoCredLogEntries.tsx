@@ -7,6 +7,7 @@ import { createLogger } from '@/lib/log';
 const logger = createLogger('auto-cred-log-entries');
 import type { BrowserLogEntry } from '../helpers/types';
 import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Re-export cards so existing imports from AutoCredBrowser still work
 export { WaitingCard, InputRequestCard } from './AutoCredCards';
@@ -113,6 +114,7 @@ export function RichMessage({
 // -- Copy log button ------------------------------------------------------
 
 export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
@@ -133,12 +135,12 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
       {copied ? (
         <>
           <Check className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-emerald-400">Copied</span>
+          <span className="text-emerald-400">{t.vault.auto_cred_extra.copied}</span>
         </>
       ) : (
         <>
           <Copy className="w-3.5 h-3.5" />
-          <span>Copy Log</span>
+          <span>{t.vault.auto_cred_extra.copy_log}</span>
         </>
       )}
     </button>

@@ -4,6 +4,7 @@ import { openExternalUrl } from "@/api/system/system";
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SetupGuideModalProps {
   connector: ConnectorDefinition | null;
@@ -11,6 +12,7 @@ interface SetupGuideModalProps {
 }
 
 export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
+  const { t } = useTranslation();
   if (!connector) return null;
 
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
@@ -86,7 +88,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
         {/* Required fields hint */}
         {connector.fields.length > 0 && (
           <div className="pt-2 border-t border-primary/8">
-            <p className="text-sm text-muted-foreground/50 mb-2">Required fields:</p>
+            <p className="text-sm text-muted-foreground/50 mb-2">{t.vault.picker_section.required_fields}</p>
             <div className="flex flex-wrap gap-1.5">
               {connector.fields.filter((f) => f.required).map((f) => (
                 <span key={f.key} className="text-sm px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">

@@ -5,6 +5,7 @@ import { createLogger } from '@/lib/log';
 const logger = createLogger('auto-cred-review');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { savePlaywrightProcedure } from '@/api/vault/autoCredBrowser';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReviewHealthcheckProps {
   onHealthcheck: () => void;
@@ -64,6 +65,7 @@ export function ReviewActionButtons({
   extractedValues,
   connectorName,
 }: ReviewActionButtonsProps) {
+  const { t } = useTranslation();
   const isDev = import.meta.env.DEV;
   const [savingProcedure, setSavingProcedure] = useState(false);
   const [procedureSaved, setProcedureSaved] = useState(false);
@@ -104,7 +106,7 @@ export function ReviewActionButtons({
       </div>
       <div className="flex items-center gap-2">
         {!healthResult?.success && (
-          <span className="text-sm text-muted-foreground/60">Test connection to enable save</span>
+          <span className="text-sm text-muted-foreground/60">{t.vault.auto_cred_extra.test_to_save}</span>
         )}
         {/* Dev-only: Save procedure for future re-use */}
         {isDev && healthResult?.success && extractedValues.__procedure_log && (
@@ -116,7 +118,7 @@ export function ReviewActionButtons({
                 ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
                 : 'border-violet-500/20 text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-400'
             }`}
-            title="Save browser procedure for this connector (dev)"
+            title={t.vault.auto_cred_extra.save_procedure_title}
           >
             {savingProcedure ? (
               <LoadingSpinner size="sm" />

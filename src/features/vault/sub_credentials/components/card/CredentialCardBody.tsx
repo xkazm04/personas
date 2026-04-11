@@ -7,6 +7,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CredentialCardBodyProps {
   credential: CredentialMetadata;
@@ -42,6 +43,7 @@ export function CredentialCardBody({
   setEditError,
   onOAuthConsent,
 }: CredentialCardBodyProps) {
+  const { t, tx } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const updateCredential = useVaultStore((s) => s.updateCredential);
 
@@ -49,7 +51,7 @@ export function CredentialCardBody({
     return (
       <div className="px-3 pb-3 border-t border-primary/10">
         <div className="text-sm text-muted-foreground/80 py-3">
-          No connector definition available for this credential type.
+          {t.vault.credential_card.no_connector}
         </div>
       </div>
     );
@@ -72,14 +74,14 @@ export function CredentialCardBody({
                 googleOAuth.reset();
                 setEditingId(null);
               } catch (err) {
-                setEditError(err instanceof Error ? err.message : 'Failed to update credential');
+                setEditError(err instanceof Error ? err.message : t.vault.card_body.failed_update);
               }
             }}
             onOAuthConsent={isGoogleOAuthFlow ? onOAuthConsent : undefined}
-            oauthConsentLabel={googleOAuth.isAuthorizing ? 'Authorizing with Google...' : 'Authorize with Google'}
+            oauthConsentLabel={googleOAuth.isAuthorizing ? tx(t.vault.card_body.authorizing_with, { name: 'Google' }) : tx(t.vault.card_body.authorize_with, { name: 'Google' })}
             oauthConsentDisabled={googleOAuth.isAuthorizing}
-            oauthConsentHint={isGoogleOAuthFlow ? 'Launches app-managed Google consent and updates refresh token after approval.' : undefined}
-            oauthConsentSuccessBadge={googleOAuth.completedAt ? `Google consent completed at ${googleOAuth.completedAt}` : undefined}
+            oauthConsentHint={isGoogleOAuthFlow ? tx(t.vault.card_body.authorize_hint, { name: 'Google' }) : undefined}
+            oauthConsentSuccessBadge={googleOAuth.completedAt ? tx(t.vault.card_body.consent_completed, { name: 'Google', time: googleOAuth.completedAt }) : undefined}
             isAuthorizingOAuth={googleOAuth.isAuthorizing}
             oauthPollingMessage={googleOAuth.message}
             onCancel={() => setEditingId(null)}

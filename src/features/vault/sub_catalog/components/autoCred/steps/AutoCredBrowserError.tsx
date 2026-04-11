@@ -1,6 +1,7 @@
 import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from '../display/AutoCredLogEntries';
 import { ERROR_KIND_CONFIG, useAutoScrollRef } from '../helpers/autoCredErrorConfig';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoCredBrowserErrorProps {
   logs: BrowserLogEntry[];
@@ -15,6 +16,7 @@ export function AutoCredBrowserError({
   onRetry,
   onCancel,
 }: AutoCredBrowserErrorProps) {
+  const { t } = useTranslation();
   const scrollRef = useAutoScrollRef(logs.length);
   const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
   const Icon = config!.icon;
@@ -31,7 +33,7 @@ export function AutoCredBrowserError({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">Auto-Setup Failed</p>
+            <p className="text-sm font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
             <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
@@ -59,7 +61,7 @@ export function AutoCredBrowserError({
           </div>
         ))}
         {logs.length === 0 && (
-          <div className="text-muted-foreground/60 text-center py-8">No log output captured.</div>
+          <div className="text-muted-foreground/60 text-center py-8">{t.vault.auto_cred_extra.no_log_output}</div>
         )}
       </div>
 

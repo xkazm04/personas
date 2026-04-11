@@ -7,8 +7,10 @@ import { useCredentialManagerState } from './useCredentialManagerState';
 import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerHeader';
 import { CredentialManagerViews } from './CredentialManagerViews';
 import { VaultBreadcrumb } from './VaultBreadcrumb';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function CredentialManager() {
+  const { t } = useTranslation();
   const state = useCredentialManagerState();
 
   const {
@@ -37,7 +39,7 @@ export function CredentialManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground/60">
-        <LoadingSpinner size="lg" label="Loading credentials" />
+        <LoadingSpinner size="lg" label={t.vault.manager.loading_credentials} />
       </div>
     );
   }

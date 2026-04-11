@@ -7,6 +7,7 @@ import { useCredentialListFilters } from './useCredentialListFilters';
 import { EmptyStateView } from './EmptyStateView';
 import { type CredRow, useCredentialColumns } from './CredentialListColumns';
 import { CredentialDetailModals } from './CredentialDetailModals';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type SortDir = 'asc' | 'desc';
 
@@ -20,6 +21,7 @@ export function CredentialList({
   onGoToAddNew,
   onWorkspaceConnect,
 }: CredentialListProps) {
+  const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const pendingDeleteIds = useVaultStore((s) => s.pendingDeleteCredentialIds);
   const {
@@ -148,8 +150,8 @@ export function CredentialList({
         sortDirection={sortDir}
         onSort={handleSort}
         pageSize={25}
-        emptyTitle="No credentials match"
-        emptyDescription="Try adjusting your filters or search term"
+        emptyTitle={t.vault.credential_list.no_match}
+        emptyDescription={t.vault.credential_list.no_match_hint}
         className="flex-1"
       />
 

@@ -6,6 +6,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/shared/hooks/useRotationTicker';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CredentialCardProps {
   credential: CredentialMetadata;
@@ -20,6 +21,7 @@ export function CredentialCard({
   onSelect,
   onDelete,
 }: CredentialCardProps) {
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const rotationStatus = useVaultStore((s) => s.rotationStatuses[credential.id] ?? null);
   const storeFetchRotationStatus = useVaultStore((s) => s.fetchRotationStatus);
@@ -46,7 +48,7 @@ export function CredentialCard({
         ? null
         : {
             success: credential.healthcheck_last_success,
-            message: credential.healthcheck_last_message ?? 'Stored connection test result',
+            message: credential.healthcheck_last_message ?? t.vault.credential_card.stored_result,
             isStale: true,
           }
     ), [healthcheckResult, credential.healthcheck_last_success, credential.healthcheck_last_message]);
@@ -69,7 +71,7 @@ export function CredentialCard({
       >
         <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
           <LoadingSpinner size="sm" />
-          Deleting {credential.name}...
+          {tx(t.vault.credential_card.deleting, { name: credential.name })}
         </div>
       </div>
     );
@@ -113,7 +115,7 @@ export function CredentialCard({
           {!connector && (
             <div className="px-3 pb-3 border-t border-primary/10">
               <div className="text-sm text-muted-foreground/80 py-3">
-                No connector definition available for this credential type.
+                {t.vault.credential_card.no_connector}
               </div>
             </div>
           )}

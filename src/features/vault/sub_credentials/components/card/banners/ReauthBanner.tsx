@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AlertTriangle, X, ExternalLink } from 'lucide-react';
 import { typedListen, EventName } from '@/lib/eventRegistry';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReauthEntry {
   credentialId: string;
@@ -15,6 +16,7 @@ interface ReauthEntry {
  * until the user dismisses them.
  */
 export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: string) => void }) {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<ReauthEntry[]>([]);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
           <button
             onClick={() => dismiss(entry.credentialId)}
             className="text-amber-400/60 hover:text-amber-400 shrink-0"
-            aria-label="Dismiss"
+            aria-label={t.common.dismiss}
           >
             <X className="w-3.5 h-3.5" />
           </button>

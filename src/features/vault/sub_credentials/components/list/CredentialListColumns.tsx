@@ -6,6 +6,7 @@ import { type DataGridColumn } from '@/features/shared/components/display/DataGr
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { capitalize } from './credentialListTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CredRow {
   credential: CredentialMetadata;
@@ -58,6 +59,7 @@ export function useCredentialColumns({
   setHealthFilter: (v: string) => void;
   onDelete: (id: string) => void;
 }): DataGridColumn<CredRow>[] {
+  const { t } = useTranslation();
   const nameColumn: DataGridColumn<CredRow> = useMemo(() => ({
     key: 'name',
     label: 'Name',
@@ -88,7 +90,7 @@ export function useCredentialColumns({
           )}
           <span className="text-sm font-medium text-foreground truncate">
             {row.credential.name}
-            {isPending && <span className="ml-2 text-xs text-red-400/70 font-normal">Deleting...</span>}
+            {isPending && <span className="ml-2 text-xs text-red-400/70 font-normal">{t.common.deleting}</span>}
           </span>
         </div>
       );
@@ -162,7 +164,7 @@ export function useCredentialColumns({
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(row.credential.id); }}
               className="p-1 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Delete credential"
+              title={t.vault.credential_card.delete_credential}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

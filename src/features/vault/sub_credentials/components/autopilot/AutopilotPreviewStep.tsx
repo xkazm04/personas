@@ -2,6 +2,7 @@ import { Loader2, ChevronRight, ChevronDown, Zap, Shield, Database } from 'lucid
 import type { OpenApiParseResult } from '@/lib/bindings/OpenApiParseResult';
 import type { OpenApiEndpoint } from '@/lib/bindings/OpenApiEndpoint';
 import { MethodBadge } from './AutopilotShared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutopilotPreviewStepProps {
   parseResult: OpenApiParseResult;
@@ -36,6 +37,7 @@ export function AutopilotPreviewStep({
   onGenerate,
   onBack,
 }: AutopilotPreviewStepProps) {
+  const { t, tx } = useTranslation();
   return (
     <div className="space-y-4" data-testid="vault-autopilot-preview">
       {/* API Summary Card */}
@@ -62,7 +64,7 @@ export function AutopilotPreviewStep({
       {/* Auth Schemes */}
       {parseResult.authSchemes.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Authentication</h4>
+          <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{t.vault.autopilot.authentication}</h4>
           <div className="flex flex-wrap gap-2">
             {parseResult.authSchemes.map((auth) => (
               <div key={auth.name} className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-400">
@@ -74,7 +76,7 @@ export function AutopilotPreviewStep({
       {/* Connector Name & Color */}
       <div className="grid grid-cols-[1fr_auto] gap-3">
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">Connector Name</label>
+          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.connector_name}</label>
           <input
             type="text"
             value={customName}
@@ -83,7 +85,7 @@ export function AutopilotPreviewStep({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">Color</label>
+          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.color}</label>
           <input
             type="color"
             value={customColor}
@@ -100,8 +102,8 @@ export function AutopilotPreviewStep({
             Endpoints ({selectedEndpoints.size}/{parseResult.endpoints.length} selected)
           </h4>
           <div className="flex gap-2 text-xs">
-            <button onClick={onSelectAll} className="text-blue-400 hover:text-blue-300">Select all</button>
-            <button onClick={onDeselectAll} className="text-muted-foreground/50 hover:text-muted-foreground">None</button>
+            <button onClick={onSelectAll} className="text-blue-400 hover:text-blue-300">{t.vault.import.select_all}</button>
+            <button onClick={onDeselectAll} className="text-muted-foreground/50 hover:text-muted-foreground">{t.vault.import.deselect_all}</button>
           </div>
         </div>
 
@@ -131,7 +133,7 @@ export function AutopilotPreviewStep({
           className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-          {isGenerating ? 'Generating...' : `Generate Connector (${selectedEndpoints.size} tools)`}
+          {isGenerating ? t.vault.autopilot.generating : tx(t.vault.autopilot.generate_connector, { count: selectedEndpoints.size })}
         </button>
       </div>
     </div>

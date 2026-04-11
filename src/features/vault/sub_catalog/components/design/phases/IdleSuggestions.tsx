@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plug } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface IdleSuggestionsProps {
   templateSearch: string;
@@ -20,20 +21,21 @@ export function IdleSuggestions({
   onExpandTemplate,
   onApplyTemplate,
 }: IdleSuggestionsProps) {
+  const { t } = useTranslation();
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   return (
     <div className="p-3 rounded-xl border border-primary/15 bg-secondary/20 space-y-2">
-      <p className="text-sm text-muted-foreground/75">Saved local catalog</p>
+      <p className="text-sm text-muted-foreground/75">{t.vault.design_phases.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
-        placeholder="Search catalog"
+        placeholder={t.vault.design_phases.search_catalog}
         className="w-full px-3 py-1.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
-        <p className="text-sm text-muted-foreground/90">No catalog entries yet. Save a successfully tested connector first.</p>
+        <p className="text-sm text-muted-foreground/90">{t.vault.design_phases.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (

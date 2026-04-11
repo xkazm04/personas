@@ -3,6 +3,7 @@ import { RefreshCw, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { refreshCredentialOAuthNow } from '@/api/vault/rotation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface OAuthActivityBadgeProps {
   credentialId: string;
@@ -39,6 +40,7 @@ export function OAuthActivityBadge({
   oauthTokenExpiresAt,
   onRefreshed,
 }: OAuthActivityBadgeProps) {
+  const { t } = useTranslation();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const expiry = getExpiryStatus(oauthTokenExpiresAt);
 
@@ -70,14 +72,14 @@ export function OAuthActivityBadge({
           onClick={handleRefresh}
           disabled={isRefreshing}
           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 shrink-0"
-          title="Refresh OAuth token now"
+          title={t.vault.credential_card.refresh_oauth}
         >
           {isRefreshing ? (
             <LoadingSpinner size="xs" className="w-2.5 h-2.5" />
           ) : (
             <RefreshCw className="w-2.5 h-2.5" />
           )}
-          <span className="text-xs font-medium">Refresh</span>
+          <span className="text-xs font-medium">{t.vault.credential_card.refresh}</span>
         </button>
       )}
       {oauthRefreshCount > 0 && (

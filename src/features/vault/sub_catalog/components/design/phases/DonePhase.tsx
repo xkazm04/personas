@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, ArrowRight, RefreshCw, PackagePlus } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DonePhaseProps {
   connectorLabel?: string;
@@ -18,6 +19,7 @@ export function DonePhase({
   onViewCredential,
   onRefine,
 }: DonePhaseProps) {
+  const { t } = useTranslation();
   const [refinementText, setRefinementText] = useState('');
 
   const handleRefineSubmit = () => {
@@ -35,7 +37,7 @@ export function DonePhase({
         <CheckCircle className="w-6 h-6 text-emerald-400" />
       </div>
       <div className="text-center">
-        <h3 className="text-sm font-semibold text-foreground">Credential Created</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t.vault.design_phases.credential_created}</h3>
         <p className="text-sm text-muted-foreground/90 mt-1">
           {connectorLabel} credential has been securely saved.
           {refinementCount > 0 && (

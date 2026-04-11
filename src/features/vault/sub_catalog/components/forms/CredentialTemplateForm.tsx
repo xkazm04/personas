@@ -7,6 +7,7 @@ import { SetupGuideSection } from '@/features/vault/sub_credentials/components/f
 import { TemplateFormHeader } from '@/features/vault/sub_credentials/components/forms/TemplateFormHeader';
 import { AuthMethodTabs } from '@/features/vault/sub_credentials/components/forms/AuthMethodTabs';
 import { TemplateFormBody } from './TemplateFormBody';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AuthVariant {
   id: string;
@@ -64,6 +65,7 @@ export function CredentialTemplateForm({
   isHealthchecking,
   healthcheckResult,
 }: CredentialTemplateFormProps) {
+  const { t } = useTranslation();
   const metadata = (selectedConnector.metadata ?? {}) as Record<string, unknown>;
   const variants = useMemo<AuthVariant[] | null>(() => {
     if (!Array.isArray(metadata.auth_variants)) return null;
@@ -115,8 +117,8 @@ export function CredentialTemplateForm({
     ? !oauthDone || (requiresHealthcheck && !healthcheckResult?.success)
     : requiresHealthcheck && !healthcheckResult?.success;
   const saveDisabledReason = isAnyOAuth && !oauthDone
-    ? 'Use the authorize button below to connect this credential.'
-    : requiresHealthcheck && !healthcheckResult?.success ? 'Run a successful connection test before saving.' : undefined;
+    ? t.vault.credential_forms.oauth_required
+    : requiresHealthcheck && !healthcheckResult?.success ? t.vault.credential_forms.healthcheck_required : undefined;
 
   return (
     <div key="form"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
@@ -29,7 +29,14 @@ export function useCredentialManagerState() {
   const [credentialSearch, setCredentialSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Bulk Healthcheck
+  // Bulk Healthcheck — only include credentials whose service_type maps to a
+  // known connector definition. Orphaned credentials (no matching connector)
+  // would always fail healthcheck and inflate the failure count.
+  const healthcheckCredentials = useMemo(() => {
+    if (connectorDefinitions.length === 0) return credentials;
+    const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
+    return credentials.filter((cred) => connectorNames.has(cred.service_type));
+  }, [credentials, connectorDefinitions]);
   const bulk = useBulkHealthcheck();
   const [isDailyRun, setIsDailyRun] = useState(false);
 
@@ -106,20 +113,20 @@ export function useCredentialManagerState() {
 
   // Daily auto-test: run healthchecks if not run today
   useEffect(() => {
-    if (loading || credentials.length === 0 || bulk.isRunning) return;
+    if (loading || healthcheckCredentials.length === 0 || bulk.isRunning) return;
     const lastRun = bulk.summary?.completedAt;
     const today = new Date().toDateString();
     const alreadyRanToday = lastRun && new Date(lastRun).toDateString() === today;
     if (alreadyRanToday) return;
     // Defer bulk healthcheck to idle time to avoid competing with navigation renders
-    const run = () => { setIsDailyRun(true); bulk.run(credentials); };
+    const run = () => { setIsDailyRun(true); bulk.run(healthcheckCredentials); };
     if (typeof requestIdleCallback === 'function') {
       const id = requestIdleCallback(run, { timeout: 5000 });
       return () => cancelIdleCallback(id);
     }
     const timer = setTimeout(run, 3000);
     return () => clearTimeout(timer);
-  }, [loading, credentials.length]);
+  }, [loading, healthcheckCredentials.length]);
 
   // Clear daily-run flag when bulk finishes
   useEffect(() => {
@@ -129,6 +136,7 @@ export function useCredentialManagerState() {
   return {
     // Data
     credentials,
+    healthcheckCredentials,
     connectorDefinitions,
     loading,
     vault,

@@ -3,11 +3,13 @@ import { ExternalLink, MessageSquare, Hand, Check } from 'lucide-react';
 import type { BrowserLogEntry } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
 import { createLogger } from '@/lib/log';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger('auto-cred-cards');
 
 /** Prominent amber card for WAITING: messages */
 export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLatest: boolean }) {
+  const { t } = useTranslation();
   const [confirmed, setConfirmed] = useState(false);
   const message = entry.message.replace(/^WAITING:\s*/i, '');
 
@@ -42,7 +44,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${confirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
-          {confirmed ? 'Step confirmed -- waiting for detection' : 'Action Required'}
+          {confirmed ? t.vault.auto_cred.step_confirmed : t.vault.auto_cred.action_required}
         </p>
         <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{message}</p>
         {!confirmed && (
@@ -72,6 +74,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
 /** Violet card for input requests */
 export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-xl border-2 border-violet-500/30 bg-violet-500/8"
@@ -80,7 +83,7 @@ export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
         <MessageSquare className="w-4 h-4 text-violet-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-violet-400">Input Requested</p>
+        <p className="text-sm font-semibold text-violet-400">{t.vault.auto_cred.input_requested}</p>
         <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{entry.message}</p>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ForagingResultCard } from './ForagingResultCard';
 import { Button } from '@/features/shared/components/buttons';
 import type { useCredentialForaging } from '@/hooks/design/credential/useCredentialForaging';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Forage = ReturnType<typeof useCredentialForaging>;
 
@@ -47,13 +48,14 @@ export function ForagingIdle({ onScan }: ForagingIdleProps) {
 }
 
 export function ForagingScanning() {
+  const { t } = useTranslation();
   return (
     <div
       key="scanning"
       className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
     >
       <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
-      <p className="text-sm text-foreground/80">Scanning filesystem for credentials...</p>
+      <p className="text-sm text-foreground/80">{t.vault.foraging.scanning}</p>
       <p className="text-sm text-muted-foreground/50">
         Checking environment variables, config files, and dev tool credentials
       </p>
@@ -149,6 +151,7 @@ interface ForagingErrorProps {
 }
 
 export function ForagingError({ forage, onBack }: ForagingErrorProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="error"
@@ -156,7 +159,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
     >
       <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
       <div>
-        <p className="text-sm font-medium text-foreground/90">Scan Failed</p>
+        <p className="text-sm font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
         <p className="text-sm text-red-400/70 mt-1">{forage.error}</p>
       </div>
       <div className="flex items-center justify-center gap-2">

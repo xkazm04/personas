@@ -5,6 +5,7 @@ import {
   CheckCircle,
   Circle,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Step card component -----------------------------------------
 
@@ -21,6 +22,7 @@ export function SetupStepCard({
   onToggle: () => void;
   components: Components;
 }) {
+  const { t } = useTranslation();
   // Strip the leading number (e.g. "1. " or "2) ")
   const content = stepMarkdown.replace(/^\s*\d+[.)]\s+/, '');
 
@@ -34,8 +36,8 @@ export function SetupStepCard({
       <button
         onClick={onToggle}
         className="mt-0.5 shrink-0 focus-visible:outline-none"
-        title={isCompleted ? 'Mark as not done' : 'Mark as done'}
-        aria-label="Mark step complete"
+        title={isCompleted ? t.vault.design_phases.mark_not_done : t.vault.design_phases.mark_done}
+        aria-label={t.vault.design_phases.mark_step_complete}
       >
         {isCompleted ? (
           <CheckCircle className="w-4 h-4 text-emerald-400" />

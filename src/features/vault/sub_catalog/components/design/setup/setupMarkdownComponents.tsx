@@ -6,10 +6,12 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Copy button -------------------------------------------------
 
 export function CopyButton({ text, className }: { text: string; className?: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -25,7 +27,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
   return (
     <button
       onClick={handleCopy}
-      title="Copy to clipboard"
+      title={t.vault.design_phases.copy_to_clipboard}
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm transition-all ${
         copied
           ? 'text-emerald-400 bg-emerald-500/10'

@@ -6,6 +6,7 @@ import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { type BatchItem, type ItemStatus, StatusIcon, BatchSummary } from './BatchHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WizardBatchPhaseProps {
   connectors: ConnectorDefinition[];
@@ -13,6 +14,7 @@ interface WizardBatchPhaseProps {
 }
 
 export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<BatchItem[]>(() =>
     connectors.map((c) => ({ connector: c, status: 'pending' as ItemStatus })),
   );
@@ -105,7 +107,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
           className="text-muted-foreground/80 hover:text-foreground/90"
-          title="Skip this service"
+          title={t.vault.wizard_detect.skip_service}
         >
           Skip
         </Button>

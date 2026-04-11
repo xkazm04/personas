@@ -1,5 +1,6 @@
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   'file-text': FileText,
@@ -15,6 +16,7 @@ interface ImportSourcePickerProps {
 }
 
 export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in space-y-4"
@@ -27,8 +29,8 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-medium text-foreground">Import from External Vault</h3>
-          <p className="text-sm text-muted-foreground/70">Choose the source of your secrets</p>
+          <h3 className="text-sm font-medium text-foreground">{t.vault.credential_import.import_from_vault}</h3>
+          <p className="text-sm text-muted-foreground/70">{t.vault.credential_import.import_subtitle}</p>
         </div>
       </div>
 

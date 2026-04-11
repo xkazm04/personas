@@ -1,6 +1,7 @@
 import { Check, Play, Copy, ExternalLink } from 'lucide-react';
 import type { GeneratedConnectorResult } from '@/lib/bindings/GeneratedConnectorResult';
 import { MethodBadge } from './AutopilotShared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutopilotGeneratedStepProps {
   generatedResult: GeneratedConnectorResult;
@@ -13,12 +14,13 @@ export function AutopilotGeneratedStep({
   onPlayground,
   onComplete,
 }: AutopilotGeneratedStepProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
         <div className="flex items-center gap-2 mb-2">
           <Check className="w-5 h-5 text-emerald-400" />
-          <h4 className="text-sm font-medium text-emerald-400">Connector Generated Successfully</h4>
+          <h4 className="text-sm font-medium text-emerald-400">{t.vault.autopilot.connector_generated}</h4>
         </div>
         <p className="text-sm text-muted-foreground/70">
           <strong>{generatedResult.connectorLabel}</strong> is now available in your connector catalog

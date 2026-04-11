@@ -4,6 +4,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { VaultStatus } from "@/api/vault/credentials";
 
 import type { CredentialTemplateField } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface FormActionsProps {
   vault: VaultStatus | null;
@@ -24,6 +25,7 @@ export function FormActions({
   saveDisabled,
   saveDisabledReason,
 }: FormActionsProps) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="border-t border-primary/8" />
@@ -34,8 +36,8 @@ export function FormActions({
               <Lock className="w-3 h-3" />
               <span>
                 {vault.key_source === 'keychain'
-                  ? 'Encrypted with OS Keychain'
-                  : 'Encrypted at rest'}
+                  ? t.vault.credential_forms.encrypted_keychain
+                  : t.vault.credential_forms.encrypted_at_rest}
               </span>
             </div>
           )}

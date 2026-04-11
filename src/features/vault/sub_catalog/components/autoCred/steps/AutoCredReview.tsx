@@ -4,6 +4,7 @@ import type { ExtractedValues, ExtractionCompleteness } from '../helpers/types';
 import { buildConnectorContext } from '../helpers/types';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { ReviewHealthcheck, ReviewActionButtons } from './ReviewActions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoCredReviewProps {
   designResult: CredentialDesignResult;
@@ -36,6 +37,7 @@ export function AutoCredReview({
   isPartial = false,
   completeness,
 }: AutoCredReviewProps) {
+  const { t } = useTranslation();
   const ctx = buildConnectorContext(designResult);
 
   return (
@@ -65,7 +67,7 @@ export function AutoCredReview({
         <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-400">Partial Extraction</p>
+            <p className="text-sm font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
             <p className="text-sm text-muted-foreground/70 mt-0.5">
               {completeness
                 ? `${completeness.filledRequired} of ${completeness.totalRequired} required fields filled. Complete the missing fields before saving.`
@@ -77,7 +79,7 @@ export function AutoCredReview({
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground/70">Credential Name</label>
+        <label className="text-sm font-medium text-muted-foreground/70">{t.vault.auto_cred_extra.credential_name}</label>
         <input
           type="text"
           value={credentialName}
