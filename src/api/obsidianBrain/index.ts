@@ -119,3 +119,37 @@ export const obsidianBrainReadVaultNote = (filePath: string) =>
 
 export const obsidianBrainPushGoals = (projectId: string) =>
   invoke<PushSyncResult>("obsidian_brain_push_goals", { projectId });
+
+// ── Phase 6: Google Drive Cloud Sync ──────────────────────────────
+
+export interface DriveSyncResult {
+  uploaded: number;
+  downloaded: number;
+  deleted: number;
+  skipped: number;
+  errors: string[];
+}
+
+export interface DriveStatus {
+  connected: boolean;
+  email: string | null;
+  storageUsedBytes: number | null;
+  storageLimitBytes: number | null;
+  lastSyncAt: string | null;
+  manifestFileCount: number;
+}
+
+export const obsidianDriveStatus = () =>
+  invoke<DriveStatus>("obsidian_drive_status");
+
+export const obsidianDrivePushSync = (folderNames?: string[]) =>
+  invoke<DriveSyncResult>("obsidian_drive_push_sync", { folderNames: folderNames ?? null });
+
+export const obsidianDrivePullSync = (folderNames?: string[]) =>
+  invoke<DriveSyncResult>("obsidian_drive_pull_sync", { folderNames: folderNames ?? null });
+
+export const loginWithGoogleDrive = () =>
+  invoke<void>("login_with_google_drive");
+
+export const getGoogleDriveStatus = () =>
+  invoke<boolean>("get_google_drive_status");
