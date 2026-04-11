@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   FolderKanban, Plus, Target, ChevronRight, GripVertical,
-  Trash2, CheckCircle2, Circle, Clock, AlertCircle, X, Folder,
+  Trash2, CheckCircle2, Circle, X, Folder,
   FolderOpen, Search, Pencil, MoreHorizontal, Network,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -14,131 +14,16 @@ import { ImplementationLog } from './ImplementationLog';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
 import { CrossProjectMetadataModal } from './CrossProjectMetadataModal';
 import { useTranslation } from '@/i18n/useTranslation';
-
-// ---------------------------------------------------------------------------
-// Types – thin view-models mapped from store bindings
-// ---------------------------------------------------------------------------
-
-interface Project {
-  id: string;
-  name: string;
-  path: string;
-  description?: string;
-  techStack: string[];
-  goalCount: number;
-  status: 'active' | 'archived' | 'paused';
-  createdAt: string;
-}
-
-interface Goal {
-  id: string;
-  projectId: string;
-  title: string;
-  status: 'open' | 'in-progress' | 'done' | 'blocked';
-  progress: number;
-  signals: GoalSignal[];
-}
-
-interface GoalSignal {
-  id: string;
-  message: string;
-  timestamp: string;
-  type: 'info' | 'warning' | 'success';
-}
-
-/** Map a DevProject from the store into the local Project view-model. */
-function toProject(dp: import("@/lib/bindings/DevProject").DevProject, goalCount: number): Project {
-  return {
-    id: dp.id,
-    name: dp.name,
-    path: dp.root_path,
-    description: dp.description ?? undefined,
-    techStack: dp.tech_stack ? dp.tech_stack.split(",").map((s) => s.trim()).filter(Boolean) : [],
-    goalCount,
-    status: (dp.status as Project["status"]) || "active",
-    createdAt: dp.created_at.slice(0, 10),
-  };
-}
-
-/** Map a DevGoal from the store into the local Goal view-model. */
-function toGoal(dg: import("@/lib/bindings/DevGoal").DevGoal, signals: import("@/lib/bindings/DevGoalSignal").DevGoalSignal[]): Goal {
-  return {
-    id: dg.id,
-    projectId: dg.project_id,
-    title: dg.title,
-    status: (dg.status as Goal["status"]) || "open",
-    progress: dg.progress,
-    signals: signals
-      .filter((s) => s.goal_id === dg.id)
-      .map((s) => ({
-        id: s.id,
-        message: s.message ?? s.signal_type,
-        timestamp: s.created_at,
-        type: (s.signal_type === "success" ? "success" : s.signal_type === "warning" ? "warning" : "info") as GoalSignal["type"],
-      })),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Project Type Selector
-// ---------------------------------------------------------------------------
-
-type ProjectType = 'react' | 'nodejs' | 'fastapi' | 'rust' | 'python' | 'combined' | 'other';
-
-const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; color: string }[] = [
-  { id: 'react', label: 'React', icon: '⚛️', color: 'bg-cyan-500/15 border-cyan-500/25 text-cyan-400' },
-  { id: 'nodejs', label: 'NodeJS', icon: '🟢', color: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' },
-  { id: 'fastapi', label: 'FastAPI', icon: '⚡', color: 'bg-teal-500/15 border-teal-500/25 text-teal-400' },
-  { id: 'rust', label: 'Rust', icon: '🦀', color: 'bg-orange-500/15 border-orange-500/25 text-orange-400' },
-  { id: 'python', label: 'Python', icon: '🐍', color: 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400' },
-  { id: 'combined', label: 'Combined', icon: '🔗', color: 'bg-violet-500/15 border-violet-500/25 text-violet-400' },
-  { id: 'other', label: 'Other', icon: '📁', color: 'bg-primary/10 border-primary/20 text-muted-foreground' },
-];
-
-// ---------------------------------------------------------------------------
-// Status helpers
-// ---------------------------------------------------------------------------
-
-const STATUS_STYLES: Record<string, string> = {
-  active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  archived: 'bg-primary/10 text-muted-foreground border-primary/15',
-  paused: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  open: 'bg-primary/10 text-muted-foreground border-primary/15',
-  'in-progress': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  done: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  blocked: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
-
-const GOAL_ICONS: Record<string, typeof Circle> = {
-  open: Circle,
-  'in-progress': Clock,
-  done: CheckCircle2,
-  blocked: AlertCircle,
-};
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium border ${STATUS_STYLES[status] ?? STATUS_STYLES.open}`}>
-      {status.replace('-', ' ')}
-    </span>
-  );
-}
+import {
+  type Project, type Goal, type ProjectType, type EditProjectData,
+  toProject, toGoal, PROJECT_TYPES, GOAL_ICONS, StatusBadge,
+} from './projectManagerTypes';
 
 // ---------------------------------------------------------------------------
 // Project Modal (create + edit modes)
 // ---------------------------------------------------------------------------
 
 type ModalStep = 'form' | 'created';
-
-/** Data shape for an existing project being edited. */
-interface EditProjectData {
-  id: string;
-  name: string;
-  path: string;
-  description: string;
-  projectType: ProjectType;
-  githubUrl: string;
-}
 
 function ProjectModal({
   open: isOpen,
