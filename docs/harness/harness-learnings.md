@@ -280,3 +280,18 @@
 - CredentialManager and ScheduleTimeline don't have sub-tab entrance animations — but they're single-content pages, not tabbed UIs. Low priority
 - `text-3xl font-bold` in DashboardHome greeting was replaced with `typo-heading-lg` — slightly smaller on desktop but now respects text-scale. If users want it larger, consider adding a `typo-heading-xl` tier to typography.css
 - FleetOptimizationCard's TYPE_CONFIG uses `text-*-300` badge text colors — all have light theme overrides. No action needed unless new recommendation types are added
+
+## Button Component Adoption
+
+- [2026-04-11] Shared Button at `src/features/shared/components/buttons/Button.tsx` — 6 variants (primary, secondary, ghost, danger, accent, link), 7 sizes (xs, sm, md, lg, icon-sm/md/lg), 13 accent colors, icon/iconRight, loading, disabledReason tooltip, block mode
+- [2026-04-11] **NOT candidates for Button migration**: `role="switch"` toggles (use AccessibleToggle), tab bar buttons (specialized navigation), icon rail buttons with badge overlays (custom layout), card-like selection buttons
+- [2026-04-11] Good migration candidates: action buttons (Save, Delete, Execute), link-style dismiss/cancel text, icon buttons (refresh, close), CTA buttons
+- [2026-04-11] Ad-hoc pattern → Button mapping: `p-1.5 rounded-lg hover:bg-secondary/50` → ghost icon-sm; `px-3 py-1.5 rounded-lg bg-amber-500/20` → accent amber sm; `text-xs text-muted-foreground hover:...` → link xs
+- [2026-04-11] 85 files already use Button; 651 use raw `<button>`. Migrated: AccountSettings (4), EditorBanners (5), PersonaEditorHeader (2), PersonaOverviewPage (1), QuickStatsBar (1), LeaderboardPage (1) = 14 buttons in this run
+
+## Open follow-ups (from Run #10 — Button Upgrade, 2026-04-11)
+
+- ~600+ files still use raw `<button>` — but many are legitimate (tabs, toggles, custom controls). A realistic migration target for future runs is 10-20 action buttons per run
+- OpsSidebar PanelLoadingFallback uses ad-hoc spinner div instead of LoadingSpinner — minor
+- `btn-sm` CSS class used in EditorBanners was replaced by Button size="sm" — check if `btn-sm` is used elsewhere and can be removed
+- Consider adding a `variant="primary-soft"` to Button for the common `bg-primary/10 text-primary border-primary/15` pattern used in agent execute buttons and sign-in buttons
