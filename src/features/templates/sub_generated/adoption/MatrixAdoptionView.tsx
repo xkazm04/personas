@@ -196,6 +196,8 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   //   - 1 matching credential → auto-select (recorded in autoDetectedIds)
   //   - 0 matching credentials → block the question (recorded in blockedQuestionIds),
   //     user must add a credential via the Apps & Services catalog
+  // Restored answers from a prior adoptionDraft (saved before catalog redirect)
+  // also merge in, so the user resumes where they left off.
   useEffect(() => {
     if (!hasAdoptionQuestions || defaultsLoaded.current) return;
     defaultsLoaded.current = true;
@@ -204,20 +206,31 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       if (q.default) defaults[q.id] = String(q.default);
     }
 
+    // If a draft exists for THIS review, restore its answers
+    const sys = useSystemStore.getState();
+    const draft = sys.adoptionDraft;
+    const restoredAnswers: Record<string, string> | undefined =
+      draft && draft.reviewId === review.id ? draft.userAnswers : undefined;
+    if (restoredAnswers) {
+      // Clear the draft so it doesn't fire the resume banner repeatedly
+      sys.setAdoptionDraft(null);
+    }
+
     void import("@/stores/vaultStore").then(({ useVaultStore }) => {
       const creds = useVaultStore.getState().credentials;
       const serviceTypes = new Set(creds.map((c) => c.service_type));
       const { autoAnswers, autoDetectedIds: detected, blockedQuestionIds: blocked } =
         matchVaultToQuestions(adoptionQuestions, serviceTypes);
-      // Vault answers override template defaults
-      const merged = { ...defaults, ...autoAnswers };
+      // Order: template defaults < vault auto-answers < restored draft answers
+      const merged = { ...defaults, ...autoAnswers, ...(restoredAnswers ?? {}) };
       if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
       if (detected.size > 0) setAutoDetectedIds(detected);
       if (blocked.size > 0) setBlockedQuestionIds(blocked);
     }).catch(() => {
-      if (Object.keys(defaults).length > 0) setAdoptionAnswers(defaults);
+      const merged = { ...defaults, ...(restoredAnswers ?? {}) };
+      if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
     });
-  }, [hasAdoptionQuestions, adoptionQuestions]);
+  }, [hasAdoptionQuestions, adoptionQuestions, review.id]);
 
   // When questions are completed, store answers in the build draft and transition to draft_ready.
   // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,
@@ -385,13 +398,26 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   // Navigate to the credentials catalog pre-filtered by a category
   // (called from the questionnaire's "Add credential" button when a blocked
   // question needs a credential from a specific category).
+  // Saves current adoption state so the user can resume after adding credentials.
   const handleAddCredentialForCategory = useCallback((category: string) => {
     const sys = useSystemStore.getState();
+    // Persist current adoption progress so the user can resume from the
+    // background banner after adding the credential
+    sys.setAdoptionDraft({
+      reviewId: review.id,
+      templateName: review.test_case_name ?? 'Template',
+      step: 'questionnaire',
+      connectorSwaps: {},
+      connectorCredentialMap: {},
+      variableValues: {},
+      userAnswers: { ...adoptionAnswers },
+      savedAt: Date.now(),
+    });
     sys.setPendingCatalogCategoryFilter(category);
     sys.setSidebarSection('credentials');
-    // Close the adoption modal — the user returns via the catalog after adding
+    // Close the adoption modal — user returns via the resume banner
     onClose();
-  }, [onClose]);
+  }, [onClose, review.id, review.test_case_name, adoptionAnswers]);
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
