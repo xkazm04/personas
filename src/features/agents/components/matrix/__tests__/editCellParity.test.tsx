@@ -94,6 +94,14 @@ vi.mock("lucide-react", () => {
     MousePointerClick: Icon,
     Radio: Icon,
     Activity: Icon,
+    RefreshCw: Icon,
+    Play: Icon,
+    Zap: Icon,
+    Link: Icon,
+    FolderSearch: Icon,
+    ClipboardPaste: Icon,
+    AppWindow: Icon,
+    Combine: Icon,
   };
 });
 
