@@ -7,6 +7,7 @@ import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
 import { getStatusIcon, SectionStatusDot } from './StatusIndicators';
 import { InstallButton } from './InstallButton';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function SectionCard({
   section,
@@ -39,6 +40,7 @@ export function SectionCard({
   onShowLiteLLM: () => void;
   onMcpRegistered?: () => void;
 }) {
+  const { t } = useTranslation();
   const [_mcpBusy, _setMcpBusy] = useState(false);
 
   const isAccount = section.id === 'account';
@@ -66,7 +68,7 @@ export function SectionCard({
           /* Loading indicator — shown while this section's health check is in-flight */
           <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-6 px-4">
             <Loader2 className={`w-5 h-5 animate-spin ${sectionStyle.icon} opacity-60`} />
-            <span className="text-xs text-muted-foreground/60">Checking {section.label.toLowerCase()}...</span>
+            <span className="text-xs text-muted-foreground/60">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
           </div>
         ) : (
           section.items.map((check) => (
@@ -103,7 +105,7 @@ export function SectionCard({
                     icon={<Key className="w-3 h-3" />}
                     className="mt-2"
                   >
-                    {check.status === 'ok' ? 'Edit Key' : 'Configure'}
+                    {check.status === 'ok' ? t.overview.section_card.edit_key : t.overview.section_card.configure}
                   </Button>
                 )}
                 {check.id === 'litellm_proxy' && !ipcError && (
@@ -115,7 +117,7 @@ export function SectionCard({
                     icon={<Key className="w-3 h-3" />}
                     className="mt-2"
                   >
-                    {check.status === 'ok' ? 'Edit Config' : 'Configure'}
+                    {check.status === 'ok' ? t.overview.section_card.edit_config : t.overview.section_card.configure}
                   </Button>
                 )}
                 {check.id === 'claude_desktop_mcp' && !ipcError && (
@@ -140,7 +142,7 @@ export function SectionCard({
               loading={authLoading}
               icon={authLoading ? undefined : <Globe className="w-3.5 h-3.5" />}
             >
-              {authLoading ? 'Signing in...' : 'Sign in with Google'}
+              {authLoading ? t.overview.section_card.signing_in : t.overview.section_card.sign_in_google}
             </Button>
             {authError && (
               <p className="typo-body text-red-400/80">{authError}</p>
@@ -159,6 +161,7 @@ function ClaudeDesktopMcpButton({
   isConnected: boolean;
   onDone?: () => void;
 }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -189,7 +192,7 @@ function ClaudeDesktopMcpButton({
         loading={busy}
         icon={busy ? undefined : <Unplug className="w-3 h-3" />}
       >
-        {busy ? 'Working...' : isConnected ? 'Disconnect' : 'Connect to Claude Desktop'}
+        {busy ? t.overview.section_card.working : isConnected ? t.overview.section_card.disconnect : t.overview.section_card.connect_claude}
       </Button>
       {result && (
         <p className="text-[11px] text-muted-foreground/70">{result}</p>

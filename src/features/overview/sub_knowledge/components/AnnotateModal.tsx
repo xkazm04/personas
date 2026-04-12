@@ -4,6 +4,7 @@ import { upsertKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SCOPE_TYPES } from '../libs/knowledgeHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AnnotateModalProps {
   personas: Array<{ id: string; name: string }>;
@@ -12,6 +13,7 @@ interface AnnotateModalProps {
 }
 
 export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalProps) {
+  const { t } = useTranslation();
   const [personaId, setPersonaId] = useState(personas[0]?.id ?? '');
   const [scopeType, setScopeType] = useState('global');
   const [scopeId, setScopeId] = useState('');
@@ -38,19 +40,19 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
   return (
     <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="sm" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
       <h3 id="annotate-modal-title" className="text-base font-semibold text-foreground/90 flex items-center gap-2">
-        <MessageSquare className="w-4 h-4 text-cyan-400" /> Add Knowledge Annotation
+        <MessageSquare className="w-4 h-4 text-cyan-400" /> {t.overview.annotate_modal.title}
       </h3>
 
       <div className="space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">Attribution Persona</label>
+          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.persona_label}</label>
           <ThemedSelect value={personaId} onChange={(e) => setPersonaId(e.target.value)} className="w-full py-1.5">
             {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </ThemedSelect>
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">Scope</label>
+          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.scope_label}</label>
           <ThemedSelect value={scopeType} onChange={(e) => setScopeType(e.target.value)} className="w-full py-1.5">
             {Object.entries(SCOPE_TYPES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
           </ThemedSelect>
@@ -59,7 +61,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
         {(scopeType === 'tool' || scopeType === 'connector') && (
           <div>
             <label className="text-xs text-muted-foreground/70 mb-1 block">
-              {scopeType === 'tool' ? 'Tool Name' : 'Connector / Service Type'}
+              {scopeType === 'tool' ? t.overview.annotate_modal.tool_name : t.overview.annotate_modal.connector_type}
             </label>
             <input
               type="text"
@@ -72,7 +74,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
         )}
 
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">Annotation</label>
+          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.annotation_label}</label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -85,14 +87,14 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
 
       <div className="flex justify-end gap-2">
         <button onClick={onClose} className="px-4 py-1.5 rounded-xl text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors">
-          Cancel
+          {t.overview.annotate_modal.cancel}
         </button>
         <button
           onClick={() => { void handleSave(); }}
           disabled={saving || !text.trim()}
           className="px-4 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save Annotation'}
+          {saving ? t.overview.annotate_modal.saving : t.overview.annotate_modal.save_annotation}
         </button>
       </div>
     </BaseModal>

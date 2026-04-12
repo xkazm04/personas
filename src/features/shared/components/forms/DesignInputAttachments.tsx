@@ -1,6 +1,7 @@
 import { X, File } from 'lucide-react';
 import type { DesignFileType, DesignFile } from '@/lib/types/frontendTypes';
 import { FILE_TYPE_ICONS, FILE_TYPE_LABELS } from './designInputHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TypeSelectorProps {
   pendingFile: { name: string; content: string };
@@ -45,6 +46,7 @@ interface AttachedFilesRowProps {
 }
 
 export function AttachedFilesRow({ files, onRemove }: AttachedFilesRowProps) {
+  const { t } = useTranslation();
   if (files.length === 0) return null;
 
   return (
@@ -62,7 +64,7 @@ export function AttachedFilesRow({ files, onRemove }: AttachedFilesRowProps) {
             <button
               onClick={() => onRemove(index)}
               className="ml-0.5 text-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-              title="Remove file"
+              title={t.shared.forms_extra.remove_file}
             >
               <X className="w-3 h-3" />
             </button>
@@ -80,14 +82,15 @@ interface ReferencesTextareaProps {
 }
 
 export function ReferencesTextarea({ references, onChange, disabled }: ReferencesTextareaProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
-      <label className="typo-body text-foreground px-1">References</label>
+      <label className="typo-body text-foreground px-1">{t.shared.forms_extra.references}</label>
       <textarea
         value={references.join('\n')}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        placeholder="Paste URLs, connection strings, API keys, or any reference info (one per line)"
+        placeholder={t.shared.forms_extra.references_placeholder}
         rows={3}
         className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 typo-code text-foreground resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
       />

@@ -19,6 +19,7 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from './sidebarData';
 import { AgentsSidebarNav } from './sections/AgentsSidebarNav';
 import { PluginsSidebarNav } from './sections/PluginsSidebarNav';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
@@ -228,6 +229,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 // -- Schedules persona filter sidebar --
 
 function SchedulesSidebarNav() {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [cronAgents, setCronAgents] = useState<{ persona_id: string; persona_name: string }[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
@@ -264,7 +266,7 @@ function SchedulesSidebarNav() {
     <div className="flex flex-col h-full">
       <div className="px-3 py-3 border-b border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="typo-label text-foreground/90">Schedules</span>
+          <span className="typo-label text-foreground/90">{t.shared.sidebar_extra.schedules}</span>
           <span className="text-[10px] font-mono text-foreground/90">{cronAgents.length} total</span>
         </div>
       </div>

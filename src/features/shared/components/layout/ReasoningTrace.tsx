@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReasoningEntry } from "@/hooks/execution/useReasoningTrace";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReasoningTraceProps {
   entries: ReasoningEntry[];
@@ -28,6 +29,7 @@ function ExpandableText({ text, maxLen = 120 }: { text: string; maxLen?: number 
 }
 
 function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: number }) {
+  const { t } = useTranslation();
   const ts = relativeTs(entry.ts, baseTime);
 
   switch (entry.type) {
@@ -36,7 +38,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-blue-400 shrink-0">{"\u25CF"}</span>
           <div className="min-w-0 flex-1">
-            <span className="typo-caption font-medium">System Init</span>
+            <span className="typo-caption font-medium">{t.shared.reasoning_trace.system_init}</span>
             <span className="typo-caption text-foreground ml-2">{entry.model}</span>
             {entry.sessionId != null && (
               <span className="typo-caption text-foreground ml-1">({String(entry.sessionId).slice(0, 8)})</span>
@@ -51,7 +53,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-purple-400 shrink-0">{"\u25C6"}</span>
           <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">Reasoning</span>
+            <span className="font-medium">{t.shared.reasoning_trace.reasoning}</span>
             <div className="mt-0.5">
               <ExpandableText text={entry.content.split("\n")[0] ?? ""} />
             </div>
@@ -79,7 +81,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-yellow-400 shrink-0">{"\u25C0"}</span>
           <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">Result</span>
+            <span className="font-medium">{t.shared.reasoning_trace.result}</span>
             <div className="mt-0.5">
               <ExpandableText text={entry.contentPreview} maxLen={80} />
             </div>
@@ -105,7 +107,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-green-400 shrink-0">{"\u25CF"}</span>
           <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">Complete</span>
+            <span className="font-medium">{t.shared.reasoning_trace.complete}</span>
             <span className="text-foreground ml-2">
               {(entry.durationMs / 1000).toFixed(1)}s
               {entry.cost != null && ` \u00B7 $${entry.cost.toFixed(4)}`}
@@ -121,7 +123,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-red-400 shrink-0">{"\u2717"}</span>
           <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium text-red-400">Error</span>
+            <span className="font-medium text-red-400">{t.shared.reasoning_trace.error}</span>
             <span className="text-red-400 ml-2">{entry.message}</span>
           </div>
           <span className="typo-caption text-foreground shrink-0">{ts}</span>

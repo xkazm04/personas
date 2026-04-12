@@ -2,8 +2,10 @@ import { Puzzle, FileSignature, ScanLine, Palette, Brain, BookOpen, Wrench } fro
 import { useSystemStore } from "@/stores/systemStore";
 import type { DevToolsTab } from '@/lib/types/types';
 import { devToolsItems, researchLabItems } from '../sidebarData';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function PluginsSidebarNav() {
+  const { t } = useTranslation();
   const pluginTab = useSystemStore((s) => s.pluginTab);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
@@ -94,7 +96,7 @@ export function PluginsSidebarNav() {
                 </div>
                 {activeProject && (
                   <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
-                    <p className="text-[10px] uppercase tracking-wider text-foreground/90 font-medium mb-0.5">Active Project</p>
+                    <p className="text-[10px] uppercase tracking-wider text-foreground/90 font-medium mb-0.5">{t.shared.sidebar_extra.active_project}</p>
                     <p className="typo-caption text-foreground truncate">{activeProject.name}</p>
                     {activeProject.root_path && (
                       <p className="text-[10px] text-foreground/90 truncate mt-0.5">{activeProject.root_path}</p>

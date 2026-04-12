@@ -3,6 +3,7 @@ import { User, FileText, Lightbulb } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { SectionEditor } from './SectionEditor';
 import { DesignContextViewer } from './DesignContextViewer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DraftIdentityTabProps {
   draft: N8nPersonaDraft;
@@ -19,6 +20,7 @@ const SUBTABS: { id: IdentitySubtab; label: string; Icon: React.ComponentType<{ 
 ];
 
 export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentityTabProps) {
+  const { t } = useTranslation();
   const [subtab, setSubtab] = useState<IdentitySubtab>('overview');
 
   return (
@@ -49,7 +51,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         {subtab === 'overview' && (
           <div className="space-y-4 h-full overflow-y-auto pr-1">
             <div>
-              <label className="block typo-heading text-foreground/80 mb-1.5">Name</label>
+              <label className="block typo-heading text-foreground/80 mb-1.5">{t.shared.draft_editor.name_label}</label>
               <input
                 type="text"
                 value={draft.name ?? ''}
@@ -61,13 +63,13 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                   }
                 }}
                 disabled={disabled}
-                placeholder="Give your persona a name..."
+                placeholder={t.shared.draft_editor.name_input_placeholder}
                 className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
               />
             </div>
 
             <div>
-              <label className="block typo-heading text-foreground/80 mb-1.5">Description</label>
+              <label className="block typo-heading text-foreground/80 mb-1.5">{t.shared.draft_editor.description_label}</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) =>
@@ -78,7 +80,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 }
                 disabled={disabled}
                 rows={6}
-                placeholder="A brief description of what this persona does..."
+                placeholder={t.shared.draft_editor.description_input_placeholder}
                 className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all resize-y"
               />
             </div>
@@ -90,7 +92,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             value={draft.system_prompt}
             onChange={(v) => updateDraft((curr) => ({ ...curr, system_prompt: v }))}
             label="System Prompt"
-            placeholder="The core instructions for this persona..."
+            placeholder={t.shared.draft_editor.system_prompt_placeholder}
             disabled={disabled}
           />
         )}

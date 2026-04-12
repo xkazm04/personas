@@ -1,6 +1,7 @@
 import { Loader2, Settings2, SkipForward } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConfigureStepProps {
   questions: TransformQuestionResponse[] | null;
@@ -20,6 +21,7 @@ export function ConfigureStep({
   onSkip,
   loadingText = 'Analyzing requirements...',
 }: ConfigureStepProps) {
+  const { t } = useTranslation();
   if (questionGenerating) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -44,7 +46,7 @@ export function ConfigureStep({
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <Settings2 className="w-8 h-8 text-foreground" />
         <p className="typo-body text-foreground">No configuration questions needed.</p>
-        <p className="typo-body text-foreground">Click next to proceed with the transform.</p>
+        <p className="typo-body text-foreground">{t.shared.draft_editor.click_next}</p>
       </div>
     );
   }
@@ -53,7 +55,7 @@ export function ConfigureStep({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="typo-heading text-foreground">Configure Transform</p>
+          <p className="typo-heading text-foreground">{t.shared.draft_editor.configure_transform}</p>
           <p className="typo-body text-foreground mt-0.5">
             Answer these questions to customize the persona generation.
           </p>
@@ -88,7 +90,7 @@ export function ConfigureStep({
                 value={userAnswers[q.id] ?? q.default ?? ''}
                 onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
               >
-                <option value="">Select...</option>
+                <option value="">{t.shared.draft_editor.select}</option>
                 {q.options.map((opt) => (
                   <option key={opt} value={opt}>
                     {opt}

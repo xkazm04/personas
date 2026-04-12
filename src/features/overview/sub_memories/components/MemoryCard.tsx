@@ -4,6 +4,7 @@ import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Importance colors (Tailwind palette values, centralized for theme consistency) --
 const IMPORTANCE_COLORS = {
@@ -57,6 +58,7 @@ export function MemoryRow({
 }: {
   memory: PersonaMemory; personaName: string; onDelete: () => void; onSelect: () => void; index?: number;
 }) {
+  const { t } = useTranslation();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,8 +76,8 @@ export function MemoryRow({
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
         <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
-          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
-          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
+          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
+          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
         </div>
       ) : (
         <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">

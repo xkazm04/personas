@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface ThemedSelectOption {
   value: string;
@@ -67,6 +68,7 @@ function FilterableSelect({
   wrapperClassName = '',
   className = '',
 }: Pick<ThemedSelectProps, 'options' | 'value' | 'onValueChange' | 'placeholder' | 'wrapperClassName' | 'className'>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -173,7 +175,7 @@ function FilterableSelect({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Filter..."
+              placeholder={t.shared.forms_extra.filter_placeholder}
               className="w-full bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none"
             />
           </div>

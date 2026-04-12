@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Radio } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   stats: RealtimeStats;
@@ -24,6 +25,7 @@ const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: s
 });
 
 export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
       <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
@@ -36,7 +38,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-3" title="Events per minute">
+        <div className="flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.events_per_min}>
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 shadow-elevation-1 flex items-center justify-center">
             <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
           </div>
@@ -48,7 +50,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
 
         <div className="w-px h-6 md:h-8 bg-primary/10" />
 
-        <div className="flex items-center gap-1.5 md:gap-3" title="Pending">
+        <div className="flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.pending}>
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 shadow-elevation-1 flex items-center justify-center">
             <Clock className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
           </div>
@@ -60,7 +62,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
 
         <div className="w-px h-6 md:h-8 bg-primary/10" />
 
-        <div className="flex items-center gap-1.5 md:gap-3" title="Success rate">
+        <div className="flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.success}>
           <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg border shadow-elevation-1 flex items-center justify-center bg-gradient-to-br ${stats.successRate >= 90 ? 'from-emerald-500/10 to-transparent border-emerald-500/20' : 'from-red-500/10 to-transparent border-red-500/20'}`}>
             <CheckCircle2 className={`w-3 h-3 md:w-4 md:h-4 ${stats.successRate >= 90 ? 'text-emerald-400' : 'text-red-400'}`} />
           </div>
@@ -72,7 +74,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
 
         <div className="w-px h-6 md:h-8 bg-primary/10 hidden sm:block" />
 
-        <div className="hidden sm:flex items-center gap-1.5 md:gap-3" title="Total in window">
+        <div className="hidden sm:flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.in_window}>
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 shadow-elevation-1 flex items-center justify-center">
             <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
           </div>

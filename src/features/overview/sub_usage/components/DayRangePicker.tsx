@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, forwardRef } from 'react';
 import { Calendar } from 'lucide-react';
 import type { OverviewDayRange, CustomDateRange } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type DayRange = OverviewDayRange;
 
@@ -78,6 +79,7 @@ interface DateRangePopoverProps {
 
 const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
   function DateRangePopover({ value, onChange }, ref) {
+    const { t } = useTranslation();
     const today = new Date().toISOString().slice(0, 10);
     const [startDate, setStartDate] = useState(value?.[0] ?? '');
     const [endDate, setEndDate] = useState(value?.[1] ?? today);
@@ -102,7 +104,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
           </div>
           {isValid && <p className="text-sm text-muted-foreground/60">{dayCount} day{dayCount !== 1 ? 's' : ''} selected</p>}
           <div className="flex items-center gap-2">
-            <button onClick={handleApply} disabled={!isValid} title={!isValid ? 'Select a valid date range to apply' : undefined} className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Apply</button>
+            <button onClick={handleApply} disabled={!isValid} title={!isValid ? 'Select a valid date range to apply' : undefined} className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{t.overview.day_range.apply}</button>
             {value && <button onClick={() => onChange(null)} className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">Clear</button>}
           </div>
         </div>

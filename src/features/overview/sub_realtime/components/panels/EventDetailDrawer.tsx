@@ -4,6 +4,7 @@ import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   event: RealtimeEvent;
@@ -28,6 +29,7 @@ function formatPayload(payload: string | null): string {
 }
 
 export default function EventDetailDrawer({ event, onClose }: Props) {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const statusInfo = STATUS_ICONS[event.status] ?? STATUS_ICONS.pending!;
   const StatusIcon = statusInfo.icon;
@@ -58,7 +60,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
           </div>
           <span className="text-sm text-muted-foreground/80">{formatRelativeTime(event.created_at)}</span>
         </div>
-        <button onClick={onClose} title="Close event details" className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground/95 transition-colors">
+        <button onClick={onClose} title={t.overview.realtime_page.close_event_details} className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground/95 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>

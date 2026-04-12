@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { createLogger } from "@/lib/log";
+import { en } from '@/i18n/en';
 
 const logger = createLogger("chart-error-boundary");
 
@@ -40,7 +41,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
       return (
         <div className="flex flex-col items-center justify-center h-full w-full gap-2 py-6">
           <BarChart3 className="w-5 h-5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Chart unavailable</span>
+          <span className="text-xs text-muted-foreground">{en.overview.chart_error.chart_unavailable}</span>
           <button
             onClick={this.handleRetry}
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border border-primary/15 text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"

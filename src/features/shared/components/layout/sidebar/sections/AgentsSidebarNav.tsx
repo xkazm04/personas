@@ -8,6 +8,7 @@ import type { CloudTab } from '@/lib/types/types';
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
 import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { cloudItems } from '../sidebarData';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const HEALTH_DOT: Record<string, string> = {
   healthy: 'bg-emerald-400',
@@ -28,6 +29,7 @@ export function HealthDot({ grade }: { grade: string | undefined }) {
 }
 
 export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
+  const { t } = useTranslation();
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const personas = useAgentStore((s) => s.personas);
   const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
@@ -109,7 +111,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
       {/* Header */}
       <div className="px-3 py-3 border-b border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="typo-label text-foreground/90">Agents</span>
+          <span className="typo-label text-foreground/90">{t.shared.sidebar_extra.agents}</span>
           <button
             onClick={onCreatePersona}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
@@ -202,8 +204,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
                       className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                      title="Remove from favorites"
-                      aria-label="Remove from favorites"
+                      title={t.shared.sidebar_extra.remove_favorites}
+                      aria-label={t.shared.sidebar_extra.remove_favorites}
                     >
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" aria-hidden="true" />
                     </span>
@@ -263,8 +265,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
                         className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                        title="Add to favorites"
-                        aria-label="Add to favorites"
+                        title={t.shared.sidebar_extra.add_favorites}
+                        aria-label={t.shared.sidebar_extra.add_favorites}
                       >
                         <Star className="w-3 h-3 text-foreground/90" aria-hidden="true" />
                       </span>

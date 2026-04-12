@@ -7,6 +7,7 @@ import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/li
 
 import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- HighlightedJson --------------------------------------------------
 
@@ -60,20 +61,21 @@ interface EventDetailContentProps {
 }
 
 export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: EventDetailContentProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4 h-full min-h-0">
       <div className="grid grid-cols-2 gap-3 flex-shrink-0">
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">Event ID</span>
+          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.event_id}</span>
           <span className="text-sm"><UuidLabel value={event.id} /></span>
         </div>
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">Project</span>
+          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.project}</span>
           <span className="text-sm"><UuidLabel value={event.project_id} /></span>
         </div>
         {event.source_id && (
           <div>
-            <span className="text-sm text-foreground/70 font-medium block mb-0.5">Source</span>
+            <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.source}</span>
             <span className="text-sm">
               <UuidLabel value={event.source_id} label={event.source_type || undefined} />
             </span>
@@ -81,7 +83,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
         )}
         {event.processed_at && (
           <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
-            <span className="text-sm font-mono text-foreground/70 font-medium">Processed</span>
+            <span className="text-sm font-mono text-foreground/70 font-medium">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 text-sm text-foreground">
               {new Date(event.processed_at).toLocaleString()}
             </span>
@@ -92,7 +94,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.payload && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center justify-between mb-1 flex-shrink-0">
-            <span className="text-sm text-foreground/70 font-medium">Event Data</span>
+            <span className="text-sm text-foreground/70 font-medium">{t.overview.event_log_item.event_data}</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
@@ -103,12 +105,12 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                 }).catch(() => { /* intentional */ });
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
-              title="Copy event data"
+              title={t.overview.event_log_item.copy_event_data}
             >
               {copiedPayload ? (
-                <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">{t.overview.event_log_item.copied}</span></>
               ) : (
-                <><Copy className="w-3 h-3" />Copy</>
+                <><Copy className="w-3 h-3" />{t.overview.event_log_item.copy}</>
               )}
             </button>
           </div>
@@ -120,7 +122,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
 
       {event.error_message && (
         <div>
-          <span className="text-sm text-red-400 block mb-1">Error</span>
+          <span className="text-sm text-red-400 block mb-1">{t.overview.event_log_item.error}</span>
           <pre className="bg-red-500/5 p-2 rounded-lg text-red-400 text-sm whitespace-pre-wrap">
             {event.error_message}
           </pre>

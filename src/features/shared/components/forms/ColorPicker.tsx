@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const COLOR_PRESETS = [
   '#8b5cf6', // violet
@@ -25,6 +26,7 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) {
+  const { t } = useTranslation();
   const s = SIZE_STYLES[size];
 
   return (
@@ -70,7 +72,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
             type="button"
             onClick={() => onChange('#8b5cf6')}
             className="p-1.5 rounded-lg border border-dashed border-primary/20 text-foreground hover:text-foreground hover:border-primary/30 transition-all"
-            title="Reset to default"
+            title={t.shared.forms_extra.reset_to_default}
           >
             <X className="w-3.5 h-3.5" />
           </button>

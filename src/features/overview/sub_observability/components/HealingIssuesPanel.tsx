@@ -8,6 +8,7 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
@@ -48,6 +49,7 @@ export function HealingIssuesPanel({
   viewMode, setViewMode, timelineEvents, timelineLoading,
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
+  const { t } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
@@ -89,7 +91,7 @@ export function HealingIssuesPanel({
           <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">Health Issues</h3>
+          <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.healing_issues_panel.title}</h3>
           {healingIssues.length > 0 && (
             <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
@@ -123,12 +125,12 @@ export function HealingIssuesPanel({
             {healingRunning ? (
               <>
                 <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-                Analyzing...
+                {t.overview.healing_issues_panel.analyzing}
               </>
             ) : (
               <>
                 <Stethoscope className="w-4 h-4" />
-                Run Analysis
+                {t.overview.healing_issues_panel.run_analysis}
               </>
             )}
           </button>
@@ -212,8 +214,8 @@ export function HealingIssuesPanel({
             <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="typo-heading text-foreground/80">No open issues</p>
-            <p className="typo-body text-muted-foreground mt-1">Run analysis to check for problems.</p>
+            <p className="typo-heading text-foreground/80">{t.overview.healing_issues_panel.no_open_issues}</p>
+            <p className="typo-body text-muted-foreground mt-1">{t.overview.healing_issues_panel.run_analysis_hint}</p>
           </div>
         </div>
       ) : (
@@ -232,7 +234,7 @@ export function HealingIssuesPanel({
         >
           {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />}
           <FileWarning className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="typo-body typo-heading text-muted-foreground/90">Healing Audit Log</span>
+          <span className="typo-body typo-heading text-muted-foreground/90">{t.overview.healing_issues_panel.healing_audit_log}</span>
           {auditEntries.length > 0 && auditExpanded && (
             <span className="px-1.5 py-0.5 typo-caption rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
               {auditEntries.length}
@@ -247,7 +249,7 @@ export function HealingIssuesPanel({
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
               </div>
             ) : auditEntries.length === 0 ? (
-              <p className="typo-body text-muted-foreground/70 py-3 text-center">No silent failures recorded.</p>
+              <p className="typo-body text-muted-foreground/70 py-3 text-center">{t.overview.healing_issues_panel.no_silent_failures}</p>
             ) : (
               <div className="space-y-1">
                 {auditEntries.map((entry) => (

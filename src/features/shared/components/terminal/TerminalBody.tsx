@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, ChevronRight, Clock, Wifi, AlertCircle } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalLineStyle } from '@/lib/utils/terminalColors';
+import { useTranslation } from '@/i18n/useTranslation';
 /** Terminal empty state describing the current execution context. */
 export type TerminalEmptyState =
   | 'idle'
@@ -50,6 +51,7 @@ export function TerminalBody({
   enableUnseenCounter = false,
   emptyState = 'idle',
 }: TerminalBodyProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
   const lastSeenLineCount = useRef(0);
@@ -138,7 +140,7 @@ export function TerminalBody({
               <div className="flex flex-col items-center gap-2">
                 <div className="flex items-center gap-1.5 text-muted-foreground/60">
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-400/60" />
-                  <span className="typo-body">Press Enter or click Play to start</span>
+                  <span className="typo-body">{t.shared.terminal_extra.press_enter}</span>
                   <span className="inline-block w-[2px] h-4 bg-emerald-400/70 animate-[blink-caret_1s_step-end_infinite]" />
                 </div>
               </div>
@@ -163,7 +165,7 @@ export function TerminalBody({
             {emptyState === 'failed' && (
               <div className="flex flex-col items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-400/60" />
-                <span className="typo-body text-red-400/60">Connection failed -- check provider settings and retry</span>
+                <span className="typo-body text-red-400/60">{t.shared.terminal_extra.connection_failed}</span>
               </div>
             )}
           </div>

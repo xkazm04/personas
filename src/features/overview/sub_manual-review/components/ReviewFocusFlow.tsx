@@ -29,6 +29,7 @@ import {
 } from './reviewFocusHelpers';
 import { FocusedDecisionCard } from './FocusedDecisionCard';
 import { ActionZone } from './ActionZone';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Severity badge (local — only used in this view)
@@ -60,6 +61,7 @@ interface ReviewFocusFlowProps {
 // ---------------------------------------------------------------------------
 
 export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: ReviewFocusFlowProps) {
+  const { t } = useTranslation();
   const pending = useMemo(() => reviews.filter((r) => r.status === 'pending'), [reviews]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewDir, setReviewDir] = useState(0);
@@ -235,8 +237,8 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
         <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
           <Check className="w-8 h-8 text-emerald-400" />
         </div>
-        <p className="text-lg font-medium text-foreground">All caught up</p>
-        <p className="text-sm text-foreground/60">No pending reviews to process.</p>
+        <p className="text-lg font-medium text-foreground">{t.overview.review_focus.all_caught_up}</p>
+        <p className="text-sm text-foreground/60">{t.overview.review_focus.no_pending}</p>
       </div>
     );
   }
@@ -248,7 +250,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[220px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Queue ({pending.length})</span>
+          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
@@ -362,7 +364,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                             <button
                               onClick={() => setDecisionVerdicts({})}
                               className="text-xs text-foreground/50 hover:text-foreground/80 transition-colors"
-                              title="Clear all verdicts"
+                              title={t.overview.review_focus.clear_all_verdicts}
                             >
                               Clear
                             </button>
@@ -458,7 +460,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1.5 text-sm text-foreground/40">
                           <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="font-medium">Quick Actions</span>
+                          <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
                         {suggestedActions.map((action, i) => (
                           <button
@@ -491,7 +493,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                         setActionNotes('');
                       }}
                       icon={<X className="w-5 h-5" />}
-                      label={hasMultipleDecisions ? 'Reject all' : 'Reject'}
+                      label={hasMultipleDecisions ? t.overview.review_focus.reject_all : t.overview.review.reject}
                       colorClasses="text-red-400 hover:bg-red-500/10"
                       activeClasses="bg-red-500/10"
                       notes={actionNotes}
@@ -504,7 +506,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                       active={activeAction === 'retry'}
                       onClick={() => { setActiveAction(activeAction === 'retry' ? null : 'retry'); setActionNotes(''); }}
                       icon={<RotateCcw className="w-5 h-5" />}
-                      label="Retry with changes"
+                      label={t.overview.review_focus.retry_with_changes}
                       colorClasses="text-amber-400 hover:bg-amber-500/10"
                       activeClasses="bg-amber-500/10"
                       notes={actionNotes}
@@ -522,7 +524,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                         setActionNotes('');
                       }}
                       icon={<Check className="w-5 h-5" />}
-                      label={hasMultipleDecisions ? 'Accept all' : 'Approve'}
+                      label={hasMultipleDecisions ? t.overview.review_focus.accept_all : t.overview.review.approve}
                       colorClasses="text-emerald-400 hover:bg-emerald-500/10"
                       activeClasses="bg-emerald-500/10"
                       notes={actionNotes}

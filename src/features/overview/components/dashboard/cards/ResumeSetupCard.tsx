@@ -2,8 +2,10 @@ import { RotateCcw, ArrowRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useShallow } from 'zustand/react/shallow';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function ResumeSetupCard() {
+  const { t } = useTranslation();
   const {
     tourActive,
     tourCompleted,
@@ -41,7 +43,7 @@ export default function ResumeSetupCard() {
           <RotateCcw className="w-5 h-5 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-foreground/90">Resume Tour</h3>
+          <h3 className="typo-heading text-foreground/90">{t.overview.resume_setup_card.resume_tour}</h3>
           <p className="typo-body text-muted-foreground/70">
             You left off at <span className="text-violet-400 font-medium">{currentStepLabel}</span>
             {completedCount > 0 && (
@@ -53,7 +55,7 @@ export default function ResumeSetupCard() {
           <button
             onClick={handleDismiss}
             className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/50 hover:text-foreground/70"
-            title="Skip tour entirely"
+            title={t.overview.resume_setup_card.skip_tour}
           >
             <X className="w-4 h-4" />
           </button>
@@ -61,7 +63,7 @@ export default function ResumeSetupCard() {
             onClick={handleResume}
             className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
           >
-            Continue
+            {t.overview.resume_setup_card.continue_label}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

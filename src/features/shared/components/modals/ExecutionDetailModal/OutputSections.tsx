@@ -1,6 +1,7 @@
 import { MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ParsedOutput } from './outputParser';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMessage']> }) {
   return (
@@ -48,6 +49,7 @@ export function FlowSteps({ flow }: { flow: NonNullable<ParsedOutput['executionF
 }
 
 export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2.5">
       {reviews.map((r, i) => (
@@ -69,7 +71,7 @@ export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] })
           )}
           {Array.isArray(r.suggested_actions) && r.suggested_actions.length > 0 && (
             <div className="space-y-1 pt-1">
-              <span className="text-sm font-semibold text-foreground uppercase tracking-wider">Suggested Actions</span>
+              <span className="text-sm font-semibold text-foreground uppercase tracking-wider">{t.shared.execution_detail.suggested_actions}</span>
               {(r.suggested_actions as string[]).map((a, j) => (
                 <div key={j} className="flex items-start gap-2 text-sm text-foreground">
                   <span className="text-primary/40 mt-0.5">&#8226;</span><span>{a}</span>
@@ -126,11 +128,12 @@ export function EventsList({ events }: { events: Record<string, unknown>[] }) {
 }
 
 export function KnowledgeSection({ annotation }: { annotation: Record<string, unknown> }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3.5 space-y-2">
       <div className="flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-emerald-400" />
-        <span className="text-sm font-semibold text-foreground/85">Knowledge Insight</span>
+        <span className="text-sm font-semibold text-foreground/85">{t.shared.execution_detail.knowledge_insight}</span>
         {typeof annotation.confidence === 'number' && (
           <span className="text-sm text-foreground ml-auto">{Math.round(annotation.confidence * 100)}% confidence</span>
         )}
@@ -146,13 +149,14 @@ export function KnowledgeSection({ annotation }: { annotation: Record<string, un
 }
 
 export function OutcomeSection({ data }: { data: Record<string, unknown> }) {
+  const { t } = useTranslation();
   const oa = data.outcome_assessment as Record<string, unknown> | undefined;
   if (!oa) return null;
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2.5">
         <Target className="w-4 h-4 text-primary/60" />
-        <span className="text-sm font-semibold text-foreground/85">Outcome Assessment</span>
+        <span className="text-sm font-semibold text-foreground/85">{t.shared.execution_detail.outcome_assessment}</span>
         <span className={`text-sm px-1.5 py-0.5 rounded-full font-semibold uppercase ${
           oa.accomplished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>{oa.accomplished ? 'Accomplished' : 'Not Accomplished'}</span>
@@ -160,7 +164,7 @@ export function OutcomeSection({ data }: { data: Record<string, unknown> }) {
       {typeof oa.summary === 'string' && <p className="text-sm text-foreground leading-relaxed">{oa.summary}</p>}
       {Array.isArray(oa.blockers) && oa.blockers.length > 0 && (
         <div className="space-y-1">
-          <span className="text-sm font-semibold text-foreground uppercase tracking-wider">Blockers</span>
+          <span className="text-sm font-semibold text-foreground uppercase tracking-wider">{t.shared.execution_detail.blockers}</span>
           {(oa.blockers as string[]).map((b, i) => (
             <div key={i} className="flex items-start gap-2 text-sm text-red-400/80">
               <span className="mt-0.5">&#8226;</span><span>{b}</span>

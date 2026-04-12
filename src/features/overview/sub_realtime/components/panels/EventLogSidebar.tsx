@@ -4,6 +4,7 @@ import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_LABELS, clampLabel } from '../../libs/visualizationHelpers';
 import { useAgentStore } from "@/stores/agentStore";
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   events: RealtimeEvent[];
@@ -47,6 +48,7 @@ function tryParsePayload(raw: string | null | undefined): string | null {
 }
 
 export default function EventLogSidebar({ events, onSelectEvent }: Props) {
+  const { t } = useTranslation();
   const allPersonas = useAgentStore(s => s.personas);
   const [logSearch, setLogSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
   return (
     <div className="w-[340px] border-l border-primary/10 flex flex-col bg-background/50 backdrop-blur-sm">
       <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-2">
-        <span className="text-sm font-mono font-medium text-muted-foreground/80">Event Log</span>
+        <span className="text-sm font-mono font-medium text-muted-foreground/80">{t.overview.event_log_sidebar.title}</span>
         <span className="text-xs font-mono text-muted-foreground/40 ml-auto">{filteredLog.length} entries</span>
       </div>
 
@@ -118,7 +120,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
       <div ref={logRef} onScroll={handleLogScroll} className="flex-1 overflow-y-auto">
         {filteredLog.length === 0 && (
           <div className="px-3 py-8 text-center">
-            <span className="text-xs text-muted-foreground/40 font-mono">No events yet</span>
+            <span className="text-xs text-muted-foreground/40 font-mono">{t.overview.event_log_sidebar.no_events}</span>
           </div>
         )}
         {filteredLog.map(entry => {
@@ -205,7 +207,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                           onClick={e => { e.stopPropagation(); const evt = events.find(ev => ev.id === entry.id); if (evt) onSelectEvent(evt); }}
                           className="text-[10px] font-mono text-cyan-400/60 hover:text-cyan-400/90 transition-colors"
                         >
-                          Open in detail drawer &rarr;
+                          {t.overview.event_log_sidebar.open_detail_drawer} &rarr;
                         </button>
                       </div>
                     </div>

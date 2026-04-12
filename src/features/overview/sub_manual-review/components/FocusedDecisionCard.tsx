@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle, Image as ImageIcon, Video } from 'lucide-react';
 import { type DecisionItem, type DecisionVerdict, catBorder, isVideoUrl } from './reviewFocusHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface FocusedDecisionCardProps {
   decision: DecisionItem;
@@ -66,10 +67,11 @@ function DecisionMeta({ category, mediaType }: { category?: string; mediaType?: 
 }
 
 function MediaPanel({ url, alt }: { url: string; alt: string }) {
+  const { t } = useTranslation();
   const handleMediaError = (e: React.SyntheticEvent<HTMLElement>) => {
     const el = e.target as HTMLElement;
     el.style.display = 'none';
-    const fallback = `<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><span class="text-sm">Media unavailable</span></div>`;
+    const fallback = `<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><span class="text-sm">${t.overview.focused_decision.media_unavailable}</span></div>`;
     if (el.parentElement) el.parentElement.innerHTML = fallback;
   };
 
@@ -87,6 +89,7 @@ function MediaPanel({ url, alt }: { url: string; alt: string }) {
 }
 
 function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdict; onToggle: (v: DecisionVerdict) => void; layout: 'full' | 'compact' }) {
+  const { t } = useTranslation();
   const wrapperClass = layout === 'full'
     ? 'flex items-center gap-2 mt-4 pt-3 border-t border-primary/10'
     : 'flex items-center gap-1.5 flex-shrink-0 pt-1';
@@ -105,7 +108,7 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
         }`}
       >
         <CheckCircle2 className="w-4 h-4" />
-        Accept
+        {t.overview.focused_decision.accept}
       </button>
       <button
         onClick={() => onToggle('reject')}
@@ -115,7 +118,7 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
         }`}
       >
         <XCircle className="w-4 h-4" />
-        Reject
+        {t.overview.focused_decision.reject}
       </button>
     </div>
   );

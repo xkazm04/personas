@@ -7,6 +7,7 @@ import { sanitizeIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PopupIconSelectorProps {
   value: string;
@@ -16,6 +17,7 @@ interface PopupIconSelectorProps {
 }
 
 export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm' }: PopupIconSelectorProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -44,7 +46,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
             ? 'border-primary/40 ring-2 ring-primary/20 bg-primary/8'
             : 'border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40'
         }`}
-        title="Choose icon"
+        title={t.shared.forms_extra.choose_icon}
       >
         {value ? (
           isAgent ? (

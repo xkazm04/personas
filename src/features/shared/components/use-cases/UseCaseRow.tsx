@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Play, Clock, Info, Settings2, Cpu, Bell } from 'lucide-react';
 import type { UseCaseItem } from './UseCasesList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
@@ -44,6 +45,7 @@ export function UseCaseRow({
   configExpanded,
   configContent,
 }: UseCaseRowProps) {
+  const { t } = useTranslation();
   const mode = useCase.execution_mode ?? 'e2e';
   const modeBadge = (MODE_BADGE[mode] ?? MODE_BADGE.e2e)!;
   const catStyle = useCase.category ? CATEGORY_STYLES[useCase.category] : null;
@@ -136,7 +138,7 @@ export function UseCaseRow({
                   ? 'bg-primary/10 border-primary/20 text-primary/80'
                   : 'bg-secondary/40 border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:border-primary/25'
               }`}
-              title="Toggle execution history"
+              title={t.shared.use_cases_extra.toggle_history}
             >
               <Clock className="w-3.5 h-3.5" />
             </button>
@@ -152,7 +154,7 @@ export function UseCaseRow({
                       ? 'bg-secondary/40 border-primary/15 text-violet-400/60 hover:text-violet-400 hover:border-violet-500/25'
                       : 'bg-secondary/40 border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:border-primary/25'
                 }`}
-                title="Configure model, notifications & subscriptions"
+                title={t.shared.use_cases_extra.configure_model}
               >
                 <Settings2 className="w-3.5 h-3.5" />
               </button>

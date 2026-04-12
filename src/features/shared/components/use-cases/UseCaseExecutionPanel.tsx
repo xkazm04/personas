@@ -7,6 +7,7 @@ import type { UseCaseItem } from './UseCasesList';
 import { StructuredField } from './StructuredField';
 import { MockModePanel } from './MockModePanel';
 import { useUseCaseExecution } from './useUseCaseExecution';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   e2e:  { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
@@ -21,6 +22,7 @@ interface UseCaseExecutionPanelProps {
 }
 
 export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecutionFinished }: UseCaseExecutionPanelProps) {
+  const { t } = useTranslation();
   const exec = useUseCaseExecution(personaId, useCase, onExecutionFinished);
   const modeBadge = (MODE_BADGE[exec.mode] ?? MODE_BADGE.e2e)!;
 
@@ -67,7 +69,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           </div>
         ) : (
           <>
-            <p className="typo-label text-muted-foreground/60">Input Data</p>
+            <p className="typo-label text-muted-foreground/60">{t.shared.use_cases_extra.input_data}</p>
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}

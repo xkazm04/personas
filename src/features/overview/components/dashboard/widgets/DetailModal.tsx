@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DetailModalProps {
   title: string;
@@ -11,6 +12,7 @@ interface DetailModalProps {
 }
 
 export default function DetailModal({ title, subtitle, onClose, actions, children }: DetailModalProps) {
+  const { t } = useTranslation();
   return (
     <BaseModal
       isOpen
@@ -36,7 +38,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
         <button
           onClick={onClose}
           className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/90 transition-colors focus-ring"
-          aria-label="Close"
+          aria-label={t.overview.detail_modal.close}
         >
           <X className="w-4 h-4" />
         </button>

@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingTimelineProps {
   events: HealingTimelineEvent[];
@@ -177,6 +178,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
 }
 
 function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (events.length === 0) return null;
@@ -192,12 +194,12 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
           : <ChevronRight className="w-3.5 h-3.5 text-blue-400/70 flex-shrink-0" />
         }
         <BookOpen className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-        <span className="typo-heading text-blue-300">Knowledge Base</span>
+        <span className="typo-heading text-blue-300">{t.overview.healing_timeline.knowledge_base}</span>
         <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/15 text-blue-400 ml-1">
           {events.length}
         </span>
         <span className="text-xs text-blue-400/50 ml-auto">
-          Patterns influencing healing decisions
+          {t.overview.healing_timeline.patterns_hint}
         </span>
       </button>
       {expanded && (
@@ -224,6 +226,7 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
 }
 
 export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimelineProps) {
+  const { t } = useTranslation();
   const { chains, knowledgeEvents } = useMemo(() => {
     const knowledgeEvents = events.filter(e => e.eventType === 'knowledge');
     const issueEvents = events.filter(e => e.eventType !== 'knowledge');
@@ -270,7 +273,7 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
     return (
       <div className="flex items-center justify-center py-10">
         <LoadingSpinner size="lg" className="text-cyan-400" />
-        <span className="ml-2 text-sm text-muted-foreground">Loading timeline...</span>
+        <span className="ml-2 text-sm text-muted-foreground">{t.overview.healing_timeline.loading}</span>
       </div>
     );
   }
@@ -282,8 +285,8 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
           <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
             <CheckCircle className="w-6 h-6 text-emerald-400" />
           </div>
-          <p className="typo-heading text-foreground/80">No healing events</p>
-          <p className="text-sm text-muted-foreground mt-1">Run analysis to build the resilience timeline.</p>
+          <p className="typo-heading text-foreground/80">{t.overview.healing_timeline.no_events}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.overview.healing_timeline.no_events_hint}</p>
         </div>
       </div>
     );

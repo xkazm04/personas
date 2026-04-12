@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EstimatedProgressBarProps {
   isRunning: boolean;
@@ -32,6 +33,7 @@ export function EstimatedProgressBar({
   estimatedSeconds = 30,
   className,
 }: EstimatedProgressBarProps) {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(0);
@@ -114,10 +116,10 @@ export function EstimatedProgressBar({
           <span>~{remaining}s remaining</span>
         )}
         {isOvertime && (
-          <span className="text-amber-500/80">Taking longer than expected</span>
+          <span className="text-amber-500/80">{t.shared.progress_extra.taking_longer}</span>
         )}
         {isDone && (
-          <span>Complete</span>
+          <span>{t.shared.progress_extra.complete}</span>
         )}
       </div>
     </div>

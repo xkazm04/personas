@@ -1,5 +1,6 @@
 import { AlertTriangle, Zap, ArrowRight, Shield, TrendingDown, DollarSign } from 'lucide-react';
 import type { PersonaHealthSignal, RoutingRecommendation } from '@/stores/slices/overview/personaHealthSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PredictiveAlertsProps {
   signals: PersonaHealthSignal[];
@@ -39,6 +40,7 @@ const SEVERITY_STYLES = {
 };
 
 function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[] {
+  const { t } = useTranslation();
   const alerts: PredictiveAlert[] = [];
 
   for (const s of signals) {
@@ -49,7 +51,7 @@ function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[
         severity: s.projectedExhaustionDays <= 2 ? 'critical' : 'warning',
         icon: DollarSign,
         title: s.projectedExhaustionDays === 0
-          ? 'Budget Exhausted'
+          ? t.overview.predictive_alerts_extra.budget_exhausted
           : `Budget exhaustion in ${s.projectedExhaustionDays}d`,
         description: `Daily burn rate: $${s.dailyBurnRate.toFixed(2)}/day. Projected monthly: $${s.projectedMonthlyCost.toFixed(2)}.`,
         personaName: s.personaName,
@@ -78,7 +80,7 @@ function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[
         id: `healing-${s.personaId}`,
         severity: 'warning',
         icon: AlertTriangle,
-        title: 'Excessive self-healing activity',
+        title: t.overview.predictive_alerts_extra.excessive_healing,
         description: `${s.healingFrequency.toFixed(1)} healing events/day suggests systemic instability. ${s.rollbackCount} circuit-breaker triggers.`,
         personaName: s.personaName,
         personaIcon: s.personaIcon,
@@ -92,7 +94,7 @@ function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[
         id: `critical-${s.personaId}`,
         severity: 'critical',
         icon: Zap,
-        title: 'Critical health status',
+        title: t.overview.predictive_alerts_extra.critical_health,
         description: `Heartbeat score: ${s.heartbeatScore}/100. Multiple health signals degraded.`,
         personaName: s.personaName,
         personaIcon: s.personaIcon,
@@ -109,6 +111,7 @@ function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[
 }
 
 export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsProps) {
+  const { t } = useTranslation();
   const alerts = buildPredictiveAlerts(signals);
 
   if (alerts.length === 0 && recommendations.length === 0) {
@@ -119,13 +122,13 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
             <Shield className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <h3 className="typo-heading text-foreground/90">Predictive Alerts</h3>
-            <p className="text-xs text-muted-foreground/70">All systems nominal</p>
+            <h3 className="typo-heading text-foreground/90">{t.overview.predictive_alerts_extra.title}</h3>
+            <p className="text-xs text-muted-foreground/70">{t.overview.predictive_alerts_extra.all_nominal}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-4 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
           <Shield className="w-5 h-5 text-emerald-400" />
-          <p className="text-sm text-emerald-400/80">No predictive alerts -- all personas within healthy parameters.</p>
+          <p className="text-sm text-emerald-400/80">{t.overview.predictive_alerts_extra.no_alerts}</p>
         </div>
       </div>
     );
@@ -179,7 +182,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
         <div className="pt-3 border-t border-primary/10">
           <div className="flex items-center gap-1.5 mb-2">
             <Zap className="w-3.5 h-3.5 text-violet-400" />
-            <span className="typo-caption text-foreground/80">BYOM Routing Recommendations</span>
+            <span className="typo-caption text-foreground/80">{t.overview.predictive_alerts_extra.byom_recommendations}</span>
           </div>
           <div className="space-y-2">
             {recommendations.map((rec) => (

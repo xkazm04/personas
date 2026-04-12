@@ -6,6 +6,7 @@ import type { AnomalyDrilldownData } from '@/lib/bindings/AnomalyDrilldownData';
 import type { CorrelatedEvent } from '@/lib/bindings/CorrelatedEvent';
 import type { RootCauseSuggestion } from '@/lib/bindings/RootCauseSuggestion';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AnomalyDrilldownPanelProps {
   anomaly: MetricAnomaly;
@@ -116,6 +117,7 @@ const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: 
 });
 
 export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, onClose }: AnomalyDrilldownPanelProps) {
+  const { t } = useTranslation();
   const metricLabel = METRIC_LABELS[anomaly.metric] ?? anomaly.metric;
   const deviationPct = anomaly.deviation_pct.toFixed(0);
 
@@ -141,7 +143,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             </div>
             <div>
               <h2 id="anomaly-drilldown-title" className="text-base font-semibold text-foreground/90">
-                Anomaly Drill-Down
+                {t.overview.anomaly_drilldown_extra.title}
               </h2>
               <p className="text-xs text-muted-foreground/70">
                 {metricLabel} spike on {new Date(anomaly.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -156,12 +158,12 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
         {/* Anomaly summary bar */}
         <div className="mt-3 flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground/60">Value:</span>
+            <span className="text-muted-foreground/60">{t.overview.anomaly_drilldown_extra.value_label}</span>
             <span className="font-medium text-red-400">{anomaly.value.toFixed(2)}</span>
           </div>
           <ArrowRight className="w-3 h-3 text-muted-foreground/40" />
           <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground/60">Baseline:</span>
+            <span className="text-muted-foreground/60">{t.overview.anomaly_drilldown_extra.baseline_label}</span>
             <span className="font-medium text-muted-foreground">{anomaly.baseline.toFixed(2)}</span>
           </div>
           <div className="ml-auto px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
@@ -175,7 +177,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
         {loading && (
           <div className="flex items-center justify-center py-12">
             <LoadingSpinner size="md" />
-            <span className="ml-3 text-sm text-muted-foreground/70">Correlating events...</span>
+            <span className="ml-3 text-sm text-muted-foreground/70">{t.overview.anomaly_drilldown_extra.correlating}</span>
           </div>
         )}
 
@@ -192,7 +194,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             {data.rootCauseSuggestions.length > 0 && (
               <section>
                 <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-                  Likely Root Causes
+                  {t.overview.anomaly_drilldown_extra.likely_root_causes}
                 </h3>
                 <div className="space-y-2">
                   {data.rootCauseSuggestions.map((s) => (
@@ -209,7 +211,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
               </h3>
               {sortedEvents.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground/60">
-                  No correlated events found in the ±24h window.
+                  {t.overview.anomaly_drilldown_extra.no_correlated}
                 </div>
               ) : (
                 <div className="space-y-0.5 relative">

@@ -12,6 +12,7 @@ import { ExecutionMemories } from '@/features/agents/sub_executions/detail/views
 import { ExecutionLogViewer } from '@/features/agents/sub_executions/detail/views/ExecutionLogViewer';
 import { parseOutputData, type OutputSection } from './outputParser';
 import { UserMessageCard, FlowSteps, ReviewsList, MemoriesList, EventsList, KnowledgeSection, OutcomeSection } from './OutputSections';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   execution: PersonaExecution;
@@ -20,12 +21,13 @@ interface Props {
 }
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
   };
   return (
-    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors" title="Copy">
+    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors" title={t.shared.execution_detail.copy}>
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       {label && <span>{copied ? 'Copied' : label}</span>}
     </button>

@@ -4,6 +4,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { DraftPromptTab } from './DraftPromptTab';
 import { DraftSettingsTab } from './DraftSettingsTab';
 import { DraftJsonTab } from './DraftJsonTab';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface DraftEditTab {
   id: string;
@@ -63,6 +64,7 @@ export function DraftEditStep({
   hideAdjustmentPanel = false,
   showNotifications,
 }: DraftEditStepProps) {
+  const { t } = useTranslation();
   const defaultTab = earlyTabs.length > 0 ? earlyTabs[0]!.id : 'prompt';
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
@@ -98,7 +100,7 @@ export function DraftEditStep({
                 updateDraft((curr) => ({ ...curr, name: trimmed || null }));
               }
             }}
-            placeholder="Persona name..."
+            placeholder={t.shared.draft_editor.persona_name_placeholder}
             disabled={disabled}
             className="w-full typo-heading text-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
           />
@@ -106,7 +108,7 @@ export function DraftEditStep({
             type="text"
             value={draft.description ?? ''}
             onChange={(e) => updateDraft((curr) => ({ ...curr, description: e.target.value.trim() ? e.target.value : null }))}
-            placeholder="Brief description..."
+            placeholder={t.shared.draft_editor.description_placeholder}
             disabled={disabled}
             className="w-full typo-body text-muted-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
           />
@@ -195,7 +197,7 @@ export function DraftEditStep({
             <textarea
               value={adjustmentRequest}
               onChange={(e) => onAdjustmentChange(e.target.value)}
-              placeholder="Example: Make error handling stricter, add retry logic..."
+              placeholder={t.shared.draft_editor.refine_placeholder}
               className="flex-1 h-16 p-2.5 rounded-xl border border-primary/15 bg-background/40 typo-body text-foreground/75 resize-none placeholder-muted-foreground/30"
               disabled={disabled || transforming}
             />

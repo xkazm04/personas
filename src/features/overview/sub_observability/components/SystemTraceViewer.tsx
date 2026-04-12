@@ -7,8 +7,10 @@ import type { SystemTrace } from '@/lib/execution/systemTrace';
 import type { SystemOperationType } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function TraceCard({ trace }: { trace: SystemTrace }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
 
@@ -97,7 +99,7 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
             <div className="border-t border-primary/10">
               {/* Time axis */}
               <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 px-2 py-1 bg-secondary/40">
-                <div className="typo-code text-muted-foreground/50 uppercase tracking-wider">Span</div>
+                <div className="typo-code text-muted-foreground/50 uppercase tracking-wider">{t.overview.system_trace_extra.span}</div>
                 <div className="flex justify-between typo-code text-muted-foreground/50 uppercase tracking-wider">
                   <span>0ms</span>
                   <span>{formatDuration(totalMs)}</span>
@@ -183,6 +185,7 @@ function SpanRowCompact({
 }
 
 export default function SystemTraceViewer() {
+  const { t } = useTranslation();
   const { traces, activeCount, errorCount, clear } = useSystemTraces();
   const [filter, setFilter] = useState<SystemOperationType | 'all'>('all');
 
@@ -202,9 +205,9 @@ export default function SystemTraceViewer() {
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <p className="typo-body text-muted-foreground/80">No system traces recorded</p>
+        <p className="typo-body text-muted-foreground/80">{t.overview.system_trace_extra.no_traces}</p>
         <p className="typo-body text-muted-foreground/60 mt-1">
-          Traces appear when design, credential, or template operations run
+          {t.overview.system_trace_extra.no_traces_hint}
         </p>
       </div>
     );
@@ -236,7 +239,7 @@ export default function SystemTraceViewer() {
             onChange={(e) => setFilter(e.target.value as SystemOperationType | 'all')}
             className="typo-code bg-secondary/60 border border-primary/20 rounded px-2 py-1 text-foreground/80"
           >
-            <option value="all">All operations</option>
+            <option value="all">{t.overview.system_trace_extra.all_operations}</option>
             {operationTypes.map((type) => (
               <option key={type} value={type}>
                 {SYSTEM_OPERATION_CONFIG[type as SystemOperationType]?.label ?? type}
@@ -247,7 +250,7 @@ export default function SystemTraceViewer() {
           <button
             onClick={clear}
             className="p-1.5 rounded hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
-            title="Clear completed traces"
+            title={t.overview.system_trace_extra.clear_completed}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

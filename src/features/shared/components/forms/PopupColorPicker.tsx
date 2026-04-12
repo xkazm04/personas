@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Palette } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PopupColorPickerProps {
   value: string;
@@ -10,6 +11,7 @@ interface PopupColorPickerProps {
 }
 
 export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPickerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -33,7 +35,7 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
         }`}
-        title="Choose color"
+        title={t.shared.forms_extra.choose_color}
       >
         {value ? (
           <div

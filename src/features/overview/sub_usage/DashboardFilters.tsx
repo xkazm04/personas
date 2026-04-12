@@ -113,6 +113,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 // ---------------------------------------------------------------------------
 
 import { forwardRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DateRangePopoverProps {
   value: CustomDateRange | null;
@@ -121,6 +122,7 @@ interface DateRangePopoverProps {
 
 const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
   function DateRangePopover({ value, onChange }, ref) {
+    const { t } = useTranslation();
     const today = new Date().toISOString().slice(0, 10);
     const [startDate, setStartDate] = useState(value?.[0] ?? '');
     const [endDate, setEndDate] = useState(value?.[1] ?? today);
@@ -144,7 +146,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">Start Date</label>
+            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.start_date}</label>
             <input
               type="date"
               value={startDate}
@@ -154,7 +156,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             />
           </div>
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">End Date</label>
+            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.end_date}</label>
             <input
               type="date"
               value={endDate}
@@ -232,13 +234,14 @@ interface PersonaSelectProps {
 }
 
 export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps) {
+  const { t } = useTranslation();
   return (
     <ThemedSelect
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="py-1.5"
     >
-      <option value="">All Personas</option>
+      <option value="">{t.overview.filters.all_personas}</option>
       {personas.map((p) => (
         <option key={p.id} value={p.id}>
           {p.icon ? `${p.icon} ` : ''}{p.name}

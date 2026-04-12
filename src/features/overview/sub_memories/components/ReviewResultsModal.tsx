@@ -1,6 +1,7 @@
 import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { MemoryReviewResult } from '@/api/overview/memories';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReviewResultsModalProps {
   reviewResult: MemoryReviewResult | null;
@@ -9,6 +10,7 @@ interface ReviewResultsModalProps {
 }
 
 export default function ReviewResultsModal({ reviewResult, reviewError, onClose }: ReviewResultsModalProps) {
+  const { t } = useTranslation();
   if (!reviewResult && !reviewError) return null;
 
   return (
@@ -18,7 +20,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
           <div className="flex-1 min-w-0 pr-4">
             <h3 id="review-results-title" className="typo-heading text-foreground/90 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              AI Memory Review
+              {t.overview.review_results.title}
             </h3>
             {reviewResult && (
               <p className="text-sm text-muted-foreground/80 mt-1">
@@ -37,7 +39,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
             <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="typo-heading text-red-300">Review failed</p>
+                <p className="typo-heading text-red-300">{t.overview.review_results.review_failed}</p>
                 <p className="text-sm text-red-400/70 mt-1">{reviewError}</p>
               </div>
             </div>

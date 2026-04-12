@@ -4,6 +4,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { listExecutionsForUseCase } from '@/api/agents/executions';
 import { formatRelativeTime, formatDuration } from '@/lib/utils/formatters';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("use-case-history");
 
@@ -24,6 +25,7 @@ interface UseCaseHistoryProps {
 }
 
 export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: UseCaseHistoryProps) {
+  const { t } = useTranslation();
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                     onRerun(exec.input_data!);
                   }}
                   className="p-1 rounded hover:bg-primary/10 text-muted-foreground/40 hover:text-primary/70 transition-colors flex-shrink-0"
-                  title="Re-run with this input"
+                  title={t.shared.use_cases_extra.rerun_input}
                 >
                   <RotateCw className="w-3 h-3" />
                 </button>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import type { TerminalLineStyle } from '@/lib/utils/terminalColors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TerminalFilter {
   keyword: string;
@@ -43,6 +44,7 @@ export function useTerminalFilter() {
 }
 
 export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const isFiltering = filter.keyword !== '' || filter.activeTypes.size < ALL_TYPES.size;
 
@@ -78,7 +80,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
         type="text"
         value={filter.keyword}
         onChange={(e) => onChange({ ...filter, keyword: e.target.value })}
-        placeholder="Search output..."
+        placeholder={t.shared.terminal_extra.search_output}
         autoFocus
         className="flex-1 min-w-0 bg-transparent text-sm text-foreground/80 placeholder-muted-foreground/30 outline-none font-mono"
       />

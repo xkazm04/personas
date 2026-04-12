@@ -6,6 +6,7 @@ import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES, COLOR_MAP, formatDuration, formatCost } from '../libs/knowledgeHelpers';
 import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import { ConfidenceArc } from '@/features/shared/components/display/ConfidenceArc';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const cardVariants = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } };
 const cardTransition = { type: 'spring' as const, stiffness: 400, damping: 30, mass: 0.8 };
@@ -29,6 +30,7 @@ function isPrimitive(value: unknown): boolean {
 }
 
 function NestedObjectCard({ label, data }: { label: string; data: Record<string, unknown> }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-lg p-3">
@@ -36,7 +38,7 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
         type="button"
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 w-full text-left"
-        title={open ? 'Collapse details' : 'Expand details'}
+        title={open ? t.overview.knowledge_row.collapse_details : t.overview.knowledge_row.expand_details}
         aria-expanded={open}
       >
         <motion.div
@@ -162,6 +164,7 @@ interface KnowledgeRowProps {
 }
 
 export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const config = KNOWLEDGE_TYPES[entry.knowledge_type];
   const total = entry.success_count + entry.failure_count;
@@ -237,17 +240,17 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
             <>
               <button
                 onClick={handleVerify}
-                aria-label="Verify annotation"
+                aria-label={t.overview.knowledge_row.verify_annotation}
                 className="p-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                title="Verify annotation"
+                title={t.overview.knowledge_row.verify_annotation}
               >
                 <CheckCircle className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleDismiss}
-                aria-label="Dismiss annotation"
+                aria-label={t.overview.knowledge_row.dismiss_annotation}
                 className="p-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
-                title="Dismiss annotation"
+                title={t.overview.knowledge_row.dismiss_annotation}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -283,7 +286,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
                 >
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-1">Annotation</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-1">{t.overview.knowledge_row.annotation}</div>
                   <p className="text-sm text-foreground/80 bg-secondary/20 rounded-lg p-2">{entry.annotation_text}</p>
                 </motion.div>
               )}
@@ -294,24 +297,24 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                 variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
               >
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">Successes</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{t.overview.knowledge_row.successes}</div>
                   <div className="text-sm font-semibold text-emerald-400">{entry.success_count}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">Failures</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{t.overview.knowledge_row.failures}</div>
                   <div className="text-sm font-semibold text-red-400">{entry.failure_count}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">Avg Cost</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{t.overview.knowledge_row.avg_cost}</div>
                   <div className="text-sm font-semibold text-foreground/80">{formatCost(entry.avg_cost_usd)}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">Avg Duration</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{t.overview.knowledge_row.avg_duration}</div>
                   <div className="text-sm font-semibold text-foreground/80">{formatDuration(entry.avg_duration_ms)}</div>
                 </motion.div>
                 {Object.keys(patternData).length > 0 && (
                   <motion.div className="col-span-full" variants={cardVariants} transition={cardTransition}>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-2">Pattern Data</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-2">{t.overview.knowledge_row.pattern_data}</div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {Object.entries(patternData).map(([key, value]) => (
                         <PatternValueCard key={key} label={formatLabel(key)} value={value} />

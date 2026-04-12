@@ -11,6 +11,7 @@ import {
 } from '@/lib/ipcMetrics';
 import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function useIpcSnapshot() {
   const generation = useSyncExternalStore(subscribeIpcMetrics, getIpcTotalCount);
@@ -82,6 +83,7 @@ function SlowestCallRow({ record }: { record: IpcCallRecord }) {
 type Tab = 'commands' | 'slowest';
 
 export default function IpcPerformancePanel() {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>('commands');
   const { stats, slowest, summary } = useIpcSnapshot();
@@ -103,7 +105,7 @@ export default function IpcPerformancePanel() {
             <Gauge className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-left">
-            <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">IPC Performance</h3>
+            <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.ipc_panel.title}</h3>
             <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/70">
               <span>{summary.totalCalls.toLocaleString()} calls</span>
               <span className="text-primary/15">|</span>
@@ -126,21 +128,21 @@ export default function IpcPerformancePanel() {
         <div className="border-t border-primary/10">
           <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/5">
             <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'commands' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
-              <Gauge className="w-3 h-3" /> By Command
+              <Gauge className="w-3 h-3" /> {t.overview.ipc_panel.by_command}
             </button>
             <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'slowest' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
-              <Timer className="w-3 h-3" /> Slowest Calls
+              <Timer className="w-3 h-3" /> {t.overview.ipc_panel.slowest_calls}
             </button>
           </div>
 
           {tab === 'commands' && (
             <div role="table" aria-label="IPC command performance">
               <div role="row" className="grid grid-cols-[1fr_60px_60px_60px_52px] gap-2 px-3 py-1.5 text-sm text-muted-foreground/50 border-b border-primary/5">
-                <span role="columnheader">Command</span>
+                <span role="columnheader">{t.overview.ipc_panel.command}</span>
                 <span role="columnheader" className="text-right">p50</span>
                 <span role="columnheader" className="text-right">p95</span>
                 <span role="columnheader" className="text-right">p99</span>
-                <span role="columnheader" className="text-right">Calls</span>
+                <span role="columnheader" className="text-right">{t.overview.ipc_panel.calls_header}</span>
               </div>
               <div role="rowgroup" className="max-h-[300px] overflow-y-auto divide-y divide-primary/[0.03]">
                 {stats.map(stat => <CommandRow key={stat.command} stat={stat} maxP95={maxP95} />)}
@@ -151,9 +153,9 @@ export default function IpcPerformancePanel() {
           {tab === 'slowest' && (
             <div role="table" aria-label="Slowest IPC calls">
               <div role="row" className="flex items-center gap-3 px-3 py-1.5 text-sm text-muted-foreground/50 border-b border-primary/5">
-                <span role="columnheader" className="min-w-[60px] text-right">Duration</span>
+                <span role="columnheader" className="min-w-[60px] text-right">{t.overview.ipc_panel.duration_header}</span>
                 <span role="columnheader" className="flex-1">Command</span>
-                <span role="columnheader" className="min-w-[50px] text-right">When</span>
+                <span role="columnheader" className="min-w-[50px] text-right">{t.overview.ipc_panel.when_header}</span>
               </div>
               <div role="rowgroup" className="max-h-[300px] overflow-y-auto divide-y divide-primary/[0.03]">
                 {slowest.map((record, i) => <SlowestCallRow key={`${record.command}-${record.timestamp}-${i}`} record={record} />)}

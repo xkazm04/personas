@@ -6,6 +6,7 @@ import {
 import type { TimeRange, PlaybackSpeed, TimelineReplayState } from '@/hooks/realtime/useTimelineReplay';
 import { SPEEDS, formatDate } from './timelinePlayerHelpers';
 import { EventDensityMarkers } from './EventDensityMarkers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props extends TimelineReplayState {
   onEnterReplay: (range: TimeRange) => Promise<void>;
@@ -31,6 +32,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
   onSeek,
   onExitReplay,
 }: Props) {
+  const { t } = useTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
   const fraction = totalMs > 0 ? cursorMs / totalMs : 0;
   const percent = Math.round(fraction * 100);
@@ -103,7 +105,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         className="relative h-1.5 w-full cursor-pointer group"
         role="slider"
         tabIndex={0}
-        aria-label="Timeline position"
+        aria-label={t.overview.realtime_page.reset_to_start}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
@@ -139,9 +141,9 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <button
           onClick={() => onSeek(0)}
-          aria-label="Reset timeline"
+          aria-label={t.overview.realtime_page.reset_to_start}
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
-          title="Reset to start"
+          title={t.overview.realtime_page.reset_to_start}
         >
           <SkipBack className="w-3.5 h-3.5" />
         </button>
@@ -150,9 +152,9 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <button
           onClick={cycleSpeed}
-          aria-label="Cycle playback speed"
+          aria-label={t.overview.realtime_page.cycle_speed}
           className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]"
-          title="Cycle playback speed"
+          title={t.overview.realtime_page.cycle_speed}
         >
           <Gauge className="w-3 h-3" />
           <span aria-live="polite">{speed}x</span>
@@ -183,9 +185,9 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <button
           onClick={onExitReplay}
-          aria-label="Exit replay"
+          aria-label={t.overview.realtime_page.exit_replay}
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]"
-          title="Exit replay"
+          title={t.overview.realtime_page.exit_replay}
         >
           <X className="w-3.5 h-3.5" />
         </button>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformPhaseInfo } from './transformProgressTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TransformStatusPanelsProps {
   phase: CliRunPhase;
@@ -28,6 +29,7 @@ export function TransformStatusPanels({
   onCancel,
   errorMessage,
 }: TransformStatusPanelsProps) {
+  const { t } = useTranslation();
   const PhaseIcon = transformPhase?.Icon ?? Sparkles;
 
   if (phase === 'running') {
@@ -38,7 +40,7 @@ export function TransformStatusPanels({
             className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400/70" />
-            <span className="typo-body text-amber-400/80">Resuming previous transformation session...</span>
+            <span className="typo-body text-amber-400/80">{t.shared.progress_extra.resuming}</span>
           </div>
         )}
 
@@ -78,7 +80,7 @@ export function TransformStatusPanels({
             <button
               onClick={onCancel}
               className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
-              title="Cancel transformation"
+              title={t.shared.progress_extra.cancel_transformation}
             >
               <XCircle className="w-3.5 h-3.5" />
               Cancel
@@ -98,7 +100,7 @@ export function TransformStatusPanels({
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
         <div>
-          <p className="typo-heading text-emerald-400">Draft generated successfully</p>
+          <p className="typo-heading text-emerald-400">{t.shared.progress_extra.draft_generated}</p>
           <p className="typo-body text-foreground mt-0.5">
             Your persona draft is ready for review and editing.
           </p>
@@ -114,7 +116,7 @@ export function TransformStatusPanels({
           <AlertCircle className="w-6 h-6 text-red-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="typo-heading text-red-400">Transformation failed</p>
+          <p className="typo-heading text-red-400">{t.shared.progress_extra.transformation_failed}</p>
           <p className="typo-body text-red-400/60 mt-0.5">
             {errorMessage || 'Check the output below for details.'}
           </p>
@@ -139,7 +141,7 @@ export function TransformStatusPanels({
         <Sparkles className="w-6 h-6 text-foreground" />
       </div>
       <div>
-        <p className="typo-body text-foreground">Waiting to start transformation...</p>
+        <p className="typo-body text-foreground">{t.shared.progress_extra.waiting_to_start}</p>
         <p className="typo-body text-foreground mt-0.5">
           Click "Generate Persona Draft" to begin.
         </p>

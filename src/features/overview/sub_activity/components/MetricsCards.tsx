@@ -2,6 +2,7 @@ import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Summary Card -----------------------------------------------------
 
@@ -52,6 +53,7 @@ interface AnomalyBadgeProps {
 }
 
 export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10">
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
@@ -64,7 +66,7 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
         </p>
         {anomaly.execution_ids.length > 0 && (
           <div className="flex items-center gap-1 mt-1 flex-wrap">
-            <span className="text-sm text-muted-foreground/60">Top executions:</span>
+            <span className="text-sm text-muted-foreground/60">{t.overview.metrics_cards.top_executions}</span>
             {anomaly.execution_ids.map((id) => (
               <button
                 key={id}

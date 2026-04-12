@@ -8,6 +8,7 @@ import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ImportanceBar } from './MemoryCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function parseTags(tags: string[] | null): string[] {
   if (!tags) return [];
@@ -25,6 +26,7 @@ interface MemoryDetailModalProps {
 export default function MemoryDetailModal({
   memory, personaName, personaColor, onClose, onDelete,
 }: MemoryDetailModalProps) {
+  const { t } = useTranslation();
   const tags = parseTags(memory.tags);
 
   return (
@@ -58,24 +60,24 @@ export default function MemoryDetailModal({
         <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Title</div>
+            <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">{t.overview.memory_detail.title_label}</div>
             <p className="typo-heading text-foreground/90">{stripHtml(memory.title)}</p>
           </div>
 
           {/* Content */}
           <div>
-            <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Content</div>
+            <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">{t.overview.memory_detail.content_label}</div>
             <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{stripHtml(memory.content)}</p>
           </div>
 
           {/* Meta row */}
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Category</div>
+              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">{t.overview.memory_detail.category_label}</div>
               <CategoryChip category={memory.category} />
             </div>
             <div>
-              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Importance</div>
+              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">{t.overview.memory_detail.importance_label}</div>
               <ImportanceBar value={memory.importance} />
             </div>
           </div>
@@ -83,7 +85,7 @@ export default function MemoryDetailModal({
           {/* Tags */}
           {tags.length > 0 && (
             <div>
-              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1.5">Tags</div>
+              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1.5">{t.overview.memory_detail.tags_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Tag className="w-3 h-3 text-muted-foreground/50" />
                 {tags.map((tag) => (
@@ -101,7 +103,7 @@ export default function MemoryDetailModal({
               title={`Execution: ${memory.source_execution_id}`}
             >
               <ExternalLink className="w-3 h-3" />
-              View Source Execution
+              {t.overview.memory_detail.view_source_execution}
             </button>
           )}
         </div>
@@ -112,7 +114,7 @@ export default function MemoryDetailModal({
             onClick={() => { onDelete(); onClose(); }}
             className="px-3 py-1.5 text-xs rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
           >
-            Delete Memory
+            {t.overview.memory_detail.delete_memory}
           </button>
           <button
             onClick={onClose}

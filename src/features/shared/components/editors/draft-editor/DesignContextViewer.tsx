@@ -4,6 +4,7 @@ import { parseDesignContext } from '@/features/shared/components/use-cases/UseCa
 import { UseCasesList } from '@/features/shared/components/use-cases/UseCasesList';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SectionEditor } from './SectionEditor';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignContextViewerProps {
   value: string;
@@ -12,6 +13,7 @@ interface DesignContextViewerProps {
 }
 
 export function DesignContextViewer({ value, onChange, disabled }: DesignContextViewerProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'structured' | 'raw'>('structured');
   const contextData = useMemo(() => parseDesignContext(value), [value]);
   const credentials = useVaultStore((s) => s.credentials);
@@ -27,7 +29,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
         value={value}
         onChange={onChange}
         label="Design Context"
-        placeholder="Additional context about how this persona was designed..."
+        placeholder={t.shared.draft_editor.design_context_placeholder}
         disabled={disabled}
       />
     );
@@ -37,7 +39,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
     <div className="flex flex-col h-full min-h-0">
       {/* Header with label and toggle */}
       <div className="flex items-center justify-between px-1 pb-2 flex-shrink-0">
-        <span className="typo-heading text-foreground/80">Design Context</span>
+        <span className="typo-heading text-foreground/80">{t.shared.draft_editor.design_context}</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
             onClick={() => setMode('structured')}
@@ -71,7 +73,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             value={value}
             onChange={onChange}
             label=""
-            placeholder="Design context JSON..."
+            placeholder={t.shared.draft_editor.design_context_json}
             disabled={disabled}
           />
         ) : (

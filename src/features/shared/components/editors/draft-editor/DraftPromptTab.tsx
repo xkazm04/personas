@@ -7,6 +7,7 @@ import {
   fromEditableStructuredPrompt,
 } from '@/lib/personas/promptMigration';
 import { SectionEditor } from './SectionEditor';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DraftPromptTabProps {
   draft: N8nPersonaDraft;
@@ -26,6 +27,7 @@ const SUBTABS: { id: PromptSubtab; label: string; Icon: React.ComponentType<{ cl
 ];
 
 export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabProps) {
+  const { t } = useTranslation();
   const [subtab, setSubtab] = useState<PromptSubtab>('identity');
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
@@ -88,7 +90,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
           <div className="flex flex-col h-full min-h-0 gap-2">
             {/* Custom section toolbar */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="typo-heading text-foreground/80">Custom Sections</span>
+              <span className="typo-heading text-foreground/80">{t.shared.draft_editor.custom_sections}</span>
               <button
                 onClick={() => {
                   const next = {
@@ -143,7 +145,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                         }}
                         disabled={disabled}
                         className="p-0.5 text-muted-foreground/80 hover:text-red-400 flex-shrink-0"
-                        title="Remove section"
+                        title={t.shared.draft_editor.remove_section}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -158,7 +160,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                       <input
                         type="text"
                         value={editable.customSections[selectedCustomIndex]!.key}
-                        placeholder="key"
+                        placeholder={t.shared.draft_editor.key_placeholder}
                         onChange={(e) => {
                           const nextSections = editable.customSections.map((entry, i) =>
                             i === selectedCustomIndex ? { ...entry, key: e.target.value } : entry,
@@ -171,7 +173,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                       <input
                         type="text"
                         value={editable.customSections[selectedCustomIndex]!.label}
-                        placeholder="label"
+                        placeholder={t.shared.draft_editor.label_placeholder}
                         onChange={(e) => {
                           const nextSections = editable.customSections.map((entry, i) =>
                             i === selectedCustomIndex ? { ...entry, label: e.target.value } : entry,
@@ -192,7 +194,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         label={editable.customSections[selectedCustomIndex]!.label || 'Custom Section'}
-                        placeholder="Section content..."
+                        placeholder={t.shared.draft_editor.content_placeholder}
                         disabled={disabled}
                       />
                     </div>

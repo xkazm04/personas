@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { UseCaseItem } from './UseCasesList';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface MockModePanelProps {
   useCase: UseCaseItem;
@@ -8,6 +9,7 @@ interface MockModePanelProps {
 }
 
 export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="border border-amber-500/20 rounded-xl bg-amber-500/5 overflow-hidden">
       {/* Header */}
@@ -16,7 +18,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
           <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
             {modeBadge.label}
           </span>
-          <span className="typo-body text-amber-400/70">Example output</span>
+          <span className="typo-body text-amber-400/70">{t.shared.use_cases_extra.example_output}</span>
         </div>
         <button
           onClick={onClose}

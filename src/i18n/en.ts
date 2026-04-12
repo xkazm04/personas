@@ -9993,6 +9993,14 @@ export const en = {
     cmd_navigate: "navigate",
     cmd_select: "select",
     cmd_commands: "commands",
+    draft_editor: { persona_name_placeholder: "Persona name...", description_placeholder: "Brief description...", refine_placeholder: "Example: Make error handling stricter, add retry logic...", name_label: "Name", name_input_placeholder: "Give your persona a name...", description_label: "Description", description_input_placeholder: "A brief description of what this persona does...", system_prompt_placeholder: "The core instructions for this persona...", custom_sections: "Custom Sections", remove_section: "Remove section", key_placeholder: "key", label_placeholder: "label", content_placeholder: "Section content...", icon_label: "Icon", color_label: "Color", design_context: "Design Context", design_context_placeholder: "Additional context about how this persona was designed...", design_context_json: "Design context JSON...", click_next: "Click next to proceed with the transform.", configure_transform: "Configure Transform", select: "Select..." },
+    forms_extra: { references: "References", references_placeholder: "Paste URLs, connection strings, API keys, or any reference info (one per line)", remove_file: "Remove file", choose_color: "Choose color", choose_icon: "Choose icon", filter_placeholder: "Filter...", reset_to_default: "Reset to default" },
+    reasoning_trace: { system_init: "System Init", reasoning: "Reasoning", tool_call: "Tool Call: {name}", result: "Result", complete: "Complete", error: "Error" },
+    sidebar_extra: { agents: "Agents", schedules: "Schedules", remove_favorites: "Remove from favorites", add_favorites: "Add to favorites", active_project: "Active Project" },
+    execution_detail: { copy: "Copy", suggested_actions: "Suggested Actions", knowledge_insight: "Knowledge Insight", outcome_assessment: "Outcome Assessment", blockers: "Blockers" },
+    progress_extra: { taking_longer: "Taking longer than expected", complete: "Complete", resuming: "Resuming previous transformation session...", cancel_transformation: "Cancel transformation", draft_generated: "Draft generated successfully", transformation_failed: "Transformation failed", waiting_to_start: "Waiting to start transformation..." },
+    terminal_extra: { press_enter: "Press Enter or click Play to start", connection_failed: "Connection failed -- check provider settings and retry", search_output: "Search output...", dismiss: "Dismiss" },
+    use_cases_extra: { example_output: "Example output", input_data: "Input Data", rerun_input: "Re-run with this input", input_prefix: "Input: ", error_prefix: "Error: ", output_prefix: "Output: ", toggle_history: "Toggle execution history", configure_model: "Configure model, notifications & subscriptions" },
   },
 };
 

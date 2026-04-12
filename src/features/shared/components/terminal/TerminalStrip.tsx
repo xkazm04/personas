@@ -4,6 +4,7 @@ import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
 import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const EngineCapabilityBadge = lazy(() =>
   import('@/features/settings/sub_engine/components/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
@@ -51,6 +52,7 @@ export function TerminalStrip({
   expandedMaxHeight = 'max-h-40',
   operation,
 }: TerminalStripProps) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const logText = lines.join('\n');
 
@@ -105,7 +107,7 @@ export function TerminalStrip({
         {!isRunning && onClear && lines.length > 0 && (
           <Tooltip content="Dismiss">
             <button
-              title="Dismiss"
+              title={t.shared.terminal_extra.dismiss}
               onClick={onClear}
               className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
             >

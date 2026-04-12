@@ -1,11 +1,13 @@
 import { Monitor, ExternalLink, Wifi } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-shell';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * Mobile-only card that links to Claude Code Remote Control (claude.ai/code).
  * Shown on the dashboard to guide users to connect their desktop CLI session.
  */
 export default function RemoteControlCard() {
+  const { t } = useTranslation();
   const handleOpen = async () => {
     try {
       await open('https://claude.ai/code');
@@ -26,7 +28,7 @@ export default function RemoteControlCard() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="typo-heading text-foreground">Connect to Desktop</h3>
+            <h3 className="typo-heading text-foreground">{t.overview.remote_control_card.connect_to_desktop}</h3>
             <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-cyan-400 transition-colors" />
           </div>
           <p className="typo-body text-muted-foreground/70 leading-relaxed">
@@ -34,7 +36,7 @@ export default function RemoteControlCard() {
           </p>
           <div className="flex items-center gap-1.5 mt-2.5 typo-caption text-cyan-400/70">
             <Wifi className="w-3 h-3" />
-            <span>Requires Claude Pro or Max subscription</span>
+            <span>{t.overview.remote_control_card.requires_subscription}</span>
           </div>
         </div>
       </div>

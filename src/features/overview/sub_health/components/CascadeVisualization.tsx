@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { GitBranch, ArrowRight } from 'lucide-react';
 import type { CascadeLink, PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CascadeVisualizationProps {
   links: CascadeLink[];
@@ -22,6 +23,7 @@ const GRADE_RING = {
 } as const;
 
 export function CascadeVisualization({ links, signals }: CascadeVisualizationProps) {
+  const { t } = useTranslation();
   const signalMap = useMemo(
     () => new Map(signals.map(s => [s.personaId, s])),
     [signals],
@@ -71,8 +73,8 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
             <GitBranch className="w-4 h-4 text-violet-400" />
           </div>
           <div>
-            <h3 className="typo-heading text-foreground/90">Chain Cascade Map</h3>
-            <p className="text-xs text-muted-foreground/70">No chains detected -- all personas operating independently</p>
+            <h3 className="typo-heading text-foreground/90">{t.overview.cascade.title}</h3>
+            <p className="text-xs text-muted-foreground/70">{t.overview.cascade.no_chains}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

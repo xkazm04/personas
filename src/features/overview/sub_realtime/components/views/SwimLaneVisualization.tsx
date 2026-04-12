@@ -10,6 +10,7 @@ import {
   iconChar,
 } from '../../libs/visualizationHelpers';
 import EventLogSidebar from '../panels/EventLogSidebar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /*
  * Swim Lane visualization -- horizontal left-to-right flow.
@@ -65,6 +66,7 @@ function distributeVertically(
 }
 
 export default function SwimLaneVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
+  const { t } = useTranslation();
   const uid = useId();
 
   /* ---------- source discovery ---------- */
@@ -249,7 +251,7 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
         {events.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex flex-col items-center gap-2 bg-background/40 backdrop-blur-sm border border-primary/10 rounded-2xl px-6 py-4">
-              <span className="text-sm text-muted-foreground/40 font-mono">Idle</span>
+              <span className="text-sm text-muted-foreground/40 font-mono">{t.overview.realtime_idle.idle}</span>
               <span className="text-xs text-muted-foreground/30">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
             </div>
           </div>

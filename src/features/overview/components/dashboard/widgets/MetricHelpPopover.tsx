@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { HelpCircle, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STORAGE_KEY = 'dashboard-help-dismissed';
 
@@ -63,6 +64,7 @@ function persistDismissed(dismissed: Set<string>) {
 }
 
 export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissedSet());
   const ref = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
               type="button"
               onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
               className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-              aria-label="Dismiss help"
+              aria-label={t.overview.metric_help_popover.dismiss_help}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -116,10 +118,10 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
           <p className="text-xs text-muted-foreground leading-relaxed mb-2">{info.description}</p>
           <div className="text-xs space-y-1.5">
             <p className="text-emerald-400">
-              <span className="font-medium">Healthy:</span> {info.healthyRange}
+              <span className="font-medium">{t.overview.metric_help_popover.healthy}</span> {info.healthyRange}
             </p>
             <p className="text-blue-400">
-              <span className="font-medium">Click:</span> {info.navigatesTo}
+              <span className="font-medium">{t.overview.metric_help_popover.click}</span> {info.navigatesTo}
             </p>
           </div>
           <button
@@ -127,7 +129,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
             onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
             className="mt-2.5 w-full text-xs text-center py-1 rounded-lg bg-primary/5 hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
           >
-            Got it, don't show again
+            {t.overview.metric_help_popover.got_it}
           </button>
         </div>
       )}
