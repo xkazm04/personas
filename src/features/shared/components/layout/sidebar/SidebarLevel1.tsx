@@ -31,22 +31,12 @@ export default function SidebarLevel1({
 }: SidebarLevel1Props) {
   const {
     sidebarSection,
-    n8nTransformActive,
-    templateAdoptActive,
-    rebuildActive,
-    templateTestActive,
-    connectorTestActive,
     contextScanActive,
     contextScanComplete,
     creativeSessionRunning,
   } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
-      n8nTransformActive: s.n8nTransformActive,
-      templateAdoptActive: s.templateAdoptActive,
-      rebuildActive: s.rebuildActive,
-      templateTestActive: s.templateTestActive,
-      connectorTestActive: s.connectorTestActive,
       contextScanActive: s.contextScanActive,
       contextScanComplete: s.contextScanComplete,
       creativeSessionRunning: s.creativeSessionRunning,
@@ -54,9 +44,7 @@ export default function SidebarLevel1({
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
-  const feedbackImprovementComplete = useSystemStore((s) => s.feedbackImprovementComplete);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
-  const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
@@ -101,7 +89,7 @@ export default function SidebarLevel1({
           id: 'build-test',
           priority: 2,
           active: isBuildingOrTesting,
-          label: buildPhase === 'testing' ? 'Testing agent' : 'Building agent',
+          label: buildPhase === 'testing' ? 'Testing agent' : 'Draft in progress',
           variant: 'pulse',
           color: 'bg-violet-500 border-violet-600/50',
           pingColor: 'bg-violet-500/40',
@@ -109,46 +97,14 @@ export default function SidebarLevel1({
         {
           id: 'executing',
           priority: 2,
-          active: isExecuting || isLabRunning,
-          label: isExecuting && isLabRunning ? 'Executing & lab running' : isExecuting ? 'Execution in progress' : 'Lab running',
+          active: isExecuting,
+          label: 'Execution in progress',
           variant: 'pulse',
-          color: 'bg-orange-500 border-orange-600/50',
-          pingColor: 'bg-orange-500/40',
-        },
-        {
-          id: 'lab-connector-test',
-          priority: 3,
-          active: (isLabRunning || connectorTestActive) && !isExecuting,
-          label: connectorTestActive ? 'Connector test active' : 'Lab running',
-          variant: 'pulse',
-          color: 'bg-cyan-500 border-cyan-600/50',
-          pingColor: 'bg-cyan-500/40',
-        },
-        {
-          id: 'feedback-complete',
-          priority: 6,
-          active: feedbackImprovementComplete && !isLabRunning && !isExecuting,
-          label: 'Feedback improvement complete',
-          variant: 'dot',
-          color: 'bg-emerald-500 border border-emerald-600/50 shadow-emerald-500/30',
+          color: 'bg-blue-500 border-blue-600/50',
+          pingColor: 'bg-blue-500/40',
         },
       ],
-      'design-reviews': [
-        {
-          id: 'transform-activity',
-          priority: 4,
-          active: n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive,
-          label: [
-            n8nTransformActive && 'Build',
-            templateAdoptActive && 'Adoption',
-            rebuildActive && 'Rebuild',
-            templateTestActive && 'Template test',
-          ].filter(Boolean).join(', ') + ' active',
-          variant: 'pulse',
-          color: 'bg-amber-500 border-amber-600/50',
-          pingColor: 'bg-amber-500/40',
-        },
-      ],
+      // Templates: no indicators — adoption creates a draft, visible via Agents
       plugins: [
         {
           id: 'creative-session-active',
@@ -181,23 +137,19 @@ export default function SidebarLevel1({
     };
     return map;
   }, [
-    pendingReviewCount, unreadMessageCount, isExecuting, isLabRunning, connectorTestActive,
-    feedbackImprovementComplete, n8nTransformActive, templateAdoptActive,
-    rebuildActive, templateTestActive, contextScanActive, contextScanComplete,
+    pendingReviewCount, unreadMessageCount, isExecuting,
+    isBuildingOrTesting, buildPhase,
+    contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning,
   ]);
 
-  // Activity dots for the Agents (personas) section — shown center-right,
-  // one dot per active process, all visible simultaneously.
+  // Activity dots for Agents: purple per draft, blue per execution
   const agentActivityDots = useMemo((): ActivityDot[] => {
     const dots: ActivityDot[] = [];
-    if (isExecuting) dots.push({ id: 'exec', color: 'bg-orange-500', pingColor: 'bg-orange-500/40', label: 'Execution in progress' });
-    if (isLabRunning) dots.push({ id: 'lab', color: 'bg-cyan-500', pingColor: 'bg-cyan-500/40', label: 'Lab running' });
-    if (isBuildingOrTesting) dots.push({ id: 'build', color: 'bg-violet-500', pingColor: 'bg-violet-500/40', label: buildPhase === 'testing' ? 'Testing agent' : 'Building agent' });
-    if (connectorTestActive) dots.push({ id: 'conn', color: 'bg-teal-500', pingColor: 'bg-teal-500/40', label: 'Connector test active' });
-    if (feedbackImprovementComplete && !isLabRunning && !isExecuting) dots.push({ id: 'feedback', color: 'bg-emerald-500', label: 'Feedback improvement complete' });
+    if (isBuildingOrTesting) dots.push({ id: 'build', color: 'bg-violet-500', pingColor: 'bg-violet-500/40', label: buildPhase === 'testing' ? 'Testing agent' : 'Draft in progress' });
+    if (isExecuting) dots.push({ id: 'exec', color: 'bg-blue-500', pingColor: 'bg-blue-500/40', label: 'Execution in progress' });
     return dots;
-  }, [isExecuting, isLabRunning, isBuildingOrTesting, connectorTestActive, feedbackImprovementComplete, buildPhase]);
+  }, [isExecuting, isBuildingOrTesting, buildPhase]);
 
   return (
     <>
@@ -222,10 +174,6 @@ export default function SidebarLevel1({
                 // Clear context scan complete indicator when navigating to plugins
                 if (section.id === 'plugins' && contextScanComplete) {
                   setContextScanComplete(false);
-                }
-                // Clear feedback improvement complete indicator when navigating to agents
-                if (section.id === 'personas' && feedbackImprovementComplete) {
-                  useSystemStore.getState().setFeedbackImprovementComplete(false);
                 }
                 if (IS_MOBILE) {
                   onMobileDrawerToggle(section.id);

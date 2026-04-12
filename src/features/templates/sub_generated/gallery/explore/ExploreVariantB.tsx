@@ -23,6 +23,7 @@ import { Search, TrendingUp, Download, Zap, MessageSquare, Database, Shield, Bar
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useIsDarkTheme } from '@/stores/themeStore';
 
 interface Props {
   availableCategories: CategoryWithCount[];
@@ -39,27 +40,41 @@ interface UseCaseLane {
   icon: React.ElementType;
   color: string;
   categories: string[];
+  /** Maps to a role illustration for the lane header */
+  illustrationKey: string;
 }
 
 const USE_CASE_LANES: UseCaseLane[] = [
-  { title: 'Monitoring & Alerts', icon: Bell, color: '#f59e0b', categories: ['monitoring', 'alerting', 'observability', 'health-check'] },
-  { title: 'Content & Communication', icon: MessageSquare, color: '#3b82f6', categories: ['content', 'social-media', 'email', 'copywriting', 'communication'] },
-  { title: 'Data Processing', icon: Database, color: '#8b5cf6', categories: ['data-pipeline', 'etl', 'analytics', 'reporting', 'data-processing'] },
-  { title: 'Security & Compliance', icon: Shield, color: '#ef4444', categories: ['security', 'compliance', 'audit', 'vulnerability'] },
-  { title: 'DevOps & Automation', icon: GitBranch, color: '#10b981', categories: ['devops', 'ci-cd', 'deployment', 'infrastructure'] },
-  { title: 'Business Intelligence', icon: BarChart3, color: '#06b6d4', categories: ['bi', 'dashboard', 'kpi', 'forecasting'] },
+  { title: 'Monitoring & Alerts',    icon: Bell,          color: '#f59e0b', categories: ['monitoring', 'alerting', 'observability', 'health-check'], illustrationKey: 'operations' },
+  { title: 'Content & Communication', icon: MessageSquare, color: '#3b82f6', categories: ['content', 'social-media', 'email', 'copywriting', 'communication'], illustrationKey: 'content' },
+  { title: 'Data Processing',        icon: Database,      color: '#8b5cf6', categories: ['data-pipeline', 'etl', 'analytics', 'reporting', 'data-processing'], illustrationKey: 'data' },
+  { title: 'Security & Compliance',  icon: Shield,        color: '#ef4444', categories: ['security', 'compliance', 'audit', 'vulnerability'], illustrationKey: 'operations' },
+  { title: 'DevOps & Automation',    icon: GitBranch,     color: '#10b981', categories: ['devops', 'ci-cd', 'deployment', 'infrastructure'], illustrationKey: 'software' },
+  { title: 'Business Intelligence',  icon: BarChart3,     color: '#06b6d4', categories: ['bi', 'dashboard', 'kpi', 'forecasting'], illustrationKey: 'business' },
 ];
+
+/** Illustration paths keyed by role */
+const LANE_ILLUSTRATIONS: Record<string, { dark: string; light: string }> = {
+  software:   { dark: '/illustrations/explore/software-dark.png',   light: '/illustrations/explore/software-light.png' },
+  operations: { dark: '/illustrations/explore/operations-dark.png', light: '/illustrations/explore/operations-light.png' },
+  business:   { dark: '/illustrations/explore/business-dark.png',   light: '/illustrations/explore/business-light.png' },
+  content:    { dark: '/illustrations/explore/content-dark.png',    light: '/illustrations/explore/content-light.png' },
+  customer:   { dark: '/illustrations/explore/customer-dark.png',   light: '/illustrations/explore/customer-light.png' },
+  data:       { dark: '/illustrations/explore/data-dark.png',       light: '/illustrations/explore/data-light.png' },
+};
 
 function TemplateMiniCard({ template, onClick }: { template: PersonaDesignReview; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-56 p-3.5 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left"
+      className="flex-shrink-0 w-64 p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left group/card"
     >
-      <div className="text-sm font-medium text-foreground/85 truncate">{template.test_case_name}</div>
-      <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1">{template.instruction}</p>
+      <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
+        {template.test_case_name}
+      </div>
+      <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{template.instruction}</p>
       {template.adoption_count > 0 && (
-        <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
+        <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/60">
           <Download className="w-3 h-3" /> {template.adoption_count}
         </div>
       )}
@@ -74,12 +89,14 @@ export function ExploreVariantB({
   onSearchFocus,
 }: Props) {
   const { t } = useTranslation();
+  const isDark = useIsDarkTheme();
+
   // Build lane data: templates per use case lane
   const laneData = useMemo(() => {
     return USE_CASE_LANES.map((lane) => {
       const cats = new Set(lane.categories);
       const templates = allItems
-        .filter((t) => t.category && cats.has(t.category))
+        .filter((item) => item.category && cats.has(item.category))
         .sort((a, b) => b.adoption_count - a.adoption_count)
         .slice(0, 8);
       return { ...lane, templates };
@@ -89,7 +106,7 @@ export function ExploreVariantB({
   // Most adopted across all templates
   const mostAdopted = useMemo(() => {
     return [...allItems]
-      .filter((t) => t.adoption_count > 0)
+      .filter((item) => item.adoption_count > 0)
       .sort((a, b) => b.adoption_count - a.adoption_count)
       .slice(0, 8);
   }, [allItems]);
@@ -115,23 +132,53 @@ export function ExploreVariantB({
         {/* Use case lanes */}
         {laneData.map((lane) => {
           const Icon = lane.icon;
+          const illustration = LANE_ILLUSTRATIONS[lane.illustrationKey];
+          const imgSrc = illustration
+            ? (isDark ? illustration.dark : illustration.light)
+            : undefined;
+
           return (
             <div key={lane.title}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${lane.color}15` }}>
-                  <Icon className="w-4 h-4" style={{ color: lane.color }} />
-                </div>
-                <h3 className="text-sm font-semibold text-foreground/80">{lane.title}</h3>
-                <span className="text-sm text-muted-foreground/40">{(lane.templates.length === 1 ? t.templates.explore.templates_count_one : t.templates.explore.templates_count_other).replace('{count}', String(lane.templates.length))}</span>
-                {lane.categories[0] && (
-                  <button
-                    onClick={() => onSelectCategory(lane.categories[0]!)}
-                    className="ml-auto text-sm text-primary/60 hover:text-primary transition-colors"
-                  >
-                    {t.templates.explore.view_all}
-                  </button>
+              {/* Lane header with illustration accent */}
+              <div className="relative overflow-hidden rounded-xl mb-3">
+                {imgSrc && (
+                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                    <img
+                      src={imgSrc}
+                      alt=""
+                      className="w-full h-full object-cover opacity-15"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40" />
+                  </div>
                 )}
+                <div className="relative flex items-center gap-2.5 px-4 py-3">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center border"
+                    style={{ backgroundColor: `${lane.color}15`, borderColor: `${lane.color}25` }}
+                  >
+                    <Icon className="w-4.5 h-4.5" style={{ color: lane.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground/90">{lane.title}</h3>
+                    <span className="text-xs text-muted-foreground/40">
+                      {(lane.templates.length === 1
+                        ? t.templates.explore.templates_count_one
+                        : t.templates.explore.templates_count_other
+                      ).replace('{count}', String(lane.templates.length))}
+                    </span>
+                  </div>
+                  {lane.categories[0] && (
+                    <button
+                      onClick={() => onSelectCategory(lane.categories[0]!)}
+                      className="text-sm text-primary/60 hover:text-primary transition-colors font-medium"
+                    >
+                      {t.templates.explore.view_all}
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Template cards */}
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {lane.templates.map((tmpl) => (
                   <TemplateMiniCard key={tmpl.id} template={tmpl} onClick={() => onSelectTemplate(tmpl)} />
@@ -154,12 +201,18 @@ export function ExploreVariantB({
                 <button
                   key={tmpl.id}
                   onClick={() => onSelectTemplate(tmpl)}
-                  className="text-left p-3.5 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all"
+                  className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
                 >
-                  <div className="text-sm font-medium text-foreground/85 truncate">{tmpl.test_case_name}</div>
-                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1">{tmpl.instruction}</p>
-                  <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/70 font-medium">
-                    <Download className="w-3 h-3" /> {(tmpl.adoption_count === 1 ? t.templates.explore.adoption_count_one : t.templates.explore.adoption_count_other).replace('{count}', String(tmpl.adoption_count))}
+                  <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
+                    {tmpl.test_case_name}
+                  </div>
+                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{tmpl.instruction}</p>
+                  <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/70 font-medium">
+                    <Download className="w-3 h-3" />
+                    {(tmpl.adoption_count === 1
+                      ? t.templates.explore.adoption_count_one
+                      : t.templates.explore.adoption_count_other
+                    ).replace('{count}', String(tmpl.adoption_count))}
                   </div>
                 </button>
               ))}

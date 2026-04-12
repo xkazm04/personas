@@ -8,7 +8,7 @@
     "content",
     "marketing"
   ],
-  "is_published": false,
+  "is_published": true,
   "service_flow": [
     "TTS API",
     "Video Composition API",

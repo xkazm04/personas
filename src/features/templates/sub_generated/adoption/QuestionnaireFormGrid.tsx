@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Send, Check, X, Sparkles,
   KeyRound, Settings2, ShieldCheck, Brain, Bell, Globe, Gauge,
-  Info, CircleDot,
+  Info, CircleDot, AlertCircle, Plus,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
@@ -18,6 +18,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface QuestionnaireFormGridProps {
   questions: TransformQuestionResponse[];
   userAnswers: Record<string, string>;
+  /** Question IDs that were auto-answered from the credential vault. */
+  autoDetectedIds?: Set<string>;
+  /** Question IDs that are blocked because no vault credential exists for the category. */
+  blockedQuestionIds?: Set<string>;
+  /** Called when the user clicks "Add credential" on a blocked question. Passes the vault category. */
+  onAddCredential?: (vaultCategory: string) => void;
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onSubmit: () => void;
   onClose: () => void;
@@ -205,21 +211,28 @@ function QuestionCard({
   answer,
   onAnswer,
   inputRef,
+  isAutoDetected,
+  isBlocked,
+  onAddCredential,
 }: {
   question: TransformQuestionResponse;
   answer: string;
   onAnswer: (v: string) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  isAutoDetected?: boolean;
+  isBlocked?: boolean;
+  onAddCredential?: (vaultCategory: string) => void;
 }) {
+  const { t } = useTranslation();
   const [flash, setFlash] = useState(false);
   const prevAnswer = useRef(answer);
 
   useEffect(() => {
     if (answer && answer !== prevAnswer.current) {
       setFlash(true);
-      const t = setTimeout(() => setFlash(false), 500);
+      const t2 = setTimeout(() => setFlash(false), 500);
       prevAnswer.current = answer;
-      return () => clearTimeout(t);
+      return () => clearTimeout(t2);
     }
     prevAnswer.current = answer;
   }, [answer]);
@@ -229,12 +242,14 @@ function QuestionCard({
   return (
     <div
       className={`relative rounded-lg px-3 py-2.5 transition-colors ${
-        flash ? 'bg-emerald-500/[0.06]' : 'bg-transparent'
+        flash ? 'bg-emerald-500/[0.06]' : isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
       }`}
     >
       {/* Question label + status indicator */}
       <div className="flex items-start gap-2 mb-1.5">
-        {isAnswered ? (
+        {isBlocked ? (
+          <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
+        ) : isAnswered ? (
           <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
         ) : (
           <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
@@ -242,10 +257,16 @@ function QuestionCard({
         <span className="text-sm font-medium text-foreground/90 leading-snug">
           {question.question}
         </span>
+        {isAutoDetected && !isBlocked && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-violet-500/10 border border-violet-500/20 text-violet-400 flex-shrink-0 mt-0.5">
+            <KeyRound className="w-2.5 h-2.5" />
+            {t.templates.adopt_modal.auto_detected}
+          </span>
+        )}
       </div>
 
       {/* Context */}
-      {question.context && (
+      {question.context && !isBlocked && (
         <div className="flex items-start gap-1.5 ml-5.5 mb-2">
           <Info className="w-3 h-3 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
           <span className="text-xs text-muted-foreground/50 leading-relaxed">
@@ -254,7 +275,23 @@ function QuestionCard({
         </div>
       )}
 
-      {/* Input control */}
+      {/* Blocked state: show the "Add credential" call-to-action */}
+      {isBlocked && question.vault_category ? (
+        <div className="ml-5.5 space-y-2">
+          <p className="text-xs text-rose-300/80 leading-relaxed">
+            {t.templates.adopt_modal.credential_required.replace('{category}', question.vault_category)}
+          </p>
+          <button
+            type="button"
+            onClick={() => onAddCredential?.(question.vault_category!)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            {t.templates.adopt_modal.add_credential}
+          </button>
+        </div>
+      ) : (
+      /* Input control */
       <div className="ml-5.5">
         {question.type === 'select' && question.options ? (
           <SelectPills options={question.options} value={answer} onChange={onAnswer} allowCustom={question.allow_custom} />
@@ -291,6 +328,7 @@ function QuestionCard({
           />
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -302,6 +340,9 @@ function QuestionCard({
 export function QuestionnaireFormGrid({
   questions,
   userAnswers,
+  autoDetectedIds,
+  blockedQuestionIds,
+  onAddCredential,
   onAnswerUpdated,
   onSubmit,
   onClose,
@@ -315,7 +356,9 @@ export function QuestionnaireFormGrid({
     [questions, userAnswers],
   );
   const totalCount = questions.length;
+  const blockedCount = blockedQuestionIds?.size ?? 0;
   const allAnswered = answeredCount === totalCount;
+  const canSubmit = allAnswered && blockedCount === 0;
   const remaining = totalCount - answeredCount;
 
   // Auto-focus first unanswered text input on mount
@@ -393,6 +436,9 @@ export function QuestionnaireFormGrid({
                         answer={userAnswers[q.id] ?? ''}
                         onAnswer={(v) => onAnswerUpdated(q.id, v)}
                         inputRef={q.id === firstUnansweredId ? firstInputRef : undefined}
+                        isAutoDetected={autoDetectedIds?.has(q.id)}
+                        isBlocked={blockedQuestionIds?.has(q.id)}
+                        onAddCredential={onAddCredential}
                       />
                     ))}
                   </div>
@@ -412,19 +458,27 @@ export function QuestionnaireFormGrid({
             {t.templates.adopt_modal.cancel}
           </button>
 
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={!allAnswered}
-            className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl transition-all ${
-              allAnswered
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
-                : 'bg-white/[0.06] text-muted-foreground/40 cursor-not-allowed'
-            }`}
-          >
-            <Send className="w-3.5 h-3.5" />
-            {allAnswered ? t.templates.adopt_modal.submit_all : t.templates.adopt_modal.submit_remaining.replace('{remaining}', String(remaining))}
-          </button>
+          <div className="flex items-center gap-3">
+            {blockedCount > 0 && (
+              <span className="text-xs text-rose-300/70 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {t.templates.adopt_modal.blocked_blocking_submit.replace('{count}', String(blockedCount))}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={!canSubmit}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl transition-all ${
+                canSubmit
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
+                  : 'bg-white/[0.06] text-muted-foreground/40 cursor-not-allowed'
+              }`}
+            >
+              <Send className="w-3.5 h-3.5" />
+              {allAnswered ? t.templates.adopt_modal.submit_all : t.templates.adopt_modal.submit_remaining.replace('{remaining}', String(remaining))}
+            </button>
+          </div>
         </div>
       </div>
     </BaseModal>

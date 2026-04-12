@@ -6,7 +6,10 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
  * For questions with `vault_category` + `option_service_types`, checks
  * how many options have a matching credential in the vault:
  * - 1 match  → auto-select that option, mark as auto-detected
- * - 0 or 2+  → leave for the user to answer
+ * - 0 matches → BLOCK the question (user must add a credential via the catalog)
+ * - 2+ matches → leave for the user to answer
+ *
+ * Questions without `vault_category` or `option_service_types` are ignored.
  */
 export function matchVaultToQuestions(
   questions: TransformQuestionResponse[],
@@ -14,9 +17,11 @@ export function matchVaultToQuestions(
 ): {
   autoAnswers: Record<string, string>;
   autoDetectedIds: Set<string>;
+  blockedQuestionIds: Set<string>;
 } {
   const autoAnswers: Record<string, string> = {};
   const autoDetectedIds = new Set<string>();
+  const blockedQuestionIds = new Set<string>();
 
   for (const q of questions) {
     if (!q.vault_category || !q.option_service_types || !q.options) continue;
@@ -24,19 +29,28 @@ export function matchVaultToQuestions(
 
     // Find which options have a matching credential in the vault
     const matchingIndices: number[] = [];
+    let hasNullFallback = false;
     for (let i = 0; i < q.option_service_types.length; i++) {
       const st = q.option_service_types[i];
+      if (st === null) {
+        hasNullFallback = true;
+        continue;
+      }
       if (st && credentialServiceTypes.has(st)) {
         matchingIndices.push(i);
       }
     }
 
-    // Exactly 1 match → auto-select
     if (matchingIndices.length === 1) {
+      // Exactly 1 match → auto-select
       autoAnswers[q.id] = q.options[matchingIndices[0]!]!;
       autoDetectedIds.add(q.id);
+    } else if (matchingIndices.length === 0 && !hasNullFallback) {
+      // No matching credentials and no "Other" fallback → block the question
+      blockedQuestionIds.add(q.id);
     }
+    // 2+ matches → user must choose, no auto-answer
   }
 
-  return { autoAnswers, autoDetectedIds };
+  return { autoAnswers, autoDetectedIds, blockedQuestionIds };
 }

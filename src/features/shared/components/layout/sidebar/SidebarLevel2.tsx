@@ -178,31 +178,14 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         </SidebarSubNav>
       );
 
-    case 'design-reviews': {
-      const { n8nTransformActive: n8nBuildActive, templateAdoptActive } = useSystemStore.getState();
-      const drBadges: Record<string, SubNavBadge> = {};
-      if (templateGalleryTotal > 0) drBadges['generated'] = { count: templateGalleryTotal, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' };
-      const hasActiveProcess = n8nBuildActive || templateAdoptActive;
+    case 'design-reviews':
       return (
-        <>
-          <SidebarSubNav
-            items={filterSimple(templateItems)}
-            activeId={templateTab}
-            onSelect={(id) => setTemplateTab(id as TemplateTab)}
-            badges={Object.keys(drBadges).length > 0 ? drBadges : undefined}
-          />
-          {hasActiveProcess && (
-            <div className={`mx-2 mt-2 flex items-center gap-2 px-3 py-2 rounded-lg ${n8nBuildActive ? 'bg-violet-500/8 border border-violet-500/15' : 'bg-amber-500/8 border border-amber-500/15'}`}>
-              <span className="relative flex h-2.5 w-2.5 shrink-0">
-                <span className={`absolute inset-0 rounded-full animate-ping ${n8nBuildActive ? 'bg-violet-500/40' : 'bg-amber-500/40'}`} />
-                <span className={`relative w-2.5 h-2.5 rounded-full ${n8nBuildActive ? 'bg-violet-500 border border-violet-600/50' : 'bg-amber-500 border border-amber-600/50'}`} />
-              </span>
-              <span className={`text-[11px] truncate ${n8nBuildActive ? 'text-violet-300/80' : 'text-amber-300/80'}`}>{n8nBuildActive ? 'Building persona...' : 'Adopting template...'}</span>
-            </div>
-          )}
-        </>
+        <SidebarSubNav
+          items={filterSimple(templateItems)}
+          activeId={templateTab}
+          onSelect={(id) => setTemplateTab(id as TemplateTab)}
+        />
       );
-    }
 
 
     case 'schedules':

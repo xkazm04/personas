@@ -210,6 +210,11 @@
     "pushbullet": "notifications",
     "onesignal": "notifications",
 
-    "desktop_browser": "cloud"
+    "desktop_browser": "cloud",
+
+    "gcp_cloud": "cloud",
+    "aws_cloud": "cloud",
+    "azure_cloud": "cloud",
+    "cloud_billing": "cloud"
   }
 }

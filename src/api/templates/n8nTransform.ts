@@ -63,6 +63,10 @@ export interface TransformQuestionResponse {
   default?: string;
   context?: string;
   allow_custom?: boolean;
+  /** Credential category to match against the vault (e.g. "cloud", "ai"). */
+  vault_category?: string;
+  /** Parallel array mapping each `options` entry to a credential service_type. null = no mapping. */
+  option_service_types?: (string | null)[];
 }
 
 export interface N8nTransformSnapshot {

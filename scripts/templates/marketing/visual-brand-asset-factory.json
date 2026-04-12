@@ -368,6 +368,23 @@
     ],
     "adoption_questions": [
       {
+        "id": "aq_intent_1",
+        "category": "domain",
+        "question": "What do you want to build?",
+        "type": "select",
+        "options": [
+          "Social media graphics and posts",
+          "Marketing hero images and banners",
+          "Product UI illustrations and backgrounds",
+          "Icon sets and graphic assets",
+          "Brand kit (logos, color swatches, style guide visuals)",
+          "Mixed (various asset types as needed)"
+        ],
+        "default": "Mixed (various asset types as needed)",
+        "context": "Shapes the agent's default generation style, prompt templates, and evaluation criteria for the types of assets you'll create most often.",
+        "dimension": "use-cases"
+      },
+      {
         "id": "aq_domain_1",
         "category": "domain",
         "question": "Which AI image generation service do you want to use?",
@@ -378,6 +395,8 @@
           "Stable Diffusion via StabilityAI (open model, fine-tuning support)",
           "Other (custom image generation endpoint)"
         ],
+        "option_service_types": ["leonardo_ai", "openai", "stability_ai", null],
+        "vault_category": "ai",
         "default": "Leonardo AI (high quality, style control, 150 free/day)",
         "context": "Determines which API generates images. Leonardo offers most style control. DALL-E 3 has best prompt comprehension.",
         "dimension": "connectors"
@@ -393,24 +412,11 @@
           "OpenAI GPT-4 Vision (balanced quality and speed)",
           "Skip auto-evaluation (go straight to human review)"
         ],
+        "option_service_types": ["gemini", "anthropic", "openai", null],
+        "vault_category": "ai",
         "default": "Google Gemini (fast, good visual understanding)",
         "context": "Vision model evaluates generated images against brand guidelines before human review.",
         "dimension": "connectors"
-      },
-      {
-        "id": "aq_domain_3",
-        "category": "domain",
-        "question": "What types of visual assets will you primarily create?",
-        "type": "select",
-        "options": [
-          "Marketing assets (hero images, social cards, banners)",
-          "Product UI (illustrations, backgrounds, decorative elements)",
-          "Icons and graphics (icon sets, diagrams, infographics)",
-          "Mixed (all types)"
-        ],
-        "default": "Mixed (all types)",
-        "context": "Shapes default generation style and evaluation criteria.",
-        "dimension": "use-cases"
       },
       {
         "id": "aq_config_1",

@@ -109,7 +109,7 @@ export function ExploreView({
               >
                 <div className="text-sm font-medium text-foreground/80 truncate">{tmpl.test_case_name}</div>
                 <div className="text-sm text-muted-foreground/80 truncate mt-0.5">
-                  {tmpl.instruction.length > 60 ? tmpl.instruction.slice(0, 60) + '...' : tmpl.instruction}
+                  {(tmpl.instruction ?? '').length > 60 ? (tmpl.instruction ?? '').slice(0, 60) + '...' : (tmpl.instruction ?? '')}
                 </div>
                 {!isSimple && tmpl.adoption_count > 0 && (
                   <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
@@ -141,6 +141,7 @@ export function ExploreView({
             categoryCounts={categoryCounts}
             topTemplates={topTemplatesByGroup.get(group.role) ?? []}
             onSelectCategory={onSelectCategory}
+            onSelectTemplate={onSelectTemplate}
           />
         ))}
       </div>

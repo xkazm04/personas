@@ -1,7 +1,7 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
 export interface AdoptionDraft {
   reviewId: string;
@@ -52,9 +52,12 @@ export interface UiSlice {
   pluginTab: PluginTab;
   devToolsTab: DevToolsTab;
   eventBusTab: EventBusTab;
+  researchLabTab: ResearchLabTab;
   adoptionDraft: AdoptionDraft | null;
   contextScanActive: boolean;
   contextScanComplete: boolean;
+  /** Pending category filter applied when the credentials catalog next mounts. */
+  pendingCatalogCategoryFilter: string | null;
 
   // Canvas <-> Live Stream cross-linking
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
@@ -85,8 +88,10 @@ export interface UiSlice {
   setPluginTab: (tab: PluginTab) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
+  setResearchLabTab: (tab: ResearchLabTab) => void;
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
+  setPendingCatalogCategoryFilter: (category: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
@@ -125,9 +130,11 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   pluginTab: "browse" as PluginTab,
   devToolsTab: "projects" as DevToolsTab,
   eventBusTab: "live-stream" as EventBusTab,
+  researchLabTab: "dashboard" as ResearchLabTab,
   adoptionDraft: null,
   contextScanActive: false,
   contextScanComplete: false,
+  pendingCatalogCategoryFilter: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
@@ -154,12 +161,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
+  setResearchLabTab: (tab) => startTransition(() => set({ researchLabTab: tab })),
   setEventBusTab: (tab) => set({ eventBusTab: tab }),
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
+  setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
-  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain']),
+  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain', 'research-lab']),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);
     if (next.has(plugin)) {

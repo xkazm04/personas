@@ -4,6 +4,7 @@ import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types'
 import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
 import { ROLE_PRESETS, type RolePreset } from './catalogRolePresets';
+import { useSystemStore } from '@/stores/systemStore';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
@@ -12,7 +13,17 @@ function capitalize(s: string) {
 }
 
 export function usePickerFilters(connectors: ConnectorDefinition[], credentials: CredentialMetadata[], searchTerm?: string) {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Consume any pending category filter set by another part of the app (e.g.
+  // the template adoption modal redirecting to the catalog when a credential
+  // is missing). Read once on mount and clear so it doesn't re-apply later.
+  const pendingCategory = useSystemStore.getState().pendingCatalogCategoryFilter;
+  const [activeCategory, setActiveCategory] = useState<string | null>(pendingCategory);
+  useEffect(() => {
+    if (pendingCategory) {
+      useSystemStore.getState().setPendingCatalogCategoryFilter(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);
   const [connectedFilter, setConnectedFilter] = useState<ConnectedFilter>('all');

@@ -100,7 +100,7 @@ export function useGalleryQuery(
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
-  const [coverageFilter, setCoverageFilter] = useState('all');
+  const [coverageFilter, setCoverageFilter] = useState('full');
   const [availableConnectors, setAvailableConnectors] = useState<ConnectorWithCount[]>([]);
   const [availableCategories, setAvailableCategories] = useState<CategoryWithCount[]>([]);
   const [trendingTemplates, setTrendingTemplates] = useState<PersonaDesignReview[]>([]);

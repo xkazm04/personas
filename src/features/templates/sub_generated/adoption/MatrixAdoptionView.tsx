@@ -23,6 +23,7 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
+import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface MatrixAdoptionViewProps {
@@ -186,9 +187,15 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const hasAdoptionQuestions = adoptionQuestions.length > 0;
   const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
   const [questionsComplete, setQuestionsComplete] = useState(false);
+  const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
+  const [blockedQuestionIds, setBlockedQuestionIds] = useState<Set<string>>(new Set());
   const defaultsLoaded = useRef(false);
 
-  // Pre-populate default answers from template questions
+  // Pre-populate default answers from template questions + vault auto-detection.
+  // For questions with vault_category + option_service_types:
+  //   - 1 matching credential → auto-select (recorded in autoDetectedIds)
+  //   - 0 matching credentials → block the question (recorded in blockedQuestionIds),
+  //     user must add a credential via the Apps & Services catalog
   useEffect(() => {
     if (!hasAdoptionQuestions || defaultsLoaded.current) return;
     defaultsLoaded.current = true;
@@ -196,7 +203,20 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     for (const q of adoptionQuestions) {
       if (q.default) defaults[q.id] = String(q.default);
     }
-    if (Object.keys(defaults).length > 0) setAdoptionAnswers(defaults);
+
+    void import("@/stores/vaultStore").then(({ useVaultStore }) => {
+      const creds = useVaultStore.getState().credentials;
+      const serviceTypes = new Set(creds.map((c) => c.service_type));
+      const { autoAnswers, autoDetectedIds: detected, blockedQuestionIds: blocked } =
+        matchVaultToQuestions(adoptionQuestions, serviceTypes);
+      // Vault answers override template defaults
+      const merged = { ...defaults, ...autoAnswers };
+      if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
+      if (detected.size > 0) setAutoDetectedIds(detected);
+      if (blocked.size > 0) setBlockedQuestionIds(blocked);
+    }).catch(() => {
+      if (Object.keys(defaults).length > 0) setAdoptionAnswers(defaults);
+    });
   }, [hasAdoptionQuestions, adoptionQuestions]);
 
   // When questions are completed, store answers in the build draft and transition to draft_ready.
@@ -226,9 +246,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }
   }, [questionsComplete, seeded, adoptionAnswers, adoptionQuestions]);
 
-  // Seed the matrix cells from the template on first render
+  // Seed the matrix cells from the template — deferred until questionnaire is completed
+  // (if one exists). This prevents creating a draft persona when the user might
+  // close the questionnaire without finishing it.
   useEffect(() => {
     if (seedDone.current || !designResult) return;
+    if (hasAdoptionQuestions && !questionsComplete) return;
     seedDone.current = true;
 
     const dimensionData = extractDimensionData(designResult);
@@ -307,7 +330,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         logger.error("Failed to create draft persona for adoption", { err });
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona]);
+  }, [designResult, templateName, review.instruction, createPersona, hasAdoptionQuestions, questionsComplete]);
 
   const build = useMatrixBuild({ personaId });
   const lifecycle = useMatrixLifecycle({ personaId });
@@ -358,6 +381,17 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       );
     }).catch(() => {});
   }, [currentBuildPhase, seeded, personaId]);
+
+  // Navigate to the credentials catalog pre-filtered by a category
+  // (called from the questionnaire's "Add credential" button when a blocked
+  // question needs a credential from a specific category).
+  const handleAddCredentialForCategory = useCallback((category: string) => {
+    const sys = useSystemStore.getState();
+    sys.setPendingCatalogCategoryFilter(category);
+    sys.setSidebarSection('credentials');
+    // Close the adoption modal — the user returns via the catalog after adding
+    onClose();
+  }, [onClose]);
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
@@ -421,9 +455,23 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   if (!seeded) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
-      </div>
+      <>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+        </div>
+        {hasAdoptionQuestions && !questionsComplete && (
+          <QuestionnaireFormGrid
+            questions={adoptionQuestions}
+            userAnswers={adoptionAnswers}
+            autoDetectedIds={autoDetectedIds}
+            blockedQuestionIds={blockedQuestionIds}
+            onAddCredential={handleAddCredentialForCategory}
+            onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
+            onSubmit={() => setQuestionsComplete(true)}
+            onClose={onClose}
+          />
+        )}
+      </>
     );
   }
 
@@ -485,7 +533,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       )}
 
       {/* Adoption questions — FormGrid variant */}
-      {hasAdoptionQuestions && !questionsComplete && seeded && (
+      {hasAdoptionQuestions && !questionsComplete && (
         <QuestionnaireFormGrid
           questions={adoptionQuestions}
           userAnswers={adoptionAnswers}

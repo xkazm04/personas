@@ -1,11 +1,46 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
-import { computeCategoryReadiness } from '../gallery/matrix/architecturalCategories';
+import { ARCH_CATEGORIES, computeCategoryReadiness, userHasCategoryCredential } from '../gallery/matrix/architecturalCategories';
+
+interface SuggestedConnectorShape {
+  name?: string;
+  label?: string;
+  category?: string;
+  optional?: boolean;
+}
+
+/**
+ * Read the template's structured connector list from design_result.
+ * Prefers suggested_connectors (has category + optional flag) over
+ * the fallback service_flow string parsing.
+ */
+function getRequiredConnectorCategories(review: PersonaDesignReview): string[] | null {
+  if (!review.design_result) return null;
+  try {
+    const dr = JSON.parse(review.design_result) as Record<string, unknown>;
+    const suggested = (dr.suggested_connectors ?? []) as SuggestedConnectorShape[];
+    if (suggested.length === 0) return null;
+    const categories = new Set<string>();
+    for (const sc of suggested) {
+      if (sc.optional) continue; // optional connectors don't count toward readiness
+      if (sc.category && ARCH_CATEGORIES[sc.category]) {
+        categories.add(sc.category);
+      }
+    }
+    return [...categories];
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Compute a 0-100 adoption readiness score for a template based on
  * whether the user has credentials for the architectural component
  * categories the template requires (e.g. messaging, database, email).
+ *
+ * Reads required categories from `design_result.suggested_connectors[].category`
+ * (skipping any connector marked `optional: true`). Falls back to parsing
+ * `connectors_used` service_flow strings when suggested_connectors is missing.
  *
  * This evaluates at the *category* level rather than per-connector,
  * so having any email client unlocks all email-dependent templates.
@@ -15,12 +50,23 @@ export function computeAdoptionReadiness(
   _installedConnectorNames: Set<string>,
   credentialServiceTypes: Set<string>,
 ): number {
+  // Primary path: structured suggested_connectors with category + optional flag
+  const structuredCategories = getRequiredConnectorCategories(review);
+  if (structuredCategories !== null) {
+    if (structuredCategories.length === 0) return 100;
+    let ready = 0;
+    for (const cat of structuredCategories) {
+      if (userHasCategoryCredential(cat, credentialServiceTypes)) ready++;
+    }
+    return Math.round((ready / structuredCategories.length) * 100);
+  }
+
+  // Fallback path: parse connectors_used (service_flow strings)
   const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-  if (connectors.length === 0) return 100; // no connectors needed = fully ready
+  if (connectors.length === 0) return 100;
 
   const { total, ready } = computeCategoryReadiness(connectors, credentialServiceTypes);
   if (total === 0) return 100;
-
   return Math.round((ready / total) * 100);
 }
 

@@ -20,6 +20,7 @@ import { ExploreVariantB } from '../explore/ExploreVariantB';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateVirtualList } from './TemplateVirtualList';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useGalleryActions } from './useGalleryActions';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { ViewMode, TemplateModal } from './reviewParseCache';
@@ -224,6 +225,7 @@ export default function GeneratedReviewsTab({
               </button>
             ))}
           </div>
+          <ErrorBoundary name={`Explore ${exploreVariant}`}>
           {exploreVariant === 'role' ? (
             <ExploreVariantA
               availableCategories={gallery.availableCategories}
@@ -253,6 +255,7 @@ export default function GeneratedReviewsTab({
               onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
             />
           )}
+          </ErrorBoundary>
         </div>
       ) : (
       <div className="flex-1 flex flex-col overflow-hidden">

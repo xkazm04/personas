@@ -6367,6 +6367,11 @@ export const en = {
       type_custom_value: "Type your custom value...",
       // Vault auto-detection badge shown when a connector question is pre-answered from credentials
       auto_detected: "Auto-detected from credentials",
+      // Blocked question state — no credential of the required category exists
+      credential_required: "No {category} credential found in your vault. Add one to continue.",
+      add_credential: "Add credential",
+      // Submit button hint when blocked questions exist
+      blocked_blocking_submit: "{count} question(s) need credentials before you can continue",
     },
 
     // Scan results

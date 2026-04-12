@@ -125,7 +125,7 @@
         ],
         "api_base_url": "https://configured-during-adoption",
         "role": "billing_data",
-        "category": "finance"
+        "category": "cloud"
       }
     ],
     "suggested_notification_channels": [
@@ -331,6 +331,8 @@
           "Microsoft Azure",
           "Other (custom billing API endpoint)"
         ],
+        "option_service_types": ["gcp_cloud", "aws_cloud", "azure_cloud", null],
+        "vault_category": "cloud",
         "default": "Google Cloud Platform",
         "context": "Determines which billing API the agent queries. Each provider has different endpoints and authentication methods.",
         "dimension": "connectors"
