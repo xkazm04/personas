@@ -380,7 +380,7 @@ export function UnifiedMatrixEntry() {
             onClick={() => setLaunchError(null)}
             className="text-red-400/60 hover:text-red-400 text-xs"
           >
-            {t.common.dismiss}
+            {t.errors.dismiss_error}
           </button>
         </div>
       )}
