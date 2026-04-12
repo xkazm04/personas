@@ -2,15 +2,17 @@ import { SearchX } from 'lucide-react';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ConnectorCard } from './ConnectorCard';
+import type { RecipeIndicator } from './useRecipeIndicators';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PickerGridProps {
   filteredConnectors: ConnectorDefinition[];
   ownedServiceTypes: Set<string>;
+  recipeIndicators?: Map<string, RecipeIndicator>;
   onPickType: (connector: ConnectorDefinition) => void;
 }
 
-export function PickerGrid({ filteredConnectors, ownedServiceTypes, onPickType }: PickerGridProps) {
+export function PickerGrid({ filteredConnectors, ownedServiceTypes, recipeIndicators, onPickType }: PickerGridProps) {
   const { t } = useTranslation();
   return (
     <>
@@ -20,6 +22,7 @@ export function PickerGrid({ filteredConnectors, ownedServiceTypes, onPickType }
             key={connector.id}
             connector={connector}
             isOwned={ownedServiceTypes.has(connector.name)}
+            recipeIndicator={recipeIndicators?.get(connector.name)}
             onPickType={onPickType}
           />
         ))}

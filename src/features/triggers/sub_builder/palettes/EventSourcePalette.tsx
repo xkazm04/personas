@@ -100,6 +100,7 @@ function SourceChip({ template: t, isOnCanvas, onStartPointerDrag }: {
 }
 
 function CustomEventChip() {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
 
   return (

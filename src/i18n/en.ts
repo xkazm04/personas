@@ -1893,6 +1893,7 @@ export const en = {
       tooltip_agent_override: "Overrides workspace/global default",
       tooltip_agent_set: "Set on this agent",
       tooltip_no_value: "No value configured",
+      tooltip_default: "No value configured",
       tooltip_overriding: "Overriding inherited value",
       saved: "Saved",
       workspace_prefix: "Workspace: {label}",
@@ -1903,12 +1904,90 @@ export const en = {
       field_max_budget: "Max Budget",
       field_max_turns: "Max Turns",
       field_prompt_cache: "Prompt Cache",
+
+      // Expanded labels/hints (BudgetControls, PromptCacheControls, etc.)
+      model_and_provider: "Model & Provider",
+      max_budget_label: "Max Budget (USD)",
+      max_budget_hint: "Maximum total spend for a single execution. The run will stop if this limit is reached.",
+      max_budget_range: "$0.01 and up, or leave blank for no limit",
+      max_budget_example: "0.50",
+      max_budget_placeholder: "Monthly budget in USD -- e.g. 25.00",
+      max_turns_label: "Max Turns",
+      max_turns_hint: "Maximum number of LLM round-trips per execution. Each turn is one prompt-response cycle with tool use.",
+      max_turns_range: "1 and up, or leave blank for no limit",
+      max_turns_example: "5",
+      max_turns_placeholder: "Max round-trips -- e.g. 5",
+      prompt_caching_hint: "Caches the system prompt across executions to reduce input token costs. Agents that run frequently with the same prompt benefit most.",
+      prompt_caching_range: "Off, 5 min, or 1 hr retention",
+      prompt_caching_example: "5 min for cron-triggered agents",
+
+      // CustomModelConfigForm
+      provider: "Provider",
+      provider_anthropic: "Anthropic",
+      provider_ollama: "Ollama (local)",
+      provider_litellm: "LiteLLM (proxy)",
+      provider_custom: "Custom URL",
+      model_name_placeholder_litellm: "e.g. anthropic/claude-sonnet-4-20250514",
+      model_name_placeholder_ollama: "e.g. llama3.1:8b",
+      model_name_placeholder_custom: "Model identifier",
+      base_url_hint: "The API endpoint for your model provider. Must include protocol (http/https) and port if non-standard.",
+      base_url_example: "http://localhost:11434",
+      auth_token_hint: "Authentication token for the provider API. For Ollama local, use 'ollama'. For LiteLLM, use your master key.",
+      auth_token_example: "sk-...",
+      auth_token_placeholder_litellm: "LiteLLM master key (sk-...)",
+      auth_token_placeholder_ollama: "ollama",
+      auth_token_placeholder_custom: "Bearer token",
+
+      // LiteLLMConfigField
+      litellm_label: "LiteLLM Proxy Settings",
+      litellm_sublabel: "(global, shared across all agents)",
+      litellm_base_url_placeholder: "Proxy Base URL (http://localhost:4000)",
+      litellm_master_key_placeholder: "Master Key (sk-...)",
+      litellm_save_label: "Save Global Config",
+      litellm_description: "These global settings are used as defaults for all agents using the LiteLLM provider. Per-agent overrides above take precedence.",
+
+      // OllamaApiKeyField
+      ollama_label: "Ollama API Key",
+      ollama_sublabel: "(global, shared across all personas)",
+      ollama_placeholder: "Paste your key from ollama.com/settings",
+      ollama_save_label: "Save Key",
+      ollama_signup: "Sign up free at",
+      ollama_copy_key: "and copy your API key from Settings.",
+
+      // Compare (ModelABCompare)
+      compare_models: "Compare Models",
+      side_by_side: "Side-by-side",
+      model_a: "Model A",
+      model_b: "Model B",
+      add_prompt_first: "Add a prompt first to run comparisons.",
+      select_different_models: "Select two different models to compare.",
+      run_comparison: "Run Comparison",
+      generating_scenarios: "Generating scenarios...",
+      testing_model: "Testing {modelId}",
+      running: "Running...",
+      tokens_in: "Tokens In",
+      tokens_out: "Tokens Out",
+
+      // ComparisonResults
+      wins: "wins",
+      composite: "composite",
+      quality: "Quality",
+      tool_accuracy: "Tool Accuracy",
+      protocol: "Protocol",
+      scenario: "Scenario",
+      latency: "Latency",
+      cost: "Cost",
+
+      // CompareOutputPreviews
+      output_previews: "Output Previews",
+      no_output: "No output",
     },
 
     // -----------------------------------------------------------------
     //  USE CASES -- use case flows, schedule, detail
     // -----------------------------------------------------------------
     use_cases: {
+      // Legacy keys (original use_cases section)
       no_persona: "No persona selected",
       identified: "{count} use case(s) identified",
       default_model: "Persona Default Model",
@@ -1918,13 +1997,92 @@ export const en = {
       fixture_inputs: "Fixture inputs:",
       test_use_case: "Test Use Case",
       view_history: "View full test history",
-      generating: "Generating scenarios...",
       testing_scenario: "Testing {name}...",
       active_triggers: "Active Triggers",
       active_subs: "Active Subscriptions",
       general_history: "General History",
       unlinked_execs: "({count} unlinked execution(s))",
       no_unlinked: "No unlinked executions found.",
+
+      // Expanded keys (merged from duplicate block)
+      no_persona_selected: "No persona selected",
+      use_cases_identified: "{count} use case identified",
+      use_cases_identified_other: "{count} use cases identified",
+      persona_default_model: "Persona Default Model",
+      cache_5m: "Cache 5m",
+      cache_1h: "Cache 1h",
+      custom_model: "Custom model",
+      notifications_configured: "Notifications configured",
+      unlinked_executions: "({count} unlinked execution)",
+      unlinked_executions_other: "({count} unlinked executions)",
+      no_unlinked_executions: "No unlinked executions found.",
+      waiting_for_test: "Waiting for test to start...",
+      cancel_test: "Cancel test",
+      view_full_test_history: "View full test history",
+      use_case_not_found: "Use case not found.",
+      stop: "Stop",
+      stop_test: "Stop test",
+      no_prompt_configured: "No prompt configured",
+      test_this_use_case: "Test this use case",
+      tests: "Tests",
+      view_full_test_history_title: "View full test history",
+      stage_input: "Input",
+      stage_transform: "Transform",
+      stage_output: "Output",
+      generating: "Generating...",
+      testing: "Testing...",
+      save_failed: "Save failed",
+      no_inputs: "No inputs",
+      override: "Override",
+      inherited_label: "Inherited",
+      persona_default: "Persona Default",
+      use_persona_default: "Use persona default",
+      model: "Model",
+      default_label: "Default",
+      not_set: "Not set",
+      confirm: "Confirm",
+      update_fixture_title: "Update fixture with current inputs",
+      delete_fixture_title: "Delete fixture",
+      fixture_name_placeholder: "e.g. Happy Path",
+      description_optional: "Description (optional)",
+      save_current_as_fixture: "Save current as fixture",
+      no_fixture: "No fixture",
+      select_test_fixture: "Select test fixture",
+      no_fixture_auto: "No fixture (auto-generate)",
+      active_subscriptions: "Active Subscriptions",
+      confirm_delete: "Confirm?",
+      quick_pick: "Quick Pick",
+      visual: "Visual",
+      cron: "Cron",
+      activating: "Activating...",
+      activate_schedule: "Activate Schedule Trigger",
+      ai_suggestion: "AI suggestion:",
+      days: "Days",
+      all: "All",
+      weekdays: "Weekdays",
+      time: "Time",
+      hour_click: "Hour (click to set)",
+      cron_placeholder: "* * * * *  (min hour dom mon dow)",
+      next: "next:",
+      now: "now",
+      schedule_trigger: "Schedule Trigger",
+      activate: "Activate",
+      event_type: "Event Type",
+      select_event_type: "Select event type...",
+      source_filter: "Source Filter",
+      source_filter_optional: "(optional)",
+      source_filter_placeholder: "e.g. persona-id or glob pattern",
+      add: "Add",
+      event_subscriptions: "Event Subscriptions",
+      configured: "configured",
+      activate_db: "Activate as DB-backed subscription",
+      add_subscription: "Add Subscription",
+      select_channels_label: "Select notification channels",
+      cron_field_min: "min",
+      cron_field_hour: "hour",
+      cron_field_day: "day",
+      cron_field_month: "month",
+      cron_field_weekday: "weekday",
     },
 
     // -----------------------------------------------------------------
@@ -2721,147 +2879,8 @@ export const en = {
       // CompareOutputPreviews
       output_previews: "Output Previews",
       no_output: "No output",
-    },
 
-    // -----------------------------------------------------------------
-    //  USE CASES -- use case flows, detail, schedule, subscriptions
-    // -----------------------------------------------------------------
-    use_cases: {
-      no_persona_selected: "No persona selected",
-      use_cases_identified: "{count} use case identified",
-      use_cases_identified_other: "{count} use cases identified",
-
-      // DefaultModelSection
-      persona_default_model: "Persona Default Model",
-      inherit_hint: "All use cases inherit this model unless overridden below.",
-      cache_5m: "Cache 5m",
-      cache_1h: "Cache 1h",
-
-      // UseCaseListPanel
-      custom_model: "Custom model",
-      notifications_configured: "Notifications configured",
-
-      // UseCaseTabHeader / GeneralHistory
-      general_history: "General History",
-      unlinked_executions: "({count} unlinked execution)",
-      unlinked_executions_other: "({count} unlinked executions)",
-      no_unlinked_executions: "No unlinked executions found.",
-
-      // UseCaseTestRunner
-      test: "Test",
-      run_with: "Run with",
-      fixture_inputs: "Fixture inputs:",
-      test_use_case: "Test Use Case",
-      waiting_for_test: "Waiting for test to start...",
-      cancel_test: "Cancel test",
-      view_full_test_history: "View full test history",
-
-      // UseCaseDetailPanel
-      use_case_not_found: "Use case not found.",
-      stop: "Stop",
-      stop_test: "Stop test",
-      no_prompt_configured: "No prompt configured",
-      test_this_use_case: "Test this use case",
-      tests: "Tests",
-      view_full_test_history_title: "View full test history",
-      stage_input: "Input",
-      stage_transform: "Transform",
-      stage_output: "Output",
-      generating: "Generating...",
-      testing: "Testing...",
-      save_failed: "Save failed",
-
-      // UseCaseDetailSections
-      no_inputs: "No inputs",
-
-      // UseCaseModelDropdown
-      override: "Override",
-      inherited_label: "Inherited",
-      persona_default: "Persona Default",
-      use_persona_default: "Use persona default",
-
-      // UseCaseModelOverride
-      model: "Model",
-      default_label: "Default",
-      not_set: "Not set",
-
-      // UseCaseModelOverrideForm (labels shared with model_config)
-
-      // UseCaseChannelDropdown (labels from channelSummary helper)
-
-      // FixtureDropdownList
-      confirm: "Confirm",
-      update_fixture_title: "Update fixture with current inputs",
-      delete_fixture_title: "Delete fixture",
-      fixture_name_placeholder: "e.g. Happy Path",
-      description_optional: "Description (optional)",
-      save_current_as_fixture: "Save current as fixture",
-
-      // UseCaseFixtureDropdown
-      no_fixture: "No fixture",
-      select_test_fixture: "Select test fixture",
-      no_fixture_auto: "No fixture (auto-generate)",
-
-      // UseCaseActiveItems
-      active_triggers: "Active Triggers",
-      active_subscriptions: "Active Subscriptions",
-      confirm_delete: "Confirm?",
-
-      // ScheduleBuilder
-      quick_pick: "Quick Pick",
-      visual: "Visual",
-      cron: "Cron",
-      activating: "Activating...",
-      activate_schedule: "Activate Schedule Trigger",
-      ai_suggestion: "AI suggestion:",
-
-      // DayTimeGrid
-      days: "Days",
-      all: "All",
-      weekdays: "Weekdays",
-      time: "Time",
-      hour_click: "Hour (click to set)",
-
-      // ScheduleModePanels (cron field labels)
-      cron_placeholder: "* * * * *  (min hour dom mon dow)",
-
-      // SchedulePreview -- next label
-      next: "next:",
-      now: "now",
-
-      // SubscriptionList
-      schedule_trigger: "Schedule Trigger",
-      activate: "Activate",
-
-      event_type: "Event Type",
-      select_event_type: "Select event type...",
-      source_filter: "Source Filter",
-      source_filter_optional: "(optional)",
-      source_filter_placeholder: "e.g. persona-id or glob pattern",
-      add: "Add",
-
-      // UseCaseSubscriptions
-      event_subscriptions: "Event Subscriptions",
-      configured: "configured",
-      activate_db: "Activate as DB-backed subscription",
-      add_subscription: "Add Subscription",
-
-      // UseCaseChannelDropdown
-      select_channels_label: "Select notification channels",
-
-      // ScheduleModePanels (cron field labels)
-      cron_field_min: "min",
-      cron_field_hour: "hour",
-      cron_field_day: "day",
-      cron_field_month: "month",
-      cron_field_weekday: "weekday",
-    },
-
-    // -----------------------------------------------------------------
-    //  EDITOR -- editor layout, tab bar, banners, header, stats
-    // -----------------------------------------------------------------
-    editor_ui: {
-      // EditorBody
+      // EditorBody (merged from duplicate editor_ui block)
       select_agent: "Select an agent to get started",
       choose_from_sidebar: "Choose from the sidebar or create a new agent",
       save_failed_retry: "Save failed -- will retry on next edit",
@@ -2884,7 +2903,6 @@ export const en = {
 
       // PersonaEditorHeader
       execution_in_progress: "Execution in progress",
-      running: "Running...",
       execute: "Execute",
       execute_failed: "Failed to start execution. Please try again.",
       no_triggers_or_subs: "No triggers or event subscriptions configured",
@@ -3295,6 +3313,33 @@ export const en = {
       headers: "Headers",
       body: "Body",
       empty_response: "(empty response)",
+    },
+    // -- Playground extra labels (referenced via vt = t.vault.playground_extra) -
+    playground_extra: {
+      add_tag: "Add tag...",
+      body_label: "Body",
+      credential_id: "Credential ID",
+      enabled: "Enabled",
+      header_col: "Header",
+      id: "ID",
+      name: "Name",
+      no_endpoints: "No endpoints",
+      no_endpoints_hint: "No API endpoints defined for this connector yet.",
+      no_recipes: "No recipes yet",
+      parse_load: "Parse & Load",
+      parsing: "Parsing...",
+      paste_placeholder: "Paste OpenAPI/Swagger spec JSON or YAML here...",
+      paste_spec_title: "Paste API Spec",
+      path_parameters: "Path Parameters",
+      query_parameters: "Query Parameters",
+      recipes_title: "Saved Recipes",
+      truncated_warning: "Response truncated for display",
+      value_col: "Value",
+    },
+    // -- Ingest / credential rename labels -----------------------------
+    ingest: {
+      save_name: "Save name",
+      rename_credential: "Rename credential",
     },
     // -- Database management (sub_databases/) -------------------------
     databases: {
@@ -4041,7 +4086,87 @@ export const en = {
       loading: "Loading cloud status...",
       token_available: "Token available",
       no_token: "No token configured",
+      no_token_configured: "No token configured",
       no_status: "No status data available.",
+    },
+
+    // API Playground (dt = t.deployment.api_playground)
+    api_playground: {
+      title: "API Playground",
+      request_body: "Request Body",
+      response_label: "Response",
+      send_request: "Send Request",
+      sending: "Sending...",
+      empty_response: "(empty response)",
+      snippets: "Snippets",
+    },
+
+    // Connection form (dt = t.deployment.connection)
+    connection: {
+      orchestrator_url_label: "Cloud Server URL",
+      orchestrator_prefix: "https://",
+      enter_api_key: "Enter API key",
+      connect: "Connect",
+      connected: "Connected",
+      disconnect: "Disconnect",
+      diagnose: "Diagnose",
+      diagnosing: "Diagnosing...",
+      diagnostics_title: "Diagnostics",
+      url_protocol_error: "URL must use http or https",
+      url_hostname_error: "URL is missing a hostname",
+      url_invalid: "Invalid URL",
+    },
+
+    // Deployments panel (dt = t.deployment.deployments_panel)
+    deployments_panel: {
+      deploy_persona: "Deploy Persona",
+      select_persona: "Select a persona to deploy",
+      all_deployed: "All personas are already deployed",
+    },
+
+    // Execution row detail (dt = t.deployment.exec_detail)
+    exec_detail: {
+      fetching_output: "Fetching output...",
+      no_output: "No output",
+    },
+
+    // OAuth panel (dt = t.deployment.oauth_panel)
+    oauth_panel: {
+      connect_anthropic: "Connect Anthropic Account",
+      open_auth_instruction: "Open the auth page, sign in, and paste the code below.",
+      paste_code: "Paste authorization code",
+      refresh_auth_link: "Refresh auth link",
+      token_connected: "Token connected",
+      token_expired: "Token expired",
+      token_unknown: "Token status unknown",
+      expires: "Expires",
+      scopes: "Scopes",
+    },
+
+    // Create trigger form (dt = t.deployment.trigger_form)
+    trigger_form: {
+      new_cloud_trigger: "New Cloud Trigger",
+      persona_must_be_deployed: "Persona (must be deployed)",
+      select_persona: "Select a persona",
+      trigger_type: "Trigger Type",
+      schedule_cron: "Schedule (cron)",
+      create_trigger: "Create Trigger",
+      creating: "Creating...",
+    },
+
+    // Daily breakdown chart (dt = t.deployment.chart)
+    chart: {
+      daily_executions: "Daily executions",
+    },
+
+    // Deployment card actions (dt = t.deployment.deploy_card)
+    deploy_card: {
+      test_deployment: "Test deployment",
+      pause_deployment: "Pause deployment",
+      resume_deployment: "Resume deployment",
+      remove_deployment: "Remove deployment",
+      copy_endpoint: "Copy endpoint",
+      open_endpoint: "Open endpoint",
     },
 
     // Cloud panel tab labels
@@ -4102,6 +4227,8 @@ export const en = {
       deploy_first: "Deploy a persona first to create cloud triggers.",
       loading: "Loading triggers...",
       empty: "No cloud triggers yet. Create one to schedule automated runs.",
+      recent_firings: "Recent firings",
+      no_firings: "No recent firings",
     },
 
     // -- Unified Deployment Dashboard --
@@ -6132,9 +6259,11 @@ export const en = {
       answered: "{count} answered",
       cancel_setup: "Cancel setup",
       type_your_answer: "Type your answer...",
+      type_answer: "Type your answer...",
       default_label: "Default: {value}",
       select_project: "Select a codebase project...",
       navigate_hint: "navigate",
+      navigate: "navigate",
       skip_all: "Skip all",
       submit_answers: "Submit Answers",
       answer_remaining: "Answer remaining ({count})",
@@ -6531,19 +6660,6 @@ export const en = {
       copied: "Copied",
     },
 
-    // Questionnaire modal
-    questionnaire: {
-      answered: "{count} answered",
-      cancel_setup: "Cancel setup",
-      navigate: "navigate",
-      skip_all: "Skip all",
-      submit_answers: "Submit Answers",
-      answer_remaining: "Answer remaining ({count})",
-      next: "Next",
-      select_project: "Select a codebase project...",
-      type_answer: "Type your answer...",
-      default_label: "Default: {value}",
-    },
   },
 
   // -------------------------------------------------------------------
@@ -6552,6 +6668,87 @@ export const en = {
   triggers: {
     title: "Triggers & Automations",
     subtitle: "Set up what causes your agents to run automatically",
+
+    // Event canvas builder (sub_builder)
+    builder: {
+      add_persona_action: "Add persona",
+      auto_layout: "Auto layout",
+      cancel: "Cancel",
+      canvas_templates: "Canvas Templates",
+      connected_listeners: "Connected listeners",
+      connected_personas: "Connected personas",
+      current_name: "Current name",
+      custom_event_placeholder: "custom.event.type",
+      done: "Done",
+      double_click_edit: "Double-click to edit",
+      events: "Events",
+      filter_events_placeholder: "Filter events...",
+      filter_personas_placeholder: "Filter personas...",
+      hide_sidebar: "Hide sidebar",
+      impact_preview: "Impact preview",
+      init_handlers_title: "Initial handlers",
+      layout: "Layout",
+      marketplace: "Marketplace",
+      new_name: "New name",
+      no_events_filter: "No events match filter",
+      no_matches: "No matches",
+      no_matching_events: "No matching events",
+      no_personas_connected: "No personas connected",
+      no_personas_created: "No personas created",
+      note_placeholder: "Add a note...",
+      personas: "Personas",
+      refresh: "Refresh",
+      rename: "Rename",
+      rename_event_action: "Rename event",
+      rename_event_desc: "Update the event type across all references.",
+      rename_event_type: "Rename event type",
+      rename_placeholder: "new.event.type",
+      renaming: "Renaming...",
+      show_sidebar: "Show sidebar",
+      source: "Source",
+      source_personas: "Source personas",
+      use_template: "Use template",
+    },
+
+    // Trigger Studio (sub_studio) - chain/workflow composer
+    studio: {
+      building_blocks: "Building Blocks",
+      clear: "Clear",
+      clear_canvas: "Clear canvas",
+      drag_or_click_to_add: "Drag or click to add",
+      export: "Export",
+      export_chain: "Export chain",
+      import: "Import",
+      import_chain: "Import chain",
+      logic_gates: "Logic Gates",
+      persona_steps: "Persona Steps",
+      remove_from_chain: "Remove from chain",
+      studio_title: "Trigger Studio",
+      trigger_sources: "Trigger Sources",
+      unsaved_changes: "Unsaved changes",
+    },
+
+    // Subscription list table
+    subscription_list: {
+      active: "Active",
+      browse_marketplace: "Browse marketplace",
+      col_actions: "Actions",
+      col_event_type: "Event Type",
+      col_events: "Events",
+      col_feed: "Feed",
+      col_last_event: "Last Event",
+      col_status: "Status",
+      error: "Error",
+      never: "Never",
+      no_active_subs: "No active subscriptions",
+      unsubscribe: "Unsubscribe",
+    },
+
+    // Trigger type selector
+    type_selector: {
+      trigger_type: "Trigger Type",
+    },
+
     // Tab labels
     tab_triggers: "Triggers",
     tab_chains: "Automations",
@@ -7014,6 +7211,14 @@ export const en = {
     },
 
     // -- Appearance -------------------------------------------------------
+    appearance_extra: {
+      simple: "Simple",
+      simple_hint: "Core features only",
+      full: "Full",
+      full_hint: "Show the complete interface",
+      dev: "Dev",
+      dev_hint: "Unlock developer tooling",
+    },
     appearance: {
       title: "Appearance",
       subtitle: "Customize how the app looks",
@@ -8109,6 +8314,7 @@ export const en = {
   schedules: {
     title: "Schedule Timeline",
     subtitle: "Aggregated view of all scheduled agent executions. Cron schedules use UTC.",
+    scheduled: "scheduled",
     engine_on: "Engine On",
     engine_off: "Engine Off",
     mock_schedule: "Mock Schedule",
@@ -8169,6 +8375,7 @@ export const en = {
     empty: "No recipes yet",
     no_match_hint: "Try a different search term.",
     empty_hint: "Create your first reusable LLM recipe to get started.",
+    add_field: "Add Field",
 
     // RecipeManager
     title: "Recipes",
@@ -9623,6 +9830,25 @@ export const en = {
     create_blank_team: "Create Blank Team",
     no_teams_yet: "No teams yet",
     no_teams_hint: "Start from a template below or create a blank team",
+
+    // -- Team memory (diff + row) --
+    category_changes: "Category changes",
+    importance_shifts: "Importance shifts",
+    no_memory_diff: "No memory differences",
+    base_run: "Base run",
+    compare_run: "Compare run",
+    need_two_runs: "Select two runs to compare",
+    comparing_runs: "Comparing runs",
+    edit_memory: "Edit memory",
+    delete_memory: "Delete memory",
+    edit_memory_title: "Edit memory entry",
+    auto_label: "auto",
+    manual_label: "manual",
+    version_history: "Version history",
+
+    // -- Canvas overlays --
+    no_agents_in_team: "No agents in this team",
+    drag_agents_hint: "Drag agents from the sidebar onto the canvas",
 
     // -- CreateTeamForm --
     team_name: "Team Name",

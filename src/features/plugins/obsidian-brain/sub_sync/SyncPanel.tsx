@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -19,7 +18,6 @@ import {
 } from '@/api/obsidianBrain';
 
 export default function SyncPanel() {
-  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const setSyncRunning = useSystemStore((s) => s.setObsidianSyncRunning);

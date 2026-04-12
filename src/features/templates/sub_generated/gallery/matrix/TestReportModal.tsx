@@ -3,7 +3,6 @@
  * Shows per-tool scope on the left, LLM-generated analysis on the right.
  */
 import { useState, useRef } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   X, CheckCircle2, XCircle, AlertTriangle, FileText,
   Zap, Clock, Shield, Key, Copy, Check,
@@ -17,7 +16,6 @@ import { useAgentStore } from '@/stores/agentStore';
 // ---------------------------------------------------------------------------
 
 export function TestReportModal({ results, summary, onClose }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void }) {
-  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, true, onClose);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);

@@ -148,22 +148,72 @@ def ipc(cmd, args_dict, pick=None):
 
 
 
+def get_run_status(run_id):
+    """Fetch just the run status (small payload, safe for DOM readback)."""
+    return ipc("get_pipeline_run", {"id": run_id}, pick="{status:r.status}")
+
+
+def get_run_nodes(run_id):
+    """Fetch ONLY status + skip_reason per node (minimal payload).
+
+    Each node returns `{status, skip_reason}`. Keeps well under 300-char limit
+    for up to 4+ nodes. Use `get_run_node_outputs` and `get_run_node_member_ids`
+    for additional fields when needed.
+    """
+    return ipc(
+        "get_pipeline_run", {"id": run_id},
+        pick=(
+            "(JSON.parse(r.node_statuses||'[]')"
+            ".map(n=>({status:n.status,skip_reason:n.skip_reason||''})))"
+        ),
+    )
+
+
+def get_run_node_outputs(run_id):
+    """Fetch just node outputs (short strings), one per node."""
+    return ipc(
+        "get_pipeline_run", {"id": run_id},
+        pick=(
+            "(JSON.parse(r.node_statuses||'[]')"
+            ".map(n=>((n.output||'').substring(0,100))))"
+        ),
+    )
+
+
+def get_run_node_member_ids(run_id):
+    """Fetch just member_ids, one per node."""
+    return ipc(
+        "get_pipeline_run", {"id": run_id},
+        pick=(
+            "(JSON.parse(r.node_statuses||'[]')"
+            ".map(n=>n.member_id))"
+        ),
+    )
+
+
 def poll_pipeline_run(run_id, target_statuses, timeout_s=30):
-    """Poll a pipeline run until its status is in target_statuses."""
+    """Poll a pipeline run until its status is in target_statuses.
+
+    Returns a dict with 'status' and 'nodes' (parsed list).
+    """
+    last_status = None
     for _ in range(timeout_s * 2):
-        run = ipc("get_pipeline_run", {"id": run_id},
-                   pick="{id:r.id,status:r.status,node_statuses:r.node_statuses}")
-        if run["status"] in target_statuses:
-            return run
+        run = get_run_status(run_id)
+        last_status = run.get("status")
+        if last_status in target_statuses:
+            nodes = get_run_nodes(run_id)
+            return {"status": last_status, "nodes": nodes}
         time.sleep(0.5)
     raise RuntimeError(
         f"Pipeline run {run_id} did not reach {target_statuses} "
-        f"within {timeout_s}s — stuck at '{run['status']}'"
+        f"within {timeout_s}s — stuck at '{last_status}'"
     )
 
 
 def parse_node_statuses(run):
-    """Parse node_statuses JSON from a pipeline run."""
+    """Return node list from a run dict (already parsed by poll_pipeline_run)."""
+    if "nodes" in run:
+        return run["nodes"]
     raw = run.get("node_statuses", "[]")
     if isinstance(raw, str):
         return json.loads(raw)
@@ -200,25 +250,30 @@ test("Health check", test_health)
 
 
 def test_get_persona():
-    result = ipc("list_personas", {}, pick="{count:r.length,id:r[0]?.id,name:r[0]?.name}")
-    assert result.get("count", 0) >= 1, "Need at least 1 persona — create one first"
-    return f"{result['count']} personas available, using '{result.get('name')}'"
+    result = ipc("list_personas", {},
+                  pick="{count:r.length,id0:r[0]?.id,id1:r[1]?.id,name:r[0]?.name}")
+    assert result.get("count", 0) >= 2, "Need at least 2 personas — create more first"
+    return f"{result['count']} personas available, using '{result.get('name')}' + one more"
 
-persona_info = test("At least 1 persona exists", test_get_persona)
+persona_info = test("At least 2 personas exist", test_get_persona)
 
 
-# Get the first persona ID for use as shell member
-SHELL_PERSONA_ID = None
+# Get two persona IDs for pipeline members (backend enforces uniqueness
+# of team_id+persona_id, so multi-member tests need distinct personas).
+SHELL_PERSONA_1 = None
+SHELL_PERSONA_2 = None
 
-def get_shell_persona_id():
-    global SHELL_PERSONA_ID
-    result = ipc("list_personas", {}, pick="{count:r.length,id:r[0]?.id,name:r[0]?.name}")
-    SHELL_PERSONA_ID = result["id"]
-    if not SHELL_PERSONA_ID:
-        raise RuntimeError("No personas returned")
-    return SHELL_PERSONA_ID
+def get_shell_persona_ids():
+    global SHELL_PERSONA_1, SHELL_PERSONA_2
+    result = ipc("list_personas", {},
+                  pick="{count:r.length,id0:r[0]?.id,id1:r[1]?.id}")
+    SHELL_PERSONA_1 = result["id0"]
+    SHELL_PERSONA_2 = result["id1"]
+    if not SHELL_PERSONA_1 or not SHELL_PERSONA_2:
+        raise RuntimeError("Need at least 2 personas")
+    return (SHELL_PERSONA_1, SHELL_PERSONA_2)
 
-get_shell_persona_id()
+get_shell_persona_ids()
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +292,7 @@ def test_command_node_setup():
     # Add a command node that echoes JSON
     ipc("add_team_member", {
         "teamId": team1_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_1,
         "role": "worker",
         "positionX": 0.0,
         "positionY": 0.0,
@@ -260,8 +315,8 @@ def test_command_node_execute():
     assert len(nodes) == 1, f"Expected 1 node, got {len(nodes)}"
     assert nodes[0]["status"] == "completed", f"Node status: {nodes[0]['status']}"
 
-    output = nodes[0].get("output", "")
-    assert "hello_from_command" in str(output), f"Output missing expected text: {output}"
+    outputs = get_run_node_outputs(run_id)
+    assert "hello_from_command" in str(outputs[0]), f"Output missing expected text: {outputs[0]}"
     return f"output contains 'hello_from_command'"
 
 test("Command node executes and captures stdout", test_command_node_execute)
@@ -286,7 +341,7 @@ def test_cond_met_setup():
     # Node 1: command that outputs type=feature
     m1_id = ipc("add_team_member", {
         "teamId": team2_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_1,
         "role": "worker",
         "positionX": 0.0, "positionY": 0.0,
         "config": json.dumps({
@@ -295,10 +350,10 @@ def test_cond_met_setup():
         })
     }, pick="r.id")
 
-    # Node 2: command that echoes "reached"
+    # Node 2: command that echoes "reached" (different persona to avoid uniqueness constraint)
     m2_id = ipc("add_team_member", {
         "teamId": team2_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_2,
         "role": "worker",
         "positionX": 200.0, "positionY": 0.0,
         "config": json.dumps({
@@ -307,13 +362,15 @@ def test_cond_met_setup():
         })
     }, pick="r.id")
 
-    # Conditional connection: m1 → m2, only if type == "feature"
+    # Conditional connection: m1 → m2, only if output contains "feature"
+    # Uses `*` (whole-output mode) + contains to sidestep Windows cmd quote
+    # mangling of JSON. Works cross-platform on raw stdout.
     ipc("create_team_connection", {
         "teamId": team2_id,
         "sourceMemberId": m1_id,
         "targetMemberId": m2_id,
         "connectionType": "conditional",
-        "condition": json.dumps({"field": "type", "op": "equals", "value": "feature"}),
+        "condition": json.dumps({"field": "*", "op": "contains", "value": "feature"}),
         "label": "if feature"
     }, pick="r.id")
     return f"team={team2_id}, m1={m1_id[:8]}, m2={m2_id[:8]}"
@@ -358,7 +415,7 @@ def test_cond_skip_setup():
     # Node 1: outputs type=feature
     m1_id = ipc("add_team_member", {
         "teamId": team3_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_1,
         "role": "worker",
         "positionX": 0.0, "positionY": 0.0,
         "config": json.dumps({
@@ -370,7 +427,7 @@ def test_cond_skip_setup():
     # Node 2: should be SKIPPED because condition requires type=bug
     m2_id = ipc("add_team_member", {
         "teamId": team3_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_2,
         "role": "worker",
         "positionX": 200.0, "positionY": 0.0,
         "config": json.dumps({
@@ -379,16 +436,16 @@ def test_cond_skip_setup():
         })
     }, pick="r.id")
 
-    # Conditional connection: m1 → m2, requires type=bug (won't match)
+    # Conditional connection: m1 → m2, requires output to contain "bug" (won't match)
     ipc("create_team_connection", {
         "teamId": team3_id,
         "sourceMemberId": m1_id,
         "targetMemberId": m2_id,
         "connectionType": "conditional",
-        "condition": json.dumps({"field": "type", "op": "equals", "value": "bug"}),
+        "condition": json.dumps({"field": "*", "op": "contains", "value": "bug"}),
         "label": "if bug"
     }, pick="r.id")
-    return f"team={team3_id}, condition requires type=bug but output is type=feature"
+    return f"team={team3_id}, condition requires 'bug' in output but output is 'feature'"
 
 test("Create team: cmd→cmd with unmet condition", test_cond_skip_setup)
 
@@ -400,9 +457,7 @@ def test_cond_skip_execute():
     nodes = parse_node_statuses(run)
     assert len(nodes) == 2, f"Expected 2 nodes, got {len(nodes)}"
 
-    # Find node statuses — node 1 should complete, node 2 should be skipped
-    status_map = {n.get("member_id", ""): n["status"] for n in nodes}
-    statuses = list(status_map.values())
+    statuses = [n["status"] for n in nodes]
     assert "completed" in statuses, f"No completed node: {statuses}"
     assert "skipped" in statuses, f"No skipped node: {statuses}"
 
@@ -434,7 +489,7 @@ def test_approval_setup():
     # Single command node with approval gate
     ipc("add_team_member", {
         "teamId": team4_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_1,
         "role": "worker",
         "positionX": 0.0, "positionY": 0.0,
         "config": json.dumps({
@@ -448,40 +503,41 @@ def test_approval_setup():
 test("Create team with approval gate node", test_approval_setup)
 
 
+APPROVAL_RUN_ID = None
+
 def test_approval_pauses():
+    global APPROVAL_RUN_ID
     run_id = ipc("execute_team", {"teamId": team4_id, "inputData": None})
+    APPROVAL_RUN_ID = run_id
 
     # Poll until we see awaiting_approval status
     for _ in range(20):
         time.sleep(0.5)
-        run = ipc("get_pipeline_run", {"id": run_id},
-                   pick="{id:r.id,status:r.status,node_statuses:r.node_statuses}")
-        node_statuses = parse_node_statuses(run)
-        statuses = [n["status"] for n in node_statuses]
+        status = get_run_status(run_id).get("status")
+        nodes = get_run_nodes(run_id)
+        statuses = [n["status"] for n in nodes]
         if "awaiting_approval" in statuses:
             return f"run_id={run_id}, pipeline paused at approval gate"
-        if run["status"] in ("completed", "failed", "cancelled"):
+        if status in ("completed", "failed", "cancelled"):
             raise AssertionError(
-                f"Pipeline finished without pausing: status={run['status']}, nodes={statuses}"
+                f"Pipeline finished without pausing: status={status}, nodes={statuses}"
             )
 
     raise AssertionError("Pipeline did not reach awaiting_approval within 10s")
 
-approval_run_info = test("Pipeline pauses at approval gate", test_approval_pauses)
+test("Pipeline pauses at approval gate", test_approval_pauses)
 
 
 def test_approval_resumes():
-    # Get the current run
-    runs = ipc("list_pipeline_runs", {"teamId": team4_id},
-                pick="r.map(x=>({id:x.id,status:x.status,node_statuses:x.node_statuses}))")
-    assert len(runs) >= 1, "No pipeline runs found"
-    run_id = runs[0]["id"]
-    node_statuses = parse_node_statuses(runs[0])
+    run_id = APPROVAL_RUN_ID
+    assert run_id, "No approval run tracked"
+    nodes = get_run_nodes(run_id)
+    member_ids = get_run_node_member_ids(run_id)
 
-    # Find the member_id of the awaiting node
-    awaiting = [n for n in node_statuses if n["status"] == "awaiting_approval"]
-    assert len(awaiting) == 1, f"Expected 1 awaiting node, got {len(awaiting)}"
-    member_id = awaiting[0]["member_id"]
+    # Find the index of the awaiting node, then look up its member_id
+    awaiting_idx = [i for i, n in enumerate(nodes) if n["status"] == "awaiting_approval"]
+    assert len(awaiting_idx) == 1, f"Expected 1 awaiting node, got {len(awaiting_idx)}"
+    member_id = member_ids[awaiting_idx[0]]
 
     # Approve the node
     ipc("approve_pipeline_node", {"runId": run_id, "memberId": member_id})
@@ -492,8 +548,8 @@ def test_approval_resumes():
 
     nodes = parse_node_statuses(run)
     assert nodes[0]["status"] == "completed"
-    output = str(nodes[0].get("output", ""))
-    assert "approved_output" in output, f"Missing expected output: {output}"
+    outputs = get_run_node_outputs(run_id)
+    assert "approved_output" in str(outputs[0]), f"Missing expected output: {outputs[0]}"
     return f"pipeline completed after approval, output correct"
 
 test("Approving gate resumes pipeline to completion", test_approval_resumes)
@@ -524,7 +580,7 @@ def test_model_override_config():
 
     ipc("add_team_member", {
         "teamId": team5_id,
-        "personaId": SHELL_PERSONA_ID,
+        "personaId": SHELL_PERSONA_1,
         "role": "worker",
         "positionX": 0.0, "positionY": 0.0,
         "config": json.dumps({
@@ -538,8 +594,8 @@ def test_model_override_config():
     run = poll_pipeline_run(run_id, ["completed", "failed"], timeout_s=15)
     assert run["status"] == "completed"
 
-    nodes = parse_node_statuses(run)
-    assert "config_parsed_ok" in str(nodes[0].get("output", ""))
+    outputs = get_run_node_outputs(run_id)
+    assert "config_parsed_ok" in str(outputs[0]), f"Missing expected output: {outputs[0]}"
     return "command node with modelProfileOverride runs without error"
 
 test("NodeConfig with modelProfileOverride parses correctly", test_model_override_config)

@@ -23,7 +23,7 @@ export default function OptimizerPanel({
   onRefresh,
   dismissedIds,
 }: OptimizerPanelProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const pt = t.pipeline;
   const [expanded, setExpanded] = useState(false);
 

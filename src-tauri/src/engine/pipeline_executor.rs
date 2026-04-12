@@ -118,18 +118,36 @@ struct ConditionSpec {
 ///
 /// Returns `true` if the condition is met (or if the condition is malformed —
 /// fail-open is the safe default so pipelines don't break on bad config).
+///
+/// Field lookup strategy:
+/// 1. If the output is valid JSON, look up `spec.field` on it.
+/// 2. If the output is NOT valid JSON (e.g., plain stdout from a command
+///    node on Windows that mangles quotes), fall back to treating the entire
+///    output string as the value. This is useful for `contains` checks on
+///    raw text output.
+/// 3. If `spec.field == "*"` or `"_output"`, always use the whole output string.
 fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) -> bool {
     let spec: ConditionSpec = match serde_json::from_str(condition_json) {
         Ok(s) => s,
         Err(_) => return true,
     };
-    let output_value = predecessor_output
+
+    // Try JSON field lookup first
+    let json_value = predecessor_output
         .and_then(|o| serde_json::from_str::<serde_json::Value>(o).ok())
         .and_then(|v| v.get(&spec.field).cloned())
         .and_then(|v| match v {
             serde_json::Value::String(s) => Some(s),
             other => Some(other.to_string()),
         });
+
+    // If JSON lookup failed OR field is the special whole-output marker,
+    // fall back to the raw output string.
+    let output_value = if json_value.is_some() && spec.field != "*" && spec.field != "_output" {
+        json_value
+    } else {
+        predecessor_output.map(|s| s.trim().to_string())
+    };
 
     match spec.op.as_str() {
         "equals" => output_value.as_deref() == spec.value.as_deref(),
@@ -138,7 +156,7 @@ fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) ->
             .as_deref()
             .map(|v| v.contains(spec.value.as_deref().unwrap_or("")))
             .unwrap_or(false),
-        "exists" => output_value.is_some(),
+        "exists" => output_value.is_some() && !output_value.as_deref().unwrap_or("").is_empty(),
         _ => true,
     }
 }

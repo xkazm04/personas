@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { Dna, AlertTriangle, Sparkles, Link2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -21,7 +20,6 @@ function fitnessBar(fitness: number): string {
 }
 
 export function IdeaEvolutionPanel() {
-  const { t } = useTranslation();
   const ideas = useSystemStore((s) => s.ideas);
 
   const fitness = useMemo(() => computeIdeaFitness(ideas), [ideas]);

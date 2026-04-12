@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';

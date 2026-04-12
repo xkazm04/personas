@@ -31,7 +31,6 @@ function rangesEqual(a: [number, number], b: [number, number]) {
 }
 
 export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRiskChange }: EffortRiskFilterProps) {
-  const { t } = useTranslation();
   const allRange: [number, number] = [1, 10];
 
   return (

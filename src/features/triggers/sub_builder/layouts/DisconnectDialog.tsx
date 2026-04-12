@@ -2,7 +2,6 @@
  * Confirmation dialog for disconnecting a persona from an event.
  */
 import { AlertTriangle, X } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   open: boolean;

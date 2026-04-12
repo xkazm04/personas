@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState } from 'react';
 import { History, Calendar } from 'lucide-react';
 import { getCredentialAuditLog } from '@/api/vault/credentials';
@@ -20,7 +19,6 @@ const OP_STYLES: Record<string, string> = {
 };
 
 export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
-  const { t } = useTranslation();
   const [entries, setEntries] = useState<CredentialAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
 

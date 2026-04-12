@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
 
 interface Props {

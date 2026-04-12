@@ -5,7 +5,6 @@
  * Test report modal + helpers → TestReportModal.tsx
  */
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { createPortal } from 'react-dom';
 import {
   Play, X, HelpCircle, CheckCircle2, Send, RefreshCw, Save,

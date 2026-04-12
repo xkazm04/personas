@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   PanelLeft, PanelLeftClose, RotateCcw, LayoutGrid,
   StickyNote, FlaskConical, Sparkles, MoreHorizontal,

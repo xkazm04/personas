@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { GitBranch } from 'lucide-react';
 import type { ConditionGateNodeData } from '../libs/triggerStudioConstants';

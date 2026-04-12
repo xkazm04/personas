@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   X, RefreshCw, Network, Layers, Tag, Database, Globe,
   FolderTree, Target, Link2, Sparkles, Clock, AlertCircle,
@@ -241,7 +240,6 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
 // ---------------------------------------------------------------------------
 
 export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadataModalProps) {
-  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [map, setMap] = useState<CrossProjectMetadataMap | null>(null);
   const [loading, setLoading] = useState(false);

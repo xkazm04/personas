@@ -24,7 +24,6 @@ function PredefinedView() {
 // -- Component ------------------------------------------------------------
 
 export function TemplateSourcePanel(props: TemplateSourcePanelProps) {
-  const { t } = useTranslation();
   if (props.mode === 'predefined') return <PredefinedView />;
   if (props.mode === 'custom') return <CustomSourceView {...props} />;
   return <BatchSourceView {...props} />;

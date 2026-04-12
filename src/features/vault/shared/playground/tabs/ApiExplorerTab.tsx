@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';

@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   Heart, RefreshCw, AlertTriangle, XCircle,
   Lightbulb, ArrowRight, Shield,
@@ -60,7 +59,6 @@ interface SelfHealingPanelProps {
 }
 
 export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
-  const { t } = useTranslation();
   const tasks = useSystemStore((s) => s.tasks);
   const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const addToast = useToastStore((s) => s.addToast);

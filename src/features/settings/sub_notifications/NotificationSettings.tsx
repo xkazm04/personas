@@ -53,6 +53,8 @@ const SEVERITY_ROWS: Array<{
 ];
 
 function WeeklyDigestToggle() {
+  const { t } = useTranslation();
+  const st = t.settings.notifications;
   const digestSetting = useAppSetting('health_digest_enabled', 'true', (v) => v === 'true' || v === 'false');
 
   const enabled = digestSetting.value === 'true';

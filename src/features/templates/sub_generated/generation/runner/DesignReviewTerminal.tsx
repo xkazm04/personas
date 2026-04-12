@@ -2,7 +2,6 @@
  * Terminal output and result summary for DesignReviewRunner.
  */
 import { useEffect, useRef } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 interface TestRunResult {
@@ -23,7 +22,6 @@ interface TerminalOutputProps {
 }
 
 export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }: TerminalOutputProps) {
-  const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
 
@@ -104,7 +102,6 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 // -- Result Summary --------------------------------------------------
 
 export function ResultSummary({ result }: { result: TestRunResult }) {
-  const { t } = useTranslation();
   return (
     <div className="px-4 py-3 border-t border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
       <div className="flex items-center gap-4 text-sm">

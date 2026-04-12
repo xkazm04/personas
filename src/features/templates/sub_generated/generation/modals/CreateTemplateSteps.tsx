@@ -27,7 +27,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
           type="text"
           value={templateName}
           onChange={(e) => reducer.setTemplateName(e.target.value)}
-          placeholder={t.templates.generation.template_name_label + '...'}
+          placeholder="Template name..."
           className="w-full px-4 py-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
           autoFocus
         />

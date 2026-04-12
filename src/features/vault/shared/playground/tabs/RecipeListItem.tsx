@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';

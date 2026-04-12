@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   motion, AnimatePresence, useMotionValue, useTransform,
 } from 'framer-motion';
@@ -176,7 +175,6 @@ function SwipeCard({
 // ---------------------------------------------------------------------------
 
 export default function IdeaTriagePage() {
-  const { t } = useTranslation();
   const { triageIdea, deleteIdea } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeIdeas = useSystemStore((s) => s.ideas);

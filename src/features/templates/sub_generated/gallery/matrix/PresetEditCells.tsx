@@ -73,6 +73,7 @@ interface MemoryEditCellProps {
 }
 
 export function MemoryEditCell({ editState, callbacks }: MemoryEditCellProps) {
+  const { t } = useTranslation();
   const currentPreset = useMemo(() => {
     if (!editState.memoryEnabled) return 'stateless';
     const scope = editState.memoryScope || 'all';
@@ -112,6 +113,7 @@ interface MessagesEditCellProps {
 }
 
 export function MessagesEditCell({ editState, callbacks }: MessagesEditCellProps) {
+  const { t } = useTranslation();
   const currentPreset = editState.messagePreset || 'updates';
 
   const handlePresetChange = useCallback(
@@ -143,6 +145,7 @@ interface ErrorEditCellProps {
 }
 
 export function ErrorEditCell({ editState, callbacks }: ErrorEditCellProps) {
+  const { t } = useTranslation();
   const current = editState.errorStrategy || 'halt';
 
   const handleChange = useCallback(
@@ -174,6 +177,7 @@ interface UseCaseEditCellProps {
 }
 
 export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) {
+  const { t } = useTranslation();
   const [newTitle, setNewTitle] = useState('');
   const useCases = editState.useCases ?? [];
 

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   Swords, Trophy, Clock, Loader2, CheckCircle2, XCircle,
   Plus, RefreshCw, Ban, Star,
@@ -452,7 +451,6 @@ function CompetitionCard({
 // ---------------------------------------------------------------------------
 
 export function CompetitionPanel() {
-  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const [competitions, setCompetitions] = useState<DevCompetition[]>([]);
   const [loading, setLoading] = useState(false);

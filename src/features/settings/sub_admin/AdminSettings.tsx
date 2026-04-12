@@ -43,12 +43,12 @@ export default function AdminSettings() {
   };
 
   const statusLabel = tourActive
-    ? st.status_active
+    ? st.tour_active
     : tourCompleted
-      ? st.status_completed
+      ? st.tour_completed
       : tourDismissed
-        ? st.status_dismissed
-        : st.status_not_started;
+        ? st.tour_dismissed
+        : st.tour_not_started;
 
   const statusColor = tourActive
     ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
@@ -76,7 +76,7 @@ export default function AdminSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-foreground/90">{st.guided_tour}</h3>
-                <p className="text-sm text-muted-foreground/50">{st.guided_tour_hint}</p>
+                <p className="text-sm text-muted-foreground/50">{st.tour_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${statusColor}`}>
                 {statusLabel}

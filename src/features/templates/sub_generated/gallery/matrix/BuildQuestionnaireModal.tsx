@@ -8,7 +8,6 @@
  * in the progress dots with a pulsing ring.
  */
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, X, Send, Check, Info,

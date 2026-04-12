@@ -114,16 +114,16 @@ export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean
  * Codex CLI removed — all execution uses Claude Code CLI only.
  */
 export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
-  design_analysis:        { claude_code: true },
-  credential_design:      { claude_code: true },
-  credential_healthcheck: { claude_code: true },
-  n8n_transform:          { claude_code: true },
-  test_generation:        { claude_code: true },
-  persona_execution:      { claude_code: true },
-  template_adopt:         { claude_code: true },
-  query_debug:            { claude_code: true },
-  healing_analysis:       { claude_code: true },
-  recipe_execution:       { claude_code: true },
+  design_analysis:        { claude_code: true, ollama: false },
+  credential_design:      { claude_code: true, ollama: false },
+  credential_healthcheck: { claude_code: true, ollama: false },
+  n8n_transform:          { claude_code: true, ollama: false },
+  test_generation:        { claude_code: true, ollama: false },
+  persona_execution:      { claude_code: true, ollama: false },
+  template_adopt:         { claude_code: true, ollama: false },
+  query_debug:            { claude_code: true, ollama: false },
+  healing_analysis:       { claude_code: true, ollama: false },
+  recipe_execution:       { claude_code: true, ollama: false },
 };
 
 /** Settings key for the persisted capability map */

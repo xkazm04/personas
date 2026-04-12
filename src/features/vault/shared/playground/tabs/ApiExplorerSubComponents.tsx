@@ -144,6 +144,8 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
 }
 
 export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClose, onSubmit }: PasteSpecModalProps) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
       <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-elevation-3 p-4 space-y-3">

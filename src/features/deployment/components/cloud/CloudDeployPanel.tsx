@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useEffect, useCallback } from 'react';
 import { Cloud, Activity } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -43,7 +42,6 @@ const TABS: TabDef[] = [
 // ---------------------------------------------------------------------------
 
 export default function CloudDeployPanel() {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('connection');
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');

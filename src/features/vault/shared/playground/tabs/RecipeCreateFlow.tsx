@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { Sparkles, X, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';

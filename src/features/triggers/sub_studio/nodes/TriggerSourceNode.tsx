@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow,

@@ -88,6 +88,12 @@ Plus `apply_provider_env` injects per-provider env vars (OLLAMA_*, ANTHROPIC_*, 
 
 `engine/provider/codex.rs::build_execution_args` does NOT call into `prompt::build_cli_args` — it builds Codex args independently, so Claude-specific flags like `--effort` don't apply to Codex. When proposing CLI flag changes, verify the flag is Claude-specific before adding it here.
 
+### `assemble_prompt` brackets the persona content with TWO autonomy directives (top + bottom)
+
+Discovered in `/research` run 12 (2026-04-12, Andrej Karpathy skills video). `engine/prompt.rs::assemble_prompt` prepends `EXECUTION_MODE_DIRECTIVE` at line 95 (constant at line 1462) **and** appends a second "EXECUTE NOW" reinforcement at line 497-511 which repeats the "Act autonomously — do NOT ask questions" instruction. Persona-authored `structured_prompt.customSections` (line 252) land **between** the two directives, so a template cannot override "don't ask questions" via customSections alone — any such override would be contradicted at the bottom of the prompt by the EXECUTE NOW block.
+
+**Implication for /research:** any finding that proposes changing default prompt behavior (discipline mode, clarification style, verification rituals, early-exit rules) must touch BOTH sites (line 95 + line 497-511), or it only half-works. This is the "pre + post sandwich" pattern — assume it applies until verified otherwise. See the Karpathy discipline handoff at `.planning/handoffs/2026-04-12-karpathy-discipline-override.md` for the reference implementation of a dual-site directive override.
+
 ### Effort flag mechanism (CLI 2.1.94 hardening)
 
 `engine/prompt.rs::DEFAULT_EFFORT = "medium"` is the personas-pinned default effort level. CLI 2.1.94 silently changed the implicit CLI default from `medium` to `high` for API-key/Bedrock/Vertex/Foundry/Team/Enterprise users; personas pins `medium` everywhere via `--effort` so behavior is deterministic across CLI versions and account tiers. Override path:

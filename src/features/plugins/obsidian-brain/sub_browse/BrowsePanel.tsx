@@ -79,6 +79,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
 }
 
 export default function BrowsePanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);

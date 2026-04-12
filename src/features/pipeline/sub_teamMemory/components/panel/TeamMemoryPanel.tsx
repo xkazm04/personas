@@ -1,4 +1,3 @@
-import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
@@ -35,8 +34,6 @@ export default function TeamMemoryPanel({
   teamId, memories, total, stats, onClose, onDelete, onImportanceChange,
   onCreate, onFilter, onLoadMore, onFilterByRun, onEdit,
 }: TeamMemoryPanelProps) {
-  const { t, tx } = useTranslation();
-  const pt = t.pipeline;
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [statsExpanded, setStatsExpanded] = useState(false);

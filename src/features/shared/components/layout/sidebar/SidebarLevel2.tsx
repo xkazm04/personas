@@ -66,7 +66,6 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   const templateTab = useSystemStore((s) => s.templateTab);
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
   // Badge counts passed as props from Sidebar (single useBadgeCounts instance)
-  const templateGalleryTotal = useSystemStore((s) => s.templateGalleryTotal);
   const settingsTab = useSystemStore((s) => s.settingsTab);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const eventBusTab = useSystemStore((s) => s.eventBusTab);

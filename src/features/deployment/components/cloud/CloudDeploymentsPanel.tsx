@@ -40,7 +40,7 @@ export function CloudDeploymentsPanel({
   onRemove,
   onRefresh,
 }: Props) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const dt = t.deployment.deployments_panel;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();

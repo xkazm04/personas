@@ -14,7 +14,7 @@ interface CloudExecutionRowProps {
 }
 
 export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput }: CloudExecutionRowProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const dt = t.deployment.exec_detail;
   return (
     <div className="rounded-lg bg-secondary/30 border border-primary/10 overflow-hidden">

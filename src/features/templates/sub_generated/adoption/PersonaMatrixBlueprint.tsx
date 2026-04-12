@@ -6,7 +6,6 @@
  * circuit-dot indicators.  Uses theme CSS variables — works across all themes.
  */
 import { useMemo } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, Play, Eye, Sparkles, Terminal } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';

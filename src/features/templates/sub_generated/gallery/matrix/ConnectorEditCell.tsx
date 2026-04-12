@@ -228,6 +228,7 @@ export function ConnectorEditCell({
   callbacks,
   onNavigateCatalog,
 }: ConnectorEditCellProps) {
+  const { t } = useTranslation();
   const [popupConnector, setPopupConnector] = useState<string | null>(null);
 
   // Build set of service_types present in vault (same as wizard's useAdoptionAutoResolve)

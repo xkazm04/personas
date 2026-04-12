@@ -153,6 +153,8 @@ export function CloudConnectionForm({
 }
 
 function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
+  const { t } = useTranslation();
+  const dt = t.deployment.connection;
   const allPassed = diagnostics.steps.every((s) => s.passed);
 
   return (
