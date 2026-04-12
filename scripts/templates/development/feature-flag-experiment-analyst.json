@@ -791,6 +791,20 @@
         "context": "Balances signal-to-noise in Slack. Concise suits high-volume teams; verbose suits data-driven teams who want to audit before acting.",
         "dimension": "use-cases"
       }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "execution_discipline",
+        "label": "Execution Discipline",
+        "type": "select",
+        "default_value": "deliberate",
+        "value": "deliberate",
+        "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
+        "options": [
+          "autonomous",
+          "deliberate"
+        ]
+      }
     ]
   },
   "is_published": true
