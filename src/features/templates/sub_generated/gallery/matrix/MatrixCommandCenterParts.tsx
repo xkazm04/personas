@@ -16,10 +16,11 @@ import type { DesignQuestion } from '@/lib/types/designTypes';
 import type { ToolTestResult } from '@/lib/types/buildTypes';
 import { useAgentStore } from '@/stores/agentStore';
 import { TestReportModal } from './TestReportModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Import constants used locally + re-export for backward compatibility
-import { BUILD_PHASE_LABELS, CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES, type BuildPhase } from './matrixBuildConstants';
-export { BUILD_PHASE_LABELS, CELL_FRIENDLY_NAMES, PHASE_SUBTEXT, ORB_GLOW_CLASSES } from './matrixBuildConstants';
+import { CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES, type BuildPhase } from './matrixBuildConstants';
+export { CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES } from './matrixBuildConstants';
 export type { BuildPhase } from './matrixBuildConstants';
 
 interface PromptSection { key: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; content: string; }
@@ -125,7 +126,20 @@ export function ActiveBuildProgress({
   /** Submit all collected answers at once */
   onSubmitAnswers?: () => void;
 }) {
-  const phaseLabel = BUILD_PHASE_LABELS[buildPhase ?? 'analyzing'] ?? 'Building...';
+  const { t } = useTranslation();
+  // Map BuildPhase keys to t.templates.matrix.* keys (key names differ — see below).
+  const PHASE_TO_I18N: Record<string, string> = {
+    initializing: t.templates.matrix.preparing,
+    analyzing: t.templates.matrix.analyzing,
+    resolving: t.templates.matrix.building,
+    awaiting_input: t.templates.matrix.waiting_input,
+    draft_ready: t.templates.matrix.draft_ready,
+    testing: t.templates.matrix.testing,
+    test_complete: t.templates.matrix.test_complete,
+    promoted: t.templates.matrix.promoted,
+    failed: t.templates.matrix.build_failed,
+  };
+  const phaseLabel = PHASE_TO_I18N[buildPhase ?? 'analyzing'] ?? t.templates.matrix.analyzing;
   const isAwaitingInput = buildPhase === 'awaiting_input';
   const pendingAnswerCount = useAgentStore((s) => Object.keys(s.buildPendingAnswers).length);
 

@@ -5940,6 +5940,15 @@ export const en = {
       test_complete: "Test complete",
       promoted: "Agent promoted",
       build_failed: "Build failed",
+      // Phase subtext hints — longer descriptions shown under the build phase label.
+      // Used by BuildStatusIndicator.hint prop in the command center.
+      // Keep concise (under 8 words) and end with an ellipsis or period.
+      phase_subtext_analyzing: "Understanding your intent...",
+      phase_subtext_resolving: "Building agent configuration...",
+      // Sub-text displayed when the build is paused waiting for user dimension answers.
+      phase_subtext_awaiting_input: "Your input is needed — click a highlighted dimension",
+      // Sub-text displayed when all dimensions are resolved and ready for test.
+      phase_subtext_draft_ready: "All dimensions resolved — ready for testing",
       // Cell dimension labels
       dim_tasks: "Tasks",
       dim_apps: "Apps & Services",
