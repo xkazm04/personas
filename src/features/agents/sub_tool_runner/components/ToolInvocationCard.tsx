@@ -9,6 +9,7 @@ import {
   Wrench,
   Terminal,
   Globe,
+  Zap,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
@@ -28,8 +29,8 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
 
-  const toolType = !tool.script_path ? 'api' : 'script';
-  const TypeIcon = toolType === 'api' ? Globe : Terminal;
+  const toolType = tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
+  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' ? Terminal : Globe;
 
   const handleRun = () => {
     onRun(inputJson.trim() || '{}');

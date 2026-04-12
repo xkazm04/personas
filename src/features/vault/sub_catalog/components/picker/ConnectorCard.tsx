@@ -1,4 +1,4 @@
-import { Plug, Monitor } from 'lucide-react';
+import { Plug, Monitor, BadgeCheck } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
@@ -6,14 +6,16 @@ import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/shared/utils/
 import { getLicenseTier, LICENSE_TIER_META } from '@/lib/credentials/connectorLicensing';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { LICENSE_ICON } from './connectorCardConstants';
+import type { RecipeIndicator } from './useRecipeIndicators';
 
 interface ConnectorCardProps {
   connector: ConnectorDefinition;
   isOwned: boolean;
+  recipeIndicator?: RecipeIndicator;
   onPickType: (connector: ConnectorDefinition) => void;
 }
 
-export function ConnectorCard({ connector, isOwned, onPickType }: ConnectorCardProps) {
+export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType }: ConnectorCardProps) {
   const authMethods = getAuthMethods(connector);
   const tier = getLicenseTier(connector.name, connector.metadata as Record<string, unknown> | null);
   const tierMeta = LICENSE_TIER_META[tier];
@@ -60,6 +62,17 @@ export function ConnectorCard({ connector, isOwned, onPickType }: ConnectorCardP
         >
           <Monitor className="w-2.5 h-2.5" />
           Local
+        </span>
+      )}
+
+      {/* Recipe reuse indicator */}
+      {recipeIndicator && (
+        <span
+          className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-medium bg-emerald-500/10 border-emerald-500/20 text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity duration-200"
+          title={`Verified setup \u2014 used ${recipeIndicator.usageCount} ${recipeIndicator.usageCount === 1 ? 'time' : 'times'}`}
+        >
+          <BadgeCheck className="w-2.5 h-2.5" />
+          {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : 'Cached'}
         </span>
       )}
 

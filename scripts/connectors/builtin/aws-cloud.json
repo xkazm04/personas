@@ -1,0 +1,73 @@
+{
+  "id": "builtin-aws-cloud",
+  "name": "aws_cloud",
+  "label": "Amazon Web Services",
+  "color": "#FF9900",
+  "icon_url": "/icons/connectors/aws-s3.svg",
+  "category": "cloud",
+  "fields": [
+    {
+      "key": "access_key_id",
+      "label": "Access Key ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "AKIA...",
+      "helpText": "From AWS IAM -> Users -> Security credentials -> Access keys",
+      "sensitive": true
+    },
+    {
+      "key": "secret_access_key",
+      "label": "Secret Access Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From the same IAM access key creation page",
+      "sensitive": true
+    },
+    {
+      "key": "region",
+      "label": "Region",
+      "type": "text",
+      "required": true,
+      "placeholder": "us-east-1",
+      "helpText": "Default AWS region for API calls",
+      "sensitive": false
+    },
+    {
+      "key": "account_id",
+      "label": "Account ID",
+      "type": "text",
+      "required": false,
+      "placeholder": "123456789012",
+      "helpText": "12-digit AWS account ID. Found in the top-right menu of the AWS Console.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://sts.{{region}}.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15",
+    "method": "GET",
+    "headers": {
+      "Authorization": "AWS4-HMAC-SHA256 {{access_key_id}}"
+    },
+    "description": "Validates AWS credentials via STS GetCallerIdentity"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Amazon Web Services access for compute, billing, storage, and other AWS services.",
+    "auth_type": "api_key",
+    "auth_type_label": "Access Key",
+    "docs_url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html",
+    "setup_guide": "1. Log in to the AWS Console.\n2. Go to IAM -> Users -> select your user (or create one).\n3. Under Security credentials, click 'Create access key'.\n4. Choose 'Application running outside AWS'.\n5. Copy the Access Key ID and Secret Access Key.\n6. Your Account ID is in the top-right menu of the AWS Console.\n7. Grant the IAM user permissions needed for your use case (e.g., ce:GetCostAndUsage for billing).",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "Access Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

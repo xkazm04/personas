@@ -295,7 +295,7 @@ export function useMatrixLifecycle({
     // Also reset the DB session phase back to draft_ready so re-testing works
     const sessionId = state.buildSessionId;
     if (sessionId) {
-      invokeWithTimeout("reset_build_session_phase", { sessionId }).catch(() => {});
+      invokeWithTimeout("reset_build_session_phase", { sessionId }).catch(silentCatch("lifecycle:rejectTest"));
     }
   }, []);
 

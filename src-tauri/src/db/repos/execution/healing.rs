@@ -120,7 +120,7 @@ pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppErr
             )?;
         } else {
             conn.execute(
-                "UPDATE persona_healing_issues SET status = ?1 WHERE id = ?2",
+                "UPDATE persona_healing_issues SET status = ?1, resolved_at = NULL WHERE id = ?2",
                 params![status, id],
             )?;
         }
@@ -528,10 +528,18 @@ mod tests {
         assert_eq!(pending.status, "auto_fix_pending");
         assert!(pending.resolved_at.is_none());
 
-        // Filter by resolved status
+        // Revert resolved issue back to open — resolved_at must be cleared
+        update_status(&pool, &issue1.id, "open").unwrap();
+        let reverted = get_by_id(&pool, &issue1.id).unwrap();
+        assert_eq!(reverted.status, "open");
+        assert!(
+            reverted.resolved_at.is_none(),
+            "resolved_at should be cleared when issue reverts to open"
+        );
+
+        // Filter by resolved status (issue1 was reverted to open above)
         let resolved_list = get_all(&pool, None, Some("resolved")).unwrap();
-        assert_eq!(resolved_list.len(), 1);
-        assert_eq!(resolved_list[0].id, issue1.id);
+        assert_eq!(resolved_list.len(), 0);
 
         // Delete
         let deleted = delete(&pool, &issue1.id).unwrap();

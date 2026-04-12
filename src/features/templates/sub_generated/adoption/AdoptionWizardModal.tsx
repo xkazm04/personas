@@ -1,7 +1,13 @@
+import { useState, useCallback } from 'react';
 import { X, Grid3X3 } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useAgentStore } from '@/stores/agentStore';
 import { MatrixAdoptionView } from './MatrixAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
+import {
+  ConfirmDestructiveModal,
+  type ConfirmDestructiveConfig,
+} from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 
 interface AdoptionWizardModalProps {
   isOpen: boolean;
@@ -10,18 +16,46 @@ interface AdoptionWizardModalProps {
   onPersonaCreated: () => void;
 }
 
+/** Phases where the user has not yet done meaningful work. */
+const SAFE_CLOSE_PHASES = new Set(['initializing', 'promoted', 'cancelled', 'failed']);
+
 export default function AdoptionWizardModal({
   isOpen,
   onClose,
   review,
   onPersonaCreated,
 }: AdoptionWizardModalProps) {
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
+  const buildSessionId = useAgentStore((s) => s.buildSessionId);
+
+  const handleCloseAttempt = useCallback(() => {
+    // No active build session or phase is safe to close — skip confirmation
+    if (!buildSessionId || SAFE_CLOSE_PHASES.has(buildPhase)) {
+      onClose();
+      return;
+    }
+
+    setConfirmConfig({
+      title: 'Discard adoption progress?',
+      message: 'You have unsaved work in this adoption wizard. Closing now will discard your progress.',
+      confirmLabel: 'Discard & Close',
+      onConfirm: () => {
+        setConfirmConfig(null);
+        onClose();
+      },
+      onCancel: () => {
+        setConfirmConfig(null);
+      },
+    });
+  }, [buildPhase, buildSessionId, onClose]);
+
   if (!isOpen || !review) return null;
 
   return (
     <BaseModal
       isOpen
-      onClose={onClose}
+      onClose={handleCloseAttempt}
       titleId="adoption-matrix-title"
       maxWidthClass="max-w-[1750px]"
       panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
@@ -40,7 +74,7 @@ export default function AdoptionWizardModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95"
           >
             <X className="w-4 h-4" />
@@ -48,10 +82,14 @@ export default function AdoptionWizardModal({
         </div>
         <MatrixAdoptionView
           review={review}
-          onClose={onClose}
+          onClose={handleCloseAttempt}
           onPersonaCreated={onPersonaCreated}
         />
       </div>
+      <ConfirmDestructiveModal
+        open={!!confirmConfig}
+        config={confirmConfig}
+      />
     </BaseModal>
   );
 }

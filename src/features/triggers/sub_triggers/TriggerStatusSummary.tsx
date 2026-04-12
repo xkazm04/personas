@@ -1,5 +1,5 @@
 import type { PersonaTrigger } from '@/lib/types/types';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta } from '@/lib/utils/platform/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta, getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 
 interface TriggerStatusSummaryProps {
@@ -49,7 +49,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
         </span>
       )}
       <span className={`text-sm font-medium ${colorClass}`}>
-        {trigger.trigger_type === 'event_listener' ? 'Event Listener' : trigger.trigger_type.charAt(0).toUpperCase() + trigger.trigger_type.slice(1)}
+        {getTriggerTypeLabel(trigger.trigger_type)}
       </span>
       {parts.length > 0 && (
         <span className="text-sm text-muted-foreground/35 truncate">

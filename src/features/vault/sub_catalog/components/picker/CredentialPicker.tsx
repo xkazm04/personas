@@ -5,6 +5,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { PickerGrid } from './PickerGrid';
 import { usePickerFilters } from './usePickerFilters';
+import { useRecipeIndicators } from './useRecipeIndicators';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -24,6 +25,7 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
   }), [rawConnectors, viewMode]);
 
   const filters = usePickerFilters(connectors, credentials, searchTerm);
+  const recipeIndicators = useRecipeIndicators();
   const tourActive = useSystemStore((s) => s.tourActive);
   const recordCredentialInteraction = useSystemStore((s) => s.recordCredentialInteraction);
 
@@ -59,6 +61,7 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
       <PickerGrid
         filteredConnectors={filters.filteredConnectors}
         ownedServiceTypes={filters.ownedServiceTypes}
+        recipeIndicators={recipeIndicators}
         onPickType={handlePickType}
       />
     </div>

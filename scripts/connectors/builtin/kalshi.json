@@ -1,0 +1,39 @@
+{
+  "id": "builtin-kalshi",
+  "name": "kalshi",
+  "label": "Kalshi",
+  "color": "#4DE4B2",
+  "icon_url": "/icons/connectors/kalshi.svg",
+  "category": "finance",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": false,
+      "placeholder": "a952bcbe-ec3b-...",
+      "helpText": "From Kalshi Settings → API Keys. Optional — public market data is accessible without auth."
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://trading-api.kalshi.com/trade-api/v2/exchange/status",
+    "method": "GET",
+    "headers": {},
+    "description": "Checks Kalshi exchange status (public endpoint, no auth required)"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Kalshi prediction market platform for reading markets, events, order books, and settlement data.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.kalshi.com",
+    "setup_guide": "1. Create an account at kalshi.com\n2. Go to Settings → API Keys\n3. Generate a new API key\n4. Paste the key here (optional — public market data works without auth)",
+    "pricing_tier": "freemium",
+    "mcp_package": "@newyorkcompute/kalshi-mcp",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

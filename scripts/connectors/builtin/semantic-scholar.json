@@ -1,0 +1,52 @@
+{
+  "id": "builtin-semantic-scholar",
+  "name": "semantic_scholar",
+  "label": "Semantic Scholar",
+  "color": "#1857B6",
+  "icon_url": "/icons/connectors/semantic-scholar.svg",
+  "category": "research",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": false,
+      "placeholder": "Optional - raises rate limit",
+      "helpText": "Request at semanticscholar.org/product/api. Free tier works without a key (100 req/5min).",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.semanticscholar.org/graph/v1/paper/search?query=test&limit=1",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates Semantic Scholar API access with a test search"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Academic paper search with citation graphs, influence metrics, and paper recommendations from Semantic Scholar.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://api.semanticscholar.org/",
+    "setup_guide": "1. Visit semanticscholar.org/product/api\n2. Request an API key (optional - free tier works without one)\n3. API key raises rate limit from 100 req/5min to 1 req/sec sustained",
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "Semantic Scholar Graph API. Base URL: https://api.semanticscholar.org/graph/v1. If $SEMANTIC_SCHOLAR_API_KEY is set, include header x-api-key. Main endpoints: /paper/search, /paper/{paperId}, /paper/{paperId}/citations, /paper/{paperId}/references, /author/{authorId}.",
+      "examples": [
+        "curl -H 'x-api-key: $SEMANTIC_SCHOLAR_API_KEY' 'https://api.semanticscholar.org/graph/v1/paper/search?query=attention+mechanism&limit=10&fields=title,abstract,year,citationCount,authors'",
+        "curl -H 'x-api-key: $SEMANTIC_SCHOLAR_API_KEY' 'https://api.semanticscholar.org/graph/v1/paper/649def34f8be52c8b66281af98ae884c09aef38b?fields=title,abstract,citations,references'",
+        "curl -H 'x-api-key: $SEMANTIC_SCHOLAR_API_KEY' 'https://api.semanticscholar.org/graph/v1/paper/search?query=transformer+architecture&year=2023-2026&fieldsOfStudy=Computer+Science&limit=20'",
+        "curl -H 'x-api-key: $SEMANTIC_SCHOLAR_API_KEY' 'https://api.semanticscholar.org/recommendations/v1/papers/forpaper/649def34f8be52c8b66281af98ae884c09aef38b?limit=10&fields=title,year'"
+      ],
+      "gotchas": [
+        "Without API key: 100 requests per 5 minutes. With key: 1 request/sec sustained, burst up to 10/sec.",
+        "Paper IDs can be: Semantic Scholar ID (40-char hex), DOI (10.xxxx/...), ArXiv:YYMM.NNNNN, PMID:NNNNN, or URL.",
+        "Use 'fields' parameter to control response size -- default returns minimal fields. Common fields: title, abstract, year, citationCount, referenceCount, authors, externalIds, url.",
+        "Pagination: use 'offset' and 'limit' (max 100 per page). Total results in response metadata.",
+        "fieldsOfStudy filter values: Computer Science, Medicine, Biology, Physics, Mathematics, etc."
+      ]
+    }
+  }
+}

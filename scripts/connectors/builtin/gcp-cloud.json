@@ -1,0 +1,55 @@
+{
+  "id": "builtin-gcp-cloud",
+  "name": "gcp_cloud",
+  "label": "Google Cloud Platform",
+  "color": "#4285F4",
+  "icon_url": "/icons/connectors/gcp-cloud.svg",
+  "category": "cloud",
+  "fields": [
+    {
+      "key": "service_account_json",
+      "label": "Service Account Key (JSON)",
+      "type": "password",
+      "required": true,
+      "placeholder": "{\"type\": \"service_account\", ...}",
+      "helpText": "Full JSON key file content from GCP Console -> IAM -> Service Accounts -> Keys",
+      "sensitive": true
+    },
+    {
+      "key": "project_id",
+      "label": "Project ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "my-project-123",
+      "helpText": "GCP project ID (not project name). Found in the project selector or dashboard.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://cloudresourcemanager.googleapis.com/v1/projects/{{project_id}}",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{service_account_json}}"
+    },
+    "description": "Validates GCP credentials by listing project metadata"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Google Cloud Platform access for compute, storage, billing, and other GCP services.",
+    "auth_type": "service_account",
+    "auth_type_label": "Service Account",
+    "docs_url": "https://cloud.google.com/iam/docs/service-account-overview",
+    "setup_guide": "1. Go to the GCP Console (console.cloud.google.com).\n2. Navigate to IAM & Admin -> Service Accounts.\n3. Click 'Create Service Account' and give it a descriptive name.\n4. Grant it the roles needed for your use case (e.g., Billing Viewer for cost monitoring).\n5. Go to the Keys tab and click 'Add Key' -> 'Create new key' -> JSON.\n6. Copy the entire JSON content and paste it here.\n7. Note your Project ID from the project selector at the top of the console.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "service_account",
+        "label": "Service Account Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

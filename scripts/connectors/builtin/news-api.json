@@ -1,0 +1,40 @@
+{
+  "id": "builtin-news_api",
+  "name": "news_api",
+  "label": "News API",
+  "color": "#CF212B",
+  "icon_url": "/icons/connectors/news-api.svg",
+  "category": "research",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "abc123def456...",
+      "helpText": "From newsapi.org → Get API Key (free tier: 100 requests/day)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://newsapi.org/v2/top-headlines/sources",
+    "method": "GET",
+    "headers": {
+      "X-Api-Key": "{{api_key}}"
+    },
+    "description": "Validates API key by fetching news sources"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "News API for fetching headlines, articles, and sources from 80,000+ news outlets worldwide.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://newsapi.org/docs",
+    "setup_guide": "1. Go to newsapi.org and sign up\n2. Copy your API key from the dashboard\n3. Paste it here",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

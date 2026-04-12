@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { CredentialDesignProvider } from '@/features/vault/sub_catalog/components/design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/sub_catalog/components/design/phases/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/sub_catalog/components/design/phases/AnalyzingPhase';
+import { RecipeConfidenceBanner } from '@/features/vault/sub_catalog/components/design/phases/RecipeConfidenceBanner';
 import { PreviewPhase } from '@/features/vault/sub_catalog/components/design/phases/PreviewPhase';
 import { DonePhase } from '@/features/vault/sub_catalog/components/design/phases/DonePhase';
 import { ErrorPhase } from '@/features/vault/sub_catalog/components/design/phases/ErrorPhase';
@@ -135,7 +136,10 @@ export function CredentialDesignModalBody({
           )}
 
           {orch.phase === 'analyzing' && (
-            <AnalyzingPhase key="analyzing" outputLines={orch.outputLines} onCancel={orch.cancel} />
+            <div key="analyzing" className="space-y-3">
+              <RecipeConfidenceBanner instruction={orch.instruction} />
+              <AnalyzingPhase outputLines={orch.outputLines} onCancel={orch.cancel} />
+            </div>
           )}
 
           {orch.phase === 'preview' && orch.contextValue && (

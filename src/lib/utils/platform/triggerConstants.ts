@@ -340,6 +340,13 @@ export const RATE_LIMIT_WINDOW_OPTIONS = [
   { label: 'Per hour', value: 3600 },       // i18n: triggers.rate_per_hour
 ] as const;
 
+/** Look up the human-readable label for a trigger type. Falls back to Title Case. */
+export function getTriggerTypeLabel(triggerType: string): string {
+  return _labelByType.get(triggerType) ?? triggerType.charAt(0).toUpperCase() + triggerType.slice(1).replace(/_/g, ' ');
+}
+
+const _labelByType = new Map(TRIGGER_TYPE_OPTIONS.map((o) => [o.type, o.label]));
+
 /** Extract rate_limit from a raw config object, falling back to defaults. */
 export function extractRateLimit(config: Record<string, unknown> | null | undefined): TriggerRateLimitConfig {
   if (!config || typeof config.rate_limit !== 'object' || config.rate_limit === null) {

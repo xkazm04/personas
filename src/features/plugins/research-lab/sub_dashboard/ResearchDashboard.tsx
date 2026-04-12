@@ -1,0 +1,117 @@
+import { useEffect } from 'react';
+import {
+  BookOpen, FolderSearch, Lightbulb, FlaskConical, Target, FileText,
+  ArrowRight, Plus,
+} from 'lucide-react';
+import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
+
+export default function ResearchDashboard() {
+  const { t } = useTranslation();
+  const stats = useSystemStore((s) => s.researchDashboardStats);
+  const fetchStats = useSystemStore((s) => s.fetchResearchDashboardStats);
+  const projects = useSystemStore((s) => s.researchProjects);
+  const fetchProjects = useSystemStore((s) => s.fetchResearchProjects);
+  const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
+  const setActiveProject = useSystemStore((s) => s.setActiveResearchProject);
+
+  useEffect(() => {
+    fetchStats();
+    fetchProjects();
+  }, [fetchStats, fetchProjects]);
+
+  const statCards = [
+    { icon: FolderSearch, label: t.research_lab.projects, value: stats?.totalProjects ?? 0, sub: `${stats?.activeProjects ?? 0} ${t.research_lab.active}`, tab: 'projects' as const },
+    { icon: BookOpen, label: t.research_lab.sources, value: stats?.totalSources ?? 0, tab: 'literature' as const },
+    { icon: Lightbulb, label: t.research_lab.hypotheses, value: stats?.totalHypotheses ?? 0, tab: 'hypotheses' as const },
+    { icon: FlaskConical, label: t.research_lab.experiments, value: stats?.totalExperiments ?? 0, tab: 'experiments' as const },
+    { icon: Target, label: t.research_lab.findings, value: stats?.totalFindings ?? 0, tab: 'findings' as const },
+    { icon: FileText, label: t.research_lab.reports, value: stats?.totalReports ?? 0, tab: 'reports' as const },
+  ];
+
+  return (
+    <div className="p-6 space-y-6 overflow-y-auto">
+      <div className="flex items-center justify-between">
+        <h2 className="typo-heading text-foreground">{t.research_lab.dashboard}</h2>
+        <button
+          onClick={() => setResearchLabTab('projects')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          {t.research_lab.create_project}
+        </button>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {statCards.map((card) => (
+          <button
+            key={card.label}
+            onClick={() => setResearchLabTab(card.tab)}
+            className="rounded-card bg-secondary/50 border border-border/30 p-4 flex items-start gap-3 hover:border-primary/30 transition-colors text-left group"
+          >
+            <card.icon className="w-5 h-5 text-primary/60 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="typo-body text-foreground font-semibold">{card.value}</p>
+              <p className="typo-caption text-foreground/70">{card.label}</p>
+              {card.sub && <p className="typo-micro text-foreground/50">{card.sub}</p>}
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-foreground/20 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ))}
+      </div>
+
+      {/* Recent projects */}
+      {projects.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="typo-body text-foreground/80 font-medium">{t.research_lab.projects}</h3>
+            <button
+              onClick={() => setResearchLabTab('projects')}
+              className="typo-caption text-primary/60 hover:text-primary/80 transition-colors"
+            >
+              View all
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {projects.slice(0, 5).map((project) => (
+              <button
+                key={project.id}
+                onClick={() => {
+                  setActiveProject(project.id);
+                  setResearchLabTab('literature');
+                }}
+                className="w-full rounded-card bg-secondary/30 border border-border/20 p-3 hover:border-primary/20 transition-colors text-left group"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="typo-body text-foreground font-medium truncate">{project.name}</p>
+                    {project.thesis && (
+                      <p className="typo-micro text-foreground/40 truncate mt-0.5">{project.thesis}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/50 font-medium">
+                      {project.status.replace(/_/g, ' ')}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {projects.length === 0 && (
+        <div className="rounded-card bg-secondary/30 border border-border/20 p-8 text-center space-y-3">
+          <FolderSearch className="w-10 h-10 text-foreground/15 mx-auto" />
+          <p className="typo-body text-foreground/50">{t.research_lab.no_projects}</p>
+          <p className="typo-caption text-foreground/30 max-w-md mx-auto">{t.research_lab.no_projects_hint}</p>
+        </div>
+      )}
+    </div>
+  );
+}

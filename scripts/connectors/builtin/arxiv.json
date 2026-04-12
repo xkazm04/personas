@@ -1,0 +1,42 @@
+{
+  "id": "builtin-arxiv",
+  "name": "arxiv",
+  "label": "arXiv",
+  "color": "#B31B1B",
+  "icon_url": "/icons/connectors/arxiv.svg",
+  "category": "research",
+  "fields": [],
+  "healthcheck_config": {
+    "endpoint": "http://export.arxiv.org/api/query?search_query=all:test&max_results=1",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates arXiv API access with a test query"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Access arXiv preprint repository for scientific papers across physics, mathematics, computer science, and more.",
+    "auth_type": "none",
+    "auth_type_label": "None",
+    "docs_url": "https://info.arxiv.org/help/api/index.html",
+    "setup_guide": "No authentication required. arXiv API is free and open.",
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "arXiv API returns Atom XML. Base URL: http://export.arxiv.org/api/query. Use search_query parameter with field prefixes: ti (title), au (author), abs (abstract), cat (category). Combine with AND/OR/ANDNOT. Use start and max_results for pagination.",
+      "examples": [
+        "curl 'http://export.arxiv.org/api/query?search_query=ti:transformer+AND+cat:cs.CL&max_results=10'",
+        "curl 'http://export.arxiv.org/api/query?search_query=au:hinton+AND+abs:attention&start=0&max_results=5'",
+        "curl 'http://export.arxiv.org/api/query?id_list=2301.07041,2302.13971'",
+        "curl 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=20'"
+      ],
+      "gotchas": [
+        "Response is Atom XML, not JSON. Parse <entry> elements for papers. Key fields: <title>, <summary>, <author><name>, <published>, <link> (PDF link has title='pdf').",
+        "Rate limit: max 1 request per 3 seconds. arXiv will block IPs that exceed this.",
+        "Category codes: cs.AI, cs.CL, cs.CV, cs.LG, math.CO, physics.*, q-bio.*, stat.ML, etc.",
+        "Use id_list for fetching specific papers by arXiv ID (e.g., 2301.07041).",
+        "PDF download: replace /abs/ with /pdf/ in the paper URL."
+      ]
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "builtin-pubmed",
+  "name": "pubmed",
+  "label": "PubMed",
+  "color": "#326599",
+  "icon_url": "/icons/connectors/pubmed.svg",
+  "category": "research",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "NCBI API Key",
+      "type": "password",
+      "required": false,
+      "placeholder": "Optional - raises rate limit to 10 req/sec",
+      "helpText": "Register at ncbi.nlm.nih.gov/account/ to get an API key. Without a key: 3 req/sec.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi?db=pubmed&retmode=json",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates PubMed E-utilities access via database info endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Access PubMed biomedical and life sciences literature from the National Center for Biotechnology Information (NCBI).",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
+    "setup_guide": "1. Visit ncbi.nlm.nih.gov/account/ and sign in or register\n2. Go to Settings > API Key Management\n3. Click 'Create an API Key'\n4. Copy the key (optional but recommended for higher rate limits)",
+    "pricing_tier": "free",
+    "llm_usage_hint": {
+      "overview": "PubMed E-utilities API. Base URL: https://eutils.ncbi.nlm.nih.gov/entrez/eutils. If $PUBMED_API_KEY is set, append &api_key= to all requests. Main tools: esearch.fcgi (search), efetch.fcgi (retrieve), elink.fcgi (find related). Always include &retmode=json for JSON output (where supported).",
+      "examples": [
+        "curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=CRISPR+gene+editing&retmode=json&retmax=10&api_key=$PUBMED_API_KEY'",
+        "curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=38123456,38123457&retmode=xml&api_key=$PUBMED_API_KEY'",
+        "curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=machine+learning+AND+radiology[MeSH]&datetype=pdat&mindate=2024/01/01&maxdate=2026/12/31&retmode=json'",
+        "curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&db=pubmed&id=38123456&cmd=neighbor_score&retmode=json'"
+      ],
+      "gotchas": [
+        "Without API key: 3 requests/sec. With key: 10 requests/sec. Include api_key parameter or NCBI blocks.",
+        "esearch returns PMIDs (numeric IDs), not paper content. Use efetch with the IDs to get abstracts/metadata.",
+        "efetch for pubmed returns XML, not JSON (retmode=json is not supported for efetch). Parse <PubmedArticle> elements.",
+        "MeSH terms in square brackets filter by Medical Subject Headings: [MeSH], [MeSH Major Topic], [Author], [Journal], etc.",
+        "Use usehistory=y with esearch to store results on the server, then retrieve with WebEnv and query_key -- avoids passing huge ID lists.",
+        "PMC (PubMed Central) has full-text articles via a separate API. PubMed itself only has abstracts."
+      ]
+    }
+  }
+}
