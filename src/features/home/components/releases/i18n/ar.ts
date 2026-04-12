@@ -75,6 +75,18 @@ export const ar = {
             description:
               "Personas now captures the lessons from each agent session, distills them into reusable knowledge, and brings them forward to the next run. Your agents get smarter the longer you use them — no manual training needed.",
           },
+          // TODO(i18n-ar): untranslated — English source-of-truth added 2026-04-12
+          '5': {
+            title: 'Turn any document into a listenable briefing',
+            description:
+              'A new template that turns research reports, meeting transcripts, or long articles into a 5- to 15-minute two-host audio conversation you can listen to on the go. You pick the style — casual, formal, news, or executive — and review the script before the voices are generated.',
+          },
+          // TODO(i18n-ar): untranslated — English source-of-truth added 2026-04-12
+          '6': {
+            title: 'A Stanford-trained editor for your writing',
+            description:
+              'A new template that reviews your drafts using the Stanford "Writing in the Sciences" method. It flags passive voice, dead-weight phrases, and jargon — and explains exactly why every suggested change makes the sentence clearer. It learns your voice from the edits you accept or reject.',
+          },
         },
       },
       roadmap: {

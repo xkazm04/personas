@@ -12,9 +12,10 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(102);
+    let mut m = HashMap::with_capacity(104);
     m.insert("content/ai-document-intelligence-hub.json", "000c31726dd203b5");
     m.insert("content/analytics-content-distribution-use-case.json", "00126379a9f20920");
+    m.insert("content/audio-briefing-host.json", "001fc5fbd10f050a");
     m.insert("content/autonomous-art-director.json", "0015358c67c74ec8");
     m.insert("content/content-approval-workflow.json", "0018b704fc91d565");
     m.insert("content/content-performance-reporter.json", "000c69199b4a9fd2");
@@ -22,20 +23,21 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/feature-video-creator.json", "0012fdc449dcca74");
     m.insert("content/game-character-animator.json", "001aef347c3b3f5f");
     m.insert("content/newsletter-curator.json", "0010f81605b96895");
+    m.insert("content/scientific-writing-editor.json", "00192b22e8f48322");
     m.insert("content/social-media-designer.json", "001f20781e342d8b");
-    m.insert("development/autonomous-issue-resolver.json", "000c787460abfb5f");
-    m.insert("development/build-intelligence-use-case.json", "00168f1e4d789ccf");
-    m.insert("development/codebase-health-scanner.json", "00055cbdb2b9f562");
-    m.insert("development/design-handoff-coordinator.json", "0005e4afd081ba6c");
-    m.insert("development/dev-clone.json", "000dd30f5f901eb7");
-    m.insert("development/dev-lifecycle-manager.json", "0016a2e84ea4b2a4");
-    m.insert("development/documentation-freshness-guardian.json", "000d3ceb86f85366");
-    m.insert("development/feature-flag-experiment-analyst.json", "001dd58395ec3409");
-    m.insert("development/feature-flag-governance-use-case.json", "0013103d7807ce19");
-    m.insert("development/qa-guardian.json", "001dc5e973996cec");
-    m.insert("development/real-time-database-watcher.json", "00050ded78c66c76");
-    m.insert("development/self-evolving-codebase-memory.json", "000558d0a4375f09");
-    m.insert("development/user-lifecycle-manager.json", "0016d7ff09b72678");
+    m.insert("development/autonomous-issue-resolver.json", "001a4cece8ff1644");
+    m.insert("development/build-intelligence-use-case.json", "001beacb7c020fea");
+    m.insert("development/codebase-health-scanner.json", "000459f016ec1e79");
+    m.insert("development/design-handoff-coordinator.json", "000fb379b7948f98");
+    m.insert("development/dev-clone.json", "00129b38e6703343");
+    m.insert("development/dev-lifecycle-manager.json", "001cfa782f21300a");
+    m.insert("development/documentation-freshness-guardian.json", "001cd304ec3cc160");
+    m.insert("development/feature-flag-experiment-analyst.json", "001e59908d0bef91");
+    m.insert("development/feature-flag-governance-use-case.json", "000e1412c68057bb");
+    m.insert("development/qa-guardian.json", "00025a60bdcc588b");
+    m.insert("development/real-time-database-watcher.json", "000cc6deda92e43a");
+    m.insert("development/self-evolving-codebase-memory.json", "001d52932776f2a8");
+    m.insert("development/user-lifecycle-manager.json", "000bbe82363cd13d");
     m.insert("devops/devops-guardian.json", "00191a118384bf31");
     m.insert("devops/incident-logger.json", "001e95d651c6ad55");
     m.insert("devops/sentry-production-monitor.json", "001ee39aba1ded16");

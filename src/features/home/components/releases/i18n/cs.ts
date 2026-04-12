@@ -73,6 +73,18 @@ export const cs = {
             description:
               'Personas nyní zachycuje poznatky z každé relace agenta, destiluje je do znovupoužitelných znalostí a přenáší je do dalšího běhu. Vaši agenti jsou tím chytřejší, čím déle je používáte — bez nutnosti je sami trénovat.',
           },
+          // TODO(i18n-cs): untranslated — English source-of-truth added 2026-04-12
+          '5': {
+            title: 'Turn any document into a listenable briefing',
+            description:
+              'A new template that turns research reports, meeting transcripts, or long articles into a 5- to 15-minute two-host audio conversation you can listen to on the go. You pick the style — casual, formal, news, or executive — and review the script before the voices are generated.',
+          },
+          // TODO(i18n-cs): untranslated — English source-of-truth added 2026-04-12
+          '6': {
+            title: 'A Stanford-trained editor for your writing',
+            description:
+              'A new template that reviews your drafts using the Stanford "Writing in the Sciences" method. It flags passive voice, dead-weight phrases, and jargon — and explains exactly why every suggested change makes the sentence clearer. It learns your voice from the edits you accept or reject.',
+          },
         },
       },
       roadmap: {

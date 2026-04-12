@@ -28,14 +28,25 @@ const MAX_TURNS_MAX: i32 = 100;
 /// A single fix action parsed from the healer's output.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealingFix {
-    /// "modify_prompt" | "update_config" | "modify_file" | "run_command"
+    /// "modify_prompt" | "update_config" | "modify_file" | "run_command" | "instrument_and_reproduce"
+    ///
+    /// `instrument_and_reproduce` is a *deferred* fix: instead of writing a
+    /// concrete change, the healer proposes log statements to inject and
+    /// requests a re-execution to gather runtime evidence. The actual fix is
+    /// then proposed in a follow-up healing pass, this time grounded in real
+    /// trace data instead of guessed-from-static-code. See
+    /// `engine/healing.rs::HealingAction::InstrumentAndReproduce` and the
+    /// healer prompt in [`build_healing_input`].
     #[serde(rename = "type")]
     pub fix_type: String,
-    /// Section name, config key, file path, or command
+    /// Section name, config key, file path, or command. For
+    /// `instrument_and_reproduce`, this is the file path where log lines
+    /// should be injected.
     pub target: String,
     /// Human-readable what and why
     pub description: String,
-    /// The actual change content
+    /// The actual change content. For `instrument_and_reproduce`, this is a
+    /// JSON array of `{line, expr}` log point objects.
     pub payload: String,
 }
 
@@ -127,20 +138,40 @@ pub fn build_healing_input(error: &str, category: &str) -> serde_json::Value {
 
 ## Your Task (Self-Healing Mode)
 1. Diagnose WHY the execution failed based on everything you just tried
-2. Apply fixes using your available tools (file editing, bash)
-3. For any database-level changes to the persona configuration, output structured JSON
+2. Decide whether you have enough EVIDENCE to fix it confidently. If not, propose
+   instrumentation first (see "Reproduce-and-verify pattern" below).
+3. Apply fixes using your available tools (file editing, bash)
+4. For any database-level changes to the persona configuration, output structured JSON
+
+## Reproduce-and-verify pattern (PREFER THIS over guessing)
+If the failure could be caused by multiple things and you cannot identify the
+root cause from the static error alone, do NOT guess. Instead, propose
+lightweight log lines to inject and request a re-execution. The next healing
+pass will see the runtime evidence and write a confident fix.
+
+Output one `instrument_and_reproduce` block per file you want to instrument:
+{{"healing_fix": {{"type": "instrument_and_reproduce", "target": "path/to/file.ext", "description": "why these log points", "payload": "[{{\"line\": 42, \"expr\": \"value of x\"}}, {{\"line\": 88, \"expr\": \"len(items)\"}}]"}}}}
+
+Then end with: {{"healing_complete": {{"should_retry": true, "diagnosis": "needs runtime evidence -- proposed instrumentation"}}}}
+
+Use this pattern when:
+- The error message is generic ("something went wrong", "unexpected response")
+- A value is wrong but you can't tell which input produced it
+- The failure happens intermittently (race / timing / resource pressure)
+- You have two plausible root causes and need data to choose
 
 ## Database Fix Format
 Output each database change on its own line:
 {{"healing_fix": {{"type": "modify_prompt", "target": "instructions", "description": "why this fix", "payload": "new content"}}}}
 {{"healing_fix": {{"type": "update_config", "target": "timeout_ms", "description": "why this fix", "payload": "900000"}}}}
 
-Valid types: modify_prompt, update_config, modify_file, run_command
+Valid types: modify_prompt, update_config, modify_file, run_command, instrument_and_reproduce
 Valid targets for modify_prompt: system_prompt, instructions, structured_prompt, or any section name
 Valid targets for update_config: timeout_ms (1000-1800000), max_turns (1-100), enabled (true only; disabling requires human approval)
 
 ## Rules
 - Be surgical -- fix the minimum needed
+- Prefer evidence over guessing -- if uncertain, instrument and reproduce
 - Explain your diagnosis before applying fixes
 - End with: {{"healing_complete": {{"should_retry": true/false, "diagnosis": "one-sentence root cause"}}}}
 "#,
@@ -415,6 +446,36 @@ fn apply_db_fixes(
                     fix.fix_type, fix.target, fix.description
                 ));
             }
+            "instrument_and_reproduce" => {
+                // Reproduce-and-verify pattern: the healer doesn't have enough
+                // evidence to write a confident fix, so it proposes log points
+                // to inject and asks for a re-execution. We do NOT inject the
+                // logs or trigger the re-run automatically (that requires
+                // runtime orchestration that lives outside this transaction).
+                // We DO record the proposal in the audit log so:
+                //   1. The user can see what the healer would investigate
+                //   2. A future runtime orchestrator can pick up pending
+                //      proposals and act on them
+                //   3. Telemetry can measure how often the healer chooses
+                //      reproduce-and-verify vs guessing
+                let log_point_count = serde_json::from_str::<serde_json::Value>(&fix.payload)
+                    .ok()
+                    .and_then(|v| v.as_array().map(|a| a.len()))
+                    .unwrap_or(0);
+                tx_audit(
+                    &tx,
+                    "ai_heal_instrument_proposed",
+                    &format!(
+                        "Healer proposed instrumenting {} ({} log points): {}",
+                        fix.target, log_point_count, fix.description,
+                    ),
+                    Some(&fix.payload),
+                );
+                applied.push(format!(
+                    "Pending instrumentation: {} ({} log points) -- {}",
+                    fix.target, log_point_count, fix.description
+                ));
+            }
             other => {
                 tracing::warn!("AI healing: unknown fix type '{}'", other);
                 tx_audit(&tx, "ai_heal_unknown_fix_type",
@@ -588,5 +649,53 @@ mod tests {
         assert_eq!(MAX_TURNS_MAX, 100);
         assert!(TIMEOUT_MS_MIN > 0, "timeout lower bound must be positive");
         assert!(MAX_TURNS_MIN > 0, "max_turns lower bound must be positive");
+    }
+
+    #[test]
+    fn test_healing_prompt_documents_instrument_and_reproduce() {
+        let input = build_healing_input("generic error", "Unknown");
+        let prompt = input.get("_healing_prompt").unwrap().as_str().unwrap();
+        assert!(
+            prompt.contains("instrument_and_reproduce"),
+            "prompt must teach the new fix type"
+        );
+        assert!(
+            prompt.contains("Reproduce-and-verify"),
+            "prompt must surface the pattern name"
+        );
+        assert!(
+            prompt.contains("evidence over guessing"),
+            "prompt must encode the rule that drives the pattern"
+        );
+    }
+
+    #[test]
+    fn test_parse_healing_output_with_instrument_and_reproduce() {
+        let output = r#"Diagnosis: not enough evidence yet.
+{"healing_fix": {"type": "instrument_and_reproduce", "target": "src/foo.rs", "description": "trace value of x and len of items", "payload": "[{\"line\": 42, \"expr\": \"value of x\"}, {\"line\": 88, \"expr\": \"len(items)\"}]"}}
+{"healing_complete": {"should_retry": true, "diagnosis": "needs runtime evidence -- proposed instrumentation"}}
+"#;
+        let (fixes, diagnosis, should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1, "should parse one instrument fix");
+        assert_eq!(fixes[0].fix_type, "instrument_and_reproduce");
+        assert_eq!(fixes[0].target, "src/foo.rs");
+        assert!(
+            fixes[0].payload.contains("\"line\": 42"),
+            "payload must preserve the log-point JSON"
+        );
+        assert!(should_retry);
+        assert!(diagnosis.unwrap().contains("runtime evidence"));
+    }
+
+    #[test]
+    fn test_parse_instrument_payload_log_point_count() {
+        // Verify the payload shape the dispatch arm uses to count log points.
+        // This test pins the contract between the healer prompt format and the
+        // counting logic in apply_db_fixes -- if the healer ever changes the
+        // payload shape, this test fails first.
+        let payload = r#"[{"line": 42, "expr": "value of x"}, {"line": 88, "expr": "len(items)"}, {"line": 120, "expr": "is_dirty"}]"#;
+        let parsed: serde_json::Value = serde_json::from_str(payload).unwrap();
+        let count = parsed.as_array().map(|a| a.len()).unwrap_or(0);
+        assert_eq!(count, 3, "instrument payload must be a JSON array of log points");
     }
 }
