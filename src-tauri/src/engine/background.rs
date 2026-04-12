@@ -30,6 +30,7 @@ use crate::engine::subscription::{
 };
 use crate::engine::ExecutionEngine;
 use super::event_registry::{emit_event_bus, event_name};
+use crate::daemon::lock::{DaemonLock, LockFileContents, default_data_dir, trigger_type_to_kind};
 
 /// Per-subscription health snapshot including tick latency, counts, and error tracking.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -898,6 +899,67 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
     trigger_scheduler_tick_counted(scheduler, pool);
 }
 
+/// Check whether a trigger should be yielded to the daemon.
+///
+/// Returns `true` (yield = skip) when **all three** conditions hold:
+///  1. A `daemon.lock` file exists and is fresh (heartbeat < 90 s old).
+///  2. The daemon's `owns[]` list includes this trigger's kind.
+///  3. The trigger's persona has `headless = true`.
+///
+/// When any condition is false the UI fires the trigger normally — this
+/// is the fallback behavior that guarantees users who haven't installed
+/// the daemon are completely unaffected.
+fn should_yield_to_daemon(
+    daemon_lock: &Option<LockFileContents>,
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+) -> bool {
+    // No daemon running → never yield.
+    let lock = match daemon_lock {
+        Some(l) => l,
+        None => return false,
+    };
+
+    // Map the trigger's DB string to our enum. Unknown types → never yield.
+    let kind = match trigger_type_to_kind(&trigger.trigger_type) {
+        Some(k) => k,
+        None => return false,
+    };
+
+    // Daemon doesn't own this trigger kind → don't yield.
+    if !lock.owns_kind(kind) {
+        return false;
+    }
+
+    // Finally check if the persona is headless. A single PK lookup is
+    // cheap (persona index on primary key). If the query fails or the
+    // persona doesn't exist, default to NOT yielding — better to
+    // double-fire than silently lose a trigger.
+    let headless = pool
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT headless FROM personas WHERE id = ?1",
+                rusqlite::params![trigger.persona_id],
+                |row| row.get::<_, bool>(0),
+            )
+            .ok()
+        })
+        .unwrap_or(false);
+
+    if headless {
+        tracing::debug!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            kind = ?kind,
+            "yielding trigger to daemon (persona is headless and daemon owns this kind)"
+        );
+    }
+
+    headless
+}
+
 /// Fix 3 helper: when a trigger author didn't specify a payload, synthesize
 /// a diagnostic one so downstream consumers (Live Stream, Event Log, dev
 /// inspection) can see WHAT fired, WHY, and WHEN. Pure function — unit-tested
@@ -952,7 +1014,7 @@ pub(crate) fn synthesize_trigger_fired_payload(
 
 /// Same as `trigger_scheduler_tick` but returns the number of triggers fired.
 /// Used by the startup overdue sweep to know how many were recovered.
-pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
+pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
     let now = chrono::Utc::now();
     let now_str = now.to_rfc3339();
     let mut fired: u32 = 0;
@@ -966,11 +1028,30 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
         }
     };
 
+    // Daemon-lock check: read once per tick (not per trigger) to avoid
+    // re-reading the lock file for every due trigger. If the daemon is
+    // running, `daemon_lock` holds its lock contents; if not, it's None
+    // and `should_yield_to_daemon` falls through to the UI-fires path.
+    let daemon_lock = DaemonLock::check_active(&default_data_dir())
+        .unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "failed to read daemon lock — assuming no daemon");
+            None
+        });
+
     for trigger in triggers {
         // Skip polling triggers -- they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
         // Skip event_listener triggers -- they are event-driven, not time-based.
         if trigger.trigger_type == "polling" || trigger.trigger_type == "event_listener" {
+            continue;
+        }
+
+        // Daemon yield check: if a daemon is running, owns this trigger
+        // kind, and the persona is headless, let the daemon handle it.
+        // The trigger's schedule still advances (mark_triggered below),
+        // but the event is NOT published from the UI — the daemon's own
+        // trigger loop will claim it instead.
+        if should_yield_to_daemon(&daemon_lock, pool, &trigger) {
             continue;
         }
 

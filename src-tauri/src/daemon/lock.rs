@@ -305,6 +305,37 @@ fn hostname_or_unknown() -> String {
     whoami::fallible::hostname().unwrap_or_else(|_| "unknown".to_string())
 }
 
+/// Returns the standard app data directory for personas.
+///
+/// On Windows: `%APPDATA%/com.personas.desktop`
+/// On macOS: `~/Library/Application Support/com.personas.desktop`
+/// On Linux: `~/.local/share/com.personas.desktop`
+///
+/// Used by both the daemon binary and the windowed app's daemon-lock
+/// check so they agree on where `daemon.lock` lives.
+pub fn default_data_dir() -> PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("com.personas.desktop")
+}
+
+/// Map a `persona_triggers.trigger_type` DB string to a [`TriggerKind`].
+///
+/// Returns `None` for trigger types that don't map to a daemon-owned
+/// kind (e.g. "event_listener"). The daemon lock's `owns[]` is checked
+/// against this mapping.
+pub fn trigger_type_to_kind(trigger_type: &str) -> Option<TriggerKind> {
+    match trigger_type {
+        "schedule" | "cron" => Some(TriggerKind::Cron),
+        "polling" => Some(TriggerKind::Polling),
+        "webhook" => Some(TriggerKind::Webhook),
+        "smee_relay" => Some(TriggerKind::SmeeRelay),
+        "shared_event_relay" => Some(TriggerKind::SharedEventRelay),
+        "cloud_webhook_relay" => Some(TriggerKind::CloudWebhookRelay),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

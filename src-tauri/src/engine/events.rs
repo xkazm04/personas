@@ -15,12 +15,10 @@
 //! (it has a `Self: Sized` bound and is not callable through
 //! `&dyn ExecutionEventEmitter`).
 //!
-//! Phase 0 scaffolding (2026-04-08): this module is additive — no existing
-//! engine code calls it yet. The emitter is threaded through `runner.rs` and
-//! related files in a follow-up pass. `#[allow(dead_code)]` is temporary
-//! and should come off once the threading is complete.
-
-#![allow(dead_code)]
+//! Phase 1 (2026-04-08): the emitter is now threaded through `runner.rs`,
+//! `dispatch.rs`, `ollama.rs`, and `provider/mod.rs`. The `run_execution`
+//! function accepts `Arc<dyn ExecutionEventEmitter>` and all event emission
+//! goes through `emit_to()` instead of calling `app.emit()` directly.
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -101,6 +99,20 @@ impl ExecutionEventEmitter for NoOpEmitter {
     fn emit_json(&self, _event: &str, _payload: serde_json::Value) {
         // intentional no-op
     }
+}
+
+/// Serialize a typed payload and emit through a trait object.
+///
+/// This is the workhorse helper for call sites that hold
+/// `Arc<dyn ExecutionEventEmitter>` or `&dyn ExecutionEventEmitter`
+/// (where the generic `emit()` method is not callable due to the
+/// `Self: Sized` bound).
+///
+/// ```ignore
+/// emit_to(&*emitter, event_name::EXECUTION_STATUS, &status_event);
+/// ```
+pub fn emit_to<P: Serialize>(emitter: &dyn ExecutionEventEmitter, event: &str, payload: &P) {
+    emitter.emit_json(event, serde_json::to_value(payload).unwrap_or(serde_json::Value::Null));
 }
 
 #[cfg(test)]

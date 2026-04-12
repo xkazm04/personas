@@ -34,3 +34,11 @@ pub fn emit_process_activity(app: &AppHandle, domain: &str, action: &str, run_id
         tracing::warn!(domain, action, ?run_id, "Failed to emit process activity event: {e}");
     }
 }
+
+/// Like [`emit_process_activity`] but accepts an [`ExecutionEventEmitter`] trait
+/// object instead of an `AppHandle`. Used by `runner.rs` after the emitter
+/// refactor so the runner no longer needs a concrete `AppHandle`.
+pub fn emit_process_activity_via(emitter: &dyn super::events::ExecutionEventEmitter, domain: &str, action: &str, run_id: Option<&str>, label: Option<&str>) {
+    let event = ProcessActivityEvent::new(domain, action, run_id, label);
+    super::events::emit_to(emitter, super::event_registry::event_name::PROCESS_ACTIVITY, &event);
+}

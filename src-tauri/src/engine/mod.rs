@@ -396,12 +396,14 @@ async fn run_execution_with_ceiling(
     chain_trace_id: Option<String>,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) -> ExecutionResult {
+    let emitter: Arc<dyn events::ExecutionEventEmitter> =
+        Arc::new(events::TauriEmitter::new(app));
     let ceiling = std::time::Duration::from_secs(ENGINE_MAX_EXECUTION_SECS);
 
     match tokio::time::timeout(
         ceiling,
         runner::run_execution(
-            app,
+            emitter,
             pool,
             execution_id.clone(),
             persona,

@@ -5,11 +5,10 @@
 //! and fire scheduled triggers while the windowed UI is closed or the
 //! user is logged out.
 //!
-//! **Phase 0 (2026-04-08):** this binary only acquires the daemon lock
-//! file, writes heartbeats, and waits for shutdown. No trigger runtime,
-//! no persona execution. A later session wires in the cron/polling/
-//! webhook subscriptions once `engine::runner::run_execution` has been
-//! decoupled from `tauri::AppHandle` via `engine::events::ExecutionEventEmitter`.
+//! **Phase 0 (2026-04-08/09):** acquires the daemon lock, runs a trigger
+//! scheduler tick loop, consumes events for headless personas, and executes
+//! them via `runner::run_execution` with a `NoOpEmitter`. Single-threaded
+//! execution (no concurrency tracker), suitable for scheduled cron agents.
 //!
 //! **Credential trust model:** this daemon runs entirely on the user's
 //! own hardware and unlocks credentials via the local OS keychain or
@@ -33,11 +32,16 @@
 //! cargo build --bin personas-daemon --features daemon
 //! ```
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
+use std::time::Duration;
 
 use app_lib::daemon::lock::{DaemonLock, LockError, TriggerKind, HEARTBEAT_INTERVAL};
-use tokio::sync::mpsc;
+use app_lib::daemon::runtime;
+use app_lib::daemon::{SchedulerState, ProviderCircuitBreaker};
+use tokio::sync::{mpsc, Mutex};
 
 /// Exit codes — stable so the future Task Scheduler install script can
 /// check them.
@@ -126,17 +130,35 @@ async fn main() -> ExitCode {
         "daemon lock acquired"
     );
 
+    // Open the real app DB pool (same path as the windowed app).
+    let pool = match app_lib::daemon::init_db(&app_data_dir, None) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Failed to initialize database: {e}");
+            let _ = lock.release();
+            return ExitCode::from(EXIT_DB_MISSING);
+        }
+    };
+    tracing::info!("database pool initialized");
+
+    // Create execution log directory
+    let log_dir = app_data_dir.join("logs");
+    if let Err(e) = std::fs::create_dir_all(&log_dir) {
+        tracing::warn!(error = %e, "failed to create log directory — executions will log to stderr");
+    }
+
+    // Shared state for the trigger runtime
+    let scheduler = Arc::new(SchedulerState::new());
+    let circuit_breaker = Arc::new(ProviderCircuitBreaker::new());
+    let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
+    let owns = args.owns.clone();
+
     // Spawn the heartbeat loop. It runs until `shutdown_tx` is dropped or
     // the main task sends a message.
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
     let heartbeat_task = tokio::spawn({
-        // `lock` is moved into the heartbeat task so that the heartbeat
-        // and the final release can both access `self`. We recover it
-        // by having the task return the lock on shutdown.
         async move {
             let mut interval = tokio::time::interval(HEARTBEAT_INTERVAL);
-            // First tick fires immediately — skip it, we just wrote the
-            // lock in `acquire`.
             interval.tick().await;
             loop {
                 tokio::select! {
@@ -157,15 +179,33 @@ async fn main() -> ExitCode {
         }
     });
 
-    // Wait for the OS shutdown signal. On Windows this is Ctrl+C / Ctrl+Break;
-    // on Unix it's SIGINT / SIGTERM.
-    wait_for_shutdown().await;
+    // Main trigger loop — runs every 5 seconds until shutdown.
+    tracing::info!("trigger runtime started (tick interval: 5s)");
+    let mut tick_interval = tokio::time::interval(Duration::from_secs(5));
+    tick_interval.tick().await; // skip immediate first tick
 
-    tracing::info!("shutdown signal received, draining");
+    loop {
+        tokio::select! {
+            _ = tick_interval.tick() => {
+                runtime::daemon_tick(
+                    &scheduler,
+                    &pool,
+                    &log_dir,
+                    &circuit_breaker,
+                    &child_pids,
+                    &owns,
+                ).await;
+            }
+            _ = tokio::signal::ctrl_c() => {
+                tracing::info!("shutdown signal received");
+                break;
+            }
+        }
+    }
 
-    // Signal the heartbeat task to stop and await its return value (the
-    // lock handle). On any error awaiting the task, we still try to
-    // clean up by constructing a fresh handle — but that's best-effort.
+    tracing::info!("draining — waiting for in-flight executions");
+
+    // Signal the heartbeat task to stop and recover the lock handle.
     drop(shutdown_tx);
     let lock = match heartbeat_task.await {
         Ok(lock) => lock,
