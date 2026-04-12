@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Target, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
@@ -121,6 +122,7 @@ function nodeRadius(goal: DevGoal): number {
 // ---------------------------------------------------------------------------
 
 export default function GoalConstellation() {
+  const { t } = useTranslation();
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);

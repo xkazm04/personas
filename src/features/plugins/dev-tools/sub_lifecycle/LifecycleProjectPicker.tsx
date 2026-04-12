@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { FolderKanban, AlertCircle, GitBranch } from 'lucide-react';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { useSystemStore } from '@/stores/systemStore';
@@ -14,6 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
  *    (Dev Clone adoption requires GitHub credentials to wire up PR workflows)
  */
 export function LifecycleProjectPicker() {
+  const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
@@ -69,7 +71,7 @@ export function LifecycleProjectPicker() {
           options={options}
           value={activeProjectId ?? ''}
           onValueChange={(v) => setActiveProject(v)}
-          placeholder="Select a project..."
+          placeholder={t.plugins.dev_tools.select_project}
           wrapperClassName="w-[260px]"
         />
       </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Bot, ChevronDown, ChevronRight, Search, Store } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
@@ -39,6 +40,7 @@ function parseEventListenerTriggers(triggers: PersonaTrigger[], personaId: strin
 }
 
 export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanvasEventTypes, marketplaceContent, onStartPointerDrag }: Props) {
+  const { t } = useTranslation();
   const [view, setView] = useState<SidebarView>('personas');
   const [search, setSearch] = useState('');
   const [expandedPersonas, setExpandedPersonas] = useState<Set<string>>(new Set());
@@ -68,14 +70,14 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
           className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
-          <Bot className="w-3 h-3" />Personas
+          <Bot className="w-3 h-3" />{t.triggers.builder.personas}
         </button>
         <button
           onClick={() => setView('marketplace')}
           className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
-          <Store className="w-3 h-3" />Marketplace
+          <Store className="w-3 h-3" />{t.triggers.builder.marketplace}
         </button>
       </div>
 
@@ -90,7 +92,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Filter personas..."
+                placeholder={t.triggers.builder.filter_personas_placeholder}
                 className="w-full pl-7 pr-2 py-1.5 text-xs rounded-md bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
@@ -181,7 +183,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
 
             {filtered.length === 0 && (
               <p className="px-2 py-4 text-[10px] text-muted-foreground/50 italic text-center">
-                {personas.length === 0 ? 'No personas created yet' : 'No matches'}
+                {personas.length === 0 ? t.triggers.builder.no_personas_created : t.triggers.builder.no_matches}
               </p>
             )}
           </div>

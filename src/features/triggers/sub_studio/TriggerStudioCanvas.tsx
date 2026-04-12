@@ -9,6 +9,7 @@ import {
   PanelLeft, PanelLeftClose, Trash2, LayoutGrid, Save,
   Download, Upload,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -156,6 +157,7 @@ export function TriggerStudioCanvas() {
 }
 
 function TriggerStudioInner() {
+  const { t } = useTranslation();
   const personas = useAgentStore(s => s.personas);
   const reactFlowInstance = useReactFlow();
   const [cs, dispatch] = useTriggerStudioState();
@@ -407,7 +409,7 @@ function TriggerStudioInner() {
           <button
             onClick={() => dispatch({ type: 'TOGGLE_PALETTE' })}
             className="p-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
-            title={cs.paletteCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            title={cs.paletteCollapsed ? t.triggers.builder.show_sidebar : t.triggers.builder.hide_sidebar}
           >
             {cs.paletteCollapsed
               ? <PanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
@@ -418,38 +420,38 @@ function TriggerStudioInner() {
           <button
             onClick={handleAutoLayout}
             className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
-            title="Auto Layout"
+            title={t.triggers.builder.auto_layout}
           >
-            <LayoutGrid className="w-3.5 h-3.5" /><span className="text-[10px]">Layout</span>
+            <LayoutGrid className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.builder.layout}</span>
           </button>
 
           <button
             onClick={handleExport}
             className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
-            title="Export Chain"
+            title={t.triggers.studio.export_chain}
           >
-            <Download className="w-3.5 h-3.5" /><span className="text-[10px]">Export</span>
+            <Download className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.export}</span>
           </button>
 
           <button
             onClick={handleImport}
             className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
-            title="Import Chain"
+            title={t.triggers.studio.import_chain}
           >
-            <Upload className="w-3.5 h-3.5" /><span className="text-[10px]">Import</span>
+            <Upload className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.import}</span>
           </button>
 
           <button
             onClick={handleClear}
             className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-red-500/10 transition-colors text-muted-foreground hover:text-red-400"
-            title="Clear Canvas"
+            title={t.triggers.studio.clear_canvas}
           >
-            <Trash2 className="w-3.5 h-3.5" /><span className="text-[10px]">Clear</span>
+            <Trash2 className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.clear}</span>
           </button>
 
           {cs.isDirty && (
             <span className="flex items-center gap-1 px-2 py-1 text-[9px] text-amber-400/70">
-              <Save className="w-3 h-3" /> Unsaved changes (auto-saving)
+              <Save className="w-3 h-3" /> {t.triggers.studio.unsaved_changes}
             </span>
           )}
         </div>
@@ -518,7 +520,7 @@ function TriggerStudioInner() {
               className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Remove from chain
+              {t.triggers.studio.remove_from_chain}
             </button>
           </div>
         )}
@@ -527,7 +529,7 @@ function TriggerStudioInner() {
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <div className="text-center max-w-md px-8 py-6 rounded-xl bg-card/80 border border-primary/10">
-              <h3 className="text-sm font-semibold text-foreground/80 mb-2">Trigger Chaining Studio</h3>
+              <h3 className="text-sm font-semibold text-foreground/80 mb-2">{t.triggers.studio.studio_title}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Compose reactive event flows across your personas. Use trigger types as building blocks,
                 add conditional branching and parallel fan-out to create intelligent automation chains.

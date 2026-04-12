@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -23,6 +24,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function CloudSyncPanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const setDriveConnected = useSystemStore((s) => s.setObsidianDriveConnected);

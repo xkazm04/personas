@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow,
@@ -6,6 +7,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { TriggerSourceNodeData } from '../libs/triggerStudioConstants';
+import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow,
@@ -35,7 +37,7 @@ function TriggerSourceNodeInner({ data, selected }: NodeProps) {
       <div className="flex flex-col min-w-0">
         <span className="text-[10px] uppercase tracking-wider text-amber-400/70 font-medium">Trigger</span>
         <span className="text-xs font-semibold text-foreground truncate">{d.label}</span>
-        <span className="text-[10px] text-muted-foreground truncate">{d.triggerType}</span>
+        <span className="text-[10px] text-muted-foreground truncate">{getTriggerTypeLabel(d.triggerType)}</span>
       </div>
 
       <Handle

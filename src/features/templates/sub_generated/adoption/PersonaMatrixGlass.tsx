@@ -6,6 +6,7 @@
  * and floating shadows.  Uses theme CSS variables so it works across all themes.
  */
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, HelpCircle, Play, Eye, Sparkles } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';

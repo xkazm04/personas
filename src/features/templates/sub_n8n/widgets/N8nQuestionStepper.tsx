@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
 import { N8nQuestionListbox } from './N8nQuestionListbox';
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: Props) {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Plus, Trash2, Zap, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TriageRule } from '@/lib/bindings/TriageRule';
@@ -35,6 +36,7 @@ interface TriageRulesPanelProps {
 }
 
 export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [creating, setCreating] = useState(false);
   const [ruleName, setRuleName] = useState('');
@@ -155,7 +157,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                 type="text"
                 value={ruleName}
                 onChange={e => setRuleName(e.target.value)}
-                placeholder="Rule name..."
+                placeholder={t.plugins.dev_tools.group_name_placeholder}
                 className="w-full px-2 py-1 text-xs bg-background/50 border border-border/30 rounded text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               {conditions.map((cond, idx) => (

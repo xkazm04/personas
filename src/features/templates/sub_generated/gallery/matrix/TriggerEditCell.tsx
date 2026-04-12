@@ -3,10 +3,12 @@
  */
 import { useMemo, useState, useRef } from 'react';
 import { Pencil, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 import { TRIGGER_ICONS } from './matrixEditTypes';
+import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 
 // -- Trigger Popup -----------------------------------------------------
 
@@ -23,6 +25,7 @@ function TriggerPopup({
   onConfigChange: (index: number, config: Record<string, string>) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const popupRef = useRef<HTMLDivElement>(null);
   useClickOutside(popupRef, true, onClose);
 
@@ -56,14 +59,14 @@ function TriggerPopup({
 
       {isSchedule && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">Schedule</label>
+          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.schedule}</label>
           <input
             type="text"
             autoFocus
             value={config.schedule ?? config.cron ?? (trigger.config.cron as string | undefined) ?? trigger.description ?? ''}
             onChange={(e) => onConfigChange(index, { ...config, schedule: e.target.value })}
             onKeyDown={(e) => e.key === 'Enter' && onClose()}
-            placeholder="Every weekday at 9am"
+            placeholder={t.templates.trigger_edit.schedule_placeholder}
             className={inputClass}
           />
           <p className="text-sm text-muted-foreground/40">Natural language or cron (e.g. "0 9 * * 1-5")</p>
@@ -72,7 +75,7 @@ function TriggerPopup({
 
       {isWebhook && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">Webhook URL</label>
+          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.webhook_url}</label>
           <input
             type="text"
             autoFocus
@@ -87,21 +90,21 @@ function TriggerPopup({
 
       {isPolling && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">Check Interval</label>
+          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.check_interval}</label>
           <input
             type="text"
             autoFocus
             value={config.interval ?? (trigger.config.interval as string | undefined) ?? ''}
             onChange={(e) => onConfigChange(index, { ...config, interval: e.target.value })}
             onKeyDown={(e) => e.key === 'Enter' && onClose()}
-            placeholder="Every 5 minutes"
+            placeholder={t.templates.trigger_edit.check_interval_placeholder}
             className={inputClass}
           />
         </div>
       )}
 
       {(trigger.trigger_type === 'manual' || trigger.trigger_type === 'event') && (
-        <p className="text-sm text-muted-foreground/40 italic">No configuration needed</p>
+        <p className="text-sm text-muted-foreground/40 italic">{t.templates.trigger_edit.no_config_needed}</p>
       )}
     </div>
   );
@@ -145,7 +148,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
         const isOpen = openPopupIndex === index;
 
         // Compute display value
-        let displayValue = trigger.trigger_type.charAt(0).toUpperCase() + trigger.trigger_type.slice(1);
+        let displayValue = getTriggerTypeLabel(trigger.trigger_type);
         if (isSchedule) {
           displayValue = config.schedule ?? config.cron ?? (trigger.config.cron as string | undefined) ?? trigger.description ?? 'Schedule';
         } else if (trigger.trigger_type === 'webhook') {

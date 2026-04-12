@@ -7,6 +7,7 @@
  */
 import { useState, useMemo, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 import { REVIEW_PRESETS, MEMORY_PRESETS, MESSAGE_PRESETS } from './matrixEditTypes';
@@ -27,6 +28,7 @@ interface ReviewEditCellProps {
 }
 
 export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
+  const { t } = useTranslation();
   const currentPreset = useMemo(() => {
     if (!editState.requireApproval) return 'autonomous';
     const match = REVIEW_PRESETS.find(
@@ -56,7 +58,7 @@ export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
         value={currentPreset}
         onValueChange={handlePresetChange}
         options={REVIEW_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
-        placeholder="Select review policy..."
+        placeholder={t.templates.preset_edit.select_review}
         className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
       />
     </div>
@@ -95,7 +97,7 @@ export function MemoryEditCell({ editState, callbacks }: MemoryEditCellProps) {
         value={currentPreset}
         onValueChange={handlePresetChange}
         options={MEMORY_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
-        placeholder="Select memory strategy..."
+        placeholder={t.templates.preset_edit.select_memory}
         className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
       />
     </div>
@@ -126,7 +128,7 @@ export function MessagesEditCell({ editState, callbacks }: MessagesEditCellProps
         value={currentPreset}
         onValueChange={handlePresetChange}
         options={MESSAGE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
-        placeholder="Notification strategy..."
+        placeholder={t.templates.preset_edit.notification_strategy}
         className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
       />
     </div>
@@ -157,7 +159,7 @@ export function ErrorEditCell({ editState, callbacks }: ErrorEditCellProps) {
         value={current}
         onValueChange={handleChange}
         options={ERROR_STRATEGY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        placeholder="Error handling..."
+        placeholder={t.templates.preset_edit.error_handling}
         className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
       />
     </div>
@@ -206,7 +208,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-            placeholder="Add use case..."
+            placeholder={t.templates.preset_edit.add_use_case}
             className="flex-1 px-2 py-1 rounded-md border border-primary/10 bg-transparent text-sm text-foreground/70 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
           <button type="button" onClick={handleAdd} disabled={!newTitle.trim()}

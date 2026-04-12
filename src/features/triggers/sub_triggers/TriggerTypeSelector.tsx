@@ -4,6 +4,7 @@ import {
   TRIGGER_CATEGORIES, TRIGGER_TYPE_OPTIONS,
   type TriggerCategory,
 } from '@/lib/utils/platform/triggerConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerTypeSelectorProps {
   selectedCategory: TriggerCategory | null;
@@ -14,6 +15,7 @@ export interface TriggerTypeSelectorProps {
 export function TriggerTypeSelector({
   selectedCategory, triggerType, setTriggerType,
 }: TriggerTypeSelectorProps) {
+  const { t } = useTranslation();
   const triggerTypeRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   if (!selectedCategory || selectedCategory === 'manual') return null;
@@ -26,7 +28,7 @@ export function TriggerTypeSelector({
   return (
     <div>
       <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-        Trigger Type
+        {t.triggers.type_selector.trigger_type}
       </label>
       <div
         className="grid grid-cols-3 gap-2"

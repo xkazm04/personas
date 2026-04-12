@@ -3,6 +3,7 @@
  * Features: search, group filtering, categorization.
  */
 import { useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X, Plus, Users } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';

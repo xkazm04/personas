@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Workflow } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
 import FlowDiagram from './FlowDiagram';
@@ -20,6 +21,7 @@ interface ActivityDiagramModalProps {
 }
 
 export default function ActivityDiagramModal({ isOpen, onClose, templateName, flows, titleOverride, subtitleOverride }: ActivityDiagramModalProps) {
+  const { t } = useTranslation();
   const [activeFlowIndex, setActiveFlowIndex] = useState(0);
   const [inspectedNode, setInspectedNode] = useState<FlowNode | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -104,7 +106,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground/80">
-            No flow data available
+            {t.templates.diagrams.no_flow_data}
           </div>
         )}
 

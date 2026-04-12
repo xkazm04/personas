@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Search, FolderOpen, CheckCircle2, XCircle, Save } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -17,6 +18,7 @@ import {
 } from '@/api/obsidianBrain';
 
 export default function SetupPanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
@@ -187,7 +189,7 @@ export default function SetupPanel() {
               type="text"
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
-              placeholder="Vault path..."
+              placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
               className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground/80 typo-body placeholder:text-muted-foreground/30 focus-ring transition-all"
             />
             <button

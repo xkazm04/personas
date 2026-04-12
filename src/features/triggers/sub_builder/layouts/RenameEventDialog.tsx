@@ -14,6 +14,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Pencil, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Mirrors `RESERVED_EVENT_TYPES` in src-tauri/src/db/repos/resources/triggers.rs.
 // Kept in sync manually; the backend still rejects these authoritatively.
@@ -80,6 +81,7 @@ export function RenameEventDialog({
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const [newEventType, setNewEventType] = useState(oldEventType);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -140,10 +142,9 @@ export function RenameEventDialog({
             <Pencil className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Rename event type</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-1">{t.triggers.builder.rename_event_type}</h3>
             <p className="text-xs text-foreground/70 leading-relaxed">
-              Updates every reference across subscriptions, triggers, event handlers, and the
-              audit log in one atomic operation.
+              {t.triggers.builder.rename_event_desc}
             </p>
           </div>
           <button
@@ -158,7 +159,7 @@ export function RenameEventDialog({
         <div className="px-4 pb-3 space-y-3">
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-foreground/70 mb-1">
-              Current name
+              {t.triggers.builder.current_name}
             </label>
             <div className="px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-sm font-mono text-foreground/90">
               {oldEventType}
@@ -170,7 +171,7 @@ export function RenameEventDialog({
               htmlFor="rename-event-new"
               className="block text-[11px] font-semibold uppercase tracking-wider text-foreground/70 mb-1"
             >
-              New name
+              {t.triggers.builder.new_name}
             </label>
             <input
               id="rename-event-new"
@@ -193,7 +194,7 @@ export function RenameEventDialog({
                   ? 'border-amber-400/40 focus:border-amber-400/60'
                   : 'border-primary/15 focus:border-cyan-400/50'
               }`}
-              placeholder="e.g. stock.alert.triggered"
+              placeholder={t.triggers.builder.rename_placeholder}
             />
           </div>
 
@@ -201,15 +202,15 @@ export function RenameEventDialog({
           <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-2">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/60 mb-1.5">
               <CheckCircle2 className="w-3 h-3 text-cyan-400/70" />
-              Impact preview
+              {t.triggers.builder.impact_preview}
             </div>
             <div className="text-xs text-foreground/80 space-y-0.5">
               <div>
-                <span className="text-foreground/60">Source personas:</span>{' '}
+                <span className="text-foreground/60">{t.triggers.builder.source_personas}</span>{' '}
                 <span className="font-semibold">{affectedCounts.sources}</span>
               </div>
               <div>
-                <span className="text-foreground/60">Connected listeners:</span>{' '}
+                <span className="text-foreground/60">{t.triggers.builder.connected_listeners}</span>{' '}
                 <span className="font-semibold">{affectedCounts.connections}</span>
               </div>
               <div className="text-[10px] text-foreground/50 pt-1">
@@ -236,14 +237,14 @@ export function RenameEventDialog({
             disabled={busy}
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-foreground/70 hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t.triggers.builder.cancel}
           </button>
           <button
             onClick={() => void handleConfirm()}
             disabled={disabled}
             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-400/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {busy ? 'Renaming…' : 'Rename'}
+            {busy ? t.triggers.builder.renaming : t.triggers.builder.rename}
           </button>
         </div>
       </div>

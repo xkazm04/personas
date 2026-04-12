@@ -45,6 +45,7 @@ import {
   MoreHorizontal, Plus, Pencil, Search,
   Radio, RefreshCw, Wand2,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -116,6 +117,7 @@ interface Props {
 // ── Component ────────────────────────────────────────────────────────────
 
 export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, groups }: Props) {
+  const { t } = useTranslation();
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>(initialTriggers);
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>(initialEvents);
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
@@ -486,7 +488,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             type="text"
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
-            placeholder="Filter events..."
+            placeholder={t.triggers.builder.filter_events_placeholder}
             className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
           />
         </div>
@@ -499,14 +501,14 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             onClick={() => void handleInitializeHandlers()}
             disabled={isBackfilling}
             className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Initialize event handlers for personas with untouched triggers (idempotent)"
+            title={t.triggers.builder.init_handlers_title}
           >
             <Wand2 className={`w-4 h-4 ${isBackfilling ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => void reload()}
             className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
-            title="Refresh"
+            title={t.triggers.builder.refresh}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -515,7 +517,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
 
       {/* ── Table header ── */}
       <div className="flex items-center px-4 py-2.5 border-b border-primary/10 bg-card/20 max-w-[1280px]">
-        <span className="w-14 typo-label text-foreground/80">Source</span>
+        <span className="w-14 typo-label text-foreground/80">{t.triggers.builder.source}</span>
         <div className="w-[260px] min-w-[260px] pl-3">
           <ColumnDropdownFilter
             label="Source Personas"
@@ -525,7 +527,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
           />
         </div>
         <span className="w-[300px] min-w-[300px] typo-label text-foreground/80 pl-3">Event</span>
-        <span className="flex-1 typo-label text-foreground/80">Connected Personas</span>
+        <span className="flex-1 typo-label text-foreground/80">{t.triggers.builder.connected_personas}</span>
         <span className="w-10" />
       </div>
 
@@ -536,7 +538,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             <div>
               <Radio className="w-8 h-8 text-muted-foreground/15 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground/50">
-                {eventSearch ? 'No matching events' : 'No events match this filter'}
+                {eventSearch ? t.triggers.builder.no_matching_events : t.triggers.builder.no_events_filter}
               </p>
             </div>
           </div>
@@ -607,7 +609,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
               {/* Connected personas */}
               <div className="flex-1 flex flex-wrap items-center gap-1.5 min-h-[32px]">
                 {row.connections.length === 0 && (
-                  <span className="text-sm text-muted-foreground/30 italic">No personas connected</span>
+                  <span className="text-sm text-muted-foreground/30 italic">{t.triggers.builder.no_personas_connected}</span>
                 )}
                 {row.connections.map(conn => (
                   <PersonaChip
@@ -649,7 +651,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5 text-emerald-400" />
-                      Add persona
+                      {t.triggers.builder.add_persona_action}
                     </button>
                     <button
                       onClick={() => {
@@ -674,7 +676,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <Pencil className="w-3.5 h-3.5 text-cyan-400" />
-                      Rename event
+                      {t.triggers.builder.rename_event_action}
                     </button>
                   </div>
                 )}

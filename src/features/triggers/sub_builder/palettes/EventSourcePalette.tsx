@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   EVENT_SOURCE_CATEGORIES,
   type EventSourceTemplate,
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
@@ -33,7 +35,7 @@ export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: 
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
       >
         <Zap className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-[11px] font-medium text-muted-foreground">Events</span>
+        <span className="text-[11px] font-medium text-muted-foreground">{t.triggers.builder.events}</span>
         {expanded
           ? <ChevronUp className="w-3 h-3 text-muted-foreground/50" />
           : <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
@@ -106,7 +108,7 @@ function CustomEventChip() {
         type="text"
         value={value}
         onChange={e => setValue(e.target.value)}
-        placeholder="custom_event"
+        placeholder={t.triggers.builder.custom_event_placeholder}
         className="w-24 px-2 py-1.5 text-[10px] rounded-lg bg-transparent text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:w-32 transition-all"
       />
       {value.trim() && (

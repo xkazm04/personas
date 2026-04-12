@@ -1,4 +1,5 @@
 import { Zap, X, GitBranch, type LucideIcon, Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow, Layers, FileEdit, CheckCircle2, XCircle, Store } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';

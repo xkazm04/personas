@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Trash2, X } from 'lucide-react';
 import { EVENT_EDGE_TYPES } from '../libs/eventCanvasConstants';
 

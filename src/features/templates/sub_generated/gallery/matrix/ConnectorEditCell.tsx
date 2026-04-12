@@ -7,6 +7,7 @@
  */
 import { useMemo, useState, useRef, useCallback } from 'react';
 import { CheckCircle2, X, Database, Plus, Table2, MessageSquare, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -41,6 +42,7 @@ function ConnectorPopup({
   onClose: () => void;
   onNavigateCatalog?: () => void;
 }) {
+  const { t } = useTranslation();
   const popupRef = useRef<HTMLDivElement>(null);
   useClickOutside(popupRef, true, onClose);
   const meta = getConnectorMeta(activeName);
@@ -75,13 +77,13 @@ function ConnectorPopup({
 
       {availableCreds.length > 0 && (
         <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground/70">Credential</label>
+          <label className="text-sm font-medium text-foreground/70">{t.templates.connector_edit.credential}</label>
           <ThemedSelect
             filterable
             value={credId || ''}
             onValueChange={(val) => { callbacks.onCredentialSelect(activeName, val); onClose(); }}
             options={availableCreds.map((c) => ({ value: c.id, label: c.name }))}
-            placeholder="Select credential..."
+            placeholder={t.templates.connector_edit.select_credential}
             className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
           />
         </div>
@@ -89,25 +91,25 @@ function ConnectorPopup({
 
       {filteredMembers && (
         <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground/70">Connector Type</label>
+          <label className="text-sm font-medium text-foreground/70">{t.templates.connector_edit.connector_type}</label>
           <ThemedSelect
             filterable
             value={activeName}
             onValueChange={(val) => { callbacks.onConnectorSwap(rc.name, val); onClose(); }}
             options={filteredMembers.map((m) => ({ value: m, label: getConnectorMeta(m).label }))}
-            placeholder="Switch connector..."
+            placeholder={t.templates.connector_edit.switch_connector}
             className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
           />
         </div>
       )}
 
       {availableCreds.length === 0 && (
-        <p className="text-sm text-muted-foreground/40 italic">No credentials available for this connector</p>
+        <p className="text-sm text-muted-foreground/40 italic">{t.templates.connector_edit.no_credentials}</p>
       )}
 
       {availableCreds.length === 0 && onNavigateCatalog && (
         <Button variant="link" size="xs" onClick={() => { onNavigateCatalog(); onClose(); }} className="text-[11px] text-primary/70 hover:text-primary p-0">
-          Add in Keys Catalog
+          {t.templates.connector_edit.add_in_catalog}
         </Button>
       )}
     </div>
@@ -240,7 +242,7 @@ export function ConnectorEditCell({
   if (allConnectors.length === 0) {
     return (
       <div className="space-y-2 w-full">
-        <span className="text-sm text-muted-foreground/40">No connectors required</span>
+        <span className="text-sm text-muted-foreground/40">{t.templates.connector_edit.no_connectors}</span>
       </div>
     );
   }

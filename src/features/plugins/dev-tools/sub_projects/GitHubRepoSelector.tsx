@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, Search, ExternalLink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
@@ -33,6 +34,7 @@ interface Props {
  * - No errors are ever surfaced to the user.
  */
 export function GitHubRepoSelector({ value, onChange }: Props) {
+  const { t } = useTranslation();
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [hasSelector, setHasSelector] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                 ref={searchRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filter repositories..."
+                placeholder={t.plugins.dev_tools.filter_repositories}
                 className="flex-1 text-xs bg-transparent text-foreground placeholder:text-muted-foreground/40 outline-none"
               />
             </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Trash2, Tag, Box, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useLocalImage } from '../hooks/useLocalImage';
@@ -11,6 +12,7 @@ interface AssetCardProps {
 }
 
 export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: AssetCardProps) {
+  const { t } = useTranslation();
   const [hovering, setHovering] = useState(false);
   const isImage = asset.assetType === '2d';
   const sizeStr = formatFileSize(asset.fileSize);
@@ -50,7 +52,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
                 onDelete(asset.id);
               }}
               className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-              title="Delete"
+              title={t.plugins.artist.delete}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -61,7 +63,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
                 if (tags !== null) onUpdateTags(asset.id, tags);
               }}
               className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-              title="Edit Tags"
+              title={t.plugins.artist.edit_tags}
             >
               <Tag className="w-4 h-4" />
             </button>

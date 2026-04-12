@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { FolderKanban, ChevronDown, AlertCircle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
@@ -16,6 +17,7 @@ const LifecyclePage = lazy(() => import('./sub_lifecycle/LifecyclePage'));
 // ---------------------------------------------------------------------------
 
 export function ProjectSelector() {
+  const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
@@ -100,6 +102,7 @@ export function ProjectSelector() {
 // ---------------------------------------------------------------------------
 
 export default function DevToolsPage() {
+  const { t } = useTranslation();
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
 
   return (

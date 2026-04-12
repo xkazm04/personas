@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -154,7 +155,7 @@ export default function BrowsePanel() {
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter notes..."
+            placeholder={t.plugins.obsidian_brain.filter_notes}
             className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-background/50 border border-primary/12 text-foreground/80 typo-caption placeholder:text-muted-foreground/30 focus-ring transition-all"
           />
         </div>

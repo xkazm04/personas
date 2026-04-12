@@ -4,6 +4,7 @@
  * View mode: expandable prompt section chips.
  */
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Sparkles, Upload, Play, Save, Send } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';

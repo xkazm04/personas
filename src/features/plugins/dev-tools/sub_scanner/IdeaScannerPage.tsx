@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Play, CheckSquare, Square, Clock,
@@ -292,6 +293,7 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
 // ---------------------------------------------------------------------------
 
 export default function IdeaScannerPage() {
+  const { t } = useTranslation();
   const { runScan } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation

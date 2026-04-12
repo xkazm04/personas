@@ -19,7 +19,7 @@ export function CreateTemplateModalHeader({
           <Wand2 className="w-4 h-4 text-violet-400" />
         </div>
         <div>
-          <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">Create Template</h2>
+          <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">{ t.templates.generation.create_template}</h2>
           <p className="text-sm text-muted-foreground/80">Design a reusable persona template with AI</p>
         </div>
       </div>

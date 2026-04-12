@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { X, RotateCw, Grid3x3, Box } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useModelViewer } from '../hooks/useModelViewer';
@@ -11,6 +12,7 @@ interface Gallery3DProps {
 }
 
 export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DProps) {
+  const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const {
     wireframe, autoRotate, lightingPreset,
@@ -63,7 +65,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                   className={`p-1.5 rounded-lg text-md transition-colors ${
                     autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
-                  title="Auto-rotate"
+                  title={t.plugins.artist.auto_rotate}
                 >
                   <RotateCw className="w-3.5 h-3.5" />
                 </button>
@@ -72,7 +74,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                   className={`p-1.5 rounded-lg text-md transition-colors ${
                     wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
-                  title="Wireframe"
+                  title={t.plugins.artist.wireframe}
                 >
                   <Grid3x3 className="w-3.5 h-3.5" />
                 </button>
@@ -81,9 +83,9 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                   onChange={(e) => setLightingPreset(e.target.value as 'studio' | 'outdoor' | 'soft')}
                   className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-[11px] text-foreground"
                 >
-                  <option value="studio">Studio</option>
-                  <option value="outdoor">Outdoor</option>
-                  <option value="soft">Soft</option>
+                  <option value="studio">{ t.plugins.artist.lighting_studio}</option>
+                  <option value="outdoor">{ t.plugins.artist.lighting_outdoor}</option>
+                  <option value="soft">{ t.plugins.artist.lighting_soft}</option>
                 </select>
                 <button
                   onClick={() => setSelectedIndex(null)}

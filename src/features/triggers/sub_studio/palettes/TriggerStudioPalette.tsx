@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, GitBranch, Zap, Bot } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import {
   TRIGGER_BLOCK_TEMPLATES,
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPersonaStep, onAddConditionGate }: Props) {
+  const { t } = useTranslation();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ triggers: true, personas: true, logic: true });
 
   const toggle = (id: string) => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
@@ -24,8 +26,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-3 py-2.5 border-b border-primary/10">
-        <h3 className="text-xs font-semibold text-foreground/80 tracking-wide">Building Blocks</h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Drag or click to add to canvas</p>
+        <h3 className="text-xs font-semibold text-foreground/80 tracking-wide">{t.triggers.studio.building_blocks}</h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5">{t.triggers.studio.drag_or_click_to_add}</p>
       </div>
 
       {/* Trigger Sources */}
@@ -36,7 +38,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
         >
           {expandedSections.triggers ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
           <Zap className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-[11px] font-medium text-foreground/80">Trigger Sources</span>
+          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.trigger_sources}</span>
           <span className="ml-auto text-[9px] text-muted-foreground/60">{TRIGGER_BLOCK_TEMPLATES.length}</span>
         </button>
 
@@ -72,7 +74,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
         >
           {expandedSections.personas ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
           <Bot className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[11px] font-medium text-foreground/80">Persona Steps</span>
+          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.persona_steps}</span>
           <span className="ml-auto text-[9px] text-muted-foreground/60">{personas.length}</span>
         </button>
 
@@ -92,7 +94,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
               </button>
             ))}
             {personas.length === 0 && (
-              <p className="text-[10px] text-muted-foreground/50 px-2 py-2">No personas created yet</p>
+              <p className="text-[10px] text-muted-foreground/50 px-2 py-2">{t.triggers.builder.no_personas_created}</p>
             )}
           </div>
         )}
@@ -106,7 +108,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
         >
           {expandedSections.logic ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
           <GitBranch className="w-3.5 h-3.5 text-violet-400" />
-          <span className="text-[11px] font-medium text-foreground/80">Logic Gates</span>
+          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.logic_gates}</span>
         </button>
 
         {expandedSections.logic && (

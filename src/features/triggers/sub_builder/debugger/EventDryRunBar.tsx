@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Play, SkipForward, Square, ChevronDown } from 'lucide-react';
 import type { DryRunState } from '../hooks/useEventCanvasState';
 

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Upload, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   CATEGORY_OPTIONS,
@@ -8,6 +9,7 @@ import {
 import type { CustomProps } from './TemplateSourceTypes';
 
 export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUpload }: CustomProps) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showExample, setShowExample] = useState(false);
 
