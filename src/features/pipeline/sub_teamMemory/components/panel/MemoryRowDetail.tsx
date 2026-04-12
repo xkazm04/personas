@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX } from '../../libs/memoryConstants';
@@ -23,6 +24,8 @@ export default function MemoryRowDetail({
   onSave,
   onCancel,
 }: MemoryRowDetailProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [editTitle, setEditTitle] = useState(initialTitle);
   const [editContent, setEditContent] = useState(initialContent);
   const [editCategory, setEditCategory] = useState(initialCategory);
@@ -43,12 +46,12 @@ export default function MemoryRowDetail({
   return (
     <div className="px-2.5 py-2 rounded-xl border border-violet-500/25 bg-violet-500/5 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-violet-400">Edit Memory</span>
+        <span className="text-sm font-medium text-violet-400">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
-          <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-500/15 text-emerald-400" title="Save">
+          <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
             <Check className="w-3 h-3" />
           </button>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60" title="Cancel">
+          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60" title={t.common.cancel}>
             <X className="w-3 h-3" />
           </button>
         </div>
@@ -59,7 +62,7 @@ export default function MemoryRowDetail({
         className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30"
         value={editTitle}
         onChange={(e) => setEditTitle(e.target.value)}
-        placeholder="Title..."
+        placeholder={pt.title_placeholder}
         onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onCancel(); }}
       />
 
@@ -67,7 +70,7 @@ export default function MemoryRowDetail({
         className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 resize-none"
         value={editContent}
         onChange={(e) => setEditContent(e.target.value)}
-        placeholder="Content..."
+        placeholder={pt.content_placeholder}
         rows={3}
       />
 

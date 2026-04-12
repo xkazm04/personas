@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
@@ -32,6 +33,8 @@ interface DiffContentProps {
 }
 
 export default function DiffContent({ diff }: DiffContentProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [expandedSection, setExpandedSection] = useState<'added' | 'removed' | null>('added');
 
   return (
@@ -55,7 +58,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Category diffs */}
       {diff.categoryDiffs.length > 0 && (
         <div className="px-1">
-          <p className="text-xs font-medium text-muted-foreground/60 mb-1">Category changes</p>
+          <p className="text-xs font-medium text-muted-foreground/60 mb-1">{pt.category_changes}</p>
           <div className="space-y-0.5">
             {diff.categoryDiffs.map((cd) => (
               <div key={cd.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
@@ -73,7 +76,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Importance shifts */}
       {diff.importanceShifts.some((s) => Math.abs(s.delta) >= 0.1) && (
         <div className="px-1">
-          <p className="text-xs font-medium text-muted-foreground/60 mb-1">Importance shifts</p>
+          <p className="text-xs font-medium text-muted-foreground/60 mb-1">{pt.importance_shifts}</p>
           <div className="space-y-0.5">
             {diff.importanceShifts.filter((s) => Math.abs(s.delta) >= 0.1).map((s) => (
               <div key={s.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
@@ -117,7 +120,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       )}
 
       {diff.added.length === 0 && diff.removed.length === 0 && (
-        <div className="text-center py-3"><p className="text-xs text-muted-foreground/50">No memory differences between these runs</p></div>
+        <div className="text-center py-3"><p className="text-xs text-muted-foreground/50">{pt.no_memory_diff}</p></div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp, Plus, GripVertical } from 'lucide-react';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';

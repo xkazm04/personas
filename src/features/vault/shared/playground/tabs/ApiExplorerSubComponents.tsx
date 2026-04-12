@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Upload, FileText, Globe, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -10,11 +11,13 @@ import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 // -- Empty state --------------------------------------------------
 
 export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   return (
     <EmptyIllustration
       icon={Globe}
-      heading="No API endpoints loaded"
-      description="Upload an OpenAPI/Swagger spec to explore and test API endpoints."
+      heading={vt.no_endpoints}
+      description={vt.no_endpoints_hint}
       cta={
         <div className="flex items-center gap-2">
           <Button
@@ -145,7 +148,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
       <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground/80">Paste OpenAPI / Swagger Spec</h3>
+          <h3 className="text-sm font-semibold text-foreground/80">{vt.paste_spec_title}</h3>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -158,7 +161,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
         <textarea
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
-          placeholder="Paste your OpenAPI JSON or YAML spec here..."
+          placeholder={vt.paste_placeholder}
           className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
@@ -179,7 +182,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
             loading={isParsing}
             className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
           >
-            {isParsing ? 'Parsing...' : 'Parse & Load'}
+            {isParsing ? vt.parsing : vt.parse_load}
           </Button>
         </div>
       </div>

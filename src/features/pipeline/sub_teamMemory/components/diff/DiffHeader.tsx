@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { ArrowRight } from 'lucide-react';
 
 interface DiffHeaderProps {
@@ -13,6 +14,8 @@ function shortId(id: string) {
 }
 
 export default function DiffHeader({ runs, runA, runB, onRunAChange, onRunBChange }: DiffHeaderProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   return (
     <div className="flex items-center gap-1.5 px-1">
       <select
@@ -20,7 +23,7 @@ export default function DiffHeader({ runs, runA, runB, onRunAChange, onRunBChang
         onChange={(e) => onRunAChange(e.target.value)}
         className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 truncate"
       >
-        <option value="" disabled>Base run...</option>
+        <option value="" disabled>{pt.base_run}</option>
         {runs.map(([id, count]) => (
           <option key={id} value={id} disabled={id === runB}>
             {shortId(id)} ({count})
@@ -33,7 +36,7 @@ export default function DiffHeader({ runs, runA, runB, onRunAChange, onRunBChang
         onChange={(e) => onRunBChange(e.target.value)}
         className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 truncate"
       >
-        <option value="" disabled>Compare run...</option>
+        <option value="" disabled>{pt.compare_run}</option>
         {runs.map(([id, count]) => (
           <option key={id} value={id} disabled={id === runA}>
             {shortId(id)} ({count})

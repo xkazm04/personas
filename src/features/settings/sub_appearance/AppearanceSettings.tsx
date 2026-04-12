@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { Check, Palette, Type, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
@@ -85,6 +86,9 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
 }
 
 export default function AppearanceSettings() {
+  const { t } = useTranslation();
+  const st = t.settings.appearance;
+  const se = t.settings.appearance_extra;
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
@@ -100,8 +104,8 @@ export default function AppearanceSettings() {
       <ContentHeader
         icon={<Palette className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Appearance"
-        subtitle="Customize how the app looks"
+        title={st.title}
+        subtitle={st.subtitle}
       />
 
       <ContentBody centered>
@@ -110,7 +114,7 @@ export default function AppearanceSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-violet-400" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Interface Mode</h2>
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.interface_mode}</h2>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Button
@@ -123,8 +127,8 @@ export default function AppearanceSettings() {
                 }`}
               >
                 <Sparkles className={`w-5 h-5 ${viewMode === VIEW_MODES.SIMPLE ? 'text-violet-400' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.SIMPLE ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Simple</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">Streamlined view</span>
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.SIMPLE ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.simple}</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">{se.simple_hint}</span>
                 {viewMode === VIEW_MODES.SIMPLE && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-violet-400" /></div>
                 )}
@@ -139,8 +143,8 @@ export default function AppearanceSettings() {
                 }`}
               >
                 <LayoutGrid className={`w-5 h-5 ${viewMode === VIEW_MODES.FULL ? 'text-foreground/80' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.FULL ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Full</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">All features</span>
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.FULL ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.full}</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">{se.full_hint}</span>
                 {viewMode === VIEW_MODES.FULL && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-primary" /></div>
                 )}
@@ -155,8 +159,8 @@ export default function AppearanceSettings() {
                 }`}
               >
                 <Wrench className={`w-5 h-5 ${viewMode === VIEW_MODES.DEV ? 'text-amber-400' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.DEV ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Dev</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">Full + Dev Tools</span>
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.DEV ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.dev}</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">{se.dev_hint}</span>
                 {viewMode === VIEW_MODES.DEV && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-amber-400" /></div>
                 )}
@@ -165,7 +169,7 @@ export default function AppearanceSettings() {
           </div>
           {/* Dark themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Dark</h2>
+            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.dark}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {darkThemes.map((t) => (
                 <ThemeSwatch
@@ -180,7 +184,7 @@ export default function AppearanceSettings() {
 
           {/* Light themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Light</h2>
+            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.light}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {lightThemes.map((t) => (
                 <ThemeSwatch
@@ -197,7 +201,7 @@ export default function AppearanceSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
               <Type className="w-4 h-4 text-muted-foreground/70" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Text Size</h2>
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.text_size}</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {TEXT_SCALES.map((scale) => {

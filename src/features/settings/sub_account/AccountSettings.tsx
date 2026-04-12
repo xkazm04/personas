@@ -1,8 +1,11 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Globe, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 export default function AccountSettings() {
+  const { t } = useTranslation();
+  const st = t.settings.account;
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isOffline = useAuthStore((s) => s.isOffline);
@@ -15,8 +18,8 @@ export default function AccountSettings() {
       <ContentHeader
         icon={<User className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title="Account"
-        subtitle="Manage your sign-in and profile"
+        title={st.title}
+        subtitle={st.subtitle}
       />
 
       <ContentBody centered>
@@ -66,7 +69,7 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80 mb-4">Sign in to sync your data across devices</p>
+              <p className="text-sm text-muted-foreground/80 mb-4">{st.sign_in_prompt}</p>
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}

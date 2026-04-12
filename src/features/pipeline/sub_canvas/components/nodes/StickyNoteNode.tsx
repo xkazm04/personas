@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { GripVertical, Trash2, Check } from 'lucide-react';
@@ -44,6 +45,8 @@ const CATEGORY_STYLES: Record<StickyNoteCategory, { bg: string; border: string; 
 const CATEGORIES: StickyNoteCategory[] = ['decision', 'todo', 'warning', 'documentation'];
 
 function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const d = data as StickyNoteData;
   const [editing, setEditing] = useState(!d.text);
   const [draft, setDraft] = useState(d.text || '');
@@ -124,7 +127,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Write a note (markdown supported)..."
+              placeholder={pt.note_placeholder}
               rows={3}
               className="w-full bg-transparent text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-y outline-none min-h-[48px] font-mono"
             />
@@ -134,7 +137,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
               >
                 <Check className="w-3 h-3" />
-                Done
+                {pt.done}
               </button>
             </div>
           </div>
@@ -143,7 +146,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             {d.text ? (
               <Markdown remarkPlugins={[remarkGfm]}>{d.text}</Markdown>
             ) : (
-              <span className="text-muted-foreground/40 italic">Double-click to edit...</span>
+              <span className="text-muted-foreground/40 italic">{pt.double_click_to_edit}</span>
             )}
           </div>
         )}

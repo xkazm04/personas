@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Wifi, Stethoscope, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -35,15 +36,17 @@ export function CloudConnectionForm({
   isDiagnosing,
   onDiagnose,
 }: CloudConnectionFormProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.connection;
   const urlValidation = useFieldValidation({
     validate: (value) => {
       try {
         const u = new URL(value);
-        if (!['http:', 'https:'].includes(u.protocol)) return 'URL must use http or https';
-        if (!u.hostname) return 'URL must include a hostname';
+        if (!['http:', 'https:'].includes(u.protocol)) return dt.url_protocol_error;
+        if (!u.hostname) return dt.url_hostname_error;
         return null;
       } catch {
-        return 'Enter a valid orchestrator URL';
+        return dt.url_invalid;
       }
     },
     debounceMs: 300,
@@ -56,9 +59,9 @@ export function CloudConnectionForm({
         <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
           <Wifi className="w-5 h-5 text-emerald-400" />
           <div>
-            <p className="text-sm font-medium text-emerald-400">Connected</p>
+            <p className="text-sm font-medium text-emerald-400">{dt.connected}</p>
             <p className="text-sm text-muted-foreground/80 mt-0.5">
-              Orchestrator: {config?.url}
+              {dt.orchestrator_prefix} {config?.url}
             </p>
           </div>
         </div>
@@ -67,7 +70,7 @@ export function CloudConnectionForm({
           onClick={onDisconnect}
           className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
         >
-          Disconnect
+          {dt.disconnect}
         </button>
       </div>
     );
@@ -76,7 +79,7 @@ export function CloudConnectionForm({
   return (
     <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
       <FormField
-        label="Orchestrator URL"
+        label={dt.orchestrator_url_label}
         validationState={urlValidation.validationState}
         error={urlValidation.error}
       >
@@ -95,14 +98,14 @@ export function CloudConnectionForm({
         )}
       </FormField>
 
-      <FormField label="API Key">
+      <FormField label={t.deployment.api_key}>
         {(inputProps) => (
           <input
             {...inputProps}
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter API key"
+            placeholder={dt.enter_api_key}
             className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
           />
         )}
@@ -117,11 +120,11 @@ export function CloudConnectionForm({
           {isConnecting ? (
             <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
               <LoadingSpinner />
-              <span>Connecting...</span>
-              <span className="sr-only">Connecting to cloud orchestrator...</span>
+              <span>{t.deployment.connecting}</span>
+              <span className="sr-only">{t.deployment.sr_connecting}</span>
             </span>
           ) : (
-            'Connect'
+            dt.connect
           )}
         </button>
 
@@ -133,12 +136,12 @@ export function CloudConnectionForm({
           {isDiagnosing ? (
             <span className="inline-flex items-center gap-2">
               <LoadingSpinner />
-              <span>Diagnosing...</span>
+              <span>{dt.diagnosing}</span>
             </span>
           ) : (
             <>
               <Stethoscope className="w-4 h-4" />
-              Diagnose
+              {dt.diagnose}
             </>
           )}
         </button>
@@ -162,7 +165,7 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
     >
       <div className="flex items-center justify-between mb-3">
         <p className={`text-sm font-medium ${allPassed ? 'text-emerald-400' : 'text-red-400'}`}>
-          Connection Diagnostics
+          {dt.diagnostics_title}
         </p>
         <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
           <Clock className="w-3 h-3" />
@@ -170,7 +173,7 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
         </div>
       </div>
 
-      <ul className="space-y-2" role="list" aria-label="Diagnostic steps">
+      <ul className="space-y-2" role="list" aria-label={dt.diagnostics_title}>
         {diagnostics.steps.map((step, i) => (
           <li key={i} className="flex items-start gap-2.5">
             {step.passed ? (

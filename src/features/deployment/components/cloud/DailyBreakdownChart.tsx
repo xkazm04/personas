@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useRef, useState } from 'react';
 import { useScaledFontSize } from '@/stores/themeStore';
 
@@ -27,6 +28,8 @@ function formatShortDate(iso: string): string {
 
 export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
   const sf = useScaledFontSize();
+  const { t } = useTranslation();
+  const dt = t.deployment.chart;
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -64,7 +67,7 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
       className="rounded-xl bg-secondary/20 border border-primary/10 px-3 pt-2 pb-1 relative"
     >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground/70">Daily Executions</span>
+        <span className="text-[11px] font-medium text-muted-foreground/70">{dt.daily_executions}</span>
         <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
           <span className="flex items-center gap-1">
             <span className="inline-block w-2 h-2 rounded-sm" style={{ background: 'var(--status-success)' }} />

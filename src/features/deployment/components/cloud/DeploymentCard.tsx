@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConical, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -33,6 +34,8 @@ export function DeploymentCard({
   onTest,
   onDismissTest,
 }: DeploymentCardProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.deploy_card;
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -69,7 +72,7 @@ export function DeploymentCard({
           {d.status === 'active' && onTest && (
             <button
               type="button"
-              title="Test deployment"
+              title={dt.test_deployment}
               onClick={() => onTest(d.id, d.persona_id)}
               disabled={isBusy || testRunning}
               className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-blue-400
@@ -81,7 +84,7 @@ export function DeploymentCard({
           {d.status === 'active' && (
             <button
               type="button"
-              title="Pause deployment"
+              title={dt.pause_deployment}
               onClick={() => handleAction(d.id, () => onPause(d.id))}
               disabled={isBusy}
               className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-amber-400
@@ -93,7 +96,7 @@ export function DeploymentCard({
           {d.status === 'paused' && (
             <button
               type="button"
-              title="Resume deployment"
+              title={dt.resume_deployment}
               onClick={() => handleAction(d.id, () => onResume(d.id))}
               disabled={isBusy}
               className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-emerald-400
@@ -104,7 +107,7 @@ export function DeploymentCard({
           )}
           <button
             type="button"
-            title="Remove deployment"
+            title={dt.remove_deployment}
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
             className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-red-400
@@ -122,7 +125,7 @@ export function DeploymentCard({
         </code>
         <button
           type="button"
-          title="Copy endpoint URL"
+          title={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
           className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
                      hover:bg-secondary/50 transition-colors cursor-pointer"
@@ -134,7 +137,7 @@ export function DeploymentCard({
             href={sanitizeExternalUrl(endpointUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            title="Open endpoint"
+            title={dt.open_endpoint}
             className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
                        hover:bg-secondary/50 transition-colors"
           >

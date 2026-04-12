@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Play } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -18,6 +19,8 @@ interface RequestBuilderProps {
 }
 
 export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderProps) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   const [method, setMethod] = useState(endpoint?.method.toUpperCase() || 'GET');
   const [path, setPath] = useState(endpoint?.path || '/');
   const [queryParams, setQueryParams] = useState<KeyValue[]>(() => initQueryParams(endpoint));
@@ -90,7 +93,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
 
       {/* Path parameters */}
       {pathParams.length > 0 && (
-        <Section label="Path Parameters">
+        <Section label={vt.path_parameters}>
           <div className="space-y-1.5">
             {pathParams.map((param) => (
               <div key={param} className="flex items-center gap-2">
@@ -108,16 +111,16 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
         </Section>
       )}
 
-      <Section label="Query Parameters">
+      <Section label={vt.query_parameters}>
         <KeyValueEditor entries={queryParams} onChange={setQueryParams} />
       </Section>
 
-      <Section label="Headers">
+      <Section label={t.common.actions}>
         <KeyValueEditor entries={headers} onChange={setHeaders} />
       </Section>
 
       {['POST', 'PUT', 'PATCH'].includes(method) && (
-        <Section label="Body">
+        <Section label={vt.body_label}>
           <SqlEditor
             value={body}
             onChange={setBody}

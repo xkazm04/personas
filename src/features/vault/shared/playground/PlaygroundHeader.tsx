@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
@@ -14,6 +15,8 @@ interface PlaygroundHeaderProps {
 }
 
 export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundHeaderProps) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   const [tagInput, setTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -116,7 +119,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               <button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
                 className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
-                title="Save name"
+                title={t.vault.ingest.save_name}
               >
                 <Check className="w-3.5 h-3.5" />
               </button>
@@ -129,7 +132,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               <button
                 onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
                 className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
-                title="Rename credential"
+                title={t.vault.ingest.rename_credential}
               >
                 <Pencil className="w-3 h-3" />
               </button>
@@ -173,7 +176,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 }}
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
                 autoFocus
-                placeholder="Add tag..."
+                placeholder={vt.add_tag}
                 className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (

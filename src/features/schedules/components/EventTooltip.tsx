@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Clock, AlertTriangle } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
@@ -12,6 +13,8 @@ export function EventTooltip({
   conflictGroup?: ConflictGroup;
 }) {
   // Other agents in the same conflict window (excluding the current one)
+  const { t } = useTranslation();
+  const st = t.schedules;
   const otherConflicts = conflictGroup
     ? [...new Set(conflictGroup.events.filter((e) => e.triggerId !== event.triggerId).map((e) => e.agentName))]
     : [];
@@ -41,7 +44,7 @@ export function EventTooltip({
           })}
         </div>
         <div className="flex items-center gap-1 capitalize">
-          {event.kind === 'projected' && <span className="text-blue-400">Scheduled</span>}
+          {event.kind === 'projected' && <span className="text-blue-400">{st.scheduled}</span>}
           {event.kind === 'past-success' && <span className="text-emerald-400">Completed</span>}
           {event.kind === 'past-failure' && <span className="text-red-400">Failed</span>}
         </div>

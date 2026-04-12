@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Sparkles, Check, X } from 'lucide-react';
 import type { TopologySuggestion } from '@/lib/bindings/TopologySuggestion';
@@ -79,6 +80,8 @@ export default function OptimizerResults({
   onAcceptSuggestion,
   onDismissSuggestion,
 }: OptimizerResultsProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
 
   return (
@@ -86,23 +89,23 @@ export default function OptimizerResults({
       {loading && !hasData && (
         <div className="px-3 py-6 text-center">
           <div className="w-5 h-5 mx-auto mb-2 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Analyzing pipeline history...</p>
+          <p className="text-sm text-muted-foreground">{pt.analyzing_pipeline}</p>
         </div>
       )}
 
       {!loading && !hasData && (
         <div className="px-3 py-6 text-center">
           <Sparkles className="w-5 h-5 mx-auto mb-2 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">Run the pipeline at least twice</p>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">to generate optimization insights</p>
+          <p className="text-sm text-muted-foreground/80">{pt.run_pipeline_twice}</p>
+          <p className="text-sm text-muted-foreground/80 mt-0.5">{pt.run_pipeline_twice_hint}</p>
         </div>
       )}
 
       {hasData && suggestions.length === 0 && (
         <div className="px-3 py-6 text-center">
           <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400/60" />
-          <p className="text-sm text-foreground/80">Topology looks good</p>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">No improvements detected</p>
+          <p className="text-sm text-foreground/80">{pt.topology_looks_good}</p>
+          <p className="text-sm text-muted-foreground/80 mt-0.5">{pt.no_improvements}</p>
         </div>
       )}
 
@@ -140,14 +143,14 @@ export default function OptimizerResults({
                     <button
                       onClick={() => onAcceptSuggestion(s)}
                       className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
-                      title="Accept suggestion"
+                      title={pt.accept_suggestion}
                     >
                       <Check className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => onDismissSuggestion(s.id)}
                       className="p-1 rounded-lg bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
-                      title="Dismiss"
+                      title={t.common.dismiss}
                     >
                       <X className="w-3 h-3" />
                     </button>

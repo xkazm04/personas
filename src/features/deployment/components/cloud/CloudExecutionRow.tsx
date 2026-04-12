@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Terminal, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { statusIcon, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
@@ -13,6 +14,8 @@ interface CloudExecutionRowProps {
 }
 
 export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput }: CloudExecutionRowProps) {
+  const { t, tx } = useTranslation();
+  const dt = t.deployment.exec_detail;
   return (
     <div className="rounded-lg bg-secondary/30 border border-primary/10 overflow-hidden">
       {/* Row */}
@@ -71,7 +74,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             if (output.loading) {
               return (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-                  <LoadingSpinner size="sm" /> Fetching output...
+                  <LoadingSpinner size="sm" /> {dt.fetching_output}
                 </div>
               );
             }
@@ -84,7 +87,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             }
             if (output.lines.length === 0) {
               return (
-                <p className="text-xs text-muted-foreground/50 italic">No output available.</p>
+                <p className="text-xs text-muted-foreground/50 italic">{dt.no_output}</p>
               );
             }
             return (

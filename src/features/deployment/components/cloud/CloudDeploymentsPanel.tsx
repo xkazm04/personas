@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Rocket, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -39,6 +40,8 @@ export function CloudDeploymentsPanel({
   onRemove,
   onRefresh,
 }: Props) {
+  const { t, tx } = useTranslation();
+  const dt = t.deployment.deployments_panel;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -70,7 +73,7 @@ export function CloudDeploymentsPanel({
       {/* Deploy new persona */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Deploy Persona</SectionHeading>
+          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{dt.deploy_persona}</SectionHeading>
           <Button
             variant="secondary"
             size="xs"
@@ -100,7 +103,7 @@ export function CloudDeploymentsPanel({
                          transition-colors"
             >
               <option value="">
-                {deployablePersonas.length === 0 ? 'All personas deployed' : 'Select a persona\u2026'}
+                {deployablePersonas.length === 0 ? dt.all_deployed : dt.select_persona}
               </option>
               {deployablePersonas.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>

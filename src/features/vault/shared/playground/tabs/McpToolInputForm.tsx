@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import type { McpTool } from '@/api/agents/mcpTools';
 
 // -- Tool input form ----------------------------------------------

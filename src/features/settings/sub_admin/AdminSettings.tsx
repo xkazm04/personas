@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -5,6 +6,8 @@ import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 
 export default function AdminSettings() {
+  const { t } = useTranslation();
+  const st = t.settings.admin;
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourCompleted = useSystemStore((s) => s.tourCompleted);
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
@@ -40,12 +43,12 @@ export default function AdminSettings() {
   };
 
   const statusLabel = tourActive
-    ? 'Active'
+    ? st.status_active
     : tourCompleted
-      ? 'Completed'
+      ? st.status_completed
       : tourDismissed
-        ? 'Dismissed'
-        : 'Not started';
+        ? st.status_dismissed
+        : st.status_not_started;
 
   const statusColor = tourActive
     ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
@@ -60,8 +63,8 @@ export default function AdminSettings() {
       <ContentHeader
         icon={<Shield className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Admin"
-        subtitle="Development tools and testing utilities"
+        title={st.title}
+        subtitle={st.subtitle}
       />
       <ContentBody>
         <div className="max-w-2xl mx-auto space-y-6 py-2">
@@ -72,8 +75,8 @@ export default function AdminSettings() {
                 <Map className="w-4.5 h-4.5 text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground/90">Guided Tour</h3>
-                <p className="text-sm text-muted-foreground/50">Force-start or reset the onboarding tour for e2e testing</p>
+                <h3 className="text-sm font-semibold text-foreground/90">{st.guided_tour}</h3>
+                <p className="text-sm text-muted-foreground/50">{st.guided_tour_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${statusColor}`}>
                 {statusLabel}
@@ -84,13 +87,13 @@ export default function AdminSettings() {
               {/* Tour state summary */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Progress</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{st.progress}</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {completedCount} / {TOUR_STEPS.length} steps
                   </p>
                 </div>
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Current Step</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{st.current_step}</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
                   </p>
@@ -99,7 +102,7 @@ export default function AdminSettings() {
 
               {/* Step completion detail */}
               <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">Step Status</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">{st.step_status}</p>
                 <div className="space-y-1.5">
                   {TOUR_STEPS.map((step, i) => (
                     <div key={step.id} className="flex items-center gap-2">

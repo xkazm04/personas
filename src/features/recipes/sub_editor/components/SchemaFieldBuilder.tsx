@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback } from 'react';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
@@ -17,6 +18,8 @@ interface SchemaFieldBuilderProps {
 }
 
 export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps) {
+  const { t } = useTranslation();
+  const rt = t.recipes;
   const addField = useCallback(() => {
     onChange([...fields, { key: '', type: 'text', label: '', default: '' }]);
   }, [fields, onChange]);
@@ -99,7 +102,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-1"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add field
+        {rt.add_field}
       </motion.button>
     </div>
   );

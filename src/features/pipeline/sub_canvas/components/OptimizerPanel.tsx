@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronDown, ChevronUp, RotateCcw, BarChart3, TrendingUp } from 'lucide-react';
@@ -22,6 +23,8 @@ export default function OptimizerPanel({
   onRefresh,
   dismissedIds,
 }: OptimizerPanelProps) {
+  const { t, tx } = useTranslation();
+  const pt = t.pipeline;
   const [expanded, setExpanded] = useState(false);
 
   const suggestions = (analytics?.suggestions ?? []).filter((s) => !dismissedIds.has(s.id));
@@ -48,7 +51,7 @@ export default function OptimizerPanel({
           )}
         </div>
         <span className={`text-sm font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-muted-foreground'}`}>
-          Topology Optimizer
+          {pt.topology_optimizer}
           {hasSuggestions && (
             <span className="ml-1.5 text-sm text-indigo-400">
               {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
@@ -92,7 +95,7 @@ export default function OptimizerPanel({
                   <button
                     onClick={(e) => { e.stopPropagation(); onRefresh(); }}
                     className="p-1 rounded-lg hover:bg-primary/10 transition-colors"
-                    title="Refresh analytics"
+                    title={pt.refresh_analytics}
                   >
                     <RotateCcw className={`w-3 h-3 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
                   </button>

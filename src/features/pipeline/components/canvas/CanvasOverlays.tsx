@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Users } from 'lucide-react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import {
@@ -54,6 +55,8 @@ export default function CanvasOverlays({
   handleDeleteEdge, handleChangeConnectionType,
   setSelectedMember, setContextMenu, setEdgeTooltip,
 }: CanvasOverlaysProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const teamMemories = usePipelineStore((s) => s.teamMemories);
   const teamMemoriesTotal = usePipelineStore((s) => s.teamMemoriesTotal);
   const teamMemoryStats = usePipelineStore((s) => s.teamMemoryStats);
@@ -174,8 +177,8 @@ export default function CanvasOverlays({
             <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
-            <p className="text-sm font-medium text-foreground/80 mb-1">No agents in this team</p>
-            <p className="text-sm text-muted-foreground/80">Drag agents from the sidebar or click &quot;Add Agent&quot; above</p>
+            <p className="text-sm font-medium text-foreground/80 mb-1">{pt.no_agents_in_team}</p>
+            <p className="text-sm text-muted-foreground/80">{pt.drag_agents_hint}</p>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Sparkles } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -17,6 +18,8 @@ interface CredentialRecipesTabProps {
 }
 
 export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
 
   const [recipes, setRecipes] = useState<RecipeDefinition[]>([]);
@@ -125,7 +128,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground/90">Recipes</h3>
+          <h3 className="text-sm font-semibold text-foreground/90">{vt.recipes_title}</h3>
           <p className="text-sm text-muted-foreground/60 mt-0.5">
             Reusable automation templates for this credential
           </p>
@@ -161,7 +164,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
         {recipes.length === 0 && !creating ? (
           <EmptyIllustration
             icon={BookOpen}
-            heading="No recipes yet"
+            heading={vt.no_recipes}
             description="Create your first recipe by describing what you want to automate with this credential."
             cta={
               <Button

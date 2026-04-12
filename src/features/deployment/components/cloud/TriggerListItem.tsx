@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   ChevronDown,
   ChevronRight,
@@ -40,6 +41,8 @@ export function TriggerListItem({
   onToggleEnabled,
   onDelete,
 }: TriggerListItemProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.schedules;
   const config = parseConfig(trigger.config) as Record<string, string>;
 
   return (
@@ -106,13 +109,13 @@ export function TriggerListItem({
 
           {/* Recent firings */}
           <div>
-            <SectionHeading as="h4" className="text-xs text-muted-foreground/70 mb-2">Recent Firings</SectionHeading>
+            <SectionHeading as="h4" className="text-xs text-muted-foreground/70 mb-2">{dt.recent_firings}</SectionHeading>
             {isLoadingFirings ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground/50 py-2">
                 <LoadingSpinner size="xs" /> Loading...
               </div>
             ) : firings.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">No firings recorded yet.</p>
+              <p className="text-xs text-muted-foreground/50">{dt.no_firings}</p>
             ) : (
               <div className="space-y-1">
                 {firings.map((f) => (

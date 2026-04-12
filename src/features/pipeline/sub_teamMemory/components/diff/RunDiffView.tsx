@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GitCompareArrows } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -13,6 +14,8 @@ interface RunDiffViewProps {
 }
 
 export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const runs = useMemo(() => stats?.run_counts ?? [], [stats]);
   const [runA, setRunA] = useState<string>('');
   const [runB, setRunB] = useState<string>('');
@@ -57,7 +60,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
     return (
       <div className="text-center py-6 px-3">
         <GitCompareArrows className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-        <p className="text-xs text-muted-foreground/50">Need at least 2 runs to compare</p>
+        <p className="text-xs text-muted-foreground/50">{pt.need_two_runs}</p>
         <button onClick={onClose} className="mt-2 text-xs text-violet-400 hover:text-violet-300">Back</button>
       </div>
     );
@@ -70,7 +73,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       {loading && (
         <div className="flex items-center justify-center py-4 gap-1.5">
           <LoadingSpinner size="sm" className="text-violet-400" />
-          <span className="text-xs text-muted-foreground/50">Comparing runs...</span>
+          <span className="text-xs text-muted-foreground/50">{pt.comparing_runs}</span>
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useMemo } from 'react';
 import { History, ChevronUp } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
@@ -26,6 +27,8 @@ interface TeamMemoryRowProps {
 }
 
 export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, onEdit }: TeamMemoryRowProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -64,7 +67,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           <div className="flex items-center gap-2 mt-1.5">
             <CategoryChip category={memory.category} source="team" />
             <span className="text-sm px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground/60">
-              {isAuto ? 'Auto' : 'Manual'}
+              {isAuto ? pt.auto_label : pt.manual_label}
             </span>
             <div className="flex items-center gap-0.5">
               {Array.from({ length: IMPORTANCE_DOTS }).map((_, i) => (
@@ -90,7 +93,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           {showHistory && revisions.length > 0 && (
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground/60">Version History</span>
+                <span className="text-sm font-medium text-muted-foreground/60">{pt.version_history}</span>
                 <button onClick={() => setShowHistory(false)} className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground/60">
                   <ChevronUp className="w-3 h-3" />
                 </button>

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
@@ -17,6 +18,8 @@ import { DailyBreakdownChart } from './DailyBreakdownChart';
 // ---------------------------------------------------------------------------
 
 export function CloudHistoryPanel() {
+  const { t } = useTranslation();
+  const dt = t.deployment;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
   const [executions, setExecutions] = useState<CloudExecution[]>([]);
@@ -142,7 +145,7 @@ export function CloudHistoryPanel() {
           onChange={(e) => setFilterPersona(e.target.value)}
           className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
-          <option value="">All personas</option>
+          <option value="">{dt.history.all_personas}</option>
           {personas.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -153,10 +156,10 @@ export function CloudHistoryPanel() {
           onChange={(e) => setFilterStatus(e.target.value)}
           className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
-          <option value="">All statuses</option>
-          <option value="completed">Completed</option>
-          <option value="failed">Failed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">{dt.history.all_statuses}</option>
+          <option value="completed">{dt.history.completed}</option>
+          <option value="failed">{dt.history.failed}</option>
+          <option value="cancelled">{dt.history.cancelled}</option>
         </select>
 
         <select
@@ -164,9 +167,9 @@ export function CloudHistoryPanel() {
           onChange={(e) => setPeriod(Number(e.target.value))}
           className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
+          <option value={7}>{dt.history.last_7_days}</option>
+          <option value={30}>{dt.history.last_30_days}</option>
+          <option value={90}>{dt.history.last_90_days}</option>
         </select>
 
         {historyLastPolled != null && (

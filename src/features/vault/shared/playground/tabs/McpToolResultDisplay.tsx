@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, AlertCircle, Clock, Check, Server } from 'lucide-react';
 import type { McpToolResult } from '@/api/agents/mcpTools';
 

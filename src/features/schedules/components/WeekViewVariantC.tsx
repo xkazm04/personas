@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useState, useCallback } from 'react';
 import { Clock } from 'lucide-react';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';

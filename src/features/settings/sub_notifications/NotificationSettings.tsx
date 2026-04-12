@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert, Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -77,11 +78,11 @@ function WeeklyDigestToggle() {
     <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary/60" />
-        <span className="text-sm font-medium text-foreground/80">Weekly Health Digest</span>
+        <span className="text-sm font-medium text-foreground/80">{st.weekly_digest}</span>
       </div>
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-medium text-foreground/80">Agent Health Digest</span>
+          <span className="text-sm font-medium text-foreground/80">{st.digest_title}</span>
           <p className="text-sm text-muted-foreground/80">
             Weekly notification summarizing health issues across all agents with a total health score
           </p>
@@ -104,6 +105,8 @@ function WeeklyDigestToggle() {
 }
 
 export default function NotificationSettings() {
+  const { t } = useTranslation();
+  const st = t.settings.notifications;
   const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
@@ -143,8 +146,8 @@ export default function NotificationSettings() {
       <ContentHeader
         icon={<Bell className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Notifications"
-        subtitle="Control which healing alerts trigger notifications"
+        title={st.title}
+        subtitle={st.subtitle}
       />
 
       <ContentBody centered>
@@ -152,7 +155,7 @@ export default function NotificationSettings() {
           <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
             <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary/60" />
-              <span className="text-sm font-medium text-foreground/80">Healing Alert Severity</span>
+              <span className="text-sm font-medium text-foreground/80">{st.healing_severity}</span>
             </div>
 
             <div className="divide-y divide-primary/10">

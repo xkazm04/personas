@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
@@ -27,6 +28,8 @@ export default function DryRunDebugger({
   onStateChange,
   onClose,
 }: DryRunDebuggerProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const dbg = useDebugger(members, connections, agentNames, agentRoles, onStateChange, onClose);
 
   const agentNameForInspected = useMemo(
@@ -51,7 +54,7 @@ export default function DryRunDebugger({
         <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
           <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-amber-300">
-            <span className="font-semibold">Cycle detected</span>
+            <span className="font-semibold">{pt.cycle_detected}</span>
             <span className="text-amber-300/80">
               {' -- '}Execution order is arbitrary for:{' '}
               {Array.from(dbg.cycleNodeIds).map((id) => agentNames[id] || id).join(', ')}

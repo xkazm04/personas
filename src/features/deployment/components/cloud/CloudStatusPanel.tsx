@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
@@ -21,6 +22,8 @@ export interface CloudStatusPanelProps {
 }
 
 export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId, lastPolled }: CloudStatusPanelProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment;
   if (!status && isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
@@ -65,7 +68,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
 
       {/* Worker counts */}
       <div>
-        <SectionHeading className="mb-3">Workers</SectionHeading>
+        <SectionHeading className="mb-3">{dt.cloud_status.workers}</SectionHeading>
         <div className="flex flex-wrap gap-3">
           <WorkerBadge label="Idle" count={workers.idle} color="emerald" />
           <WorkerBadge label="Executing" count={workers.executing} color="blue" />
@@ -75,7 +78,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
 
       {/* Stats */}
       <div>
-        <SectionHeading className="mb-3">Activity</SectionHeading>
+        <SectionHeading className="mb-3">{dt.cloud_status.activity}</SectionHeading>
         <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
           <ActivityGauge
             label="Queue Length"
@@ -95,14 +98,14 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       {/* Active execution progress */}
       {activeExecutionId && (
         <div>
-          <SectionHeading className="mb-3">Active Execution</SectionHeading>
+          <SectionHeading className="mb-3">{dt.cloud_status.active_execution}</SectionHeading>
           <ExecutionProgressBar executionId={activeExecutionId} />
         </div>
       )}
 
       {/* Claude token indicator */}
       <div>
-        <SectionHeading className="mb-3">Claude Token</SectionHeading>
+        <SectionHeading className="mb-3">{dt.cloud_status.claude_token}</SectionHeading>
         <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30 border border-primary/10">
           {status.hasClaudeToken ? (
             <>
@@ -111,7 +114,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="text-sm text-foreground/80">Token available</span>
+              <span className="text-sm text-foreground/80">{dt.status.token_available}</span>
             </>
           ) : (
             <>
@@ -120,7 +123,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <span className="text-sm text-foreground/80">No token configured</span>
+              <span className="text-sm text-foreground/80">{dt.status.no_token_configured}</span>
             </>
           )}
         </div>

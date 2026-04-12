@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Send, Copy, Check, ChevronDown, ChevronRight, Terminal, Code2, Loader2 } from 'lucide-react';
 import { executePersona } from '@/api/agents/executions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +52,8 @@ console.log(data);`;
 const DEFAULT_BODY = JSON.stringify({ message: 'Hello! Please confirm you are operational.' }, null, 2);
 
 export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygroundProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.api_playground;
   const [expanded, setExpanded] = useState(false);
   const [body, setBody] = useState(DEFAULT_BODY);
   const [sending, setSending] = useState(false);
@@ -121,7 +124,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                    transition-colors cursor-pointer py-0.5"
       >
         <Terminal className="w-3 h-3" />
-        <span>API Playground</span>
+        <span>{dt.title}</span>
         <ChevronRight className="w-3 h-3" />
       </button>
     );
@@ -137,14 +140,14 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                    hover:text-indigo-300 transition-colors cursor-pointer"
       >
         <Terminal className="w-3 h-3" />
-        <span>API Playground</span>
+        <span>{dt.title}</span>
         <ChevronDown className="w-3 h-3" />
       </button>
 
       {/* Request body editor */}
       <div className="space-y-1">
         <label className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
-          Request Body
+          {dt.request_body}
         </label>
         <textarea
           value={body}
@@ -175,7 +178,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           {sending
             ? <Loader2 className="w-3 h-3 animate-spin" />
             : <Send className="w-3 h-3" />}
-          {sending ? 'Sending...' : 'Send Request'}
+          {sending ? dt.sending : dt.send_request}
         </button>
 
         <button
@@ -186,7 +189,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                      transition-colors cursor-pointer"
         >
           <Code2 className="w-3 h-3" />
-          Snippets
+          {dt.snippets}
         </button>
       </div>
 
@@ -231,7 +234,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       {response && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="font-medium text-muted-foreground/60 uppercase tracking-wider">Response</span>
+            <span className="font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.response_label}</span>
             <span className={`px-1.5 py-0.5 rounded font-medium ${
               response.status === 'success'
                 ? 'bg-emerald-500/10 text-emerald-400'
@@ -265,7 +268,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
               ? response.error
               : response.data
                 ? formatResponseData(response.data)
-                : '(empty response)'}
+                : dt.empty_response}
           </pre>
         </div>
       )}

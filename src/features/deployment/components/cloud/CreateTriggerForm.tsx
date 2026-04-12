@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Plus, Clock, Webhook } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -15,6 +16,8 @@ interface CreateTriggerFormProps {
 }
 
 export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: CreateTriggerFormProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.trigger_form;
   const [createPersonaId, setCreatePersonaId] = useState('');
   const [createType, setCreateType] = useState<'schedule' | 'webhook'>('schedule');
   const [createCron, setCreateCron] = useState('0 * * * *');
@@ -42,17 +45,17 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
   return (
     <div className="rounded-xl bg-secondary/30 border border-indigo-500/15 p-4 space-y-3">
-      <h4 className="text-sm font-medium text-foreground/90">New Cloud Trigger</h4>
+      <h4 className="text-sm font-medium text-foreground/90">{dt.new_cloud_trigger}</h4>
 
       {/* Persona selector */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/70">Persona (must be deployed)</label>
+        <label className="text-xs text-muted-foreground/70">{dt.persona_must_be_deployed}</label>
         <select
           value={createPersonaId}
           onChange={(e) => setCreatePersonaId(e.target.value)}
           className="w-full px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
-          <option value="">Select persona...</option>
+          <option value="">{dt.select_persona}</option>
           {deployedPersonas.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -61,7 +64,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Trigger type */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/70">Trigger Type</label>
+        <label className="text-xs text-muted-foreground/70">{dt.trigger_type}</label>
         <div className="flex gap-2">
           <button
             onClick={() => setCreateType('schedule')}
@@ -72,7 +75,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            Schedule (Cron)
+            {dt.schedule_cron}
           </button>
           <button
             onClick={() => setCreateType('webhook')}
@@ -132,7 +135,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors"
         >
           {isCreating ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
-          {isCreating ? 'Creating...' : 'Create Trigger'}
+          {isCreating ? dt.creating : dt.create_trigger}
         </button>
         <button
           onClick={onCancel}

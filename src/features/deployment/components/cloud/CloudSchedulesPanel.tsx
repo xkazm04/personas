@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
+  const { t, tx } = useTranslation();
+  const dt = t.deployment;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
 

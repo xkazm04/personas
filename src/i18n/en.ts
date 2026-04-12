@@ -6332,6 +6332,118 @@ export const en = {
       approve_and_promote: "Approve & Promote",
       view_agent_btn: "View Agent",
     },
+
+    // Activity diagram modal
+    diagrams: {
+      no_flow_data: "No flow data available",
+      nodes_count: "{count} nodes",
+      edges_count: "{count} edges",
+      connectors_count: "{count} connector(s)",
+      decisions_count: "{count} decision(s)",
+    },
+
+    // Generation
+    generation: {
+      create_template: "Create Template",
+      create_template_subtitle: "Design a reusable persona template with AI",
+      template_name_label: "Template Name",
+      run_design_review: "Run Design Review",
+      cancel: "Cancel",
+      close: "Close",
+      generating: "Generating: {name}",
+      running: "Running...",
+    },
+
+    // Connector edit cell
+    connector_edit: {
+      credential: "Credential",
+      select_credential: "Select credential...",
+      connector_type: "Connector Type",
+      switch_connector: "Switch connector...",
+      no_credentials: "No credentials available for this connector",
+      add_in_catalog: "Add in Keys Catalog",
+      database: "Database",
+      new_table: "New",
+      existing_table: "Existing",
+      configure_table: "Configure table...",
+      existing_table_label: "Existing Table",
+      schema: "Schema",
+      table_name: "Table name",
+      in_app_messages: "In-App Messages",
+      not_connected: "not connected",
+      no_connectors: "No connectors required",
+      linked: "Linked",
+      set_up: "Set up",
+      more_connectors: "+{count} more",
+    },
+
+    // Trigger edit cell
+    trigger_edit: {
+      schedule: "Schedule",
+      schedule_placeholder: "Every weekday at 9am",
+      schedule_hint: "Natural language or cron (e.g. \"0 9 * * 1-5\")",
+      webhook_url: "Webhook URL",
+      check_interval: "Check Interval",
+      check_interval_placeholder: "Every 5 minutes",
+      no_config_needed: "No configuration needed",
+      manual_only: "Manual execution only",
+    },
+
+    // Preset edit cells
+    preset_edit: {
+      select_review: "Select review policy...",
+      select_memory: "Select memory strategy...",
+      notification_strategy: "Notification strategy...",
+      error_handling: "Error handling...",
+      add_use_case: "Add use case...",
+      halt_on_error: "Halt on error",
+      retry_once: "Retry once",
+      retry_3x: "Retry 3x",
+      notify_continue: "Notify & continue",
+      skip_failed: "Skip failed step",
+    },
+
+    // Test report modal
+    test_report: {
+      title: "Test Report",
+      passed: "{count} passed",
+      failed: "{count} failed",
+      skipped: "{count} skipped",
+      test_scope: "Test Scope",
+      overview: "Overview",
+      analysis: "Analysis",
+      results: "Results",
+      next_steps: "Next Steps",
+      connector_credentials: "Connector Credentials",
+      matched: "matched",
+      not_found: "not found",
+      missing_keys_hint: "Add missing API keys in the Keys section before approving this agent.",
+      connected_successfully: "Connected Successfully",
+      needs_credentials: "Needs Credentials",
+      add_keys_hint: "Add the required API keys in the Keys section to enable these tools.",
+      connection_failed: "Connection Failed",
+      builtin_no_test: "Built-in (No Test Needed)",
+      what_happened: "What happened",
+      service: "Service",
+      response_preview: "Response Preview",
+      error_detail: "Error Detail",
+      copy: "Copy",
+      copied: "Copied",
+    },
+
+    // Questionnaire modal
+    questionnaire: {
+      answered: "{count} answered",
+      cancel_setup: "Cancel setup",
+      navigate: "navigate",
+      skip_all: "Skip all",
+      submit_answers: "Submit Answers",
+      answer_remaining: "Answer remaining ({count})",
+      next: "Next",
+      select_project: "Select a codebase project...",
+      type_answer: "Type your answer...",
+      default_label: "Default: {value}",
+    },
   },
 
   // -------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useMemo } from 'react';
 import { Clock, Copy, Check } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -20,6 +21,8 @@ interface ResponseViewerProps {
 }
 
 export function ResponseViewer({ response }: ResponseViewerProps) {
+  const { t } = useTranslation();
+  const vt = t.vault.playground_extra;
   const [subTab, setSubTab] = useState<ResponseSubTab>('body');
   const [copied, setCopied] = useState(false);
 
@@ -69,7 +72,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       {/* Truncation warning */}
       {response.truncated && (
         <div className="px-3 py-2 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-400 text-sm">
-          Response body was truncated (exceeded 2 MB limit). Partial content is shown below.
+          {vt.truncated_warning}
         </div>
       )}
 
@@ -115,8 +118,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
-                <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">Header</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground/70">Value</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">{vt.header_col}</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground/70">{vt.value_col}</th>
               </tr>
             </thead>
             <tbody>

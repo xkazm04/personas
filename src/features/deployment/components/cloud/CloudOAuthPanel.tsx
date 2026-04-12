@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, ExternalLink, Shield, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -28,13 +29,16 @@ export function CloudOAuthPanel({
   onRefreshOAuth,
   onDisconnectOAuth,
 }: CloudOAuthPanelProps) {
+  const { t } = useTranslation();
+  const dt = t.deployment.oauth_panel;
+
   // State: waiting for callback
   if (pendingOAuthState) {
     return (
       <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
         <div className="p-4 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
           <p className="text-sm text-foreground/80 leading-relaxed">
-            Open the authorization window, approve access, then paste the code below to complete the connection.
+            {dt.open_auth_instruction}
           </p>
           {sanitizeExternalUrl(oauthStartUrl) && (
             <a
@@ -50,13 +54,13 @@ export function CloudOAuthPanel({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="oauth-code" className="text-sm font-medium text-muted-foreground/80">Authorization Code</label>
+          <label htmlFor="oauth-code" className="text-sm font-medium text-muted-foreground/80">{t.deployment.auth_code}</label>
           <input
             id="oauth-code"
             type="text"
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
-            placeholder="Paste the code here"
+            placeholder={dt.paste_code}
             className="w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
         </div>
@@ -95,10 +99,10 @@ export function CloudOAuthPanel({
     const statusColor = isExpired ? 'text-amber-400' : isUnknown ? 'text-slate-400' : 'text-emerald-400';
     const statusTextColor = isExpired ? 'text-amber-300' : isUnknown ? 'text-slate-300' : 'text-emerald-400';
     const statusLabel = isExpired
-      ? 'Anthropic Token Expired'
+      ? dt.token_expired
       : isUnknown
-        ? 'Anthropic Account Connected (status unknown)'
-        : 'Anthropic Account Connected';
+        ? dt.token_unknown
+        : dt.token_connected;
 
     return (
       <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -130,7 +134,7 @@ export function CloudOAuthPanel({
         {/* Scopes */}
         {oauthStatus.scopes && oauthStatus.scopes.length > 0 && (
           <div>
-            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Scopes</SectionHeading>
+            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{dt.scopes}</SectionHeading>
             <div className="flex flex-wrap gap-2">
               {oauthStatus.scopes.map((scope) => (
                 <span
@@ -147,7 +151,7 @@ export function CloudOAuthPanel({
         {/* Expiry */}
         {oauthStatus.expiresAt && (
           <div>
-            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Expires</SectionHeading>
+            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{dt.expires}</SectionHeading>
             <p className="text-sm text-foreground/90">
               {new Date(oauthStatus.expiresAt).toLocaleString()}
             </p>
@@ -191,7 +195,7 @@ export function CloudOAuthPanel({
         className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
       >
         <ExternalLink className="w-4 h-4" />
-        {oauthStartUrl ? 'Refresh Authorization Link' : 'Connect Anthropic Account'}
+        {oauthStartUrl ? dt.refresh_auth_link : dt.connect_anthropic}
       </button>
       {sanitizeExternalUrl(oauthStartUrl) && (
         <a
