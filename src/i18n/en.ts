@@ -3581,6 +3581,11 @@ export const en = {
       status_error: "error",
       save_name: "Save name",
       rename_credential: "Rename credential",
+      // DocumentsTab
+      no_documents_heading: "No documents yet",
+      no_documents_description: "Drop files here, paste text, or scan a directory to start building your knowledge base.",
+      delete_document: "Delete document",
+      chunks_label: "{count} chunks",
     },
     // Credential manager header / toolbar
     manager: {
@@ -3766,6 +3771,10 @@ export const en = {
       minutes_2: "2 minutes",
       minutes_5: "5 minutes",
       minutes_10: "10 minutes",
+      // EventTemplateCard -- healthcheck auto-rotation explanation
+      healthcheck_auto_rotate: "Rotation will trigger automatically when a previously-healthy credential begins failing its healthcheck.",
+      // EventTemplateCard -- last evaluated timestamp
+      last_evaluated: "Last evaluated: {time}",
     },
     // Credential forms
     credential_forms: {
@@ -3856,6 +3865,15 @@ export const en = {
       scan_privacy: "No secrets are uploaded -- scanning happens entirely on your machine.",
       scanning: "Scanning filesystem for credentials...",
       scan_failed: "Scan Failed",
+      // ForagingStepIndicator -- step labels
+      step_start: "Start",
+      step_scan: "Scan",
+      step_results: "Results",
+      step_import: "Import",
+      step_done: "Done",
+      // Accessible labels for step states
+      step_completed: "(completed)",
+      step_current: "(current)",
     },
     // Desktop discovery
     desktop_discovery: {
@@ -3899,6 +3917,13 @@ export const en = {
       auto_provision: "Auto-provision available",
       verified_setup: "Verified setup",
       cached_recipe: "Cached recipe will speed up design",
+      // IdlePhase
+      idle_description: "Describe the tool and credential type. Claude will generate the exact fields you need, then you can save them securely.",
+      from_catalog: "From Catalog",
+      any_service: "Any Service...",
+      import_from: "Import from...",
+      auto_setup: "Auto-Setup",
+      design_credential: "Design Credential",
       open_setup_page: "Open setup page in browser",
       mark_not_done: "Mark as not done",
       mark_done: "Mark as done",
@@ -4145,6 +4170,25 @@ export const en = {
       stage_failed: "Failed",
       tool_calls: "{count} tool calls",
     },
+
+    // -- cloudSchedulesHelpers --
+    // Trigger type labels displayed in cloud schedule panels
+    cloud_trigger_schedule: "Scheduled (Cron)",
+    cloud_trigger_polling: "Polling",
+    cloud_trigger_webhook: "Webhook",
+    cloud_trigger_chain: "Chain",
+    cloud_trigger_manual: "Manual",
+    // Health badge label
+    cloud_healthy: "Healthy",
+    // Cron preset labels
+    cron_every_5min: "Every 5 min",
+    cron_every_15min: "Every 15 min",
+    cron_every_hour: "Every hour",
+    cron_every_6hours: "Every 6 hours",
+    cron_daily_midnight: "Daily at midnight UTC",
+    cron_daily_9am: "Daily at 9am UTC",
+    cron_weekdays_9am: "Weekdays at 9am UTC",
+    cron_weekly_sun: "Weekly (Sun midnight UTC)",
   },
 
   // -------------------------------------------------------------------
@@ -4437,6 +4481,14 @@ export const en = {
     // Workflows/background jobs panel
     workflows: {
       loading: "Loading workflows...",
+      title: "Workflows",
+      subtitle: "Active and recent background operations across your workspace",
+      no_jobs: "No background jobs running or recent",
+      jobs_hint: "Jobs appear here when you run N8n transforms, template adoptions, template generation, or query debugging",
+      all_types: "All types",
+      no_filter_match: "No jobs match the current filters",
+      auto_refreshing: "Auto-refreshing while jobs are running",
+      cancel_failed: "Failed to cancel workflow job",
     },
 
     // Schedule timeline panel
@@ -6381,6 +6433,20 @@ export const en = {
       close: "Close",
       generating: "Generating: {name}",
       running: "Running...",
+
+      // -- DesignReviewRunner --
+      runner_title: "Run Design Review",
+      runner_running: "Running tests...",
+      runner_complete: "Review complete",
+      runner_configure: "Configure and start a review run",
+      no_persona_warning: "No persona selected. Select a persona in the sidebar before generating templates.",
+      template_progress: "Template {current} of {total}",
+      generating_template: "Generating: {name}",
+      start_review_predefined: "Start Review (5 cases)",
+      start_batch: "Start Batch ({count} template{plural})",
+      start_review_custom: "Start Review ({count} case{plural})",
+      copy_log: "Copy Log",
+      copied_log: "Copied!",
     },
 
     // Connector edit cell
@@ -6973,6 +7039,14 @@ export const en = {
       applied: "Applied",
       reset: "Reset",
       enter_theme_name: "Enter a theme name",
+      // ThemePreview -- mock UI labels inside the miniature preview
+      preview_dashboard: "Dashboard",
+      preview_action: "Action",
+      preview_card_title: "Card Title",
+      preview_muted_text: "Muted description text with secondary content",
+      preview_ok: "OK",
+      preview_warn: "Warn",
+      preview_err: "Err",
       // Translation contributor
       language_translations: "Language & Translations",
       translation_keys: "{count} translation keys",
@@ -9660,6 +9734,12 @@ export const en = {
     edges: "edges",
     use_template: "Use Template",
 
+    // -- PersonaNode --
+    // Default persona name shown when name is empty
+    default_agent_name: "Agent",
+    // Tooltip for the cycle warning indicator on pipeline nodes
+    cycle_tooltip: "Part of a cycle \u2014 execution order is heuristically determined. Consider removing circular connections or marking them as feedback edges.",
+
     // -- DryRunDebugger --
     cycle_detected: "Cycle detected",
     cycle_warning: "Execution order is arbitrary for: {nodes}. Consider removing circular connections or marking them as feedback edges.",
@@ -9707,6 +9787,84 @@ export const en = {
     run_pipeline_or_add: "Run a pipeline or add one manually",
     load_more: "Load more",
     showing_count: "Showing {shown} of {total}",
+  },
+
+  // -------------------------------------------------------------------
+  //  COMPOSITION -- workflow composition (src/features/composition/)
+  // -------------------------------------------------------------------
+  composition: {
+    // -- PersonaPickerModal --
+    // Modal header for selecting a persona to add to a workflow
+    select_persona: "Select Persona",
+    // Placeholder in the persona search input
+    search_personas: "Search personas\u2026",
+    // Shown when the user has no personas at all
+    no_personas_created: "No personas created yet.",
+    // Shown when the search filter returns nothing
+    no_matching_personas: "No matching personas.",
+
+    // -- WorkflowExecutionPanel --
+    // Header label showing workflow execution status
+    workflow_running: "Workflow Running",
+    workflow_complete: "Workflow Complete",
+    workflow_failed: "Workflow Failed",
+    // Label for the collapsed final output section
+    final_output: "Final Output",
+    // Appended to truncated output strings
+    truncated: "\u2026(truncated)",
+    // Title tooltips for metrics
+    tooltip_exec_time: "LLM execution time",
+    tooltip_poll_overhead: "Polling overhead",
+    tooltip_input_tokens: "Input tokens",
+    tooltip_output_tokens: "Output tokens",
+    tooltip_wall_clock: "Total wall-clock time",
+    tooltip_llm_cost: "Total LLM cost",
+    tooltip_total_tokens: "Total tokens (in / out)",
+
+    // -- WorkflowList --
+    // Page heading
+    workflows_title: "Workflows",
+    workflows_subtitle: "Compose personas into multi-step DAG workflows where each persona's output feeds into the next.",
+    // Natural language composer
+    describe_workflow: "Describe a workflow in plain English",
+    compose_placeholder: "e.g. When a PR is opened, have a security reviewer check for vulnerabilities, a code quality reviewer check style, and a technical writer draft changelog entries, then aggregate results and post a summary comment\u2026",
+    composing_topology: "Composing pipeline topology\u2026",
+    ctrl_enter_compose: "Ctrl+Enter to compose",
+    composing: "Composing\u2026",
+    compose: "Compose",
+    // Manual creation
+    new_workflow_placeholder: "New workflow name\u2026",
+    create: "Create",
+    untitled_workflow: "Untitled Workflow",
+    // Empty state
+    chain_agents_title: "Chain your agents into pipelines",
+    chain_agents_description: "Build multi-agent workflows where each persona processes data and passes its output to the next. Connect agents into DAG pipelines for complex automation.",
+    describe_plain_english: "Describe in plain English",
+    ai_compose_hint: "AI composes the pipeline topology for you",
+    build_manually: "Build manually",
+    drag_connect_hint: "Drag and connect agent nodes on a canvas",
+    my_first_workflow: "My First Workflow",
+    // Workflow list items
+    // {nodeCount} nodes, {edgeCount} edges
+    node_count: "{count} node",
+    node_count_plural: "{count} nodes",
+    edge_count: "{count} edge",
+    edge_count_plural: "{count} edges",
+    delete_confirm: "Delete?",
+
+    // -- WorkflowToolbar --
+    // Tooltip for back button
+    back_to_workflows: "Back to workflows",
+    // Node type button labels
+    input_node: "Input",
+    persona_node: "Persona",
+    output_node: "Output",
+    // Tooltip for add-node buttons
+    add_input_node: "Add Input node",
+    add_persona_node: "Add Persona node",
+    add_output_node: "Add Output node",
+    // Execution buttons
+    run: "Run",
   },
 
   // -------------------------------------------------------------------
@@ -10001,6 +10159,26 @@ export const en = {
     progress_extra: { taking_longer: "Taking longer than expected", complete: "Complete", resuming: "Resuming previous transformation session...", cancel_transformation: "Cancel transformation", draft_generated: "Draft generated successfully", transformation_failed: "Transformation failed", waiting_to_start: "Waiting to start transformation..." },
     terminal_extra: { press_enter: "Press Enter or click Play to start", connection_failed: "Connection failed -- check provider settings and retry", search_output: "Search output...", dismiss: "Dismiss" },
     use_cases_extra: { example_output: "Example output", input_data: "Input Data", rerun_input: "Re-run with this input", input_prefix: "Input: ", error_prefix: "Error: ", output_prefix: "Output: ", toggle_history: "Toggle execution history", configure_model: "Configure model, notifications & subscriptions" },
+
+    // -- editors/JsonEditor --
+    // Validation badge shown when JSON is syntactically correct
+    json_valid: "Valid JSON",
+    // Fallback error message when JSON parse fails with non-SyntaxError
+    json_invalid: "Invalid JSON",
+    // Tooltip and label for the format button
+    json_format: "Format",
+    // Tooltip text for the format button
+    json_format_tooltip: "Format JSON",
+
+    // -- display/PersonaIcon --
+    // Accessible label for the emoji agent icon
+    agent_icon_label: "agent icon",
+
+    // -- layout/BreadcrumbTrail --
+    // Accessible label for the breadcrumb navigation landmark
+    breadcrumb_label: "Breadcrumb",
+    // Accessible label for the ellipsis button that reveals collapsed segments
+    breadcrumb_show_hidden: "Show hidden breadcrumbs",
   },
 };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Search } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { PersonaAvatar } from '@/features/pipeline/sub_canvas/libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaPickerModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface PersonaPickerModalProps {
 }
 
 export default function PersonaPickerModal({ open, onClose, onSelect }: PersonaPickerModalProps) {
+  const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [query, setQuery] = useState('');
 
@@ -29,7 +31,7 @@ export default function PersonaPickerModal({ open, onClose, onSelect }: PersonaP
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <h3 className="text-sm font-semibold text-foreground">Select Persona</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t.composition.select_persona}</h3>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -42,7 +44,7 @@ export default function PersonaPickerModal({ open, onClose, onSelect }: PersonaP
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search personas…"
+              placeholder={t.composition.search_personas}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
               autoFocus
             />
@@ -53,7 +55,7 @@ export default function PersonaPickerModal({ open, onClose, onSelect }: PersonaP
         <div className="max-h-72 overflow-y-auto p-2">
           {filtered.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              {personas.length === 0 ? 'No personas created yet.' : 'No matching personas.'}
+              {personas.length === 0 ? t.composition.no_personas_created : t.composition.no_matching_personas}
             </div>
           ) : (
             filtered.map((p) => (

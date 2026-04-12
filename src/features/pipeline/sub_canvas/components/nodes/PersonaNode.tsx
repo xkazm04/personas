@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Check, AlertTriangle, Sparkles, CircleDot, RefreshCw, Ban } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from '../../libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaNodeData {
   name: string;
@@ -36,8 +37,9 @@ function getPipelineStyles(status?: string, selected?: boolean): string {
 }
 
 function PersonaNodeComponent({ data, selected }: NodeProps) {
+  const { t } = useTranslation();
   const d = data as PersonaNodeData;
-  const name = d.name || 'Agent';
+  const name = d.name || t.pipeline.default_agent_name;
   const icon = d.icon || '';
   const color = d.color || '#6366f1';
   const role = d.role || 'worker';
@@ -109,7 +111,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       {isCycleNode && (
         <div
           className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500/90 flex items-center justify-center z-10"
-          title="Part of a cycle — execution order is heuristically determined. Consider removing circular connections or marking them as feedback edges."
+          title={t.pipeline.cycle_tooltip}
         >
           <RefreshCw className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
         </div>

@@ -5,6 +5,7 @@ import { TemplateSourcePanel } from '../sources/TemplateSourcePanel';
 import { TerminalOutput, ResultSummary } from './DesignReviewTerminal';
 import { ModeTabBar } from '../sources/ModeTabBar';
 import { useDesignRunnerState } from './useDesignRunnerState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type { PredefinedTestCase } from './designRunnerConstants';
 
@@ -33,6 +34,7 @@ export default function DesignReviewRunner({
   isOpen, onClose, lines, isRunning, result, runProgress,
   personaName, personaDescription, onStart, onCancel,
 }: DesignReviewRunnerProps) {
+  const { t } = useTranslation();
   const state = useDesignRunnerState({
     isOpen, isRunning, lines, runProgress, personaName, onStart, onClose,
   });
@@ -56,9 +58,9 @@ export default function DesignReviewRunner({
                 <Play className="w-4 h-4 text-violet-400" />
               </div>
               <div>
-                <h3 id="design-runner-title" className="text-sm font-semibold text-foreground/90">Run Design Review</h3>
+                <h3 id="design-runner-title" className="text-sm font-semibold text-foreground/90">{t.templates.generation.runner_title}</h3>
                 <p className="text-sm text-muted-foreground/90">
-                  {isRunning ? 'Running tests...' : result ? 'Review complete' : 'Configure and start a review run'}
+                  {isRunning ? t.templates.generation.runner_running : result ? t.templates.generation.runner_complete : t.templates.generation.runner_configure}
                 </p>
               </div>
             </div>
@@ -87,7 +89,7 @@ export default function DesignReviewRunner({
               ) : (
                 <>
                   <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <p className="text-sm text-amber-400">No persona selected. Select a persona in the sidebar before generating templates.</p>
+                  <p className="text-sm text-amber-400">{t.templates.generation.no_persona_warning}</p>
                 </>
               )}
             </div>
@@ -129,7 +131,7 @@ export default function DesignReviewRunner({
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground/80">
-                  Template {state.progressInfo.current} of {state.progressInfo.total}
+                  {t.templates.generation.template_progress.replace('{current}', String(state.progressInfo.current)).replace('{total}', String(state.progressInfo.total))}
                   <span className="text-muted-foreground/90 ml-1.5">-- {state.progressInfo.pct}%</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
@@ -137,7 +139,7 @@ export default function DesignReviewRunner({
                 </span>
               </div>
               {state.progressInfo.currentTemplateName && (
-                <p className="text-sm text-violet-400/70 mb-2 truncate">Generating: {state.progressInfo.currentTemplateName}</p>
+                <p className="text-sm text-violet-400/70 mb-2 truncate">{t.templates.generation.generating.replace('{name}', state.progressInfo.currentTemplateName!)}</p>
               )}
               <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
                 <div
@@ -163,7 +165,7 @@ export default function DesignReviewRunner({
           <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-primary/10">
             {isRunning ? (
               <button onClick={onCancel} className="px-4 py-2 text-sm rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-2">
-                <Square className="w-3.5 h-3.5" />Cancel
+                <Square className="w-3.5 h-3.5" />{t.common.cancel}
               </button>
             ) : !state.hasStarted ? (
               <button
@@ -172,19 +174,19 @@ export default function DesignReviewRunner({
                 className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
-                {state.mode === 'predefined' ? 'Start Review (5 cases)'
-                  : state.mode === 'batch' ? `Start Batch (${state.filteredBatchTemplates.length} template${state.filteredBatchTemplates.length !== 1 ? 's' : ''})`
-                  : `Start Review (${state.validCustomCount} case${state.validCustomCount !== 1 ? 's' : ''})`}
+                {state.mode === 'predefined' ? t.templates.generation.start_review_predefined
+                  : state.mode === 'batch' ? t.templates.generation.start_batch.replace('{count}', String(state.filteredBatchTemplates.length)).replace('{plural}', state.filteredBatchTemplates.length !== 1 ? 's' : '')
+                  : t.templates.generation.start_review_custom.replace('{count}', String(state.validCustomCount)).replace('{plural}', state.validCustomCount !== 1 ? 's' : '')}
               </button>
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
                   <button onClick={state.handleCopyLog} className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-muted-foreground/90 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
                     {state.copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    {state.copied ? 'Copied!' : 'Copy Log'}
+                    {state.copied ? t.templates.generation.copied_log : t.templates.generation.copy_log}
                   </button>
                 )}
-                <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl bg-primary/10 text-foreground/80 border border-primary/20 hover:bg-primary/20 transition-colors">Close</button>
+                <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl bg-primary/10 text-foreground/80 border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
               </div>
             )}
           </div>

@@ -1,5 +1,6 @@
 import { ArrowRight, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function FooterActions({
   loading,
@@ -28,6 +29,7 @@ export function FooterActions({
   startOnboarding: () => void;
   onNext?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex items-center gap-3">
@@ -41,7 +43,7 @@ export function FooterActions({
             icon={<Download className="w-4 h-4" />}
             className="flex-1"
           >
-            Install All Dependencies
+            {t.system_health.install_all}
           </Button>
         )}
         {onNext && (
@@ -54,7 +56,7 @@ export function FooterActions({
             iconRight={<ArrowRight className="w-4 h-4" />}
             className="flex-1"
           >
-            Continue
+            {t.common.continue}
           </Button>
         )}
       </div>
@@ -68,8 +70,8 @@ export function FooterActions({
               <Sparkles className="w-5 h-5 text-violet-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="typo-heading text-foreground/90">Ready to create your first agent?</h3>
-              <p className="typo-body text-muted-foreground/70">All checks passed. Let us guide you through creating and running your first agent.</p>
+              <h3 className="typo-heading text-foreground/90">{t.system_health.ready_title}</h3>
+              <p className="typo-body text-muted-foreground/70">{t.system_health.ready_hint}</p>
             </div>
             <Button
               variant="accent"
@@ -79,7 +81,7 @@ export function FooterActions({
               icon={<Sparkles className="w-4 h-4" />}
               className="flex-shrink-0"
             >
-              Get Started
+              {t.system_health.get_started}
             </Button>
           </div>
         </div>

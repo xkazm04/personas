@@ -8,6 +8,7 @@ import {
   ExpirationThresholdConfig,
   GenericPollingConfig,
 } from '@/features/vault/sub_credentials/components/features/EventConfigSubPanels';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EventTemplateCardProps {
   template: CredentialTemplateEvent;
@@ -24,6 +25,7 @@ export function EventTemplateCard({
   onToggle,
   onUpdateConfig,
 }: EventTemplateCardProps) {
+  const { t } = useTranslation();
   const isEnabled = existing ? existing.enabled : false;
   const config = safeParseConfig(existing?.config);
   const Icon = EVENT_ICONS[template.id] || Zap;
@@ -86,7 +88,7 @@ export function EventTemplateCard({
           )}
           {template.id === 'healthcheck_failure' && (
             <div className="text-sm text-muted-foreground/80">
-              Rotation will trigger automatically when a previously-healthy credential begins failing its healthcheck.
+              {t.vault.event_config.healthcheck_auto_rotate}
             </div>
           )}
           {/* Fallback: generic polling interval for connector-specific events */}
@@ -99,7 +101,7 @@ export function EventTemplateCard({
 
           {existing.last_polled_at && (
             <div className="text-sm text-muted-foreground/60 mt-1">
-              Last evaluated: {new Date(existing.last_polled_at).toLocaleString()}
+              {t.vault.event_config.last_evaluated.replace('{time}', new Date(existing.last_polled_at).toLocaleString())}
             </div>
           )}
         </div>

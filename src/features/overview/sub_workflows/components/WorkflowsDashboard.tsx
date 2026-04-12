@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Workflow, Terminal, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/pipeline/workflows';
 import type { WorkflowsOverview, WorkflowJob } from '@/api/pipeline/workflows';
 import { STATUS_FILTER_OPTIONS, JOB_TYPE_LABELS, type StatusFilter } from '../workflowHelpers';
 import { SummaryCards, JobRow } from './WorkflowCard';
 
 export default function WorkflowsDashboard() {
+  const { t } = useTranslation();
   const [data, setData] = useState<WorkflowsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function WorkflowsDashboard() {
       await cancelWorkflowJob(job.job_type, job.job_id);
       load();
     } catch {
-      useToastStore.getState().addToast('Failed to cancel workflow job', 'error');
+      useToastStore.getState().addToast(t.overview.workflows.cancel_failed, 'error');
     }
   };
 
@@ -58,11 +60,11 @@ export default function WorkflowsDashboard() {
       <ContentHeader
         icon={<Workflow className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Workflows"
-        subtitle="Active and recent background operations across your workspace"
+        title={t.overview.workflows.title}
+        subtitle={t.overview.workflows.subtitle}
         actions={
           <button onClick={load} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-xl bg-secondary/60 text-muted-foreground hover:text-foreground border border-primary/10 hover:border-primary/20 transition-colors">
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> {t.common.refresh}
           </button>
         }
       />
@@ -73,9 +75,9 @@ export default function WorkflowsDashboard() {
         ) : !data || data.total_count === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Terminal className="w-10 h-10 text-muted-foreground/20" />
-            <div className="text-sm text-muted-foreground/60">No background jobs running or recent</div>
+            <div className="text-sm text-muted-foreground/60">{t.overview.workflows.no_jobs}</div>
             <div className="text-[11px] text-muted-foreground/60">
-              Jobs appear here when you run N8n transforms, template adoptions, template generation, or query debugging
+              {t.overview.workflows.jobs_hint}
             </div>
           </div>
         ) : (
@@ -107,7 +109,7 @@ export default function WorkflowsDashboard() {
                       onClick={() => setTypeFilter('all')}
                       className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${typeFilter === 'all' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25' : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'}`}
                     >
-                      All types
+                      {t.overview.workflows.all_types}
                     </button>
                     {jobTypes.map((t) => (
                       <button
@@ -126,7 +128,7 @@ export default function WorkflowsDashboard() {
             {/* Job list */}
             <div className="flex flex-col gap-2">
               {filteredJobs.length === 0 ? (
-                <div className="text-[12px] text-muted-foreground/50 text-center py-8">No jobs match the current filters</div>
+                <div className="text-[12px] text-muted-foreground/50 text-center py-8">{t.overview.workflows.no_filter_match}</div>
               ) : (
                 filteredJobs.map((job) => {
                   const key = `${job.job_type}:${job.job_id}`;
@@ -138,7 +140,7 @@ export default function WorkflowsDashboard() {
             {data.running_count > 0 && (
               <div className="flex items-center gap-1.5 text-[10px] text-blue-400/60">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                Auto-refreshing while jobs are running
+                {t.overview.workflows.auto_refreshing}
               </div>
             )}
           </div>

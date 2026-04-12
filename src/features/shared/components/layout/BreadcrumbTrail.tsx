@@ -3,6 +3,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useBreadcrumbTrail, type BreadcrumbSegment } from '@/hooks/navigation/useBreadcrumbTrail';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Renders a single breadcrumb segment (clickable or current). */
 function Segment({ segment, isCurrent }: { segment: BreadcrumbSegment; isCurrent: boolean }) {
@@ -32,6 +33,7 @@ function Separator() {
 
 /** Dropdown for collapsed middle segments on narrow viewports. */
 function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -50,7 +52,7 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="typo-caption text-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded-sm focus-ring"
-        aria-label="Show hidden breadcrumbs"
+        aria-label={t.shared.breadcrumb_show_hidden}
         aria-expanded={open}
       >
         <MoreHorizontal className="w-3.5 h-3.5" />
@@ -84,6 +86,7 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
  * middle segments collapse into an ellipsis dropdown.
  */
 export default function BreadcrumbTrail() {
+  const { t } = useTranslation();
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const trail = useBreadcrumbTrail();
 
@@ -133,7 +136,7 @@ export default function BreadcrumbTrail() {
   return (
     <nav
       ref={containerRef}
-      aria-label="Breadcrumb"
+      aria-label={t.shared.breadcrumb_label}
       className="flex items-center gap-1 px-4 py-1.5 min-h-[28px] border-b border-primary/5"
     >
       <LayoutGroup id="breadcrumb">

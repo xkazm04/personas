@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Trash2, Upload, AlertCircle } from 'lucide-react';
 import { createLogger } from '@/lib/log';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger('vector-kb-documents');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
@@ -20,6 +21,7 @@ interface DocumentsTabProps {
 }
 
 export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<KbDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,8 +111,8 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
           <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>
             <EmptyIllustration
               icon={Upload}
-              heading="No documents yet"
-              description="Drop files here, paste text, or scan a directory to start building your knowledge base."
+              heading={t.vault.shared.no_documents_heading}
+              description={t.vault.shared.no_documents_description}
               className="py-20"
             />
           </IngestDropZone>
@@ -133,7 +135,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}
                       <span className="ml-1.5">{formatBytes(doc.byteSize)}</span>
-                      <span className="ml-1.5">{doc.chunkCount} chunks</span>
+                      <span className="ml-1.5">{t.vault.shared.chunks_label.replace('{count}', String(doc.chunkCount))}</span>
                     </p>
                   </div>
                   <StatusBadge status={doc.status} error={doc.errorMessage} />
@@ -141,7 +143,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     onClick={() => void handleDelete(doc.id)}
                     disabled={deletingId === doc.id}
                     className="p-1.5 rounded-lg text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
-                    title="Delete document"
+                    title={t.vault.shared.delete_document}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

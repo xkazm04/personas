@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Check, X, AlignLeft } from 'lucide-react';
 import { Tooltip } from '../display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface JsonEditorProps {
   value: string;
@@ -112,6 +113,7 @@ const TOKEN_CLASSES: Record<string, string> = {
 };
 
 export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
+  const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -123,7 +125,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
       JSON.parse(trimmed);
       return 'valid' as const;
     } catch (e) {
-      return { error: e instanceof SyntaxError ? e.message : 'Invalid JSON' };
+      return { error: e instanceof SyntaxError ? e.message : t.shared.json_invalid };
     }
   }, [value]);
 
@@ -176,7 +178,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             isValid ? (
               <span className="flex items-center gap-1 typo-body text-emerald-400/80">
                 <Check className="w-3 h-3" />
-                Valid JSON
+                {t.shared.json_valid}
               </span>
             ) : isError ? (
               <span className="flex items-center gap-1 typo-body text-red-400/80 truncate max-w-[280px]">
@@ -186,7 +188,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             ) : null
           )}
         </div>
-        <Tooltip content="Format JSON">
+        <Tooltip content={t.shared.json_format_tooltip}>
           <button
             type="button"
             onClick={handleFormat}
@@ -194,7 +196,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             className="flex items-center gap-1 px-2 py-0.5 typo-body text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <AlignLeft className="w-3 h-3" />
-            Format
+            {t.shared.json_format}
           </button>
         </Tooltip>
       </div>

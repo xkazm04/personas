@@ -1,5 +1,6 @@
 import { X, Wand2 } from 'lucide-react';
 import { WizardStepper } from '@/features/shared/components/progress/WizardStepper';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CreateTemplateModalHeaderProps {
   wizardSteps: { key: string; label: string }[];
@@ -12,6 +13,7 @@ export function CreateTemplateModalHeader({
   currentIndex,
   onClose,
 }: CreateTemplateModalHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
       <div className="flex items-center gap-3">
@@ -19,8 +21,8 @@ export function CreateTemplateModalHeader({
           <Wand2 className="w-4 h-4 text-violet-400" />
         </div>
         <div>
-          <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">{ t.templates.generation.create_template}</h2>
-          <p className="text-sm text-muted-foreground/80">Design a reusable persona template with AI</p>
+          <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">{t.templates.generation.create_template}</h2>
+          <p className="text-sm text-muted-foreground/80">{t.templates.generation.create_template_subtitle}</p>
         </div>
       </div>
       <div className="flex items-center gap-4">

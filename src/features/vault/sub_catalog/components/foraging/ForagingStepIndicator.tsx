@@ -1,12 +1,5 @@
 import type { ForagingPhase } from "@/hooks/design/credential/useCredentialForaging";
-
-const STEPS: { key: ForagingPhase; label: string }[] = [
-  { key: "idle", label: "Start" },
-  { key: "scanning", label: "Scan" },
-  { key: "results", label: "Results" },
-  { key: "importing", label: "Import" },
-  { key: "done", label: "Done" },
-];
+import { useTranslation } from "@/i18n/useTranslation";
 
 const STEP_INDEX: Record<string, number> = {
   idle: 0,
@@ -22,6 +15,16 @@ interface ForagingStepIndicatorProps {
 }
 
 export function ForagingStepIndicator({ phase }: ForagingStepIndicatorProps) {
+  const { t } = useTranslation();
+
+  const STEPS: { key: ForagingPhase; label: string }[] = [
+    { key: "idle", label: t.vault.foraging.step_start },
+    { key: "scanning", label: t.vault.foraging.step_scan },
+    { key: "results", label: t.vault.foraging.step_results },
+    { key: "importing", label: t.vault.foraging.step_import },
+    { key: "done", label: t.vault.foraging.step_done },
+  ];
+
   const currentIndex = STEP_INDEX[phase] ?? 0;
 
   return (
@@ -42,7 +45,7 @@ export function ForagingStepIndicator({ phase }: ForagingStepIndicatorProps) {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              aria-label={`${step.label}${isCompleted ? " (completed)" : isCurrent ? " (current)" : ""}`}
+              aria-label={`${step.label}${isCompleted ? ` ${t.vault.foraging.step_completed}` : isCurrent ? ` ${t.vault.foraging.step_current}` : ""}`}
               aria-current={isCurrent ? "step" : undefined}
             />
             {/* Connector line (except after last dot) */}

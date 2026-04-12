@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Check, AlertTriangle, Loader2, Clock, X, DollarSign, Zap } from 'lucide-react';
 import type { WorkflowExecution, WorkflowNode, WorkflowNodeExecution } from '@/lib/types/compositionTypes';
 import { formatDuration, formatCost as _formatCost } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const formatCost = (usd: number | undefined) => _formatCost(usd, { precision: 'auto' });
 
@@ -35,6 +36,7 @@ const statusColor: Record<string, string> = {
 };
 
 function NodeExecutionRow({ nodeExec, node }: { nodeExec: WorkflowNodeExecution; node?: WorkflowNode }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const Icon = statusIcon[nodeExec.status] ?? Clock;
   const color = statusColor[nodeExec.status] ?? 'text-muted-foreground';
@@ -76,16 +78,16 @@ function NodeExecutionRow({ nodeExec, node }: { nodeExec: WorkflowNodeExecution;
           {hasMetrics && (
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-muted-foreground/70">
               {nodeExec.execution_ms != null && (
-                <span title="LLM execution time">exec {formatDuration(nodeExec.execution_ms)}</span>
+                <span title={t.composition.tooltip_exec_time}>exec {formatDuration(nodeExec.execution_ms)}</span>
               )}
               {nodeExec.poll_overhead_ms != null && (
-                <span title="Polling overhead">poll {formatDuration(nodeExec.poll_overhead_ms)}</span>
+                <span title={t.composition.tooltip_poll_overhead}>poll {formatDuration(nodeExec.poll_overhead_ms)}</span>
               )}
               {nodeExec.input_tokens != null && (
-                <span title="Input tokens">in {formatTokens(nodeExec.input_tokens)}</span>
+                <span title={t.composition.tooltip_input_tokens}>in {formatTokens(nodeExec.input_tokens)}</span>
               )}
               {nodeExec.output_tokens != null && (
-                <span title="Output tokens">out {formatTokens(nodeExec.output_tokens)}</span>
+                <span title={t.composition.tooltip_output_tokens}>out {formatTokens(nodeExec.output_tokens)}</span>
               )}
             </div>
           )}
@@ -95,7 +97,7 @@ function NodeExecutionRow({ nodeExec, node }: { nodeExec: WorkflowNodeExecution;
           {nodeExec.output && (
             <pre className="text-xs text-foreground/70 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
               {nodeExec.output.length > 2000
-                ? nodeExec.output.slice(0, 2000) + '\n…(truncated)'
+                ? nodeExec.output.slice(0, 2000) + `\n${t.composition.truncated}`
                 : nodeExec.output}
             </pre>
           )}
@@ -106,6 +108,7 @@ function NodeExecutionRow({ nodeExec, node }: { nodeExec: WorkflowNodeExecution;
 }
 
 export default function WorkflowExecutionPanel({ execution, nodes }: WorkflowExecutionPanelProps) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
@@ -128,7 +131,7 @@ export default function WorkflowExecutionPanel({ execution, nodes }: WorkflowExe
         className="w-full flex items-center gap-2 px-4 py-2.5 text-left"
       >
         <span className="text-xs font-semibold text-foreground flex-1">
-          Workflow {execution.status === 'running' ? 'Running' : execution.status === 'completed' ? 'Complete' : execution.status === 'failed' ? 'Failed' : execution.status}
+          {execution.status === 'running' ? t.composition.workflow_running : execution.status === 'completed' ? t.composition.workflow_complete : execution.status === 'failed' ? t.composition.workflow_failed : execution.status}
         </span>
         <span className="text-[10px] font-mono text-muted-foreground">
           {completedNodes}/{totalNodes}
@@ -140,17 +143,17 @@ export default function WorkflowExecutionPanel({ execution, nodes }: WorkflowExe
       {(execution.total_duration_ms != null || execution.total_cost_usd != null) && (
         <div className="px-4 pb-1 flex items-center gap-3 text-[10px] font-mono text-muted-foreground/70">
           {execution.total_duration_ms != null && (
-            <span className="flex items-center gap-0.5" title="Total wall-clock time">
+            <span className="flex items-center gap-0.5" title={t.composition.tooltip_wall_clock}>
               <Clock className="w-2.5 h-2.5" /> {formatDuration(execution.total_duration_ms)}
             </span>
           )}
           {execution.total_cost_usd != null && (
-            <span className="flex items-center gap-0.5 text-amber-400/70" title="Total LLM cost">
+            <span className="flex items-center gap-0.5 text-amber-400/70" title={t.composition.tooltip_llm_cost}>
               <DollarSign className="w-2.5 h-2.5" /> {formatCost(execution.total_cost_usd)}
             </span>
           )}
           {(execution.total_input_tokens != null || execution.total_output_tokens != null) && (
-            <span className="flex items-center gap-0.5" title="Total tokens (in / out)">
+            <span className="flex items-center gap-0.5" title={t.composition.tooltip_total_tokens}>
               <Zap className="w-2.5 h-2.5" /> {formatTokens(execution.total_input_tokens)}/{formatTokens(execution.total_output_tokens)}
             </span>
           )}
@@ -185,10 +188,10 @@ export default function WorkflowExecutionPanel({ execution, nodes }: WorkflowExe
           {/* Final output */}
           {execution.output && execution.status === 'completed' && (
             <div className="mt-2 border border-emerald-500/20 rounded-lg px-3 py-2 bg-emerald-500/5">
-              <div className="text-[10px] font-semibold text-emerald-400 uppercase mb-1">Final Output</div>
+              <div className="text-[10px] font-semibold text-emerald-400 uppercase mb-1">{t.composition.final_output}</div>
               <pre className="text-xs text-foreground/70 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
                 {execution.output.length > 1000
-                  ? execution.output.slice(0, 1000) + '\n…(truncated)'
+                  ? execution.output.slice(0, 1000) + `\n${t.composition.truncated}`
                   : execution.output}
               </pre>
             </div>

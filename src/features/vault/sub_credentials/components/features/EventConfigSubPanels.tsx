@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Clock, Timer, ShieldAlert, CalendarClock } from 'lucide-react';
 import type { CredentialTemplateEvent } from '@/lib/types/types';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { useTranslation } from '@/i18n/useTranslation';
+import { en } from '@/i18n/en';
 
 export function safeParseConfig(json: string | null | undefined): Record<string, unknown> {
   if (!json) return {};
@@ -15,9 +17,9 @@ export function safeParseConfig(json: string | null | undefined): Record<string,
 
 /** Universal rotation event templates available for all credential types */
 export const ROTATION_EVENT_TEMPLATES: CredentialTemplateEvent[] = [
-  { id: 'cron_schedule', name: 'Scheduled Rotation', description: 'Rotate credentials on a cron schedule (e.g., daily, weekly).' },
-  { id: 'expiration_threshold', name: 'Expiration Threshold', description: 'Trigger rotation when credential approaches its expiry date.' },
-  { id: 'healthcheck_failure', name: 'Healthcheck Failure', description: 'Automatically rotate when the credential fails its healthcheck.' },
+  { id: 'cron_schedule', name: en.vault.event_config.scheduled_rotation, description: en.vault.event_config.scheduled_rotation_desc },
+  { id: 'expiration_threshold', name: en.vault.event_config.expiration_threshold, description: en.vault.event_config.expiration_threshold_desc },
+  { id: 'healthcheck_failure', name: en.vault.event_config.healthcheck_failure, description: en.vault.event_config.healthcheck_failure_desc },
 ];
 
 export const EVENT_ICONS: Record<string, typeof Clock> = {
@@ -33,22 +35,23 @@ export function CronScheduleConfig({
   config: Record<string, unknown>;
   onUpdate: (updates: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation();
   const cronExpr = (config.cronExpression as string) || '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(cronExpr);
 
   const presets = [
-    { label: 'Daily (midnight)', value: '0 0 * * *' },
-    { label: 'Weekly (Mon)', value: '0 0 * * 1' },
-    { label: 'Monthly (1st)', value: '0 0 1 * *' },
-    { label: 'Every 6 hours', value: '0 */6 * * *' },
+    { label: t.vault.event_config.cron_daily, value: '0 0 * * *' },
+    { label: t.vault.event_config.cron_weekly, value: '0 0 * * 1' },
+    { label: t.vault.event_config.cron_monthly, value: '0 0 1 * *' },
+    { label: t.vault.event_config.cron_6h, value: '0 */6 * * *' },
   ];
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <CalendarClock className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">Cron schedule</label>
+        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.cron_schedule}</label>
       </div>
 
       {!editing && cronExpr ? (
@@ -60,7 +63,7 @@ export function CronScheduleConfig({
             onClick={() => { setDraft(cronExpr); setEditing(true); }}
             className="text-sm text-amber-400/80 hover:text-amber-400 transition-colors"
           >
-            Edit
+            {t.common.edit}
           </button>
         </div>
       ) : (
@@ -93,14 +96,14 @@ export function CronScheduleConfig({
               disabled={!draft.trim()}
               className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
-              Save
+              {t.common.save}
             </button>
             {cronExpr && (
               <button
                 onClick={() => { setDraft(cronExpr); setEditing(false); }}
                 className="px-2 py-1 text-muted-foreground/80 hover:text-foreground/90 text-sm transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             )}
           </div>
@@ -117,13 +120,14 @@ export function ExpirationThresholdConfig({
   config: Record<string, unknown>;
   onUpdate: (updates: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation();
   const thresholdDays = Number(config.thresholdDays) || 7;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
         <Timer className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">Rotate when expiring within</label>
+        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.rotate_when_expiring}</label>
         <div className="flex items-center gap-1">
           {[3, 7, 14, 30].map((d) => (
             <button
@@ -141,7 +145,7 @@ export function ExpirationThresholdConfig({
         </div>
       </div>
       <p className="text-sm text-muted-foreground/60">
-        Credential must have an <code className="text-sm">expires_at</code> field in its metadata.
+        {t.vault.event_config.expiration_hint}
       </p>
     </div>
   );
@@ -154,29 +158,30 @@ export function GenericPollingConfig({
   config: Record<string, unknown>;
   onUpdate: (updates: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation();
   const pollingInterval = Number(config.pollingIntervalSeconds) || 60;
 
   return (
     <>
       <div className="flex items-center gap-3">
         <Clock className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">Polling interval</label>
+        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.polling_interval}</label>
         <ThemedSelect
           value={String(pollingInterval)}
           onChange={(e) => onUpdate({ pollingIntervalSeconds: parseInt(e.target.value) })}
           className="px-2 py-1 w-auto"
           wrapperClassName="inline-block"
         >
-          <option value={10}>10 seconds</option>
-          <option value={30}>30 seconds</option>
-          <option value={60}>1 minute</option>
-          <option value={120}>2 minutes</option>
-          <option value={300}>5 minutes</option>
-          <option value={600}>10 minutes</option>
+          <option value={10}>{t.vault.event_config.seconds_10}</option>
+          <option value={30}>{t.vault.event_config.seconds_30}</option>
+          <option value={60}>{t.vault.event_config.minute_1}</option>
+          <option value={120}>{t.vault.event_config.minutes_2}</option>
+          <option value={300}>{t.vault.event_config.minutes_5}</option>
+          <option value={600}>{t.vault.event_config.minutes_10}</option>
         </ThemedSelect>
       </div>
       <div className="text-sm text-muted-foreground/80">
-        Approx. {Math.round(86400 / pollingInterval).toLocaleString()} checks/day
+        {t.vault.event_config.checks_per_day.replace('{count}', Math.round(86400 / pollingInterval).toLocaleString())}
       </div>
     </>
   );

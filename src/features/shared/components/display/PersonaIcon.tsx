@@ -1,6 +1,7 @@
 import { Bot } from 'lucide-react';
 import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type FrameSize = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -74,6 +75,7 @@ export function PersonaIcon({
   className = '',
   framed,
 }: PersonaIconProps) {
+  const { t } = useTranslation();
   const isDark = useIsDarkTheme();
   const style = { color: color ?? 'var(--primary)' };
 
@@ -109,7 +111,7 @@ export function PersonaIcon({
         }
         style={style}
         role="img"
-        aria-label="agent icon"
+        aria-label={t.shared.agent_icon_label}
       >
         {icon}
       </span>

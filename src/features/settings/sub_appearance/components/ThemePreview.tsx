@@ -1,8 +1,11 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 // ---------------------------------------------------------------------------
 // Mini preview — shows derived colors in a miniature app
 // ---------------------------------------------------------------------------
 
 export function ThemePreview({ vars }: { vars: Record<string, string> }) {
+  const { t } = useTranslation();
   const bg = vars['--background'];
   const fg = vars['--foreground'];
   const primary = vars['--primary'];
@@ -44,13 +47,13 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
-              <span className="text-xs font-semibold" style={{ color: fg }}>Dashboard</span>
+              <span className="text-xs font-semibold" style={{ color: fg }}>{t.settings.appearance.preview_dashboard}</span>
             </div>
             <div
               className="px-2 py-0.5 rounded-md text-[9px] font-medium"
               style={{ backgroundColor: btnPrimary, color: '#fff' }}
             >
-              Action
+              {t.settings.appearance.preview_action}
             </div>
           </div>
 
@@ -61,11 +64,11 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
           >
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-              <span className="text-[10px] font-medium" style={{ color: fg }}>Card Title</span>
+              <span className="text-[10px] font-medium" style={{ color: fg }}>{t.settings.appearance.preview_card_title}</span>
             </div>
             <div className="h-px" style={{ backgroundColor: border }} />
             <span className="text-[9px] block" style={{ color: muted }}>
-              Muted description text with secondary content
+              {t.settings.appearance.preview_muted_text}
             </span>
           </div>
 
@@ -73,15 +76,15 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-success'] }} />
-              <span className="text-[8px]" style={{ color: muted }}>OK</span>
+              <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_ok}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-warning'] }} />
-              <span className="text-[8px]" style={{ color: muted }}>Warn</span>
+              <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_warn}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: vars['--status-error'] }} />
-              <span className="text-[8px]" style={{ color: muted }}>Err</span>
+              <span className="text-[8px]" style={{ color: muted }}>{t.settings.appearance.preview_err}</span>
             </div>
           </div>
         </div>

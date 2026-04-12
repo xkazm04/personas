@@ -2,6 +2,7 @@ import { Sparkles, Bot, Import, Globe } from 'lucide-react';
 import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IdleSuggestions } from './IdleSuggestions';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface IdlePhaseProps {
   instruction: string;
@@ -38,13 +39,14 @@ export function IdlePhase({
   onExpandTemplate,
   onApplyTemplate,
 }: IdlePhaseProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="input"
       className="animate-fade-slide-in space-y-4"
     >
       <div className="text-sm text-muted-foreground/80">
-        Describe the tool and credential type. Claude will generate the exact fields you need, then you can save them securely.
+        {t.vault.design_phases.idle_description}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -52,7 +54,7 @@ export function IdlePhase({
           onClick={onToggleTemplates}
           className="px-2.5 py-1 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
         >
-          From Catalog
+          {t.vault.design_phases.from_catalog}
         </button>
 
         {onUniversalSetup && (
@@ -61,7 +63,7 @@ export function IdlePhase({
             className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
           >
             <Globe className="w-3.5 h-3.5" />
-            Any Service...
+            {t.vault.design_phases.any_service}
           </button>
         )}
 
@@ -71,7 +73,7 @@ export function IdlePhase({
             className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 transition-colors"
           >
             <Import className="w-3.5 h-3.5" />
-            Import from...
+            {t.vault.design_phases.import_from}
           </button>
         )}
 
@@ -120,7 +122,7 @@ export function IdlePhase({
             className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
           >
             <Bot className="w-4 h-4" />
-            Auto-Setup
+            {t.vault.design_phases.auto_setup}
           </button>
         )}
         <button
@@ -130,7 +132,7 @@ export function IdlePhase({
           className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Sparkles className="w-4 h-4" />
-          Design Credential
+          {t.vault.design_phases.design_credential}
         </button>
       </div>
     </div>

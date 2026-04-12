@@ -1,15 +1,18 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 /**
  * Branded recipe loading animation -- a small book icon with flipping pages.
  * Replaces generic Loader2 spinners during recipe execution moments.
  */
 export function RecipePageFlipLoader({ className = '' }: { className?: string }) {
+  const { t } = useTranslation();
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 20 20"
       fill="none"
       className={`w-[20px] h-[20px] ${className}`}
-      aria-label="Loading"
+      aria-label={t.shared.suspense_loading}
     >
       <style>{`
         @keyframes pageFlip1 {
