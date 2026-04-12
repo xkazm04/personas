@@ -145,6 +145,12 @@ event_names! {
     ARTIST_SESSION_OUTPUT      => "artist-session-output",
     ARTIST_SESSION_COMPLETE    => "artist-session-complete",
 
+    // Media Studio export
+    MEDIA_EXPORT_STATUS        => "media-export-status",
+    MEDIA_EXPORT_OUTPUT        => "media-export-output",
+    MEDIA_EXPORT_PROGRESS      => "media-export-progress",
+    MEDIA_EXPORT_COMPLETE      => "media-export-complete",
+
     // Recipe
     RECIPE_EXECUTION_STATUS    => "recipe-execution-status",
     RECIPE_GENERATION_STATUS   => "recipe-generation-status",
@@ -176,6 +182,7 @@ event_names! {
     // Pipeline
     PIPELINE_STATUS            => "pipeline-status",
     PIPELINE_CYCLE_WARNING     => "pipeline-cycle-warning",
+    PIPELINE_APPROVAL_NEEDED   => "pipeline-approval-needed",
 
     // P2P
     P2P_MANIFEST_SYNC_PROGRESS => "p2p:manifest-sync-progress",
@@ -192,6 +199,9 @@ event_names! {
 
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
+
+    // CLI version warning (Claude Code CLI below minimum required version)
+    CLI_VERSION_WARNING        => "cli-version-warning",
 
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",

@@ -47,6 +47,7 @@ import jira from '../../../scripts/connectors/builtin/jira.json';
 import kubernetes from '../../../scripts/connectors/builtin/kubernetes.json';
 import elevenlabs from '../../../scripts/connectors/builtin/elevenlabs.json';
 import leonardoAi from '../../../scripts/connectors/builtin/leonardo-ai.json';
+import googleGemini from '../../../scripts/connectors/builtin/google-gemini.json';
 import confluence from '../../../scripts/connectors/builtin/confluence.json';
 import neon from '../../../scripts/connectors/builtin/neon.json';
 import upstash from '../../../scripts/connectors/builtin/upstash.json';
@@ -136,6 +137,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   kubernetes,
   elevenlabs,
   leonardoAi,
+  googleGemini,
   confluence,
   neon,
   upstash,

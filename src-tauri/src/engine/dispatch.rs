@@ -20,6 +20,7 @@ use crate::db::repos::communication::{
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
+use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -423,6 +424,64 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     ));
                 }
                 Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
+            }
+        }
+        ProtocolMessage::ProposeImprovement {
+            section,
+            rationale,
+            current_excerpt: _,
+            proposed_replacement,
+            confidence,
+            evidence,
+        } => {
+            // Guard: reject proposals targeting the identity section
+            if section == "identity" {
+                ctx.logger.log("[PROPOSE] Rejected: proposals targeting identity section are not allowed");
+                return;
+            }
+
+            let rationale_excerpt: String = rationale.chars().take(200).collect();
+            let instruction = format!(
+                "Self-proposed improvement (confidence: {:.0}%): {}",
+                confidence * 100.0,
+                rationale_excerpt
+            );
+            let draft_json = serde_json::json!({
+                "section": section,
+                "proposed": proposed_replacement,
+                "confidence": confidence,
+                "evidence": evidence.as_deref().unwrap_or(""),
+                "source_execution": ctx.execution_id,
+            });
+            let change_summary = format!(
+                "Proposed by persona during execution {}. {}",
+                ctx.execution_id,
+                evidence.as_deref().unwrap_or("")
+            );
+
+            match matrix_repo::create_run(
+                ctx.pool,
+                ctx.persona_id,
+                &instruction,
+                "self-proposed",
+                None,
+            ) {
+                Ok(run) => {
+                    // Populate the draft fields on the newly created run
+                    if let Err(e) = matrix_repo::update_run_draft(
+                        ctx.pool,
+                        &run.id,
+                        &draft_json.to_string(),
+                        &change_summary,
+                    ) {
+                        ctx.logger.log(&format!("[PROPOSE] Failed to update draft: {e}"));
+                    }
+                    ctx.logger.log(&format!(
+                        "[PROPOSE] Created Lab Matrix draft: {} (confidence: {:.0}%, section: {})",
+                        run.id, confidence * 100.0, section
+                    ));
+                }
+                Err(e) => ctx.logger.log(&format!("[PROPOSE] Failed to create Lab Matrix run: {e}")),
             }
         }
     }

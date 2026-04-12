@@ -72,7 +72,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     githubUrl: githubUrl,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -80,6 +80,8 @@ export const updateProject = (id: string, updates: { name?: string; description?
     status: updates.status,
     techStack: updates.techStack,
     githubUrl: updates.githubUrl,
+    monitoringCredentialId: updates.monitoringCredentialId,
+    monitoringProjectSlug: updates.monitoringProjectSlug,
   });
 
 export const deleteProject = (id: string) =>
@@ -519,13 +521,14 @@ export const listTasks = (projectId?: string, status?: string, goalId?: string) 
     goalId: goalId,
   });
 
-export const createTask = (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string) =>
+export const createTask = (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string, depth?: string) =>
   invoke<DevTask>("dev_tools_create_task", {
     title,
     projectId: projectId,
     description: description,
     sourceIdeaId: sourceIdeaId,
     goalId: goalId,
+    depth: depth,
   });
 
 export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
@@ -750,3 +753,30 @@ export const getTechRadar = () =>
 
 export const getRiskMatrix = () =>
   safeInvoke<RiskMatrixEntry[]>([], "dev_tools_get_risk_matrix");
+
+// ============================================================================
+// Skill Files
+// ============================================================================
+
+export interface SkillEntry {
+  name: string;
+  path: string;
+  description: string | null;
+  referenceFileCount: number;
+  referenceFiles: string[];
+}
+
+export interface SkillFileContent {
+  skillName: string;
+  fileName: string;
+  content: string;
+}
+
+export const listSkills = () =>
+  safeInvoke<SkillEntry[]>([], "skill_files_list");
+
+export const readSkillFile = (skillName: string, fileName: string) =>
+  invoke<SkillFileContent>("skill_files_read", { skillName, fileName });
+
+export const writeSkillFile = (skillName: string, fileName: string, content: string) =>
+  invoke<void>("skill_files_write", { skillName, fileName, content });

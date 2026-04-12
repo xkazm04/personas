@@ -1,0 +1,584 @@
+[00:00:00] This design in Stitch is fantastic.
+And this design, as well,
+it's, you know, it's not my favorite.
+And what's interesting is is that this
+not favorite screen was the first screen
+that Stitch generated. Getting to
+[music] this screen came down to one
+thing,
+direction. So, more often than not, you
+will get better results with Stitch if
+you can start your prompt with a design
+concept, a vibe, or a general aesthetic.
+Think about it this way. Coding agents,
+they're really good at writing code, and
+[00:00:31] they can be even more effective if you
+play the role of their tech lead. And
+Stitch is really good at designing, and
+it can be even more effective when you
+act as the creative director. So, let me
+show you by starting with a basic
+prompt. So, for the first prompt, I'm
+going to hold back, and I'm going to
+just write a road running race listing
+page.
+All right, let's see what we got.
+So, this is what Stitch gives us with
+with almost no direction. It's dark,
+[00:01:02] it's it's got races and stuff, but does
+it feel like anything?
+Not exactly. It's, you know, a shot in
+the dark. You might like it, you might
+not. By the way, it lacks direction. So,
+the first thing that I think about when
+it comes to design, it isn't color,
+typography, and layouts. It's empathy. I
+want to think about what my user needs
+and what I want them to feel when they
+come to the site. So, here's a mistake
+that I see a lot. Describing your idea
+[00:01:32] with abstract words, like make it look
+good or high-end. And there's just not
+enough direction. Here's an example. If
+I were designing a site about Washington
+D.C., and I described the aesthetic as
+patriotic or monumental, I'd get pretty
+generic results. Think about what D.C.
+actually looks like. If you've ever
+been, it's a lot of marble columns,
+wide-open plazas, and these monuments,
+they are neoclassical. And that's a word
+Stitch can build from. And now the
+[00:02:03] design feels real. It feels like
+standing in the Jefferson Memorial. But
+how do I turn this feeling into a
+prompt? So, they say that design is a
+lot like writing. You should design what
+you know. That I actually don't know if
+they say that. It sounds very good. I'm
+going to go with it. What I know is
+running. So, I'm going to make a
+community marathon site where runners
+share all the stuff that you learn only
+after you've actually run the marathon.
+So, this site should feel very
+prestigious or prestigious.
+[00:02:34] It should feel very important because
+these are historic races in world-class
+cities. And I can take this same
+approach for my marathon site. Instead
+of using words like sporty or athletic,
+that'll just give me like green running
+shoes. I want to describe what it
+actually feels like. But how do I use
+the right words? You know the answer. We
+ask Gemini. And I ask it to help me
+write a prompt using design concepts,
+aesthetic descriptions, and to establish
+a creative direction. I'm thinking about
+the prestige of the Boston Marathon,
+[00:03:06] colors that are historic in running,
+like the clay of an old track. And
+Gemini comes back with language like
+architectural limestone, ink on paper.
+And these are words that I would not
+have known to use on my own, but they're
+exactly the kind of words that Stitch
+can build from. So, now my prompt
+describes what the site is and how it
+should feel. Let's see the difference.
+Okay, that's that's already a lot better
+because there's intent here.
+A runner's guide to the world's greatest
+marathon, the spirit of the 26.2, the
+[00:03:36] list of the actual marathons.
+This is not perfect, but it's something
+I can work with. So, before we go any
+further, notice that Stitch already
+created a design system for us.
+This is the DNA of your design. It
+contains colors, fonts, components, and
+you can use this to keep screens in your
+project consistent. And there's a second
+tab in here called design.md.
+Stitch generated a structured creative
+[00:04:07] brief from our prompts. It covers
+creative direction, color hierarchy with
+specific roles,
+typography rationale,
+elevation components,
+even do's and don'ts. And this is what's
+driving the design system.
+And you can edit it directly, or you can
+go and have an LM generate one for you.
+And we're going to come back to this.
+So, this design system has four color
+roles, primary, secondary, tertiary, and
+[00:04:38] neutral.
+Now, don't think of these as a palette
+of matching colors.
+Think of them as a hierarchy. Each color
+has a job based on visual weight and
+importance. And there's a lot of ways
+that we can establish a color hierarchy.
+But here's a method that I like to use.
+Let's start with neutral.
+Neutral is about 80 to 90% of your
+screen. It's the canvas. So, with design
+[00:05:08] systems, you can modify every single
+color manually. And since I know the
+direction that I want, that's exactly
+what I'm going to do.
+So, for the canvas, I wanted that
+architectural limestone. And limestone
+is a warmer color. And right here, this
+isn't as warm as I would like it to be.
+It's uh it's pretty devoid of of really
+any warmth. So, what I'm going to do is
+I'm going to nudge it on the color hue
+just just a little bit towards that
+orange, and then I'm just going to move
+it a little bit down until I kind of
+[00:05:38] feel something that, you know, feels
+nice and warm. All right, so
+that looks good.
+Let's move on to primary.
+Primary is the ink. It's headings, body
+text, it's the core content.
+And currently, it's this navy blue,
+which has good contrast against the warm
+limestone white. The feeling I'm going
+for is asphalt. So, again, I'm just
+going to modify the color, just drop it
+[00:06:08] down to sort of a dark asphalt. And yes,
+okay, that looks good. Next up is
+secondary. It needs to be a little more
+subdued so the primary text can have the
+focus.
+And lastly, there's tertiary. And
+tertiary
+can be the accent. You can use this for
+the most important button so the hover
+state of less important buttons. It's
+the call to action. It's the loudest,
+but it's used the least.
+[00:06:39] It's third in volume, but it's first in
+visual pull.
+And I wanted to set this to that clay
+color. So, I'm going to move around on
+the wheel till it feels something that
+is like a nice old dirt track clay. And
+this earthy red is going to pull your
+eye right to the action. So, the next
+part of the design system are fonts. The
+font hierarchy sets up headline, body,
+and label. And you can specify which
+[00:07:09] values you want for each. This design
+system set up Newsreader as the
+headline, and this makes sense because I
+conveyed a very fancy and authoritative
+and historical tone.
+But that's not quite the direction I
+want to go with. So, you know, I've been
+cheating because, you know, I I have to
+prepare the video. So, I really like
+Public Sans for this because one of the
+goals is is that I want to have the
+reverence for the marathon and for it to
+feel like a a prestigious journal, but
+[00:07:42] approachable at the same time. So,
+Public Sans is great for that because it
+feels official, but it is a rounder,
+more friendly font.
+So, I'm going to set that for both the
+headline and the body. And then for the
+label, I'm going to set it to Space
+Grotesque. Now, a note on Space
+Grotesque.
+We all have our opinions on fonts, and
+you know, like I I
+Space Grotesque has its place, and it's
+in labels. That's my opinion. That that
+is my opinion. I think that it's
+fantastic in labels. It looks like a
+[00:08:13] timestamp. It it looks very official.
+But Space Grotesque,
+I don't think it's like the best for
+headlines. And
+that's going to happen in Stitch. It's
+going to generate headlines with Space
+Grotesque, and
+and I can't stop it. You know, that's I
+I can't. I would just recommend, you
+know, use other fonts. It's a great code
+font. It's a great label font. It's a
+great timestamp font. Keep it out of
+your headlines. Do me a favor. That's my
+opinion. It's my opinion. All right.
+Next up
+is this corner radius.
+[00:08:44] And you can set it to a pretty much a
+non value or a very round value
+or a extremely round value. And this
+gives me some pause because I want the
+friendliness, so that that's going to
+be, you know, some round. But I, you
+know, I also want it to be like
+stationary, and stationary tends to not
+be round. It's got hard edges. So, this
+is this is one of those
+you got to decide moments in in design,
+and this was so
+I'm I'm going to lean towards the
+approachability, so so I'm going to go
+with the the little the little round.
+[00:09:14] You know, we can always change this
+later.
+So, now I have a new design system, but
+to apply it to this design, I need to
+right-click it and select update to the
+latest design system. All right, so this
+this looks pretty good. I I really do
+love the Public Sans font. I cheated,
+but it's it's good. It's a great font.
+So, I want to preview this, and I can
+click the preview icon at the top, or I
+can just hit Shift P. And this opens it
+up in this nice Stitch responsive
+[00:09:44] viewer. And as I scroll through, I can
+see that, you know, this this does this
+already looks so much better. There's
+there's some work still, but this is a
+lot better from the original design. It
+feels like it has a lot of direction
+going for it. There's stuff I want to
+change, but you know, I I already feel
+miles better. So, this next part is it's
+my favorite, and that's layout. Because
+layout is it's the coolest, but the
+great part about layout is is that you
+get to think about what is that core
+emotion that you're trying to convey. I
+[00:10:16] want the user to feel like they're in
+the city already. I want them to feel
+immersion. As much as I love layouts,
+sometimes I can't find the right one for
+the right situation, and I just I feel
+stuck. When that happens, though, I
+think about the site and its physical
+application. Well, if my website was a
+book, what kind of book would it be?
+Well, to me, it is clearly a coffee
+table book. Coffee table books have
+full-page imagery, dense information,
+and editorial headings. And on the web,
+[00:10:47] the layout that best represents a coffee
+table book, in in my opinion, is a
+lookbook. So, to set these layouts, I'm
+going to use variants. Variants are
+incredible because they allow you to
+create more than one go at your design,
+and you can scope it to specific
+aspects. You can also set the level of
+creativity. Refine is, you know, just a
+little bit, not too much. Explore, to
+me, that's the sweet spot. And
+reimagine, that one that one can go
+pretty wild. Buckle up when you use that
+[00:11:18] one. It can be fun, but it goes places.
+So, in this case, I'm going to select
+explore, and I'm going to write a custom
+prompt. I'm going to ask it to explore
+an editorial lookbook layout. I want it
+to be editorial, so it has those big
+headers and that editorial feel. The
+lookbook
+will really express that specific layout
+with the imagery.
+And I really want to double down on the
+large editorial headings over images.
+And then lastly, this is a little flare
+[00:11:48] that I find to be pretty useful.
+When you want really nice big headings,
+is you you tell it that you want it to
+be like a luxury travel magazine. All
+right. Let's generate five,
+and let's see what we got. All right.
+I think that these are much better.
+In some ways, it's changed the
+aesthetic.
+Instead of the big white page that puts
+the text front and center, it now
+[00:12:19] blends it and shares the attention with
+the text in the image, and there's some
+really good applications there, and that
+could send a good message.
+And the large editorial layouts, they're
+they're probably too large, but
+I'm a sucker for them, so I'm just going
+to keep it like that for now.
+And as we go through, we have lots of
+imagery, lots of large text, and the
+layout is pretty cohesive. And I I
+really like this one over here where we
+have the uh the three-column images,
+[00:12:51] sort of these marathon cards. These
+These are really good. These have a lot
+of potential.
+And the important thing to think about
+here is that you're not
+picking and choosing is it this one
+screen versus the other.
+Ultimately, every single bit of these
+elements on these screens, they these
+are components, and Stitch allows you to
+export your screens as HTML, and from
+there you can slice and dice them up
+into these little components, and as
+[00:13:21] long as they fit on the same layouts,
+which is very much the case with these
+screens, they're going to just like
+click in like building blocks.
+All right. So, this gives us a lot of
+good options, but there is one
+commonality across all the generated
+screens from this new layout that
+just needs a little bit of changing, and
+that is the imagery.
+So, I'm going to create another variant,
+and I'm going to choose this one cuz I I
+like this one has a good imagery
+[00:13:51] potential.
+I'm going to set it to explore, and I'm
+going to give it a prompt to focus on
+the major cities. Use major marathon
+city images that convey the scale and
+grandeur of the event.
+And I also want it to use a minimalist
+cinematic photography of the road race
+courses. And this is going to be a lot
+of imagery
+that is maybe one person running on the
+road, or a road that is empty and has a
+vanishing point off in the distance.
+[00:14:21] And I wanted to avoid sort of that
+cliche runners on the road images.
+All right. So, let's generate these.
+All right. This has some potential here.
+The layout is a little less lookbooky
+than I wanted, and so I could have also
+tuned that in the variant as well. And
+maybe I should have, but
+there are some pretty cool things going
+on here. The third generation over here
+to the right has some pretty wild
+typography treatment, and it's pretty
+interesting, and it's actually telling
+[00:14:52] me that I like Public Sans more bold
+than I do not bold, and it's normal font
+weight
+for these headers. So, that's pretty
+cool.
+So, I've learned a lot already by going
+through all these different revisions.
+I've learned which fonts I like, the
+color scheme, and a lot more of the
+direction is in place. And sometimes
+when I get to that point where it's
+starting to feel like the idea is
+crystallizing, I move on to a new
+[00:15:22] project. You can take the design MD
+and copy it, and you could paste that
+right into a new prompt for Stitch
+because it contains all of the direction
+that we've established, and then it will
+create a pretty good first generation.
+So, I'm not going to use the design MD
+that was generated in this design system
+because I have another design MD that I
+worked on uh while preparing for this
+video that I really like, and I spent a
+lot of time on it, and I think it
+presents like really good results. And I
+[00:15:53] want you to see this design MD, what it
+looks like, with the details in it. And
+you can even use it for your own base
+prompts. You can go into Gemini, and you
+can write in a new app idea. Like I can
+go and write in the Washington D.C.
+tours with the neoclassicism
+and all of the grandeur and the
+Jefferson Memorial that I can't stop
+talking about.
+And
+send in this one as an example, and I
+think you can get pretty good results.
+[00:16:25] So, I will leave a link to that design
+MD in the description, and you can check
+it out and and use it, and you let me
+know like if you got good results with
+it. All right. So, this gives me this
+site, and
+I really like the input elements on it,
+and I really like the typography as
+well. But the grid, it's boring. So, I'm
+going to quickly just set some variants
+for the layout, for the images, and I'm
+going to tell it to explore the lookbook
+editorial, and then I'm going to tell it
+to also use large typographic headings.
+All right. So,
+[00:16:55] it came up with a nice mixture of
+layouts that emphasize the text on white
+or the text on the image, which is good
+to look at these options. And I really
+like a lot of these directions here and
+and some of these components. But let me
+go and preview this one right here
+because I'm pretty sure this one is
+going to be interactive.
+So, when I scroll down to this, yes,
+this is a horizontal scroller. And this
+[00:17:25] was definitely
+directed by the lookbook layout. So, I'm
+really happy with the way this looks.
+But to me, there's just this one thing
+that feels off.
+And that's the content. It doesn't feel
+real. So, scrolling through this, the
+aesthetic is clearly there. The colors,
+the layout, the typography, it's all
+working. But reading the text, it's
+generic. My app is a community app for
+marathoners, and the heading, the elite
+calendar,
+[00:17:55] you know, that's not quite what I'm
+looking for. But there is one thing you
+can do that will vastly improve the way
+this looks on the page, and that is
+copywriting. And no, you don't have to
+think about all the text all yourself. I
+mean, it's 2026. Like we got lots of
+tools for that. And one of my favorites
+are using an agent skill.
+So, here at skills.sh, there's a whole
+repository of all of these agent skills
+that have all this knowledge and
+expertise
+all tied in with all of these tools.
+Now, if you don't have a lot of
+[00:18:26] familiarity with running command-line
+tools or uh development tools,
+it's okay. There's an easy way to still
+get set up here.
+So, in skills.sh, the repository of open
+agent skills, I can type in copywriting,
+and up the top,
+there is a copywriting skill, which is
+in a GitHub repository of marketing
+skills that is written by Corey Haines.
+Thank you, Corey. This one's great.
+[00:18:56] We can click into the GitHub repo
+and give it a star.
+And you can take a look at the actual
+content, clicking into skills, and then
+the skill MD, and all of the reference
+content as well. So, if you are not
+familiar with command-line tools, agent
+skills, or any development tools for
+that matter, that's okay.
+These skills are largely just really
+good information packaged up with what
+tools it needs to use. And this skill is
+[00:19:27] really dependent on the information. So,
+you can copy this text, and you can send
+that over to Gemini, and type in this
+process that I'm going to be following
+down in Antigravity, and you'll get very
+similar results. So, here in
+Antigravity, I'm going to install this
+command. I'm going to run the skill. I'm
+going to set it to the default
+installation, set it to local. It has
+the copywriting skill installed at the
+project level.
+[00:19:58] So, I'm going to paste in some
+information about my app. And this right
+here is all the information that I've
+talked about so far.
+What the app is, all of the community
+aspects, the history of the marathon.
+And then I'm also going to add in my
+design MD cuz it has a lot of really
+good information that is useful in
+copywriting.
+Then here in the agent manager, I can
+use the slash command to select the
+copywriting skill. And then I'm going to
+tell it to use the copy prompt MD file
+and design MD as context about the site.
+[00:20:30] So, into gravity using Gemini 3.1 Pro
+high on planning mode
+gives me this archival marathon
+community copy. And it's giving me this
+as this reviewable document where I can
+put comments on. And this is really good
+for this case because there are edits
+that I'm going to want to apply. So, I'm
+going to change the page title and the
+meta description. Select the option C
+for the headline.
+Make some comments on the sub headlines
+[00:21:02] and a bunch of other little things that
+are tailored to how I want my page copy
+to be.
+I'm going to submit this revision.
+And I have myself I think what is a
+pretty good copy. So, back in my
+project, I'm going to select this
+screen.
+Choose five variants on explore.
+And I'm going to target layout
+images and text content only and paste
+[00:21:35] in this copy.
+And for good measure, I'm going to
+target this screen just in the prompt
+box and send
+a prompt with the copy as well.
+And look at that.
+We have more marathon names, real tips,
+real CTAs, and it doesn't feel just like
+a template anymore. So, let me pull up
+this preview one more time.
+This is where we started.
+And this is where we ended. And you can
+[00:22:06] take this direction even further. Like
+in this case, I generated these pages
+for the specific marathon screens. And
+without a prompting, without asking,
+because I have all this context and
+because I have all this direction, I got
+this really cool elevation map.
+All right. So, here is the process.
+Start with empathy. Who is the site for
+and how do you want them to feel? And
+then you can move on to things like
+colors to represent these emotions and
+the aesthetics. Then typography and
+[00:22:36] imagery and the layout. Think about the
+physical objects that you can represent
+with the layout and how they can be
+structuring the content to do its job.
+And then use the right copy because it's
+going to make the site feel real.
+Stitch does not replace the design
+process. It's a design tool. And the
+best designs come from thought,
+understanding your content, and setting
+a creative direction. And once you have
+a design that you love, Stitch helps you
+[00:23:06] get to building because you can export
+your screens as code. And if you're
+interested in that, then let me know
+because that is what I'm going to be
+covering in the next video.

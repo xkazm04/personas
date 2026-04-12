@@ -134,6 +134,12 @@ export const EventName = {
   ARTIST_SESSION_OUTPUT: 'artist-session-output',
   ARTIST_SESSION_COMPLETE: 'artist-session-complete',
 
+  // Media Studio export
+  MEDIA_EXPORT_STATUS: 'media-export-status',
+  MEDIA_EXPORT_OUTPUT: 'media-export-output',
+  MEDIA_EXPORT_PROGRESS: 'media-export-progress',
+  MEDIA_EXPORT_COMPLETE: 'media-export-complete',
+
   // Recipe
   RECIPE_EXECUTION_STATUS: 'recipe-execution-status',
   RECIPE_GENERATION_STATUS: 'recipe-generation-status',
@@ -632,6 +638,12 @@ export interface EventPayloadMap {
   [EventName.ARTIST_SESSION_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.ARTIST_SESSION_OUTPUT]: { job_id: string; line: string };
   [EventName.ARTIST_SESSION_COMPLETE]: { session_id: string; output_lines: number };
+
+  // Media Studio export (BackgroundJob pattern)
+  [EventName.MEDIA_EXPORT_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.MEDIA_EXPORT_OUTPUT]: { job_id: string; line: string };
+  [EventName.MEDIA_EXPORT_PROGRESS]: { job_id: string; progress: number; time: number };
+  [EventName.MEDIA_EXPORT_COMPLETE]: { job_id: string; output_path: string };
 
   // Recipe
   [EventName.RECIPE_EXECUTION_STATUS]: { recipe_id: string; status: string };

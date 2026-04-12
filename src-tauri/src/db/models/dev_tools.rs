@@ -15,6 +15,8 @@ pub struct DevProject {
     pub status: String,
     pub tech_stack: Option<String>,
     pub github_url: Option<String>,
+    pub monitoring_credential_id: Option<String>,
+    pub monitoring_project_slug: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -205,6 +207,9 @@ pub struct DevTask {
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,
+    /// Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
+    /// or "deep_build" (full planning + implementation phases).
+    pub depth: String,
 }
 
 // ============================================================================

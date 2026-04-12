@@ -499,12 +499,11 @@ mod tests {
     fn test_blocked_providers() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["codex_cli".into()],
+            blocked_providers: vec!["claude_code".into()],
             ..Default::default()
         };
         let decision = policy.evaluate(&[], None);
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
-        assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
+        assert!(decision.blocked_providers.contains(&EngineKind::ClaudeCode));
     }
 
     #[test]
@@ -516,7 +515,8 @@ mod tests {
         };
         let decision = policy.evaluate(&[], None);
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        // With single provider in ALL, allowing it leaves nothing else to block
+        assert!(decision.blocked_providers.is_empty());
     }
 
     #[test]
@@ -561,7 +561,8 @@ mod tests {
         };
         let decision = policy.evaluate(&["hipaa".into()], None);
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        // With single provider in ALL, allowing claude_code blocks nothing else
+        assert!(decision.blocked_providers.is_empty());
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
     }
 
@@ -580,12 +581,12 @@ mod tests {
 
         // Exact match with different casing should match
         let decision = policy.evaluate(&["HIPAA".into()], None);
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+        assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
 
         let decision = policy.evaluate(&["Hipaa".into()], None);
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+        assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
     }
 
     #[test]
@@ -635,8 +636,9 @@ mod tests {
 
         // But exact "test" should match
         let decision = policy.evaluate(&["test".into()], None);
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("Test restriction"));
+        // claude_code is the allowed provider, so it's not blocked
+        assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
     }
 
     #[test]
@@ -647,18 +649,17 @@ mod tests {
             compliance_rules: vec![ComplianceRule {
                 name: "HIPAA".into(),
                 workflow_tags: vec!["hipaa".into()],
-                // Codex is NOT in allowed_providers
-                allowed_providers: vec!["claude_code".into(), "codex_cli".into()],
+                // "other_provider" is unknown and not in allowed_providers
+                allowed_providers: vec!["claude_code".into(), "other_provider".into()],
                 enabled: true,
             }],
             ..Default::default()
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
         assert!(warnings[0].message.contains("HIPAA"));
-        assert!(warnings[0].message.contains("codex_cli"));
-        assert!(warnings[0].message.contains("not in the top-level"));
+        assert!(warnings[0].message.contains("other_provider"));
     }
 
     #[test]
@@ -688,7 +689,7 @@ mod tests {
             routing_rules: vec![RoutingRule {
                 name: "Cheap simple".into(),
                 task_complexity: TaskComplexity::Simple,
-                provider: "codex_cli".into(),
+                provider: "other_provider".into(),
                 model: None,
                 enabled: true,
             }],
@@ -696,9 +697,8 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
-        assert!(warnings[0].message.contains("Routing rule"));
-        assert!(warnings[0].message.contains("codex_cli"));
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
+        assert!(warnings[0].message.contains("other_provider"));
     }
 
     #[test]
@@ -871,7 +871,8 @@ mod tests {
         // No routing rules at all — should still produce a valid decision
         let decision = policy.evaluate(&[], None);
         assert!(decision.preferred_provider.is_none());
-        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        // Only provider in ALL is allowed, so blocked list is empty
+        assert!(decision.blocked_providers.is_empty());
     }
 
     #[test]

@@ -33,7 +33,7 @@ desktop = [
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing
-test-automation = []
+test-automation = ["dep:xcap", "dep:image"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
@@ -85,7 +85,7 @@ base64 = "0.22"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 sha2 = "0.10"
 whoami = "1"
-reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
 futures-util = "0.3"
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }

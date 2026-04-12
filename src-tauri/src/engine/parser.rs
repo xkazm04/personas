@@ -275,6 +275,7 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("manual_review", parse_manual_review),
     ("execution_flow", parse_execution_flow),
     ("knowledge_annotation", parse_knowledge_annotation),
+    ("propose_improvement", parse_propose_improvement),
 ];
 
 fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
@@ -335,6 +336,17 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
         scope: str_field_or(msg, "scope", "persona"),
         note: str_field_or(msg, "note", ""),
         confidence: msg.get("confidence").and_then(|v| v.as_f64()),
+    })
+}
+
+fn parse_propose_improvement(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::ProposeImprovement {
+        section: str_field_or(msg, "section", "instructions"),
+        rationale: str_field_or(msg, "rationale", ""),
+        current_excerpt: str_field(msg, "current_excerpt"),
+        proposed_replacement: str_field_or(msg, "proposed_replacement", ""),
+        confidence: msg.get("confidence").and_then(|v| v.as_f64()).unwrap_or(0.5),
+        evidence: str_field(msg, "evidence"),
     })
 }
 

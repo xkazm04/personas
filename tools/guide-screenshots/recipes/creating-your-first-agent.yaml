@@ -1,0 +1,13 @@
+# Guide topic: creating-your-first-agent
+# Destination:  personas-web/public/imgs/guide/topics/creating-your-first-agent-<locale>.png
+#
+# Opens the agent creation wizard and hovers on the intent input so the
+# screenshot shows the exact screen the guide walkthrough refers to.
+
+topic: creating-your-first-agent
+
+steps:
+  - navigate: personas
+  - click_testid: create-agent-btn
+  - wait_for: '[data-testid="agent-intent-input"]'
+  - wait: 300

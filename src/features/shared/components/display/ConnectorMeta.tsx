@@ -210,6 +210,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // -- AI --------------------------------------------------------
   elevenlabs:         { label: 'ElevenLabs',         color: '#000000', iconUrl: '/icons/connectors/elevenlabs.svg',                     Icon: Bot },
+  google_gemini:      { label: 'Google Gemini',      color: '#4285F4', iconUrl: '/icons/connectors/google-gemini.svg',                  Icon: Bot },
   leonardo_ai:        { label: 'Leonardo AI',        color: '#6C3AEF', iconUrl: '/icons/connectors/leonardo-ai.svg',                    Icon: Bot },
   openai:             { label: 'OpenAI',             color: '#412991', iconUrl: '/icons/connectors/openai.svg',                         Icon: Bot },
   replicate:          { label: 'Replicate',          color: '#3D3D3D', iconUrl: '/icons/connectors/replicate.svg',                      Icon: Bot },

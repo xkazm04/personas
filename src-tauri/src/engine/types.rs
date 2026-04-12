@@ -133,6 +133,16 @@ pub enum ProtocolMessage {
         note: String,
         confidence: Option<f64>,
     },
+    /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
+    /// for user review. Never applied directly -- always goes through Lab UI.
+    ProposeImprovement {
+        section: String,
+        rationale: String,
+        current_excerpt: Option<String>,
+        proposed_replacement: String,
+        confidence: f64,
+        evidence: Option<String>,
+    },
 }
 
 // =============================================================================

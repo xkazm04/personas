@@ -18,10 +18,6 @@ export const en = {
         label: "Agents",
         description: "Create, configure, and manage AI agent personas with custom behaviors and capabilities"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "Events",
         description: "Configure event triggers, webhook listeners, and schedule-driven automations"

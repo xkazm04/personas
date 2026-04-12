@@ -52,6 +52,13 @@ impl CliProvider for ClaudeProvider {
     fn apply_provider_env(&self, cli_args: &mut CliArgs, profile: &ModelProfile) {
         prompt::apply_provider_env(cli_args, profile);
     }
+
+    fn minimum_version(&self) -> Option<&str> {
+        // CLI ≥ 2.1.101 fixes: UTF-8 stream corruption, --dangerously-skip-permissions
+        // downgrade, team permission inheritance, hardcoded 5-minute API timeout,
+        // --resume context loss on large sessions, MCP outputSchema validation.
+        Some("2.1.101")
+    }
 }
 
 #[cfg(test)]
@@ -112,6 +119,9 @@ mod tests {
         let args = provider.build_execution_args(None, None);
         assert!(args.args.contains(&"-p".to_string()));
         assert!(args.args.contains(&"stream-json".to_string()));
+        assert!(args
+            .args
+            .contains(&"--exclude-dynamic-system-prompt-sections".to_string()));
     }
 
     #[test]
@@ -122,5 +132,13 @@ mod tests {
         let args = provider.build_execution_args(None, None);
         assert!(args.args.contains(&"--effort".to_string()));
         assert!(args.args.contains(&"medium".to_string()));
+    }
+
+    #[test]
+    fn test_minimum_version_is_set() {
+        let provider = ClaudeProvider;
+        let min = provider.minimum_version();
+        assert!(min.is_some());
+        assert_eq!(min.unwrap(), "2.1.101");
     }
 }

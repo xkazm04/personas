@@ -93,6 +93,23 @@ struct EvalRequest {
     js: String,
 }
 
+#[derive(Deserialize)]
+struct ScreenshotRequest {
+    /// Absolute directory to save the PNG into. Created if missing.
+    save_dir: String,
+    /// Filename without extension. `.png` is appended.
+    filename: String,
+    /// Optional max width in pixels. Image is downscaled preserving aspect ratio
+    /// if the captured window is wider. Defaults to 1280 to keep guide assets
+    /// lightweight.
+    #[serde(default)]
+    max_width: Option<u32>,
+    /// Optional substring of the OS window title to capture. Defaults to
+    /// "Personas". Falls back to the primary monitor if no match.
+    #[serde(default)]
+    window_title: Option<String>,
+}
+
 // ── Core eval + response machinery ──────────────────────────────────────────
 
 /// Default timeout for quick bridge operations (query, navigate, etc.)
@@ -278,6 +295,107 @@ async fn handle_eval(
     })?;
 
     Ok(r#"{"success": true}"#.to_string())
+}
+
+async fn handle_screenshot(
+    AxumState(_state): AxumState<ServerState>,
+    Json(req): Json<ScreenshotRequest>,
+) -> Result<String, (StatusCode, String)> {
+    use std::path::PathBuf;
+
+    let save_dir = PathBuf::from(&req.save_dir);
+    tokio::fs::create_dir_all(&save_dir).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to create save dir {}: {e}", save_dir.display()),
+        )
+    })?;
+
+    let filename = if req.filename.ends_with(".png") {
+        req.filename.clone()
+    } else {
+        format!("{}.png", req.filename)
+    };
+    let out_path = save_dir.join(&filename);
+    let target_title = req.window_title.clone().unwrap_or_else(|| "Personas".to_string());
+    let max_width = req.max_width.unwrap_or(1280);
+
+    let out_path_owned = out_path.clone();
+    let result = tokio::task::spawn_blocking(move || -> Result<(u32, u32), String> {
+        use xcap::{Monitor, Window};
+
+        let mut captured: Option<image::RgbaImage> = None;
+
+        if let Ok(windows) = Window::all() {
+            let hit = windows
+                .iter()
+                .find(|w| w.title().map(|t| t == target_title).unwrap_or(false))
+                .or_else(|| {
+                    windows.iter().find(|w| {
+                        w.title()
+                            .map(|t| t.contains(target_title.as_str()))
+                            .unwrap_or(false)
+                    })
+                });
+            if let Some(w) = hit {
+                match w.capture_image() {
+                    Ok(img) => captured = Some(img),
+                    Err(e) => tracing::warn!(
+                        "Window capture failed for '{target_title}': {e}. Falling back to primary monitor."
+                    ),
+                }
+            }
+        }
+
+        if captured.is_none() {
+            let monitors = Monitor::all()
+                .map_err(|e| format!("Failed to enumerate monitors: {e}"))?;
+            let primary = monitors
+                .into_iter()
+                .next()
+                .ok_or_else(|| "No monitors available for capture".to_string())?;
+            let img = primary
+                .capture_image()
+                .map_err(|e| format!("Monitor capture failed: {e}"))?;
+            captured = Some(img);
+        }
+
+        let img = captured.ok_or_else(|| "No capture produced".to_string())?;
+        let (orig_w, orig_h) = (img.width(), img.height());
+
+        // Downscale if wider than max_width, preserving aspect ratio.
+        let resized = if orig_w > max_width {
+            let new_h = ((orig_h as f32) * (max_width as f32 / orig_w as f32)).round() as u32;
+            image::imageops::resize(&img, max_width, new_h, image::imageops::FilterType::Lanczos3)
+        } else {
+            img
+        };
+        let (final_w, final_h) = (resized.width(), resized.height());
+
+        resized
+            .save(&out_path_owned)
+            .map_err(|e| format!("Failed to write PNG to {}: {e}", out_path_owned.display()))?;
+
+        Ok((final_w, final_h))
+    })
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Capture task join error: {e}"),
+        )
+    })?;
+
+    let (width, height) =
+        result.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+
+    Ok(serde_json::json!({
+        "success": true,
+        "path": out_path.to_string_lossy(),
+        "width": width,
+        "height": height,
+    })
+    .to_string())
 }
 
 // ── Workflow macro handlers ──────────────────────────────────────────────────
@@ -610,6 +728,7 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
         .route("/wait", post(handle_wait))
         .route("/list-interactive", get(handle_list_interactive))
         .route("/eval", post(handle_eval))
+        .route("/screenshot", post(handle_screenshot))
         // Workflow macros
         .route("/select-agent", post(handle_select_agent))
         .route("/open-editor-tab", post(handle_open_editor_tab))

@@ -44,8 +44,8 @@ export function useDevToolsActions() {
     deleteIdea: store.deleteIdea,
 
     // Tasks
-    createTask: (data: { title: string; description?: string; goalId?: string }) =>
-      store.createTask(data.title, pid() || undefined, data.description, undefined, data.goalId),
+    createTask: (data: { title: string; description?: string; goalId?: string; depth?: string }) =>
+      store.createTask(data.title, pid() || undefined, data.description, undefined, data.goalId, data.depth),
     batchFromAcceptedIdeas: async () => {
       const accepted = store.ideas.filter((i) => i.status === 'accepted');
       if (accepted.length === 0) return;

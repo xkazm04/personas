@@ -403,7 +403,6 @@ impl ProviderCircuitBreaker {
 
         let all_kinds = [
             EngineKind::ClaudeCode,
-            EngineKind::CodexCli,
         ];
 
         let providers = all_kinds
@@ -650,9 +649,9 @@ pub fn build_failover_chain(
     }
 
     // 3. Cross-provider failover: add alternate providers
-    let alternates = match primary {
-        EngineKind::ClaudeCode => vec![EngineKind::CodexCli],
-        EngineKind::CodexCli => vec![EngineKind::ClaudeCode],
+    // Codex CLI removed — no cross-provider failover available currently.
+    let alternates: Vec<EngineKind> = match primary {
+        EngineKind::ClaudeCode => vec![],
     };
 
     for alt in alternates {
@@ -759,7 +758,6 @@ mod tests {
     fn test_circuit_breaker_starts_closed() {
         let cb = ProviderCircuitBreaker::new();
         assert!(cb.try_acquire_and_probe(EngineKind::ClaudeCode));
-        assert!(cb.try_acquire_and_probe(EngineKind::CodexCli));
         assert!(!cb.is_globally_paused());
     }
 
@@ -772,8 +770,6 @@ mod tests {
         }
         // Circuit should now be open
         assert!(!cb.try_acquire_and_probe(EngineKind::ClaudeCode));
-        // Other providers unaffected
-        assert!(cb.try_acquire_and_probe(EngineKind::CodexCli));
     }
 
     #[test]
@@ -792,28 +788,21 @@ mod tests {
     #[test]
     fn test_global_breaker_trips_after_threshold() {
         let cb = ProviderCircuitBreaker::new();
-        // Spread failures across both providers to hit the global threshold
-        // without hitting any single provider's threshold (5)
-        for _ in 0..5 {
+        // Accumulate failures on the sole provider to hit the global threshold
+        for _ in 0..9 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
-        // Claude circuit is now open (5 consecutive), but global has 5 < 10
-        assert!(!cb.is_globally_paused());
-
-        for _ in 0..4 {
-            cb.record_failure(EngineKind::CodexCli);
-        }
-        // 9 total failures -- still under global threshold (10)
+        // 9 total failures — still under global threshold (10)
+        // (per-provider circuit opened at 5, but global counter keeps accumulating)
         assert!(!cb.is_globally_paused());
 
         // Push past global threshold
-        cb.record_failure(EngineKind::CodexCli);
-        // 10 total failures -- global breaker should trip
+        cb.record_failure(EngineKind::ClaudeCode);
+        // 10 total failures — global breaker should trip
         assert!(cb.is_globally_paused());
 
-        // All providers should be blocked
+        // Provider should be blocked
         assert!(!cb.try_acquire_and_probe(EngineKind::ClaudeCode));
-        assert!(!cb.try_acquire_and_probe(EngineKind::CodexCli));
     }
 
     #[test]
@@ -825,31 +814,28 @@ mod tests {
         }
         cb.record_success(EngineKind::ClaudeCode);
         for _ in 0..4 {
-            cb.record_failure(EngineKind::CodexCli);
+            cb.record_failure(EngineKind::ClaudeCode);
         }
-        // 1 success offsets 1 Claude failure: 3 Claude + 4 Codex = 7 < 10
+        // 1 success offsets 1 failure: 8 failures - 1 success = 7 net < 10
         assert!(!cb.is_globally_paused());
     }
 
     #[test]
     fn test_success_offsets_one_failure_from_global_window() {
         let cb = ProviderCircuitBreaker::new();
-        // 8 failures across providers, then Claude succeeds once
-        for _ in 0..4 {
+        // 8 failures, then one success
+        for _ in 0..8 {
             cb.record_failure(EngineKind::ClaudeCode);
-        }
-        for _ in 0..4 {
-            cb.record_failure(EngineKind::CodexCli);
         }
         assert!(!cb.is_globally_paused()); // 8 < 10
 
-        // Claude recovers -- only 1 failure removed (1:1 offset)
+        // One success — only 1 failure removed (1:1 offset)
         cb.record_success(EngineKind::ClaudeCode);
-        // 3 Claude + 4 Codex = 7 remaining
+        // 7 remaining
 
-        // 3 more Codex failures push past threshold: 3 + 4 + 3 = 10
+        // 3 more failures push past threshold: 7 + 3 = 10
         for _ in 0..3 {
-            cb.record_failure(EngineKind::CodexCli);
+            cb.record_failure(EngineKind::ClaudeCode);
         }
         assert!(cb.is_globally_paused());
     }
@@ -857,54 +843,46 @@ mod tests {
     #[test]
     fn test_multiple_successes_gradually_drain_failures() {
         let cb = ProviderCircuitBreaker::new();
-        // 4 failures each → 8 total
-        for _ in 0..4 {
+        // 8 failures total
+        for _ in 0..8 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
-        for _ in 0..4 {
-            cb.record_failure(EngineKind::CodexCli);
-        }
-        // Each success removes 1 failure from that provider
-        cb.record_success(EngineKind::ClaudeCode); // 3 Claude + 4 Codex = 7
-        cb.record_success(EngineKind::CodexCli); // 3 Claude + 3 Codex = 6
+        // Each success removes 1 failure
+        cb.record_success(EngineKind::ClaudeCode); // 7
+        cb.record_success(EngineKind::ClaudeCode); // 6
         // 2 more failures: 6 + 2 = 8 < 10
         cb.record_failure(EngineKind::ClaudeCode);
-        cb.record_failure(EngineKind::CodexCli);
+        cb.record_failure(EngineKind::ClaudeCode);
         assert!(!cb.is_globally_paused());
     }
 
     #[test]
     fn test_single_success_does_not_purge_all_provider_failures() {
         let cb = ProviderCircuitBreaker::new();
-        // Provider A accumulates 6 failures, B has 3 → 9 total (just under threshold)
-        for _ in 0..6 {
+        // 9 failures total (just under threshold)
+        for _ in 0..9 {
             cb.record_failure(EngineKind::ClaudeCode);
-        }
-        for _ in 0..3 {
-            cb.record_failure(EngineKind::CodexCli);
         }
         assert!(!cb.is_globally_paused()); // 9 < 10
 
-        // One lucky success on provider A: should only remove 1 of 6, not all 6
+        // One lucky success: should only remove 1 of 9, not all 9
         cb.record_success(EngineKind::ClaudeCode);
-        // 5 Claude + 3 Codex = 8
+        // 8 remaining
 
-        // 2 more failures on Codex tip the global breaker
-        cb.record_failure(EngineKind::CodexCli);
-        cb.record_failure(EngineKind::CodexCli);
-        // 5 + 3 + 2 = 10 → trips
+        // 2 more failures tip the global breaker: 8 + 2 = 10
+        cb.record_failure(EngineKind::ClaudeCode);
+        cb.record_failure(EngineKind::ClaudeCode);
         assert!(cb.is_globally_paused());
     }
 
     #[test]
     fn test_failover_chain_claude_primary() {
         let chain = build_failover_chain(EngineKind::ClaudeCode, None);
-        // Should have: Claude(configured) + Claude model fallbacks + Codex
-        assert!(chain.len() >= 3);
+        // Should have: Claude(configured) + Claude model fallbacks
+        assert!(chain.len() >= 2);
         assert_eq!(chain[0].engine_kind, EngineKind::ClaudeCode);
-        // Last alternate should be Codex
-        let last = chain.last().unwrap();
-        assert_eq!(last.engine_kind, EngineKind::CodexCli);
+        // All entries should be ClaudeCode (no cross-provider alternates)
+        assert!(chain.iter().all(|c| c.engine_kind == EngineKind::ClaudeCode));
     }
 
     #[test]
@@ -941,20 +919,12 @@ mod tests {
     #[test]
     fn test_global_trip_returns_transition() {
         let cb = ProviderCircuitBreaker::new();
-        // 4 failures on Claude, 4 on Codex (8 total, no per-provider trip yet)
-        for _ in 0..4 {
+        // 9 failures (per-provider circuit opens at 5, but global counter keeps going)
+        for _ in 0..9 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
-        for _ in 0..4 {
-            cb.record_failure(EngineKind::CodexCli);
-        }
-        // 9th failure
-        cb.record_failure(EngineKind::ClaudeCode);
-        // Claude now has 5 consecutive → per-provider circuit opens
         // 10th failure: hits global threshold
-        let transitions = cb.record_failure(EngineKind::CodexCli);
-        // Should have exactly 1 transition: global pause (Codex at 5 also opens, but
-        // the per-provider open for Codex is a separate transition)
+        let transitions = cb.record_failure(EngineKind::ClaudeCode);
         assert!(transitions.iter().any(|t| t.provider == "global" && t.to_state == "paused"));
     }
 
@@ -973,8 +943,5 @@ mod tests {
         // trip_count_1h for Claude should be 1
         let claude = status.providers.iter().find(|p| p.provider == "claude_code").unwrap();
         assert_eq!(claude.trip_count_1h, 1);
-        // Other providers should have 0
-        let codex = status.providers.iter().find(|p| p.provider == "codex_cli").unwrap();
-        assert_eq!(codex.trip_count_1h, 0);
     }
 }

@@ -18,10 +18,6 @@ export const ja = {
         label: "エージェント",
         description: "AIエージェントペルソナの作成、設定、管理"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "イベント",
         description: "イベントトリガー、Webhook、オートメーションの設定"

@@ -198,16 +198,20 @@ pub async fn discover_clis() -> Vec<DiscoveredApp> {
     for cli in KNOWN_CLIS {
         let (installed, binary_path) = detect_cli_binary(cli);
 
-        // TODO(cli-version): invoking `<bin> --version` with a 1s timeout
-        // would populate the version field. Skipped on the first iteration
-        // to keep discovery fast and avoid shelling out per entry during a
-        // startup scan. Re-enable when the UI wants to display versions.
+        // Populate version by running `<bin> --version` with a 1s timeout
+        // if the binary was found. Keeps discovery fast (1s cap per binary).
+        let version = if let Some(ref path) = binary_path {
+            get_app_version(path).await
+        } else {
+            None
+        };
+
         results.push(DiscoveredApp {
             connector_name: cli.connector_name.to_string(),
             label: cli.label.to_string(),
             installed,
             binary_path,
-            version: None,
+            version,
             running: false, // CLIs aren't long-running processes
             category: "cli".to_string(),
         });
@@ -532,8 +536,10 @@ mod tests {
             // CLIs should never be reported as running -- they aren't
             // long-lived processes.
             assert!(!results[idx].running);
-            // Version is always None on the fast path.
-            assert!(results[idx].version.is_none());
+            // Uninstalled CLIs must have no version.
+            if !results[idx].installed {
+                assert!(results[idx].version.is_none());
+            }
         }
     }
 
@@ -575,8 +581,7 @@ mod tests {
     }
 }
 
-/// Get the app version by running the binary with --version.
-#[allow(dead_code)]
+/// Get the app version by running the binary with --version (1s timeout).
 pub async fn get_app_version(binary_path: &str) -> Option<String> {
     let mut cmd = tokio::process::Command::new(binary_path);
     cmd.arg("--version");
@@ -588,7 +593,13 @@ pub async fn get_app_version(binary_path: &str) -> Option<String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = cmd.output().await.ok()?;
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        cmd.output(),
+    )
+    .await
+    .ok()?  // timeout
+    .ok()?; // IO error
 
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);

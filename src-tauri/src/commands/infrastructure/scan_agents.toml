@@ -197,3 +197,13 @@ color = "#14B8A6"
 category_group = "mastermind"
 description = "Optimizes build, deploy, and operations workflows"
 examples = "CI/CD pipelines, Docker optimization, Monitoring gaps"
+
+[[agents]]
+key = "bounty-hunter"
+label = "Bounty Hunter"
+emoji = "🏴‍☠️"
+abbreviation = "BNT"
+color = "#DC2626"
+category_group = "technical"
+description = "Scans for exploitable bugs, logic flaws, and edge cases that qualify for bug bounty programs — pricing anomalies, data inconsistencies, rule violations, race conditions, and UI/logic mismatches"
+examples = "Pricing calculation errors, Race conditions in state updates, Inconsistent validation rules, Edge cases in boundary logic, Data leaks between user contexts"

@@ -32,7 +32,6 @@ export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
-  { id: 'workflows', icon: GitBranch, label: 'Workflows', minTier: TIERS.TEAM },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
@@ -125,7 +124,7 @@ export const cloudItems: SubNavItem[] = [
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
   const tier = activeTier ?? TIERS.TEAM;
   return [
-    { id: 'account', label: 'Account', icon: Globe, devOnly: true },
+    { id: 'account', label: 'Account', icon: Globe },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },

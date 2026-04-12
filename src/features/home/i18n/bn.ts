@@ -18,10 +18,6 @@ export const bn = {
         label: "এজেন্ট",
         description: "আপনার AI এজেন্ট পারসোনা তৈরি, কনফিগার এবং পরিচালনা করুন"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "ইভেন্ট",
         description: "ইভেন্ট ট্রিগার, ওয়েবহুক এবং অটোমেশন কনফিগার করুন"

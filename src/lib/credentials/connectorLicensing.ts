@@ -129,6 +129,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   obsidian:                        'personal',
 
   elevenlabs:                      'personal',
+  google_gemini:                   'personal',
 
   // -- Paid (no meaningful free tier) ------------------
   leonardo_ai:                     'paid',

@@ -295,6 +295,7 @@ pub async fn execute_team(
         execution_order,
         initial_node_statuses,
         cancelled,
+        process_registry: state.process_registry.clone(),
     };
 
     tokio::spawn(async move {
@@ -326,6 +327,40 @@ pub fn cancel_pipeline(
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("pipeline", &run_id);
     tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
+    Ok(true)
+}
+
+/// Approve a pipeline node that is awaiting human approval.
+///
+/// Uses the `ActiveProcessRegistry` to signal the approval flag for the
+/// pipeline executor's `poll_for_approval` loop.
+#[tauri::command]
+pub fn approve_pipeline_node(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+    member_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let approval_key = format!("{}:{}", run_id, member_id);
+    state
+        .process_registry
+        .cancel_run("pipeline_approval", &approval_key);
+    tracing::info!(run_id = %run_id, member_id = %member_id, "Pipeline node approval granted");
+    Ok(true)
+}
+
+/// Reject a pipeline node that is awaiting human approval.
+///
+/// Cancels the entire pipeline, which causes `poll_for_approval` to return
+/// `false` and the pipeline to stop.
+#[tauri::command]
+pub fn reject_pipeline_node(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    state.process_registry.cancel_run("pipeline", &run_id);
+    tracing::info!(run_id = %run_id, "Pipeline node approval rejected — cancelling pipeline");
     Ok(true)
 }
 

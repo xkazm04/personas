@@ -115,6 +115,12 @@ export const getPipelineRun = (id: string) =>
 export const cancelPipeline = (runId: string) =>
   invoke<boolean>("cancel_pipeline", { runId });
 
+export const approvePipelineNode = (runId: string, memberId: string) =>
+  invoke<boolean>("approve_pipeline_node", { runId, memberId });
+
+export const rejectPipelineNode = (runId: string) =>
+  invoke<boolean>("reject_pipeline_node", { runId });
+
 // -- Pipeline Analytics & Optimizer --------------------------------------
 
 export const getPipelineAnalytics = (teamId: string) =>

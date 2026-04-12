@@ -75,6 +75,28 @@ pub struct PersonaTeamConnection {
 }
 
 // ============================================================================
+// Node Configuration (parsed from PersonaTeamMember.config JSON)
+// ============================================================================
+
+/// Parsed node configuration from the `config` JSON field on PersonaTeamMember.
+///
+/// All fields are optional — existing nodes with no config work unchanged.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeConfig {
+    /// Override the persona's default model_profile for this pipeline step.
+    /// Example: "claude-haiku" for cheap classification nodes.
+    pub model_profile_override: Option<String>,
+    /// Node type: "persona" (default, LLM execution) or "command" (deterministic).
+    pub node_type: Option<String>,
+    /// Shell command to run if node_type == "command".
+    pub command: Option<String>,
+    /// If true, pipeline pauses here for human approval before executing.
+    pub approval_gate: Option<bool>,
+}
+
+// ============================================================================
 // Team Counts (batch query result)
 // ============================================================================
 

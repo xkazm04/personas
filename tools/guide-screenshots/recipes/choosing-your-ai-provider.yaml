@@ -1,0 +1,13 @@
+# Guide topic: choosing-your-ai-provider
+# Destination:  personas-web/public/imgs/guide/topics/choosing-your-ai-provider-<locale>.png
+#
+# Opens Settings → BYOM so readers see where to connect Claude / OpenAI /
+# local model providers, matching the guide narrative.
+
+topic: choosing-your-ai-provider
+
+steps:
+  - navigate: settings
+  - click_testid: tab-byom
+  - wait_for: '[data-testid="settings-page"]'
+  - wait: 300

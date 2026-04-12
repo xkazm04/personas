@@ -238,6 +238,52 @@ pub struct CreateAbResultInput {
 }
 
 // ============================================================================
+// Lab: Consensus (multi-sample consistency testing)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabConsensusRun {
+    pub id: String,
+    pub persona_id: String,
+    pub status: LabRunStatus,
+    #[ts(type = "number")]
+    pub num_samples: i32,
+    pub model_id: String,
+    #[ts(type = "number")]
+    pub scenarios_count: i32,
+    pub use_case_filter: Option<String>,
+    pub agreement_rate: Option<f64>,
+    pub summary: Option<String>,
+    pub llm_summary: Option<String>,
+    pub progress_json: Option<String>,
+    pub error: Option<String>,
+    pub created_at: String,
+    pub completed_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabConsensusResult {
+    pub id: String,
+    pub run_id: String,
+    #[ts(type = "number")]
+    pub sample_index: i32,
+    #[serde(flatten)]
+    #[ts(flatten)]
+    pub base: LabResultBase,
+}
+
+#[derive(Debug, Clone)]
+pub struct CreateConsensusResultInput {
+    pub run_id: String,
+    pub sample_index: i32,
+    pub base: CreateLabResultBaseInput,
+}
+
+// ============================================================================
 // Lab: Matrix (Draft generation + current vs draft comparison)
 // ============================================================================
 

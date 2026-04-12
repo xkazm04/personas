@@ -18,10 +18,6 @@ export const ko = {
         label: "에이전트",
         description: "AI 에이전트 페르소나 생성, 구성 및 관리"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "이벤트",
         description: "이벤트 트리거, 웹훅 및 자동화 구성"

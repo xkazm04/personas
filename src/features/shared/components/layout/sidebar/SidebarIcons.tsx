@@ -289,46 +289,11 @@ export function IconPlugins({ active = false, className = '' }: IconProps) {
   );
 }
 
-// -- Workflows: DAG pipeline — nodes connected by directed arrows ----------
-
-export function IconWorkflows({ active = false, className = '' }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Top node */}
-      <circle cx="12" cy="4" r="2.5" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.7 : 0.4} />
-      <circle cx="12" cy="4" r="1.3" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.5} />
-      {/* Left branch node */}
-      <circle cx="5.5" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.7 : 0.4} />
-      <circle cx="5.5" cy="12" r="1.3" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.5} />
-      {/* Right branch node */}
-      <circle cx="18.5" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.7 : 0.4} />
-      <circle cx="18.5" cy="12" r="1.3" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.5} />
-      {/* Bottom converge node */}
-      <circle cx="12" cy="20" r="2.5" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.7 : 0.4} />
-      <circle cx="12" cy="20" r="1.3" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.5} />
-      {/* Edges: top → left */}
-      <line x1="10" y1="5.8" x2="7.2" y2="10.2" stroke="currentColor" strokeWidth="1.2" className={a('pi-flow', active)} opacity={active ? 0.7 : 0.3} />
-      {/* Edges: top → right */}
-      <line x1="14" y1="5.8" x2="16.8" y2="10.2" stroke="currentColor" strokeWidth="1.2" className={a('pi-flow', active)} opacity={active ? 0.7 : 0.3} />
-      {/* Edges: left → bottom */}
-      <line x1="7.2" y1="13.8" x2="10" y2="18.2" stroke="currentColor" strokeWidth="1.2" className={a('pi-flow', active)} opacity={active ? 0.7 : 0.3} />
-      {/* Edges: right → bottom */}
-      <line x1="16.8" y1="13.8" x2="14" y2="18.2" stroke="currentColor" strokeWidth="1.2" className={a('pi-flow', active)} opacity={active ? 0.7 : 0.3} />
-      {/* Arrow tips on edges */}
-      <circle cx="8.5" cy="8.2" r="0.7" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.6 : 0.2} />
-      <circle cx="15.5" cy="8.2" r="0.7" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.6 : 0.2} />
-      <circle cx="8.5" cy="15.8" r="0.7" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.6 : 0.2} />
-      <circle cx="15.5" cy="15.8" r="0.7" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.6 : 0.2} />
-    </svg>
-  );
-}
-
 /** Map section ID -> custom icon */
 export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
   home: IconHome,
   overview: IconOverview,
   personas: IconAgents,
-  workflows: IconWorkflows,
   events: IconEvents,
   credentials: IconKeys,
   'design-reviews': IconTemplates,

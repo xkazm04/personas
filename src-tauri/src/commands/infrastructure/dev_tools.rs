@@ -57,6 +57,7 @@ pub fn dev_tools_create_project(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_project(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -65,6 +66,8 @@ pub fn dev_tools_update_project(
     status: Option<String>,
     tech_stack: Option<Option<String>>,
     github_url: Option<Option<String>>,
+    monitoring_credential_id: Option<Option<String>>,
+    monitoring_project_slug: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -75,6 +78,8 @@ pub fn dev_tools_update_project(
         status.as_deref(),
         tech_stack.as_ref().map(|o| o.as_deref()),
         github_url.as_ref().map(|o| o.as_deref()),
+        monitoring_credential_id.as_ref().map(|o| o.as_deref()),
+        monitoring_project_slug.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -705,6 +710,7 @@ pub fn dev_tools_get_task(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_task(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
@@ -713,6 +719,7 @@ pub fn dev_tools_create_task(
     source_idea_id: Option<String>,
     goal_id: Option<String>,
     status: Option<String>,
+    depth: Option<String>,
 ) -> Result<DevTask, AppError> {
     require_auth_sync(&state)?;
     repo::create_task(
@@ -723,6 +730,7 @@ pub fn dev_tools_create_task(
         source_idea_id.as_deref(),
         goal_id.as_deref(),
         status.as_deref(),
+        depth.as_deref(),
     )
 }
 
@@ -2146,6 +2154,7 @@ pub fn dev_tools_start_competition(
             source_idea_id.as_deref(),
             source_goal_id.as_deref(),
             Some("queued"),
+            None,
         )?;
 
         // Tag the task with its worktree name via session_id

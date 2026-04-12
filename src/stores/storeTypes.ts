@@ -40,10 +40,10 @@ import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ArtistSlice } from "./slices/system/artistSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
+import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
-import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
 import type { ProcessActivitySlice } from "./slices/processActivitySlice";
 
 // -- Shared helpers ------------------------------------------------------
@@ -202,13 +202,12 @@ export type OverviewStore = CoreState &
   PersonaHealthSlice &
   ProcessActivitySlice;
 
-/** Pipeline domain: triggers, teams, groups, recipes, composition */
+/** Pipeline domain: triggers, teams, groups, recipes */
 export type PipelineStore = CoreState &
   TriggerSlice &
   TeamSlice &
   GroupSlice &
-  RecipeSlice &
-  CompositionSlice;
+  RecipeSlice;
 
 /** Vault domain: credentials, databases, automations, rotation */
 export type VaultStore = CoreState &
@@ -230,5 +229,6 @@ export type SystemStore = CoreState &
   SetupSlice &
   AmbientContextSlice &
   ArtistSlice &
-  ObsidianBrainSlice;
+  ObsidianBrainSlice &
+  ResearchLabSlice;
 

@@ -13,7 +13,7 @@ export interface DevToolsTaskSlice {
   maxParallelTasks: number;
 
   fetchTasks: (projectId?: string, status?: string, goalId?: string) => Promise<void>;
-  createTask: (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string) => Promise<DevTask>;
+  createTask: (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string, depth?: string) => Promise<DevTask>;
   batchCreateTasks: (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) => Promise<DevTask[]>;
   startTask: (id: string) => Promise<void>;
   cancelTask: (id: string) => Promise<void>;
@@ -42,9 +42,9 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
     }
   },
 
-  createTask: async (title, projectId, description, sourceIdeaId, goalId) => {
+  createTask: async (title, projectId, description, sourceIdeaId, goalId, depth) => {
     try {
-      const task = await devApi.createTask(title, projectId, description, sourceIdeaId, goalId);
+      const task = await devApi.createTask(title, projectId, description, sourceIdeaId, goalId, depth);
       set((state) => ({ tasks: [...state.tasks, task], error: null }));
       return task;
     } catch (err) {

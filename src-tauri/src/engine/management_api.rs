@@ -9,6 +9,7 @@
 //! uses a process-scoped "system" key created on first call to
 //! [`get_or_create_system_api_key`].
 
+use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use std::sync::Mutex;
 use tauri::Manager;
@@ -82,6 +83,8 @@ pub fn management_router(state: ManagementState) -> Router {
         // Automation settings
         .route("/api/settings/auto-optimize/{persona_id}", get(get_auto_optimize).post(set_auto_optimize))
         .route("/api/settings/health-watch/{persona_id}", get(get_health_watch).post(set_health_watch))
+        // Credential proxy -- route HTTP calls through stored credentials
+        .route("/api/proxy/{credential_id}", post(proxy_request))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -255,6 +258,45 @@ fn err_json(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
 /// the auth middleware (`Result<Response, (StatusCode, Json<ApiResult>)>`).
 fn err_json_tuple(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
     err_json(status, msg)
+}
+
+// =============================================================================
+// Credential proxy endpoint
+// =============================================================================
+
+#[derive(Deserialize)]
+struct ProxyRequestBody {
+    method: String,
+    path: String,
+    #[serde(default)]
+    headers: HashMap<String, String>,
+    #[serde(default)]
+    body: Option<String>,
+}
+
+/// Proxy an HTTP request through a stored credential's auth strategy.
+///
+/// Credential secrets never leave the server — the CLI subprocess sends requests
+/// here with a credential ID, and auth headers are injected server-side.
+async fn proxy_request(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(credential_id): Path<String>,
+    Json(input): Json<ProxyRequestBody>,
+) -> impl IntoResponse {
+    match crate::engine::api_proxy::execute_api_request(
+        &state.pool,
+        &credential_id,
+        &input.method,
+        &input.path,
+        input.headers,
+        input.body,
+    ).await {
+        Ok(resp) => ok_json(resp).into_response(),
+        Err(e) => {
+            let msg = format!("{e}");
+            err_json(StatusCode::BAD_GATEWAY, &msg).into_response()
+        }
+    }
 }
 
 // =============================================================================

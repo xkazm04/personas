@@ -18,10 +18,6 @@ export const zh = {
         label: "代理",
         description: "创建、配置和管理您的 AI 代理角色"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "事件",
         description: "配置事件触发器、Webhook 和自动化"

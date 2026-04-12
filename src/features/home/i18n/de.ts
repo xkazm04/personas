@@ -18,10 +18,6 @@ export const de = {
         label: "Agenten",
         description: "Erstellen, konfigurieren und verwalten Sie Ihre KI-Agenten"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "Ereignisse",
         description: "Event-Trigger, Webhooks und Automatisierungen konfigurieren"

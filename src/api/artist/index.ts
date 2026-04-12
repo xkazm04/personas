@@ -81,3 +81,50 @@ export const artistRunCreativeSession = (
 
 export const artistCancelCreativeSession = (sessionId: string) =>
   invoke<boolean>("artist_cancel_creative_session", { sessionId });
+
+// -- FFmpeg Detection & Probing ---------------------------------------------
+
+export interface FfmpegStatus {
+  found: boolean;
+  path: string | null;
+  version: string | null;
+}
+
+export interface MediaProbeResult {
+  duration: number;
+  width: number | null;
+  height: number | null;
+  hasVideo: boolean;
+  hasAudio: boolean;
+  codec: string | null;
+  filePath: string;
+}
+
+/** Check whether ffmpeg is installed and return its version + path. */
+export const artistCheckFfmpeg = () =>
+  invoke<FfmpegStatus>("artist_check_ffmpeg");
+
+/** Probe a media file with ffprobe for duration, dimensions, and codec info. */
+export const artistProbeMedia = (filePath: string) =>
+  invoke<MediaProbeResult>("artist_probe_media", { filePath });
+
+// -- Media Export (ffmpeg) --------------------------------------------------
+
+/**
+ * Start an FFmpeg export of a composition to MP4.
+ * Runs in a background task; listen for `media_export_progress`,
+ * `media_export_status`, and `media_export_complete` events to track progress.
+ */
+export const artistExportComposition = (
+  jobId: string,
+  compositionJson: string,
+  outputPath: string,
+) =>
+  invoke<{ job_id: string }>("artist_export_composition", {
+    jobId,
+    compositionJson,
+    outputPath,
+  });
+
+export const artistCancelExport = (jobId: string) =>
+  invoke<boolean>("artist_cancel_export", { jobId });

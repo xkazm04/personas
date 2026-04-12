@@ -34,6 +34,7 @@ export const SCAN_AGENTS: ScanAgentDef[] = [
   { key: 'risk-assessor', label: 'Risk Assessor', emoji: '⚠️', abbreviation: 'RSK', color: '#F97316', categoryGroup: 'mastermind', description: 'Identifies project risks and mitigation strategies', examples: ['Single points of failure', 'Scaling risks', 'Data loss scenarios'] },
   { key: 'integration-planner', label: 'Integration Planner', emoji: '🔗', abbreviation: 'INT', color: '#6366F1', categoryGroup: 'mastermind', description: 'Plans system integrations and API design', examples: ['Third-party APIs', 'Webhook design', 'Data synchronization'] },
   { key: 'devops-optimizer', label: 'DevOps Optimizer', emoji: '🔧', abbreviation: 'OPS', color: '#14B8A6', categoryGroup: 'mastermind', description: 'Optimizes build, deploy, and operations workflows', examples: ['CI/CD pipelines', 'Docker optimization', 'Monitoring gaps'] },
+  { key: 'bounty-hunter', label: 'Bounty Hunter', emoji: '🏴‍☠️', abbreviation: 'BNT', color: '#DC2626', categoryGroup: 'technical', description: 'Scans for exploitable bugs, logic flaws, and edge cases that qualify for bug bounty programs', examples: ['Pricing calculation errors', 'Race conditions', 'Inconsistent validation', 'Data leaks between contexts'] },
 ];
 
 export const AGENT_CATEGORIES = [

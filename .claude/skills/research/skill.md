@@ -627,6 +627,7 @@ Research run complete.
 
   Source-type yield:  {expected vs actual for this source type — see Phase 3 calibration table}
   Snapshot freshness: {fresh | stale by N commits — consider /refresh-context}
+  Commit: {filled in by Phase 13 — short SHA + subject, or skip reason}
 ```
 
 **Surface `already_existed` prominently when the finding count is low.** A product demo run that extracts 2 findings + 8 catches is a high-yield run — frame it that way. Do not let the user read "only 2 findings" as a failure when the real output is "8 existing features confirmed + 2 real gaps found".
@@ -821,6 +822,120 @@ the summary so it stays canonical):
 
 ---
 
+## Phase 13: Atomic Commit (MANDATORY — prevents merge loss)
+
+**Why this phase exists**: On 2026-04-11, a merge without recovery options wiped out an entire research session's worth of code — Task Runner depth presets, DevProject monitoring fields, event registry entries, TaskOutputPanel markdown toggle, and more. The fixes had to be manually recreated from the conversation transcript because no commit had captured them. **Never again.** Each research run commits its own output at the end, so git is the recovery mechanism when anything else fails.
+
+This phase runs at the very end of a research session after Phases 10–12 have completed. It is **non-negotiable** except in the two explicit skip conditions below.
+
+### 13a. Determine if there are changes to commit
+
+Run `git status --porcelain` to see uncommitted changes. If the output is **empty**, skip Phase 13 entirely and print `No changes to commit.` in the final summary. This covers the "accepted: none" branch where nothing was actioned.
+
+### 13b. Review what will be committed
+
+Run `git status` and `git diff --stat` to see the full set of changes. The user will see this output as part of the skill flow. **Look for unexpected files** — anything outside the expected scope should raise a warning:
+
+- **Expected scope for a research run:**
+  - Any files touched by accepted Phase 8 findings (if the user chose Option B/C and the implementation already happened in the same session, or if the user told the skill to "implement right away")
+  - `.planning/handoffs/{date}-{slug}.md` (if a handoff was written)
+  - `src/data/releases.json` + all 14 locale files under `src/features/home/components/releases/i18n/` (if Phase 12 ran)
+  - The Obsidian vault is **outside the repo**, so it should NOT appear in git status
+- **Unexpected files that warrant a pause:**
+  - Files under `node_modules/`, `target/`, `.vite/`, build artifacts
+  - `.env`, `credentials.json`, anything that looks like secrets
+  - Files from feature areas completely unrelated to any accepted finding (suggests stale edits from a different session)
+
+If unexpected files are present, **print them to the user and ask** whether to include them in the commit or leave them uncommitted. Don't auto-include anything suspicious.
+
+### 13c. Stage only the in-scope files
+
+Use **explicit `git add <path>` per file**, NOT `git add -A` or `git add .`. This avoids accidentally staging secrets or unrelated drift. Build the file list from:
+
+1. The handoff path (if Phase 8 Option B/C ran)
+2. The files edited by an in-session implementation (if the user said "implement right away")
+3. `src/data/releases.json` + all 14 locale files (if Phase 12 ran)
+4. Any new files created during the run (`sub_*/` directories, new Rust modules, new i18n keys)
+
+### 13d. Write the commit message
+
+Use this exact template via HEREDOC so multi-line formatting is preserved:
+
+```bash
+git commit -m "$(cat <<'EOF'
+research: {short-title-of-source}
+
+Source: {url-or-pasted}
+Accepted: {N} finding(s) ({comma-separated-titles})
+
+{optional 1-2 line summary of what was implemented or handed off}
+
+{if handoff written:}
+Handoff: .planning/handoffs/{date}-{slug}.md
+
+{if /add-template or /add-credential ran:}
+Catalog: /add-template {names} | /add-credential {names}
+
+{if Phase 12 ran:}
+Release log: {N} item(s) added to {version}
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+**Rules for the commit message:**
+- First line prefix **must be `research:`** — this identifies research-run commits in `git log` and makes them easy to filter
+- Short title = the source video/article title trimmed to ≤50 chars, lowercased
+- **Never include file paths** in the commit body — those are in `git diff`; the message is about *why*
+- **Never use `--no-verify`** — let pre-commit hooks run. If a hook fails, fix the issue, re-stage, and create a NEW commit (never `--amend`)
+- **Never skip signing** — the Co-Authored-By line is required
+
+### 13e. Handle commit failure
+
+If the commit fails (pre-commit hook rejection, lint errors introduced by an in-session implementation, etc.):
+
+1. Print the failure reason to the user
+2. Do NOT retry with `--no-verify`
+3. If the failure is fixable (e.g., TypeScript error in a file the skill wrote), **fix it inline** and create a new commit with the same message
+4. If the failure is NOT fixable in the current session (e.g., hook requires manual intervention), print:
+   ```
+   ⚠️ Commit failed. Changes are staged but NOT committed.
+   Research outputs are safe in Obsidian vault, but code changes
+   are vulnerable to merge loss until you commit manually.
+   Run: git commit --message "research: <title>"
+   ```
+5. Still write the Research note — never sacrifice the learning loop because of a commit failure
+
+### 13f. Skip conditions
+
+Phase 13 has exactly **two** skip conditions. Everything else is non-negotiable.
+
+**Skip 1 — No changes:** Phase 13a found an empty `git status --porcelain`. Nothing to commit. Print `No changes to commit.` and move on.
+
+**Skip 2 — User explicitly opts out:** The user typed one of `--no-commit`, `no commit`, or `skip commit` in the original `/research` invocation OR as a response to Phase 8 triage. In this case, print:
+```
+⚠️ Skipping commit per user request.
+Changes are uncommitted and vulnerable to merge loss until you commit manually.
+```
+
+**NOT a skip condition:** "I'll commit manually later." Do not take the user's word for this — the whole point of Phase 13 is to make the commit happen in-session before context is lost. If the user expresses this preference, gently remind them that "later" turned into "lost work" on 2026-04-11, and ask again whether to commit now.
+
+### 13g. Update the Phase 11 summary
+
+Append a `Commit:` line to the final printout (re-print the summary so it stays canonical):
+
+```
+  Commit: {short-sha} — research: {short-title}
+           | skipped (no changes)
+           | skipped (user opted out)
+           | ⚠️ commit failed — see above
+```
+
+This gives the user one line to verify the whole run is safely captured in git before they close the session.
+
+---
+
 ## Error Handling
 
 | Failure | Response |
@@ -834,6 +949,8 @@ the summary so it stays canonical):
 | Obsidian vault path missing | Run Phase 0 bootstrap, don't fail. |
 | `/add-template` or `/add-credential` invocation fails | Report which one, save its description into the Research note as "deferred", continue. |
 | `src/data/releases.json` missing or unparseable | Print `release log not found, skipping Phase 12` and stop the phase. Do NOT auto-create the file. |
+| Phase 13 commit fails (pre-commit hook, lint, etc.) | Try to fix inline and re-commit. If unfixable, print the warning from Phase 13e and leave changes staged. Never use `--no-verify`. |
+| Phase 13 detects unexpected files in `git status` | Ask the user before staging. Never auto-include suspicious paths (`node_modules/`, `.env`, `target/`, etc.). |
 
 ---
 
@@ -846,6 +963,9 @@ the summary so it stays canonical):
 - **Phase 12 is the only place** the skill writes to `src/data/releases.json` AND to any file under `src/features/home/components/releases/i18n/`. Never touch them from any other phase. Never write items the user did not explicitly accept in Phase 8 → Phase 12c.
 - **Never write English directly into a `.tsx` literal** anywhere in the codebase. Per `.claude/CLAUDE.md` → Internationalization, every user-facing string lands in all 14 locale files. If a Phase 8 handoff plan would touch frontend code, the "Cross-cutting concerns" section MUST instruct the implementing CLI to follow the i18n contract (English first, then placeholders + TODO markers in the other 13).
 - **Never put technical jargon in user-facing copy.** Release notes are news, not engineering logs. Voice rules in CLAUDE.md → "UI Conventions → Internationalization → Voice for user-facing copy". Apply them in Phase 12e *before* writing anything.
+- **Phase 13 is mandatory.** Every research run ends with a commit unless there are no changes OR the user explicitly opted out. "I'll commit manually later" is not a valid skip reason — on 2026-04-11 "later" became "lost work from a bad merge". Git is the recovery mechanism.
+- **Phase 13 stages files explicitly.** Never `git add -A` / `git add .` — always `git add <path>` per file to avoid sweeping up secrets or drift from other sessions.
+- **Phase 13 never bypasses hooks.** No `--no-verify`, no `--no-gpg-sign`. If a pre-commit hook fails, fix the underlying issue and create a new commit.
 
 ---
 
@@ -967,3 +1087,35 @@ After the 6-run iteration session completed, six follow-up topics accumulated as
 **Rules NOT added:**
 - "Force all findings that touch .tsx to include i18n migration of existing hardcoded strings in the same file." Too aggressive — that's a separate goal (i18n Phase 2-8 migration), not a research skill concern. The research skill only ensures NEW strings from its findings go through i18n, not that existing strings in the same file get migrated.
 - "Add i18n effort as a multiplier to the relevance score." The i18n cost is ~5 minutes per finding (add key to en.ts, use t.section.key in component) — not enough to change a relevance score.
+
+### 2026-04-11 — Phase 13 atomic commit (post merge-loss incident)
+
+**Context:** A bad merge on 2026-04-11 wiped out multiple research sessions' worth of code — Task Runner depth presets, DevProject monitoring fields, event registry entries, TaskOutputPanel markdown toggle, command name registrations, store slice signatures, API wrappers. None of it was committed. The Rust models still had their old struct shapes, the frontend bindings had reverted to pre-run forms, and the migration file still contained the ALTER TABLE statements — a classic broken-state drift. Recovery took ~30 minutes of manual re-typing from the conversation transcript.
+
+**Root cause:** The research skill ended after Phase 12 (or Phase 11 if Phase 12 skipped) with no commit step. "Just commit manually later" was the implicit default. The Obsidian vault persisted the Research/Lessons notes (so the *learning* was intact), but the code changes from `implement right away` runs and handoff plans had no git anchor. A subsequent merge reconciliation dropped them silently.
+
+**Rule added: Phase 13 — Atomic Commit (mandatory).**
+
+Every research run now ends with an explicit commit step. The design choices:
+
+- **Explicit file staging (`git add <path>`), not `git add -A`.** Avoids sweeping up secrets, build artifacts, or drift from concurrent sessions. The skill builds the file list from known outputs (handoff path, in-session edits, release log files).
+- **`research:` commit prefix.** Makes research-run commits filterable via `git log --grep="^research:"`. Useful for forensics and for the `/gsd:pr-branch` skill to detect research commits when building PR branches.
+- **Commit body explains *why*, not *what*.** The file list is in `git diff`; the message records source URL, accepted findings, handoff path, and catalog invocations. This is what's valuable in `git log` a month later.
+- **No `--no-verify`, no `--amend`.** Hooks run, and if they fail, the skill fixes inline and creates a NEW commit. Amending after a hook failure loses the hook's feedback.
+- **Only two skip conditions: no changes, explicit user opt-out.** "I'll commit later" is not a valid skip — the whole point is to make the commit happen *now*, before context is lost. The skill gently pushes back if the user offers to commit manually.
+- **Phase 11 summary shows the commit SHA.** One line the user can scan to verify the run is safe in git before closing the session.
+- **Commit failure doesn't block the Research note.** Even if the commit fails, the Obsidian Research note and Lessons note are written — the learning loop is always preserved, separate from the code-safety loop.
+
+**Rules considered but not added:**
+
+- "Push after commit." Too much side effect — push is a shared-state action, commit is local. The user may want to review multiple research commits before pushing. Phase 13 stops at commit.
+- "Auto-create a branch for each research run." Overkill for single-finding runs. The `/gsd:pr-branch` skill already handles branch creation when needed.
+- "Use `git stash` as a safety net before the run." Wrong direction — stashing makes recovery harder, not easier. Commit IS the safety net.
+- "Block Phase 13 on TypeScript errors." Too brittle — pre-existing errors in unrelated files would block every research run. The pre-commit hook is the right place for lint/type checking.
+- "Run `tsc --noEmit` automatically before committing." Compelling but expensive — tsc takes 60-90s on this repo. The pre-commit hook runs it for changed files already; full checks belong in CI.
+
+**Open questions for future runs:**
+
+- Will users respect the explicit stage rule, or will they push to include unrelated drift? The "unexpected files" prompt in 13b is the checkpoint — watch whether it fires often or never.
+- Does the `research:` prefix get picked up by `/gsd:pr-branch`? It should — verify on next PR cycle.
+- Is the commit message template too verbose for single-finding runs? Possibly — the "optional 1-2 line summary" slot is there to let short runs stay short.

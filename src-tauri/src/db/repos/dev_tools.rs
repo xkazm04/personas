@@ -21,6 +21,8 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         status: row.get("status")?,
         tech_stack: row.get("tech_stack")?,
         github_url: row.get("github_url").unwrap_or(None),
+        monitoring_credential_id: row.get("monitoring_credential_id").unwrap_or(None),
+        monitoring_project_slug: row.get("monitoring_project_slug").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -155,6 +157,7 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
+        depth: row.get::<_, Option<String>>("depth")?.unwrap_or_else(|| "quick".to_string()),
     })
 }
 
@@ -246,6 +249,7 @@ pub fn create_project(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_project(
     pool: &DbPool,
     id: &str,
@@ -254,6 +258,8 @@ pub fn update_project(
     status: Option<&str>,
     tech_stack: Option<Option<&str>>,
     github_url: Option<Option<&str>>,
+    monitoring_credential_id: Option<Option<&str>>,
+    monitoring_project_slug: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -268,6 +274,8 @@ pub fn update_project(
         push_field!(status, "status", sets, param_idx);
         push_field!(tech_stack, "tech_stack", sets, param_idx);
         push_field!(github_url, "github_url", sets, param_idx);
+        push_field!(monitoring_credential_id, "monitoring_credential_id", sets, param_idx);
+        push_field!(monitoring_project_slug, "monitoring_project_slug", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -289,6 +297,12 @@ pub fn update_project(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = github_url {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = monitoring_credential_id {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = monitoring_project_slug {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));
@@ -1466,6 +1480,7 @@ pub fn get_task_by_id(pool: &DbPool, id: &str) -> Result<DevTask, AppError> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_task(
     pool: &DbPool,
     project_id: Option<&str>,
@@ -1474,6 +1489,7 @@ pub fn create_task(
     source_idea_id: Option<&str>,
     goal_id: Option<&str>,
     status: Option<&str>,
+    depth: Option<&str>,
 ) -> Result<DevTask, AppError> {
     if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
@@ -1483,12 +1499,13 @@ pub fn create_task(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let status = status.unwrap_or("queued");
+        let depth = depth.unwrap_or("quick");
 
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_tasks (id, project_id, title, description, source_idea_id, goal_id, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params![id, project_id, title, description, source_idea_id, goal_id, status, now],
+            "INSERT INTO dev_tasks (id, project_id, title, description, source_idea_id, goal_id, status, depth, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![id, project_id, title, description, source_idea_id, goal_id, status, depth, now],
         )?;
 
         get_task_by_id(pool, &id)

@@ -434,12 +434,12 @@ mod tests {
 
     #[test]
     fn test_diagnose_timeout_max_cap() {
-        // 1_200_000 * 2 = 2_400_000 -> capped at 1_800_000
+        // 1_200_000 * 2 = 2_400_000 -> capped at MAX_TIMEOUT_MS (1_200_000)
         let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0, None);
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
-                new_timeout_ms: 1_800_000
+                new_timeout_ms: 1_200_000
             }
         );
     }

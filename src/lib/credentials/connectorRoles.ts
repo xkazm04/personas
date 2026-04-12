@@ -122,7 +122,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // -- Specialty -------------------------------------------------
   role('auth_identity',       ['clerk']),
-  role('ai_platform',         ['openai', 'leonardo_ai', 'elevenlabs']),
+  role('ai_platform',         ['openai', 'google_gemini', 'leonardo_ai', 'elevenlabs']),
   role('advertising',         ['google_ads']),
   role('e_signature',         ['docusign']),
   role('hr_recruiting',       ['greenhouse']),

@@ -466,6 +466,55 @@ html {
   font-size: 17px;
 }
 
+/* XL — maximum readability (18px base) */
+[data-text-scale="xl"] {
+  font-size: 18px;
+}
+
+[data-text-scale="xl"] .text-xs {
+  font-size: 0.9rem;
+}
+
+[data-text-scale="xl"] .text-sm {
+  font-size: 1.0625rem;
+}
+
+[data-text-scale="xl"] .text-\[7px\] {
+  font-size: 10px;
+}
+
+[data-text-scale="xl"] .text-\[8px\] {
+  font-size: 11px;
+}
+
+[data-text-scale="xl"] .text-\[9px\] {
+  font-size: 12px;
+}
+
+[data-text-scale="xl"] .text-\[10px\] {
+  font-size: 13px;
+}
+
+[data-text-scale="xl"] .text-\[11px\] {
+  font-size: 14px;
+}
+
+[data-text-scale="xl"] .text-\[12px\] {
+  font-size: 15px;
+}
+
+[data-text-scale="xl"] .text-\[13px\] {
+  font-size: 16px;
+}
+
+[data-text-scale="xl"] .text-\[14px\] {
+  font-size: 17px;
+}
+
+[data-text-scale="xl"] .text-\[15px\] {
+  font-size: 18px;
+}
+
 /* -- Brightness --
    Driven by --app-brightness CSS variable (set from JS).
    Dark themes:  low=1.25  mid=1.38  high=1.50

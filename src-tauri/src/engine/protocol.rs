@@ -188,6 +188,7 @@ impl MockProtocol {
                 ProtocolMessage::ManualReview { .. } => "ManualReview",
                 ProtocolMessage::ExecutionFlow { .. } => "ExecutionFlow",
                 ProtocolMessage::KnowledgeAnnotation { .. } => "KnowledgeAnnotation",
+                ProtocolMessage::ProposeImprovement { .. } => "ProposeImprovement",
             };
             disc == type_name
         })

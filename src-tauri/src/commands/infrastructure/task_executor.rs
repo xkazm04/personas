@@ -45,6 +45,7 @@ fn build_task_prompt(
     idea_context: Option<String>,
     goal_context: Option<String>,
     codebase_context: Option<String>,
+    depth: &str,
 ) -> String {
     let mut prompt = String::new();
 
@@ -55,6 +56,31 @@ fn build_task_prompt(
         prompt.push('\n');
     }
     prompt.push('\n');
+
+    // Depth-specific instructions
+    match depth {
+        "campaign" => {
+            prompt.push_str("## Execution Strategy: Campaign\n");
+            prompt.push_str("This task has multiple deliverables. Break it into subtasks first:\n");
+            prompt.push_str("1. Analyze the goal and identify 3-7 concrete subtasks\n");
+            prompt.push_str("2. Execute each subtask in sequence\n");
+            prompt.push_str("3. After each subtask, report progress and what was completed\n");
+            prompt.push_str("4. When all subtasks are done, provide a consolidated summary\n\n");
+        }
+        "deep_build" => {
+            prompt.push_str("## Execution Strategy: Deep Build\n");
+            prompt.push_str("This is a complex task requiring thorough planning before implementation:\n");
+            prompt.push_str("1. **Research phase**: Explore the codebase, identify all affected files and dependencies\n");
+            prompt.push_str("2. **Planning phase**: Write a detailed plan with specific file changes, new files, and test strategy\n");
+            prompt.push_str("3. **Implementation phase**: Execute the plan methodically, one component at a time\n");
+            prompt.push_str("4. **Validation phase**: Run tests, verify correctness, check for regressions\n");
+            prompt.push_str("5. **Summary**: Provide a comprehensive report of all changes made\n\n");
+        }
+        _ => {
+            prompt.push_str("## Execution Strategy: Quick Task\n");
+            prompt.push_str("Execute this task directly with minimal planning overhead.\n\n");
+        }
+    }
 
     if let Some(idea) = idea_context {
         prompt.push_str("## Background\n");
@@ -156,6 +182,7 @@ pub async fn dev_tools_execute_task(
         idea_context,
         goal_context,
         codebase_context,
+        &task.depth,
     );
 
     // Mark task as running
@@ -406,6 +433,7 @@ pub async fn dev_tools_start_batch(
                 idea_context,
                 goal_context,
                 codebase_context,
+                &task.depth,
             );
 
             // Mark task as running

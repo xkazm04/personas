@@ -958,6 +958,8 @@ mod tests {
             is_offline: false,
             token_expires_at: None,
             pending_oauth_state: None,
+            google_provider_token: None,
+            google_provider_refresh_token: None,
         };
         let resp = inner.to_response();
         assert!(resp.is_authenticated);
@@ -979,6 +981,8 @@ mod tests {
             is_offline: true,
             token_expires_at: None,
             pending_oauth_state: None,
+            google_provider_token: None,
+            google_provider_refresh_token: None,
         };
         let resp = inner.to_response();
         // Offline with cached user = authenticated but offline-only
@@ -1001,6 +1005,8 @@ mod tests {
             is_offline: false,
             token_expires_at: None,
             pending_oauth_state: None,
+            google_provider_token: None,
+            google_provider_refresh_token: None,
         };
         let resp = inner.to_response();
         assert!(resp.is_authenticated);

@@ -1,0 +1,12 @@
+# Guide topic: understanding-the-interface
+# Destination:  personas-web/public/imgs/guide/topics/understanding-the-interface-<locale>.png
+#
+# Lands on the Home page — a wide shot of the sidebar + workspace so new
+# users can see the overall app structure referenced in the guide prose.
+
+topic: understanding-the-interface
+
+steps:
+  - navigate: home
+  - wait_for: '[data-testid="sidebar-home"]'
+  - wait: 300

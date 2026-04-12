@@ -203,7 +203,7 @@ export default function AppearanceSettings() {
               <Type className="w-4 h-4 text-muted-foreground/70" />
               <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.text_size}</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
                 return (
@@ -219,9 +219,8 @@ export default function AppearanceSettings() {
                   >
                     <span
                       className={`font-semibold ${
-                        scale.id === 'large'
-                          ? 'text-base'
-                          : 'text-lg'
+                        scale.id === 'large' ? 'text-base' :
+                        scale.id === 'larger' ? 'text-lg' : 'text-xl'
                       } ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
                     >
                       Aa

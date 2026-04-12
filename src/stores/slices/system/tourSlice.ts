@@ -426,13 +426,13 @@ export const createTourSlice: StateCreator<
 
       if (ts.completed) {
         // Allow restart — reset this tour's state
-        ts.completed = false;
-        ts.dismissed = false;
         ts.currentStepIndex = 0;
         ts.completedSteps = {};
         ts.subStepIndex = 0;
       }
-      if (ts.dismissed) return;
+      // Always un-dismiss when explicitly starting
+      ts.completed = false;
+      ts.dismissed = false;
 
       const hasProgress = Object.values(ts.completedSteps).some(Boolean);
       set({

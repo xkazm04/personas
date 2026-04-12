@@ -18,10 +18,6 @@ export const ru = {
         label: "Агенты",
         description: "Создавайте, настраивайте и управляйте персонажами ваших ИИ-агентов"
       },
-      workflows: {
-        label: "Workflows",
-        description: "Compose multi-agent DAG pipelines where each persona's output feeds into the next"
-      },
       events: {
         label: "События",
         description: "Настройка триггеров событий, вебхуков и автоматизации"

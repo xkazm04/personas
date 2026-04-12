@@ -5,12 +5,10 @@
       "version": "roadmap",
       "status": "roadmap",
       "items": [
-        { "id": "1", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 1 },
-        { "id": "2", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 2 },
-        { "id": "3", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 3 },
-        { "id": "4", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 4 },
-        { "id": "5", "type": "feature", "status": "planned", "priority": "next", "sort_order": 5 },
-        { "id": "6", "type": "feature", "status": "planned", "priority": "next", "sort_order": 6 }
+        { "id": "2", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 1 },
+        { "id": "3", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 2 },
+        { "id": "4", "type": "feature", "status": "in_progress", "priority": "now", "sort_order": 3 },
+        { "id": "6", "type": "feature", "status": "planned", "priority": "next", "sort_order": 4 }
       ]
     },
     {

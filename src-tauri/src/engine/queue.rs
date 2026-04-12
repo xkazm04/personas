@@ -716,15 +716,19 @@ mod tests {
 
         // p1: running 1/1 (at per-persona limit of 1)
         tracker.add_running("p1", "e1");
-        // p2: running 2 (unlimited)
+        // p2: running 3 (unlimited) — fills global capacity to 4
         tracker.add_running("p2", "e2");
         tracker.add_running("p2", "e3");
+        tracker.add_running("p2", "e6");
 
-        // Queue on p1 (blocked by per-persona) and p3 (blocked by nothing yet)
+        // Both are queued because global capacity is full (4/4)
         tracker.admit("p1", "e4", 1, ExecutionPriority::Urgent);
         tracker.admit("p3", "e5", 0, ExecutionPriority::Normal);
 
-        // 3 running, global has room. drain_next_global should skip p1 (at per-persona limit)
+        // Free up one global slot
+        tracker.remove_running("p2", "e6");
+
+        // drain_next_global should skip p1 (at per-persona limit of 1)
         // and pick p3's item
         let next = tracker.drain_next_global().unwrap();
         assert_eq!(next.execution_id, "e5");

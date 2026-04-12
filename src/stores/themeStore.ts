@@ -20,7 +20,7 @@ export type ThemeId =
   | 'light-news'
   | 'custom';
 
-export type TextScale = 'default' | 'large' | 'larger';
+export type TextScale = 'large' | 'larger' | 'xl';
 
 export type BrightnessLevel = 'low' | 'mid' | 'high';
 
@@ -73,15 +73,15 @@ export const THEMES: ThemeDefinition[] = [
 ];
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
-  { id: 'default', label: 'Small', description: 'Compact readability' },
-  { id: 'large', label: 'Large', description: 'Default — comfortable reading' },
-  { id: 'larger', label: 'Larger', description: 'Maximum readability' },
+  { id: 'large', label: 'Small', description: 'Compact readability' },
+  { id: 'larger', label: 'Standard', description: 'Default — comfortable reading' },
+  { id: 'xl', label: 'Large', description: 'Maximum readability' },
 ];
 
 const TEXT_SCALE_MULTIPLIERS: Record<TextScale, number> = {
-  default: 1,
   large: 15 / 14,
   larger: 16.5 / 14,
+  xl: 18 / 14,
 };
 
 /**
@@ -209,7 +209,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       themeId: 'dark-midnight' as ThemeId,
-      textScale: 'large' as TextScale,
+      textScale: 'larger' as TextScale,
       timezone: 'local' as TimezoneMode,
       brightness: 'low' as BrightnessLevel,
       customTheme: null as CustomThemeConfig | null,
@@ -249,11 +249,15 @@ export const useThemeStore = create<ThemeState>()(
       name: 'persona-theme',
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Migrate removed 'default' scale to 'large' (new "Small")
+          if ((state.textScale as string) === 'default') {
+            state.textScale = 'large';
+          }
           if (state.themeId === 'custom' && state.customTheme) {
             injectCustomThemeStyle(deriveCustomThemeVars(state.customTheme));
           }
           applyThemeToDOM(state.themeId, state.customTheme);
-          applyTextScale(state.textScale ?? 'large');
+          applyTextScale(state.textScale ?? 'larger');
           applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
         }
       },

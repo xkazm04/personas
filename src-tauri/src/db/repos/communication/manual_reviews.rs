@@ -115,6 +115,34 @@ pub fn get_all(
     })
 }
 
+/// Fetch recently resolved (approved/rejected/resolved) reviews for a persona.
+///
+/// Used by the runner to inject prior review decisions into the next execution
+/// so the agent can learn from past human feedback.
+///
+/// - `days`: lookback window in days
+/// - `limit`: max number of reviews to return
+pub fn get_recent_resolved(
+    pool: &DbPool,
+    persona_id: &str,
+    days: i64,
+    limit: i64,
+) -> Result<Vec<PersonaManualReview>, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::get_recent_resolved", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_manual_reviews
+             WHERE persona_id = ?1
+               AND status IN ('approved', 'rejected', 'resolved')
+               AND (julianday('now') - julianday(created_at)) <= ?2
+             ORDER BY created_at DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![persona_id, days, limit], row_to_review)?;
+        Ok(collect_rows(rows, "manual_reviews::get_recent_resolved"))
+    })
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,

@@ -1,4 +1,4 @@
-use super::types::{providers, CliArgs, ModelProfile};
+use super::types::{CliArgs, ModelProfile};
 use crate::db::models::{LlmUsageHint, Persona, PersonaToolDefinition};
 #[cfg(test)]
 use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
@@ -996,6 +996,8 @@ You have a layered memory system. Knowing where each layer lives helps you query
 - Need a remembered preference or past decision? Persona memory.
 - Need a chunk of authoritative source text? Knowledge base.
 - Need this-run state? Just keep it in your working context.
+
+**Citation discipline:** When your response draws on knowledge base content, always cite the source document. Include the document title (and source path if available) so the user can verify your claims against the original material. Example: *According to "Sleep Optimization Guide" (health/sleep-protocols.md), morning sunlight within 30 minutes of waking improves circadian alignment.*
 
 Treat memory writes as compounding: every well-titled, well-categorized memory you emit makes the next run cheaper.
 

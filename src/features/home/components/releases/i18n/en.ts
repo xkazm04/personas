@@ -92,11 +92,6 @@ export const en = {
         label: 'Roadmap',
         summary: "What we're building now and what comes next.",
         items: {
-          '1': {
-            title: 'Dev Mode',
-            description:
-              'Tools to debug, hot-reload, and iterate on your agents without leaving the app while you build.',
-          },
           '2': {
             title: 'Cloud Integration',
             description:
@@ -111,11 +106,6 @@ export const en = {
             title: 'Use Personas in your language',
             description:
               'Full multi-language support, including right-to-left layouts and language-specific fonts.',
-          },
-          '5': {
-            title: 'Distribution & Polish',
-            description:
-              'One-click installers, automatic updates, and signed binaries on every platform.',
           },
           '6': {
             title: 'Team Workspaces',

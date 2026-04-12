@@ -333,6 +333,18 @@ body {
 [data-text-scale="larger"] .typo-data-lg    { font-size: 1.75rem; }
 [data-text-scale="larger"] .typo-code       { font-size: 0.85rem; }
 
+/* XL — maximum readability */
+[data-text-scale="xl"] .typo-hero       { font-size: 3rem; }
+[data-text-scale="xl"] .typo-heading-lg { font-size: 1.625rem; }
+[data-text-scale="xl"] .typo-heading    { font-size: 1.0625rem; }
+[data-text-scale="xl"] .typo-body       { font-size: 1.0625rem; }
+[data-text-scale="xl"] .typo-body-lg    { font-size: 1.1875rem; }
+[data-text-scale="xl"] .typo-caption    { font-size: 0.9rem; }
+[data-text-scale="xl"] .typo-label      { font-size: 0.9rem; }
+[data-text-scale="xl"] .typo-data       { font-size: 1.0625rem; }
+[data-text-scale="xl"] .typo-data-lg    { font-size: 1.875rem; }
+[data-text-scale="xl"] .typo-code       { font-size: 0.9rem; }
+
 /* -- JSON Viewer Line Numbers -----------------------------------------------
    CSS-counter-based line numbers for HighlightedJson. */
 

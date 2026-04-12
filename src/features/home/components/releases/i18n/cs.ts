@@ -79,11 +79,6 @@ export const cs = {
         label: 'Plán',
         summary: 'Co stavíme teď a co přijde dál.',
         items: {
-          '1': {
-            title: 'Vývojářský režim',
-            description:
-              'Nástroje pro ladění, hot-reload a rychlou iteraci na vašich agentech, aniž byste opustili aplikaci.',
-          },
           '2': {
             title: 'Cloudová integrace',
             description:
@@ -98,11 +93,6 @@ export const cs = {
             title: 'Používejte Personas ve svém jazyce',
             description:
               'Plná podpora více jazyků, včetně rozložení zprava doleva a fontů specifických pro jednotlivé jazyky.',
-          },
-          '5': {
-            title: 'Distribuce a doladění',
-            description:
-              'Instalátory na jedno kliknutí, automatické aktualizace a podepsané binárky na všech platformách.',
           },
           '6': {
             title: 'Týmové pracovní prostory',

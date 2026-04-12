@@ -1,0 +1,65 @@
+{
+  "id": "builtin-google-gemini",
+  "name": "google_gemini",
+  "label": "Google Gemini",
+  "color": "#4285F4",
+  "icon_url": "/icons/connectors/google-gemini.svg",
+  "category": "ai",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "AIza...",
+      "helpText": "From Google AI Studio (aistudio.google.com) -> Get API Key",
+      "sensitive": true
+    },
+    {
+      "key": "model",
+      "label": "Model",
+      "type": "select",
+      "required": false,
+      "options": [
+        "gemini-3-flash-preview",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "gemini-1.5-pro"
+      ],
+      "helpText": "Gemini 3 Flash Preview is the latest. 2.5 Flash has a generous free tier (1,500 req/day). 2.5 Pro is the most accurate. 1.5 Pro kept for long-context workloads."
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models?key={{api_key}}",
+    "method": "GET",
+    "description": "Lists available Gemini models to validate the API key"
+  },
+  "services": [
+    {
+      "toolName": "google_gemini_generate",
+      "label": "Generate Content"
+    },
+    {
+      "toolName": "google_gemini_stream",
+      "label": "Stream Content"
+    },
+    {
+      "toolName": "google_gemini_embed",
+      "label": "Embeddings"
+    },
+    {
+      "toolName": "google_gemini_count_tokens",
+      "label": "Count Tokens"
+    }
+  ],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Google Gemini text and chat API for general-purpose generation, multi-turn conversations, embeddings, and token counting. Use this for second-opinion LLMs, cross-family consensus, and tasks where a non-Anthropic model helps (e.g. design-direction brainstorming, copywriting refreshes).",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://ai.google.dev/gemini-api/docs",
+    "setup_guide": "1. Go to aistudio.google.com\n2. Click 'Get API Key' in the top-right\n3. Create a new API key (or use an existing one)\n4. Copy the key and paste it here\n\nFree tier: 1,500 requests/day on Gemini 2.5 Flash. Pro models are paid beyond a small daily allowance.",
+    "pricing_tier": "freemium"
+  }
+}

@@ -1041,6 +1041,39 @@ const google_ads: EP[] = [
   ], ['Budgets'], jsonBody(), 'Body: { "operations": [{ "create": { "name": "My Budget", "amountMicros": "10000000", "deliveryMethod": "STANDARD" } }] }'),
 ];
 
+// -- Google Gemini ----------------------------------------------------
+
+const google_gemini: EP[] = [
+  ep('GET', '/v1beta/models', 'List available Gemini models', [
+    queryP('key', true, 'API key'),
+  ], ['Models']),
+  ep('GET', '/v1beta/models/{model}', 'Get model metadata', [
+    pathP('model', 'Model name e.g. gemini-2.5-pro'),
+    queryP('key', true, 'API key'),
+  ], ['Models']),
+  ep('POST', '/v1beta/models/{model}:generateContent', 'Generate text or chat response', [
+    pathP('model', 'Model name e.g. gemini-2.5-flash'),
+    queryP('key', true, 'API key'),
+  ], ['Generate'], jsonBody(), 'Body: { "contents": [{ "parts": [{ "text": "Write a haiku about the sea." }] }] }'),
+  ep('POST', '/v1beta/models/{model}:streamGenerateContent', 'Stream generation tokens as server-sent events', [
+    pathP('model', 'Model name'),
+    queryP('key', true, 'API key'),
+    queryP('alt', false, 'Set to "sse" for server-sent events'),
+  ], ['Generate'], jsonBody(), 'Body: { "contents": [{ "parts": [{ "text": "..." }] }] }'),
+  ep('POST', '/v1beta/models/{model}:countTokens', 'Count tokens for a prompt before running it', [
+    pathP('model', 'Model name'),
+    queryP('key', true, 'API key'),
+  ], ['Tokens'], jsonBody(), 'Body: { "contents": [{ "parts": [{ "text": "..." }] }] }'),
+  ep('POST', '/v1beta/models/{model}:embedContent', 'Embed a single content block into a vector', [
+    pathP('model', 'Embedding model e.g. text-embedding-004'),
+    queryP('key', true, 'API key'),
+  ], ['Embeddings'], jsonBody(), 'Body: { "content": { "parts": [{ "text": "..." }] } }'),
+  ep('POST', '/v1beta/models/{model}:batchEmbedContents', 'Embed multiple content blocks in one call', [
+    pathP('model', 'Embedding model'),
+    queryP('key', true, 'API key'),
+  ], ['Embeddings'], jsonBody(), 'Body: { "requests": [{ "model": "models/text-embedding-004", "content": { "parts": [{ "text": "..." }] } }] }'),
+];
+
 // -- ElevenLabs -------------------------------------------------------
 
 const elevenlabs: EP[] = [
@@ -1258,6 +1291,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   kubernetes,
   elevenlabs,
   leonardo_ai,
+  google_gemini,
   linkedin,
   reddit,
   google_ads,

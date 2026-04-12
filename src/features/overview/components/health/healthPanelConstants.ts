@@ -1,20 +1,16 @@
-import { Monitor, Cpu, Cloud, User, Activity } from 'lucide-react';
+import { Monitor, Cloud, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const SECTION_ICONS: Record<string, LucideIcon> = {
   local: Monitor,
-  agents: Cpu,
   cloud: Cloud,
   account: User,
-  subscriptions: Activity,
 };
 
 export const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
   local: { badge: 'bg-violet-500/10', icon: 'text-violet-400' },
-  agents: { badge: 'bg-emerald-500/10', icon: 'text-emerald-400' },
   cloud: { badge: 'bg-sky-500/10', icon: 'text-sky-400' },
   account: { badge: 'bg-amber-500/10', icon: 'text-amber-400' },
-  subscriptions: { badge: 'bg-rose-500/10', icon: 'text-rose-400' },
 };
 
 export const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-violet-400' };
@@ -22,8 +18,6 @@ export const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-vi
 /** Skeleton section stubs -- rendered immediately while backend check runs. */
 export const SKELETON_SECTIONS = [
   { id: 'local', label: 'Local Environment' },
-  { id: 'agents', label: 'Agents' },
   { id: 'cloud', label: 'Cloud Deployment' },
   { id: 'account', label: 'Account' },
-  ...(import.meta.env.DEV ? [{ id: 'subscriptions', label: 'Subscription Health', devOnly: true }] : []),
 ];

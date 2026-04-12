@@ -370,6 +370,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "calendly" => Some("https://api.calendly.com"),
         "elevenlabs" => Some("https://api.elevenlabs.io/v1"),
         "leonardo_ai" => Some("https://cloud.leonardo.ai/api/rest/v1"),
+        "google_gemini" => Some("https://generativelanguage.googleapis.com"),
         "betterstack" => Some("https://uptime.betterstack.com"),
         "mixpanel" => Some("https://mixpanel.com"),
         "twilio_segment" => Some("https://api.segment.io"),
