@@ -2890,9 +2890,12 @@ export const en = {
       tab_activity: "Activity",
       tab_matrix: "Matrix",
       tab_use_cases: "Use Cases",
+      tab_prompt: "Prompt",
       tab_lab: "Lab",
       tab_connectors: "Connectors",
       tab_chat: "Chat",
+      tab_design: "Design",
+      tab_health: "Health",
       tab_settings: "Settings",
 
       // EditorBanners

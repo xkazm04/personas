@@ -13,7 +13,7 @@ import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab, MatrixTab,
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, LabTab, ChatTab,
+  PersonaConnectorsTab, LabTab, ChatTab, DesignTab, HealthTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
@@ -151,7 +151,6 @@ export function EditorBody() {
               {editorTab === 'matrix' && (
                 <EditorTabContent className="space-y-6">
                   <MatrixTab />
-                  <PersonaPromptEditor />
                 </EditorTabContent>
               )}
               {editorTab === 'use-cases' && (
@@ -159,6 +158,7 @@ export function EditorBody() {
                   <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />
                 </EditorTabContent>
               )}
+              {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && (
                 <EditorTabContent>
@@ -166,6 +166,8 @@ export function EditorBody() {
                 </EditorTabContent>
               )}
               {editorTab === 'chat' && <ChatTab />}
+              {editorTab === 'design' && <DesignTab />}
+              {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <EditorTabContent>
                   <PersonaSettingsTab

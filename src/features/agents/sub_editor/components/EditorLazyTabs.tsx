@@ -24,3 +24,9 @@ export const LabTab = lazy(() =>
 export const ChatTab = lazy(() =>
   import('@/features/agents/sub_chat/ChatTab').then((m) => ({ default: m.ChatTab })),
 );
+export const DesignTab = lazy(() =>
+  import('@/features/agents/sub_design').then((m) => ({ default: m.DesignTab })),
+);
+export const HealthTab = lazy(() =>
+  import('@/features/agents/sub_health').then((m) => ({ default: m.HealthTab })),
+);

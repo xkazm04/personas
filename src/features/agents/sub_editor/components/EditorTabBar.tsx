@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Check, Activity, MessageCircle, Grid3X3 } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Check, Activity, MessageCircle, Grid3X3, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
@@ -14,9 +14,12 @@ const tabDefs: TabDefBase[] = [
   { id: 'activity', labelKey: 'tab_activity', icon: Activity, minTier: TIERS.TEAM },
   { id: 'matrix', labelKey: 'tab_matrix', icon: Grid3X3, minTier: TIERS.TEAM },
   { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
+  { id: 'prompt', labelKey: 'tab_prompt', icon: FileText },
   { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
   { id: 'connectors', labelKey: 'tab_connectors', icon: Link },
   { id: 'chat', labelKey: 'tab_chat', icon: MessageCircle },
+  { id: 'design', labelKey: 'tab_design', icon: Wand2 },
+  { id: 'health', labelKey: 'tab_health', icon: HeartPulse },
   { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
