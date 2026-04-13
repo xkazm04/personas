@@ -15,6 +15,7 @@
     "ecommerce": { "label": "E-Commerce", "color": "#7AB55C", "icon": "ShoppingBag" },
     "scheduling": { "label": "Scheduling", "color": "#006BFF", "icon": "Calendar" },
     "productivity": { "label": "Productivity", "color": "#eab308", "icon": "FileText" },
+    "time-tracking": { "label": "Time Tracking", "color": "#f59e0b", "icon": "Activity" },
     "cloud": { "label": "Cloud", "color": "#3b82f6", "icon": "Cloud" },
     "design": { "label": "Design", "color": "#F24E1E", "icon": "Layout" },
     "ai": { "label": "AI", "color": "#6C3AEF", "icon": "Bot" },
@@ -92,7 +93,10 @@
     "roam": "productivity",
     "miro": "productivity",
     "news_api": "productivity",
-    "toggl": "productivity",
+
+    "toggl": "time-tracking",
+    "clockify": "time-tracking",
+    "harvest": "time-tracking",
 
     "figma": "design",
     "canva": "design",
@@ -198,6 +202,7 @@
     "cloudflare_r2": "storage",
     "backblaze_b2": "storage",
     "dropbox": "storage",
+    "local_drive": "storage",
 
     "typeform": "forms",
     "tally": "forms",

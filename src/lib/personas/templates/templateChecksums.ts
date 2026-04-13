@@ -41,7 +41,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'finance/expense-receipt-processor.json': '001a6c358b512d0c',
   'finance/finance-controller.json': '001f83f967dfe60a',
   'finance/financial-stocks-signaller.json': '0013fe11690b5b1f',
-  'finance/freelancer-invoice-autopilot.json': '00001d171ba0a8dc',
+  'finance/freelancer-invoice-autopilot.json': '0015f56f8d8666da',
   'finance/invoice-tracker.json': '00085ec0fc79c818',
   'finance/market-intelligence-scout.json': '0001868b7da8f641',
   'finance/personal-finance-use-case.json': '000913641254d030',
