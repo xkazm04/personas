@@ -1,4 +1,4 @@
-import { Palette, Wrench, FileSignature, Brain, ScanLine, FlaskConical, type LucideIcon } from 'lucide-react';
+import { Palette, Wrench, FileSignature, Brain, ScanLine, FlaskConical, HardDrive, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -25,6 +25,7 @@ export default function PluginBrowsePage() {
     { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
     { id: 'ocr', label: t.plugins.ocr_label, description: t.plugins.ocr_desc, icon: ScanLine, color: 'text-cyan-400', activeBg: 'bg-cyan-500/10', activeBorder: 'border-cyan-500/20' },
     { id: 'research-lab', label: 'Research Lab', description: 'Academic paper search and hypothesis tracking', icon: FlaskConical, color: 'text-emerald-400', activeBg: 'bg-emerald-500/10', activeBorder: 'border-emerald-500/20' },
+    { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive, color: 'text-sky-400', activeBg: 'bg-sky-500/10', activeBorder: 'border-sky-500/20' },
   ];
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);

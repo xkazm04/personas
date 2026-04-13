@@ -1,0 +1,26 @@
+{
+  "id": "builtin-local-drive",
+  "name": "local_drive",
+  "label": "Local Drive",
+  "color": "#0EA5E9",
+  "icon_url": "/icons/connectors/local-drive.svg",
+  "category": "storage",
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "is_builtin": true,
+    "always_active": true,
+    "summary": "Managed local filesystem for agent exports. Files survive app upgrades, live in the OS app-data directory, and are browsable via the Drive plugin.",
+    "auth_type": "builtin",
+    "auth_type_label": "Built-in",
+    "runtime_env": {
+      "LOCAL_DRIVE_ROOT": "resolved at runtime from drive_get_root"
+    },
+    "auth_methods": [
+      { "id": "builtin", "label": "Built-in", "type": "credential", "is_default": true }
+    ]
+  }
+}
