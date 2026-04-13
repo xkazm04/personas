@@ -146,3 +146,10 @@ function SearchChipInputImpl({
     </div>
   );
 }
+
+/**
+ * Memoized export — prevents re-renders when only upstream gallery data changes
+ * (e.g. items array updating after debounce) while this component's own props
+ * remain stable. Critical for keeping input focus across fetch cycles.
+ */
+export const SearchChipInput = memo(SearchChipInputImpl);
