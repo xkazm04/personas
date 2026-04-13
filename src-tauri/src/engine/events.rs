@@ -15,12 +15,20 @@
 //! (it has a `Self: Sized` bound and is not callable through
 //! `&dyn ExecutionEventEmitter`).
 //!
-//! Phase 0 scaffolding (2026-04-08): this module is additive — no existing
-//! engine code calls it yet. The emitter is threaded through `runner.rs` and
-//! related files in a follow-up pass. `#[allow(dead_code)]` is temporary
-//! and should come off once the threading is complete.
-
-#![allow(dead_code)]
+//! ## Threading status (2026-04-13, /research run on A2A-Kit video)
+//!
+//! As of 2026-04-13 the trait is wired into `runner.rs` for the four
+//! `EXECUTION_STATUS` transition sites: early credential failure, post-spawn
+//! failure, stream loop failure, and the final-status emission at the end of
+//! `run_execution`. Other emit sites in `runner.rs` (circuit breaker, trace
+//! spans, raw output lines) still call `app.emit(...)` directly because they
+//! emit non-state-transition payloads and have no consumers in the daemon
+//! path yet. Migrating those is a follow-up when daemon mode or test-time
+//! event capture grows a real consumer.
+//!
+//! The first scaffolding pass landed 2026-04-08 (run 1, A2A gateway). The
+//! "follow-up pass" referenced in that run's comment is this module's
+//! current state — additive but no longer dead code.
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -118,5 +126,65 @@ mod tests {
     fn noop_emitter_usable_through_trait_object() {
         let emitter: Box<dyn ExecutionEventEmitter> = Box::new(NoOpEmitter::new());
         emitter.emit_json("via-dyn", serde_json::Value::Null);
+    }
+
+    /// Capture-mode emitter used by tests that need to assert which events
+    /// the engine emitted. Mirrors the tracing patterns used by other
+    /// engine tests but stays event-shaped instead of log-shaped.
+    struct CapturingEmitter {
+        events: std::sync::Mutex<Vec<(String, serde_json::Value)>>,
+    }
+
+    impl CapturingEmitter {
+        fn new() -> Self {
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
+        }
+
+        fn snapshot(&self) -> Vec<(String, serde_json::Value)> {
+            self.events.lock().unwrap().clone()
+        }
+    }
+
+    impl ExecutionEventEmitter for CapturingEmitter {
+        fn emit_json(&self, event: &str, payload: serde_json::Value) {
+            self.events.lock().unwrap().push((event.to_string(), payload));
+        }
+    }
+
+    #[test]
+    fn capturing_emitter_records_typed_emit_calls() {
+        let cap = CapturingEmitter::new();
+        cap.emit("execution-status", &serde_json::json!({
+            "execution_id": "exec-1",
+            "status": "completed",
+        }));
+        cap.emit("execution-status", &serde_json::json!({
+            "execution_id": "exec-1",
+            "status": "failed",
+            "error": "boom",
+        }));
+        let snap = cap.snapshot();
+        assert_eq!(snap.len(), 2);
+        assert_eq!(snap[0].0, "execution-status");
+        assert_eq!(snap[0].1["status"], "completed");
+        assert_eq!(snap[1].1["status"], "failed");
+        assert_eq!(snap[1].1["error"], "boom");
+    }
+
+    #[test]
+    fn engine_can_swap_emitters_at_runtime_via_trait_object() {
+        // Proves the substitution contract that justifies the trait:
+        // a single function can be parameterized over &dyn ExecutionEventEmitter
+        // and called with either a real backing or a no-op without code change.
+        fn emit_one(emitter: &dyn ExecutionEventEmitter) {
+            emitter.emit_json("test", serde_json::json!({ "ok": true }));
+        }
+
+        let cap = CapturingEmitter::new();
+        emit_one(&cap);
+        emit_one(&NoOpEmitter::new());
+        assert_eq!(cap.snapshot().len(), 1);
     }
 }

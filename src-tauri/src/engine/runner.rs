@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
+use super::events::{ExecutionEventEmitter, TauriEmitter};
 use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 
 /// Per-credential mutex pool to prevent concurrent OAuth token refreshes from
@@ -120,6 +121,13 @@ pub async fn run_execution(
     circuit_breaker: Arc<super::failover::ProviderCircuitBreaker>,
 ) -> ExecutionResult {
     let start_time = std::time::Instant::now();
+
+    // Wrap the AppHandle in an ExecutionEventEmitter for state-transition
+    // events. The four EXECUTION_STATUS emissions in this function go through
+    // `emitter.emit(...)` so that headless runtimes (daemon, tests) can later
+    // substitute a NoOpEmitter without touching the engine's transition logic.
+    // See `engine/events.rs` for the threading-status notes.
+    let emitter = TauriEmitter::new(app.clone());
 
     // Initialize trace collector for structured execution tracing
     let trace = TraceCollector::new(&execution_id, &persona.id, chain_trace_id);
@@ -329,9 +337,9 @@ pub async fn run_execution(
                 line: format!("[ERROR] {msg}"),
             },
         );
-        let _ = app.emit(
+        emitter.emit(
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(msg.clone()),
@@ -926,9 +934,9 @@ pub async fn run_execution(
                 line: format!("[ERROR] {error_msg}"),
             },
         );
-        let _ = app.emit(
+        emitter.emit(
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
@@ -1090,9 +1098,9 @@ pub async fn run_execution(
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        let _ = app.emit(
+        emitter.emit(
             event_name::EXECUTION_STATUS,
-            ExecutionStatusEvent {
+            &ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
                 error: Some(error_msg.clone()),
@@ -1823,9 +1831,9 @@ pub async fn run_execution(
     }
 
     // Emit final status
-    let _ = app.emit(
+    emitter.emit(
         event_name::EXECUTION_STATUS,
-        ExecutionStatusEvent {
+        &ExecutionStatusEvent {
             execution_id: execution_id.clone(),
             status: final_status,
             error: error.clone(),

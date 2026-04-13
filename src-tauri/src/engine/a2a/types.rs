@@ -50,8 +50,10 @@ pub struct AgentSkill {
 // JSON-RPC envelope (POST /a2a/{persona_id})
 // =============================================================================
 
-/// Inbound A2A request. We accept any of the known method names but only
-/// `message/send` is implemented; other methods return JSON-RPC -32601.
+/// Inbound A2A request. The `params` field is intentionally untyped at the
+/// envelope level so the dispatch layer in `management_api.rs` can decode it
+/// into the per-method shape (`MessageSendParams` for `message/send`,
+/// `TaskIdParams` for `tasks/get` and `tasks/cancel`, etc.).
 #[derive(Debug, Clone, Deserialize)]
 pub struct A2ARequest {
     /// JSON-RPC version field. Accepted on the way in for protocol
@@ -64,13 +66,21 @@ pub struct A2ARequest {
     #[serde(default)]
     pub id: Option<serde_json::Value>,
     pub method: String,
+    /// Raw params value. Decoded per-method by the dispatcher.
     #[serde(default)]
-    pub params: Option<MessageSendParams>,
+    pub params: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageSendParams {
     pub message: A2AMessage,
+}
+
+/// Params shape for `tasks/get` and `tasks/cancel`. The A2A spec uses a
+/// bare `{ "id": "..." }` object for both methods.
+#[derive(Debug, Clone, Deserialize)]
+pub struct TaskIdParams {
+    pub id: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -149,6 +159,115 @@ pub struct A2AError {
     pub message: String,
 }
 
+// =============================================================================
+// Task object (returned by tasks/get and tasks/cancel)
+// =============================================================================
+
+/// A2A `Task` object. Personas maps each `executions` row to one task,
+/// using the execution_id as the task id.
+#[derive(Debug, Clone, Serialize)]
+pub struct A2ATask {
+    pub id: String,
+    /// In the A2A spec, contextId groups related tasks (e.g. a multi-turn
+    /// conversation). Personas does not currently model conversation context
+    /// at the A2A surface, so we emit a deterministic value derived from
+    /// the persona id — clients that need history can use it as a grouping
+    /// key but should not rely on it for state lookup.
+    #[serde(rename = "contextId")]
+    pub context_id: String,
+    pub kind: &'static str, // always "task"
+    pub status: A2ATaskStatus,
+    /// History is not exposed yet — empty array keeps clients happy.
+    #[serde(default)]
+    pub history: Vec<serde_json::Value>,
+    /// Output artifacts when the task is in a terminal state.
+    #[serde(default)]
+    pub artifacts: Vec<A2AArtifact>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct A2ATaskStatus {
+    /// One of: "submitted", "working", "completed", "canceled", "failed".
+    pub state: &'static str,
+    /// Timestamp in RFC3339 format. Best-effort: if the executions row has
+    /// no completion time we emit the current time.
+    pub timestamp: String,
+    /// Optional message attached to the state (used for cancel/failure
+    /// reasons). The shape mirrors the spec: a `Message` object with role,
+    /// parts, and messageId.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<A2AStatusMessage>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct A2AStatusMessage {
+    pub kind: &'static str, // "message"
+    pub role: &'static str, // "agent"
+    pub parts: Vec<A2AResponsePart>,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct A2AArtifact {
+    #[serde(rename = "artifactId")]
+    pub artifact_id: String,
+    pub name: &'static str,
+    pub parts: Vec<A2AResponsePart>,
+}
+
+/// Translate a personas `executions.status` string into an A2A task state.
+///
+/// Personas writes statuses like "queued", "running", "completed", "success",
+/// "failed", "error", "cancelled", "timeout". The A2A spec's terminal vocabulary
+/// is more compact: submitted / working / completed / canceled / failed.
+pub fn map_status_to_a2a_state(personas_status: &str) -> &'static str {
+    match personas_status {
+        "queued" | "submitted" | "pending" => "submitted",
+        "running" | "starting" | "in_progress" => "working",
+        "completed" | "success" => "completed",
+        "cancelled" | "canceled" => "canceled",
+        // "timeout" maps to failed (terminal, not user-cancelled). Anything
+        // unrecognised falls through to failed so clients always see a
+        // terminal state instead of an unknown one.
+        _ => "failed",
+    }
+}
+
+/// Result envelope for `tasks/get` / `tasks/cancel` responses.
+#[derive(Debug, Clone, Serialize)]
+pub struct A2ATaskResponse {
+    pub jsonrpc: &'static str,
+    pub id: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<A2ATask>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<A2AError>,
+}
+
+impl A2ATaskResponse {
+    pub fn success(id: serde_json::Value, task: A2ATask) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: Some(task),
+            error: None,
+        }
+    }
+
+    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: None,
+            error: Some(A2AError {
+                code,
+                message: message.into(),
+            }),
+        }
+    }
+}
+
 impl A2AResponse {
     pub fn success(id: serde_json::Value, text: String) -> Self {
         Self {
@@ -204,9 +323,73 @@ mod tests {
         }"#;
         let req: A2ARequest = serde_json::from_str(raw).expect("parse");
         assert_eq!(req.method, "message/send");
-        let params = req.params.expect("params");
+        let raw_params = req.params.expect("params");
+        let params: MessageSendParams =
+            serde_json::from_value(raw_params).expect("decode message send params");
         let text = params.message.collect_text().expect("text");
         assert_eq!(text, "hello world");
+    }
+
+    #[test]
+    fn parses_tasks_get_request() {
+        let raw = r#"{
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tasks/get",
+            "params": { "id": "exec-abc" }
+        }"#;
+        let req: A2ARequest = serde_json::from_str(raw).expect("parse");
+        assert_eq!(req.method, "tasks/get");
+        let params: TaskIdParams =
+            serde_json::from_value(req.params.expect("params")).expect("decode task id params");
+        assert_eq!(params.id, "exec-abc");
+    }
+
+    #[test]
+    fn maps_personas_statuses_to_a2a_states() {
+        assert_eq!(map_status_to_a2a_state("queued"), "submitted");
+        assert_eq!(map_status_to_a2a_state("running"), "working");
+        assert_eq!(map_status_to_a2a_state("completed"), "completed");
+        assert_eq!(map_status_to_a2a_state("success"), "completed");
+        assert_eq!(map_status_to_a2a_state("cancelled"), "canceled");
+        assert_eq!(map_status_to_a2a_state("failed"), "failed");
+        assert_eq!(map_status_to_a2a_state("error"), "failed");
+        assert_eq!(map_status_to_a2a_state("timeout"), "failed");
+        // Unknown / future statuses fall through to a terminal state instead
+        // of leaking an A2A-invalid value to the client.
+        assert_eq!(map_status_to_a2a_state("nonsense-future-state"), "failed");
+    }
+
+    #[test]
+    fn task_response_success_serializes_with_correct_shape() {
+        let task = A2ATask {
+            id: "exec-1".into(),
+            context_id: "ctx-persona-1".into(),
+            kind: "task",
+            status: A2ATaskStatus {
+                state: "completed",
+                timestamp: "2026-04-13T12:00:00Z".into(),
+                message: None,
+            },
+            history: vec![],
+            artifacts: vec![A2AArtifact {
+                artifact_id: "out-1".into(),
+                name: "result",
+                parts: vec![A2AResponsePart {
+                    kind: "text",
+                    text: "final output".into(),
+                }],
+            }],
+        };
+        let resp = A2ATaskResponse::success(serde_json::json!("req-9"), task);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["jsonrpc"], "2.0");
+        assert_eq!(json["id"], "req-9");
+        assert_eq!(json["result"]["id"], "exec-1");
+        assert_eq!(json["result"]["kind"], "task");
+        assert_eq!(json["result"]["status"]["state"], "completed");
+        assert_eq!(json["result"]["artifacts"][0]["parts"][0]["text"], "final output");
+        assert!(json.get("error").is_none() || json["error"].is_null());
     }
 
     #[test]

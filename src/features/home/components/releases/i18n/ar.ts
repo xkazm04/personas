@@ -117,6 +117,12 @@ export const ar = {
             description:
               'A new speech-to-text connector that transcribes audio files or URLs with word-level timing. Powers the YouTube creator assistant for auto-editing, and gives any agent the ability to process voice notes, meeting recordings, or podcast content.',
           },
+          // TODO(i18n-ar): untranslated — English source-of-truth added 2026-04-13
+          '12': {
+            title: 'Other AI tools can check on and stop your agents',
+            description:
+              "When another AI tool calls one of your shared agents, it can now ask 'is this still running?' and 'please stop now' in mid-flight. Long research jobs no longer have to keep the connection open the whole time, and stuck runs can be cancelled cleanly from the calling side. Each agent only ever sees its own runs, so nothing leaks across agents.",
+          },
         },
       },
       roadmap: {
