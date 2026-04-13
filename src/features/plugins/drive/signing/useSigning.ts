@@ -154,6 +154,13 @@ export function useSigning() {
     return exportSignatureSidecar(id);
   }, []);
 
+  // NOTE: consumers that put the returned object in a useEffect dep array
+  // will re-fire the effect whenever `signatures` / `loadingSignatures`
+  // change — which causes an infinite loop if the effect itself triggers
+  // a refresh. Each callback below is individually memoised via useCallback,
+  // so downstream effects should destructure and depend on the specific
+  // callbacks they need (e.g. `const { refreshSignatures } = signing`) and
+  // list *those* in the dep array, not the whole `signing` object.
   return {
     identity,
     signatures,

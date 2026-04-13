@@ -28,8 +28,13 @@ export function DriveSignaturesPanel({
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
 
+  // Destructure the stable callback so the mount effect doesn't re-fire
+  // every time `signing.signatures` changes (which it does inside
+  // refreshSignatures → infinite loop).
+  const { refreshSignatures } = signing;
+
   useEffect(() => {
-    signing.refreshSignatures().catch(() => {
+    refreshSignatures().catch(() => {
       /* toasts handled in hook */
     });
     const esc = (e: KeyboardEvent) => {
@@ -37,7 +42,7 @@ export function DriveSignaturesPanel({
     };
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
-  }, [signing, onClose]);
+  }, [refreshSignatures, onClose]);
 
   const handleExport = async (id: string) => {
     try {

@@ -1,30 +1,18 @@
-import { useCallback, useState } from "react";
-import {
-  ChevronUp,
-  ChevronDown,
-  Folder,
-  File,
-  FileText,
-  FileCode,
-  Image as ImageIcon,
-  Music,
-  Video,
-  Archive,
-  Braces,
-  Table,
-  FileType,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ChevronUp, ChevronDown, FolderOpen, Sparkles } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
-import { driveFormatBytes } from "@/api/drive";
+import { driveFormatBytes, driveList } from "@/api/drive";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { visualForEntry, formatRelativeTime } from "../designTokens";
 
 interface Props {
   drive: UseDriveResult;
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, clientX: number, clientY: number) => void;
   onRenameRequest: (entry: DriveEntry) => void;
+  onNewFolder: () => void;
 }
 
 export function DriveFileList({
@@ -32,6 +20,7 @@ export function DriveFileList({
   onOpen,
   onContextMenu,
   onRenameRequest,
+  onNewFolder,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -40,6 +29,7 @@ export function DriveFileList({
         onOpen={onOpen}
         onContextMenu={onContextMenu}
         onRenameRequest={onRenameRequest}
+        onNewFolder={onNewFolder}
       />
     );
   }
@@ -49,6 +39,7 @@ export function DriveFileList({
         drive={drive}
         onOpen={onOpen}
         onContextMenu={onContextMenu}
+        onNewFolder={onNewFolder}
       />
     );
   }
@@ -58,83 +49,66 @@ export function DriveFileList({
       onOpen={onOpen}
       onContextMenu={onContextMenu}
       onRenameRequest={onRenameRequest}
+      onNewFolder={onNewFolder}
     />
   );
 }
 
 // ============================================================================
-// Shared helpers
+// Shared file chip
 // ============================================================================
 
-function pickIcon(entry: DriveEntry): typeof File {
-  if (entry.kind === "folder") return Folder;
-  const mime = entry.mime ?? "";
-  if (mime.startsWith("image/")) return ImageIcon;
-  if (mime.startsWith("audio/")) return Music;
-  if (mime.startsWith("video/")) return Video;
-  if (mime.includes("json") || mime.includes("yaml") || mime.includes("toml"))
-    return Braces;
-  if (mime.includes("csv") || mime.includes("tab-separated")) return Table;
-  if (mime.includes("typescript") || mime.includes("javascript"))
-    return FileCode;
-  if (mime.startsWith("text/")) return FileText;
-  if (mime.includes("pdf")) return FileType;
-  if (mime.includes("zip") || mime.includes("tar") || mime.includes("gzip"))
-    return Archive;
-  return File;
+function FileChip({
+  entry,
+  size = 28,
+  flat = false,
+}: {
+  entry: DriveEntry;
+  size?: number;
+  flat?: boolean;
+}) {
+  const visual = visualForEntry(entry);
+  const Icon = visual.Icon;
+  const iconSize = Math.round(size * 0.55);
+  return (
+    <div
+      className={`flex items-center justify-center flex-shrink-0 rounded-lg bg-gradient-to-br ${visual.gradient} ${
+        flat ? "border-0" : "border border-primary/10"
+      }`}
+      style={{ width: size, height: size }}
+    >
+      <Icon className={visual.text} style={{ width: iconSize, height: iconSize }} />
+    </div>
+  );
 }
 
-function iconColorFor(entry: DriveEntry): string {
-  if (entry.kind === "folder") return "text-sky-400";
-  const mime = entry.mime ?? "";
-  if (mime.startsWith("image/")) return "text-emerald-400";
-  if (mime.startsWith("audio/")) return "text-pink-400";
-  if (mime.startsWith("video/")) return "text-rose-400";
-  if (mime.includes("pdf")) return "text-red-400";
-  if (mime.includes("json") || mime.includes("yaml") || mime.includes("toml"))
-    return "text-amber-400";
-  if (mime.includes("typescript") || mime.includes("javascript"))
-    return "text-violet-400";
-  if (mime.includes("csv")) return "text-teal-400";
-  return "text-foreground/60";
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function rowBaseClass(
+function rowStateClass(
   isSelected: boolean,
   isFlash: boolean,
   isDropTarget: boolean,
+  zebra: boolean,
 ): string {
-  const base = "transition-colors cursor-default";
-  if (isDropTarget) return `${base} bg-sky-500/20 ring-1 ring-sky-500/40`;
-  if (isFlash) return `${base} bg-emerald-500/20 animate-pulse`;
-  if (isSelected) return `${base} bg-sky-500/15 text-sky-100`;
-  return `${base} hover:bg-secondary/40`;
+  if (isDropTarget)
+    return "bg-cyan-500/25 ring-1 ring-cyan-400/60 shadow-[inset_0_0_12px_rgba(34,211,238,0.3)]";
+  if (isFlash)
+    return "bg-emerald-500/15 ring-1 ring-emerald-400/50 shadow-[inset_0_0_16px_rgba(52,211,153,0.2)] transition-all duration-700";
+  if (isSelected)
+    return "bg-gradient-to-r from-cyan-500/15 via-cyan-500/8 to-transparent text-foreground shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]";
+  return zebra
+    ? "bg-secondary/15 hover:bg-secondary/40 transition-colors"
+    : "hover:bg-secondary/40 transition-colors";
 }
 
 // ============================================================================
-// List View (Finder column-style table)
+// List view
 // ============================================================================
 
 function ListView({
   drive,
   onOpen,
   onContextMenu,
-  onRenameRequest,
+  onRenameRequest: _onRenameRequest,
+  onNewFolder,
 }: Props) {
   const { t } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -154,7 +128,11 @@ function ListView({
       <button
         type="button"
         onClick={() => drive.setSort(column)}
-        className={`flex items-center gap-1 py-1.5 typo-caption font-semibold text-foreground/60 hover:text-foreground ${className}`}
+        className={`flex items-center gap-1 py-2 typo-caption-sm font-semibold uppercase tracking-wider transition-colors ${
+          active
+            ? "text-cyan-300"
+            : "text-foreground/55 hover:text-foreground"
+        } ${className}`}
       >
         {label}
         {active && <Arrow className="w-3 h-3" />}
@@ -200,23 +178,17 @@ function ListView({
   );
 
   if (drive.loading && drive.entries.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center typo-caption text-foreground/50">
-        {t.plugins.drive.loading}
-      </div>
-    );
+    return <LoadingState />;
   }
-
   if (drive.error) {
     return (
-      <div className="flex-1 flex items-center justify-center typo-caption text-rose-400">
+      <div className="flex-1 flex items-center justify-center typo-caption text-rose-300">
         {t.plugins.drive.error_prefix} {drive.error}
       </div>
     );
   }
-
   if (drive.visibleEntries.length === 0) {
-    return <DriveEmptyState drive={drive} />;
+    return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
 
   return (
@@ -229,18 +201,18 @@ function ListView({
     >
       <div className="min-w-[720px]">
         {/* Header */}
-        <div className="sticky top-0 z-10 grid grid-cols-[1fr_100px_120px_180px] gap-3 px-3 border-b border-primary/10 bg-background/90 backdrop-blur">
+        <div className="sticky top-0 z-10 grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 border-b border-primary/10 bg-background/95 backdrop-blur">
           <SortHeader column="name" label={t.plugins.drive.col_name} />
           <SortHeader column="size" label={t.plugins.drive.col_size} />
           <SortHeader column="kind" label={t.plugins.drive.col_kind} />
           <SortHeader column="modified" label={t.plugins.drive.col_modified} />
         </div>
         {/* Rows */}
-        {drive.visibleEntries.map((entry) => {
-          const Icon = pickIcon(entry);
+        {drive.visibleEntries.map((entry, idx) => {
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
           const drop = dragTarget === entry.path;
+          const zebra = idx % 2 === 1;
           return (
             <div
               key={entry.path}
@@ -268,32 +240,29 @@ function ListView({
                 if (!selected) drive.selectOnly(entry.path);
                 onContextMenu(entry, e.clientX, e.clientY);
               }}
-              className={`grid grid-cols-[1fr_100px_120px_180px] gap-3 px-3 py-1.5 border-b border-primary/5 ${rowBaseClass(
+              className={`grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-primary/5 cursor-default ${rowStateClass(
                 selected,
                 flash,
                 drop,
+                zebra,
               )}`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <Icon
-                  className={`w-4 h-4 flex-shrink-0 ${iconColorFor(entry)}`}
-                />
-                <EditableName
-                  entry={entry}
-                  onCommit={(newName) => drive.rename(entry.path, newName)}
-                  onRequestEdit={() => onRenameRequest(entry)}
-                />
+              <div className="flex items-center gap-3 min-w-0">
+                <FileChip entry={entry} size={32} />
+                <span className="typo-body text-foreground truncate">
+                  {entry.name}
+                </span>
               </div>
-              <div className="typo-caption text-foreground/60 self-center">
+              <div className="typo-caption text-foreground/75 self-center tabular-nums">
                 {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
               </div>
-              <div className="typo-caption text-foreground/60 self-center truncate">
+              <div className="typo-caption text-foreground/75 self-center truncate">
                 {entry.kind === "folder"
                   ? t.plugins.drive.folder_kind
-                  : (entry.extension?.toUpperCase() ?? "File")}
+                  : visualForEntry(entry).label}
               </div>
-              <div className="typo-caption text-foreground/60 self-center">
-                {formatDate(entry.modified)}
+              <div className="typo-caption text-foreground/75 self-center tabular-nums">
+                {formatRelativeTime(entry.modified)}
               </div>
             </div>
           );
@@ -304,31 +273,34 @@ function ListView({
 }
 
 // ============================================================================
-// Icons View (grid)
+// Icons view
 // ============================================================================
 
 function IconsView({
   drive,
   onOpen,
   onContextMenu,
-  onRenameRequest: _onRename,
+  onNewFolder,
 }: Props) {
+  if (drive.loading && drive.entries.length === 0) {
+    return <LoadingState />;
+  }
   if (drive.visibleEntries.length === 0) {
-    return <DriveEmptyState drive={drive} />;
+    return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
   return (
     <div
-      className="flex-1 overflow-auto p-4"
+      className="flex-1 overflow-auto p-5"
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu(null, e.clientX, e.clientY);
       }}
     >
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
         {drive.visibleEntries.map((entry) => {
-          const Icon = pickIcon(entry);
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
+          const visual = visualForEntry(entry);
           return (
             <button
               key={entry.path}
@@ -346,18 +318,20 @@ function IconsView({
                 if (!selected) drive.selectOnly(entry.path);
                 onContextMenu(entry, e.clientX, e.clientY);
               }}
-              className={`group flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
+              className={`group flex flex-col items-center gap-2.5 p-3 rounded-xl border transition-all ${
                 selected
-                  ? "bg-sky-500/15 border-sky-500/40"
+                  ? `bg-cyan-500/10 border-cyan-500/50 ring-2 ${visual.ring} shadow-[0_0_20px_-8px_rgba(34,211,238,0.6)]`
                   : flash
-                  ? "bg-emerald-500/15 border-emerald-500/30 animate-pulse"
-                  : "border-transparent hover:bg-secondary/40 hover:border-primary/15"
+                  ? "bg-emerald-500/10 border-emerald-500/50 ring-2 ring-emerald-400/40"
+                  : "border-primary/5 bg-secondary/10 hover:bg-secondary/30 hover:border-primary/15 hover:-translate-y-0.5"
               }`}
             >
-              <Icon
-                className={`w-10 h-10 ${iconColorFor(entry)} group-hover:scale-110 transition-transform`}
-              />
-              <div className="w-full typo-caption text-center text-foreground/80 truncate">
+              <div
+                className={`w-16 h-16 rounded-xl bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform`}
+              >
+                <visual.Icon className={`w-8 h-8 ${visual.text}`} />
+              </div>
+              <div className="w-full typo-caption text-center text-foreground truncate">
                 {entry.name}
               </div>
             </button>
@@ -369,21 +343,25 @@ function IconsView({
 }
 
 // ============================================================================
-// Columns View (Miller columns, one pane per folder depth)
+// Columns view (Miller columns)
 // ============================================================================
 
 function ColumnsView({
   drive,
   onOpen,
   onContextMenu,
+  onNewFolder,
 }: Omit<Props, "onRenameRequest">) {
-  // Build the chain of folder levels up to the current path.
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
     : [];
   const levels: string[] = [""];
   for (let i = 0; i < segments.length; i++) {
     levels.push(segments.slice(0, i + 1).join("/"));
+  }
+
+  if (drive.visibleEntries.length === 0 && segments.length === 0) {
+    return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
 
   return (
@@ -417,13 +395,9 @@ function ColumnPane({
   onOpen,
   onContextMenu,
 }: ColumnPaneProps) {
-  // Only the current level has fresh entries — parent levels need their own
-  // fetch. To keep things simple we re-use drive.entries when levelPath
-  // matches drive.currentPath, otherwise render an on-mount fetched list.
   const isCurrent = levelPath === drive.currentPath;
-
   return (
-    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto">
+    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto bg-gradient-to-b from-background to-background/80">
       {isCurrent ? (
         <ColumnEntries
           entries={drive.visibleEntries}
@@ -461,7 +435,6 @@ function ColumnEntries({
   return (
     <>
       {entries.map((entry) => {
-        const Icon = pickIcon(entry);
         const isActive = entry.path === activeChild;
         const selected = drive.isSelected(entry.path);
         return (
@@ -479,32 +452,31 @@ function ColumnEntries({
               if (!selected) drive.selectOnly(entry.path);
               onContextMenu(entry, e.clientX, e.clientY);
             }}
-            className={`w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 typo-caption text-left transition-colors ${
               isActive
-                ? "bg-sky-500/20 text-sky-100"
+                ? "bg-gradient-to-r from-cyan-500/25 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.9)]"
                 : selected
-                ? "bg-sky-500/10 text-foreground"
-                : "hover:bg-secondary/40 text-foreground/80"
+                ? "bg-cyan-500/10 text-foreground"
+                : "hover:bg-secondary/40 text-foreground/85"
             }`}
           >
-            <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${iconColorFor(entry)}`} />
+            <FileChip entry={entry} size={22} />
             <span className="truncate flex-1">{entry.name}</span>
             {entry.kind === "folder" && (
-              <span className="text-foreground/40">›</span>
+              <span className="text-foreground/50 text-sm">›</span>
             )}
           </button>
         );
       })}
       {entries.length === 0 && (
-        <div className="px-3 py-4 typo-caption-sm text-foreground/40 italic">
-          —
+        <div className="px-3 py-6 typo-caption-sm text-foreground/50 italic text-center">
+          Empty
         </div>
       )}
     </>
   );
 }
 
-// Lazy fetch for parent levels (not currently in drive state).
 function AsyncColumnEntries(props: {
   path: string;
   activeChild: string | null;
@@ -514,11 +486,25 @@ function AsyncColumnEntries(props: {
 }) {
   const [entries, setEntries] = useState<DriveEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    driveList(props.path)
+      .then((list) => {
+        if (!cancelled) setEntries(list);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.path]);
   if (!loaded) {
-    import("@/api/drive")
-      .then(({ driveList }) => driveList(props.path))
-      .then(setEntries)
-      .finally(() => setLoaded(true));
+    return (
+      <div className="px-3 py-6 typo-caption-sm text-foreground/50 italic text-center">
+        Loading...
+      </div>
+    );
   }
   return (
     <ColumnEntries
@@ -532,74 +518,59 @@ function AsyncColumnEntries(props: {
 }
 
 // ============================================================================
-// Empty state
+// Empty + loading states
 // ============================================================================
 
-function DriveEmptyState({ drive }: { drive: UseDriveResult }) {
+function LoadingState() {
   const { t } = useTranslation();
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-2 p-8 text-center">
-      <Folder className="w-14 h-14 text-foreground/20" />
-      <div className="typo-body text-foreground/70">
-        {t.plugins.drive.empty_folder}
-      </div>
-      <div className="typo-caption text-foreground/40 max-w-sm">
-        {drive.currentPath === "" ? t.plugins.drive.empty_hint : ""}
+    <div className="flex-1 flex items-center justify-center">
+      <div className="flex items-center gap-2 typo-caption text-foreground/60">
+        <span className="w-3 h-3 rounded-full bg-cyan-500/60 animate-ping" />
+        {t.plugins.drive.loading}
       </div>
     </div>
   );
 }
 
-// ============================================================================
-// Inline-editable name (used by ListView)
-// ============================================================================
-
-function EditableName({
-  entry,
-  onCommit,
-  onRequestEdit: _onRequestEdit,
+function DriveEmptyState({
+  drive,
+  onNewFolder,
 }: {
-  entry: DriveEntry;
-  onCommit: (newName: string) => void;
-  onRequestEdit: () => void;
+  drive: UseDriveResult;
+  onNewFolder: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(entry.name);
-
-  if (!editing) {
-    return (
-      <span
-        className="typo-body text-foreground/90 truncate"
-        onDoubleClick={(e) => {
-          // Double-click on the name (not the icon) goes to rename mode,
-          // but single double-click still opens the file — so only if we
-          // already have the entry selected.
-          e.stopPropagation();
-        }}
-      >
-        {entry.name}
-      </span>
-    );
-  }
-
+  const { t } = useTranslation();
+  const isRoot = drive.currentPath === "";
   return (
-    <input
-      autoFocus
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => {
-        if (value && value !== entry.name) onCommit(value);
-        setEditing(false);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          (e.target as HTMLInputElement).blur();
-        } else if (e.key === "Escape") {
-          setValue(entry.name);
-          setEditing(false);
-        }
-      }}
-      className="typo-body bg-background border border-sky-500/40 rounded px-1 py-0 focus:outline-none"
-    />
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-10 text-center">
+      <div className="relative">
+        <div
+          aria-hidden
+          className="absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br from-cyan-500/30 via-sky-500/20 to-transparent rounded-full"
+        />
+        <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-sky-500/10 to-transparent border border-cyan-500/30 flex items-center justify-center shadow-[0_0_40px_-10px_rgba(34,211,238,0.6)]">
+          <FolderOpen className="w-12 h-12 text-cyan-300" />
+        </div>
+        <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-cyan-300 animate-pulse" />
+      </div>
+      <div className="space-y-1.5 max-w-sm">
+        <div className="typo-heading-sm text-foreground">
+          {t.plugins.drive.empty_folder}
+        </div>
+        {isRoot && (
+          <p className="typo-caption text-foreground/65">
+            {t.plugins.drive.empty_hint}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onNewFolder}
+        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-caption font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
+      >
+        {t.plugins.drive.empty_cta}
+      </button>
+    </div>
   );
 }

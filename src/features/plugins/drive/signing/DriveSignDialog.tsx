@@ -29,8 +29,10 @@ export function DriveSignDialog({
   const [metadata, setMetadata] = useState("");
   const [sidecarJson, setSidecarJson] = useState<string | null>(null);
 
+  const { ensureIdentity } = signing;
+
   useEffect(() => {
-    signing.ensureIdentity().catch(() => {
+    ensureIdentity().catch(() => {
       /* surfaced inline below */
     });
     const esc = (e: KeyboardEvent) => {
@@ -38,7 +40,7 @@ export function DriveSignDialog({
     };
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
-  }, [signing, onClose]);
+  }, [ensureIdentity, onClose]);
 
   const handleSign = async () => {
     setPhase("signing");

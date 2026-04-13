@@ -202,15 +202,20 @@ export default function DrivePage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<HardDrive className="w-5 h-5 text-cyan-400" />}
+        icon={<HardDrive className="w-5 h-5 text-cyan-300" />}
         iconColor="cyan"
         title={t.plugins.drive.title}
         subtitle={t.plugins.drive.subtitle}
         actions={
-          <span className="typo-caption text-foreground/50">{statusLine}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+            <span className="typo-caption text-cyan-100 font-medium tabular-nums">
+              {statusLine}
+            </span>
+          </div>
         }
       />
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95">
         <DriveToolbar
           drive={drive}
           onNewFolder={() => setDialog({ kind: "new_folder" })}
@@ -225,6 +230,7 @@ export default function DrivePage() {
               onOpen={handleOpen}
               onContextMenu={openContextMenu}
               onRenameRequest={(entry) => setDialog({ kind: "rename", entry })}
+              onNewFolder={() => setDialog({ kind: "new_folder" })}
             />
           </div>
           <DriveDetailsPane

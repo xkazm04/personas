@@ -29,11 +29,12 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
   const [result, setResult] = useState<VerifyDocumentResult | null>(null);
   const [sidecarFound, setSidecarFound] = useState<boolean | null>(null);
 
+  const { findSidecarInDrive } = signing;
+
   // Auto-look up a sidecar sibling in the drive on mount.
   useEffect(() => {
     let cancelled = false;
-    signing
-      .findSidecarInDrive(entry.path)
+    findSidecarInDrive(entry.path)
       .then((json) => {
         if (cancelled) return;
         if (json) {
@@ -53,7 +54,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
       cancelled = true;
       document.removeEventListener("keydown", esc);
     };
-  }, [entry.path, signing, onClose]);
+  }, [entry.path, findSidecarInDrive, onClose]);
 
   const handleVerify = async () => {
     if (!sidecarJson.trim()) return;

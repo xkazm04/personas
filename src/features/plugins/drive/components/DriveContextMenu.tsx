@@ -103,18 +103,18 @@ export function DriveContextMenu({
           onClose();
         }
       }}
-      className={`w-full flex items-center gap-2.5 px-3 py-1.5 typo-caption text-left transition-colors ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-caption text-left transition-all rounded-md mx-1 ${
         opts.disabled
           ? "text-foreground/30 cursor-not-allowed"
           : opts.danger
-          ? "text-rose-400 hover:bg-rose-500/15"
-          : "text-foreground/80 hover:bg-sky-500/15 hover:text-sky-100"
+          ? "text-rose-300 hover:bg-gradient-to-r hover:from-rose-500/25 hover:to-rose-500/5 hover:text-rose-100"
+          : "text-foreground/85 hover:bg-gradient-to-r hover:from-cyan-500/25 hover:to-cyan-500/5 hover:text-cyan-50"
       }`}
     >
       <span className="w-3.5 h-3.5 flex-shrink-0">{icon}</span>
       <span className="flex-1">{label}</span>
       {opts.shortcut && (
-        <kbd className="ml-auto typo-caption-sm text-foreground/40 font-mono">
+        <kbd className="ml-auto typo-caption-sm text-foreground/45 font-mono tracking-tight">
           {opts.shortcut}
         </kbd>
       )}
@@ -122,13 +122,13 @@ export function DriveContextMenu({
   );
 
   const divider = (
-    <div className="my-1 border-t border-primary/15" aria-hidden />
+    <div className="my-1 mx-2 border-t border-primary/10" aria-hidden />
   );
 
   return (
     <div
       ref={ref}
-      className="fixed z-[9999] w-52 rounded-lg border border-primary/15 bg-background/95 backdrop-blur shadow-xl py-1"
+      className="fixed z-[9999] w-56 rounded-xl border border-primary/20 bg-background/95 backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6),0_0_30px_-8px_rgba(34,211,238,0.25)] py-1.5"
       style={{ left: x, top: y }}
     >
       {entry ? (
