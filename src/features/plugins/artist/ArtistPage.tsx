@@ -50,15 +50,24 @@ export default function ArtistPage() {
         }
       />
 
-      <ContentBody centered>
-        <div key={artistTab} className="animate-fade-slide-in">
-          <Suspense fallback={null}>
-            {artistTab === 'blender' && <CreativeStudioPanel />}
-            {artistTab === 'gallery' && <GalleryPage />}
-            {artistTab === 'media-studio' && <MediaStudioPage />}
-          </Suspense>
-        </div>
-      </ContentBody>
+      {artistTab === 'media-studio' ? (
+        <ContentBody flex noPadding>
+          <div key={artistTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0">
+            <Suspense fallback={null}>
+              <MediaStudioPage />
+            </Suspense>
+          </div>
+        </ContentBody>
+      ) : (
+        <ContentBody centered>
+          <div key={artistTab} className="animate-fade-slide-in">
+            <Suspense fallback={null}>
+              {artistTab === 'blender' && <CreativeStudioPanel />}
+              {artistTab === 'gallery' && <GalleryPage />}
+            </Suspense>
+          </div>
+        </ContentBody>
+      )}
     </ContentBox>
   );
 }

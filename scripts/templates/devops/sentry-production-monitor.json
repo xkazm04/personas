@@ -478,20 +478,32 @@
         "id": "aq_domain_1",
         "category": "domain",
         "question": "Which Sentry projects should be monitored?",
-        "type": "text",
-        "placeholder": "my-web-app, my-api, my-mobile-app (or 'all')",
+        "type": "select",
         "default": "all",
-        "context": "Enter comma-separated project slugs, or 'all' to monitor every project accessible with your Sentry token. The agent will test the connection and list available projects during setup.",
+        "vault_category": "monitoring",
+        "option_service_types": ["sentry"],
+        "dynamic_source": {
+          "service_type": "sentry",
+          "operation": "list_projects",
+          "multi": true,
+          "include_all_option": true
+        },
+        "context": "Loaded live from your connected Sentry organization. Pick one or more projects, or choose 'All' to monitor every project accessible with this token.",
         "dimension": "use-cases"
       },
       {
         "id": "aq_domain_2",
         "category": "domain",
         "question": "Which codebases should be used for root cause analysis?",
-        "type": "text",
-        "placeholder": "all (or: my-frontend, my-api, my-shared-lib)",
+        "type": "select",
         "default": "all",
-        "context": "Enter 'all' to analyze across every codebase registered in Connections, or list specific project names to narrow scope. The agent uses cross-project search and impact analysis by default. Narrow the scope if the portfolio is too broad and analysis takes too long.",
+        "dynamic_source": {
+          "service_type": "codebases",
+          "operation": "list_projects",
+          "multi": true,
+          "include_all_option": true
+        },
+        "context": "Loaded from codebases registered under Connections. Pick 'All' for cross-project search (recommended) or narrow the scope if the portfolio is too large.",
         "dimension": "connectors"
       },
       {
@@ -499,13 +511,14 @@
         "category": "domain",
         "question": "Which environment should be monitored?",
         "type": "select",
-        "options": [
-          "production (only production errors)",
-          "production + staging (both environments)",
-          "all environments"
-        ],
-        "default": "production (only production errors)",
-        "context": "Filters Sentry issues by environment tag. Production-only keeps the signal clean. Adding staging catches issues before they reach users.",
+        "default": "production",
+        "vault_category": "monitoring",
+        "option_service_types": ["sentry"],
+        "dynamic_source": {
+          "service_type": "sentry",
+          "operation": "list_environments"
+        },
+        "context": "Loaded live from the environment tag values reported to your Sentry org. Production-only keeps the signal clean — adding staging catches issues before they reach users.",
         "dimension": "use-cases"
       },
       {

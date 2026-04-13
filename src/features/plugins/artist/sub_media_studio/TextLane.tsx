@@ -12,6 +12,8 @@ interface TextLaneProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onUpdate: (id: string, patch: Partial<TextItem>) => void;
+  hideHeader?: boolean;
+  hideAdd?: boolean;
 }
 
 /** Modal for editing a text beat's expanded description. */
@@ -90,6 +92,8 @@ export default function TextLane({
   onSelect,
   onAdd,
   onUpdate,
+  hideHeader,
+  hideAdd,
 }: TextLaneProps) {
   const { t } = useTranslation();
   const [editingItem, setEditingItem] = useState<TextItem | null>(null);
@@ -98,20 +102,22 @@ export default function TextLane({
     <>
       <div className="flex flex-col">
         {/* Lane header */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20">
-          <Type className="w-3.5 h-3.5 text-amber-400" />
-          <span className="typo-heading text-amber-400 text-xs uppercase tracking-wide">
-            {t.media_studio.layer_text}
-          </span>
-          {items.length > 0 && (
-            <span className="ml-auto text-[9px] text-amber-400/60 bg-amber-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
-              {items.length}
+        {!hideHeader && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20">
+            <Type className="w-3.5 h-3.5 text-amber-400" />
+            <span className="typo-heading text-amber-400 text-xs uppercase tracking-wide">
+              {t.media_studio.layer_text}
             </span>
-          )}
-        </div>
+            {items.length > 0 && (
+              <span className="ml-auto text-[9px] text-amber-400/60 bg-amber-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+                {items.length}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Beats area */}
-        <div className="relative h-10 bg-card/50 border-b border-primary/10">
+        <div className="relative h-10 bg-amber-500/[0.02] border-b border-primary/10">
           {items.length === 0 && (
             <div className="absolute inset-0.5 rounded-lg border border-dashed border-amber-500/15 flex items-center justify-center">
               <span className="text-[10px] text-amber-400/30">{t.media_studio.empty_lane}</span>
@@ -142,20 +148,22 @@ export default function TextLane({
           })}
 
           {/* Add button */}
-          <div
-            className="absolute top-0.5 h-9 flex items-center"
-            style={{
-              left: `${items.length > 0
-                ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
-                : 8
-              }px`,
-            }}
-          >
-            <Button variant="ghost" size="xs" onClick={onAdd}>
-              <Plus className="w-3.5 h-3.5" />
-              {t.media_studio.add_text_beat}
-            </Button>
-          </div>
+          {!hideAdd && (
+            <div
+              className="absolute top-0.5 h-9 flex items-center"
+              style={{
+                left: `${items.length > 0
+                  ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
+                  : 8
+                }px`,
+              }}
+            >
+              <Button variant="ghost" size="xs" onClick={onAdd}>
+                <Plus className="w-3.5 h-3.5" />
+                {t.media_studio.add_text_beat}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

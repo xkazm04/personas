@@ -28,6 +28,20 @@ export function matchVaultToQuestions(
   const filteredOptions: Record<string, string[]> = {};
 
   for (const q of questions) {
+    // Dynamic-source questions don't carry static options — they pull their
+    // list from a connector API at render time. They still need an upfront
+    // credential check so the top "credentials required" banner lights up if
+    // the backing service isn't connected. Exception: `codebases` is a local
+    // bridge connector and never needs credentials.
+    if (q.dynamic_source) {
+      const svc = q.dynamic_source.service_type;
+      if (svc === 'codebases') continue;
+      if (!credentialServiceTypes.has(svc)) {
+        blockedQuestionIds.add(q.id);
+      }
+      continue;
+    }
+
     if (!q.vault_category || !q.option_service_types || !q.options) continue;
     if (q.option_service_types.length !== q.options.length) continue;
 

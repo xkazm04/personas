@@ -11,6 +11,7 @@ pub mod rotation;
 pub(crate) mod shared;
 pub mod db_schema;
 pub mod api_proxy;
+pub mod discovery;
 pub mod mcp_tools;
 pub mod mcp_gateways;
 #[cfg(feature = "desktop")]

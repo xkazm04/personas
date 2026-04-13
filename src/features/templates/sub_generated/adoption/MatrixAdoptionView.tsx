@@ -24,6 +24,7 @@ import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
+import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface MatrixAdoptionViewProps {
@@ -191,6 +192,14 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [blockedQuestionIds, setBlockedQuestionIds] = useState<Set<string>>(new Set());
   const [filteredOptions, setFilteredOptions] = useState<Record<string, string[]>>({});
   const defaultsLoaded = useRef(false);
+
+  // Resolve dynamic option lists (Sentry projects, codebases, ...) from the
+  // user's connected credentials. Questions without a `dynamic_source` simply
+  // get an empty state and fall through to the existing static rendering.
+  const { dynamicOptions, retry: retryDynamic } = useDynamicQuestionOptions(
+    adoptionQuestions,
+    adoptionAnswers,
+  );
 
   // Pre-populate default answers from template questions + vault auto-detection.
   // For questions with vault_category + option_service_types:
@@ -524,6 +533,8 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
             autoDetectedIds={autoDetectedIds}
             blockedQuestionIds={blockedQuestionIds}
             filteredOptions={filteredOptions}
+            dynamicOptions={dynamicOptions}
+            onRetryDynamic={retryDynamic}
             onAddCredential={handleAddCredentialForCategory}
             onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
             onSubmit={() => setQuestionsComplete(true)}
@@ -598,6 +609,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         <QuestionnaireFormGrid
           questions={adoptionQuestions}
           userAnswers={adoptionAnswers}
+          autoDetectedIds={autoDetectedIds}
+          blockedQuestionIds={blockedQuestionIds}
+          filteredOptions={filteredOptions}
+          dynamicOptions={dynamicOptions}
+          onRetryDynamic={retryDynamic}
+          onAddCredential={handleAddCredentialForCategory}
           onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
           onSubmit={() => setQuestionsComplete(true)}
           onClose={onClose}

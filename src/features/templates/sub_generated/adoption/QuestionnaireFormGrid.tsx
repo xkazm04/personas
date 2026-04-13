@@ -3,12 +3,13 @@ import { motion } from 'framer-motion';
 import {
   Send, Check, X, Sparkles,
   KeyRound, Settings2, ShieldCheck, Brain, Bell, Globe, Gauge,
-  Info, CircleDot, AlertCircle, Plus,
+  Info, CircleDot, AlertCircle, Plus, Loader2, RefreshCw, Zap,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,15 @@ interface QuestionnaireFormGridProps {
   blockedQuestionIds?: Set<string>;
   /** Vault-narrowed option lists per question ID. Applied when 2+ credentials match. */
   filteredOptions?: Record<string, string[]>;
+  /**
+   * Per-question state from `useDynamicQuestionOptions` — populated for any
+   * question whose template JSON carries a `dynamic_source`. Covers loading,
+   * error, and the actual list of `{value, label, sublabel}` items fetched
+   * from the backing connector (Sentry, codebases, ...).
+   */
+  dynamicOptions?: Record<string, DynamicOptionState>;
+  /** Retry the dynamic fetch for a specific question id. */
+  onRetryDynamic?: (questionId: string) => void;
   /** Called when the user clicks "Add credential" on a blocked question. Passes the vault category. */
   onAddCredential?: (vaultCategory: string) => void;
   onAnswerUpdated: (questionId: string, answer: string) => void;
@@ -106,19 +116,48 @@ function ProgressBar({ answered, total }: { answered: number; total: number }) {
   );
 }
 
+interface PillOption {
+  value: string;
+  label: string;
+  sublabel?: string | null;
+}
+
+// Multi-select values are stored CSV-encoded so the existing answer map
+// (`Record<string,string>`) keeps working. The literal string "all" is the
+// sentinel for "include_all_option" selections — easier to match than the
+// empty string and survives round-tripping to templates unchanged.
+const ALL_SENTINEL = 'all';
+function parseCsv(v: string): string[] {
+  return v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [];
+}
+function toCsv(values: string[]): string {
+  return values.join(',');
+}
+
 function SelectPills({
   options,
   value,
   onChange,
   allowCustom,
+  multi,
+  includeAllOption,
 }: {
-  options: string[];
+  options: PillOption[];
   value: string;
   onChange: (v: string) => void;
   allowCustom?: boolean;
+  multi?: boolean;
+  includeAllOption?: boolean;
 }) {
   const { t } = useTranslation();
-  const isCustomValue = allowCustom && value && !options.includes(value);
+  const selectedValues = useMemo(
+    () => (multi ? new Set(parseCsv(value)) : new Set([value])),
+    [value, multi],
+  );
+  const isAllSelected = multi && (value === ALL_SENTINEL || selectedValues.has(ALL_SENTINEL));
+
+  const isCustomValue =
+    !multi && allowCustom && value && !options.some((o) => o.value === value);
   const [showCustomInput, setShowCustomInput] = useState(isCustomValue ?? false);
   const customInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,27 +167,63 @@ function SelectPills({
     }
   }, [showCustomInput]);
 
+  const togglePill = (optValue: string) => {
+    setShowCustomInput(false);
+    if (!multi) {
+      onChange(optValue);
+      return;
+    }
+    // Multi-select: toggle membership. Picking a real option clears "all".
+    const next = new Set(selectedValues);
+    next.delete(ALL_SENTINEL);
+    if (next.has(optValue)) next.delete(optValue);
+    else next.add(optValue);
+    onChange(toCsv([...next]));
+  };
+
+  const pickAll = () => {
+    setShowCustomInput(false);
+    onChange(ALL_SENTINEL);
+  };
+
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
+        {multi && includeAllOption && (
+          <button
+            type="button"
+            onClick={pickAll}
+            className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
+              isAllSelected
+                ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+            }`}
+          >
+            All
+          </button>
+        )}
         {options.map((opt) => {
-          const selected = !showCustomInput && value === opt;
+          const selected =
+            !showCustomInput &&
+            !isAllSelected &&
+            (multi ? selectedValues.has(opt.value) : value === opt.value);
           return (
             <button
-              key={opt}
+              key={opt.value}
               type="button"
-              onClick={() => { setShowCustomInput(false); onChange(opt); }}
+              onClick={() => togglePill(opt.value)}
               className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
                 selected
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                   : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
               }`}
+              title={opt.sublabel ?? undefined}
             >
-              {opt}
+              {opt.label}
             </button>
           );
         })}
-        {allowCustom && (
+        {!multi && allowCustom && (
           <button
             type="button"
             onClick={() => { setShowCustomInput(true); if (!isCustomValue) onChange(''); }}
@@ -162,7 +237,7 @@ function SelectPills({
           </button>
         )}
       </div>
-      {allowCustom && showCustomInput && (
+      {!multi && allowCustom && showCustomInput && (
         <input
           ref={customInputRef}
           type="text"
@@ -172,6 +247,107 @@ function SelectPills({
           className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
         />
       )}
+    </div>
+  );
+}
+
+function DynamicSelectBody({
+  question,
+  answer,
+  onAnswer,
+  dynamicState,
+  onRetry,
+  onAddCredential,
+}: {
+  question: TransformQuestionResponse;
+  answer: string;
+  onAnswer: (v: string) => void;
+  dynamicState?: DynamicOptionState;
+  onRetry: () => void;
+  onAddCredential?: (vaultCategory: string) => void;
+}) {
+  const src = question.dynamic_source!;
+  const state = dynamicState;
+
+  if (!state || state.waitingOnParent) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+        <CircleDot className="w-3.5 h-3.5" />
+        Waiting for earlier answer…
+      </div>
+    );
+  }
+
+  if (state.loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Loading options from {src.service_type}…
+      </div>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-rose-300/80">
+          <AlertCircle className="w-3.5 h-3.5" />
+          {state.error}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/[0.03] border border-white/[0.1] text-foreground/80 hover:bg-white/[0.06] transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Retry
+          </button>
+          {question.vault_category && onAddCredential && (
+            <button
+              type="button"
+              onClick={() => onAddCredential(question.vault_category!)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              Add credential
+            </button>
+          )}
+        </div>
+        {/* Fallback: let the user type a value so adoption isn't fully blocked */}
+        <input
+          type="text"
+          value={answer}
+          onChange={(e) => onAnswer(e.target.value)}
+          placeholder={question.default ?? 'Type a value…'}
+          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+        />
+      </div>
+    );
+  }
+
+  if (state.ready && state.items.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
+        <Info className="w-3.5 h-3.5" />
+        No {src.operation.replace('list_', '')} found. Create one in {src.service_type} first.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
+        <Zap className="w-3 h-3" />
+        Loaded live from {src.service_type}
+      </div>
+      <SelectPills
+        options={state.items.map((i) => ({ value: i.value, label: i.label, sublabel: i.sublabel }))}
+        value={answer}
+        onChange={onAnswer}
+        multi={src.multi}
+        includeAllOption={src.include_all_option}
+      />
     </div>
   );
 }
@@ -217,6 +393,8 @@ function QuestionCard({
   isBlocked,
   onAddCredential,
   filteredOptions,
+  dynamicState,
+  onRetryDynamic,
 }: {
   question: TransformQuestionResponse;
   answer: string;
@@ -227,6 +405,10 @@ function QuestionCard({
   onAddCredential?: (vaultCategory: string) => void;
   /** Vault-narrowed options for this question (overrides question.options). */
   filteredOptions?: string[];
+  /** Live state for questions with a dynamic_source (loading/error/items). */
+  dynamicState?: DynamicOptionState;
+  /** Retry a failed dynamic fetch for this question. */
+  onRetryDynamic?: (questionId: string) => void;
 }) {
   const { t } = useTranslation();
   const [flash, setFlash] = useState(false);
@@ -298,8 +480,22 @@ function QuestionCard({
       ) : (
       /* Input control */
       <div className="ml-5.5">
-        {question.type === 'select' && question.options ? (
-          <SelectPills options={filteredOptions ?? question.options} value={answer} onChange={onAnswer} allowCustom={question.allow_custom} />
+        {question.dynamic_source ? (
+          <DynamicSelectBody
+            question={question}
+            answer={answer}
+            onAnswer={onAnswer}
+            dynamicState={dynamicState}
+            onRetry={() => onRetryDynamic?.(question.id)}
+            onAddCredential={onAddCredential}
+          />
+        ) : question.type === 'select' && question.options ? (
+          <SelectPills
+            options={(filteredOptions ?? question.options).map((o) => ({ value: o, label: o }))}
+            value={answer}
+            onChange={onAnswer}
+            allowCustom={question.allow_custom}
+          />
         ) : question.type === 'boolean' ? (
           <BooleanToggle value={answer} onChange={onAnswer} />
         ) : question.type === 'devtools_project' ? (
@@ -348,6 +544,8 @@ export function QuestionnaireFormGrid({
   autoDetectedIds,
   blockedQuestionIds,
   filteredOptions,
+  dynamicOptions,
+  onRetryDynamic,
   onAddCredential,
   onAnswerUpdated,
   onSubmit,
@@ -501,6 +699,8 @@ export function QuestionnaireFormGrid({
                         isBlocked={blockedQuestionIds?.has(q.id)}
                         onAddCredential={onAddCredential}
                         filteredOptions={filteredOptions?.[q.id]}
+                        dynamicState={dynamicOptions?.[q.id]}
+                        onRetryDynamic={onRetryDynamic}
                       />
                     ))}
                   </div>

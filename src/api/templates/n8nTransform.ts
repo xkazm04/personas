@@ -67,6 +67,29 @@ export interface TransformQuestionResponse {
   vault_category?: string;
   /** Parallel array mapping each `options` entry to a credential service_type. null = no mapping. */
   option_service_types?: (string | null)[];
+  /**
+   * When set, the adoption questionnaire loads the option list dynamically
+   * from a connector API (or, for `codebases`, from the local dev_projects
+   * table) using the credential the user has connected. Turns hard-to-guess
+   * identifiers (Sentry project slugs, codebase names, ...) into a real
+   * pickable list at adoption time.
+   *
+   * - `service_type`: which connector to query (e.g. `"sentry"`, `"codebases"`)
+   * - `operation`: a registry key the Rust backend resolves (e.g. `"list_projects"`)
+   * - `depends_on`: parent question id — discovery is deferred until the
+   *   parent is answered and the answer is passed as `{{param.<depends_on>}}`
+   * - `multi`: allow multi-select (stored as comma-separated CSV in the
+   *   answers map to stay compatible with `Record<string,string>`)
+   * - `include_all_option`: prepend a synthetic "all" pill that clears the
+   *   multi-selection (useful for "monitor all projects" style defaults)
+   */
+  dynamic_source?: {
+    service_type: string;
+    operation: string;
+    depends_on?: string;
+    multi?: boolean;
+    include_all_option?: boolean;
+  };
 }
 
 export interface N8nTransformSnapshot {

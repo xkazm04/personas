@@ -1323,6 +1323,8 @@ pub fn run() {
             commands::credentials::api_proxy::parse_api_definition,
             commands::credentials::api_proxy::save_api_definition,
             commands::credentials::api_proxy::load_api_definition,
+            // Credentials -- Dynamic discovery (for adoption questionnaire)
+            commands::credentials::discovery::discover_connector_resources,
             // Credentials -- MCP Tools
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
