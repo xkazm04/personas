@@ -1274,6 +1274,9 @@ pub fn run() {
             commands::credentials::auto_cred_browser::cancel_auto_cred_browser,
             // Credentials -- Auth Detection
             commands::credentials::auth_detect::detect_authenticated_services,
+            // Credentials -- CLI Capture
+            commands::credentials::cli_capture::list_cli_capturable_services,
+            commands::credentials::cli_capture::cli_capture_run,
             // Credentials -- Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,
@@ -1286,6 +1289,7 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
             commands::credentials::rotation::refresh_credential_oauth_now,
+            commands::credentials::rotation::refresh_credential_cli_now,
             commands::credentials::rotation::get_oauth_token_metrics,
             commands::credentials::rotation::get_oauth_token_lifetime_summary,
             // Credentials -- Database Schema & Queries

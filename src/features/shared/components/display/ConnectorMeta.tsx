@@ -185,6 +185,11 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   cal_com:            { label: 'Cal.com',             color: '#292929', iconUrl: '/icons/connectors/cal-com.svg',                        Icon: Calendar },
   calendly:           { label: 'Calendly',           color: '#006BFF', iconUrl: 'https://cdn.simpleicons.org/calendly/006BFF',         Icon: Calendar },
 
+  // -- Time Tracking ---------------------------------------------
+  clockify:           { label: 'Clockify',           color: '#03A9F4', iconUrl: 'https://cdn.simpleicons.org/clockify/03A9F4',         Icon: Activity },
+  toggl:              { label: 'Toggl Track',        color: '#E57CD8', iconUrl: 'https://cdn.simpleicons.org/toggltrack/E57CD8',       Icon: Activity },
+  harvest:            { label: 'Harvest',            color: '#F36F21', iconUrl: 'https://cdn.simpleicons.org/harvest/F36F21',          Icon: Activity },
+
   // -- CMS -------------------------------------------------------
   wordpress:          { label: 'WordPress',          color: '#21759B', iconUrl: 'https://cdn.simpleicons.org/wordpress/21759B',        Icon: Globe },
   webflow:            { label: 'Webflow',            color: '#4353FF', iconUrl: 'https://cdn.simpleicons.org/webflow/4353FF',          Icon: Layout },

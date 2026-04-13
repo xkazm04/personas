@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -24,7 +24,7 @@ interface SearchChipInputProps {
   availableCategories: CategoryWithCount[];
 }
 
-export function SearchChipInput({
+function SearchChipInputImpl({
   chips, inputValue, setInputValue, removeChip, addChip, clearAll,
   autocompletePrefix, autocompleteQuery,
   aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,

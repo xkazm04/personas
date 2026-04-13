@@ -1393,6 +1393,91 @@ const deepgram: EP[] = [
   ], ['Billing']),
 ];
 
+// -- Clockify --------------------------------------------------------
+
+const clockify: EP[] = [
+  ep('GET', '/user', 'Get current user', [], ['Users']),
+  ep('GET', '/workspaces', 'List workspaces', [], ['Workspaces']),
+  ep('GET', '/workspaces/{workspaceId}/users', 'List workspace users', [
+    pathP('workspaceId'),
+  ], ['Users']),
+  ep('GET', '/workspaces/{workspaceId}/projects', 'List projects', [
+    pathP('workspaceId'),
+    queryP('name', false, 'Filter by project name'),
+    queryP('archived', false, 'true/false'),
+    queryP('page-size', false, 'Default 50, max 5000'),
+  ], ['Projects']),
+  ep('GET', '/workspaces/{workspaceId}/clients', 'List clients', [
+    pathP('workspaceId'),
+  ], ['Clients']),
+  ep('GET', '/workspaces/{workspaceId}/projects/{projectId}/tasks', 'List project tasks', [
+    pathP('workspaceId'), pathP('projectId'),
+  ], ['Tasks']),
+  ep('GET', '/workspaces/{workspaceId}/user/{userId}/time-entries', 'List user time entries', [
+    pathP('workspaceId'), pathP('userId'),
+    queryP('start', false, 'ISO 8601 datetime'),
+    queryP('end', false, 'ISO 8601 datetime'),
+    queryP('in-progress', false, 'true/false'),
+  ], ['Time Entries']),
+  ep('POST', '/workspaces/{workspaceId}/time-entries', 'Create time entry', [
+    pathP('workspaceId'),
+  ], ['Time Entries'], jsonBody(), 'Body: { "start": "ISO 8601", "end": "ISO 8601", "description": "...", "projectId": "..." }'),
+];
+
+// -- Toggl Track ------------------------------------------------------
+
+const toggl: EP[] = [
+  ep('GET', '/me', 'Get current user', [], ['Users']),
+  ep('GET', '/me/workspaces', 'List workspaces for current user', [], ['Workspaces']),
+  ep('GET', '/me/projects', 'List projects for current user', [
+    queryP('include_archived', false, 'true/false'),
+  ], ['Projects']),
+  ep('GET', '/me/clients', 'List clients for current user', [], ['Clients']),
+  ep('GET', '/me/time_entries', 'List time entries for current user', [
+    queryP('start_date', false, 'ISO 8601 date'),
+    queryP('end_date', false, 'ISO 8601 date'),
+  ], ['Time Entries']),
+  ep('GET', '/me/time_entries/current', 'Get currently running time entry', [], ['Time Entries']),
+  ep('GET', '/workspaces/{workspace_id}/projects', 'List workspace projects', [
+    pathP('workspace_id'),
+  ], ['Projects']),
+  ep('POST', '/workspaces/{workspace_id}/time_entries', 'Create time entry', [
+    pathP('workspace_id'),
+  ], ['Time Entries'], jsonBody(), 'Body: { "description": "...", "start": "ISO 8601", "duration": -1, "workspace_id": 123, "created_with": "Personas" }'),
+];
+
+// -- Harvest ----------------------------------------------------------
+
+const harvest: EP[] = [
+  ep('GET', '/users/me', 'Get authenticated user', [], ['Users']),
+  ep('GET', '/users', 'List users', [
+    queryP('is_active', false, 'true/false'),
+    queryP('page', false),
+  ], ['Users']),
+  ep('GET', '/clients', 'List clients', [
+    queryP('is_active', false, 'true/false'),
+  ], ['Clients']),
+  ep('GET', '/projects', 'List projects', [
+    queryP('is_active', false, 'true/false'),
+    queryP('client_id', false, 'Filter by client'),
+  ], ['Projects']),
+  ep('GET', '/tasks', 'List tasks', [
+    queryP('is_active', false),
+  ], ['Tasks']),
+  ep('GET', '/time_entries', 'List time entries', [
+    queryP('user_id', false),
+    queryP('project_id', false),
+    queryP('from', false, 'YYYY-MM-DD'),
+    queryP('to', false, 'YYYY-MM-DD'),
+  ], ['Time Entries']),
+  ep('POST', '/time_entries', 'Create time entry', [], ['Time Entries'], jsonBody(),
+    'Body: { "project_id": 123, "task_id": 456, "spent_date": "2026-04-13", "hours": 1.5 }'),
+  ep('GET', '/invoices', 'List invoices', [
+    queryP('client_id', false),
+    queryP('state', false, 'draft, open, paid, closed'),
+  ], ['Invoices']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   alpha_vantage,
   azure_devops,
@@ -1461,4 +1546,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   x_twitter,
   youtube_data,
   deepgram,
+  clockify,
+  toggl,
+  harvest,
 };

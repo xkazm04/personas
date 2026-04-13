@@ -362,6 +362,105 @@ personas-desktop/
 └── tsconfig.json
 ```
 
+## Internationalization (i18n)
+
+The app ships with **13 languages**: English (source of truth) + Arabic, Bengali, Czech, German, Spanish, French, Hindi, Indonesian, Japanese, Korean, Russian, Vietnamese, and Simplified Chinese.
+
+### How it layers
+
+- **`src/i18n/en.ts`** is the single source of truth. All user-facing strings live here (~7,595 leaf keys across ~50 sections like `common`, `agents`, `vault`, `overview`, `triggers`, etc.).
+- **`src/i18n/{lang}.ts`** are **partial** locale files. At runtime, each non-English bundle is deep-merged with `en.ts` — any key missing from a locale automatically falls back to the English value. This means locales never break the app even mid-migration.
+- English is loaded synchronously; other bundles lazy-load on language switch. See `src/i18n/useTranslation.ts`.
+- Strings are looked up via `const { t, tx } = useTranslation()` — e.g. `t.common.save` or `tx(t.common.agent_count_other, { count: 5 })` for interpolation/pluralization.
+- Backend (Rust) sends language-agnostic **status tokens** (`"queued"`, `"failed"`, etc.) over IPC; the frontend maps them via `src/i18n/tokenMaps.ts` → `tokenLabel()`.
+
+### Checking coverage
+
+```bash
+node scripts/i18n-real-coverage.mjs   # Real coverage across all 13 locales (handles inline-object keys)
+node scripts/check-locale-parity.mjs  # Legacy parity check (undercounts inline-object keys)
+```
+
+The **real coverage** script is the authoritative one — the legacy parity checker doesn't understand inline-object lines like `anomaly_drilldown_extra: { title: "...", value_label: "..." },` so it undercounts. Expected output:
+
+```
+en.ts total keys: 7595
+
+Lang | Present | Missing | Coverage
+-----|---------|---------|---------
+ar   |    7595 |       0 | 100.0%
+bn   |    7595 |       0 | 100.0%
+cs   |    2893 |    4702 |  38.1%
+de   |    7595 |       0 | 100.0%
+...
+```
+
+### Populating translations (the pipeline)
+
+When new keys land in `en.ts`, fresh translations are produced by **Claude Code subagents** running under your subscription (no separate API key needed). The full workflow lives in `scripts/`:
+
+1. **Extract missing keys** (union across all locales):
+   ```bash
+   node scripts/i18n-agent-prep.mjs
+   # → writes .planning/i18n/missing-en.json
+   ```
+
+2. **Spawn one translator subagent per language** via the `Agent` tool (Sonnet, background mode). Each agent:
+   - reads `.planning/i18n/missing-en.json` (or `remaining-{lang}.json` for resumes),
+   - translates in ~400-key batches with in-memory accumulation,
+   - writes incremental progress to `.planning/i18n/translated-{lang}.json` after each batch (survives rate-limit interruptions),
+   - follows fixed translation rules: preserve `{variable}` placeholders, never translate brand/technical terms (Claude, OAuth, API, cron, etc.), keep UI labels concise, use consistent terminology (Agent → *Agent*/*代理*/*エージェント*/…, Vault → *Tresor*/*Bóveda*/*保险库*/…).
+
+3. **Resume interrupted agents** — if a subagent hit a rate limit, regenerate per-language work lists:
+   ```bash
+   node scripts/i18n-agent-remaining.mjs
+   # → writes .planning/i18n/remaining-{lang}.json (only untranslated keys)
+   ```
+   Then spawn resume subagents pointing at the smaller `remaining-*` files. Resume agents **merge** into existing `translated-{lang}.json` rather than overwrite.
+
+4. **Merge the translated JSON blobs into TypeScript locale files:**
+   ```bash
+   node scripts/i18n-agent-merge.mjs            # all 12 target languages
+   node scripts/i18n-agent-merge.mjs --lang de  # one language
+   ```
+   This reads each `translated-{lang}.json` plus the existing `src/i18n/{lang}.ts` (existing human-curated translations always win), then emits a complete locale file mirroring `en.ts`'s nested structure. It preserves locale-specific extras (e.g. Arabic `_zero`/`_two`, Czech `_few`/`_many` plural forms that don't exist in English).
+
+5. **Verify:**
+   ```bash
+   npx tsc --noEmit                      # TypeScript compiles clean
+   node scripts/i18n-real-coverage.mjs   # 100% on all target languages
+   ```
+
+### Czech — human-delivered path
+
+Czech translations came from a professional translator via `czech.txt` (CSV: `key,english,czech`). Merging into `src/i18n/cs.ts` is a separate one-shot step:
+
+```bash
+node scripts/merge-czech.mjs
+```
+
+This reads `czech.txt`, the existing `cs.ts`, and `en.ts`, then generates a clean cs.ts with all available Czech translations and Czech-specific plural forms preserved.
+
+### Writing new UI code
+
+Every user-facing string **must** go through i18n. The ESLint rule `custom/no-hardcoded-jsx-text` enforces this for JSX. In practice:
+
+```typescript
+import { useTranslation } from '@/i18n/useTranslation';
+
+function MyComponent() {
+  const { t, tx } = useTranslation();
+  return (
+    <div>
+      <h1>{t.common.save}</h1>
+      <p>{tx(t.common.agent_count_other, { count: 5 })}</p>
+    </div>
+  );
+}
+```
+
+Add new keys to `src/i18n/en.ts` only (with a translator-facing comment explaining context). Non-English bundles catch up via the subagent pipeline above.
+
 ## Troubleshooting
 
 ### `failed to run 'cargo metadata'` / `program not found`

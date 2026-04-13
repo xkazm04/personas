@@ -1,19 +1,64 @@
-import { X, ExternalLink, Plug } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, ExternalLink, Plug, Terminal, Loader2 } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { openExternalUrl } from "@/api/system/system";
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  cliCaptureRun,
+  listCliCapturableServices,
+  type CliCaptureResult,
+} from '@/api/auth/cliCapture';
 
 interface SetupGuideModalProps {
   connector: ConnectorDefinition | null;
   onClose: () => void;
+  onCliCaptured?: (connector: ConnectorDefinition, result: CliCaptureResult) => void;
 }
 
-export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
+export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuideModalProps) {
   const { t } = useTranslation();
+  const [cliAvailable, setCliAvailable] = useState<boolean>(false);
+  const [cliBusy, setCliBusy] = useState<boolean>(false);
+  const [cliError, setCliError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!connector) {
+      setCliAvailable(false);
+      return;
+    }
+    setCliError(null);
+    listCliCapturableServices()
+      .then((services) => {
+        if (!cancelled) setCliAvailable(services.includes(connector.name));
+      })
+      .catch(() => {
+        if (!cancelled) setCliAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connector]);
+
   if (!connector) return null;
+
+  const runCliCapture = async () => {
+    if (!connector || cliBusy) return;
+    setCliBusy(true);
+    setCliError(null);
+    try {
+      const result = await cliCaptureRun(connector.name);
+      onCliCaptured?.(connector, result);
+      onClose();
+    } catch (err) {
+      setCliError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCliBusy(false);
+    }
+  };
 
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const guide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
@@ -33,6 +78,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
 
   return (
     <BaseModal isOpen={!!connector} onClose={onClose} titleId="setup-guide-title" size="md" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
+      <div data-testid="setup-guide-modal" data-connector-name={connector.name} data-cli-available={cliAvailable ? 'true' : 'false'}>
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20">
         <div
@@ -101,17 +147,46 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
       </div>
 
       {/* Footer */}
-      {docsUrl && (
-        <div className="px-6 py-3 border-t border-primary/10 bg-secondary/10">
-          <button
-            onClick={handleOpenDocs}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-sm font-medium transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Open {connector.label} setup page
-          </button>
+      {(docsUrl || cliAvailable) && (
+        <div className="px-6 py-3 border-t border-primary/10 bg-secondary/10 flex flex-wrap items-center gap-2">
+          {cliAvailable && (
+            <div className="flex flex-col gap-1" data-testid="cli-capture-panel">
+              <button
+                data-testid="cli-capture-cta"
+                data-cli-busy={cliBusy ? 'true' : 'false'}
+                onClick={runCliCapture}
+                disabled={cliBusy}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {cliBusy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" data-testid="cli-capture-busy" />
+                ) : (
+                  <Terminal className="w-3.5 h-3.5" />
+                )}
+                {cliBusy ? t.vault.cli_capture.running : t.vault.cli_capture.cta}
+              </button>
+              {cliError && (
+                <p data-testid="cli-capture-error" className="text-xs text-destructive/90 max-w-xs">{cliError}</p>
+              )}
+              {!cliError && !cliBusy && (
+                <p data-testid="cli-capture-hint" className="text-xs text-muted-foreground/60 max-w-xs">
+                  {t.vault.cli_capture.hint}
+                </p>
+              )}
+            </div>
+          )}
+          {docsUrl && (
+            <button
+              onClick={handleOpenDocs}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-sm font-medium transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open {connector.label} setup page
+            </button>
+          )}
         </div>
       )}
+      </div>
     </BaseModal>
   );
 }

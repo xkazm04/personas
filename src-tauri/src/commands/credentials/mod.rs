@@ -20,6 +20,7 @@ pub mod desktop_bridges;
 pub mod query_debug;
 pub mod schema_proposal;
 pub mod auth_detect;
+pub mod cli_capture;
 pub mod credential_recipes;
 pub mod nl_query;
 pub mod vector_kb;

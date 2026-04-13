@@ -1,0 +1,57 @@
+{
+  "id": "builtin-harvest",
+  "name": "harvest",
+  "label": "Harvest",
+  "color": "#F36F21",
+  "icon_url": "https://cdn.simpleicons.org/harvest/F36F21",
+  "category": "time-tracking",
+  "fields": [
+    {
+      "key": "personal_access_token",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Create at id.getharvest.com/developers",
+      "sensitive": true
+    },
+    {
+      "key": "account_id",
+      "label": "Account ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "1234567",
+      "helpText": "Shown next to your token at id.getharvest.com/developers",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.harvestapp.com/v2/users/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{personal_access_token}}",
+      "Harvest-Account-Id": "{{account_id}}",
+      "User-Agent": "Personas Desktop (https://personas.app)"
+    },
+    "description": "Validates PAT via Harvest /v2/users/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Harvest time tracking, invoicing, and project billing for agencies and freelancers.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://help.getharvest.com/api-v2/",
+    "setup_guide": "1. Go to id.getharvest.com/developers\n2. Click 'Create new personal access token'\n3. Give it a name and click 'Create personal access token'\n4. Copy the token AND note the Account ID shown next to it\n5. Paste both values here",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

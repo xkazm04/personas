@@ -24,10 +24,14 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
   } = props;
 
   const { onDifficultyFilterChange, onSetupFilterChange } = props;
-  const query = useStructuredQuery(onCategoryFilterChange, onSearchChange, {
-    onDifficultyFilterChange,
-    onSetupFilterChange,
-  });
+  // Stabilize the callbacks object so useStructuredQuery's internal useCallbacks
+  // don't get new dep identities on every render, which would cascade unstable
+  // callback props into SearchChipInput and trigger unnecessary re-renders.
+  const queryCallbacks = useMemo(
+    () => ({ onDifficultyFilterChange, onSetupFilterChange }),
+    [onDifficultyFilterChange, onSetupFilterChange],
+  );
+  const query = useStructuredQuery(onCategoryFilterChange, onSearchChange, queryCallbacks);
   const selectedCategory: string | null = categoryFilter[0] ?? null;
 
   const showAiSuggestion = useMemo(() => {

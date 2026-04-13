@@ -56,6 +56,7 @@ const ROLE_LABELS: Record<string, string> = {
   shell: 'Shell / Terminal',
   note_taking: 'Note Taking',
   browser_automation: 'Browser Automation',
+  time_tracking: 'Time Tracking',
 };
 
 /** Helper to build a ConnectorRole entry with both labelKey and fallback label. */
@@ -117,6 +118,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // -- Scheduling & Forms ----------------------------------------
   role('scheduling',          ['calendly', 'cal_com', 'google_calendar', 'microsoft_calendar']),
+  role('time_tracking',       ['clockify', 'toggl', 'harvest']),
   role('form_survey',         ['typeform', 'tally', 'formbricks']),
   role('notifications',       ['novu', 'knock', 'ntfy']),
 
@@ -181,6 +183,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   scheduling: 'Scheduling',
   forms: 'Forms',
   ai: 'AI',
+  'time-tracking': 'Time Tracking',
 };
 
 /** Convert a purpose key to the i18n key used in `connector_roles`. */
@@ -217,6 +220,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   purposeGroup('finance',        ['payment_processing', 'accounting', 'banking_fintech', 'market_data']),
   purposeGroup('ecommerce',      ['e_commerce']),
   purposeGroup('scheduling',     ['scheduling']),
+  purposeGroup('time-tracking',  ['time_tracking']),
   purposeGroup('forms',          ['form_survey']),
   purposeGroup('ai',             ['ai_platform']),
 ];

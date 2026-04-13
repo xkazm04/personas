@@ -127,6 +127,9 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   knock:                           'personal',
   ntfy:                            'personal',
   obsidian:                        'personal',
+  clockify:                        'personal',
+  toggl:                           'personal',
+  harvest:                         'personal',
 
   elevenlabs:                      'personal',
   google_gemini:                   'personal',

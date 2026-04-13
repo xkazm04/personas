@@ -93,6 +93,9 @@ import vectorKnowledgeBase from '../../../scripts/connectors/builtin/vector-know
 import localMessaging from '../../../scripts/connectors/builtin/local-messaging.json';
 import codebase from '../../../scripts/connectors/builtin/codebase.json';
 import codebases from '../../../scripts/connectors/builtin/codebases.json';
+import clockify from '../../../scripts/connectors/builtin/clockify.json';
+import toggl from '../../../scripts/connectors/builtin/toggl.json';
+import harvest from '../../../scripts/connectors/builtin/harvest.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -187,4 +190,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   localMessaging,
   codebase,
   codebases,
+  clockify,
+  toggl,
+  harvest,
 ] as BuiltinConnectorDef[];
