@@ -22,6 +22,8 @@ interface QuestionnaireFormGridProps {
   autoDetectedIds?: Set<string>;
   /** Question IDs that are blocked because no vault credential exists for the category. */
   blockedQuestionIds?: Set<string>;
+  /** Vault-narrowed option lists per question ID. Applied when 2+ credentials match. */
+  filteredOptions?: Record<string, string[]>;
   /** Called when the user clicks "Add credential" on a blocked question. Passes the vault category. */
   onAddCredential?: (vaultCategory: string) => void;
   onAnswerUpdated: (questionId: string, answer: string) => void;
@@ -214,6 +216,7 @@ function QuestionCard({
   isAutoDetected,
   isBlocked,
   onAddCredential,
+  filteredOptions,
 }: {
   question: TransformQuestionResponse;
   answer: string;
@@ -222,6 +225,8 @@ function QuestionCard({
   isAutoDetected?: boolean;
   isBlocked?: boolean;
   onAddCredential?: (vaultCategory: string) => void;
+  /** Vault-narrowed options for this question (overrides question.options). */
+  filteredOptions?: string[];
 }) {
   const { t } = useTranslation();
   const [flash, setFlash] = useState(false);
@@ -294,7 +299,7 @@ function QuestionCard({
       /* Input control */
       <div className="ml-5.5">
         {question.type === 'select' && question.options ? (
-          <SelectPills options={question.options} value={answer} onChange={onAnswer} allowCustom={question.allow_custom} />
+          <SelectPills options={filteredOptions ?? question.options} value={answer} onChange={onAnswer} allowCustom={question.allow_custom} />
         ) : question.type === 'boolean' ? (
           <BooleanToggle value={answer} onChange={onAnswer} />
         ) : question.type === 'devtools_project' ? (
@@ -342,6 +347,7 @@ export function QuestionnaireFormGrid({
   userAnswers,
   autoDetectedIds,
   blockedQuestionIds,
+  filteredOptions,
   onAddCredential,
   onAnswerUpdated,
   onSubmit,
@@ -439,6 +445,7 @@ export function QuestionnaireFormGrid({
                         isAutoDetected={autoDetectedIds?.has(q.id)}
                         isBlocked={blockedQuestionIds?.has(q.id)}
                         onAddCredential={onAddCredential}
+                        filteredOptions={filteredOptions?.[q.id]}
                       />
                     ))}
                   </div>

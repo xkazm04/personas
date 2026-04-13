@@ -59,6 +59,7 @@ export default function AdoptionWizardModal({
       titleId="adoption-matrix-title"
       maxWidthClass="max-w-[1750px]"
       panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      portal
     >
       <div className="relative h-full overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">

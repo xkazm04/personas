@@ -63,7 +63,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'productivity/email-follow-up-tracker.json': '00058f5fbd924281',
   'productivity/email-morning-digest.json': '001900f3177b96a9',
   'productivity/email-task-extractor.json': '000bd0620c3bf8a1',
-  'productivity/idea-harvester.json': '001bf490524fca47',
+  'productivity/idea-harvester.json': '000431770b574305',
   'productivity/meeting-lifecycle-manager.json': '001c8fc0bba5c746',
   'productivity/personal-capture-bot.json': '001b834916f17920',
   'productivity/router.json': '001b1b0d3e7ff89b',

@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Play, X, HelpCircle, CheckCircle2, Send, RefreshCw, Save,
-  XCircle, Eye, RotateCcw, FileText, AlertTriangle,
+  XCircle, Eye, RotateCcw, FileText, AlertTriangle, Trash2,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -478,7 +478,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
 
 /** Test results panel -- pass/fail summary with View Report button. */
 export function TestResultsPanel({
-  passed, error, onApprove, onApproveAnyway, onReject, toolResults = [], summary,
+  passed, error, onApprove, onApproveAnyway, onReject, onDeleteDraft, toolResults = [], summary,
 }: {
   passed?: boolean | null;
   outputLines?: string[];
@@ -487,6 +487,8 @@ export function TestResultsPanel({
   /** Force-promote bypass when tests didn't pass (skipped / failed / connector gaps). */
   onApproveAnyway?: () => void;
   onReject?: () => void;
+  /** Discard the draft and close — shown when tests didn't fully pass. */
+  onDeleteDraft?: () => void;
   toolResults?: ToolTestResult[];
   summary?: string | null;
 }) {
@@ -585,6 +587,18 @@ export function TestResultsPanel({
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Retry
+          </button>
+        )}
+        {!didPass && onDeleteDraft && (
+          <button
+            type="button"
+            onClick={onDeleteDraft}
+            data-testid="agent-delete-draft-btn"
+            title="Discard this draft persona and close"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete Draft
           </button>
         )}
       </div>

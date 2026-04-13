@@ -189,6 +189,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [questionsComplete, setQuestionsComplete] = useState(false);
   const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
   const [blockedQuestionIds, setBlockedQuestionIds] = useState<Set<string>>(new Set());
+  const [filteredOptions, setFilteredOptions] = useState<Record<string, string[]>>({});
   const defaultsLoaded = useRef(false);
 
   // Pre-populate default answers from template questions + vault auto-detection.
@@ -219,13 +220,14 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     void import("@/stores/vaultStore").then(({ useVaultStore }) => {
       const creds = useVaultStore.getState().credentials;
       const serviceTypes = new Set(creds.map((c) => c.service_type));
-      const { autoAnswers, autoDetectedIds: detected, blockedQuestionIds: blocked } =
+      const { autoAnswers, autoDetectedIds: detected, blockedQuestionIds: blocked, filteredOptions: filtered } =
         matchVaultToQuestions(adoptionQuestions, serviceTypes);
       // Order: template defaults < vault auto-answers < restored draft answers
       const merged = { ...defaults, ...autoAnswers, ...(restoredAnswers ?? {}) };
       if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
       if (detected.size > 0) setAutoDetectedIds(detected);
       if (blocked.size > 0) setBlockedQuestionIds(blocked);
+      if (Object.keys(filtered).length > 0) setFilteredOptions(filtered);
     }).catch(() => {
       const merged = { ...defaults, ...(restoredAnswers ?? {}) };
       if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
@@ -355,7 +357,18 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   // Adoption seeds the matrix to draft_ready immediately. Once any adoption
   // questions are answered (or none exist), kick off the test automatically.
   // If conditions aren't met (questions pending, errors), manual button remains.
+  //
+  // Multi-round support: when the LLM surfaces a new pending question mid-build,
+  // the ref is reset so that once the user answers it and we cycle back to
+  // draft_ready with no more questions, the auto-test fires again. Without this
+  // reset, the guard would block re-triggering and the user would have to click
+  // the manual test button on every round.
   const autoTestedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) {
+      autoTestedRef.current = null;
+    }
+  }, [build.pendingQuestions]);
   useEffect(() => {
     if (!seeded || !personaId) return;
     if (currentBuildPhase !== 'draft_ready') return;
@@ -418,6 +431,25 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // Close the adoption modal — user returns via the resume banner
     onClose();
   }, [onClose, review.id, review.test_case_name, adoptionAnswers]);
+
+  // Discard the current draft persona and close the adoption modal.
+  // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
+  // and the user wants to abandon the adoption rather than retry or approve.
+  const handleDeleteDraft = useCallback(() => {
+    const agent = useAgentStore.getState();
+    const sys = useSystemStore.getState();
+    // Fire-and-forget cleanup — UI closes immediately either way
+    if (personaId) {
+      void agent.deletePersona(personaId).catch(() => { /* best-effort */ });
+    }
+    agent.resetBuildSession();
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      useOverviewStore.getState().processEnded('template_adopt', 'failed', personaId ?? 'unknown');
+    }).catch(() => {});
+    sys.setTemplateAdoptActive(false);
+    sys.setAdoptionDraft(null);
+    onClose();
+  }, [personaId, onClose]);
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
@@ -491,6 +523,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
             userAnswers={adoptionAnswers}
             autoDetectedIds={autoDetectedIds}
             blockedQuestionIds={blockedQuestionIds}
+            filteredOptions={filteredOptions}
             onAddCredential={handleAddCredentialForCategory}
             onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
             onSubmit={() => setQuestionsComplete(true)}
@@ -519,7 +552,9 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           buildPhase={build.buildPhase}
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={lifecycle.handlePromote}
           onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
           onRefine={lifecycle.handleRefine}
           testOutputLines={build.buildTestOutputLines}
           testPassed={build.buildTestPassed}

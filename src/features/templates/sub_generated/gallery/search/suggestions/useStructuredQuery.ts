@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 export type ChipType = 'category' | 'difficulty' | 'setup';
 
@@ -47,6 +47,25 @@ export function useStructuredQuery(
 ): UseStructuredQueryReturn {
   const [inputValue, setInputValueRaw] = useState(_cachedInput);
   const [chips, setChips] = useState<QueryChip[]>(_cachedChips);
+
+  // On mount, if the module-level cache has a value (user switched modules and
+  // returned), rehydrate the parent filter state so the gallery actually filters
+  // instead of just showing the populated input with an unfiltered result set.
+  const didHydrateRef = useRef(false);
+  useEffect(() => {
+    if (didHydrateRef.current) return;
+    didHydrateRef.current = true;
+    if (_cachedInput) onSearchChange(_cachedInput);
+    if (_cachedChips.length > 0) {
+      const cats = _cachedChips.filter((c) => c.type === 'category').map((c) => c.value);
+      const diffs = _cachedChips.filter((c) => c.type === 'difficulty').map((c) => c.value);
+      const setups = _cachedChips.filter((c) => c.type === 'setup').map((c) => c.value);
+      if (cats.length > 0) onCategoryFilterChange(cats);
+      if (diffs.length > 0) callbacks?.onDifficultyFilterChange?.(diffs);
+      if (setups.length > 0) callbacks?.onSetupFilterChange?.(setups);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Detect if the user is typing a prefix like "category:"
   const { autocompletePrefix, autocompleteQuery, keywordText } = useMemo(() => {
