@@ -1,13 +1,13 @@
 /**
- * UnifiedMatrixEntry -- direct matrix mount replacing CreationWizard.
+ * UnifiedMatrixEntry -- unified matrix build surface for persona creation and editing.
  *
  * This component renders PersonaMatrix with variant="creation" directly,
- * with no mode tabs (build/chat/matrix) and no wizard step navigation.
+ * with no mode tabs and no wizard step navigation.
  * The matrix IS the creation surface.
  *
  * It uses useMatrixBuild for build orchestration and manages local state
- * for intent text and agent name. Draft persona creation follows the same
- * pattern as MatrixCreator (createPersona via agentStore).
+ * for intent text and agent name. Draft persona creation calls createPersona
+ * via agentStore before starting the build session.
  */
 import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";

@@ -42,7 +42,7 @@ export interface UiSlice {
   showDesignNudge: boolean;
   showCloudNudge: boolean;
   isCreatingPersona: boolean;
-  /** When set, CreationWizard opens in resume mode for this draft persona */
+  /** Dormant field — preserved for legacy storeBus event handling until callers (storeBusWiring.ts, tests) are updated in a follow-up cleanup. */
   resumeDraftId: string | null;
   autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
