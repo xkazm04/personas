@@ -1813,13 +1813,30 @@ pub async fn run_execution(
         };
         let msg_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let _ = pool.get().map(|conn| {
-            conn.execute(
-                "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6)",
-                rusqlite::params![msg_id, persona.id, execution_id, title, content, now],
-            ).ok();
-        });
+        match pool.get() {
+            Ok(conn) => {
+                if let Err(e) = conn.execute(
+                    "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6)",
+                    rusqlite::params![msg_id, persona.id, execution_id, title, content, now],
+                ) {
+                    tracing::warn!(
+                        execution_id = %execution_id,
+                        persona_id = %persona.id,
+                        error = %e,
+                        "Failed to persist execution message to DB",
+                    );
+                }
+            }
+            Err(e) => {
+                tracing::warn!(
+                    execution_id = %execution_id,
+                    persona_id = %persona.id,
+                    error = %e,
+                    "Failed to acquire DB connection for execution message",
+                );
+            }
+        }
     }
 
     ExecutionResult {

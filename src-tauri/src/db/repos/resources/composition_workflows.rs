@@ -147,10 +147,11 @@ pub fn bulk_import(
     pool: &DbPool,
     workflows: Vec<CompositionWorkflow>,
 ) -> Result<u32, AppError> {
-    let conn = pool.get()?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
     let mut imported = 0u32;
     for wf in workflows {
-        let result = conn.execute(
+        let result = tx.execute(
             "INSERT OR IGNORE INTO composition_workflows (id, name, description, nodes_json, edges_json, input_schema_json, enabled, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
@@ -164,10 +165,11 @@ pub fn bulk_import(
                 wf.created_at,
                 wf.updated_at,
             ],
-        )?;
+        ).map_err(AppError::Database)?;
         if result > 0 {
             imported += 1;
         }
     }
+    tx.commit().map_err(AppError::Database)?;
     Ok(imported)
 }

@@ -484,15 +484,15 @@ fn constant_time_eq(a: &str, b: &str) -> bool {
 /// harder for XSS payloads.  Combined with CSP, this provides meaningful
 /// defense-in-depth against content injection attacks.
 pub fn generate_ipc_auth_script(token: &str) -> String {
-    // Store the token in a global that the frontend can read.
-    // Also attempt to monkey-patch __TAURI_INTERNALS__.invoke if it's
-    // already available, and set up a retry for when it appears later
+    // Monkey-patch __TAURI_INTERNALS__.invoke if it's already available,
+    // and set up a retry for when it appears later
     // (Tauri 2.x init script timing: internals may not exist yet).
+    // The token is kept only in the closure variable `_t` — never
+    // assigned to a window global — so XSS cannot trivially extract it.
     format!(
         r#"(function() {{
   'use strict';
   var _t = '{}';
-  window.__IPC_TOKEN = _t;
   function patchInvoke() {{
     if (!window.__TAURI_INTERNALS__ || !window.__TAURI_INTERNALS__.invoke) return false;
     if (window.__TAURI_INTERNALS__.__ipc_patched) return true;

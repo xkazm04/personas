@@ -111,6 +111,7 @@ pub async fn shared_event_relay_tick(
             Ok(firings) => {
                 let _ = repo::set_error(pool, &sub.id, None);
 
+                let mut sub_published = 0u32;
                 for firing in &firings {
                     // 3. Publish to local event bus
                     let event_type = format!("shared:{}", sub.slug);
@@ -128,6 +129,7 @@ pub async fn shared_event_relay_tick(
                         Ok(event) => {
                             emit_event_bus(app, &event);
                             total_new += 1;
+                            sub_published += 1;
                         }
                         Err(e) => {
                             tracing::warn!(
@@ -138,9 +140,10 @@ pub async fn shared_event_relay_tick(
                     }
                 }
 
-                // 4. Advance cursor
+                // 4. Advance cursor with actual batch count
                 if let Some(last) = firings.last() {
-                    let _ = repo::update_cursor(pool, &sub.id, &last.fired_at);
+                    let count = if sub_published > 0 { sub_published } else { 1 };
+                    let _ = repo::update_cursor(pool, &sub.id, &last.fired_at, count);
                 }
             }
             Err(e) => {

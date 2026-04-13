@@ -26,11 +26,23 @@ import type { Translations } from './en';
 
 type TokenSection = keyof Translations['status_tokens'];
 
+const warnedTokens = new Set<string>();
+
 /** Resolve a machine token to its translated label. Falls back to the raw token. */
 export function tokenLabel(t: Translations, category: TokenSection, token: string): string {
   const section = t.status_tokens[category];
   if (section && typeof section === 'object' && token in section) {
     return (section as Record<string, string | undefined>)[token] ?? token;
+  }
+  if (import.meta.env.DEV) {
+    const key = `${category}:${token}`;
+    if (!warnedTokens.has(key)) {
+      warnedTokens.add(key);
+      console.warn(
+        `[i18n] tokenLabel falling back to raw token "${token}" for category "${category}". ` +
+        `Add status_tokens.${category}.${token} to src/i18n/en.ts.`,
+      );
+    }
   }
   return token;
 }

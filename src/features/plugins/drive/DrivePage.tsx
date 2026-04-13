@@ -25,6 +25,8 @@ import { useSigning } from "./signing/useSigning";
 import { DriveSignDialog } from "./signing/DriveSignDialog";
 import { DriveVerifyDialog } from "./signing/DriveVerifyDialog";
 import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
+import { useOcr } from "./ocr/useOcr";
+import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
 
 type Dialog =
   | { kind: "new_folder" }
@@ -37,11 +39,13 @@ export default function DrivePage() {
   const { t, tx } = useTranslation();
   const drive = useDrive();
   const signing = useSigning();
+  const ocr = useOcr();
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
+  const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
   const [signaturesOpen, setSignaturesOpen] = useState(false);
 
   // Selected entries are the subset of visibleEntries whose path is in the
@@ -254,6 +258,19 @@ export default function DrivePage() {
           onCopyPath={handleCopyPath}
           onSignFile={(entry) => setSignEntry(entry)}
           onVerifyFile={(entry) => setVerifyEntry(entry)}
+          onExtractText={(entry) => setOcrEntry(entry)}
+          hasGemini={ocr.hasGemini}
+        />
+      )}
+
+      {ocrEntry && (
+        <DriveOcrDrawer
+          entry={ocrEntry}
+          ocr={ocr}
+          onClose={() => setOcrEntry(null)}
+          onFileWritten={() => {
+            drive.refresh();
+          }}
         />
       )}
 

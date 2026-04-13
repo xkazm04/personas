@@ -253,6 +253,13 @@ export interface DesignConversationMessage {
   timestamp: string;
 }
 
+/** Result of appending a message, indicating whether the conversation was truncated */
+export interface AppendMessageResult {
+  conversation: DesignConversation;
+  truncated: boolean;
+  messageCount: number;
+}
+
 /** A persistent design conversation that accumulates multi-turn context */
 export interface DesignConversation {
   id: string;

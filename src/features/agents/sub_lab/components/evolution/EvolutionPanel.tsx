@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Sparkles, Play, Loader2, CheckCircle2, XCircle,
   ToggleLeft, ToggleRight, TrendingUp,
@@ -145,6 +145,16 @@ export function EvolutionPanel() {
   const [showSettings, setShowSettings] = useState(false);
   const [eligible, setEligible] = useState(false);
 
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // Editable settings
   const [mutationRate, setMutationRate] = useState(0.15);
   const [variants, setVariants] = useState(4);
@@ -233,10 +243,14 @@ export function EvolutionPanel() {
       addToast('Evolution cycle started', 'success');
 
       // Poll for completion
-      const poll = setInterval(async () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      pollRef.current = setInterval(async () => {
         const updated = await evolutionApi.listCycles(personaId, 1).catch(() => []);
         if (updated.length > 0 && (updated[0]!.status === 'completed' || updated[0]!.status === 'failed')) {
-          clearInterval(poll);
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
           loadData();
           if (updated[0]!.status === 'completed' && updated[0]!.promoted) {
             addToast('Evolution: variant promoted!', 'success');
@@ -245,7 +259,12 @@ export function EvolutionPanel() {
       }, 3000);
 
       // Safety timeout
-      setTimeout(() => clearInterval(poll), 120_000);
+      timeoutRef.current = setTimeout(() => {
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      }, 120_000);
     } catch (err: unknown) {
       addToast(`Trigger failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
     } finally {

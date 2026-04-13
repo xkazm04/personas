@@ -25,9 +25,11 @@ export function EventsPanel({
 
   useEffect(() => {
     if (!selectedPersonaId) { setTriggers([]); setDesignEvents([]); return; }
+    let cancelled = false;
     setLoading(true);
     getPersonaDetail(selectedPersonaId)
       .then((detail) => {
+        if (cancelled) return;
         const eventTriggers = (detail.triggers ?? []).filter(
           (t: PersonaTrigger) => t.trigger_type === 'event_listener' && t.enabled,
         );
@@ -44,8 +46,9 @@ export function EventsPanel({
           }
         } catch { setDesignEvents([]); }
       })
-      .catch(() => { setTriggers([]); setDesignEvents([]); })
-      .finally(() => setLoading(false));
+      .catch(() => { if (!cancelled) { setTriggers([]); setDesignEvents([]); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [selectedPersonaId]);
 
   const selectedPersona = selectedPersonaId ? personas.find((p) => p.id === selectedPersonaId) : null;

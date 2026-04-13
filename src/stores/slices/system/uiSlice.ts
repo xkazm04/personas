@@ -168,7 +168,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
-  enabledPlugins: new Set<PluginTab>(['dev-tools', 'ocr', 'artist', 'obsidian-brain', 'research-lab', 'drive']),
+  enabledPlugins: new Set<PluginTab>(['dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive']),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);
     if (next.has(plugin)) {

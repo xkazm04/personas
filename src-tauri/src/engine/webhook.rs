@@ -14,14 +14,19 @@ use serde::Serialize;
 use sha2::Sha256;
 use tokio::sync::watch;
 
+use rusqlite::params;
+
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::models::webhook_log::CreateWebhookRequestLogInput;
+use crate::db::models::PersonaEvent;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::db::DbPool;
+use crate::engine::crypto;
 use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_WINDOW};
 use crate::engine::tier::TierConfig;
+use crate::error::AppError;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -428,39 +433,18 @@ async fn process_webhook(
     // 5. Extract event_type from typed config or default
     let event_type = cfg_event_type.unwrap_or_else(|| "webhook_received".to_string());
 
-    // 6. Mark trigger as fired BEFORE publishing the event.
-    //    This prevents duplicate events when mark_triggered fails: the caller
-    //    sees accepted:false, retries, but no orphan event sits in the bus.
-    if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.trigger_version) {
-        tracing::error!(
-            trigger_id = %trigger_id,
-            "Failed to mark trigger as fired, aborting event publish: {}",
-            e,
-        );
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            no_headers(),
-            WebhookResponse {
-                accepted: false,
-                event_id: None,
-                error: Some("Failed to advance trigger schedule".into()),
-            },
-        );
-    }
-
-    // 7. Publish event to the event bus (trigger already advanced)
-    match event_repo::publish(
-        &state.pool,
-        CreatePersonaEventInput {
-            event_type,
-            source_type: "webhook".into(),
-            source_id: Some(trigger_id.to_string()),
-            target_persona_id: Some(trigger.persona_id.clone()),
-            project_id: None,
-            payload,
-            use_case_id: trigger.use_case_id.clone(),
-        },
-    ) {
+    // 6+7. Atomically mark trigger as fired AND publish the event in a
+    //       single SQLite transaction to prevent orphan trigger advancements.
+    let input = CreatePersonaEventInput {
+        event_type,
+        source_type: "webhook".into(),
+        source_id: Some(trigger_id.to_string()),
+        target_persona_id: Some(trigger.persona_id.clone()),
+        project_id: None,
+        payload,
+        use_case_id: trigger.use_case_id.clone(),
+    };
+    match mark_triggered_and_publish(&state.pool, trigger_id, trigger.trigger_version, input) {
         Ok(event) => {
             tracing::info!(
                 trigger_id = %trigger_id,
@@ -480,7 +464,7 @@ async fn process_webhook(
             )
         }
         Err(e) => {
-            tracing::error!(trigger_id = %trigger_id, "Failed to publish webhook event: {}", e);
+            tracing::error!(trigger_id = %trigger_id, "Failed to process webhook: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 no_headers(),
@@ -521,6 +505,73 @@ fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
     // Always run the constant-time comparison, then AND with hex_valid
     // so invalid hex is still rejected without leaking timing information.
     mac.verify_slice(&expected_bytes).is_ok() && hex_valid
+}
+
+/// Atomically mark a trigger as fired and publish the corresponding event
+/// in a single SQLite transaction. Prevents orphan trigger advancements
+/// when the event publish would fail (or vice versa).
+fn mark_triggered_and_publish(
+    pool: &DbPool,
+    trigger_id: &str,
+    expected_version: i32,
+    input: CreatePersonaEventInput,
+) -> Result<PersonaEvent, AppError> {
+    let event_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let project_id = input.project_id.unwrap_or_else(|| "default".into());
+
+    let (stored_payload, payload_iv) = match &input.payload {
+        Some(plaintext) if !plaintext.is_empty() => {
+            match crypto::encrypt_for_db(plaintext) {
+                Ok((ct, iv)) => (Some(ct), Some(iv)),
+                Err(e) => {
+                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                    (Some(plaintext.clone()), None)
+                }
+            }
+        }
+        other => (other.clone(), None),
+    };
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    let trigger_rows = tx.execute(
+        "UPDATE persona_triggers
+         SET last_triggered_at = ?1, next_trigger_at = NULL, updated_at = ?1,
+             trigger_version = trigger_version + 1
+         WHERE id = ?2 AND trigger_version = ?3",
+        params![now, trigger_id, expected_version],
+    ).map_err(AppError::Database)?;
+
+    if trigger_rows == 0 {
+        return Err(AppError::Validation(
+            "Trigger version conflict — concurrent update detected".into(),
+        ));
+    }
+
+    tx.execute(
+        "INSERT INTO persona_events
+         (id, project_id, event_type, source_type, source_id, target_persona_id,
+          payload, payload_iv, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
+        params![
+            event_id,
+            project_id,
+            input.event_type,
+            input.source_type,
+            input.source_id,
+            input.target_persona_id,
+            stored_payload,
+            payload_iv,
+            input.use_case_id,
+            now,
+        ],
+    ).map_err(AppError::Database)?;
+
+    tx.commit().map_err(AppError::Database)?;
+
+    event_repo::get_by_id(pool, &event_id)
 }
 
 #[cfg(test)]

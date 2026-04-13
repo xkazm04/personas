@@ -73,6 +73,44 @@ export const driveOpenInOs = (relPath: string) =>
 export const driveRevealInOs = (relPath: string) =>
   invoke<void>("drive_reveal_in_os", { relPath });
 
+// ---------------------------------------------------------------------------
+// OCR (consolidated from the retired OCR plugin)
+// ---------------------------------------------------------------------------
+
+export interface OcrDocumentLite {
+  id: string;
+  file_name: string;
+  file_path: string | null;
+  provider: string;
+  model: string | null;
+  extracted_text: string;
+  duration_ms: number;
+  token_count: number | null;
+  created_at: string;
+}
+
+export interface OcrDriveResult {
+  document: OcrDocumentLite;
+  raw_response: string | null;
+}
+
+/**
+ * Run Gemini OCR on a drive file. Uses the managed-root sandbox + fetches
+ * the Gemini API key from the vault credential server-side (key never
+ * touches the frontend). Pinned to gemini-3-flash-preview in the backend.
+ */
+export const ocrDriveFileGemini = (
+  relPath: string,
+  credentialId: string,
+  prompt?: string,
+) =>
+  invoke<OcrDriveResult>(
+    "ocr_drive_file_gemini",
+    { relPath, credentialId, prompt: prompt ?? null },
+    undefined,
+    180_000,
+  );
+
 export const DRIVE_MIME_ICONS: Record<string, string> = {
   "text/plain": "FileText",
   "application/json": "Braces",

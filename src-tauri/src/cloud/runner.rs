@@ -29,6 +29,7 @@ pub async fn run_cloud_execution(
     cancelled: Arc<AtomicBool>,
 ) -> CloudRunResult {
     let mut offset: u32 = 0;
+    let mut high_water_mark: u32 = 0;
     let base_interval = std::time::Duration::from_millis(800);
     let max_backoff = std::time::Duration::from_secs(30);
     let max_consecutive_errors: u32 = 10;
@@ -38,6 +39,14 @@ pub async fn run_cloud_execution(
 
     for _ in 0..max_polls {
         if cancelled.load(Ordering::Acquire) {
+            if let Err(e) = client.cancel_execution(&cloud_execution_id).await {
+                tracing::warn!(
+                    execution_id = %local_execution_id,
+                    cloud_execution_id = %cloud_execution_id,
+                    error = %e,
+                    "Failed to cancel cloud execution on orchestrator",
+                );
+            }
             return CloudRunResult {
                 success: false,
                 error: Some("Cancelled".into()),
@@ -134,19 +143,20 @@ pub async fn run_cloud_execution(
             }
         }
 
-        // Emit new output lines -- use safe slice to avoid panic if the
-        // orchestrator restarted and returned fewer lines than our offset.
-        let new_lines = if poll.output_lines < offset {
+        // Emit new output lines -- use high_water_mark to avoid re-emitting
+        // lines the frontend already received after an orchestrator restart.
+        if poll.output_lines < offset {
             tracing::warn!(
                 execution_id = %local_execution_id,
                 expected_offset = offset,
                 actual_lines = poll.output_lines,
+                high_water_mark,
                 "Cloud orchestrator returned fewer output lines than offset -- possible state reset"
             );
-            poll.output.as_slice()
-        } else {
-            poll.output.get(offset as usize..).unwrap_or(&[])
-        };
+            offset = poll.output_lines;
+        }
+        let emit_from = offset.max(high_water_mark) as usize;
+        let new_lines = poll.output.get(emit_from..).unwrap_or(&[]);
         for line in new_lines {
             let _ = app.emit(
                 event_name::EXECUTION_OUTPUT,
@@ -157,6 +167,9 @@ pub async fn run_cloud_execution(
             );
         }
         offset = poll.output_lines;
+        if offset > high_water_mark {
+            high_water_mark = offset;
+        }
 
         // Check terminal status
         match poll.status.as_str() {

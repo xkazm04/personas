@@ -1599,6 +1599,7 @@ pub fn run() {
             // OCR -- Document Text Extraction
             commands::ocr::ocr_with_gemini,
             commands::ocr::ocr_with_claude,
+            commands::ocr::ocr_drive_file_gemini,
             commands::ocr::list_ocr_documents,
             commands::ocr::get_ocr_document,
             commands::ocr::delete_ocr_document,

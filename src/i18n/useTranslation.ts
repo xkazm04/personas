@@ -51,14 +51,33 @@ function mergeWithFallback(partial: Translations): Translations {
   return deepMerge(en as Record<string, unknown>, partial as unknown as Record<string, unknown>) as Translations;
 }
 
-/** Eagerly load a language bundle into cache (fire-and-forget). */
+const loadingSet = new Set<Language>();
+
+/** Eagerly load a language bundle into cache with retry on failure. */
 function preload(lang: Language) {
-  if (cache.has(lang)) return;
-  loaders[lang]().then(bundle => {
-    cache.set(lang, lang === 'en' ? bundle : mergeWithFallback(bundle));
-    // Notify React via a micro state bump so hooks re-render.
-    listeners.forEach(fn => fn());
-  });
+  if (cache.has(lang) || loadingSet.has(lang)) return;
+  loadingSet.add(lang);
+
+  const attempt = (isRetry: boolean) => {
+    loaders[lang]()
+      .then(bundle => {
+        cache.set(lang, lang === 'en' ? bundle : mergeWithFallback(bundle));
+        listeners.forEach(fn => fn());
+      })
+      .catch((err: unknown) => {
+        if (!isRetry) {
+          console.warn(`[i18n] Failed to load "${lang}" bundle, retrying...`, err);
+          setTimeout(() => attempt(true), 1000);
+          return;
+        }
+        console.error(`[i18n] Failed to load "${lang}" bundle after retry — falling back to English`, err);
+      })
+      .finally(() => {
+        loadingSet.delete(lang);
+      });
+  };
+
+  attempt(false);
 }
 
 // Tiny pub-sub so React hooks re-render when a bundle finishes loading.

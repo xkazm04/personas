@@ -7610,6 +7610,9 @@ export const en = {
   design: {
     no_persona: "No persona selected",
 
+    // Conversation truncation warning — shown when the 500-message cap trims old messages
+    conversation_truncated: "This conversation reached the message limit. Older messages have been removed — consider starting a new conversation to preserve context.",
+
     // Compilation stage labels -- shown during AI-powered persona generation
     stages: {
       assembling_label: "Preparing instructions",
@@ -8675,8 +8678,6 @@ export const en = {
     dev_tools_desc: "Project management, context mapping, idea scanning, triage, and task runner utilities.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
-    ocr_label: "OCR",
-    ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal.",
     drive_label: "Drive",
     drive_desc: "Managed local filesystem where agents save exports. Browse files in a Finder-style UI; survives app upgrades.",
 
@@ -8756,6 +8757,23 @@ export const en = {
       signatures_button: "Signatures",
       ctx_sign_file: "Sign file\u2026",
       ctx_verify_file: "Verify signature\u2026",
+      // OCR integration (merged from OCR plugin, Gemini only, pinned model)
+      ctx_extract_text: "Extract text (OCR)\u2026",
+      ctx_extract_text_no_gemini: "Extract text \u2014 connect Gemini to enable",
+      ocr_title: "Extract text with Gemini",
+      ocr_subtitle: "Vision OCR via Google Gemini 3 Flash Preview",
+      ocr_model_label: "Model",
+      ocr_connector_ready: "Gemini connector ready",
+      ocr_connector_missing: "No Gemini credential found in the vault. Connect Google Gemini to enable OCR.",
+      ocr_prompt_label: "Optional prompt",
+      ocr_prompt_placeholder: "e.g. Only extract the invoice total and line items",
+      ocr_extract: "Extract text",
+      ocr_running: "Extracting\u2026",
+      ocr_done: "Extraction complete",
+      ocr_save: "Save as .ocr.txt",
+      ocr_saved: "Saved",
+      ocr_saved_to: "Saved to",
+      ocr_copied: "Copied to clipboard",
     },
 
     artist: {

@@ -269,7 +269,17 @@ function DynamicSelectBody({
   const src = question.dynamic_source!;
   const state = dynamicState;
 
-  if (!state || state.waitingOnParent) {
+  // First render, before the hook's effect has run: show a neutral spinner.
+  if (!state) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Preparing…
+      </div>
+    );
+  }
+
+  if (state.waitingOnParent) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
         <CircleDot className="w-3.5 h-3.5" />

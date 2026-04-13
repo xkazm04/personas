@@ -184,16 +184,12 @@ pub async fn execute_db_query(
         allow_mutation.unwrap_or(false),
     ).await;
 
-    // Update last_run stats if we have a saved query ID
-    // (fire-and-forget -- don't fail the execution if this errors)
     if let Some(id) = saved_query_id {
-        let db = state.db.clone();
         let success = result.is_ok();
         let duration_ms = result.as_ref().map(|r| r.duration_ms as i64).unwrap_or(0);
-        
-        tokio::spawn(async move {
-            let _ = repo::update_query_run(&db, &id, success, duration_ms);
-        });
+        if let Err(e) = repo::update_query_run(&state.db, &id, success, duration_ms) {
+            tracing::warn!(query_id = %id, error = %e, "Failed to update query run stats");
+        }
     }
 
     result

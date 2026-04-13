@@ -160,15 +160,30 @@ export function useDynamicQuestionOptions(
         })
         .catch((err: unknown) => {
           if (requestIdRef.current[q.id] !== requestId) return;
-          const message =
-            err && typeof err === 'object' && 'message' in err
-              ? String((err as { message?: unknown }).message)
-              : String(err);
+          // Tauri serializes AppError as `{error: string, kind: string}` —
+          // prefer the `error` field, fall back to `message`, then stringify.
+          const extractMessage = (e: unknown): string => {
+            if (!e) return 'Unknown error';
+            if (typeof e === 'string') return e;
+            if (typeof e === 'object') {
+              const obj = e as Record<string, unknown>;
+              if (typeof obj.error === 'string') return obj.error;
+              if (typeof obj.message === 'string') return obj.message;
+              try {
+                return JSON.stringify(obj);
+              } catch {
+                return String(e);
+              }
+            }
+            return String(e);
+          };
+          const message = extractMessage(err);
           logger.warn('Dynamic option fetch failed', {
             questionId: q.id,
             serviceType: src.service_type,
             operation: src.operation,
             error: message,
+            raw: err,
           });
           setStateByQuestion((prev) => ({
             ...prev,

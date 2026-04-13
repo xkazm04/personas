@@ -101,7 +101,7 @@ pub struct DriveStorageInfo {
 // ---------------------------------------------------------------------------
 
 /// Resolve and cache the managed drive root. Creates it on first call.
-fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
+pub(crate) fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
     if let Some(root) = MANAGED_ROOT.get() {
         return Ok(root.clone());
     }
@@ -135,7 +135,7 @@ fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
 /// components, and anything that canonicalises outside the managed root
 /// (e.g. symlinks). For paths that do not yet exist (create/write/mkdir),
 /// the parent is canonicalised and the final component is appended back.
-fn resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError> {
+pub(crate) fn resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError> {
     let rel = rel.trim_start_matches('/').trim_start_matches('\\');
 
     // Empty or "." means the root itself.

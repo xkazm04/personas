@@ -116,11 +116,11 @@ pub fn validate_file_watcher_paths(trigger_type: &str, config: Option<&str>) -> 
 
 /// Get the normalised app data directory path, if determinable.
 fn app_data_dir_normalised() -> Option<String> {
-    // Tauri app data: %APPDATA%/com.personas.app (Win) or
-    // ~/.local/share/com.personas.app (Linux) or
-    // ~/Library/Application Support/com.personas.app (macOS)
+    // Tauri app data: %APPDATA%/com.personas.desktop (Win) or
+    // ~/.local/share/com.personas.desktop (Linux) or
+    // ~/Library/Application Support/com.personas.desktop (macOS)
     let base = dirs::data_dir()?;
-    let app_dir = base.join("com.personas.app");
+    let app_dir = base.join("com.personas.desktop");
     Some(
         app_dir
             .to_string_lossy()

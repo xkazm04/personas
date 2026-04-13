@@ -537,10 +537,10 @@ export function DimensionEditPanel({ cellKey, onDirty }: DimensionEditPanelProps
           const newConnectors = connectors.map((c) =>
             c.name === oldName ? { ...c, name: newName, has_credential: false } : c,
           );
+          const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
           const newItems = items.map((item) =>
-            item.toLowerCase().includes(oldName.toLowerCase())
-              ? item.replace(new RegExp(oldName, "gi"), newName)
-              : item,
+            pattern.test(item) ? item.replace(pattern, newName) : item,
           );
           useAgentStore.setState((s) => ({
             buildCellData: {
