@@ -171,9 +171,19 @@ fn log_resolution(config: &EffectiveModelConfig) {
 
 /// Build a global-level ModelProfile from app_settings.
 fn resolve_global_model_profile(pool: &DbPool) -> Option<ModelProfile> {
-    // Check for a global default model profile stored in settings
     let json = settings::get(pool, settings_keys::GLOBAL_MODEL_PROFILE).ok().flatten()?;
-    serde_json::from_str::<ModelProfile>(&json).ok()
+    match serde_json::from_str::<ModelProfile>(&json) {
+        Ok(profile) => Some(profile),
+        Err(e) => {
+            tracing::error!(
+                key = settings_keys::GLOBAL_MODEL_PROFILE,
+                error = %e,
+                "Corrupt JSON in global model profile setting — falling back to defaults. \
+                 Re-save the global model profile in Settings to fix this.",
+            );
+            None
+        }
+    }
 }
 
 /// Resolve the global auth token based on the effective provider.

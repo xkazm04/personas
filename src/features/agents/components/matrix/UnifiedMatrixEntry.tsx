@@ -93,6 +93,7 @@ export function UnifiedMatrixEntry() {
   }, []);
   const [agentName, setAgentName] = useState("");
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [isLaunching, setIsLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
@@ -230,7 +231,8 @@ export function UnifiedMatrixEntry() {
 
     // For intent: use text input (via ref for latest value) or fall back to workflow name
     const trimmed = intentTextRef.current.trim() || (workflowName ? `Import and transform: ${workflowName}` : "");
-    if (!trimmed || build.isBuilding) return;
+    if (!trimmed || build.isBuilding || isLaunching) return;
+    setIsLaunching(true);
     setLaunchError(null);
 
     let personaId = draftPersonaId;
@@ -283,8 +285,10 @@ export function UnifiedMatrixEntry() {
         await deletePersona(personaId);
       } catch { /* best-effort cleanup */ }
       setDraftPersonaId(null);
+    } finally {
+      setIsLaunching(false);
     }
-  }, [build, draftPersonaId, createPersona, deletePersona]); // intentText read via ref
+  }, [build, draftPersonaId, createPersona, deletePersona, isLaunching]); // intentText read via ref
 
   // -- Inline edit handlers (use --continue session for CLI refine) --------
 

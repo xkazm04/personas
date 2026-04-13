@@ -178,13 +178,26 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
         }
     }
 
-    // Warn about unknown top-level keys (LLM hallucinations)
+    // Warn about unknown top-level keys (LLM hallucinations) with did-you-mean
     for key in obj.keys() {
         if !KNOWN_STRUCTURED_KEYS.contains(&key.as_str()) {
+            let suggestion = KNOWN_STRUCTURED_KEYS
+                .iter()
+                .filter_map(|known| {
+                    let d = levenshtein(key, known);
+                    if d <= 3 { Some((*known, d)) } else { None }
+                })
+                .min_by_key(|(_, d)| *d)
+                .map(|(k, _)| k);
+            let msg = match suggestion {
+                Some(s) => format!("Unknown field '{key}' in structured prompt — did you mean '{s}'?"),
+                None => format!("Unknown field '{key}' in structured prompt"),
+            };
+            tracing::warn!(field = %key, suggestion = ?suggestion, "Structured prompt has unknown key");
             errors.push(ValidationError::new(
                 "structured_prompt",
                 "unknown_field",
-                format!("Unknown field '{key}' in structured prompt"),
+                msg,
             ));
         }
     }
@@ -282,6 +295,24 @@ pub fn validate_notification_channels(channels_json: &str) -> Vec<ValidationErro
         }
     }
     errors
+}
+
+// -- Levenshtein distance for did-you-mean suggestions -----------------------
+
+fn levenshtein(a: &str, b: &str) -> usize {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    let mut prev: Vec<usize> = (0..=b.len()).collect();
+    let mut curr = vec![0; b.len() + 1];
+    for i in 1..=a.len() {
+        curr[0] = i;
+        for j in 1..=b.len() {
+            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
+            curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
+        }
+        std::mem::swap(&mut prev, &mut curr);
+    }
+    prev[b.len()]
 }
 
 // -- Dangerous content check --------------------------------------------------

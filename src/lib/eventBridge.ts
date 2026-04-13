@@ -335,7 +335,7 @@ const registry: EventRegistration[] = [
           if (!throttleTimer) throttleTimer = setTimeout(flush, 500);
         },
       );
-      return [unlisten, () => { if (throttleTimer) clearTimeout(throttleTimer); }];
+      return [unlisten, () => { if (throttleTimer) clearTimeout(throttleTimer); flush(); }];
     },
   },
 

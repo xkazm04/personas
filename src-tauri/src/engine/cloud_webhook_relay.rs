@@ -36,6 +36,7 @@ pub struct CloudWebhookRelayState {
     pub last_poll_at: Option<String>,
     pub last_error: Option<String>,
     pub active_webhook_triggers: u32,
+    tick_lock: Arc<tokio::sync::Mutex<()>>,
 }
 
 impl CloudWebhookRelayState {
@@ -46,6 +47,7 @@ impl CloudWebhookRelayState {
             last_poll_at: None,
             last_error: None,
             active_webhook_triggers: 0,
+            tick_lock: Arc::new(tokio::sync::Mutex::new(())),
         }
     }
 
@@ -64,6 +66,7 @@ impl CloudWebhookRelayState {
             last_poll_at: None,
             last_error: None,
             active_webhook_triggers: 0,
+            tick_lock: Arc::new(tokio::sync::Mutex::new(())),
         }
     }
 }
@@ -99,6 +102,18 @@ pub async fn cloud_webhook_relay_tick(
     app: &AppHandle,
     state: &tokio::sync::Mutex<CloudWebhookRelayState>,
 ) {
+    let tick_lock = {
+        let st = state.lock().await;
+        Arc::clone(&st.tick_lock)
+    };
+    let _tick_guard = match tick_lock.try_lock() {
+        Ok(guard) => guard,
+        Err(_) => {
+            tracing::debug!("CloudWebhookRelay: tick already in progress, skipping");
+            return;
+        }
+    };
+
     let now = chrono::Utc::now().to_rfc3339();
 
     // 1. List deployments with webhooks enabled

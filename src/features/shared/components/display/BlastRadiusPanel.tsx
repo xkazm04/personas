@@ -86,7 +86,7 @@ export function useBlastRadius(
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [enabled]);
+  }, [enabled, fetcher]);
 
   return { items, loading };
 }

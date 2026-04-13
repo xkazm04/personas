@@ -1,6 +1,7 @@
 use rusqlite::params;
 
-use crate::db::models::DesignConversation;
+use crate::db::models::{AppendMessageResult, DesignConversation};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -16,7 +17,7 @@ pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<DesignConv
             "SELECT * FROM design_conversations WHERE persona_id = ?1 ORDER BY updated_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_conversation)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "design_conversations::list_by_persona"))
     })
 }
 
@@ -89,12 +90,23 @@ pub fn append_single_message(
     message_json: &str,
     last_result: Option<&str>,
     max_messages: u32,
-) -> Result<DesignConversation, AppError> {
+) -> Result<AppendMessageResult, AppError> {
     timed_query!("design_conversations", "design_conversations::append_single_message", {
         let conn = pool.get()?;
+
+        let count_before: u32 = conn.query_row(
+            "SELECT json_array_length(messages) FROM design_conversations WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Design conversation {id}")),
+            other => AppError::Database(other),
+        })?;
+        let truncated = count_before >= max_messages;
+
         let now = chrono::Utc::now().to_rfc3339();
         // Append the new message, then trim the front if over the cap.
-        let rows = conn.execute(
+        conn.execute(
             "UPDATE design_conversations
              SET messages = CASE
                    WHEN json_array_length(messages) >= ?5
@@ -106,10 +118,11 @@ pub fn append_single_message(
              WHERE id = ?1",
             params![id, message_json, last_result, now, max_messages],
         )?;
-        if rows == 0 {
-            return Err(AppError::NotFound(format!("Design conversation {id}")));
-        }
-        get_by_id(pool, id)
+
+        let conversation = get_by_id(pool, id)?;
+        let message_count: u32 = if truncated { max_messages } else { count_before + 1 };
+
+        Ok(AppendMessageResult { conversation, truncated, message_count })
     })
 }
 

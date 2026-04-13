@@ -203,16 +203,17 @@ pub fn update_cursor(
     pool: &DbPool,
     subscription_id: &str,
     cursor: &str,
+    batch_count: u32,
 ) -> Result<(), AppError> {
     timed_query!("shared_events", "shared_events::update_cursor", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
         conn.execute(
             "UPDATE shared_event_subscriptions
-             SET last_cursor = ?2, events_relayed = events_relayed + 1,
+             SET last_cursor = ?2, events_relayed = events_relayed + ?4,
                  last_event_at = ?3, error = NULL, updated_at = ?3
              WHERE id = ?1",
-            params![subscription_id, cursor, now],
+            params![subscription_id, cursor, now, batch_count],
         )?;
         Ok(())
     })

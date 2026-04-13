@@ -119,14 +119,20 @@ fn decrypt_model_profile(json: &str, persona_id: &str) -> String {
         Err(e) => {
             let session_failures = DECRYPTION_FAILURE_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
             let error_category = classify_crypto_error(&e);
-            tracing::warn!(
+            tracing::error!(
                 persona_id = %persona_id,
                 error_category = %error_category,
                 session_failure_count = session_failures,
                 "Failed to decrypt model_profile auth_token: {}",
                 e
             );
-            json.to_string()
+            obj.remove("auth_token_enc");
+            obj.remove("auth_token_iv");
+            obj.insert(
+                "auth_token_error".into(),
+                serde_json::Value::String(format!("Decryption failed: {error_category}")),
+            );
+            serde_json::to_string(&val).unwrap_or_else(|_| json.to_string())
         }
     }
 }

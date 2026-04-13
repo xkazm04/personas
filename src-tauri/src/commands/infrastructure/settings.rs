@@ -8,6 +8,8 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
+const MAX_SETTING_VALUE_SIZE: usize = 64 * 1024; // 64 KB
+
 /// Validate the settings key against the allow-list.
 fn require_valid_key(key: &str) -> Result<(), AppError> {
     settings_keys::validate_key(key).map_err(AppError::Validation)
@@ -31,6 +33,14 @@ pub fn set_app_setting(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     require_valid_key(&key)?;
+    if value.len() > MAX_SETTING_VALUE_SIZE {
+        return Err(AppError::Validation(format!(
+            "Setting value for '{}' exceeds maximum size ({} bytes > {} byte limit)",
+            key,
+            value.len(),
+            MAX_SETTING_VALUE_SIZE,
+        )));
+    }
     repo::set(&state.db, &key, &value)
 }
 

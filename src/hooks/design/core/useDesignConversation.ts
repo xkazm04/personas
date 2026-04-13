@@ -13,6 +13,7 @@ import type {
   AgentIR,
   DesignQuestion,
 } from '@/lib/types/designTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 
 /**
@@ -21,9 +22,11 @@ import { useToastStore } from '@/stores/toastStore';
  * Conversations are persisted in the DB so users can resume across app restarts.
  */
 export function useDesignConversation(personaId: string | null) {
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<DesignConversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<DesignConversation | null>(null);
   const activeConvRef = useRef<DesignConversation | null>(null);
+  const truncationWarnedRef = useRef<Set<string>>(new Set());
 
   // Promise chain serializes all message appends to prevent read-modify-write
   // races (e.g., AI question arriving while user answer is being written).
@@ -130,15 +133,20 @@ export function useDesignConversation(personaId: string | null) {
       const { message } = buildMessage(conv);
 
       try {
-        const updated = await appendSingleDesignMessage(
+        const result = await appendSingleDesignMessage(
           conv.id,
           JSON.stringify(message),
           null,
         );
+        const updated = result.conversation;
         setActiveConversation(updated);
         setConversations((prev) =>
           prev.map((c) => (c.id === updated.id ? updated : c))
         );
+        if (result.truncated && !truncationWarnedRef.current.has(conv.id)) {
+          truncationWarnedRef.current.add(conv.id);
+          useToastStore.getState().addToast(t.design.conversation_truncated, 'error');
+        }
       } catch {
         // intentional: non-critical -- preserve appended message in-memory when persistence fails
         const currentMessages = conv.messages;

@@ -382,10 +382,11 @@ export function GenomeBreedingPanel() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
-  // Cleanup polling on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (pollRef.current) clearInterval(pollRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -460,6 +461,7 @@ export function GenomeBreedingPanel() {
       // Poll for completion
       pollRef.current = setInterval(async () => {
         const updated = await genomeApi.listBreedingRuns().catch(() => [] as GenomeBreedingRun[]);
+        if (!mountedRef.current) return;
         setRuns(updated);
         const current = updated.find((r) => r.id === run.id);
         if (current && (current.status === 'completed' || current.status === 'failed')) {

@@ -7610,6 +7610,9 @@ export const en = {
   design: {
     no_persona: "No persona selected",
 
+    // Conversation truncation warning — shown when the 500-message cap trims old messages
+    conversation_truncated: "This conversation reached the message limit. Older messages have been removed — consider starting a new conversation to preserve context.",
+
     // Compilation stage labels -- shown during AI-powered persona generation
     stages: {
       assembling_label: "Preparing instructions",

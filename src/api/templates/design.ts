@@ -29,7 +29,7 @@ export const previewPrompt = (personaId: string, structuredPromptJson?: string |
 // Design Conversations
 // ============================================================================
 
-import type { DesignConversation } from "@/lib/types/designTypes";
+import type { AppendMessageResult, DesignConversation } from "@/lib/types/designTypes";
 
 export const listDesignConversations = (personaId: string) =>
   invoke<DesignConversation[]>("list_design_conversations", { personaId });
@@ -48,7 +48,7 @@ export const appendDesignConversationMessage = (id: string, messages: string, la
 
 /** Append a single message server-side (O(1) IPC payload). */
 export const appendSingleDesignMessage = (id: string, messageJson: string, lastResult?: string | null) =>
-  invoke<DesignConversation>("append_single_design_message", { id, messageJson, lastResult: lastResult });
+  invoke<AppendMessageResult>("append_single_design_message", { id, messageJson, lastResult: lastResult });
 
 export const updateDesignConversationStatus = (id: string, status: string) =>
   invoke<void>("update_design_conversation_status", { id, status });

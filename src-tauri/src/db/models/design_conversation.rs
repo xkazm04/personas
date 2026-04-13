@@ -18,6 +18,16 @@ pub struct DesignConversationMessage {
     pub timestamp: String,
 }
 
+/// Result of appending a message, indicating whether the conversation was truncated.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AppendMessageResult {
+    pub conversation: DesignConversation,
+    pub truncated: bool,
+    pub message_count: u32,
+}
+
 /// A persistent design conversation that accumulates multi-turn context.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]

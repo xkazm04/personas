@@ -87,8 +87,9 @@ pub fn get_by_persona_ids(
     })
 }
 
-pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
+pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
     timed_query!("persona_triggers", "persona_triggers::create", {
+        input.trigger_type = normalize_trigger_type(&input.trigger_type).to_string();
         validate_trigger_type(&input.trigger_type)?;
         validate_config(&input.trigger_type, input.config.as_deref())?;
 
@@ -173,9 +174,13 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
 pub fn update(
     pool: &DbPool,
     id: &str,
-    input: UpdateTriggerInput,
+    mut input: UpdateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
     timed_query!("persona_triggers", "persona_triggers::update", {
+        if let Some(ref raw_tt) = input.trigger_type {
+            let normalized = normalize_trigger_type(raw_tt).to_string();
+            input.trigger_type = Some(normalized);
+        }
         if let Some(ref tt) = input.trigger_type {
             validate_trigger_type(tt)?;
         }

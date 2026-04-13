@@ -216,8 +216,9 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
 
             let window_start = now - Duration::seconds(window_secs as i64);
 
-            // Filter events within this trigger's specific window
-            let windowed_events: Vec<_> = recent_events
+            // Filter events within this trigger's specific window, sorted ascending
+            // so that sequence evaluation picks events in chronological order.
+            let mut windowed_events: Vec<_> = recent_events
                 .iter()
                 .filter(|e| {
                     if let Ok(ts) = DateTime::parse_from_rfc3339(&e.created_at) {
@@ -227,6 +228,7 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
                     }
                 })
                 .collect();
+            windowed_events.sort_by(|a, b| a.created_at.cmp(&b.created_at));
 
             // Evaluate with detailed results
             let (fired, condition_details) = match op {

@@ -44,11 +44,9 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
 
     let mut sanitized = msg.to_string();
 
-    // Strip all field values that look like secrets (anything non-empty)
+    // Redact all non-empty credential field values regardless of length
     for (key, value) in fields {
-        if value.len() >= 8 {
-            // Only redact values long enough to be meaningful secrets.
-            // Short values (booleans, ports) aren't sensitive.
+        if !value.is_empty() {
             sanitized = sanitized.replace(value, &format!("[REDACTED:{}]", key));
         }
     }
@@ -1235,9 +1233,11 @@ pub(crate) fn parse_postgres_json_response(body: &str) -> Result<QueryResult, Ap
         });
     }
 
-    // Extract columns from first row keys
+    // Extract columns from first row keys — sorted for deterministic ordering
     let columns: Vec<String> = if let Some(first) = arr.first().and_then(|r| r.as_object()) {
-        first.keys().cloned().collect()
+        let mut cols: Vec<String> = first.keys().cloned().collect();
+        cols.sort();
+        cols
     } else {
         vec!["value".into()]
     };
@@ -1892,7 +1892,7 @@ fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> 
             // Single document result -- present as single-row table
             let columns: Vec<String> = value
                 .as_object()
-                .map(|o| o.keys().cloned().collect())
+                .map(|o| { let mut v: Vec<String> = o.keys().cloned().collect(); v.sort(); v })
                 .unwrap_or_default();
             let row: Vec<Value> = columns
                 .iter()

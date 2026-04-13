@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::db::models::DesignConversation;
+use crate::db::models::{AppendMessageResult, DesignConversation};
 use crate::db::repos::core::design_conversations as conv_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -65,7 +65,7 @@ pub fn append_single_design_message(
     id: String,
     message_json: String,
     last_result: Option<String>,
-) -> Result<DesignConversation, AppError> {
+) -> Result<AppendMessageResult, AppError> {
     require_auth_sync(&state)?;
     conv_repo::append_single_message(&state.db, &id, &message_json, last_result.as_deref(), 500)
 }

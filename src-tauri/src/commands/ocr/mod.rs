@@ -5,10 +5,11 @@ use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
 use chrono::Utc;
 use serde::Deserialize;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::models::{OcrDocument, OcrResult};
-use crate::db::repos::resources::ocr as repo;
+use crate::db::repos::resources::{credentials, ocr as repo};
+use crate::db::DbPool;
 use crate::engine::path_safety::{validate_file_access_path, ALLOWED_OCR_EXTENSIONS};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -82,11 +83,26 @@ pub async fn ocr_with_gemini(
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
     }
+    run_gemini_ocr(&state.db, &path, file_path, &api_key, model, prompt).await
+}
 
-    let file_bytes = tokio::fs::read(&path).await
+/// Shared Gemini OCR core. Reads the file, POSTs it to the Generative
+/// Language API, parses the response, persists an `OcrDocument` row and
+/// returns the result. Used by both `ocr_with_gemini` (API key from form
+/// input) and `ocr_drive_file_gemini` (API key resolved from a vault
+/// credential).
+async fn run_gemini_ocr(
+    pool: &DbPool,
+    path: &Path,
+    file_path_for_record: String,
+    api_key: &str,
+    model: Option<String>,
+    prompt: Option<String>,
+) -> Result<OcrResult, AppError> {
+    let file_bytes = tokio::fs::read(path).await
         .map_err(|e| AppError::Internal(format!("Cannot read file: {e}")))?;
     let b64_data = B64.encode(&file_bytes);
-    let mime = mime_from_path(&path);
+    let mime = mime_from_path(path);
     let model_name = model.as_deref().unwrap_or(DEFAULT_GEMINI_MODEL);
     let user_prompt = prompt.as_deref().unwrap_or(OCR_SYSTEM_PROMPT);
 
@@ -144,9 +160,9 @@ pub async fn ocr_with_gemini(
     let id = uuid::Uuid::new_v4().to_string();
 
     let doc = OcrDocument {
-        id: id.clone(),
+        id,
         file_name,
-        file_path: Some(file_path),
+        file_path: Some(file_path_for_record),
         provider: "gemini".into(),
         model: Some(model_name.into()),
         extracted_text,
@@ -157,12 +173,68 @@ pub async fn ocr_with_gemini(
         created_at: now,
     };
 
-    let saved = repo::insert_document(&state.db, &doc)?;
+    let saved = repo::insert_document(pool, &doc)?;
 
     Ok(OcrResult {
         document: saved,
         raw_response: Some(resp_text),
     })
+}
+
+/// Drive-integrated Gemini OCR. Takes a drive-relative path and a vault
+/// credential ID, resolves the managed drive root + sandbox-validates the
+/// path, fetches the credential's decrypted `api_key` field, and runs
+/// Gemini OCR pinned to the backend default model (`gemini-3-flash-preview`).
+///
+/// This is the entry point used by the Drive plugin's "Extract text" flow.
+#[tauri::command]
+pub async fn ocr_drive_file_gemini(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    rel_path: String,
+    credential_id: String,
+    prompt: Option<String>,
+) -> Result<OcrResult, AppError> {
+    require_auth_sync(&state)?;
+
+    // Resolve + sandbox the drive-relative path.
+    let root = crate::commands::drive::managed_root(&app)?;
+    let abs = crate::commands::drive::resolve_safe(&root, &rel_path)?;
+    if !abs.exists() {
+        return Err(AppError::NotFound(format!("Drive file not found: {rel_path}")));
+    }
+    // Extension check — path_safety::ALLOWED_OCR_EXTENSIONS is the source of
+    // truth for which file types Gemini OCR accepts.
+    let ext = abs
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    if !ALLOWED_OCR_EXTENSIONS.iter().any(|allowed| *allowed == ext) {
+        return Err(AppError::Validation(format!(
+            "File type not supported for OCR: .{ext}"
+        )));
+    }
+
+    // Resolve the Gemini API key from the vault credential.
+    let cred = credentials::get_by_id(&state.db, &credential_id)?;
+    if cred.service_type != "google_gemini" {
+        return Err(AppError::Validation(format!(
+            "Credential '{}' is not a Google Gemini credential (service_type='{}')",
+            cred.name, cred.service_type
+        )));
+    }
+    let fields = credentials::get_decrypted_fields(&state.db, &cred)?;
+    let api_key = fields
+        .get("api_key")
+        .or_else(|| fields.get("apiKey"))
+        .ok_or_else(|| {
+            AppError::Validation("Gemini credential is missing an 'api_key' field".into())
+        })?
+        .clone();
+
+    let abs_display = abs.to_string_lossy().to_string();
+    run_gemini_ocr(&state.db, &abs, abs_display, &api_key, None, prompt).await
 }
 
 // ---------------------------------------------------------------------------

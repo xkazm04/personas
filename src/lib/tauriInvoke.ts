@@ -86,7 +86,13 @@ function coerceArgs(args: InvokeArgs): InvokeArgs {
   if (Array.isArray(args)) return args;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args as Record<string, unknown>)) {
-    out[k] = v === undefined ? null : v;
+    if (v === undefined) {
+      out[k] = null;
+    } else if (v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+      out[k] = coerceArgs(v as InvokeArgs);
+    } else {
+      out[k] = v;
+    }
   }
   return out as InvokeArgs;
 }

@@ -68,8 +68,18 @@ impl<'a> StatusEmitter<'a> {
         node_statuses: &[serde_json::Value],
         memories_created: Option<u32>,
     ) {
-        let json = serde_json::to_string(node_statuses).unwrap_or_else(|_| "[]".into());
-        let _ = team_repo::update_pipeline_run(self.db, self.run_id, status, &json, None);
+        match serde_json::to_string(node_statuses) {
+            Ok(json) => {
+                let _ = team_repo::update_pipeline_run(self.db, self.run_id, status, &json, None);
+            }
+            Err(e) => {
+                tracing::error!(
+                    run_id = %self.run_id,
+                    error = %e,
+                    "Failed to serialize node_statuses — skipping DB write to preserve last-known-good state",
+                );
+            }
+        }
         let mut payload = serde_json::json!({
             "pipeline_id": self.run_id,
             "team_id": self.team_id,
@@ -129,7 +139,14 @@ struct ConditionSpec {
 fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) -> bool {
     let spec: ConditionSpec = match serde_json::from_str(condition_json) {
         Ok(s) => s,
-        Err(_) => return true,
+        Err(e) => {
+            tracing::warn!(
+                condition_json = %condition_json,
+                error = %e,
+                "Malformed condition JSON — bypassing condition (fail-open)",
+            );
+            return true;
+        }
     };
 
     // Try JSON field lookup first
@@ -157,7 +174,14 @@ fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) ->
             .map(|v| v.contains(spec.value.as_deref().unwrap_or("")))
             .unwrap_or(false),
         "exists" => output_value.is_some() && !output_value.as_deref().unwrap_or("").is_empty(),
-        _ => true,
+        unknown => {
+            tracing::warn!(
+                operator = %unknown,
+                field = %spec.field,
+                "Unknown condition operator — bypassing condition (fail-open)",
+            );
+            true
+        }
     }
 }
 
@@ -197,7 +221,13 @@ fn create_node_memory(
     output_text: &str,
 ) -> bool {
     let truncated = if output_text.len() > 500 {
-        format!("{}...", &output_text[..500])
+        let byte_end = output_text
+            .char_indices()
+            .take_while(|(i, _)| *i < 500)
+            .last()
+            .map(|(i, c)| i + c.len_utf8())
+            .unwrap_or(0);
+        format!("{}...", &output_text[..byte_end])
     } else {
         output_text.to_string()
     };
@@ -222,12 +252,22 @@ fn create_node_memory(
 // Parse node config helper
 // ============================================================================
 
-fn parse_node_config(member: &PersonaTeamMember) -> NodeConfig {
-    member
-        .config
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or_default()
+fn parse_node_config(member: &PersonaTeamMember) -> Result<NodeConfig, String> {
+    match member.config.as_deref() {
+        None | Some("") | Some("null") | Some("{}") => Ok(NodeConfig::default()),
+        Some(s) => match serde_json::from_str(s) {
+            Ok(cfg) => Ok(cfg),
+            Err(e) => {
+                tracing::warn!(
+                    member_id = %member.id,
+                    error = %e,
+                    raw_config = %s,
+                    "Failed to parse node config JSON — check for typos in field names or types",
+                );
+                Err(format!("Malformed node config: {e}"))
+            }
+        },
+    }
 }
 
 // ============================================================================
@@ -443,15 +483,49 @@ async fn run_command_node(
         command.env("PIPELINE_INPUT", input_val.to_string());
     }
 
-    let output = match command.output().await {
-        Ok(o) => o,
-        Err(e) => {
+    let output = match tokio::time::timeout(
+        std::time::Duration::from_secs(300),
+        async {
+            let mut child = command.spawn()?;
+            loop {
+                if cancelled.load(Ordering::Relaxed) {
+                    let _ = child.kill().await;
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Interrupted,
+                        "Pipeline cancelled by user",
+                    ));
+                }
+                match tokio::time::timeout(std::time::Duration::from_millis(200), child.wait_with_output()).await {
+                    Ok(result) => return result,
+                    Err(_) => continue,
+                }
+            }
+        },
+    )
+    .await
+    {
+        Ok(Ok(o)) => o,
+        Ok(Err(e)) if e.kind() == std::io::ErrorKind::Interrupted => {
+            update_node_status(statuses, &member.id, &[
+                ("status", serde_json::json!("cancelled")),
+                ("error", serde_json::json!("Pipeline cancelled by user")),
+            ]);
+            return NodeOutcome::Failed { cancelled: true };
+        }
+        Ok(Err(e)) => {
             update_node_status(statuses, &member.id, &[
                 ("status", serde_json::json!("failed")),
                 (
                     "error",
                     serde_json::json!(format!("Command failed to start: {}", e)),
                 ),
+            ]);
+            return NodeOutcome::Failed { cancelled: false };
+        }
+        Err(_) => {
+            update_node_status(statuses, &member.id, &[
+                ("status", serde_json::json!("failed")),
+                ("error", serde_json::json!("Command timed out after 300 seconds")),
             ]);
             return NodeOutcome::Failed { cancelled: false };
         }
@@ -564,7 +638,18 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             None => continue,
         };
 
-        let node_config = parse_node_config(member);
+        let node_config = match parse_node_config(member) {
+            Ok(cfg) => cfg,
+            Err(msg) => {
+                update_node_status(&mut statuses, member_id, &[
+                    ("status", serde_json::json!("failed")),
+                    ("error", serde_json::json!(msg)),
+                ]);
+                emitter.emit("running", &statuses, Some(memories_created));
+                has_failure = true;
+                continue;
+            }
+        };
 
         // ── Conditional branching ────────────────────────────────────
         // Skip this node if an incoming conditional edge's condition is not

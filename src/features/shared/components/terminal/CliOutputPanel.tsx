@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/terminal/TerminalHeader';
-import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
 
@@ -57,26 +57,25 @@ export default function CliOutputPanel({
 
       {healingStrip}
 
-      <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code leading-5 space-y-0.5`}>
-        {phase === 'idle' && lines.length === 0 ? (
-          <div className="text-muted-foreground/80 text-center py-4">{idleText}</div>
-        ) : lines.length === 0 ? (
-          <div className="text-muted-foreground/80 text-center py-4">{waitingText}</div>
-        ) : (
-          lines.map((line, i) => {
-            if (!line.trim()) return <div key={i} className="h-2" />;
-            const style = classifyLine(line);
-            return (
-              <div key={i} className={`whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[style]}`}>
-                {line}
-              </div>
-            );
-          })
-        )}
-        {isRunning && (
-          <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
-        )}
-      </div>
+      {lines.length === 0 ? (
+        <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code leading-5`}>
+          {phase === 'idle' ? (
+            <div className="text-muted-foreground/80 text-center py-4">{idleText}</div>
+          ) : (
+            <div className="text-muted-foreground/80 text-center py-4">{waitingText}</div>
+          )}
+          {isRunning && (
+            <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
+          )}
+        </div>
+      ) : (
+        <TerminalBody
+          lines={lines}
+          isRunning={isRunning}
+          showCursor={isRunning}
+          maxHeightClass={maxHeightClassName}
+        />
+      )}
     </div>
   );
 }
