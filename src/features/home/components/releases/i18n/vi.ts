@@ -123,6 +123,24 @@ export const vi = {
             description:
               "When another AI tool calls one of your shared agents, it can now ask 'is this still running?' and 'please stop now' in mid-flight. Long research jobs no longer have to keep the connection open the whole time, and stuck runs can be cancelled cleanly from the calling side. Each agent only ever sees its own runs, so nothing leaks across agents.",
           },
+          // TODO(i18n-vi): untranslated — English source-of-truth added 2026-04-13
+          '13': {
+            title: 'New connector: Humbalytics analytics',
+            description:
+              'Track traffic, run A/B experiments, and swap landing-page copy without touching your code. Personas can now pull heat maps and conversion data from Humbalytics and use them to guide your experiments.',
+          },
+          // TODO(i18n-vi): untranslated — English source-of-truth added 2026-04-13
+          '14': {
+            title: 'New connector: Firecrawl web scraping',
+            description:
+              'Agents can now read any website — even modern JavaScript-heavy ones — as clean, structured content. Useful for research, market intelligence, and content-monitoring agents.',
+          },
+          // TODO(i18n-vi): untranslated — English source-of-truth added 2026-04-13
+          '15': {
+            title: 'A marketing agent that actually runs your A/B tests',
+            description:
+              'A new template that proposes headline variants, deploys them with your approval, waits for statistical significance, and promotes winners automatically. Every change is human-gated before going live, and each experiment runs long enough for the results to actually mean something.',
+          },
         },
       },
       roadmap: {
