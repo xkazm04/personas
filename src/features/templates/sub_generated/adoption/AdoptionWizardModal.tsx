@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { X, Grid3X3 } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useAgentStore } from '@/stores/agentStore';
@@ -28,6 +28,17 @@ export default function AdoptionWizardModal({
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
+
+  // Reset any stale build-session state when the adoption modal opens. Without
+  // this, a leftover buildSessionId from a previous adoption would trigger the
+  // "Discard adoption progress?" confirmation when the user tries to close
+  // the questionnaire — but the confirmation is invisible (stacked below the
+  // questionnaire portal), leaving the close button effectively broken.
+  useEffect(() => {
+    if (isOpen) {
+      useAgentStore.getState().resetBuildSession();
+    }
+  }, [isOpen]);
 
   const handleCloseAttempt = useCallback(() => {
     // No active build session or phase is safe to close — skip confirmation

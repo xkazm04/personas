@@ -3939,6 +3939,29 @@ export const en = {
       filter_category: "Category",
       filter_license: "License",
     },
+    // CLI capture flow: import credentials from locally installed, already-authenticated CLIs (gcloud, gh, vercel, ...)
+    cli_capture: {
+      // Primary button label in SetupGuideModal when a local CLI can provide credentials
+      cta: "Import from local CLI",
+      // Short explainer under the CTA
+      hint: "Use an already-logged-in local CLI instead of pasting an API key.",
+      // Status shown while the subprocess is running
+      running: "Running local CLI...",
+      // Success toast headline
+      success: "Credentials captured from CLI",
+      // Notice shown when the captured token has a short TTL
+      token_ttl_notice: "This token expires in {seconds}s and will be refreshed automatically.",
+      // Badge on credentials that were captured via CLI
+      source_label: "CLI",
+      // Error: binary not installed on this machine
+      missing_binary: "`{binary}` is not installed or is not in an allowlisted location.",
+      // Error: binary present but user is not logged in
+      unauthenticated: "You are not signed in to {binary}. {instruction}",
+      // Error: capture step failed or returned empty output
+      capture_failed: "CLI capture failed: {detail}",
+      // Error: subprocess exceeded timeout
+      timeout: "CLI capture timed out. Try running the command manually first.",
+    },
     // Schema configs
     schemas: {
       none_configured: "None configured.",
@@ -6513,6 +6536,9 @@ export const en = {
       add_credential: "Add credential",
       // Submit button hint when blocked questions exist
       blocked_blocking_submit: "{count} question(s) need credentials before you can continue",
+      // Top-of-questionnaire blocked callout
+      credentials_required_title: "Credentials required",
+      credentials_required_body: "This template needs at least one credential from each category below before adoption can continue. Click \"Add credential\" — you'll return here automatically once setup is complete.",
     },
 
     // Scan results

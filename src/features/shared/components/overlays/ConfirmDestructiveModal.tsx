@@ -178,6 +178,7 @@ export function ConfirmDestructiveModal({ open, config }: ConfirmDestructiveModa
       titleId="confirm-destructive-title"
       maxWidthClass="max-w-sm"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      portal
     >
       {config && (
         <ModalContent
