@@ -10,6 +10,7 @@ import {
   PinOff,
   Copy,
   Check,
+  Wrench,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -22,19 +23,26 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
+import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
+import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
+import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 
 /** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
-function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, executionOutput }: {
+function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, executionOutput, activeExecutionId }: {
   isExecuting: boolean;
   error: string | null;
   stageProgress: { label: string; fraction: number };
   elapsed: number;
   executionOutput: string[];
+  activeExecutionId: string | null;
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
-  // Extract the last non-empty meaningful output lines as the "result"
+  const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
+  const executionSummary = useExecutionSummary(traceEntries, traceLive);
+
   const resultText = useMemo(() => {
     const meaningful = executionOutput.filter((l) => l.trim().length > 0);
     return meaningful.slice(-6).join('\n');
@@ -50,7 +58,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
 
   if (isExecuting) {
     return (
-      <div className="px-3 py-3">
+      <div className="px-3 py-3 space-y-2">
         <div className="flex items-center justify-between gap-2 mb-2">
           <span className="text-sm text-foreground/80">
             {error ? t.execution.something_went_wrong : stageProgress.label}
@@ -67,6 +75,12 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
             style={{ width: `${stageProgress.fraction * 100}%` }}
           />
         </div>
+        {/* Live reasoning trace for Simple mode */}
+        {traceEntries.length > 0 && (
+          <div className="mt-2">
+            <ReasoningTrace entries={traceEntries} isLive={traceLive} compact />
+          </div>
+        )}
       </div>
     );
   }
@@ -82,7 +96,11 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
           {formatElapsed(elapsed)}
         </span>
       </div>
-      {resultText && (
+      {/* Structured summary card when trace data is available */}
+      {executionSummary && (
+        <ExecutionSummaryCard summary={executionSummary} compact />
+      )}
+      {resultText && !executionSummary && (
         <div className="rounded-lg bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
           <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">
             {resultText}
@@ -124,6 +142,10 @@ export default function ExecutionMiniPlayer() {
   const elapsed = useElapsedTimer(isExecuting);
 
   const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
+
+  // Structured execution trace for Power mode summary
+  const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
+  const executionSummary = useExecutionSummary(traceEntries, traceLive);
 
   const personaName = useMemo(() => {
     if (!executionPersonaId) return 'Agent';
@@ -292,7 +314,7 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* Simple mode: friendly progress bar → result summary */}
+        {/* Simple mode: friendly progress bar → result summary with reasoning trace */}
         {isSimple && (
           <SimpleExecutionView
             isExecuting={isExecuting}
@@ -300,6 +322,7 @@ export default function ExecutionMiniPlayer() {
             stageProgress={stageProgress}
             elapsed={elapsed}
             executionOutput={executionOutput}
+            activeExecutionId={activeExecutionId}
           />
         )}
 
@@ -353,6 +376,13 @@ export default function ExecutionMiniPlayer() {
             {isExecuting && (
               <div className="text-blue-400/40 animate-pulse">{'>'} _</div>
             )}
+          </div>
+        )}
+
+        {/* Full mode: Execution summary when complete and trace data available */}
+        {!isSimple && !isExecuting && executionSummary && (
+          <div className="px-3 py-2 border-t border-primary/10">
+            <ExecutionSummaryCard summary={executionSummary} compact />
           </div>
         )}
       </div>
