@@ -6,6 +6,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import {
   driveOpenInOs,
   driveRevealInOs,
+  driveParentPath,
   type DriveEntry,
 } from "@/api/drive";
 import { toastCatch } from "@/lib/silentCatch";
@@ -20,6 +21,10 @@ import {
   type ContextMenuState,
 } from "./components/DriveContextMenu";
 import { DriveTextPrompt, DriveConfirm } from "./components/DrivePrompt";
+import { useSigning } from "./signing/useSigning";
+import { DriveSignDialog } from "./signing/DriveSignDialog";
+import { DriveVerifyDialog } from "./signing/DriveVerifyDialog";
+import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 
 type Dialog =
   | { kind: "new_folder" }
@@ -31,9 +36,13 @@ type Dialog =
 export default function DrivePage() {
   const { t, tx } = useTranslation();
   const drive = useDrive();
+  const signing = useSigning();
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
+  const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
+  const [signaturesOpen, setSignaturesOpen] = useState(false);
 
   // Selected entries are the subset of visibleEntries whose path is in the
   // selection set. We pass these into the details pane.
@@ -206,6 +215,7 @@ export default function DrivePage() {
           drive={drive}
           onNewFolder={() => setDialog({ kind: "new_folder" })}
           onNewFile={() => setDialog({ kind: "new_file" })}
+          onOpenSignatures={() => setSignaturesOpen(true)}
         />
         <div className="flex-1 min-h-0 flex">
           <DriveSidebar drive={drive} />
@@ -236,6 +246,41 @@ export default function DrivePage() {
           onRequestDelete={(paths) => setDialog({ kind: "delete", paths })}
           onReveal={handleReveal}
           onCopyPath={handleCopyPath}
+          onSignFile={(entry) => setSignEntry(entry)}
+          onVerifyFile={(entry) => setVerifyEntry(entry)}
+        />
+      )}
+
+      {signEntry && (
+        <DriveSignDialog
+          entry={signEntry}
+          signing={signing}
+          onClose={() => setSignEntry(null)}
+          onSidecarWritten={() => {
+            drive.refresh();
+          }}
+        />
+      )}
+
+      {verifyEntry && (
+        <DriveVerifyDialog
+          entry={verifyEntry}
+          signing={signing}
+          onClose={() => setVerifyEntry(null)}
+        />
+      )}
+
+      {signaturesOpen && (
+        <DriveSignaturesPanel
+          signing={signing}
+          onClose={() => setSignaturesOpen(false)}
+          onRevealInDrive={(drivePath) => {
+            // Navigate into the parent folder and select the file.
+            const parent = driveParentPath(drivePath);
+            drive.navigate(parent);
+            // Defer selection until after the list refreshes.
+            setTimeout(() => drive.selectOnly(drivePath), 100);
+          }}
         />
       )}
 

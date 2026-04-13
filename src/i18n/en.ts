@@ -8673,8 +8673,6 @@ export const en = {
     artist_desc: "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Project management, context mapping, idea scanning, triage, and task runner utilities.",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
     ocr_label: "OCR",
@@ -8754,6 +8752,10 @@ export const en = {
       error_prefix: "Error:",
       items_selected: "{count} selected",
       items_total: "{count} items",
+      // Signing integration (merged from doc-signing plugin)
+      signatures_button: "Signatures",
+      ctx_sign_file: "Sign file\u2026",
+      ctx_verify_file: "Verify signature\u2026",
     },
 
     artist: {

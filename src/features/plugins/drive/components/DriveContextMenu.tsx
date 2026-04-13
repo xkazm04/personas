@@ -10,6 +10,8 @@ import {
   FolderPlus,
   FilePlus,
   Link as LinkIcon,
+  FileSignature,
+  ShieldCheck,
 } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
@@ -33,6 +35,8 @@ interface Props {
   onRequestDelete: (paths: string[]) => void;
   onReveal: (entry: DriveEntry) => void;
   onCopyPath: (entry: DriveEntry) => void;
+  onSignFile: (entry: DriveEntry) => void;
+  onVerifyFile: (entry: DriveEntry) => void;
 }
 
 export function DriveContextMenu({
@@ -46,6 +50,8 @@ export function DriveContextMenu({
   onRequestDelete,
   onReveal,
   onCopyPath,
+  onSignFile,
+  onVerifyFile,
 }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
@@ -160,6 +166,23 @@ export function DriveContextMenu({
             <LinkIcon className="w-3.5 h-3.5" />,
             t.plugins.drive.ctx_copy_path,
             () => onCopyPath(entry),
+          )}
+          {entry.kind === "file" && (
+            <>
+              {divider}
+              {item(
+                <FileSignature className="w-3.5 h-3.5" />,
+                t.plugins.drive.ctx_sign_file,
+                () => onSignFile(entry),
+                { disabled: drive.selection.size > 1 },
+              )}
+              {item(
+                <ShieldCheck className="w-3.5 h-3.5" />,
+                t.plugins.drive.ctx_verify_file,
+                () => onVerifyFile(entry),
+                { disabled: drive.selection.size > 1 },
+              )}
+            </>
           )}
           {divider}
           {item(

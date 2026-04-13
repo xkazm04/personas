@@ -29,7 +29,6 @@ const CloudDeployPanel = lazy(() => import('@/features/deployment/components/clo
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
-const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
@@ -205,9 +204,6 @@ export default function PersonasPage() {
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'doc-signing') {
-        return <ErrorBoundary name="DocSigning"><Suspense fallback={SectionFallback}><DocSigningPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'ocr') {
         return <ErrorBoundary name="OCR"><Suspense fallback={SectionFallback}><OcrPage /></Suspense></ErrorBoundary>;

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FolderPlus,
   FilePlus,
+  FileSignature,
   Grid3x3,
   List,
   Columns3,
@@ -21,9 +22,15 @@ interface Props {
   drive: UseDriveResult;
   onNewFolder: () => void;
   onNewFile: () => void;
+  onOpenSignatures: () => void;
 }
 
-export function DriveToolbar({ drive, onNewFolder, onNewFile }: Props) {
+export function DriveToolbar({
+  drive,
+  onNewFolder,
+  onNewFile,
+  onOpenSignatures,
+}: Props) {
   const { t } = useTranslation();
 
   const segments = drive.currentPath
@@ -171,6 +178,16 @@ export function DriveToolbar({ drive, onNewFolder, onNewFile }: Props) {
       >
         <FilePlus className="w-3.5 h-3.5" />
         {t.plugins.drive.new_file}
+      </button>
+      <button
+        type="button"
+        onClick={onOpenSignatures}
+        title={t.plugins.drive.signatures_button}
+        aria-label={t.plugins.drive.signatures_button}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/25 typo-caption font-medium hover:bg-rose-500/20 transition-colors"
+      >
+        <FileSignature className="w-3.5 h-3.5" />
+        {t.plugins.drive.signatures_button}
       </button>
     </div>
   );
