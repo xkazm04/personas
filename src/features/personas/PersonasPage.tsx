@@ -29,7 +29,6 @@ const CloudDeployPanel = lazy(() => import('@/features/deployment/components/clo
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
-const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
@@ -204,9 +203,6 @@ export default function PersonasPage() {
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'ocr') {
-        return <ErrorBoundary name="OCR"><Suspense fallback={SectionFallback}><OcrPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'artist') {
         return <ErrorBoundary name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;

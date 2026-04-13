@@ -183,9 +183,6 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
           trail.push({ label: 'Dev Tools', onClick: () => setSidebarSection('plugins') });
           trail.push({ label: tabLabel });
-        } else if (pluginTab === 'ocr') {
-          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
-          trail.push({ label: 'OCR' });
         } else if (pluginTab === 'obsidian-brain') {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
           trail.push({ label: 'Obsidian Brain' });

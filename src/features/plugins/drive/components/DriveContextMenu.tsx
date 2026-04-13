@@ -12,11 +12,13 @@ import {
   Link as LinkIcon,
   FileSignature,
   ShieldCheck,
+  ScanLine,
 } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { isOcrEligible } from "../ocr/useOcr";
 
 export interface ContextMenuState {
   x: number;
@@ -37,6 +39,8 @@ interface Props {
   onCopyPath: (entry: DriveEntry) => void;
   onSignFile: (entry: DriveEntry) => void;
   onVerifyFile: (entry: DriveEntry) => void;
+  onExtractText: (entry: DriveEntry) => void;
+  hasGemini: boolean;
 }
 
 export function DriveContextMenu({
@@ -52,6 +56,8 @@ export function DriveContextMenu({
   onCopyPath,
   onSignFile,
   onVerifyFile,
+  onExtractText,
+  hasGemini,
 }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
@@ -182,6 +188,15 @@ export function DriveContextMenu({
                 () => onVerifyFile(entry),
                 { disabled: drive.selection.size > 1 },
               )}
+              {isOcrEligible(entry.mime, entry.extension) &&
+                item(
+                  <ScanLine className="w-3.5 h-3.5" />,
+                  hasGemini
+                    ? t.plugins.drive.ctx_extract_text
+                    : t.plugins.drive.ctx_extract_text_no_gemini,
+                  () => onExtractText(entry),
+                  { disabled: !hasGemini || drive.selection.size > 1 },
+                )}
             </>
           )}
           {divider}

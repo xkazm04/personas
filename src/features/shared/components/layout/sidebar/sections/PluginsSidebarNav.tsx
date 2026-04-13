@@ -1,4 +1,4 @@
-import { Puzzle, ScanLine, Palette, Brain, BookOpen, Wrench, HardDrive } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { DevToolsTab } from '@/lib/types/types';
 import { devToolsItems, researchLabItems } from '../sidebarData';
@@ -137,22 +137,6 @@ export function PluginsSidebarNav() {
           >
             <HardDrive className="w-4 h-4 flex-shrink-0" />
             Drive
-          </button>
-        )}
-
-        {/* OCR */}
-        {enabledPlugins.has('ocr') && (
-          <button
-            onClick={() => setPluginTab('ocr')}
-            aria-current={pluginTab === 'ocr' ? 'page' : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-              pluginTab === 'ocr'
-                ? 'bg-primary/10 text-foreground/90'
-                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
-            }`}
-          >
-            <ScanLine className="w-4 h-4 flex-shrink-0" />
-            OCR
           </button>
         )}
 
