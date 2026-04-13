@@ -1,0 +1,57 @@
+{
+  "id": "builtin-humbalytics",
+  "name": "humbalytics",
+  "label": "Humbalytics",
+  "color": "#7C3AED",
+  "icon_url": "/icons/connectors/humbalytics.svg",
+  "category": "analytics",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "hb_...",
+      "helpText": "From Humbalytics -> Settings -> API Keys. Used for read-only analytics queries and experiment control.",
+      "sensitive": true
+    },
+    {
+      "key": "property_id",
+      "label": "Property ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "prop_...",
+      "helpText": "The property identifier for the site you are tracking. Find it in Humbalytics -> Property Settings.",
+      "sensitive": false
+    },
+    {
+      "key": "api_base_url",
+      "label": "API Base URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://api.humbalytics.com/v1",
+      "helpText": "Defaults to the Humbalytics cloud endpoint. Override only for self-hosted or staging deployments.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{api_base_url|https://api.humbalytics.com/v1}}/properties/{{property_id}}",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key and property access via the property metadata endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Humbalytics web analytics with built-in A/B experimentation, traffic attribution, heat maps, and scroll-depth tracking. Runs experiments that dynamically rewrite page content without redeploying code.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://humbalytics.com/docs/api",
+    "setup_guide": "1. Sign up at humbalytics.com and add your site as a property\n2. Install the Humbalytics JavaScript snippet on your site (required for experiments + heatmaps)\n3. Go to Settings -> API Keys and create a new key with read + experiments scopes\n4. Copy the API key (hb_...) and your property ID (prop_...)\n5. Paste them here\n\nNote: dynamic content rewriting for A/B experiments requires the JS snippet to be active on the target pages -- the API alone does not modify the site.",
+    "pricing_tier": "freemium",
+    "maturity": "early"
+  }
+}

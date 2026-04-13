@@ -53,6 +53,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'legal/ai-contract-reviewer.json': '000a857781de13a3',
   'legal/contract-lifecycle-use-case.json': '0009432559dee858',
   'legal/editorial-calendar-manager.json': '0018c51f3b158599',
+  'marketing/autonomous-cro-experiment-runner.json': '00165417e7af810c',
   'marketing/reddit-trend-digest.json': '0000699e2f9cc6c5',
   'marketing/visual-brand-asset-factory.json': '0000fbd67af0f653',
   'marketing/web-marketing.json': '001b8d0d2a1d49a4',

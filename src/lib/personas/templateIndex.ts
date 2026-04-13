@@ -52,6 +52,7 @@ import tpl_hr_recruiting_pipeline_use_case from '../../../scripts/templates/hr/r
 import tpl_legal_ai_contract_reviewer from '../../../scripts/templates/legal/ai-contract-reviewer.json';
 import tpl_legal_contract_lifecycle_use_case from '../../../scripts/templates/legal/contract-lifecycle-use-case.json';
 import tpl_legal_editorial_calendar_manager from '../../../scripts/templates/legal/editorial-calendar-manager.json';
+import tpl_marketing_autonomous_cro_experiment_runner from '../../../scripts/templates/marketing/autonomous-cro-experiment-runner.json';
 import tpl_marketing_reddit_trend_digest from '../../../scripts/templates/marketing/reddit-trend-digest.json';
 import tpl_marketing_visual_brand_asset_factory from '../../../scripts/templates/marketing/visual-brand-asset-factory.json';
 import tpl_marketing_web_marketing from '../../../scripts/templates/marketing/web-marketing.json';
@@ -160,6 +161,7 @@ export const allTemplates: any[] = [
   tpl_legal_ai_contract_reviewer,
   tpl_legal_contract_lifecycle_use_case,
   tpl_legal_editorial_calendar_manager,
+  tpl_marketing_autonomous_cro_experiment_runner,
   tpl_marketing_reddit_trend_digest,
   tpl_marketing_visual_brand_asset_factory,
   tpl_marketing_web_marketing,
