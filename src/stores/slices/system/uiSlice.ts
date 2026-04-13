@@ -42,7 +42,7 @@ export interface UiSlice {
   showDesignNudge: boolean;
   showCloudNudge: boolean;
   isCreatingPersona: boolean;
-  /** When set, CreationWizard opens in resume mode for this draft persona */
+  /** Dormant field — preserved for legacy storeBus event handling until callers (storeBusWiring.ts, tests) are updated in a follow-up cleanup. */
   resumeDraftId: string | null;
   autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
@@ -168,7 +168,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
-  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain', 'research-lab']),
+  enabledPlugins: new Set<PluginTab>(['dev-tools', 'ocr', 'artist', 'obsidian-brain', 'research-lab', 'drive']),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);
     if (next.has(plugin)) {

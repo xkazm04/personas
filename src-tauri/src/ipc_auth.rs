@@ -182,6 +182,8 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "parse_api_definition",
     "save_api_definition",
     "load_api_definition",
+    // Credentials -- Dynamic discovery (adoption questionnaire)
+    "discover_connector_resources",
     // Credentials -- MCP Tools
     "list_mcp_tools",
     "execute_mcp_tool",

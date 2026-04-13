@@ -185,6 +185,11 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   cal_com:            { label: 'Cal.com',             color: '#292929', iconUrl: '/icons/connectors/cal-com.svg',                        Icon: Calendar },
   calendly:           { label: 'Calendly',           color: '#006BFF', iconUrl: 'https://cdn.simpleicons.org/calendly/006BFF',         Icon: Calendar },
 
+  // -- Time Tracking ---------------------------------------------
+  clockify:           { label: 'Clockify',           color: '#03A9F4', iconUrl: 'https://cdn.simpleicons.org/clockify/03A9F4',         Icon: Activity },
+  toggl:              { label: 'Toggl Track',        color: '#E57CD8', iconUrl: 'https://cdn.simpleicons.org/toggltrack/E57CD8',       Icon: Activity },
+  harvest:            { label: 'Harvest',            color: '#F36F21', iconUrl: 'https://cdn.simpleicons.org/harvest/F36F21',          Icon: Activity },
+
   // -- CMS -------------------------------------------------------
   wordpress:          { label: 'WordPress',          color: '#21759B', iconUrl: 'https://cdn.simpleicons.org/wordpress/21759B',        Icon: Globe },
   webflow:            { label: 'Webflow',            color: '#4353FF', iconUrl: 'https://cdn.simpleicons.org/webflow/4353FF',          Icon: Layout },
@@ -237,6 +242,10 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },
   zapier:             { label: 'Zapier',             color: '#FF4A00', iconUrl: '/icons/connectors/zapier.svg',                           Icon: Globe },
   github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: GithubIcon },
+  apify:              { label: 'Apify',              color: '#246DFF', iconUrl: '/icons/connectors/apify.svg',                            Icon: Globe },
+  x_twitter:          { label: 'X (Twitter)',        color: '#000000', iconUrl: '/icons/connectors/x-twitter.svg',                        Icon: Share2 },
+  youtube_data:       { label: 'YouTube',             color: '#FF0000', iconUrl: '/icons/connectors/youtube-data.svg',                     Icon: Video },
+  deepgram:           { label: 'Deepgram',           color: '#13EF93', iconUrl: '/icons/connectors/deepgram.svg',                         Icon: Headphones },
 
   // -- Integration Hubs -----------------------------------------
   mcp_gateway:        { label: 'MCP Gateway',        color: '#6366F1', iconUrl: '/icons/connectors/mcp_gateway.svg',                     Icon: Boxes },

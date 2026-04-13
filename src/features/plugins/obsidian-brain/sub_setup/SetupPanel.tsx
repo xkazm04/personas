@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, FolderOpen, CheckCircle2, XCircle, Save } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -11,11 +11,12 @@ import {
   obsidianBrainDetectVaults,
   obsidianBrainTestConnection,
   obsidianBrainSaveConfig,
-  obsidianBrainGetConfig,
   type DetectedVault,
   type VaultConnectionResult,
   type ObsidianVaultConfig,
 } from '@/api/obsidianBrain';
+import SavedConfigsSidebar from '../SavedConfigsSidebar';
+import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
 
 export default function SetupPanel() {
   const { t } = useTranslation();
@@ -24,15 +25,20 @@ export default function SetupPanel() {
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
   const setObsidianConnected = useSystemStore((s) => s.setObsidianConnected);
 
+  const { configs: savedConfigs, addOrUpdate: saveConfigToList } = useSavedVaultConfigs();
+  const savedPaths = useMemo(
+    () => new Set(savedConfigs.map((c) => c.vaultPath)),
+    [savedConfigs],
+  );
+
   const [detectedVaults, setDetectedVaults] = useState<DetectedVault[]>([]);
   const [detecting, setDetecting] = useState(false);
   const [vaultPath, setVaultPath] = useState('');
   const [connectionResult, setConnectionResult] = useState<VaultConnectionResult | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  // Sync options
+  // Sync options (fresh defaults — do not hydrate from saved configs)
   const [syncMemories, setSyncMemories] = useState(true);
   const [syncPersonas, setSyncPersonas] = useState(true);
   const [syncConnectors, setSyncConnectors] = useState(false);
@@ -43,41 +49,31 @@ export default function SetupPanel() {
   const [personasFolder, setPersonasFolder] = useState('Personas');
   const [connectorsFolder, setConnectorsFolder] = useState('Connectors');
 
-  useEffect(() => {
-    obsidianBrainGetConfig()
-      .then((config) => {
-        if (config) {
-          setVaultPath(config.vaultPath);
-          setSyncMemories(config.syncMemories);
-          setSyncPersonas(config.syncPersonas);
-          setSyncConnectors(config.syncConnectors);
-          setAutoSync(config.autoSync);
-          setMemoriesFolder(config.folderMapping.memoriesFolder);
-          setPersonasFolder(config.folderMapping.personasFolder);
-          setConnectorsFolder(config.folderMapping.connectorsFolder);
-          setObsidianVaultPath(config.vaultPath);
-          setObsidianVaultName(config.vaultName);
-          setObsidianConnected(true);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const visibleDetectedVaults = useMemo(
+    () => detectedVaults.filter((v) => !savedPaths.has(v.path)),
+    [detectedVaults, savedPaths],
+  );
 
   const detectVaults = useCallback(async () => {
     setDetecting(true);
     try {
       const vaults = await obsidianBrainDetectVaults();
       setDetectedVaults(vaults);
-      if (vaults.length === 0) {
-        addToast('No Obsidian vaults detected. Try browsing manually.', 'success');
+      const filteredCount = vaults.filter((v) => !savedPaths.has(v.path)).length;
+      if (filteredCount === 0) {
+        addToast(
+          vaults.length === 0
+            ? 'No Obsidian vaults detected. Try browsing manually.'
+            : 'All detected vaults are already saved. Add a new one via Browse.',
+          'success',
+        );
       }
     } catch (e) {
       addToast(`Detection failed: ${e}`, 'error');
     } finally {
       setDetecting(false);
     }
-  }, [addToast]);
+  }, [addToast, savedPaths]);
 
   const browseFolder = useCallback(async () => {
     const selected = await open({ directory: true, title: 'Select Obsidian Vault' });
@@ -121,6 +117,7 @@ export default function SetupPanel() {
         folderMapping: { memoriesFolder, personasFolder, connectorsFolder },
       };
       await obsidianBrainSaveConfig(config);
+      saveConfigToList(config);
       setObsidianVaultPath(vaultPath);
       setObsidianVaultName(connectionResult.vaultName);
       addToast('Obsidian Brain configuration saved', 'success');
@@ -129,18 +126,11 @@ export default function SetupPanel() {
     } finally {
       setSaving(false);
     }
-  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, setObsidianVaultPath, setObsidianVaultName]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <LoadingSpinner size="lg" label="Loading configuration..." />
-      </div>
-    );
-  }
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName]);
 
   return (
-    <div className="max-w-2xl space-y-5 py-2">
+    <div className="flex gap-4 py-2">
+      <div className="flex-1 min-w-0 max-w-2xl space-y-5">
       {/* Vault Connection */}
       <SectionCard collapsible title="Vault Connection" subtitle="Connect to an Obsidian vault for bidirectional sync" storageKey="obsidian-setup-vault">
         <div className="space-y-4">
@@ -163,10 +153,10 @@ export default function SetupPanel() {
           </div>
 
           {/* Detected vaults */}
-          {detectedVaults.length > 0 && (
+          {visibleDetectedVaults.length > 0 && (
             <div className="space-y-1.5">
               <p className="typo-caption text-muted-foreground/50">Detected vaults:</p>
-              {detectedVaults.map((v) => (
+              {visibleDetectedVaults.map((v) => (
                 <button
                   key={v.path}
                   onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
@@ -284,6 +274,11 @@ export default function SetupPanel() {
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
         {saving ? 'Saving...' : 'Save Configuration'}
       </button>
+      </div>
+
+      <SavedConfigsSidebar
+        emptyHint="Save a vault configuration to see it here. You can switch between vaults anytime."
+      />
     </div>
   );
 }

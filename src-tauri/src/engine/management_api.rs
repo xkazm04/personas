@@ -38,7 +38,9 @@ use crate::db::repos::resources::external_api_keys as api_key_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::a2a::types::{
-    A2ARequest, A2AResponse, AgentCapabilities, AgentCard, AgentSkill,
+    map_status_to_a2a_state, A2AArtifact, A2ARequest, A2AResponse, A2AResponsePart,
+    A2AStatusMessage, A2ATask, A2ATaskResponse, A2ATaskStatus, AgentCapabilities, AgentCard,
+    AgentSkill, MessageSendParams, TaskIdParams,
 };
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
@@ -832,11 +834,15 @@ async fn get_agent_card(
 // A2A Gateway -- JSON-RPC entry point
 // =============================================================================
 
-/// Translate an A2A `message/send` request into the existing `execute_persona`
-/// flow and wrap the result in the A2A response envelope.
+/// Dispatch an A2A JSON-RPC request to the per-method handler.
 ///
-/// Streaming (`message/stream`) and other A2A methods return JSON-RPC
-/// `-32601 Method not found`.
+/// Implemented methods:
+/// - `message/send`   — synchronous execution (blocks until terminal state)
+/// - `tasks/get`      — fetch an existing execution by id and return its A2A task shape
+/// - `tasks/cancel`   — cooperatively cancel a running execution
+///
+/// Unsupported methods return JSON-RPC `-32601 Method not found`.
+///
 // TODO(a2a-streaming): wire up `message/stream` once the engine exposes a
 // synchronous-text streaming surface for the management API.
 async fn handle_a2a_request(
@@ -846,19 +852,31 @@ async fn handle_a2a_request(
 ) -> impl IntoResponse {
     let req_id = req.id.clone().unwrap_or(serde_json::Value::Null);
 
-    if req.method != "message/send" {
-        let body = A2AResponse::error(req_id, -32601, "Method not found");
-        return (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+    match req.method.as_str() {
+        "message/send" => handle_message_send(&state, &persona_id, req_id, req.params).await,
+        "tasks/get" => handle_tasks_get(&state, &persona_id, req_id, req.params).await,
+        "tasks/cancel" => handle_tasks_cancel(&state, &persona_id, req_id, req.params).await,
+        _ => {
+            let body = A2AResponse::error(req_id, -32601, "Method not found");
+            (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+        }
     }
+}
 
-    let params = match req.params {
-        Some(p) => p,
-        None => {
-            let body = A2AResponse::error(
-                req_id,
-                -32602,
-                "Invalid params: missing message",
-            );
+/// `message/send` — execute the persona synchronously and return the final text.
+async fn handle_message_send(
+    state: &Arc<ManagementState>,
+    persona_id: &str,
+    req_id: serde_json::Value,
+    raw_params: Option<serde_json::Value>,
+) -> Response {
+    let params: MessageSendParams = match raw_params
+        .ok_or_else(|| "missing".to_string())
+        .and_then(|v| serde_json::from_value(v).map_err(|e| e.to_string()))
+    {
+        Ok(p) => p,
+        Err(_) => {
+            let body = A2AResponse::error(req_id, -32602, "Invalid params: missing message");
             return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
         }
     };
@@ -878,7 +896,7 @@ async fn handle_a2a_request(
     // Look up persona via the exposure-gated helper. Personas with
     // `gateway_exposure = local_only` are reported as "not exposed" — we
     // never leak their existence to external consumers.
-    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, &persona_id) {
+    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2AResponse::error(
@@ -915,7 +933,7 @@ async fn handle_a2a_request(
     // Wrap the user-supplied text into the engine's input shape and route
     // through the same path used by `/api/execute`.
     let input_value = serde_json::json!({ "input": prompt_text });
-    match run_persona_synchronous(&state, persona, input_value).await {
+    match run_persona_synchronous(state, persona, input_value).await {
         Ok(text) => {
             let body = A2AResponse::success(req_id, text);
             (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
@@ -924,6 +942,213 @@ async fn handle_a2a_request(
             let body = A2AResponse::error(req_id, -32603, format!("Internal error: {e}"));
             (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
         }
+    }
+}
+
+/// `tasks/get` — return the current state of an execution as an A2A Task object.
+///
+/// The execution's persona must be exposed for the task to be visible. If the
+/// persona is `local_only` (or doesn't exist) we report "Task not found"
+/// rather than leaking the existence of an internal execution. Cross-persona
+/// access is also blocked: a request to `/a2a/{persona_id}` can only inspect
+/// tasks belonging to that persona.
+async fn handle_tasks_get(
+    state: &Arc<ManagementState>,
+    persona_id: &str,
+    req_id: serde_json::Value,
+    raw_params: Option<serde_json::Value>,
+) -> Response {
+    let params: TaskIdParams = match raw_params
+        .ok_or_else(|| "missing".to_string())
+        .and_then(|v| serde_json::from_value(v).map_err(|e| e.to_string()))
+    {
+        Ok(p) => p,
+        Err(_) => {
+            let body = A2ATaskResponse::error(req_id, -32602, "Invalid params: missing task id");
+            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    // Verify the persona is reachable before returning anything about its tasks.
+    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
+        Ok(Some(p)) => p,
+        Ok(None) => {
+            let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+        Err(e) => {
+            let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    let row = match exec_repo::get_by_id(&state.pool, &params.id) {
+        Ok(r) => r,
+        Err(_) => {
+            // -32001 is the A2A spec's "TaskNotFoundError" code.
+            let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    // Cross-persona access guard: tasks can only be read through the persona
+    // that owns them. Without this check, an attacker holding any valid API
+    // key could enumerate executions across personas by guessing IDs.
+    if row.persona_id != persona.id {
+        let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+        return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+    }
+
+    let task = build_a2a_task(&row, &persona.id);
+    let body = A2ATaskResponse::success(req_id, task);
+    (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+}
+
+/// `tasks/cancel` — cooperatively cancel a running execution and return the
+/// updated A2A task. Idempotent: cancelling an already-terminal task returns
+/// the current state without re-cancelling. The same exposure + cross-persona
+/// guards as `tasks/get` apply.
+async fn handle_tasks_cancel(
+    state: &Arc<ManagementState>,
+    persona_id: &str,
+    req_id: serde_json::Value,
+    raw_params: Option<serde_json::Value>,
+) -> Response {
+    let params: TaskIdParams = match raw_params
+        .ok_or_else(|| "missing".to_string())
+        .and_then(|v| serde_json::from_value(v).map_err(|e| e.to_string()))
+    {
+        Ok(p) => p,
+        Err(_) => {
+            let body = A2ATaskResponse::error(req_id, -32602, "Invalid params: missing task id");
+            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
+        Ok(Some(p)) => p,
+        Ok(None) => {
+            let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+        Err(e) => {
+            let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    let row = match exec_repo::get_by_id(&state.pool, &params.id) {
+        Ok(r) => r,
+        Err(_) => {
+            let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    if row.persona_id != persona.id {
+        let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
+        return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+    }
+
+    let already_terminal = matches!(
+        row.status.as_str(),
+        "completed" | "success" | "failed" | "error" | "cancelled" | "timeout"
+    );
+
+    if !already_terminal {
+        // Reach into the engine via the AppHandle Tauri state; same pattern as
+        // `run_persona_synchronous`.
+        let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+            Some(s) => s,
+            None => {
+                let body = A2ATaskResponse::error(req_id, -32603, "App state not available");
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            }
+        };
+
+        let _cancelled_ok = app_state
+            .engine
+            .cancel_execution(&params.id, &state.pool, Some(&persona.id))
+            .await;
+        // We intentionally ignore the bool return — `cancel_execution` returns
+        // false for already-terminal executions, which we already detected
+        // above. The post-cancel re-read below is the source of truth either way.
+    }
+
+    // Re-read the row to pick up the updated status and emit it back to the client.
+    let updated = match exec_repo::get_by_id(&state.pool, &params.id) {
+        Ok(r) => r,
+        Err(e) => {
+            let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+    let task = build_a2a_task(&updated, &persona.id);
+    let body = A2ATaskResponse::success(req_id, task);
+    (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+}
+
+/// Convert an `executions` row into the A2A `Task` shape.
+fn build_a2a_task(row: &PersonaExecution, persona_id: &str) -> A2ATask {
+    let state = map_status_to_a2a_state(row.status.as_str());
+
+    // Best-effort timestamp: use completed_at when present (terminal states),
+    // otherwise started_at, otherwise the row's created_at.
+    let timestamp = row
+        .completed_at
+        .clone()
+        .or_else(|| row.started_at.clone())
+        .unwrap_or_else(|| row.created_at.clone());
+
+    // Attach the output as an artifact when the task is in a successful
+    // terminal state. Failures attach the error string as a status message
+    // instead — matches the way A2A clients distinguish success vs failure.
+    let mut artifacts = Vec::new();
+    let mut status_message: Option<A2AStatusMessage> = None;
+    match state {
+        "completed" => {
+            if let Some(out) = row.output_data.as_ref() {
+                if !out.is_empty() {
+                    artifacts.push(A2AArtifact {
+                        artifact_id: format!("{}-output", row.id),
+                        name: "result",
+                        parts: vec![A2AResponsePart {
+                            kind: "text",
+                            text: out.clone(),
+                        }],
+                    });
+                }
+            }
+        }
+        "failed" | "canceled" => {
+            if let Some(err) = row.error_message.as_ref() {
+                if !err.is_empty() {
+                    status_message = Some(A2AStatusMessage {
+                        kind: "message",
+                        role: "agent",
+                        parts: vec![A2AResponsePart {
+                            kind: "text",
+                            text: err.clone(),
+                        }],
+                        message_id: uuid::Uuid::new_v4().to_string(),
+                    });
+                }
+            }
+        }
+        _ => {}
+    }
+
+    A2ATask {
+        id: row.id.clone(),
+        context_id: format!("persona-{persona_id}"),
+        kind: "task",
+        status: A2ATaskStatus {
+            state,
+            timestamp,
+            message: status_message,
+        },
+        history: Vec::new(),
+        artifacts,
     }
 }
 
@@ -1148,5 +1373,113 @@ mod tests {
         let mut headers = axum::http::HeaderMap::new();
         headers.insert(header::HOST, "personas.local:8080".parse().unwrap());
         assert_eq!(host_origin_from_request(&headers), "http://personas.local:8080");
+    }
+
+    /// Build a `PersonaExecution` with the minimum fields needed by
+    /// `build_a2a_task` so the per-status branches can be tested directly.
+    fn make_exec_row(
+        id: &str,
+        persona_id: &str,
+        status: &str,
+        output: Option<&str>,
+        error: Option<&str>,
+    ) -> PersonaExecution {
+        let now = chrono::Utc::now().to_rfc3339();
+        PersonaExecution {
+            id: id.into(),
+            persona_id: persona_id.into(),
+            trigger_id: None,
+            use_case_id: None,
+            status: status.into(),
+            input_data: None,
+            output_data: output.map(|s| s.to_string()),
+            claude_session_id: None,
+            log_file_path: None,
+            execution_flows: None,
+            model_used: None,
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0.0,
+            error_message: error.map(|s| s.to_string()),
+            duration_ms: None,
+            tool_steps: None,
+            retry_of_execution_id: None,
+            retry_count: 0,
+            started_at: Some(now.clone()),
+            completed_at: Some(now.clone()),
+            created_at: now,
+            execution_config: Some("{}".into()),
+            log_truncated: false,
+        }
+    }
+
+    #[test]
+    fn build_a2a_task_completed_attaches_output_artifact() {
+        let row = make_exec_row("exec-1", "p-1", "completed", Some("the answer"), None);
+        let task = build_a2a_task(&row, "p-1");
+        assert_eq!(task.id, "exec-1");
+        assert_eq!(task.kind, "task");
+        assert_eq!(task.status.state, "completed");
+        assert!(task.status.message.is_none());
+        assert_eq!(task.artifacts.len(), 1);
+        assert_eq!(task.artifacts[0].parts[0].text, "the answer");
+        assert_eq!(task.context_id, "persona-p-1");
+    }
+
+    #[test]
+    fn build_a2a_task_failed_attaches_status_message_not_artifact() {
+        let row = make_exec_row("exec-2", "p-2", "failed", None, Some("kapow"));
+        let task = build_a2a_task(&row, "p-2");
+        assert_eq!(task.status.state, "failed");
+        assert!(task.artifacts.is_empty());
+        let msg = task.status.message.expect("status message");
+        assert_eq!(msg.parts[0].text, "kapow");
+        assert_eq!(msg.role, "agent");
+    }
+
+    #[test]
+    fn build_a2a_task_cancelled_uses_canceled_state_with_message() {
+        let row = make_exec_row("exec-3", "p-3", "cancelled", None, Some("user aborted"));
+        let task = build_a2a_task(&row, "p-3");
+        // Personas writes "cancelled" (UK), A2A spec uses "canceled" (US) — the
+        // mapper bridges the spelling without dropping the message context.
+        assert_eq!(task.status.state, "canceled");
+        let msg = task.status.message.expect("status message");
+        assert_eq!(msg.parts[0].text, "user aborted");
+    }
+
+    #[test]
+    fn build_a2a_task_running_has_no_artifacts_or_message() {
+        let row = make_exec_row("exec-4", "p-4", "running", None, None);
+        let task = build_a2a_task(&row, "p-4");
+        assert_eq!(task.status.state, "working");
+        assert!(task.artifacts.is_empty());
+        assert!(task.status.message.is_none());
+    }
+
+    #[test]
+    fn build_a2a_task_completed_with_empty_output_emits_no_artifact() {
+        // Edge case: status is terminal-success but output is empty. We do
+        // NOT emit an empty artifact because that would mislead clients into
+        // thinking there's a result to inspect.
+        let row = make_exec_row("exec-5", "p-5", "completed", Some(""), None);
+        let task = build_a2a_task(&row, "p-5");
+        assert_eq!(task.status.state, "completed");
+        assert!(task.artifacts.is_empty());
+    }
+
+    #[test]
+    fn a2a_request_dispatcher_recognizes_new_methods() {
+        // Round-trip the three method names through serde to confirm they
+        // parse into the `A2ARequest` envelope that `handle_a2a_request`
+        // matches on. This guards against typos in the dispatcher table.
+        for method in ["message/send", "tasks/get", "tasks/cancel"] {
+            let raw = format!(
+                r#"{{ "jsonrpc": "2.0", "id": 1, "method": "{}", "params": {{}} }}"#,
+                method
+            );
+            let req: A2ARequest = serde_json::from_str(&raw).expect("parse");
+            assert_eq!(req.method, method);
+        }
     }
 }

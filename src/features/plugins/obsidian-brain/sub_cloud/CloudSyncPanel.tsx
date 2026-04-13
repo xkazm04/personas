@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn, Globe } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -40,6 +40,8 @@ export default function CloudSyncPanel() {
 
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
+  const authLoading = useAuthStore((s) => s.isLoading);
 
   const [connecting, setConnecting] = useState(false);
   const [pushing, setPushing] = useState(false);
@@ -151,14 +153,27 @@ export default function CloudSyncPanel() {
   // Not signed in
   if (!isAuthenticated) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={User}
-          title="Sign In Required"
-          subtitle="Sign in with your Google account to enable cloud sync. Your vault files will be stored in your own Google Drive (15 GB free)."
-          iconColor="text-blue-400/80"
-          iconContainerClassName="bg-blue-500/10 border-blue-500/20"
-        />
+      <div className="flex-1 flex flex-col items-center justify-center py-20 px-6">
+        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+          <User className="w-7 h-7 text-blue-400/80" />
+        </div>
+        <p className="typo-heading-lg text-foreground/80 mb-1.5">Sign in to enable cloud sync</p>
+        <p className="typo-body text-muted-foreground/50 max-w-md text-center mb-6">
+          Sign in with your Google account to back up your vault to your own Google Drive
+          (15 GB free). Files are stored under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
+        </p>
+        <button
+          onClick={loginWithGoogle}
+          disabled={authLoading}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
+        >
+          {authLoading ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <Globe className="w-4 h-4" />
+          )}
+          {authLoading ? 'Signing in...' : 'Sign in with Google'}
+        </button>
       </div>
     );
   }

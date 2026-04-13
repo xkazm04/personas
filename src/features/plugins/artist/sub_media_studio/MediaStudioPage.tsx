@@ -1,8 +1,7 @@
 import { useCallback, useState, type DragEvent } from 'react';
-import { Film, Video, Music, ImagePlus, Type, Upload } from 'lucide-react';
+import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaStudio } from './hooks/useMediaStudio';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
@@ -219,147 +218,126 @@ export default function MediaStudioPage() {
   // -- Render -----------------------------------------------------------------
 
   return (
-    <ContentBox>
-      <ContentHeader
-        icon={<Film className="w-5 h-5 text-rose-400" />}
-        iconColor="red"
-        title={t.media_studio.title}
-        subtitle={t.media_studio.subtitle}
-        actions={
-          ffmpegReady ? (
-            <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" onClick={handleAddText}>
-                <Type className="w-3.5 h-3.5" />
-                {t.media_studio.add_text_beat}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleAddImage}>
-                <ImagePlus className="w-3.5 h-3.5" />
-                {t.media_studio.add_image}
-              </Button>
-              <Button variant="accent" accentColor="rose" size="sm" onClick={handleAddVideo}>
-                <Video className="w-3.5 h-3.5" />
-                {t.media_studio.add_video}
-              </Button>
-              <Button variant="accent" accentColor="blue" size="sm" onClick={handleAddAudio}>
-                <Music className="w-3.5 h-3.5" />
-                {t.media_studio.add_audio}
-              </Button>
-            </div>
-          ) : undefined
-        }
-      />
-
-      <ContentBody noPadding>
-        <div
-          className={`flex flex-col h-full relative ${dragOver ? 'ring-2 ring-rose-400/40 ring-inset' : ''}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          {/* Drag overlay */}
-          {dragOver && (
-            <div className="absolute inset-0 z-50 bg-rose-500/10 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 pointer-events-none">
-              <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-dashed border-rose-400/50 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-rose-400" />
-              </div>
-              <p className="typo-heading text-rose-400">{t.media_studio.import_media}</p>
-            </div>
-          )}
-          {/* FFmpeg banner */}
-          {(!ffmpegReady || ffmpegChecking) && (
-            <div className="px-4 md:px-6 xl:px-8 pt-4">
-              <FfmpegStatusBanner
-                status={ffmpegStatus}
-                checking={ffmpegChecking}
-                onRecheck={ffmpegRecheck}
-              />
-            </div>
-          )}
-
-          {ffmpegReady && composition.items.length === 0 && (
-            /* Empty state */
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                <ImagePlus className="w-8 h-8 text-rose-400" />
-              </div>
-              <div>
-                <h2 className="typo-heading text-foreground/90">{t.media_studio.empty_title}</h2>
-                <p className="typo-body text-muted-foreground mt-1">{t.media_studio.empty_hint}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
-                  <Video className="w-4 h-4" />
-                  {t.media_studio.add_video}
-                </Button>
-                <Button variant="accent" accentColor="blue" size="md" onClick={handleAddAudio}>
-                  <Music className="w-4 h-4" />
-                  {t.media_studio.add_audio}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {ffmpegReady && composition.items.length > 0 && (
-            <>
-              {/* Preview + Inspector row */}
-              <div className="flex flex-1 min-h-0">
-                {/* Preview — 60% */}
-                <div className="w-[60%] p-4 flex items-start">
-                  <CompositionPreview
-                    selectedItem={selectedItem}
-                    currentTime={currentTime}
-                    textItems={textItems}
-                    imageItems={imageItems}
-                  />
-                </div>
-                {/* Inspector — 40% */}
-                <div className="w-[40%] border-l border-primary/10 bg-card/30">
-                  <InspectorPanel
-                    selectedItem={selectedItem}
-                    composition={composition}
-                    onUpdate={updateItem}
-                    onUpdateComposition={updateComposition}
-                  />
-                </div>
-              </div>
-
-              {/* Timeline — fixed height */}
-              <div className="h-[250px] flex-shrink-0">
-                <TimelinePanel
-                  textItems={textItems}
-                  imageItems={imageItems}
-                  videoItems={videoItems}
-                  audioItems={audioItems}
-                  totalDuration={totalDuration}
-                  currentTime={currentTime}
-                  selectedId={selectedItemId}
-                  onSelect={setSelectedItemId}
-                  onSeek={seek}
-                  onUpdate={updateItem}
-                  onAddText={handleAddText}
-                  onAddImage={handleAddImage}
-                  onAddVideo={handleAddVideo}
-                  onAddAudio={handleAddAudio}
-                />
-              </div>
-
-              {/* Footer: Playback + Export */}
-              <PlaybackControls
-                currentTime={currentTime}
-                totalDuration={totalDuration}
-                playing={playing}
-                looping={looping}
-                onPlay={play}
-                onPause={pause}
-                onStop={stop}
-                onSeek={seek}
-                onToggleLoop={toggleLoop}
-              />
-              <ExportPanel composition={composition} />
-            </>
-          )}
+    <div
+      className={`flex-1 flex flex-col min-h-0 relative ${dragOver ? 'ring-2 ring-rose-400/40 ring-inset' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      {/* Drag overlay */}
+      {dragOver && (
+        <div className="absolute inset-0 z-50 bg-rose-500/10 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 pointer-events-none">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-dashed border-rose-400/50 flex items-center justify-center">
+            <Upload className="w-8 h-8 text-rose-400" />
+          </div>
+          <p className="typo-heading text-rose-400">{t.media_studio.import_media}</p>
         </div>
-      </ContentBody>
-    </ContentBox>
+      )}
+
+      {/* FFmpeg banner (only when gating) */}
+      {(!ffmpegReady || ffmpegChecking) && (
+        <div className="px-4 md:px-6 xl:px-8 pt-4">
+          <FfmpegStatusBanner
+            status={ffmpegStatus}
+            checking={ffmpegChecking}
+            onRecheck={ffmpegRecheck}
+          />
+        </div>
+      )}
+
+      {ffmpegReady && composition.items.length === 0 && (
+        /* Empty state — primary call-to-action */
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+            <Film className="w-10 h-10 text-rose-400" />
+          </div>
+          <div className="max-w-md">
+            <h2 className="typo-heading text-foreground text-lg">{t.media_studio.empty_title}</h2>
+            <p className="typo-body text-muted-foreground mt-1">{t.media_studio.empty_hint}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
+              <Video className="w-4 h-4" />
+              {t.media_studio.add_video}
+            </Button>
+            <Button variant="accent" accentColor="blue" size="md" onClick={handleAddAudio}>
+              <Music className="w-4 h-4" />
+              {t.media_studio.add_audio}
+            </Button>
+            <Button variant="ghost" size="md" onClick={handleAddImage}>
+              <ImagePlus className="w-4 h-4" />
+              {t.media_studio.add_image}
+            </Button>
+            <Button variant="ghost" size="md" onClick={handleAddText}>
+              <Type className="w-4 h-4" />
+              {t.media_studio.add_text_beat}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground/50">
+            {t.media_studio.import_media} — drag & drop files anywhere
+          </p>
+        </div>
+      )}
+
+      {ffmpegReady && composition.items.length > 0 && (
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Preview + Inspector row */}
+          <div className="flex flex-1 min-h-0">
+            {/* Preview — 62% */}
+            <div className="w-[62%] p-4 flex items-start justify-center bg-background/40">
+              <CompositionPreview
+                selectedItem={selectedItem}
+                currentTime={currentTime}
+                textItems={textItems}
+                imageItems={imageItems}
+              />
+            </div>
+            {/* Inspector — 38% */}
+            <div className="w-[38%] border-l border-primary/10 bg-card/30 min-h-0 overflow-y-auto">
+              <InspectorPanel
+                selectedItem={selectedItem}
+                composition={composition}
+                onUpdate={updateItem}
+                onUpdateComposition={updateComposition}
+              />
+            </div>
+          </div>
+
+          {/* Timeline — fixed height */}
+          <div className="h-[260px] flex-shrink-0">
+            <TimelinePanel
+              textItems={textItems}
+              imageItems={imageItems}
+              videoItems={videoItems}
+              audioItems={audioItems}
+              totalDuration={totalDuration}
+              currentTime={currentTime}
+              selectedId={selectedItemId}
+              onSelect={setSelectedItemId}
+              onSeek={seek}
+              onUpdate={updateItem}
+              onAddText={handleAddText}
+              onAddImage={handleAddImage}
+              onAddVideo={handleAddVideo}
+              onAddAudio={handleAddAudio}
+            />
+          </div>
+
+          {/* Footer: Playback + Export */}
+          <PlaybackControls
+            currentTime={currentTime}
+            totalDuration={totalDuration}
+            playing={playing}
+            looping={looping}
+            onPlay={play}
+            onPause={pause}
+            onStop={stop}
+            onSeek={seek}
+            onToggleLoop={toggleLoop}
+          />
+          <ExportPanel composition={composition} />
+        </div>
+      )}
+    </div>
   );
 }

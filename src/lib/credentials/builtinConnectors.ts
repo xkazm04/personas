@@ -31,6 +31,10 @@ import convex from '../../../scripts/connectors/builtin/convex.json';
 import buffer from '../../../scripts/connectors/builtin/buffer.json';
 import linkedin from '../../../scripts/connectors/builtin/linkedin.json';
 import reddit from '../../../scripts/connectors/builtin/reddit.json';
+import apify from '../../../scripts/connectors/builtin/apify.json';
+import xTwitter from '../../../scripts/connectors/builtin/x-twitter.json';
+import youtubeData from '../../../scripts/connectors/builtin/youtube-data.json';
+import deepgram from '../../../scripts/connectors/builtin/deepgram.json';
 import mcpGateway from '../../../scripts/connectors/builtin/mcp_gateway.json';
 import arcade from '../../../scripts/connectors/builtin/arcade.json';
 import slack from '../../../scripts/connectors/builtin/slack.json';
@@ -89,6 +93,9 @@ import vectorKnowledgeBase from '../../../scripts/connectors/builtin/vector-know
 import localMessaging from '../../../scripts/connectors/builtin/local-messaging.json';
 import codebase from '../../../scripts/connectors/builtin/codebase.json';
 import codebases from '../../../scripts/connectors/builtin/codebases.json';
+import clockify from '../../../scripts/connectors/builtin/clockify.json';
+import toggl from '../../../scripts/connectors/builtin/toggl.json';
+import harvest from '../../../scripts/connectors/builtin/harvest.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -121,6 +128,10 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   buffer,
   linkedin,
   reddit,
+  apify,
+  xTwitter,
+  youtubeData,
+  deepgram,
   mcpGateway,
   arcade,
   slack,
@@ -179,4 +190,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   localMessaging,
   codebase,
   codebases,
+  clockify,
+  toggl,
+  harvest,
 ] as BuiltinConnectorDef[];

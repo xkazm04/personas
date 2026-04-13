@@ -202,6 +202,52 @@ The 87 connectors in `scripts/connectors/builtin/` (and the 87 entries in `codeb
 
 This distinction was missed in `/research` run 3 (2026-04-08, Codex/Bolin video), leading to a misframed "tool surface minimization" finding. User correction recorded as a permanent rule.
 
+### Desktop bridges: typed wrappers for native CLIs (engine/desktop_bridges.rs)
+
+Personas already supports calling native CLI binaries (vs. HTTP APIs) via typed
+bridge modules in `src-tauri/src/engine/desktop_bridges.rs`. The canonical
+example is the `vscode` module: a `VsCodeAction` enum (`OpenFile`, `OpenFolder`,
+`DiffFiles`, `InstallExtension`, `RunTask`, ...) plus an `execute(binary, action)`
+function that spawns the binary via `tokio::process::Command` and returns a
+`BridgeActionResult`. New bridges follow the same shape and are gated by
+`engine/desktop_security::DesktopConnectorManifest` for capability approval.
+
+This is **distinct from** the HTTP-API connectors in `scripts/connectors/builtin/*.json`.
+The 100 builtin connectors are HTTP-API wrappers; desktop bridges are *binary*
+wrappers. When a `/research` finding is about wrapping a native CLI, the
+attachment point is `desktop_bridges.rs`, NOT the connector catalog.
+
+**Build-time codegen helper:** `scripts/generate-cli-bridge.mjs` (added 2026-04-12)
+auto-generates a bridge stub by parsing `<binary> --help`. Output is
+intentionally a stub — the human reviews enum variants, fills in the execute()
+body, and registers the module. Works best on tools with structured `--help`
+output (gh, kubectl, terraform, jq, docker); falls back to user-provided
+subcommand list for tools that use man-page mode (git).
+
+This was added after `/research` run on 2026-04-12 (GitHub Trending Weekly #30,
+Clyjs finding) discovered the existing bridge layer was hand-coded.
+
+### AI healing fix variants (engine/ai_healing.rs)
+
+`HealingFix.fix_type` accepts these variants:
+- `modify_prompt` — change persona system_prompt or structured_prompt section
+- `update_config` — change timeout_ms (1000-1800000), max_turns (1-100), enabled (true only)
+- `modify_file` — file edit performed by the CLI's own tool use (logged only)
+- `run_command` — command run by the CLI's own tool use (logged only)
+- `instrument_and_reproduce` — *deferred fix*: propose log points to inject and
+  request a re-execution. Used when the healer doesn't have enough evidence to
+  write a confident fix. Recorded in `healing_audit_log` with subsystem
+  `ai_heal_instrument_proposed`. As of 2026-04-12 the actual injection and
+  re-execution orchestration is NOT implemented — the v1 records the proposal
+  so the AI healer can start producing reproduce-and-verify suggestions on real
+  failures, generating data for the future orchestrator design.
+
+This was added after `/research` run on 2026-04-12 (Debug Agent finding from
+GitHub Trending Weekly #30). Future runs proposing additional healing fix types
+should grep for `HealingFix.fix_type` matches and add a dispatch arm in
+`apply_db_fixes` plus an entry in the healer prompt's "Database Fix Format"
+section.
+
 ### Personas framework vs `dev-tools` plugin (architectural boundary)
 
 Personas-the-framework is **general-purpose**: it orchestrates agents that work on email, documents, finance, content, and many other domains beyond coding. Code/SDLC-specific features should NOT live in the core engine.

@@ -49,7 +49,7 @@ export interface UseGalleryQueryReturn {
 }
 
 const DEFAULT_PER_PAGE = 50;
-const DEBOUNCE_MS = 150;
+const DEBOUNCE_MS = 400;
 const MAX_RECOMMENDATIONS = 8;
 
 /**

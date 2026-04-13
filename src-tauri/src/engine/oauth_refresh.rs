@@ -260,8 +260,9 @@ pub async fn refresh_single_credential(
 
     // After acquiring the lock, re-check whether the token was already refreshed
     // by whichever task held the lock before us. Re-read credential from DB.
-    if let Ok(fresh_cred) = cred_repo::get_by_id(pool, &cred.id) {
-        let fresh_meta = parse_credential_metadata(&fresh_cred);
+    let maybe_fresh = cred_repo::get_by_id(pool, &cred.id).ok();
+    if let Some(ref fresh_cred) = maybe_fresh {
+        let fresh_meta = parse_credential_metadata(fresh_cred);
         if let Some(ref meta) = fresh_meta {
             if let Some(expires_at) = extract_expires_at(meta) {
                 let remaining = expires_at.signed_duration_since(chrono::Utc::now());
@@ -275,6 +276,28 @@ pub async fn refresh_single_credential(
                 }
             }
         }
+    }
+
+    // Route CLI-sourced credentials through the CLI capture engine instead of
+    // the OAuth HTTP refresh flow. This re-runs the original capture spec
+    // (e.g. `gcloud auth print-access-token`) to get a fresh short-lived token.
+    let refresh_target = maybe_fresh.as_ref().unwrap_or(cred);
+    if parse_credential_metadata(refresh_target)
+        .and_then(|m| m.get("source").and_then(|v| v.as_str()).map(str::to_owned))
+        .as_deref()
+        == Some("cli")
+    {
+        tracing::info!(
+            credential_id = %cred.id,
+            credential_name = %cred.name,
+            service_type = %cred.service_type,
+            "Routing refresh via CLI recapture (metadata.source = cli)"
+        );
+        return crate::commands::credentials::cli_capture::recapture_for_credential(
+            pool,
+            refresh_target,
+        )
+        .await;
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, cred)?;

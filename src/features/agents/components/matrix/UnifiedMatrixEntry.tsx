@@ -1,13 +1,13 @@
 /**
- * UnifiedMatrixEntry -- direct matrix mount replacing CreationWizard.
+ * UnifiedMatrixEntry -- unified matrix build surface for persona creation and editing.
  *
  * This component renders PersonaMatrix with variant="creation" directly,
- * with no mode tabs (build/chat/matrix) and no wizard step navigation.
+ * with no mode tabs and no wizard step navigation.
  * The matrix IS the creation surface.
  *
  * It uses useMatrixBuild for build orchestration and manages local state
- * for intent text and agent name. Draft persona creation follows the same
- * pattern as MatrixCreator (createPersona via agentStore).
+ * for intent text and agent name. Draft persona creation calls createPersona
+ * via agentStore before starting the build session.
  */
 import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
@@ -145,7 +145,16 @@ export function UnifiedMatrixEntry() {
   // Saves the user a click: as soon as the LLM has produced a draft and there
   // are no outstanding questions, kick off the test pass automatically.
   // If the LLM raises questions later, manual test remains available.
+  //
+  // Multi-round support: when the LLM surfaces a new pending question mid-build,
+  // the ref is reset so that once the user answers it and we cycle back to
+  // draft_ready with no more questions, the auto-test fires again.
   const autoTestedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) {
+      autoTestedRef.current = null;
+    }
+  }, [build.pendingQuestions]);
   useEffect(() => {
     const phase = build.buildPhase;
     if (phase !== 'draft_ready') return;
@@ -380,7 +389,7 @@ export function UnifiedMatrixEntry() {
             onClick={() => setLaunchError(null)}
             className="text-red-400/60 hover:text-red-400 text-xs"
           >
-            {t.common.dismiss}
+            {t.errors.dismiss_error}
           </button>
         </div>
       )}

@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
+// TauriEmitter import removed — emitter is passed as Arc<dyn ExecutionEventEmitter>
 use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 
 /// Per-credential mutex pool to prevent concurrent OAuth token refreshes from

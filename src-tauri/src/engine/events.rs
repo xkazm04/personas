@@ -15,7 +15,7 @@
 //! (it has a `Self: Sized` bound and is not callable through
 //! `&dyn ExecutionEventEmitter`).
 //!
-//! Phase 1 (2026-04-08): the emitter is now threaded through `runner.rs`,
+//! Phase 1 (2026-04-08/09): the emitter is now threaded through `runner.rs`,
 //! `dispatch.rs`, `ollama.rs`, and `provider/mod.rs`. The `run_execution`
 //! function accepts `Arc<dyn ExecutionEventEmitter>` and all event emission
 //! goes through `emit_to()` instead of calling `app.emit()` directly.
@@ -130,5 +130,65 @@ mod tests {
     fn noop_emitter_usable_through_trait_object() {
         let emitter: Box<dyn ExecutionEventEmitter> = Box::new(NoOpEmitter::new());
         emitter.emit_json("via-dyn", serde_json::Value::Null);
+    }
+
+    /// Capture-mode emitter used by tests that need to assert which events
+    /// the engine emitted. Mirrors the tracing patterns used by other
+    /// engine tests but stays event-shaped instead of log-shaped.
+    struct CapturingEmitter {
+        events: std::sync::Mutex<Vec<(String, serde_json::Value)>>,
+    }
+
+    impl CapturingEmitter {
+        fn new() -> Self {
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
+        }
+
+        fn snapshot(&self) -> Vec<(String, serde_json::Value)> {
+            self.events.lock().unwrap().clone()
+        }
+    }
+
+    impl ExecutionEventEmitter for CapturingEmitter {
+        fn emit_json(&self, event: &str, payload: serde_json::Value) {
+            self.events.lock().unwrap().push((event.to_string(), payload));
+        }
+    }
+
+    #[test]
+    fn capturing_emitter_records_typed_emit_calls() {
+        let cap = CapturingEmitter::new();
+        cap.emit("execution-status", &serde_json::json!({
+            "execution_id": "exec-1",
+            "status": "completed",
+        }));
+        cap.emit("execution-status", &serde_json::json!({
+            "execution_id": "exec-1",
+            "status": "failed",
+            "error": "boom",
+        }));
+        let snap = cap.snapshot();
+        assert_eq!(snap.len(), 2);
+        assert_eq!(snap[0].0, "execution-status");
+        assert_eq!(snap[0].1["status"], "completed");
+        assert_eq!(snap[1].1["status"], "failed");
+        assert_eq!(snap[1].1["error"], "boom");
+    }
+
+    #[test]
+    fn engine_can_swap_emitters_at_runtime_via_trait_object() {
+        // Proves the substitution contract that justifies the trait:
+        // a single function can be parameterized over &dyn ExecutionEventEmitter
+        // and called with either a real backing or a no-op without code change.
+        fn emit_one(emitter: &dyn ExecutionEventEmitter) {
+            emitter.emit_json("test", serde_json::json!({ "ok": true }));
+        }
+
+        let cap = CapturingEmitter::new();
+        emit_one(&cap);
+        emit_one(&NoOpEmitter::new());
+        assert_eq!(cap.snapshot().len(), 1);
     }
 }

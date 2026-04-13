@@ -5,11 +5,17 @@
 
 import tpl_content_ai_document_intelligence_hub from '../../../scripts/templates/content/ai-document-intelligence-hub.json';
 import tpl_content_analytics_content_distribution_use_case from '../../../scripts/templates/content/analytics-content-distribution-use-case.json';
+import tpl_content_audio_briefing_host from '../../../scripts/templates/content/audio-briefing-host.json';
 import tpl_content_autonomous_art_director from '../../../scripts/templates/content/autonomous-art-director.json';
 import tpl_content_content_approval_workflow from '../../../scripts/templates/content/content-approval-workflow.json';
 import tpl_content_content_performance_reporter from '../../../scripts/templates/content/content-performance-reporter.json';
+import tpl_content_demo_recorder from '../../../scripts/templates/content/demo-recorder.json';
 import tpl_content_feature_video_creator from '../../../scripts/templates/content/feature-video-creator.json';
+import tpl_content_game_character_animator from '../../../scripts/templates/content/game-character-animator.json';
 import tpl_content_newsletter_curator from '../../../scripts/templates/content/newsletter-curator.json';
+import tpl_content_scientific_writing_editor from '../../../scripts/templates/content/scientific-writing-editor.json';
+import tpl_content_social_media_designer from '../../../scripts/templates/content/social-media-designer.json';
+import tpl_content_youtube_content_pipeline from '../../../scripts/templates/content/youtube-content-pipeline.json';
 import tpl_development_autonomous_issue_resolver from '../../../scripts/templates/development/autonomous-issue-resolver.json';
 import tpl_development_build_intelligence_use_case from '../../../scripts/templates/development/build-intelligence-use-case.json';
 import tpl_development_codebase_health_scanner from '../../../scripts/templates/development/codebase-health-scanner.json';
@@ -21,6 +27,7 @@ import tpl_development_feature_flag_experiment_analyst from '../../../scripts/te
 import tpl_development_feature_flag_governance_use_case from '../../../scripts/templates/development/feature-flag-governance-use-case.json';
 import tpl_development_qa_guardian from '../../../scripts/templates/development/qa-guardian.json';
 import tpl_development_real_time_database_watcher from '../../../scripts/templates/development/real-time-database-watcher.json';
+import tpl_development_self_evolving_codebase_memory from '../../../scripts/templates/development/self-evolving-codebase-memory.json';
 import tpl_development_user_lifecycle_manager from '../../../scripts/templates/development/user-lifecycle-manager.json';
 import tpl_devops_devops_guardian from '../../../scripts/templates/devops/devops-guardian.json';
 import tpl_devops_incident_logger from '../../../scripts/templates/devops/incident-logger.json';
@@ -35,6 +42,7 @@ import tpl_finance_finance_controller from '../../../scripts/templates/finance/f
 import tpl_finance_financial_stocks_signaller from '../../../scripts/templates/finance/financial-stocks-signaller.json';
 import tpl_finance_freelancer_invoice_autopilot from '../../../scripts/templates/finance/freelancer-invoice-autopilot.json';
 import tpl_finance_invoice_tracker from '../../../scripts/templates/finance/invoice-tracker.json';
+import tpl_finance_market_intelligence_scout from '../../../scripts/templates/finance/market-intelligence-scout.json';
 import tpl_finance_personal_finance_use_case from '../../../scripts/templates/finance/personal-finance-use-case.json';
 import tpl_finance_revenue_intelligence_copilot from '../../../scripts/templates/finance/revenue-intelligence-copilot.json';
 import tpl_finance_revenue_operations_hub from '../../../scripts/templates/finance/revenue-operations-hub.json';
@@ -44,8 +52,11 @@ import tpl_hr_recruiting_pipeline_use_case from '../../../scripts/templates/hr/r
 import tpl_legal_ai_contract_reviewer from '../../../scripts/templates/legal/ai-contract-reviewer.json';
 import tpl_legal_contract_lifecycle_use_case from '../../../scripts/templates/legal/contract-lifecycle-use-case.json';
 import tpl_legal_editorial_calendar_manager from '../../../scripts/templates/legal/editorial-calendar-manager.json';
+import tpl_marketing_autonomous_cro_experiment_runner from '../../../scripts/templates/marketing/autonomous-cro-experiment-runner.json';
+import tpl_marketing_reddit_trend_digest from '../../../scripts/templates/marketing/reddit-trend-digest.json';
 import tpl_marketing_visual_brand_asset_factory from '../../../scripts/templates/marketing/visual-brand-asset-factory.json';
 import tpl_marketing_web_marketing from '../../../scripts/templates/marketing/web-marketing.json';
+import tpl_marketing_website_conversion_audit from '../../../scripts/templates/marketing/website-conversion-audit.json';
 import tpl_productivity_appointment_orchestrator from '../../../scripts/templates/productivity/appointment-orchestrator.json';
 import tpl_productivity_daily_standup_compiler from '../../../scripts/templates/productivity/daily-standup-compiler.json';
 import tpl_productivity_digital_clone from '../../../scripts/templates/productivity/digital-clone.json';
@@ -58,6 +69,7 @@ import tpl_productivity_personal_capture_bot from '../../../scripts/templates/pr
 import tpl_productivity_router from '../../../scripts/templates/productivity/router.json';
 import tpl_productivity_survey_insights_analyzer from '../../../scripts/templates/productivity/survey-insights-analyzer.json';
 import tpl_productivity_survey_processor from '../../../scripts/templates/productivity/survey-processor.json';
+import tpl_project_management_agency_client_retainer_manager from '../../../scripts/templates/project-management/agency-client-retainer-manager.json';
 import tpl_project_management_client_portal_orchestrator from '../../../scripts/templates/project-management/client-portal-orchestrator.json';
 import tpl_project_management_deadline_synchronizer from '../../../scripts/templates/project-management/deadline-synchronizer.json';
 import tpl_project_management_technical_decision_tracker from '../../../scripts/templates/project-management/technical-decision-tracker.json';
@@ -67,6 +79,7 @@ import tpl_research_conversational_database_analyst from '../../../scripts/templ
 import tpl_research_customer_event_intelligence from '../../../scripts/templates/research/customer-event-intelligence.json';
 import tpl_research_database_performance_monitor from '../../../scripts/templates/research/database-performance-monitor.json';
 import tpl_research_industry_intelligence_aggregator from '../../../scripts/templates/research/industry-intelligence-aggregator.json';
+import tpl_research_knowledge_base_health_auditor from '../../../scripts/templates/research/knowledge-base-health-auditor.json';
 import tpl_research_product_analytics_briefer from '../../../scripts/templates/research/product-analytics-briefer.json';
 import tpl_research_product_scout from '../../../scripts/templates/research/product-scout.json';
 import tpl_research_product_signal_detector from '../../../scripts/templates/research/product-signal-detector.json';
@@ -78,6 +91,7 @@ import tpl_sales_contact_sync_manager from '../../../scripts/templates/sales/con
 import tpl_sales_crm_data_quality_auditor from '../../../scripts/templates/sales/crm-data-quality-auditor.json';
 import tpl_sales_email_lead_extractor from '../../../scripts/templates/sales/email-lead-extractor.json';
 import tpl_sales_lead_capture_pipeline from '../../../scripts/templates/sales/lead-capture-pipeline.json';
+import tpl_sales_local_business_lead_prospector from '../../../scripts/templates/sales/local-business-lead-prospector.json';
 import tpl_sales_outbound_sales_intelligence_pipeline from '../../../scripts/templates/sales/outbound-sales-intelligence-pipeline.json';
 import tpl_sales_personality_enriched_sales_prep from '../../../scripts/templates/sales/personality-enriched-sales-prep.json';
 import tpl_sales_sales_deal_analyzer from '../../../scripts/templates/sales/sales-deal-analyzer.json';
@@ -85,6 +99,7 @@ import tpl_sales_sales_deal_tracker from '../../../scripts/templates/sales/sales
 import tpl_sales_sales_pipeline_autopilot from '../../../scripts/templates/sales/sales-pipeline-autopilot.json';
 import tpl_sales_sales_proposal_generator from '../../../scripts/templates/sales/sales-proposal-generator.json';
 import tpl_sales_sheets_e_commerce_command_center from '../../../scripts/templates/sales/sheets-e-commerce-command-center.json';
+import tpl_sales_website_conversion_auditor from '../../../scripts/templates/sales/website-conversion-auditor.json';
 import tpl_security_access_request_manager from '../../../scripts/templates/security/access-request-manager.json';
 import tpl_security_brand_protection_sentinel from '../../../scripts/templates/security/brand-protection-sentinel.json';
 import tpl_security_security_vulnerability_pipeline from '../../../scripts/templates/security/security-vulnerability-pipeline.json';
@@ -99,11 +114,17 @@ import tpl_support_support_intelligence_use_case from '../../../scripts/template
 export const allTemplates: any[] = [
   tpl_content_ai_document_intelligence_hub,
   tpl_content_analytics_content_distribution_use_case,
+  tpl_content_audio_briefing_host,
   tpl_content_autonomous_art_director,
   tpl_content_content_approval_workflow,
   tpl_content_content_performance_reporter,
+  tpl_content_demo_recorder,
   tpl_content_feature_video_creator,
+  tpl_content_game_character_animator,
   tpl_content_newsletter_curator,
+  tpl_content_scientific_writing_editor,
+  tpl_content_social_media_designer,
+  tpl_content_youtube_content_pipeline,
   tpl_development_autonomous_issue_resolver,
   tpl_development_build_intelligence_use_case,
   tpl_development_codebase_health_scanner,
@@ -115,6 +136,7 @@ export const allTemplates: any[] = [
   tpl_development_feature_flag_governance_use_case,
   tpl_development_qa_guardian,
   tpl_development_real_time_database_watcher,
+  tpl_development_self_evolving_codebase_memory,
   tpl_development_user_lifecycle_manager,
   tpl_devops_devops_guardian,
   tpl_devops_incident_logger,
@@ -129,6 +151,7 @@ export const allTemplates: any[] = [
   tpl_finance_financial_stocks_signaller,
   tpl_finance_freelancer_invoice_autopilot,
   tpl_finance_invoice_tracker,
+  tpl_finance_market_intelligence_scout,
   tpl_finance_personal_finance_use_case,
   tpl_finance_revenue_intelligence_copilot,
   tpl_finance_revenue_operations_hub,
@@ -138,8 +161,11 @@ export const allTemplates: any[] = [
   tpl_legal_ai_contract_reviewer,
   tpl_legal_contract_lifecycle_use_case,
   tpl_legal_editorial_calendar_manager,
+  tpl_marketing_autonomous_cro_experiment_runner,
+  tpl_marketing_reddit_trend_digest,
   tpl_marketing_visual_brand_asset_factory,
   tpl_marketing_web_marketing,
+  tpl_marketing_website_conversion_audit,
   tpl_productivity_appointment_orchestrator,
   tpl_productivity_daily_standup_compiler,
   tpl_productivity_digital_clone,
@@ -152,6 +178,7 @@ export const allTemplates: any[] = [
   tpl_productivity_router,
   tpl_productivity_survey_insights_analyzer,
   tpl_productivity_survey_processor,
+  tpl_project_management_agency_client_retainer_manager,
   tpl_project_management_client_portal_orchestrator,
   tpl_project_management_deadline_synchronizer,
   tpl_project_management_technical_decision_tracker,
@@ -161,6 +188,7 @@ export const allTemplates: any[] = [
   tpl_research_customer_event_intelligence,
   tpl_research_database_performance_monitor,
   tpl_research_industry_intelligence_aggregator,
+  tpl_research_knowledge_base_health_auditor,
   tpl_research_product_analytics_briefer,
   tpl_research_product_scout,
   tpl_research_product_signal_detector,
@@ -172,6 +200,7 @@ export const allTemplates: any[] = [
   tpl_sales_crm_data_quality_auditor,
   tpl_sales_email_lead_extractor,
   tpl_sales_lead_capture_pipeline,
+  tpl_sales_local_business_lead_prospector,
   tpl_sales_outbound_sales_intelligence_pipeline,
   tpl_sales_personality_enriched_sales_prep,
   tpl_sales_sales_deal_analyzer,
@@ -179,6 +208,7 @@ export const allTemplates: any[] = [
   tpl_sales_sales_pipeline_autopilot,
   tpl_sales_sales_proposal_generator,
   tpl_sales_sheets_e_commerce_command_center,
+  tpl_sales_website_conversion_auditor,
   tpl_security_access_request_manager,
   tpl_security_brand_protection_sentinel,
   tpl_security_security_vulnerability_pipeline,

@@ -299,6 +299,31 @@
     ],
     "adoption_questions": [
       {
+        "id": "aq_sources_1",
+        "category": "domain",
+        "question": "What sources should this agent harvest ideas from?",
+        "type": "textarea",
+        "default": "",
+        "placeholder": "Paste URLs, describe RSS feeds, competitor product pages, YouTube channels, documentation sites, or describe the topics you want to track (one per line).",
+        "context": "Describe what the agent should watch. Examples: a list of tech blogs, a specific codebase directory, a competitor's changelog page, or topics like 'LLM benchmarks' or 'vector database releases'. The agent will evaluate these during the build process and may add more structured monitoring later.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_codebase_1",
+        "category": "domain",
+        "question": "Which codebase should feasibility analysis run against?",
+        "type": "select",
+        "options": [
+          "Primary codebase",
+          "Skip codebase analysis (ideas only, no feasibility scoring)"
+        ],
+        "option_service_types": ["codebase", null],
+        "vault_category": "devops",
+        "default": "Primary codebase",
+        "context": "The codebase connector lets the agent assess whether an idea already exists, its rough implementation effort, and affected files. If you don't have a codebase connector, skip this step and the agent will produce ideas without feasibility scoring.",
+        "dimension": "connectors"
+      },
+      {
         "id": "aq_domain_1",
         "category": "domain",
         "question": "What is the primary purpose of the ideas you want to harvest?",

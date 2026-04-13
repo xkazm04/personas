@@ -692,6 +692,38 @@ async fn handle_list_credentials(
     eval_bridge_method_with_timeout(&state, "listCredentials", &serde_json::json!({}), BRIDGE_TIMEOUT_DEFAULT).await
 }
 
+async fn handle_list_cli_capturable(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(
+        &state,
+        "listCliCapturable",
+        &serde_json::json!({}),
+        BRIDGE_TIMEOUT_DEFAULT,
+    )
+    .await
+}
+
+#[derive(Deserialize)]
+struct CliCaptureRunRequest {
+    service_type: String,
+}
+
+async fn handle_cli_capture_run(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<CliCaptureRunRequest>,
+) -> Result<String, (StatusCode, String)> {
+    // CLI subprocesses cap at 5s each; allow generous bridge timeout so the
+    // test driver sees the full error instead of a gateway timeout.
+    eval_bridge_method_with_timeout(
+        &state,
+        "cliCaptureRun",
+        &serde_json::json!({ "serviceType": req.service_type }),
+        60,
+    )
+    .await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -750,6 +782,8 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
         // Overview & credential helpers
         .route("/overview-counts", post(handle_overview_counts))
         .route("/list-credentials", get(handle_list_credentials))
+        .route("/list-cli-capturable", get(handle_list_cli_capturable))
+        .route("/cli-capture-run", post(handle_cli_capture_run))
         .with_state(state);
 
     let addr = format!("127.0.0.1:{}", port);

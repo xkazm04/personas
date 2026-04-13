@@ -29,11 +29,11 @@ const CloudDeployPanel = lazy(() => import('@/features/deployment/components/clo
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
-const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
+const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
@@ -205,9 +205,6 @@ export default function PersonasPage() {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
-      if (pluginTab === 'doc-signing') {
-        return <ErrorBoundary name="DocSigning"><Suspense fallback={SectionFallback}><DocSigningPage /></Suspense></ErrorBoundary>;
-      }
       if (pluginTab === 'ocr') {
         return <ErrorBoundary name="OCR"><Suspense fallback={SectionFallback}><OcrPage /></Suspense></ErrorBoundary>;
       }
@@ -219,6 +216,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'research-lab') {
         return <ErrorBoundary name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'drive') {
+        return <ErrorBoundary name="Drive"><Suspense fallback={SectionFallback}><DrivePage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

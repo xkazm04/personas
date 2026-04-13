@@ -1,0 +1,126 @@
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+
+export type DriveEntryKind = "file" | "folder";
+
+export interface DriveEntry {
+  name: string;
+  path: string;
+  kind: DriveEntryKind;
+  size: number;
+  modified: string;
+  mime: string | null;
+  extension: string | null;
+}
+
+export interface DriveTreeNode {
+  name: string;
+  path: string;
+  children: DriveTreeNode[];
+  hasMoreChildren: boolean;
+}
+
+export interface DriveStorageInfo {
+  root: string;
+  usedBytes: number;
+  entryCount: number;
+  isDev: boolean;
+}
+
+export const driveGetRoot = () => invoke<string>("drive_get_root");
+
+export const driveStorageInfo = () =>
+  invoke<DriveStorageInfo>("drive_storage_info");
+
+export const driveList = (relPath: string) =>
+  invoke<DriveEntry[]>("drive_list", { relPath });
+
+export const driveListTree = (relPath: string, maxDepth?: number) =>
+  invoke<DriveTreeNode>("drive_list_tree", { relPath, maxDepth: maxDepth ?? null });
+
+export const driveStat = (relPath: string) =>
+  invoke<DriveEntry>("drive_stat", { relPath });
+
+export const driveRead = (relPath: string) =>
+  invoke<number[]>("drive_read", { relPath });
+
+export const driveReadText = (relPath: string) =>
+  invoke<string>("drive_read_text", { relPath });
+
+export const driveWrite = (relPath: string, content: Uint8Array) =>
+  invoke<DriveEntry>("drive_write", { relPath, content: Array.from(content) });
+
+export const driveWriteText = (relPath: string, content: string) =>
+  invoke<DriveEntry>("drive_write_text", { relPath, content });
+
+export const driveMkdir = (relPath: string) =>
+  invoke<DriveEntry>("drive_mkdir", { relPath });
+
+export const driveDelete = (relPath: string) =>
+  invoke<void>("drive_delete", { relPath });
+
+export const driveRename = (relPath: string, newName: string) =>
+  invoke<DriveEntry>("drive_rename", { relPath, newName });
+
+export const driveMove = (srcRel: string, dstRel: string) =>
+  invoke<DriveEntry>("drive_move", { srcRel, dstRel });
+
+export const driveCopy = (srcRel: string, dstRel: string) =>
+  invoke<DriveEntry>("drive_copy", { srcRel, dstRel });
+
+export const driveOpenInOs = (relPath: string) =>
+  invoke<void>("drive_open_in_os", { relPath });
+
+export const driveRevealInOs = (relPath: string) =>
+  invoke<void>("drive_reveal_in_os", { relPath });
+
+export const DRIVE_MIME_ICONS: Record<string, string> = {
+  "text/plain": "FileText",
+  "application/json": "Braces",
+  "application/yaml": "Braces",
+  "application/toml": "Braces",
+  "text/csv": "Table",
+  "text/html": "Globe",
+  "text/css": "Palette",
+  "application/javascript": "FileCode",
+  "application/typescript": "FileCode",
+  "application/pdf": "FileText",
+  "image/png": "Image",
+  "image/jpeg": "Image",
+  "image/gif": "Image",
+  "image/webp": "Image",
+  "image/svg+xml": "Image",
+  "image/bmp": "Image",
+  "audio/mpeg": "Music",
+  "audio/wav": "Music",
+  "video/mp4": "Video",
+  "video/webm": "Video",
+  "application/zip": "Archive",
+  "application/x-tar": "Archive",
+  "application/gzip": "Archive",
+};
+
+export function driveFormatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(value >= 100 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+export function driveJoinPath(parent: string, name: string): string {
+  const base = parent.replace(/^\/+|\/+$/g, "");
+  if (!base) return name;
+  return `${base}/${name}`;
+}
+
+export function driveParentPath(path: string): string {
+  const trimmed = path.replace(/^\/+|\/+$/g, "");
+  const idx = trimmed.lastIndexOf("/");
+  return idx === -1 ? "" : trimmed.slice(0, idx);
+}
+
+export function driveBasename(path: string): string {
+  const trimmed = path.replace(/^\/+|\/+$/g, "");
+  const idx = trimmed.lastIndexOf("/");
+  return idx === -1 ? trimmed : trimmed.slice(idx + 1);
+}

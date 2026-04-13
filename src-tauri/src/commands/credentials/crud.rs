@@ -11,6 +11,7 @@ use crate::db::models::{
 use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::crypto;
+use crate::engine::healthcheck::HealthcheckResult;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
@@ -233,7 +234,7 @@ pub fn delete_credential_event(
 pub async fn healthcheck_credential(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<HealthcheckResult, AppError> {
     let result =
         crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
     let cred = repo::get_by_id(&state.db, &credential_id)
@@ -257,10 +258,7 @@ pub async fn healthcheck_credential(
         }
     }
 
-    Ok(serde_json::json!({
-        "success": result.success,
-        "message": result.message,
-    }))
+    Ok(result)
 }
 
 #[tauri::command]
@@ -268,7 +266,7 @@ pub async fn healthcheck_credential_preview(
     state: State<'_, Arc<AppState>>,
     service_type: String,
     session_encrypted_data: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<HealthcheckResult, AppError> {
     // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
     let field_values: HashMap<String, String> = match state.session_key.decrypt(&session_encrypted_data) {
         Ok(decrypted) => serde_json::from_str(&decrypted)
@@ -285,10 +283,7 @@ pub async fn healthcheck_credential_preview(
         &field_values,
     )
     .await?;
-    Ok(serde_json::json!({
-        "success": result.success,
-        "message": result.message,
-    }))
+    Ok(result)
 }
 
 #[tauri::command]

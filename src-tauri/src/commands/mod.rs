@@ -12,3 +12,4 @@ pub mod ocr;
 pub mod signing;
 pub mod artist;
 pub mod obsidian_brain;
+pub mod drive;

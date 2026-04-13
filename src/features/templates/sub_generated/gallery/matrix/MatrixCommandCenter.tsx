@@ -55,7 +55,7 @@ interface MatrixCommandCenterProps {
   onContinue?: () => void; onRefine?: (feedback: string) => void;
   onCreateAgent?: (name: string) => void; agentName?: string; onAgentNameChange?: (name: string) => void;
   cliOutputLines?: string[]; designQuestion?: DesignQuestion | null; onAnswerQuestion?: (answer: string) => void;
-  buildPhase?: BuildPhase; onStartTest?: () => void; onApproveTest?: () => void; onApproveTestAnyway?: () => void; onRejectTest?: () => void;
+  buildPhase?: BuildPhase; onStartTest?: () => void; onApproveTest?: () => void; onApproveTestAnyway?: () => void; onRejectTest?: () => void; onDeleteDraft?: () => void;
   testOutputLines?: string[]; testPassed?: boolean | null; testError?: string | null;
   toolTestResults?: ToolTestResult[];
   testSummary?: string | null;
@@ -102,7 +102,7 @@ export function MatrixCommandCenter({
   buildCompleted = false, phaseLabel = 'Generating persona...',
   intentText, onIntentChange, completeness = 0, hasDesignResult = false, onRefine,
   cliOutputLines = [], designQuestion, onAnswerQuestion,
-  buildPhase, onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest,
+  buildPhase, onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest, onDeleteDraft,
   testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
   buildActivity, onApplyEdits, onDiscardEdits, onSaveVersion, isPreBuild = false,
 }: MatrixCommandCenterProps) {
@@ -193,7 +193,7 @@ export function MatrixCommandCenter({
     if (buildPhase === 'testing')
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);
     if (buildPhase === 'test_complete')
-      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onApproveAnyway={onApproveTestAnyway} onReject={onRejectTest} toolResults={toolTestResults} summary={testSummary} /></div>);
+      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onApproveAnyway={onApproveTestAnyway} onReject={onRejectTest} onDeleteDraft={onDeleteDraft} toolResults={toolTestResults} summary={testSummary} /></div>);
     if (buildPhase === 'promoted' && !isSaved)
       return (<div className={WRAP}><PromotionSuccessIndicator onViewAgent={onViewAgent} /></div>);
     // Creation: Design question awaiting answer

@@ -56,6 +56,44 @@ pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     doc
 }
 
+/// Execution discipline mode — picks between the default autonomous directive
+/// (business personas) and a Karpathy-aligned "deliberate" variant (code personas
+/// that need to clarify ambiguity, stay surgical, and verify before emitting).
+///
+/// Resolved from persona parameter `execution_discipline` (Select type, options
+/// `autonomous` | `deliberate`). Default is `Autonomous` for backwards compat.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DisciplineMode {
+    Autonomous,
+    Deliberate,
+}
+
+impl DisciplineMode {
+    fn resolve(persona: &Persona) -> Self {
+        let Some(params_json) = persona.parameters.as_deref() else {
+            return Self::Autonomous;
+        };
+        let Ok(params) = serde_json::from_str::<Vec<serde_json::Value>>(params_json) else {
+            return Self::Autonomous;
+        };
+        for p in params {
+            if p.get("key").and_then(|v| v.as_str()) == Some("execution_discipline") {
+                let val = p
+                    .get("value")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| p.get("default_value").and_then(|v| v.as_str()))
+                    .or_else(|| p.get("default").and_then(|v| v.as_str()))
+                    .unwrap_or("autonomous");
+                return match val {
+                    "deliberate" => Self::Deliberate,
+                    _ => Self::Autonomous,
+                };
+            }
+        }
+        Self::Autonomous
+    }
+}
+
 /// Assemble the full prompt string from persona configuration, tools, input data,
 /// optional credential environment variable hints, and optional workspace shared instructions.
 pub fn assemble_prompt(
@@ -91,8 +129,16 @@ pub fn assemble_prompt(
     // Header
     prompt.push_str(&format!("# Persona: {name}\n\n"));
 
-    // Execution Mode — critical: establishes autonomous task execution behavior
-    prompt.push_str(EXECUTION_MODE_DIRECTIVE);
+    // Execution Mode — picks between AUTONOMOUS (default) and DELIBERATE (code/engineering
+    // personas that need Karpathy-style "think before coding" discipline). Resolved from
+    // persona parameter `execution_discipline`. See DisciplineMode above and
+    // DELIBERATE_MODE_DIRECTIVE below.
+    let discipline = DisciplineMode::resolve(persona);
+    let directive = match discipline {
+        DisciplineMode::Autonomous => EXECUTION_MODE_DIRECTIVE,
+        DisciplineMode::Deliberate => DELIBERATE_MODE_DIRECTIVE,
+    };
+    prompt.push_str(directive);
 
     // Triggering Event — when the runtime wraps input_data with `_event` metadata
     // (see engine/background.rs), surface which event fired this execution so the
@@ -502,13 +548,27 @@ pub fn assemble_prompt(
     if !tools.is_empty() {
         prompt.push_str("Use available tools as needed.\n");
     }
-    prompt.push_str("\
-        Act autonomously — do NOT ask questions or wait for input.\n\
-        Before finishing, you MUST output these protocol JSON lines (each on its own line, NOT inside code blocks):\n\
-        - {\"user_message\": {\"title\": \"...\", \"content\": \"...\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n\
-        - {\"agent_memory\": {\"title\": \"...\", \"content\": \"...\", \"category\": \"learned\", \"importance\": 5, \"tags\": []}}\n\
-        - {\"emit_event\": {\"type\": \"task_completed\", \"data\": {\"action\": \"...\", \"status\": \"success\"}}}\n\
-        - {\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"...\"}}\n");
+    match discipline {
+        DisciplineMode::Autonomous => {
+            prompt.push_str("\
+                Act autonomously — do NOT ask questions or wait for input.\n\
+                Before finishing, you MUST output these protocol JSON lines (each on its own line, NOT inside code blocks):\n\
+                - {\"user_message\": {\"title\": \"...\", \"content\": \"...\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n\
+                - {\"agent_memory\": {\"title\": \"...\", \"content\": \"...\", \"category\": \"learned\", \"importance\": 5, \"tags\": []}}\n\
+                - {\"emit_event\": {\"type\": \"task_completed\", \"data\": {\"action\": \"...\", \"status\": \"success\"}}}\n\
+                - {\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"...\"}}\n");
+        }
+        DisciplineMode::Deliberate => {
+            prompt.push_str("\
+                Follow the DELIBERATE discipline above: clarify blockers via manual_review, stay surgical, verify before emitting.\n\
+                When the task is complete AND verified (or genuinely blocked), you MUST output these protocol JSON lines (each on its own line, NOT inside code blocks):\n\
+                - {\"user_message\": {\"title\": \"...\", \"content\": \"...\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n\
+                - {\"agent_memory\": {\"title\": \"...\", \"content\": \"...\", \"category\": \"learned\", \"importance\": 5, \"tags\": []}}\n\
+                - {\"emit_event\": {\"type\": \"task_completed\", \"data\": {\"action\": \"...\", \"status\": \"success\"}}}\n\
+                - {\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"...\"}}\n\
+                If you surfaced a manual_review blocker, emit outcome_assessment with accomplished: false and summarize the blocker.\n");
+        }
+    }
 
     prompt
 }
@@ -1486,6 +1546,29 @@ Do NOT output conversational responses like "How can I help?" or "What would you
 
 "#;
 
+const DELIBERATE_MODE_DIRECTIVE: &str = r#"## Execution Mode: DELIBERATE
+
+**This is a one-shot autonomous task execution with engineering discipline — NOT a conversation, but also NOT a blind sprint.**
+
+You MUST:
+1. **Think before acting** — if the task is ambiguous, if success criteria are unclear, or if you would have to guess at user intent on a point that matters, surface the ambiguity via a `manual_review` protocol message with severity `medium` and proposed options. DO NOT silently guess. DO NOT charge ahead and produce 500 lines when 50 would suffice.
+2. **Keep it simple** — write the minimum code that solves the task. No speculative abstractions. No frameworks for one-function problems. No "while I'm in here" cleanups.
+3. **Stay surgical** — only touch files and functions directly required by the task. Do not refactor neighboring code, rewrite comments, or reformat unrelated sections. If you notice an unrelated issue, record it in `agent_memory` with category `learned` and move on.
+4. **Verify before emitting** — define the success criteria first (reproduce the bug, define the acceptance check, etc.), execute, and only then emit `user_message` and `outcome_assessment`. If verification fails, say so in `outcome_assessment` with `accomplished: false` and a specific description of what didn't work.
+5. **Produce concrete output** — as in AUTONOMOUS mode, fetch data, analyze it, take actions. `manual_review` is for genuine blocking ambiguity only; do not use it as an escape hatch for uncertainty you could resolve by reading the code.
+6. **End with protocol messages** — after your work is done and verified, output the required JSON protocol lines (one per line, not inside code blocks).
+
+**`manual_review` is broadened in DELIBERATE mode:** unlike AUTONOMOUS mode (where `manual_review` is reserved for business decisions), in DELIBERATE mode you may also use it for TECHNICAL ambiguity — unclear requirements, missing acceptance criteria, scope questions, or "should I do X or Y" design decisions where both paths are reasonable. Use `severity: "medium"` for these. Reserve `severity: "high"` for decisions that risk data loss or production impact.
+
+**Data scoping — avoid unbounded queries:**
+- When querying databases, ALWAYS use LIMIT clauses (start with LIMIT 10-50) and filter by recent time windows. Never run SELECT * without WHERE and LIMIT.
+- When calling external APIs, use pagination parameters and date filters. Never fetch entire histories.
+- Process data in small batches. If you need more data after an initial sample, fetch additional pages incrementally.
+
+Do NOT output conversational responses like "How can I help?" — when you have enough information, execute your role as defined below. When you don't, surface the blocker via `manual_review` and stop.
+
+"#;
+
 const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r###"### REQUIRED: Protocol Integration
 
 You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:
@@ -1614,6 +1697,108 @@ mod tests {
         assert!(!prompt.contains("## Available Tools"));
         // Should not contain "Use available tools" when no tools
         assert!(!prompt.contains("Use available tools as needed."));
+    }
+
+    #[test]
+    fn assemble_prompt_defaults_to_autonomous_mode() {
+        // Persona with parameters = None should fall back to AUTONOMOUS discipline.
+        let persona = test_persona();
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        assert!(
+            prompt.contains("## Execution Mode: AUTONOMOUS"),
+            "Persona with no parameters should use AUTONOMOUS mode"
+        );
+        assert!(
+            prompt.contains("do not ask questions"),
+            "AUTONOMOUS directive should forbid clarifying questions"
+        );
+        assert!(
+            !prompt.contains("## Execution Mode: DELIBERATE"),
+            "DELIBERATE directive should NOT appear when mode is autonomous"
+        );
+    }
+
+    #[test]
+    fn assemble_prompt_honors_deliberate_parameter() {
+        let mut persona = test_persona();
+        persona.parameters = Some(
+            serde_json::json!([
+                {
+                    "key": "execution_discipline",
+                    "type": "select",
+                    "default": "autonomous",
+                    "value": "deliberate",
+                    "options": ["autonomous", "deliberate"]
+                }
+            ])
+            .to_string(),
+        );
+
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        assert!(
+            prompt.contains("## Execution Mode: DELIBERATE"),
+            "Persona with execution_discipline=deliberate should use DELIBERATE mode"
+        );
+        assert!(
+            prompt.contains("Think before acting"),
+            "DELIBERATE directive should include Think before acting"
+        );
+        assert!(
+            prompt.contains("manual_review"),
+            "DELIBERATE directive should authorize manual_review for technical ambiguity"
+        );
+        assert!(
+            prompt.contains("Stay surgical"),
+            "DELIBERATE directive should include surgical language"
+        );
+        assert!(
+            !prompt.contains("## Execution Mode: AUTONOMOUS"),
+            "AUTONOMOUS directive should NOT appear when mode is deliberate"
+        );
+        // The bottom reinforcement should also match the Deliberate path.
+        assert!(
+            prompt.contains("Follow the DELIBERATE discipline above"),
+            "EXECUTE NOW block should use the Deliberate reinforcement text"
+        );
+    }
+
+    #[test]
+    fn assemble_prompt_ignores_malformed_discipline_parameter() {
+        // Garbage that is not valid JSON: should fall back to AUTONOMOUS without panic.
+        let mut persona = test_persona();
+        persona.parameters = Some("not valid json".to_string());
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        assert!(
+            prompt.contains("## Execution Mode: AUTONOMOUS"),
+            "Malformed parameters JSON should fall back to AUTONOMOUS"
+        );
+
+        // Valid JSON but unknown discipline value: should fall back to AUTONOMOUS.
+        persona.parameters = Some(
+            serde_json::json!([
+                {"key": "execution_discipline", "value": "chaos", "type": "select"}
+            ])
+            .to_string(),
+        );
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        assert!(
+            prompt.contains("## Execution Mode: AUTONOMOUS"),
+            "Unknown discipline value should fall back to AUTONOMOUS"
+        );
+
+        // Parameter absent entirely (but parameters field populated with other keys):
+        // should also fall back to AUTONOMOUS.
+        persona.parameters = Some(
+            serde_json::json!([
+                {"key": "some_other_param", "value": "foo", "type": "string"}
+            ])
+            .to_string(),
+        );
+        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        assert!(
+            prompt.contains("## Execution Mode: AUTONOMOUS"),
+            "Missing execution_discipline key should fall back to AUTONOMOUS"
+        );
     }
 
     #[test]

@@ -99,6 +99,7 @@ pub mod embedder;
 pub mod vector_store;
 pub mod kb_ingest;
 pub mod api_proxy;
+pub mod discovery;
 pub mod ssrf_safe_dns;
 pub mod api_definition;
 pub mod share_link;

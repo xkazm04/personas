@@ -1,0 +1,46 @@
+{
+  "id": "builtin-clockify",
+  "name": "clockify",
+  "label": "Clockify",
+  "color": "#03A9F4",
+  "icon_url": "https://cdn.simpleicons.org/clockify/03A9F4",
+  "category": "time-tracking",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Found in Clockify -> Profile Settings -> API",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.clockify.me/api/v1/user",
+    "method": "GET",
+    "headers": {
+      "X-Api-Key": "{{api_key}}"
+    },
+    "description": "Validates API key via Clockify /user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Clockify time tracking for teams with projects, reports, and timesheets.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.clockify.me/",
+    "setup_guide": "1. Log in to Clockify at app.clockify.me\n2. Click your profile avatar (top right) -> Profile settings\n3. Scroll to the API section at the bottom\n4. Click 'Generate' to create a new API key\n5. Copy the key and paste it here",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

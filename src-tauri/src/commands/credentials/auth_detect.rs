@@ -26,7 +26,7 @@ use crate::AppState;
 
 /// Maximum bytes we will read from a CLI subprocess (stdout + stderr combined).
 /// Prevents memory exhaustion if a malicious binary produces unbounded output.
-const MAX_CLI_OUTPUT_BYTES: usize = 256 * 1024; // 256 KiB
+pub(crate) const MAX_CLI_OUTPUT_BYTES: usize = 256 * 1024; // 256 KiB
 
 /// Result of probing a single service for existing authentication.
 #[derive(Debug, Clone, Serialize)]
@@ -97,7 +97,7 @@ const SAFE_DIRS: &[&str] = &[];
 ///
 /// Returns `None` if the tool is not found or resolves to a directory outside
 /// the allowed locations (tool-specific allowlist + platform-wide safe dirs).
-fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<PathBuf> {
+pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<PathBuf> {
     let resolved = which::which(cmd).ok()?;
 
     // Canonicalize to resolve symlinks and normalise the path
@@ -139,7 +139,7 @@ fn is_path_allowed(binary_path: &Path, extra_allowed: &[&str]) -> bool {
 }
 
 /// Read up to `limit` bytes from an `AsyncRead`, returning the buffer.
-async fn read_limited(
+pub(crate) async fn read_limited(
     reader: &mut (impl tokio::io::AsyncRead + Unpin),
     limit: usize,
 ) -> std::io::Result<Vec<u8>> {
@@ -385,7 +385,7 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
 /// We clear the full environment to avoid leaking secrets (e.g., API keys in
 /// env vars) and only pass through variables required for the CLI tools to
 /// locate their config and resolve further paths.
-fn sanitized_env() -> Vec<(String, String)> {
+pub(crate) fn sanitized_env() -> Vec<(String, String)> {
     let mut env = Vec::new();
 
     // PATH is needed so the CLI tool itself can find its own sub-binaries

@@ -494,8 +494,10 @@
           "Mailchimp (email campaigns and landing pages)",
           "None -- focus on SEO and organic only"
         ],
+        "option_service_types": ["google_ads", null, "linkedin", "mailchimp", null],
+        "vault_category": "social",
         "default": "Google Ads (search, display, video campaigns)",
-        "context": "Determines which API the agent queries for campaign performance data. Select 'None' if you only want organic/SEO analysis.",
+        "context": "Determines which API the agent queries for campaign performance data. If you don't have any of these credentials, add one via the credentials catalog — the agent will auto-detect yours and skip this question if you only have one.",
         "dimension": "connectors"
       },
       {
@@ -510,8 +512,10 @@
           "PostHog (web analytics)",
           "Mixpanel (product/web analytics)"
         ],
+        "option_service_types": ["google_analytics", "google_analytics", "google_search_console", "posthog", "mixpanel"],
+        "vault_category": "analytics",
         "default": "Google Analytics (GA4) + Search Console",
-        "context": "Determines where the agent pulls organic traffic, SEO rankings, and user behavior data. Search Console adds keyword ranking and position tracking.",
+        "context": "Determines where the agent pulls organic traffic, SEO rankings, and user behavior data. The agent will auto-detect your connected analytics tool from your vault.",
         "dimension": "connectors"
       },
       {
@@ -526,8 +530,9 @@
           "Services / agency (lead generation, consultations)",
           "B2B enterprise (pipeline, qualified leads)"
         ],
+        "allow_custom": true,
         "default": "SaaS / software product (trial signups, demo requests)",
-        "context": "Shapes which conversion metrics matter most and what types of optimization proposals are relevant. SaaS focuses on CPA and trial-to-paid. E-commerce focuses on ROAS and AOV.",
+        "context": "Shapes which conversion metrics matter most and what types of optimization proposals are relevant. Pick an option or click Custom... to describe your business in your own words.",
         "dimension": "use-cases"
       },
       {

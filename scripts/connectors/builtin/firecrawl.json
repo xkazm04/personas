@@ -1,0 +1,47 @@
+{
+  "id": "builtin-firecrawl",
+  "name": "firecrawl",
+  "label": "Firecrawl",
+  "color": "#F97316",
+  "icon_url": "/icons/connectors/firecrawl.svg",
+  "category": "integration",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "fc-...",
+      "helpText": "From Firecrawl -> Dashboard -> API Keys. Required for all scrape, crawl, and extract endpoints.",
+      "sensitive": true
+    },
+    {
+      "key": "api_base_url",
+      "label": "API Base URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://api.firecrawl.dev/v1",
+      "helpText": "Defaults to the Firecrawl cloud endpoint. Override for self-hosted deployments.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{api_base_url|https://api.firecrawl.dev/v1}}/team/credit-usage",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via the team credit-usage endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Firecrawl agent-friendly web crawling API. Converts any URL into clean markdown or structured JSON, handles JS-rendered sites, and respects robots.txt. Distinct from desktop_browser in that it runs in the cloud with no local headless browser dependency.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.firecrawl.dev/introduction",
+    "setup_guide": "1. Sign up at firecrawl.dev and note your free credit allowance\n2. Go to Dashboard -> API Keys and create a new key (format: fc-...)\n3. Paste the key here\n\nKey endpoints your agents will use:\n- POST /v1/scrape -- single-page extraction to markdown or structured data\n- POST /v1/crawl -- multi-page crawl with depth and path filters\n- POST /v1/extract -- schema-driven structured extraction across pages",
+    "pricing_tier": "freemium"
+  }
+}

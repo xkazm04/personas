@@ -16,10 +16,13 @@ import {
   type PushSyncResult,
   type PullSyncResult,
 } from '@/api/obsidianBrain';
+import SavedConfigsSidebar from '../SavedConfigsSidebar';
 
 export default function SyncPanel() {
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
+  const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
+  const activeVaultName = useSystemStore((s) => s.obsidianVaultName);
   const setSyncRunning = useSystemStore((s) => s.setObsidianSyncRunning);
   const setLastSyncAt = useSystemStore((s) => s.setObsidianLastSyncAt);
   const setPendingConflicts = useSystemStore((s) => s.setObsidianPendingConflicts);
@@ -38,7 +41,7 @@ export default function SyncPanel() {
     if (connected) {
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
     }
-  }, [connected]);
+  }, [connected, activeVaultPath]);
 
   const togglePersona = useCallback((id: string) => {
     setSelectedPersonaIds((prev) => {
@@ -116,7 +119,16 @@ export default function SyncPanel() {
   }
 
   return (
-    <div className="max-w-3xl space-y-5 py-2">
+    <div className="flex gap-4 py-2">
+      <div className="flex-1 min-w-0 max-w-3xl space-y-5">
+      {/* Active Vault */}
+      {activeVaultName && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="typo-caption text-muted-foreground/50">Active vault:</span>
+          <span className="typo-caption text-violet-300">{activeVaultName}</span>
+        </div>
+      )}
+
       {/* Sync Actions */}
       <SectionCard title="Sync Actions">
         <div className="space-y-4">
@@ -256,6 +268,11 @@ export default function SyncPanel() {
           </div>
         )}
       </SectionCard>
+      </div>
+
+      <SavedConfigsSidebar
+        emptyHint="No saved vaults yet. Set one up in the Setup tab."
+      />
     </div>
   );
 }

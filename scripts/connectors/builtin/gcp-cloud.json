@@ -3,7 +3,7 @@
   "name": "gcp_cloud",
   "label": "Google Cloud Platform",
   "color": "#4285F4",
-  "icon_url": "/icons/connectors/gcp-cloud.svg",
+  "icon_url": "/icons/connectors/google.svg",
   "category": "cloud",
   "fields": [
     {

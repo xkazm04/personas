@@ -1,0 +1,40 @@
+{
+  "id": "builtin-deepgram",
+  "name": "deepgram",
+  "label": "Deepgram",
+  "color": "#13EF93",
+  "icon_url": "/icons/connectors/deepgram.svg",
+  "category": "ai",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "dg_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "helpText": "Create in Deepgram Console → API Keys → Create new API Key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.deepgram.com/v1/projects",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Token {{api_key}}"
+    },
+    "description": "Validates API key via list projects"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Deepgram speech-to-text, text-to-speech, and audio intelligence API for transcription, diarization, and voice AI.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://developers.deepgram.com/reference",
+    "setup_guide": "1. Sign up at deepgram.com (free tier includes $200 in credits)\n2. Go to Console → API Keys\n3. Create a new API Key with Member permissions (or higher)\n4. Paste the key here\n\nNote: Deepgram uses `Authorization: Token <key>` header, not `Bearer`.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

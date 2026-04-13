@@ -42,6 +42,17 @@ interface TestBridge {
   simulateBuild(phase: string, personaId: string, cells: Record<string, string>): { success: boolean; phase?: string; personaId?: string };
   answerBuildQuestion(cellKey: string, optionIndex: number): Promise<Record<string, unknown>>;
   deleteAgent(nameOrId: string): Promise<{ success: boolean; deleted?: string; error?: string }>;
+  listCliCapturable(): Promise<{ success: boolean; services?: string[]; error?: string }>;
+  cliCaptureRun(serviceType: string): Promise<{
+    success: boolean;
+    serviceType?: string;
+    fieldKeys?: string[];
+    fieldCount?: number;
+    tokenTtlSeconds?: number | null;
+    capturedAt?: string;
+    expiresAt?: string | null;
+    error?: string;
+  }>;
   __exec__(id: string, method: string, params: Record<string, unknown>): Promise<void>;
   [key: string]: unknown;
 }
@@ -676,6 +687,47 @@ const bridge: TestBridge = {
         memories: (memories as unknown[]).length,
         events: filteredEvents.length,
         reviews: (reviews as unknown[]).length,
+      };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /**
+   * List service_types for which a local CLI capture spec exists AND the
+   * binary is installed and allowlisted on this machine.
+   */
+  async listCliCapturable() {
+    try {
+      const services = await invoke<string[]>("list_cli_capturable_services");
+      return { success: true, services };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /**
+   * Run the CLI capture spec for `serviceType`. Returns captured field keys
+   * (never the secret values) and the expiry metadata so tests can assert
+   * without touching the raw token.
+   */
+  async cliCaptureRun(serviceType: string) {
+    try {
+      const result = await invoke<{
+        service_type: string;
+        fields: Record<string, string>;
+        token_ttl_seconds: number | null;
+        captured_at: string;
+        expires_at: string | null;
+      }>("cli_capture_run", { serviceType });
+      return {
+        success: true,
+        serviceType: result.service_type,
+        fieldKeys: Object.keys(result.fields),
+        fieldCount: Object.keys(result.fields).length,
+        tokenTtlSeconds: result.token_ttl_seconds,
+        capturedAt: result.captured_at,
+        expiresAt: result.expires_at,
       };
     } catch (e: unknown) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };

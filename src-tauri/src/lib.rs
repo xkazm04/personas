@@ -1274,6 +1274,9 @@ pub fn run() {
             commands::credentials::auto_cred_browser::cancel_auto_cred_browser,
             // Credentials -- Auth Detection
             commands::credentials::auth_detect::detect_authenticated_services,
+            // Credentials -- CLI Capture
+            commands::credentials::cli_capture::list_cli_capturable_services,
+            commands::credentials::cli_capture::cli_capture_run,
             // Credentials -- Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,
@@ -1286,6 +1289,7 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
             commands::credentials::rotation::refresh_credential_oauth_now,
+            commands::credentials::rotation::refresh_credential_cli_now,
             commands::credentials::rotation::get_oauth_token_metrics,
             commands::credentials::rotation::get_oauth_token_lifetime_summary,
             // Credentials -- Database Schema & Queries
@@ -1319,6 +1323,8 @@ pub fn run() {
             commands::credentials::api_proxy::parse_api_definition,
             commands::credentials::api_proxy::save_api_definition,
             commands::credentials::api_proxy::load_api_definition,
+            // Credentials -- Dynamic discovery (for adoption questionnaire)
+            commands::credentials::discovery::discover_connector_resources,
             // Credentials -- MCP Tools
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
@@ -1618,6 +1624,23 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_read,
             commands::infrastructure::skill_files::skill_files_write,
+            // Drive -- managed local filesystem plugin
+            commands::drive::drive_get_root,
+            commands::drive::drive_storage_info,
+            commands::drive::drive_list,
+            commands::drive::drive_list_tree,
+            commands::drive::drive_stat,
+            commands::drive::drive_read,
+            commands::drive::drive_read_text,
+            commands::drive::drive_write,
+            commands::drive::drive_write_text,
+            commands::drive::drive_mkdir,
+            commands::drive::drive_delete,
+            commands::drive::drive_rename,
+            commands::drive::drive_move,
+            commands::drive::drive_copy,
+            commands::drive::drive_open_in_os,
+            commands::drive::drive_reveal_in_os,
             // Obsidian Brain -- Second Brain Sync
             commands::obsidian_brain::obsidian_brain_detect_vaults,
             commands::obsidian_brain::obsidian_brain_test_connection,

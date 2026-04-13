@@ -13,17 +13,6 @@ import { HelpCircle, Send, X, Hash } from "lucide-react";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { useTranslation } from '@/i18n/useTranslation';
 
-const DIMENSION_LABELS: Record<string, string> = {
-  "use-cases": "Tasks",
-  connectors: "Apps & Services",
-  triggers: "When It Runs",
-  "human-review": "Human Review",
-  messages: "Messages",
-  memory: "Memory",
-  "error-handling": "Error Handling",
-  events: "Events",
-};
-
 const DIMENSION_COLORS: Record<string, string> = {
   "use-cases": "text-violet-400",
   connectors: "text-cyan-400",
@@ -60,7 +49,19 @@ function QuestionModal({
 
   const options = question.options ?? [];
   const hasOptions = options.length > 0;
-  const dimensionLabel = DIMENSION_LABELS[question.cellKey] ?? question.cellKey;
+  // Cell key → t.templates.matrix.dim_* key mapping. Cell keys use dashes; i18n keys use underscores
+  // and some name-map to shorter forms (use-cases → dim_tasks, human-review → dim_review, etc).
+  const DIM_I18N_MAP: Record<string, string> = {
+    'use-cases': t.templates.matrix.dim_tasks,
+    'connectors': t.templates.matrix.dim_apps,
+    'triggers': t.templates.matrix.dim_schedule,
+    'human-review': t.templates.matrix.dim_review,
+    'messages': t.templates.matrix.dim_messages,
+    'memory': t.templates.matrix.dim_memory,
+    'error-handling': t.templates.matrix.dim_errors,
+    'events': t.templates.matrix.dim_events,
+  };
+  const dimensionLabel = DIM_I18N_MAP[question.cellKey] ?? question.cellKey;
   const dimensionColor = DIMENSION_COLORS[question.cellKey] ?? "text-primary";
 
   // Focus textarea when no options

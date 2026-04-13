@@ -875,6 +875,20 @@
         "context": "Feature flag changes can immediately affect production behavior — some teams want a confirmation reaction or reply before the change is announced widely.",
         "dimension": "human-review"
       }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "execution_discipline",
+        "label": "Execution Discipline",
+        "type": "select",
+        "default_value": "deliberate",
+        "value": "deliberate",
+        "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
+        "options": [
+          "autonomous",
+          "deliberate"
+        ]
+      }
     ]
   },
   "is_published": true

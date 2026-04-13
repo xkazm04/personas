@@ -900,6 +900,20 @@
         "context": "The agent uses this pattern to extract Jira ticket IDs and create accurate bidirectional links",
         "dimension": "connectors"
       }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "execution_discipline",
+        "label": "Execution Discipline",
+        "type": "select",
+        "default_value": "deliberate",
+        "value": "deliberate",
+        "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
+        "options": [
+          "autonomous",
+          "deliberate"
+        ]
+      }
     ]
   },
   "is_published": true

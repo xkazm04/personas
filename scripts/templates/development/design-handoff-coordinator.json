@@ -792,6 +792,20 @@
         "context": "Prevents duplicate tickets when the same component appears in multiple consecutive Figma versions without meaningful new changes.",
         "dimension": "memory"
       }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "execution_discipline",
+        "label": "Execution Discipline",
+        "type": "select",
+        "default_value": "deliberate",
+        "value": "deliberate",
+        "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
+        "options": [
+          "autonomous",
+          "deliberate"
+        ]
+      }
     ]
   },
   "is_published": true

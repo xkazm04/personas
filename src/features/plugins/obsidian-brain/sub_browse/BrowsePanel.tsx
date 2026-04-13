@@ -12,6 +12,7 @@ import {
   obsidianBrainReadVaultNote,
   type VaultTreeNode,
 } from '@/api/obsidianBrain';
+import SavedConfigsSidebar from '../SavedConfigsSidebar';
 
 function matchesFilter(node: VaultTreeNode, filter: string): boolean {
   const lower = filter.toLowerCase();
@@ -83,6 +84,7 @@ export default function BrowsePanel() {
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
+  const vaultPath = useSystemStore((s) => s.obsidianVaultPath);
 
   const [tree, setTree] = useState<VaultTreeNode | null>(null);
   const [loading, setLoading] = useState(false);
@@ -104,8 +106,12 @@ export default function BrowsePanel() {
   }, [addToast]);
 
   useEffect(() => {
-    if (connected) loadTree();
-  }, [connected, loadTree]);
+    if (connected) {
+      setSelectedPath(null);
+      setNoteContent(null);
+      loadTree();
+    }
+  }, [connected, vaultPath, loadTree]);
 
   const selectNote = useCallback(async (path: string) => {
     setSelectedPath(path);
@@ -149,6 +155,13 @@ export default function BrowsePanel() {
     <div className="flex gap-4 h-[calc(100vh-220px)] min-h-[400px] py-2">
       {/* Tree view */}
       <div className="w-72 flex-shrink-0 flex flex-col border-r border-primary/10 pr-2">
+        {/* Selected vault header */}
+        {vaultName && (
+          <div className="px-2 pb-2 mb-2 border-b border-primary/10">
+            <p className="typo-caption text-muted-foreground/40 uppercase tracking-wide">Vault</p>
+            <p className="typo-heading text-violet-300 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
+          </div>
+        )}
         {/* Search */}
         <div className="relative mb-2">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
@@ -218,6 +231,10 @@ export default function BrowsePanel() {
           </div>
         )}
       </div>
+
+      <SavedConfigsSidebar
+        emptyHint="No saved vaults yet. Set one up in the Setup tab."
+      />
     </div>
   );
 }

@@ -3939,6 +3939,29 @@ export const en = {
       filter_category: "Category",
       filter_license: "License",
     },
+    // CLI capture flow: import credentials from locally installed, already-authenticated CLIs (gcloud, gh, vercel, ...)
+    cli_capture: {
+      // Primary button label in SetupGuideModal when a local CLI can provide credentials
+      cta: "Import from local CLI",
+      // Short explainer under the CTA
+      hint: "Use an already-logged-in local CLI instead of pasting an API key.",
+      // Status shown while the subprocess is running
+      running: "Running local CLI...",
+      // Success toast headline
+      success: "Credentials captured from CLI",
+      // Notice shown when the captured token has a short TTL
+      token_ttl_notice: "This token expires in {seconds}s and will be refreshed automatically.",
+      // Badge on credentials that were captured via CLI
+      source_label: "CLI",
+      // Error: binary not installed on this machine
+      missing_binary: "`{binary}` is not installed or is not in an allowlisted location.",
+      // Error: binary present but user is not logged in
+      unauthenticated: "You are not signed in to {binary}. {instruction}",
+      // Error: capture step failed or returned empty output
+      capture_failed: "CLI capture failed: {detail}",
+      // Error: subprocess exceeded timeout
+      timeout: "CLI capture timed out. Try running the command manually first.",
+    },
     // Schema configs
     schemas: {
       none_configured: "None configured.",
@@ -5940,6 +5963,15 @@ export const en = {
       test_complete: "Test complete",
       promoted: "Agent promoted",
       build_failed: "Build failed",
+      // Phase subtext hints — longer descriptions shown under the build phase label.
+      // Used by BuildStatusIndicator.hint prop in the command center.
+      // Keep concise (under 8 words) and end with an ellipsis or period.
+      phase_subtext_analyzing: "Understanding your intent...",
+      phase_subtext_resolving: "Building agent configuration...",
+      // Sub-text displayed when the build is paused waiting for user dimension answers.
+      phase_subtext_awaiting_input: "Your input is needed — click a highlighted dimension",
+      // Sub-text displayed when all dimensions are resolved and ready for test.
+      phase_subtext_draft_ready: "All dimensions resolved — ready for testing",
       // Cell dimension labels
       dim_tasks: "Tasks",
       dim_apps: "Apps & Services",
@@ -6504,6 +6536,9 @@ export const en = {
       add_credential: "Add credential",
       // Submit button hint when blocked questions exist
       blocked_blocking_submit: "{count} question(s) need credentials before you can continue",
+      // Top-of-questionnaire blocked callout
+      credentials_required_title: "Credentials required",
+      credentials_required_body: "This template needs at least one credential from each category below before adoption can continue. Click \"Add credential\" — you'll return here automatically once setup is complete.",
     },
 
     // Scan results
@@ -8638,12 +8673,90 @@ export const en = {
     artist_desc: "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Project management, context mapping, idea scanning, triage, and task runner utilities.",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
     ocr_label: "OCR",
     ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal.",
+    drive_label: "Drive",
+    drive_desc: "Managed local filesystem where agents save exports. Browse files in a Finder-style UI; survives app upgrades.",
+
+    // Drive plugin strings -- managed local filesystem with Finder-style UI
+    drive: {
+      title: "Drive",
+      subtitle: "Managed local filesystem for agent exports",
+      root_label: "Drive root",
+      dev_badge: "Dev",
+      // Toolbar
+      back: "Back",
+      forward: "Forward",
+      up: "Up",
+      refresh: "Refresh",
+      search_placeholder: "Search this folder...",
+      view_list: "List",
+      view_icons: "Icons",
+      view_columns: "Columns",
+      new_folder: "New Folder",
+      new_file: "New File",
+      reveal_in_os: "Show in file manager",
+      open_in_os: "Open",
+      // Sidebar
+      sidebar_root: "Drive",
+      sidebar_recent: "Recent",
+      sidebar_storage: "Storage",
+      storage_used: "{used} used \u2022 {count} items",
+      empty_folder: "This folder is empty",
+      empty_hint: "Agents that export to Local Drive will save files here.",
+      empty_cta: "Create folder",
+      // Columns
+      col_name: "Name",
+      col_size: "Size",
+      col_kind: "Kind",
+      col_modified: "Modified",
+      folder_kind: "Folder",
+      // Context menu
+      ctx_open: "Open",
+      ctx_rename: "Rename",
+      ctx_duplicate: "Duplicate",
+      ctx_delete: "Delete",
+      ctx_copy: "Copy",
+      ctx_cut: "Cut",
+      ctx_paste: "Paste",
+      ctx_new_folder: "New folder",
+      ctx_new_file: "New file",
+      ctx_reveal: "Show in file manager",
+      ctx_copy_path: "Copy path",
+      // Dialogs
+      rename_title: "Rename",
+      rename_placeholder: "New name",
+      new_folder_title: "New folder",
+      new_folder_placeholder: "Folder name",
+      new_file_title: "New file",
+      new_file_placeholder: "filename.txt",
+      delete_confirm_title: "Delete {count} item(s)?",
+      delete_confirm_body: "This action cannot be undone. Deleted files are gone permanently.",
+      confirm: "Confirm",
+      cancel: "Cancel",
+      // Details pane
+      details_title: "Details",
+      details_path: "Path",
+      details_size: "Size",
+      details_kind: "Kind",
+      details_modified: "Modified",
+      details_items: "Items",
+      details_preview: "Preview",
+      preview_unavailable: "Preview unavailable",
+      preview_binary: "Binary file \u2014 open in the OS file manager to inspect.",
+      preview_too_large: "File is too large to preview inline.",
+      // Status
+      loading: "Loading...",
+      error_prefix: "Error:",
+      items_selected: "{count} selected",
+      items_total: "{count} items",
+      // Signing integration (merged from doc-signing plugin)
+      signatures_button: "Signatures",
+      ctx_sign_file: "Sign file\u2026",
+      ctx_verify_file: "Verify signature\u2026",
+    },
 
     artist: {
       title: "Artist",

@@ -125,7 +125,7 @@
         ],
         "api_base_url": "https://configured-during-adoption",
         "role": "time_data",
-        "category": "productivity"
+        "category": "time-tracking"
       }
     ],
     "suggested_notification_channels": [
@@ -399,9 +399,39 @@
           "Harvest",
           "Other (custom API endpoint)"
         ],
+        "option_service_types": ["toggl", "clockify", "harvest", null],
+        "vault_category": "time-tracking",
         "default": "Toggl Track",
-        "context": "Determines which API the agent queries for time entries. The agent will test the connection during setup.",
+        "context": "Auto-detected from your credential vault when possible. If you already have a Toggl, Clockify, or Harvest credential saved, the agent will use it automatically. If you have none, you'll be prompted to add one before continuing.",
         "dimension": "connectors"
+      },
+      {
+        "id": "aq_output_1",
+        "category": "domain",
+        "question": "Where should generated invoices be saved?",
+        "type": "select",
+        "options": [
+          "Local Drive (managed folder in the Personas app data directory)",
+          "Google Drive",
+          "Dropbox",
+          "AWS S3 bucket",
+          "Other (custom path or cloud storage)"
+        ],
+        "option_service_types": ["local_drive", "google_drive", "dropbox", "aws_s3", null],
+        "vault_category": "storage",
+        "default": "Local Drive (managed folder in the Personas app data directory)",
+        "context": "Choose where invoice HTML files are written. The managed Local Drive lives in a folder owned by the Personas app (survives version upgrades) — recommended for single-user workflows. Cloud storage options are auto-detected from your vault credentials.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_output_2",
+        "category": "configuration",
+        "question": "Folder path or prefix for invoices",
+        "type": "text",
+        "placeholder": "invoices/  or  /Clients/2026/invoices",
+        "default": "invoices/",
+        "context": "Relative path inside the selected destination. For Local Drive, this is a subfolder of the managed Drive folder. For cloud storage, it is the prefix/folder. Leave as default if unsure.",
+        "dimension": "use-cases"
       },
       {
         "id": "aq_config_1",

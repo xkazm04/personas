@@ -13,6 +13,8 @@ interface AudioLaneProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onUpdate?: (id: string, patch: Partial<AudioClip>) => void;
+  hideHeader?: boolean;
+  hideAdd?: boolean;
 }
 
 export default function AudioLane({
@@ -23,6 +25,8 @@ export default function AudioLane({
   onSelect,
   onAdd,
   onUpdate,
+  hideHeader,
+  hideAdd,
 }: AudioLaneProps) {
   const { t } = useTranslation();
 
@@ -58,20 +62,22 @@ export default function AudioLane({
   return (
     <div className="flex flex-col">
       {/* Lane header */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border-b border-blue-500/20">
-        <Music className="w-3.5 h-3.5 text-blue-400" />
-        <span className="typo-heading text-blue-400 text-xs uppercase tracking-wide">
-          {t.media_studio.layer_audio}
-        </span>
-        {items.length > 0 && (
-          <span className="ml-auto text-[9px] text-blue-400/60 bg-blue-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
-            {items.length}
+      {!hideHeader && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border-b border-blue-500/20">
+          <Music className="w-3.5 h-3.5 text-blue-400" />
+          <span className="typo-heading text-blue-400 text-xs uppercase tracking-wide">
+            {t.media_studio.layer_audio}
           </span>
-        )}
-      </div>
+          {items.length > 0 && (
+            <span className="ml-auto text-[9px] text-blue-400/60 bg-blue-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+              {items.length}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Clips area */}
-      <div className="relative h-14 bg-card/50 border-b border-primary/10">
+      <div className="relative h-14 bg-blue-500/[0.02] border-b border-primary/10">
         {/* Empty lane hint */}
         {items.length === 0 && (
           <div className="absolute inset-1 rounded-lg border border-dashed border-blue-500/15 flex items-center justify-center">
@@ -121,20 +127,22 @@ export default function AudioLane({
         ))}
 
         {/* Add button */}
-        <div
-          className="absolute top-1 h-12 flex items-center"
-          style={{
-            left: `${items.length > 0
-              ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
-              : 8
-            }px`,
-          }}
-        >
-          <Button variant="ghost" size="xs" onClick={onAdd}>
-            <Plus className="w-3.5 h-3.5" />
-            {t.media_studio.add_audio}
-          </Button>
-        </div>
+        {!hideAdd && (
+          <div
+            className="absolute top-1 h-12 flex items-center"
+            style={{
+              left: `${items.length > 0
+                ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
+                : 8
+              }px`,
+            }}
+          >
+            <Button variant="ghost" size="xs" onClick={onAdd}>
+              <Plus className="w-3.5 h-3.5" />
+              {t.media_studio.add_audio}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

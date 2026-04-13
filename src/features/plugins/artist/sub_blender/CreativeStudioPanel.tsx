@@ -74,7 +74,7 @@ function EnvironmentStatus({
   connectors: ConnectorInfoType[];
 }) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(!status);
+  const [expanded, setExpanded] = useState(false);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const navigateToVault = useCallback(() => {
@@ -96,15 +96,28 @@ function EnvironmentStatus({
       >
         <div className="flex items-center gap-2">
           <h3 className="typo-heading text-foreground">{t.plugins.artist.env_status}</h3>
-          {status && !expanded && (
+          {!expanded && (
             <div className="flex items-center gap-1.5 ml-2">
-              {status.installed && <StatusDot ok />}
-              {status.mcpInstalled && <StatusDot ok />}
-              {connectors.filter((c) => c.connected).map((c) => (
-                <StatusDot key={c.id} ok={c.healthy} />
-              ))}
-              {allReady && (
-                <span className="text-[10px] text-emerald-400 ml-1">Ready</span>
+              {checking && !status ? (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Checking…
+                </span>
+              ) : status ? (
+                <>
+                  <StatusDot ok={!!status.installed} />
+                  <StatusDot ok={!!status.mcpInstalled} />
+                  {connectors.filter((c) => c.connected).map((c) => (
+                    <StatusDot key={c.id} ok={c.healthy} />
+                  ))}
+                  {allReady ? (
+                    <span className="text-[10px] text-emerald-400 ml-1">Ready</span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/60 ml-1">Partial</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-[10px] text-muted-foreground/60">Not checked</span>
               )}
             </div>
           )}
