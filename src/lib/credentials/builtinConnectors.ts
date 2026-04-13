@@ -31,6 +31,10 @@ import convex from '../../../scripts/connectors/builtin/convex.json';
 import buffer from '../../../scripts/connectors/builtin/buffer.json';
 import linkedin from '../../../scripts/connectors/builtin/linkedin.json';
 import reddit from '../../../scripts/connectors/builtin/reddit.json';
+import apify from '../../../scripts/connectors/builtin/apify.json';
+import xTwitter from '../../../scripts/connectors/builtin/x-twitter.json';
+import youtubeData from '../../../scripts/connectors/builtin/youtube-data.json';
+import deepgram from '../../../scripts/connectors/builtin/deepgram.json';
 import mcpGateway from '../../../scripts/connectors/builtin/mcp_gateway.json';
 import arcade from '../../../scripts/connectors/builtin/arcade.json';
 import slack from '../../../scripts/connectors/builtin/slack.json';
@@ -121,6 +125,10 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   buffer,
   linkedin,
   reddit,
+  apify,
+  xTwitter,
+  youtubeData,
+  deepgram,
   mcpGateway,
   arcade,
   slack,

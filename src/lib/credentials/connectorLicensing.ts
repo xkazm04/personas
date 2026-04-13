@@ -130,6 +130,9 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
 
   elevenlabs:                      'personal',
   google_gemini:                   'personal',
+  apify:                           'personal',
+  youtube_data:                    'personal',
+  deepgram:                        'personal',
 
   // -- Paid (no meaningful free tier) ------------------
   leonardo_ai:                     'paid',
@@ -145,6 +148,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   betterstack:                     'paid',
   planetscale:                     'paid',
   zapier:                          'paid',
+  x_twitter:                       'paid',
 
   // -- Enterprise --------------------------------------
   hubspot:                         'enterprise',

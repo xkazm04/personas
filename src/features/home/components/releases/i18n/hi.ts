@@ -87,6 +87,36 @@ export const hi = {
             description:
               'A new template that reviews your drafts using the Stanford "Writing in the Sciences" method. It flags passive voice, dead-weight phrases, and jargon — and explains exactly why every suggested change makes the sentence clearer. It learns your voice from the edits you accept or reject.',
           },
+          // TODO(i18n-hi): untranslated — English source-of-truth added 2026-04-13
+          '7': {
+            title: 'Turn 20 hours of YouTube production into 3',
+            description:
+              'A new template compresses a full YouTube video cycle down to about three hours by handling everything except filming. It checks your niche is worth pursuing, drafts a hook-first script in your voice, and auto-removes retakes from raw footage using the approved script as ground truth — so you can film naturally, stumble freely, and keep going.',
+          },
+          // TODO(i18n-hi): untranslated — English source-of-truth added 2026-04-13
+          '8': {
+            title: 'Run Apify scrapers from your agents',
+            description:
+              'Connect any actor from the Apify platform — YouTube scrapers, Twitter scrapers, browser automation, and hundreds of others — directly to your agents. Unlocks research workflows that need data the official APIs cannot reach.',
+          },
+          // TODO(i18n-hi): untranslated — English source-of-truth added 2026-04-13
+          '9': {
+            title: 'X (Twitter) is now a connector',
+            description:
+              'Search recent tweets, track trending topics, and post directly from your agents. Useful for content research, social listening, and marketing automation without leaving Personas.',
+          },
+          // TODO(i18n-hi): untranslated — English source-of-truth added 2026-04-13
+          '10': {
+            title: 'Watch YouTube from your agents',
+            description:
+              'The first video platform connector in Personas. Search videos, fetch channel statistics, pull trending content, and analyze competitors directly from any agent that needs to understand what is happening on YouTube.',
+          },
+          // TODO(i18n-hi): untranslated — English source-of-truth added 2026-04-13
+          '11': {
+            title: 'Turn audio into text with Deepgram',
+            description:
+              'A new speech-to-text connector that transcribes audio files or URLs with word-level timing. Powers the YouTube creator assistant for auto-editing, and gives any agent the ability to process voice notes, meeting recordings, or podcast content.',
+          },
         },
       },
       roadmap: {

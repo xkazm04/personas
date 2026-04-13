@@ -237,6 +237,10 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },
   zapier:             { label: 'Zapier',             color: '#FF4A00', iconUrl: '/icons/connectors/zapier.svg',                           Icon: Globe },
   github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: GithubIcon },
+  apify:              { label: 'Apify',              color: '#246DFF', iconUrl: '/icons/connectors/apify.svg',                            Icon: Globe },
+  x_twitter:          { label: 'X (Twitter)',        color: '#000000', iconUrl: '/icons/connectors/x-twitter.svg',                        Icon: Share2 },
+  youtube_data:       { label: 'YouTube',             color: '#FF0000', iconUrl: '/icons/connectors/youtube-data.svg',                     Icon: Video },
+  deepgram:           { label: 'Deepgram',           color: '#13EF93', iconUrl: '/icons/connectors/deepgram.svg',                         Icon: Headphones },
 
   // -- Integration Hubs -----------------------------------------
   mcp_gateway:        { label: 'MCP Gateway',        color: '#6366F1', iconUrl: '/icons/connectors/mcp_gateway.svg',                     Icon: Boxes },

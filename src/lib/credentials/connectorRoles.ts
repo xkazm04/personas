@@ -101,7 +101,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   // -- Customer-Facing -------------------------------------------
   role('crm',                 ['hubspot', 'intercom', 'pipedrive', 'attio']),
   role('support_ticketing',   ['zendesk', 'freshdesk', 'intercom', 'crisp']),
-  role('social_media',        ['buffer', 'linkedin', 'reddit', 'twitter']),
+  role('social_media',        ['buffer', 'linkedin', 'reddit', 'twitter', 'x_twitter', 'youtube_data']),
 
   // -- Content & CMS ---------------------------------------------
   role('cms',                 ['wordpress', 'webflow', 'contentful']),
@@ -122,7 +122,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // -- Specialty -------------------------------------------------
   role('auth_identity',       ['clerk']),
-  role('ai_platform',         ['openai', 'google_gemini', 'leonardo_ai', 'elevenlabs']),
+  role('ai_platform',         ['openai', 'google_gemini', 'leonardo_ai', 'elevenlabs', 'deepgram']),
   role('advertising',         ['google_ads']),
   role('e_signature',         ['docusign']),
   role('hr_recruiting',       ['greenhouse']),
@@ -135,7 +135,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   role('container_runtime',   ['desktop_docker']),
   role('shell',               ['desktop_terminal']),
   role('note_taking',         ['desktop_obsidian', 'obsidian']),
-  role('browser_automation',  ['desktop_browser']),
+  role('browser_automation',  ['desktop_browser', 'apify']),
 ];
 
 /**

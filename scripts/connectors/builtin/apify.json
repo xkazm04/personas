@@ -1,0 +1,41 @@
+{
+  "id": "builtin-apify",
+  "name": "apify",
+  "label": "Apify",
+  "color": "#246DFF",
+  "icon_url": "/icons/connectors/apify.svg",
+  "category": "automation",
+  "fields": [
+    {
+      "key": "api_token",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "apify_api_xxxxxxxxxxxx",
+      "helpText": "Found in Apify Console → Settings → Integrations → API tokens"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.apify.com/v2/users/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_token}}"
+    },
+    "description": "Validates API token via /users/me"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Apify web scraping and automation platform with actors for YouTube scraping, Twitter/X scraping, and browser automation.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Token",
+    "docs_url": "https://docs.apify.com/api/v2",
+    "setup_guide": "1. Sign up or log in at apify.com\n2. Go to Settings → Integrations → API tokens\n3. Create a new token or copy your existing one\n4. Paste the token here",
+    "pricing_tier": "freemium",
+    "mcp_server": "@apify/actors-mcp-server",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}
+    ]
+  }
+}

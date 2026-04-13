@@ -16,6 +16,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'content/newsletter-curator.json': '0010f81605b96895',
   'content/scientific-writing-editor.json': '00192b22e8f48322',
   'content/social-media-designer.json': '001f20781e342d8b',
+  'content/youtube-content-pipeline.json': '001bfc65a8e0e32b',
   'development/autonomous-issue-resolver.json': '001a4cece8ff1644',
   'development/build-intelligence-use-case.json': '001beacb7c020fea',
   'development/codebase-health-scanner.json': '000459f016ec1e79',

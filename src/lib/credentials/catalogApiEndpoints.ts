@@ -1245,6 +1245,154 @@ const alpha_vantage: EP[] = [
   ], ['Fundamentals']),
 ];
 
+// -- Apify -----------------------------------------------------------
+
+const apify: EP[] = [
+  ep('GET', '/users/me', 'Get authenticated user', [], ['Users']),
+  ep('GET', '/acts', 'List Actors', [
+    queryP('limit', false, 'Maximum results'),
+    queryP('offset', false, 'Offset for pagination'),
+  ], ['Actors']),
+  ep('GET', '/acts/{actorId}', 'Get Actor details', [
+    pathP('actorId', 'Actor ID or username~actorName'),
+  ], ['Actors']),
+  ep('POST', '/acts/{actorId}/runs', 'Run an Actor', [
+    pathP('actorId', 'Actor ID or username~actorName'),
+    queryP('timeout', false, 'Run timeout in seconds'),
+    queryP('memory', false, 'Memory limit in MB'),
+  ], ['Runs'], jsonBody(), 'Body: actor input JSON (varies per actor)'),
+  ep('GET', '/acts/{actorId}/runs', 'List Actor runs', [
+    pathP('actorId'),
+    queryP('status', false, 'READY, RUNNING, SUCCEEDED, FAILED, ABORTED'),
+    queryP('limit', false),
+  ], ['Runs']),
+  ep('GET', '/act-runs/{runId}', 'Get run status and details', [
+    pathP('runId', 'Run ID'),
+  ], ['Runs']),
+  ep('GET', '/datasets/{datasetId}/items', 'Fetch dataset results', [
+    pathP('datasetId', 'Dataset ID'),
+    queryP('format', false, 'json, csv, xlsx, html, xml, rss'),
+    queryP('limit', false), queryP('offset', false),
+  ], ['Datasets']),
+  ep('GET', '/actor-tasks', 'List saved Actor tasks', [], ['Tasks']),
+];
+
+// -- X (Twitter) -----------------------------------------------------
+
+const x_twitter: EP[] = [
+  ep('GET', '/users/by/username/{username}', 'Look up user by username', [
+    pathP('username', 'X username without @'),
+    queryP('user.fields', false, 'created_at,description,public_metrics,profile_image_url,verified'),
+  ], ['Users']),
+  ep('GET', '/users/{id}', 'Get user by ID', [
+    pathP('id', 'User ID'),
+  ], ['Users']),
+  ep('GET', '/users/{id}/tweets', 'List recent tweets for a user', [
+    pathP('id'),
+    queryP('max_results', false, '5..100'),
+    queryP('tweet.fields', false, 'created_at,public_metrics,entities'),
+  ], ['Tweets']),
+  ep('GET', '/tweets/search/recent', 'Search recent tweets (last 7 days)', [
+    queryP('query', true, 'X search query string'),
+    queryP('max_results', false, '10..100'),
+    queryP('tweet.fields', false),
+  ], ['Search']),
+  ep('GET', '/tweets/{id}', 'Get a single tweet by ID', [
+    pathP('id'),
+    queryP('tweet.fields', false),
+    queryP('expansions', false, 'author_id,attachments.media_keys'),
+  ], ['Tweets']),
+  ep('POST', '/tweets', 'Create a tweet', [], ['Tweets'], jsonBody(), 'Body: { "text": "..." } — supports reply, media, poll'),
+  ep('GET', '/users/{id}/followers', 'List followers of a user', [
+    pathP('id'),
+    queryP('max_results', false),
+  ], ['Follows']),
+];
+
+// -- YouTube Data API v3 ---------------------------------------------
+
+const youtube_data: EP[] = [
+  ep('GET', '/search', 'Search videos, channels, or playlists', [
+    queryP('part', true, 'snippet'),
+    queryP('q', false, 'Search query'),
+    queryP('type', false, 'video, channel, playlist'),
+    queryP('order', false, 'date, rating, relevance, viewCount'),
+    queryP('maxResults', false, '0..50'),
+    queryP('publishedAfter', false, 'RFC 3339 date'),
+    queryP('key', true, 'API key'),
+  ], ['Search'], null, 'Costs 100 quota units per call'),
+  ep('GET', '/videos', 'Get video details and statistics', [
+    queryP('part', true, 'snippet,contentDetails,statistics'),
+    queryP('id', false, 'Comma-separated video IDs'),
+    queryP('chart', false, 'mostPopular'),
+    queryP('regionCode', false, 'ISO 3166-1 alpha-2'),
+    queryP('key', true),
+  ], ['Videos']),
+  ep('GET', '/channels', 'Get channel details and statistics', [
+    queryP('part', true, 'snippet,statistics,contentDetails'),
+    queryP('id', false, 'Channel ID'),
+    queryP('forUsername', false, 'Legacy username'),
+    queryP('forHandle', false, 'Channel handle'),
+    queryP('key', true),
+  ], ['Channels']),
+  ep('GET', '/playlists', 'List playlists for a channel', [
+    queryP('part', true, 'snippet,contentDetails'),
+    queryP('channelId', false),
+    queryP('maxResults', false),
+    queryP('key', true),
+  ], ['Playlists']),
+  ep('GET', '/playlistItems', 'List videos inside a playlist', [
+    queryP('part', true, 'snippet,contentDetails'),
+    queryP('playlistId', true, 'Playlist ID'),
+    queryP('maxResults', false),
+    queryP('key', true),
+  ], ['Playlists']),
+  ep('GET', '/commentThreads', 'List comment threads on a video', [
+    queryP('part', true, 'snippet,replies'),
+    queryP('videoId', true),
+    queryP('maxResults', false),
+    queryP('order', false, 'time, relevance'),
+    queryP('key', true),
+  ], ['Comments']),
+  ep('GET', '/captions', 'List captions for a video', [
+    queryP('part', true, 'snippet'),
+    queryP('videoId', true),
+    queryP('key', true),
+  ], ['Captions']),
+];
+
+// -- Deepgram --------------------------------------------------------
+
+const deepgram: EP[] = [
+  ep('GET', '/projects', 'List projects for the authenticated user', [], ['Projects']),
+  ep('GET', '/projects/{project_id}', 'Get project details', [
+    pathP('project_id', 'Project ID'),
+  ], ['Projects']),
+  ep('POST', '/listen', 'Transcribe audio from URL (synchronous)', [
+    queryP('model', false, 'nova-3, nova-2, enhanced, base'),
+    queryP('language', false, 'en, en-US, multi, etc.'),
+    queryP('smart_format', false, 'true/false'),
+    queryP('punctuate', false, 'true/false'),
+    queryP('diarize', false, 'true/false — speaker detection'),
+    queryP('paragraphs', false, 'true/false'),
+  ], ['Transcription'], jsonBody(), 'Body: { "url": "https://example.com/audio.mp3" } or raw audio bytes with Content-Type'),
+  ep('POST', '/speak', 'Text-to-speech generation', [
+    queryP('model', false, 'aura-asteria-en, aura-luna-en, etc.'),
+    queryP('encoding', false, 'mp3, linear16, opus'),
+  ], ['Speech'], jsonBody(), 'Body: { "text": "Hello world" }'),
+  ep('GET', '/projects/{project_id}/usage', 'Get project usage statistics', [
+    pathP('project_id'),
+    queryP('start', false, 'ISO 8601 date'),
+    queryP('end', false, 'ISO 8601 date'),
+  ], ['Usage']),
+  ep('GET', '/projects/{project_id}/keys', 'List API keys for a project', [
+    pathP('project_id'),
+  ], ['Keys']),
+  ep('GET', '/projects/{project_id}/balances', 'Get project billing balances', [
+    pathP('project_id'),
+  ], ['Billing']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   alpha_vantage,
   azure_devops,
@@ -1309,4 +1457,8 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   novu,
   knock,
   obsidian,
+  apify,
+  x_twitter,
+  youtube_data,
+  deepgram,
 };
