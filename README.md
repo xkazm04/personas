@@ -1,12 +1,27 @@
 # Personas Desktop
 
-A cross-platform desktop application for building, orchestrating, and monitoring AI agent personas. Built with **Tauri 2** (Rust) and **React 19** (TypeScript).
+> A local-first desktop app for building, orchestrating, and monitoring AI agent personas — encrypted credentials, visual pipelines, and real-time observability, all running entirely on your machine.
+
+[![CI](https://github.com/xkazm04/personas/actions/workflows/ci.yml/badge.svg)](https://github.com/xkazm04/personas/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/xkazm04/personas?display_name=tag&sort=semver)](https://github.com/xkazm04/personas/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#prerequisites)
+[![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri)](https://v2.tauri.app/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](./CONTRIBUTING.md)
+
+Built with **Tauri 2** (Rust) and **React 19** (TypeScript).
+
+**Looking for...**
+[Features](#key-features) · [Quickstart](#getting-started) · [Architecture](./ARCHITECTURE.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
 
 ---
 
 ## Overview
 
 Personas Desktop provides a local-first environment for creating AI agents with distinct identities, connecting them to external services via encrypted credentials, and running them on schedules or event triggers. A visual team canvas lets you wire agents together into collaborative pipelines, while an observability dashboard tracks every execution in real time.
+
+**Why local-first?** Your personas, prompts, and credentials never leave your machine unless you explicitly send them. The only outbound traffic goes to the AI providers and third-party services you configure. No telemetry dashboards. No cloud account required. Your data stays yours.
 
 ## Key Features
 
@@ -495,6 +510,19 @@ This is expected — Cargo compiles ~200+ Rust crates on the first build. Subseq
 - Sensitive values never written to logs
 - HTTPS-only external communication via rustls
 
+## For Contributors
+
+New to the project? Start here:
+
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — one-page system overview: frontend, backend, execution path, data layer, security model
+- **[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)** — day-to-day dev loop: running locally, testing, debugging, common tasks
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — coding standards, PR workflow, commit style
+- **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — community standards (Contributor Covenant v2.1)
+- **[SECURITY.md](./SECURITY.md)** — vulnerability disclosure policy
+- **[CHANGELOG.md](./CHANGELOG.md)** — release history
+
+Good first issues are labelled `good first issue` on the [issue tracker](https://github.com/xkazm04/personas/issues). i18n string extraction is a particularly friendly starting point — see the [i18n section](#internationalization-i18n) above.
+
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](./LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.

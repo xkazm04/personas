@@ -109,6 +109,65 @@ impl Default for FitnessObjective {
     }
 }
 
+impl FitnessObjective {
+    pub fn validate(&self) -> Vec<String> {
+        let mut warnings = Vec::new();
+        let sum = self.speed + self.quality + self.cost;
+
+        if self.speed < 0.0 || self.quality < 0.0 || self.cost < 0.0 {
+            warnings.push(format!(
+                "Negative weight detected (speed={:.2}, quality={:.2}, cost={:.2})",
+                self.speed, self.quality, self.cost
+            ));
+        }
+
+        if (sum - 1.0).abs() > 0.05 {
+            warnings.push(format!(
+                "Objective weights sum to {:.3} (expected ~1.0); results may be skewed",
+                sum
+            ));
+        }
+
+        warnings
+    }
+}
+
+/// Parse a fitness objective from JSON with validation and fallback logging.
+///
+/// Returns `(objective, warnings)`. If parsing fails, falls back to defaults
+/// and includes a warning describing the failure.
+pub fn parse_fitness_objective(raw: &str) -> (FitnessObjective, Vec<String>) {
+    let mut warnings = Vec::new();
+
+    let objective = match serde_json::from_str::<FitnessObjective>(raw) {
+        Ok(obj) => obj,
+        Err(e) => {
+            tracing::warn!(
+                raw_objective = %raw,
+                error = %e,
+                "Fitness objective deserialization failed — falling back to defaults",
+            );
+            warnings.push(format!(
+                "Fitness objective could not be parsed ({}); using defaults (speed=0.33, quality=0.34, cost=0.33). Raw value: {}",
+                e,
+                &raw[..raw.len().min(200)]
+            ));
+            return (FitnessObjective::default(), warnings);
+        }
+    };
+
+    warnings.extend(objective.validate());
+    if !warnings.is_empty() {
+        tracing::warn!(
+            raw_objective = %raw,
+            warnings = ?warnings,
+            "Fitness objective parsed with validation warnings",
+        );
+    }
+
+    (objective, warnings)
+}
+
 /// Fitness score computed from execution knowledge.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]

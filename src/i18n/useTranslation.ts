@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import type { Translations } from './en';
 
@@ -62,6 +63,7 @@ function preload(lang: Language) {
     loaders[lang]()
       .then(bundle => {
         cache.set(lang, lang === 'en' ? bundle : mergeWithFallback(bundle));
+        bundleVersion++;
         listeners.forEach(fn => fn());
       })
       .catch((err: unknown) => {
@@ -82,6 +84,16 @@ function preload(lang: Language) {
 
 // Tiny pub-sub so React hooks re-render when a bundle finishes loading.
 const listeners = new Set<() => void>();
+let bundleVersion = 0;
+
+function subscribe(callback: () => void): () => void {
+  listeners.add(callback);
+  return () => { listeners.delete(callback); };
+}
+
+function getSnapshot(): number {
+  return bundleVersion;
+}
 
 /**
  * Interpolate `{variable}` placeholders in a translation string.
@@ -107,6 +119,7 @@ export function interpolate(template: string, vars: Record<string, string | numb
  */
 export function useTranslation() {
   const { language } = useI18nStore();
+  useSyncExternalStore(subscribe, getSnapshot);
 
   // Trigger preload if the bundle isn't cached yet.
   if (!cache.has(language)) {

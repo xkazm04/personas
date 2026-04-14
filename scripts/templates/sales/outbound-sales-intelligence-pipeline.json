@@ -789,13 +789,20 @@
       {
         "id": "sheet_url",
         "question": "What is the URL of the Google Sheet containing your prospect list?",
-        "type": "text",
-        "placeholder": "https://docs.google.com/spreadsheets/d/1ABC.../edit",
+        "type": "select",
         "helpText": "The sheet should have columns for prospect data (at minimum: name and company, or email). The agent will add enrichment columns to the right of your existing data.",
         "required": true,
         "affectsConfig": [
           "google_sheets.spreadsheet_id"
-        ]
+        ],
+        "vault_category": "database",
+        "option_service_types": [
+          "google_sheets"
+        ],
+        "dynamic_source": {
+          "service_type": "google_sheets",
+          "operation": "list_sheets"
+        }
       },
       {
         "id": "column_mapping",

@@ -749,10 +749,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "What is the exact name of the Notion database (or database view) that this agent should poll for 'Ready for Review' items?",
-        "type": "text",
+        "type": "select",
         "default": "",
         "context": "Required to target the correct Notion database; a mismatch means the agent polls the wrong content source.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "database",
+        "option_service_types": [
+          "notion"
+        ],
+        "dynamic_source": {
+          "service_type": "notion",
+          "operation": "list_databases"
+        }
       },
       {
         "id": "aq_quality_1",

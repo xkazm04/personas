@@ -25,7 +25,7 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
     <button
       onClick={() => onPickType(connector)}
       data-testid={`catalog-connector-${connector.name}`}
-      className={`group relative flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all transition-transform hover:scale-[1.02] ${
+      className={`group relative flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all transition-transform hover:scale-[1.02] min-h-[11rem] justify-between ${
         isOwned
           ? 'bg-emerald-500/8 border-emerald-500/20 hover:bg-emerald-500/15'
           : 'bg-secondary/25 border-primary/15 hover:bg-secondary/50 hover:border-primary/25'
@@ -91,8 +91,8 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
         )}
       </div>
 
-      {/* Label */}
-      <span className="text-base font-semibold text-foreground/90 truncate w-full leading-tight">
+      {/* Label — reserve 2 lines so all cards stay uniform and long names wrap */}
+      <span className="text-base font-semibold text-foreground/90 w-full leading-tight line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1">
         {connector.label}
       </span>
     </button>

@@ -517,6 +517,25 @@ impl ExecutionEngine {
         &self.log_dir
     }
 
+    /// Promote a queued execution after a running/healing/retry slot has been
+    /// freed. Called from cleanup blocks inside spawned healing and retry
+    /// tasks that don't otherwise have the full set of shared Arcs in scope —
+    /// they retrieve the engine from `AppState` and call this method.
+    pub(crate) async fn drain_after_slot_freed(&self, app: AppHandle, pool: DbPool) {
+        drain_and_start_next(
+            self.tracker.clone(),
+            self.tasks.clone(),
+            self.queued_contexts.clone(),
+            self.cancelled_flags.clone(),
+            self.child_pids.clone(),
+            app,
+            pool,
+            self.circuit_breaker.clone(),
+            self.healing_personas.clone(),
+        )
+        .await;
+    }
+
     /// Returns a reference to the concurrency tracker (for tier usage reporting).
     pub fn tracker(&self) -> &Arc<Mutex<queue::ConcurrencyTracker>> {
         &self.tracker
@@ -2581,8 +2600,17 @@ fn spawn_healing_chain(
         tracker.lock().await.remove_running(&persona_id_cleanup, &exec_id_cleanup);
         cancelled_flags.lock().await.remove(&exec_id_cleanup);
         healing_personas.lock().await.remove(&persona_id_cleanup);
-        // TODO: call drain_and_start_next here to promote queued executions
-        // when a healing slot frees up (requires passing additional Arc clones)
+
+        // Promote queued executions now that a healing slot is free. Fetch
+        // the engine via AppState so we don't have to plumb every Arc through
+        // the spawn chain.
+        if let Some(state) = app_for_cleanup.try_state::<std::sync::Arc<crate::AppState>>() {
+            state
+                .engine
+                .drain_after_slot_freed(app_for_cleanup.clone(), pool_for_cleanup.clone())
+                .await;
+        }
+
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app_for_cleanup);
     });
@@ -2877,8 +2905,17 @@ fn spawn_delayed_retry(
         // 13. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
-        // TODO: call drain_and_start_next here to promote queued executions
-        // when a retry slot frees up (requires passing additional Arc clones)
+
+        // Promote queued executions now that a retry slot is free. Fetch the
+        // engine via AppState so we don't have to plumb every Arc through the
+        // spawn chain.
+        if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+            state
+                .engine
+                .drain_after_slot_freed(app.clone(), pool.clone())
+                .await;
+        }
+
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app);
     });

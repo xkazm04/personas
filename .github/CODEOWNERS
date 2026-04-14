@@ -1,0 +1,37 @@
+# CODEOWNERS for Personas Desktop
+#
+# This file defines who is automatically requested for review when a PR
+# touches a given path. The last matching pattern wins, so more specific
+# rules should go below more general ones.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default — everything is owned by the core maintainer unless overridden below
+*                                   @xkazm04
+
+# Backend (Rust / Tauri)
+/src-tauri/                         @xkazm04
+/src-tauri/src/engine/              @xkazm04
+/src-tauri/src/db/                  @xkazm04
+/src-tauri/src/commands/            @xkazm04
+
+# Frontend (React / TypeScript)
+/src/                               @xkazm04
+/src/features/                      @xkazm04
+/src/stores/                        @xkazm04
+/src/i18n/                          @xkazm04
+
+# Build and CI
+/.github/                           @xkazm04
+/.github/workflows/                 @xkazm04
+/scripts/                           @xkazm04
+/package.json                       @xkazm04
+/src-tauri/Cargo.toml               @xkazm04
+/src-tauri/tauri.conf.json          @xkazm04
+
+# Documentation
+/README.md                          @xkazm04
+/CONTRIBUTING.md                    @xkazm04
+/ARCHITECTURE.md                    @xkazm04
+/SECURITY.md                        @xkazm04
+/docs/                              @xkazm04

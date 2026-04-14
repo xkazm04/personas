@@ -36,6 +36,90 @@ static TASK_EXEC_JOBS: BackgroundJobManager<TaskExecExtra> = BackgroundJobManage
 );
 
 // =============================================================================
+// Context gathering (with warning collection)
+// =============================================================================
+
+struct TaskContext {
+    idea: Option<String>,
+    goal: Option<String>,
+    codebase: Option<String>,
+    warnings: Vec<String>,
+}
+
+fn gather_task_context(
+    pool: &crate::db::DbPool,
+    source_idea_id: Option<&str>,
+    goal_id: Option<&str>,
+    project_id: &str,
+) -> TaskContext {
+    let mut warnings = Vec::new();
+
+    let idea = match source_idea_id {
+        Some(idea_id) => match repo::get_idea_by_id(pool, idea_id) {
+            Ok(idea) => {
+                let mut s = String::new();
+                if let Some(desc) = &idea.description {
+                    s.push_str(desc);
+                    s.push('\n');
+                }
+                if let Some(reasoning) = &idea.reasoning {
+                    s.push_str(reasoning);
+                    s.push('\n');
+                }
+                Some(s)
+            }
+            Err(e) => {
+                tracing::warn!(idea_id, error = %e, "Failed to load linked idea context");
+                warnings.push(format!("Could not load linked idea {idea_id}: {e}"));
+                None
+            }
+        },
+        None => None,
+    };
+
+    let goal = match goal_id {
+        Some(gid) => match repo::get_goal_by_id(pool, gid) {
+            Ok(goal) => {
+                let mut s = goal.title.to_string();
+                if let Some(desc) = &goal.description {
+                    s.push_str(&format!(": {desc}"));
+                }
+                s.push('\n');
+                Some(s)
+            }
+            Err(e) => {
+                tracing::warn!(goal_id = gid, error = %e, "Failed to load linked goal context");
+                warnings.push(format!("Could not load linked goal {gid}: {e}"));
+                None
+            }
+        },
+        None => None,
+    };
+
+    let codebase = match repo::list_contexts_by_project(pool, project_id, None) {
+        Ok(contexts) if !contexts.is_empty() => {
+            let mut s = String::new();
+            for ctx in &contexts {
+                s.push_str(&format!("### {}\n", ctx.name));
+                if let Some(desc) = &ctx.description {
+                    s.push_str(&format!("{desc}\n"));
+                }
+                s.push_str(&format!("Files: {}\n\n", ctx.file_paths));
+            }
+            Some(s)
+        }
+        Ok(_) => None,
+        Err(e) => {
+            tracing::warn!(project_id, error = %e, "Failed to load codebase contexts");
+            warnings.push(format!("Could not load codebase contexts: {e}"));
+            None
+        }
+    };
+
+    TaskContext { idea, goal, codebase, warnings }
+}
+
+// =============================================================================
 // Prompt construction
 // =============================================================================
 
@@ -125,63 +209,20 @@ pub async fn dev_tools_execute_task(
         .ok_or_else(|| AppError::Validation("Task has no project_id".into()))?;
     let project = repo::get_project_by_id(&state.db, project_id)?;
 
-    // Build context from linked idea
-    let idea_context = task
-        .source_idea_id
-        .as_deref()
-        .and_then(|idea_id| repo::get_idea_by_id(&state.db, idea_id).ok())
-        .map(|idea| {
-            let mut s = String::new();
-            if let Some(desc) = &idea.description {
-                s.push_str(desc);
-                s.push('\n');
-            }
-            if let Some(reasoning) = &idea.reasoning {
-                s.push_str(reasoning);
-                s.push('\n');
-            }
-            s
-        });
-
-    // Build context from linked goal
-    let goal_context = task
-        .goal_id
-        .as_deref()
-        .and_then(|goal_id| repo::get_goal_by_id(&state.db, goal_id).ok())
-        .map(|goal| {
-            let mut s = goal.title.to_string();
-            if let Some(desc) = &goal.description {
-                s.push_str(&format!(": {desc}"));
-            }
-            s.push('\n');
-            s
-        });
-
-    // Build codebase context from project's contexts
-    let codebase_context = {
-        let contexts = repo::list_contexts_by_project(&state.db, project_id, None)
-            .unwrap_or_default();
-        if contexts.is_empty() {
-            None
-        } else {
-            let mut s = String::new();
-            for ctx in &contexts {
-                s.push_str(&format!("### {}\n", ctx.name));
-                if let Some(desc) = &ctx.description {
-                    s.push_str(&format!("{desc}\n"));
-                }
-                s.push_str(&format!("Files: {}\n\n", ctx.file_paths));
-            }
-            Some(s)
-        }
-    };
+    let ctx = gather_task_context(
+        &state.db,
+        task.source_idea_id.as_deref(),
+        task.goal_id.as_deref(),
+        project_id,
+    );
+    let context_warnings = ctx.warnings;
 
     let prompt_text = build_task_prompt(
         &task.title,
         task.description.as_deref(),
-        idea_context,
-        goal_context,
-        codebase_context,
+        ctx.idea,
+        ctx.goal,
+        ctx.codebase,
         &task.depth,
     );
 
@@ -215,6 +256,10 @@ pub async fn dev_tools_execute_task(
     let worktree_name = extract_worktree_name(task.session_id.as_deref());
 
     tokio::spawn(async move {
+        for w in &context_warnings {
+            TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
+        }
+
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
                 Err(AppError::Internal("Task execution cancelled by user".into()))
@@ -249,7 +294,11 @@ pub async fn dev_tools_execute_task(
                 TASK_EXEC_JOBS.set_status(&app_handle, &task_id_for_spawn, "completed", None);
                 let _ = app_handle.emit(
                     event_name::TASK_EXEC_COMPLETE,
-                    json!({ "task_id": task_id_for_spawn, "output_lines": line_count }),
+                    json!({
+                        "task_id": task_id_for_spawn,
+                        "output_lines": line_count,
+                        "context_warnings": context_warnings,
+                    }),
                 );
                 crate::notifications::send(
                     &app_handle,
@@ -378,61 +427,20 @@ pub async fn dev_tools_start_batch(
                 }
             };
 
-            // Build context from linked idea
-            let idea_context = task
-                .source_idea_id
-                .as_deref()
-                .and_then(|idea_id| repo::get_idea_by_id(&pool, idea_id).ok())
-                .map(|idea| {
-                    let mut s = String::new();
-                    if let Some(desc) = &idea.description {
-                        s.push_str(desc);
-                        s.push('\n');
-                    }
-                    if let Some(reasoning) = &idea.reasoning {
-                        s.push_str(reasoning);
-                        s.push('\n');
-                    }
-                    s
-                });
-
-            let goal_context = task
-                .goal_id
-                .as_deref()
-                .and_then(|goal_id| repo::get_goal_by_id(&pool, goal_id).ok())
-                .map(|goal| {
-                    let mut s = goal.title.to_string();
-                    if let Some(desc) = &goal.description {
-                        s.push_str(&format!(": {desc}"));
-                    }
-                    s.push('\n');
-                    s
-                });
-
-            let codebase_context = {
-                let contexts = repo::list_contexts_by_project(&pool, &project_id, None)
-                    .unwrap_or_default();
-                if contexts.is_empty() {
-                    None
-                } else {
-                    let mut s = String::new();
-                    for ctx in &contexts {
-                        s.push_str(&format!("### {}\n", ctx.name));
-                        if let Some(desc) = &ctx.description {
-                            s.push_str(&format!("{desc}\n"));
-                        }
-                        s.push_str(&format!("Files: {}\n\n", ctx.file_paths));
-                    }
-                    Some(s)
-                }
-            };
+            let ctx = gather_task_context(
+                &pool,
+                task.source_idea_id.as_deref(),
+                task.goal_id.as_deref(),
+                &project_id,
+            );
+            let context_warnings = ctx.warnings;
 
             let prompt_text = build_task_prompt(
                 &task.title,
                 task.description.as_deref(),
-                idea_context,
-                goal_context,
-                codebase_context,
+                ctx.idea,
+                ctx.goal,
+                ctx.codebase,
                 &task.depth,
             );
 
@@ -460,6 +468,10 @@ pub async fn dev_tools_start_batch(
                 return;
             }
             TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
+
+            for w in &context_warnings {
+                TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
+            }
 
             let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
             let result = tokio::select! {
@@ -497,7 +509,11 @@ pub async fn dev_tools_start_batch(
                     TASK_EXEC_JOBS.set_status(&app_handle, &tid, "completed", None);
                     let _ = app_handle.emit(
                         event_name::TASK_EXEC_COMPLETE,
-                        json!({ "task_id": tid, "output_lines": line_count }),
+                        json!({
+                            "task_id": tid,
+                            "output_lines": line_count,
+                            "context_warnings": context_warnings,
+                        }),
                     );
 
                     if let Some(ref gid) = goal_id {

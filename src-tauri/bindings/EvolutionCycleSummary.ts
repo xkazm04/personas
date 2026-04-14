@@ -3,9 +3,17 @@
 /**
  * Summary of an evolution cycle result.
  */
-export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null, promoted: boolean, promotedPersonaId: string | null, 
+export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null, promoted: boolean, promotedPersonaId: string | null,
 /**
  * Whether all status updates succeeded during the cycle.
  * `false` means the frontend may have shown stale status at some point.
  */
-statusReliable: boolean, };
+statusReliable: boolean,
+/**
+ * Warnings encountered during the cycle (e.g. fitness objective fallback).
+ */
+warnings: Array<string>,
+/**
+ * Raw fitness objective JSON from the policy, preserved for forensic debugging.
+ */
+rawFitnessObjective: string | null, };

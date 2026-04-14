@@ -764,10 +764,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "Which Linear team or project should handoff tickets be filed under by default?",
-        "type": "text",
+        "type": "select",
         "default": "",
         "context": "Sets the default Linear destination so tickets land in the right backlog without manual routing each time.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "project-mgmt",
+        "option_service_types": [
+          "linear"
+        ],
+        "dynamic_source": {
+          "service_type": "linear",
+          "operation": "list_teams"
+        }
       },
       {
         "id": "aq_quality_1",

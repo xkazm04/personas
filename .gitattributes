@@ -1,0 +1,60 @@
+# Enforce LF line endings in the repository for text files,
+# regardless of the contributor's OS. Git will normalize on commit
+# and convert back to the platform default on checkout only where needed.
+
+* text=auto eol=lf
+
+# Source code — always LF
+*.rs        text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.jsonc     text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.toml      text eol=lf
+*.md        text eol=lf
+*.css       text eol=lf
+*.scss      text eol=lf
+*.html      text eol=lf
+*.svg       text eol=lf
+*.sh        text eol=lf
+
+# Windows-specific scripts keep CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary files — never diff, never normalize
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.icns      binary
+*.webp      binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+*.eot       binary
+*.mp4       binary
+*.mov       binary
+*.webm      binary
+*.zip       binary
+*.tar.gz    binary
+*.db        binary
+*.sqlite    binary
+*.sqlite3   binary
+
+# Generated files — exclude from GitHub language stats and diffs
+src/lib/bindings/**     linguist-generated=true
+src-tauri/bindings/**   linguist-generated=true
+
+# Lockfiles — collapsed by default in PR diffs
+package-lock.json       linguist-generated=true -diff
+Cargo.lock              linguist-generated=true -diff

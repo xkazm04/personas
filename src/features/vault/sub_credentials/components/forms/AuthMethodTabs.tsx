@@ -1,4 +1,4 @@
-import { Server } from 'lucide-react';
+import { Server, Terminal } from 'lucide-react';
 import type { ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/shared/utils/authMethodStyles';
 
@@ -28,6 +28,7 @@ export function AuthMethodTabs({
           }`}
         >
           {method.type === 'mcp' && <Server className="w-3 h-3" />}
+          {method.type === 'cli' && <Terminal className="w-3 h-3" />}
           {method.label}
         </button>
       ))}

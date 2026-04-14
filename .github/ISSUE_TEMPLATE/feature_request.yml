@@ -1,0 +1,70 @@
+name: Feature Request
+description: Propose a new feature or enhancement
+title: "[Feature]: "
+labels: ["type:feature", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe the problem you're trying to solve before proposing a specific solution — this helps us evaluate the best approach.
+
+        **Before you submit:** search [existing issues](https://github.com/xkazm04/personas/issues?q=is%3Aissue) and the [backlog](https://github.com/xkazm04/personas/discussions) to avoid duplicates.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve? Who experiences it, and when?
+      placeholder: "When I try to X, I have to Y, which is slow / error-prone / impossible because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like the feature to work? Describe the behavior, UI, and any relevant edge cases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you think about? Why is this one better?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Agent / persona editor
+        - Vault / credentials
+        - Triggers
+        - Execution engine / providers
+        - Team canvas / pipelines
+        - Observability dashboard
+        - Deployment
+        - Desktop integration
+        - Internationalization
+        - Developer experience
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: willingness
+    attributes:
+      label: Are you willing to contribute this yourself?
+      options:
+        - "Yes, I'd like to implement it (will open a PR)"
+        - "Yes, with guidance from a maintainer"
+        - "No, just proposing the idea"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Mockups, links to similar features in other tools, related issues, anything else that helps.

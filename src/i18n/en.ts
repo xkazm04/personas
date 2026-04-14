@@ -1334,6 +1334,9 @@ export const en = {
       quality_label: "Quality",
       speed_label: "Speed",
       cost_label: "Cost",
+      // Fitness objective warning shown when objective was corrupted or fell back to defaults
+      objective_warning: "Fitness objective issue",
+      objective_fallback_toast: "Evolution used default fitness weights — check objective settings",
 
       // GenomeBreedingPanel
       genome_breeding: "Genome Breeding",
@@ -8985,6 +8988,10 @@ export const en = {
       task_depth: "Task Depth",
       goal_link: "Goal Link",
       create_task: "Create Task",
+      // Badge shown when task ran with incomplete context due to DB lookup failures
+      partial_context: "Partial context",
+      // Header for the context warnings detail panel
+      context_warnings_title: "Context warnings — task ran with missing information",
       campaign: "Campaign",
       deep_build: "Deep Build",
       idea_evolution: "Idea Evolution",
@@ -8998,7 +9005,11 @@ export const en = {
       select_skill: "Select a skill to view its contents",
       edit: "Edit",
       save: "Save",
-      file_empty: "File is empty or could not be loaded.",
+      file_empty: "File is empty.",
+      // Warning banner shown when a skill file failed to load from disk
+      file_load_failed: "File could not be loaded. Editing is disabled to prevent data loss.",
+      // Shown in content area when a file failed to load
+      file_load_failed_hint: "Try refreshing or re-selecting the skill.",
       effort: "Effort",
       risk: "Risk",
       quick_wins: "Quick Wins",

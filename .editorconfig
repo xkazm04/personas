@@ -1,0 +1,36 @@
+# EditorConfig — https://editorconfig.org
+# Keeps code formatting consistent across editors and platforms.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Rust uses 4-space indentation by convention
+[*.rs]
+indent_size = 4
+
+# Python uses 4-space indentation
+[*.py]
+indent_size = 4
+
+# Go uses tabs
+[*.go]
+indent_style = tab
+
+# Makefiles require real tabs
+[Makefile]
+indent_style = tab
+
+# Markdown — preserve trailing whitespace (used for hard line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows-specific scripts keep CRLF
+[*.{bat,cmd,ps1}]
+end_of_line = crlf

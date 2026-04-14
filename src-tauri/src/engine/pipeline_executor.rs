@@ -487,6 +487,9 @@ async fn run_command_node(
         std::time::Duration::from_secs(300),
         async {
             let mut child = command.spawn()?;
+            // Poll exit status with try_wait (non-consuming) so we can check
+            // for cancellation between polls. Once exited, wait_with_output
+            // drains stdout/stderr exactly once.
             loop {
                 if cancelled.load(Ordering::Relaxed) {
                     let _ = child.kill().await;
@@ -495,11 +498,15 @@ async fn run_command_node(
                         "Pipeline cancelled by user",
                     ));
                 }
-                match tokio::time::timeout(std::time::Duration::from_millis(200), child.wait_with_output()).await {
-                    Ok(result) => return result,
-                    Err(_) => continue,
+                match child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) => {
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    }
+                    Err(e) => return Err(e),
                 }
             }
+            child.wait_with_output().await
         },
     )
     .await
@@ -558,19 +565,26 @@ async fn run_command_node(
 // Approval gate — pause pipeline for human review
 // ============================================================================
 
+enum ApprovalOutcome {
+    Approved,
+    Cancelled,
+    TimedOut,
+}
+
 /// Poll for human approval of a pipeline node.
 ///
 /// Uses the `ActiveProcessRegistry` with domain `"pipeline_approval"` and a
 /// composite key of `"{run_id}:{member_id}"`. The approval flag starts `false`;
 /// calling `approve_pipeline_node` sets it to `true` via `cancel_run`.
 ///
-/// Returns `true` if approved, `false` if the pipeline was cancelled or timed out.
+/// Returns the outcome atomically at the point of decision, avoiding a TOCTOU
+/// race between the poll loop exit and the reason check.
 async fn poll_for_approval(
     registry: &ActiveProcessRegistry,
     run_id: &str,
     member_id: &str,
     cancelled: &Arc<AtomicBool>,
-) -> bool {
+) -> ApprovalOutcome {
     let approval_key = format!("{}:{}", run_id, member_id);
     let flag = registry.register_run("pipeline_approval", &approval_key);
 
@@ -578,22 +592,19 @@ async fn poll_for_approval(
     for _ in 0..3600 {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        // Check if pipeline was cancelled
         if cancelled.load(Ordering::Relaxed) {
             registry.unregister_run("pipeline_approval", &approval_key);
-            return false;
+            return ApprovalOutcome::Cancelled;
         }
 
-        // Check if approval was granted (flag set to true)
         if flag.load(Ordering::Relaxed) {
             registry.unregister_run("pipeline_approval", &approval_key);
-            return true;
+            return ApprovalOutcome::Approved;
         }
     }
 
-    // Timed out — clean up
     registry.unregister_run("pipeline_approval", &approval_key);
-    false
+    ApprovalOutcome::TimedOut
 }
 
 // ============================================================================
@@ -700,7 +711,7 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             ]);
             emitter.emit("awaiting_approval", &statuses, Some(memories_created));
 
-            let approved = poll_for_approval(
+            let outcome = poll_for_approval(
                 &ctx.process_registry,
                 &ctx.run_id,
                 member_id,
@@ -708,19 +719,22 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             )
             .await;
 
-            if !approved {
-                let reason = if ctx.cancelled.load(Ordering::Relaxed) {
-                    "Pipeline cancelled by user"
-                } else {
-                    "Approval timed out (1 hour)"
-                };
-                update_node_status(&mut statuses, member_id, &[
-                    ("status", serde_json::json!("rejected")),
-                    ("error", serde_json::json!(reason)),
-                ]);
-                has_failure = true;
-                emitter.emit("running", &statuses, Some(memories_created));
-                break;
+            match outcome {
+                ApprovalOutcome::Approved => {}
+                ApprovalOutcome::Cancelled | ApprovalOutcome::TimedOut => {
+                    let reason = match outcome {
+                        ApprovalOutcome::Cancelled => "Pipeline cancelled by user",
+                        ApprovalOutcome::TimedOut => "Approval timed out (1 hour)",
+                        ApprovalOutcome::Approved => unreachable!(),
+                    };
+                    update_node_status(&mut statuses, member_id, &[
+                        ("status", serde_json::json!("rejected")),
+                        ("error", serde_json::json!(reason)),
+                    ]);
+                    has_failure = true;
+                    emitter.emit("running", &statuses, Some(memories_created));
+                    break;
+                }
             }
         }
 

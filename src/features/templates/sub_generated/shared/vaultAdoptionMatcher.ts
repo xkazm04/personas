@@ -1,6 +1,52 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
 /**
+ * Aliases for connector service_types. The same logical provider gets stored
+ * under different `service_type` values depending on how the credential was
+ * created (catalog form vs CLI probe vs foraging vs healthcheck discovery).
+ *
+ * Templates reference the canonical connector name (as declared in the
+ * `builtin/*.json` file's top-level `name` field), and this map expands that
+ * into every alias a credential might actually be stored under. Without it,
+ * a user who `aws configure`'d their shell and let the CLI probe detect the
+ * credential would silently fail to auto-detect on AWS templates — because
+ * the stored service_type is `"aws"` while the template asks for `"aws_cloud"`.
+ *
+ * Known creator paths and the names they emit:
+ *   - Catalog UI      → canonical name from builtin JSON (gcp_cloud, aws_cloud, azure_cloud)
+ *   - auth_detect.rs  → "aws", "google_cloud", "azure"   (CLI probes)
+ *   - foraging.rs     → "aws"                             (~/.aws/credentials scraping)
+ *   - healthcheck.rs  → "aws", "google_cloud", "azure"   (live-detect)
+ *
+ * Add to this map whenever a new creator path introduces a different spelling
+ * for an existing connector. Keeping the logic here (matcher-local) avoids
+ * spraying alias knowledge across the codebase and is a no-op for connectors
+ * that don't have aliases.
+ */
+const SERVICE_TYPE_ALIASES: Record<string, readonly string[]> = {
+  gcp_cloud: ['gcp_cloud', 'google_cloud'],
+  aws_cloud: ['aws_cloud', 'aws'],
+  azure_cloud: ['azure_cloud', 'azure'],
+};
+
+/** Expand a canonical service_type into itself plus any known aliases. */
+function expandAliases(serviceType: string): readonly string[] {
+  return SERVICE_TYPE_ALIASES[serviceType] ?? [serviceType];
+}
+
+/** Does the vault contain any credential whose service_type matches the
+ *  canonical name OR any of its known aliases? */
+function hasMatchingCredential(
+  canonical: string,
+  credentialServiceTypes: Set<string>,
+): boolean {
+  for (const alias of expandAliases(canonical)) {
+    if (credentialServiceTypes.has(alias)) return true;
+  }
+  return false;
+}
+
+/**
  * Match adoption questions against the user's credential vault.
  *
  * For questions with `vault_category` + `option_service_types`, checks
@@ -10,6 +56,10 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
  * - 2+ matches → narrow the displayed options to only the vault-matched ones
  *               (and the "Other/null" fallback if present) so the user sees
  *               only services they actually have credentials for
+ *
+ * Matching is alias-aware via SERVICE_TYPE_ALIASES so cloud credentials
+ * created via CLI probe or foraging still hit templates that reference the
+ * canonical connector name.
  *
  * Questions without `vault_category` or `option_service_types` are ignored.
  */
@@ -36,7 +86,7 @@ export function matchVaultToQuestions(
     if (q.dynamic_source) {
       const svc = q.dynamic_source.service_type;
       if (svc === 'codebases') continue;
-      if (!credentialServiceTypes.has(svc)) {
+      if (!hasMatchingCredential(svc, credentialServiceTypes)) {
         blockedQuestionIds.add(q.id);
       }
       continue;
@@ -54,7 +104,7 @@ export function matchVaultToQuestions(
         nullFallbackIndices.push(i);
         continue;
       }
-      if (st && credentialServiceTypes.has(st)) {
+      if (st && hasMatchingCredential(st, credentialServiceTypes)) {
         matchingIndices.push(i);
       }
     }

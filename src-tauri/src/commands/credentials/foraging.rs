@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -607,6 +608,9 @@ pub fn scan_credential_sources(
 
 /// Import a foraged credential into the vault.
 /// Reads the actual (unmasked) value from the original source at import time.
+///
+/// The credential row, encrypted fields, and audit log entry are written in a
+/// single SQLite transaction so either all writes succeed or none do.
 #[tauri::command]
 pub fn import_foraged_credential(
     state: State<'_, Arc<AppState>>,
@@ -624,7 +628,6 @@ pub fn import_foraged_credential(
         return Err("No credential values found at source. The credential may have been removed.".to_string());
     }
 
-    // Create the credential in the vault
     let input = crate::db::models::CreateCredentialInput {
         name: credential_name.clone(),
         service_type: service_type.clone(),
@@ -635,19 +638,29 @@ pub fn import_foraged_credential(
         healthcheck_passed: None,
     };
 
-    let cred = crate::db::repos::resources::credentials::create_with_fields(&state.db, input, &fields)
-        .map_err(|e| format!("Failed to create credential: {e}"))?;
+    let mut conn = state.db.get()
+        .map_err(|e| format!("Failed to get DB connection: {e}"))?;
+    let tx = conn.transaction()
+        .map_err(|e| format!("Failed to start transaction: {e}"))?;
 
-    // Audit log
-    let _ = crate::db::repos::resources::audit_log::insert(
-        &state.db,
-        &cred.id,
-        &credential_name,
-        "create",
-        None,
-        None,
-        Some("Imported via credential foraging"),
-    );
+    let cred_id = crate::db::repos::resources::credentials::insert_credential_and_fields_tx(
+        &state.db, &tx, &input, &fields,
+    ).map_err(|e| format!("Failed to create credential: {e}"))?;
+
+    // Audit log in the same transaction
+    let audit_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    tx.execute(
+        "INSERT INTO credential_audit_log (id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![audit_id, cred_id, credential_name, "create", Option::<&str>::None, Option::<&str>::None, "Imported via credential foraging", now],
+    ).map_err(|e| format!("Failed to insert audit log: {e}"))?;
+
+    tx.commit()
+        .map_err(|e| format!("Failed to commit transaction: {e}"))?;
+
+    let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &cred_id)
+        .map_err(|e| format!("Failed to read created credential: {e}"))?;
 
     Ok(serde_json::json!({
         "id": cred.id,

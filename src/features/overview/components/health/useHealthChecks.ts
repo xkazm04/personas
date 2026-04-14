@@ -45,8 +45,11 @@ export function useHealthChecks() {
   const [hasIssues, setHasIssues] = useState(false);
   const [ipcError, setIpcError] = useState(false);
   const generationRef = useRef(0);
+  const inFlightRef = useRef(false);
 
   const runChecks = useCallback(() => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     const gen = ++generationRef.current;
     setLoading(true);
     setIpcError(false);
@@ -73,6 +76,9 @@ export function useHealthChecks() {
         setHasIssues(!allOk);
         setIpcError(anyIpcError);
         setLoading(false);
+      })
+      .finally(() => {
+        inFlightRef.current = false;
       });
   }, []);
 

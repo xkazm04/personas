@@ -19,3 +19,38 @@ export async function cliCaptureRun(serviceType: string): Promise<CliCaptureResu
 export async function refreshCredentialCliNow(credentialId: string): Promise<string> {
   return invoke<string>("refresh_credential_cli_now", { credentialId });
 }
+
+export interface CliSpecInfo {
+  service_type: string;
+  binary: string;
+  display_label: string;
+  install_hint: string;
+  auth_instruction: string;
+  docs_url: string;
+}
+
+export interface CliInstallStatus {
+  service_type: string;
+  installed: boolean;
+  binary_path: string | null;
+  version: string | null;
+}
+
+export interface CliVerifyResult {
+  service_type: string;
+  authenticated: boolean;
+  identity: string | null;
+  message: string;
+}
+
+export async function listCliSpecs(): Promise<CliSpecInfo[]> {
+  return invoke<CliSpecInfo[]>("list_cli_specs");
+}
+
+export async function cliCheckInstalled(serviceType: string): Promise<CliInstallStatus> {
+  return invoke<CliInstallStatus>("cli_check_installed", { serviceType });
+}
+
+export async function cliVerifyAuth(serviceType: string): Promise<CliVerifyResult> {
+  return invoke<CliVerifyResult>("cli_verify_auth", { serviceType });
+}

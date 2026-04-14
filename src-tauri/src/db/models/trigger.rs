@@ -479,8 +479,13 @@ impl PersonaTrigger {
     /// Automatically decrypts encrypted fields before parsing.
     pub fn parse_config(&self) -> TriggerConfig {
         let decrypted = self.decrypted_config_json();
-        let val: serde_json::Value = decrypted
-            .as_deref()
+        TriggerConfig::from_raw(&self.trigger_type, decrypted.as_deref())
+    }
+}
+
+impl TriggerConfig {
+    pub fn from_raw(trigger_type: &str, config_json: Option<&str>) -> TriggerConfig {
+        let val: serde_json::Value = config_json
             .and_then(|c| serde_json::from_str(c).ok())
             .unwrap_or(serde_json::Value::Null);
 
@@ -490,7 +495,7 @@ impl PersonaTrigger {
             .map(String::from);
         let payload = val.get("payload").cloned();
 
-        match self.trigger_type.as_str() {
+        match trigger_type {
             "schedule" => TriggerConfig::Schedule {
                 cron: val.get("cron").and_then(|v| v.as_str()).map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),

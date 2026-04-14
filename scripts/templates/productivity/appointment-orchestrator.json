@@ -794,10 +794,18 @@
         "id": "aq_domain_2",
         "category": "domain",
         "question": "What HubSpot pipeline should new deals be created in?",
-        "type": "text",
+        "type": "select",
         "default": "Sales Pipeline",
         "context": "HubSpot supports multiple pipelines; the orchestrator needs the exact pipeline name to place deals correctly.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "crm",
+        "option_service_types": [
+          "hubspot"
+        ],
+        "dynamic_source": {
+          "service_type": "hubspot",
+          "operation": "list_deal_pipelines"
+        }
       },
       {
         "id": "aq_boundaries_1",

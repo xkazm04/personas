@@ -1300,6 +1300,9 @@ pub fn run() {
             // Credentials -- CLI Capture
             commands::credentials::cli_capture::list_cli_capturable_services,
             commands::credentials::cli_capture::cli_capture_run,
+            commands::credentials::cli_capture::list_cli_specs,
+            commands::credentials::cli_capture::cli_check_installed,
+            commands::credentials::cli_capture::cli_verify_auth,
             // Credentials -- Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,

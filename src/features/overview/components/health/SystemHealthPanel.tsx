@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, Monitor } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
@@ -24,12 +24,15 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    if (!loading && !ipcError) {
-      runChecks();
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
     }
-  }, [isAuthenticated]);
+    runChecks();
+  }, [isAuthenticated, runChecks]);
 
   useEffect(() => {
     if (nodeState.phase === 'completed' || claudeState.phase === 'completed') {

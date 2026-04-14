@@ -776,13 +776,22 @@
       {
         "id": "jira_projects",
         "question": "Which Jira project keys should this agent monitor?",
-        "type": "text",
+        "type": "select",
         "default": "PROJ",
         "context": "The agent polls these projects for stale issues using JQL. Comma-separate multiple keys.",
         "connector_names": [
           "jira"
         ],
-        "category": "configuration"
+        "category": "configuration",
+        "vault_category": "project-mgmt",
+        "option_service_types": [
+          "jira"
+        ],
+        "dynamic_source": {
+          "service_type": "jira",
+          "operation": "list_projects",
+          "multi": true
+        }
       },
       {
         "id": "stale_threshold_days",
@@ -847,13 +856,21 @@
       {
         "id": "notion_kb_database_id",
         "question": "Notion knowledge base database ID?",
-        "type": "text",
+        "type": "select",
         "default": "",
         "context": "The Notion database containing troubleshooting guides and runbooks for solution matching.",
         "connector_names": [
           "notion"
         ],
-        "category": "configuration"
+        "category": "configuration",
+        "vault_category": "database",
+        "option_service_types": [
+          "notion"
+        ],
+        "dynamic_source": {
+          "service_type": "notion",
+          "operation": "list_databases"
+        }
       },
       {
         "id": "auto_close_enabled",

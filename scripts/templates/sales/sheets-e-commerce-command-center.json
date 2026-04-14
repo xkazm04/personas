@@ -814,10 +814,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "What is the name of the Google Sheets workbook and tab where orders should be logged?",
-        "type": "text",
+        "type": "select",
         "default": "E-Commerce Ops > Orders Log",
         "context": "Needed to target the exact sheet from day one rather than creating a new one — prevents duplicate ledgers if you already track orders manually",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "database",
+        "option_service_types": [
+          "google_sheets"
+        ],
+        "dynamic_source": {
+          "service_type": "google_sheets",
+          "operation": "list_sheets"
+        }
       }
     ]
   },

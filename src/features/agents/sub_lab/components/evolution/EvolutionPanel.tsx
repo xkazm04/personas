@@ -3,7 +3,7 @@ import {
   Sparkles, Play, Loader2, CheckCircle2, XCircle,
   ToggleLeft, ToggleRight, TrendingUp,
   Zap, DollarSign, Target, Settings2,
-  RefreshCw,
+  RefreshCw, AlertTriangle,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -92,37 +92,52 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
     ? cycle.winnerFitness - cycle.incumbentFitness
     : null;
 
+  const hasWarning = cycle.error?.startsWith('Warning:');
+
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-primary/10 bg-primary/[0.02]">
-      <CycleStatusBadge status={cycle.status} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">
-            {cycle.variantsTested} variants tested
-          </span>
-          {cycle.promoted && (
-            <span className="text-emerald-400 font-medium flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> {t.agents.lab.promoted_label}
+    <div className="space-y-0">
+      <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-primary/10 bg-primary/[0.02]">
+        <CycleStatusBadge status={cycle.status} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">
+              {cycle.variantsTested} variants tested
             </span>
-          )}
-          {improvement != null && improvement > 0 && (
-            <span className="text-violet-400 text-[10px]">
-              +{(improvement * 100).toFixed(1)}%
-            </span>
-          )}
-        </div>
-        {cycle.incumbentFitness != null && (
-          <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground/60">
-            <span>Incumbent: {Math.round(cycle.incumbentFitness * 100)}%</span>
-            {cycle.winnerFitness != null && (
-              <span>Winner: {Math.round(cycle.winnerFitness * 100)}%</span>
+            {cycle.promoted && (
+              <span className="text-emerald-400 font-medium flex items-center gap-0.5">
+                <TrendingUp className="w-3 h-3" /> {t.agents.lab.promoted_label}
+              </span>
+            )}
+            {improvement != null && improvement > 0 && (
+              <span className="text-violet-400 text-[10px]">
+                +{(improvement * 100).toFixed(1)}%
+              </span>
+            )}
+            {hasWarning && (
+              <span className="text-amber-400 flex items-center gap-0.5" title={cycle.error ?? ''}>
+                <AlertTriangle className="w-3 h-3" />
+                <span className="text-[10px]">{t.agents.lab.objective_warning}</span>
+              </span>
             )}
           </div>
-        )}
+          {cycle.incumbentFitness != null && (
+            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground/60">
+              <span>Incumbent: {Math.round(cycle.incumbentFitness * 100)}%</span>
+              {cycle.winnerFitness != null && (
+                <span>Winner: {Math.round(cycle.winnerFitness * 100)}%</span>
+              )}
+            </div>
+          )}
+        </div>
+        <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
+          {new Date(cycle.startedAt).toLocaleDateString()}
+        </span>
       </div>
-      <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
-        {new Date(cycle.startedAt).toLocaleDateString()}
-      </span>
+      {hasWarning && (
+        <div className="mx-3 mt-1 mb-1 px-2 py-1 rounded text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/10">
+          {cycle.error?.replace('Warning: ', '')}
+        </div>
+      )}
     </div>
   );
 }
@@ -183,8 +198,14 @@ export function EvolutionPanel() {
         setMinExecs(p.minExecutionsBetween);
         try {
           const obj = JSON.parse(p.fitnessObjective);
-          setObjective(obj);
-        } catch { /* use default */ }
+          if (obj && typeof obj.speed === 'number' && typeof obj.quality === 'number' && typeof obj.cost === 'number') {
+            setObjective(obj);
+          } else {
+            console.warn('[EvolutionPanel] Fitness objective has unexpected shape, using defaults:', p.fitnessObjective);
+          }
+        } catch {
+          console.warn('[EvolutionPanel] Failed to parse fitness objective, using defaults:', p.fitnessObjective);
+        }
       }
     } catch {
       // silent — policy may not exist yet
@@ -254,6 +275,9 @@ export function EvolutionPanel() {
           loadData();
           if (updated[0]!.status === 'completed' && updated[0]!.promoted) {
             addToast('Evolution: variant promoted!', 'success');
+          }
+          if (updated[0]!.error?.startsWith('Warning:')) {
+            addToast(t.agents.lab.objective_fallback_toast, 'error');
           }
         }
       }, 3000);

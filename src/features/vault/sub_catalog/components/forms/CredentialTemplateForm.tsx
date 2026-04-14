@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { CodebaseProjectPicker } from '@/features/vault/sub_catalog/components/forms/CodebaseProjectPicker';
 import { McpPrefilledForm } from '@/features/vault/sub_catalog/components/schemas/McpPrefilledForm';
+import { CliConnectionPanel } from '@/features/vault/sub_catalog/components/picker/CliConnectionPanel';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { SetupGuideSection } from '@/features/vault/sub_credentials/components/forms/SetupGuideSection';
@@ -8,6 +9,8 @@ import { TemplateFormHeader } from '@/features/vault/sub_credentials/components/
 import { AuthMethodTabs } from '@/features/vault/sub_credentials/components/forms/AuthMethodTabs';
 import { TemplateFormBody } from './TemplateFormBody';
 import { useTranslation } from '@/i18n/useTranslation';
+import { listCliSpecs, type CliSpecInfo } from '@/api/auth/cliCapture';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface AuthVariant {
   id: string;
@@ -76,7 +79,31 @@ export function CredentialTemplateForm({
     variants?.[0]?.id ?? null,
   );
 
-  const authMethods = useMemo(() => getAuthMethods(selectedConnector), [selectedConnector]);
+  // CLI spec list: used to hide CLI auth method tabs for connectors without a
+  // registered spec (e.g. user advertises CLI support but binary isn't wired).
+  const [cliSpecs, setCliSpecs] = useState<CliSpecInfo[] | null>(null);
+  useEffect(() => {
+    listCliSpecs().then(setCliSpecs).catch((e) => {
+      silentCatch('CredentialTemplateForm:listCliSpecs')(e);
+      setCliSpecs([]);
+    });
+  }, []);
+
+  const rawAuthMethods = useMemo(() => getAuthMethods(selectedConnector), [selectedConnector]);
+  const authMethods = useMemo(() => {
+    if (cliSpecs === null) {
+      // Hide CLI tabs until we know which specs are registered.
+      return rawAuthMethods.filter((m) => m.type !== 'cli');
+    }
+    const registered = new Set(cliSpecs.map((s) => s.service_type));
+    return rawAuthMethods.filter((m) => m.type !== 'cli' || registered.has(selectedConnector.name));
+  }, [rawAuthMethods, cliSpecs, selectedConnector.name]);
+
+  const activeCliSpec = useMemo(
+    () => cliSpecs?.find((s) => s.service_type === selectedConnector.name) ?? null,
+    [cliSpecs, selectedConnector.name],
+  );
+
   const defaultMethodId = useMemo(
     () => (authMethods.find((m) => m.is_default) ?? authMethods[0])?.id ?? authMethods[0]?.id ?? 'default',
     [authMethods],
@@ -103,6 +130,8 @@ export function CredentialTemplateForm({
     setActiveAuthMethodId(method.id);
     if (method.type === 'mcp') {
       onCredentialNameChange(`${selectedConnector.label} MCP`);
+    } else if (method.type === 'cli') {
+      onCredentialNameChange(`${selectedConnector.label} CLI`);
     } else {
       const v = variants?.find((vr) => vr.id === activeVariantId);
       onCredentialNameChange(`${selectedConnector.label} ${v?.auth_type_label ?? method.label}`);
@@ -145,6 +174,15 @@ export function CredentialTemplateForm({
           connector={selectedConnector}
           authMethod={activeMethod}
           onComplete={onMcpComplete ?? onCancel}
+          onCancel={onCancel}
+        />
+      ) : activeMethod?.type === 'cli' && activeCliSpec ? (
+        <CliConnectionPanel
+          connector={selectedConnector}
+          spec={activeCliSpec}
+          credentialName={credentialName}
+          onCredentialNameChange={onCredentialNameChange}
+          onCreateCredential={onCreateCredential}
           onCancel={onCancel}
         />
       ) : (

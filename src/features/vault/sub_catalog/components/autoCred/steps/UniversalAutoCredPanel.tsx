@@ -59,10 +59,13 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
 
   const autoStarted = useRef(false);
   useEffect(() => {
-    if (phase === 'running' && session.phase === 'consent' && !autoStarted.current) {
-      autoStarted.current = true;
-      session.startBrowser();
-    }
+    if (phase !== 'running' || session.phase !== 'consent') return;
+    if (autoStarted.current) return;
+    autoStarted.current = true;
+    // Defer to next microtask so React 19 concurrent double-fires see the ref set above
+    void Promise.resolve().then(() => {
+      if (autoStarted.current) session.startBrowser();
+    });
   }, [phase, session.phase, session.startBrowser]);
 
   const handleCancel = () => { session.reset(); autoStarted.current = false; setPhase('input'); };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Play, CheckSquare, Square, Clock,
@@ -284,6 +284,9 @@ export default function IdeaScannerPage() {
   const [autoScanRunning, setAutoScanRunning] = useState(false);
   const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
 
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
   // Map store ideas to display format
   const ideas: ScanIdea[] = useMemo(() =>
     storeIdeas.map((i) => ({
@@ -318,6 +321,7 @@ export default function IdeaScannerPage() {
 
   // Finalization helper — reads everything from store, no closure deps
   const finalizeScan = useCallback((outcome: 'success' | 'warning' | 'failed', errorMessage?: string) => {
+    if (!mountedRef.current) return;
     const pid = useSystemStore.getState().activeProjectId;
     if (outcome !== 'failed' && pid) {
       useSystemStore.getState().fetchIdeas(pid);
@@ -361,6 +365,7 @@ export default function IdeaScannerPage() {
     }
 
     setTimeout(() => {
+      if (!mountedRef.current) return;
       useSystemStore.setState({
         scanPhase: outcome === 'failed' ? 'error' : 'complete',
         currentScanId: null,
@@ -368,6 +373,9 @@ export default function IdeaScannerPage() {
       setScanProgress(0);
     }, 800);
   }, []);
+
+  const finalizeScanRef = useRef(finalizeScan);
+  useEffect(() => { finalizeScanRef.current = finalizeScan; });
 
   // Listen for streaming events — registered ONCE on mount.
   // Reads currentScanId from store at event time so listener is stable.
@@ -389,11 +397,11 @@ export default function IdeaScannerPage() {
       if (id && event.payload.job_id === id) {
         const { status, error } = event.payload;
         if (status === 'completed') {
-          finalizeScan('success');
+          finalizeScanRef.current('success');
         } else if (status === 'completed_with_warning') {
-          finalizeScan('warning', error);
+          finalizeScanRef.current('warning', error);
         } else if (status === 'failed' || status === 'cancelled') {
-          finalizeScan('failed', error);
+          finalizeScanRef.current('failed', error);
         }
       }
     }).then((fn) => { statusUnlisten = fn; });
@@ -402,7 +410,7 @@ export default function IdeaScannerPage() {
       outputUnlisten?.();
       statusUnlisten?.();
     };
-  }, [finalizeScan]);
+  }, []);
 
   // On mount: if a scan is already active, poll its real status to resync
   // (handles user navigating away during scan and missing completion event).
@@ -420,17 +428,17 @@ export default function IdeaScannerPage() {
         );
         if (cancelled) return;
         if (result.status === 'completed') {
-          finalizeScan('success');
+          finalizeScanRef.current('success');
         } else if (result.status === 'completed_with_warning') {
-          finalizeScan('warning', result.error);
+          finalizeScanRef.current('warning', result.error);
         } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
-          finalizeScan('failed', result.error);
+          finalizeScanRef.current('failed', result.error);
         }
       } catch { /* ignore */ }
     })();
 
     return () => { cancelled = true; };
-  }, [finalizeScan]);
+  }, []);
 
   const toggleAgent = (key: string) => {
     setSelectedAgents((prev) => {
@@ -495,15 +503,16 @@ export default function IdeaScannerPage() {
 
       let completed = 0;
       for (const ctx of ctxList) {
+        if (!mountedRef.current) break;
         const matchedAgents = matchAgentsToContext(ctx);
         setAutoScanStatus(`Scanning "${ctx.name}" (${matchedAgents.length} agents) — ${completed + 1}/${ctxList.length}`);
         setScanProgress(Math.round((completed / ctxList.length) * 90) + 5);
 
         try {
           await runScan(matchedAgents, ctx.id);
-          // Wait for scan to complete by polling scanPhase
           await new Promise<void>((resolve) => {
             const check = () => {
+              if (!mountedRef.current) { resolve(); return; }
               const phase = useSystemStore.getState().scanPhase;
               if (phase !== 'running') { resolve(); return; }
               setTimeout(check, 2000);
@@ -516,6 +525,8 @@ export default function IdeaScannerPage() {
         completed++;
       }
 
+      if (!mountedRef.current) return;
+
       setAutoScanStatus(`Completed! Scanned ${ctxList.length} contexts.`);
       setScanProgress(100);
       useOverviewStore.getState().processEnded('auto_scan', 'completed');
@@ -525,6 +536,7 @@ export default function IdeaScannerPage() {
       useSystemStore.getState().fetchScans(activeProjectId);
 
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setScanProgress(0);
         setAutoScanStatus(null);
         setAutoScanRunning(false);

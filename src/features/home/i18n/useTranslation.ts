@@ -7,6 +7,7 @@
  * files in this directory should be merged into the main locale files.
  * See: i18n Phase 2 consolidation plan.
  */
+import { useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { en } from './en';
 
@@ -33,17 +34,29 @@ const cache = new Map<Language, HomeTranslations>();
 cache.set('en', en.home);
 
 const listeners = new Set<() => void>();
+let bundleVersion = 0;
+
+function subscribe(callback: () => void): () => void {
+  listeners.add(callback);
+  return () => { listeners.delete(callback); };
+}
+
+function getSnapshot(): number {
+  return bundleVersion;
+}
 
 function preload(lang: Language) {
   if (cache.has(lang)) return;
   loaders[lang]().then(bundle => {
     cache.set(lang, { ...en.home, ...bundle.home });
+    bundleVersion++;
     listeners.forEach(fn => fn());
   });
 }
 
 export function useHomeTranslation() {
   const { language } = useI18nStore();
+  useSyncExternalStore(subscribe, getSnapshot);
 
   if (!cache.has(language)) {
     preload(language);

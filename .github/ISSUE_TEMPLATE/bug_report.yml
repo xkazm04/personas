@@ -1,0 +1,111 @@
+name: Bug Report
+description: Report a reproducible bug in Personas Desktop
+title: "[Bug]: "
+labels: ["type:bug", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill out the sections below so we can reproduce and fix the issue quickly.
+
+        **Before you submit:** please search [existing issues](https://github.com/xkazm04/personas/issues?q=is%3Aissue) to make sure this isn't already reported.
+
+        **For security issues:** do NOT file a public bug report. See [SECURITY.md](https://github.com/xkazm04/personas/blob/master/SECURITY.md).
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, concise description of the bug.
+      placeholder: "When I click X, the app crashes / shows Y / does not do Z."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimum steps to reproduce the behavior.
+      placeholder: |
+        1. Open the Vault page
+        2. Click "Add credential"
+        3. Select connector X
+        4. See the error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include any error messages, stack traces, or log output.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (Debian/Ubuntu)
+        - Linux (Fedora/RHEL)
+        - Linux (Arch)
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Found in Settings > About, or the window title. For dev builds, include the commit SHA.
+      placeholder: "0.4.0 or commit 0d89a2c8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Which part of the app is affected? Pick the closest match.
+      options:
+        - Agent / persona editor
+        - Vault / credentials
+        - Triggers (cron, webhook, clipboard, file watcher)
+        - Execution engine / providers
+        - Team canvas / pipelines
+        - Observability dashboard
+        - Deployment (GitHub, GitLab, n8n, cloud)
+        - Desktop integration (tray, notifications, updater)
+        - Internationalization
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Relevant log output from the app. On most platforms logs live under the user data directory — see the troubleshooting section of the README for exact paths.
+        **Please redact any API keys, tokens, or personal information before pasting.**
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, related issues, workarounds, anything else that helps.

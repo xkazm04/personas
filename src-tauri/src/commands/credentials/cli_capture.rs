@@ -71,6 +71,17 @@ struct CaptureSpec {
     token_ttl_seconds: Option<i64>,
     /// Short hint shown when `auth_check` reports the user is not logged in.
     auth_instruction: &'static str,
+    /// Human-readable label for the frontend (e.g. "Google Cloud SDK").
+    display_label: &'static str,
+    /// Markdown snippet with OS-specific install commands, shown when the
+    /// binary is not detected. Never executed automatically.
+    install_hint: &'static str,
+    /// Optional read-only command used by Test Connection / healthcheck to
+    /// verify the captured auth actually works (e.g. `gcloud projects list`).
+    /// When `None`, Test Connection falls back to `auth_check`.
+    verify_step: Option<CliStep>,
+    /// Documentation URL shown alongside the install hint.
+    docs_url: &'static str,
 }
 
 // =============================================================================
@@ -106,6 +117,13 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         ],
         token_ttl_seconds: Some(3600),
         auth_instruction: "Run `gcloud auth login` in a terminal, then retry.",
+        display_label: "Google Cloud SDK",
+        install_hint: "**Windows:** `winget install Google.CloudSDK`\n**macOS:** `brew install --cask google-cloud-sdk`\n**Linux:** See docs for your distro",
+        verify_step: Some(CliStep {
+            cmd: "gcloud",
+            args: &["projects", "list", "--limit=1", "--format=value(projectId)"],
+        }),
+        docs_url: "https://cloud.google.com/sdk/docs/install",
     },
     // GitHub -- long-lived PAT managed by gh.
     CaptureSpec {
@@ -125,6 +143,13 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }],
         token_ttl_seconds: None,
         auth_instruction: "Run `gh auth login` in a terminal, then retry.",
+        display_label: "GitHub CLI",
+        install_hint: "**Windows:** `winget install GitHub.cli`\n**macOS:** `brew install gh`\n**Linux:** `sudo apt install gh` or see docs",
+        verify_step: Some(CliStep {
+            cmd: "gh",
+            args: &["api", "user", "--jq", ".login"],
+        }),
+        docs_url: "https://cli.github.com/",
     },
     // Vercel -- long-lived token from `vercel` CLI login.
     CaptureSpec {
@@ -144,6 +169,10 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }],
         token_ttl_seconds: None,
         auth_instruction: "Run `vercel login` in a terminal, then retry.",
+        display_label: "Vercel CLI",
+        install_hint: "**All platforms:** `npm install -g vercel`",
+        verify_step: Some(CliStep { cmd: "vercel", args: &["whoami"] }),
+        docs_url: "https://vercel.com/docs/cli",
     },
     // Netlify -- long-lived personal access token.
     CaptureSpec {
@@ -163,6 +192,10 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }],
         token_ttl_seconds: None,
         auth_instruction: "Run `netlify login` in a terminal, then retry.",
+        display_label: "Netlify CLI",
+        install_hint: "**All platforms:** `npm install -g netlify-cli`",
+        verify_step: Some(CliStep { cmd: "netlify", args: &["status"] }),
+        docs_url: "https://docs.netlify.com/cli/get-started/",
     },
     // Heroku -- long-lived OAuth token via heroku/authorizations.
     CaptureSpec {
@@ -182,6 +215,108 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }],
         token_ttl_seconds: None,
         auth_instruction: "Run `heroku login` in a terminal, then retry.",
+        display_label: "Heroku CLI",
+        install_hint: "**Windows:** `winget install Heroku.CLI`\n**macOS:** `brew tap heroku/brew && brew install heroku`\n**Linux:** `curl https://cli-assets.heroku.com/install.sh | sh`",
+        verify_step: Some(CliStep { cmd: "heroku", args: &["auth:whoami"] }),
+        docs_url: "https://devcenter.heroku.com/articles/heroku-cli",
+    },
+    // Azure -- short-lived access token via `az account get-access-token`.
+    CaptureSpec {
+        service_type: "azure_cloud",
+        binary: "az",
+        auth_check: CliStep {
+            cmd: "az",
+            args: &["account", "show", "--query", "user.name", "-o", "tsv"],
+        },
+        fields: &[
+            CaptureField {
+                field_key: "client_secret",
+                sensitive: true,
+                step: CliStep {
+                    cmd: "az",
+                    args: &["account", "get-access-token", "--query", "accessToken", "-o", "tsv"],
+                },
+            },
+            CaptureField {
+                field_key: "subscription_id",
+                sensitive: false,
+                step: CliStep {
+                    cmd: "az",
+                    args: &["account", "show", "--query", "id", "-o", "tsv"],
+                },
+            },
+            CaptureField {
+                field_key: "tenant_id",
+                sensitive: false,
+                step: CliStep {
+                    cmd: "az",
+                    args: &["account", "show", "--query", "tenantId", "-o", "tsv"],
+                },
+            },
+            CaptureField {
+                field_key: "client_id",
+                sensitive: false,
+                step: CliStep {
+                    cmd: "az",
+                    args: &["account", "show", "--query", "user.name", "-o", "tsv"],
+                },
+            },
+        ],
+        token_ttl_seconds: Some(3600),
+        auth_instruction: "Run `az login` in a terminal, then retry.",
+        display_label: "Azure CLI",
+        install_hint: "**Windows:** `winget install Microsoft.AzureCLI`\n**macOS:** `brew install azure-cli`\n**Linux:** `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`",
+        verify_step: Some(CliStep {
+            cmd: "az",
+            args: &["account", "show", "--query", "id", "-o", "tsv"],
+        }),
+        docs_url: "https://learn.microsoft.com/en-us/cli/azure/install-azure-cli",
+    },
+    // AWS -- access key + secret captured from default profile credentials.
+    // Unlike OAuth CLIs, aws stores long-lived credentials in ~/.aws/credentials.
+    // We read them via `aws configure get`.
+    CaptureSpec {
+        service_type: "aws_cloud",
+        binary: "aws",
+        auth_check: CliStep {
+            cmd: "aws",
+            args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
+        },
+        fields: &[
+            CaptureField {
+                field_key: "access_key_id",
+                sensitive: true,
+                step: CliStep {
+                    cmd: "aws",
+                    args: &["configure", "get", "aws_access_key_id"],
+                },
+            },
+            CaptureField {
+                field_key: "secret_access_key",
+                sensitive: true,
+                step: CliStep {
+                    cmd: "aws",
+                    args: &["configure", "get", "aws_secret_access_key"],
+                },
+            },
+            CaptureField {
+                field_key: "region",
+                sensitive: false,
+                step: CliStep {
+                    cmd: "aws",
+                    args: &["configure", "get", "region"],
+                },
+            },
+        ],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `aws configure` in a terminal to set credentials, then retry.",
+        display_label: "AWS CLI",
+        install_hint: "**Windows:** `winget install Amazon.AWSCLI`\n**macOS:** `brew install awscli`\n**Linux:** `sudo apt install awscli` or see docs",
+        verify_step: Some(CliStep {
+            cmd: "aws",
+            args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
+        }),
+        docs_url: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
     },
 ];
 
@@ -268,17 +403,22 @@ async fn run_step(
 ) -> Result<String, CliCaptureError> {
     let args: Vec<String> = step.args.iter().map(|a| a.to_string()).collect();
 
-    let mut child = Command::new(bin_path)
-        .args(&args)
+    let mut cmd = Command::new(bin_path);
+    cmd.args(&args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .env_clear()
-        .envs(sanitized_env())
-        .spawn()
-        .map_err(|e| CliCaptureError::CaptureFailed {
-            step: step.cmd.to_string(),
-            detail: format!("spawn failed: {}", e),
-        })?;
+        .envs(sanitized_env());
+    // Prevent empty console windows flashing on Windows.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let mut child = cmd.spawn().map_err(|e| CliCaptureError::CaptureFailed {
+        step: step.cmd.to_string(),
+        detail: format!("spawn failed: {}", e),
+    })?;
 
     let result = timeout(STEP_TIMEOUT, async {
         let mut stdout_reader = child.stdout.take().ok_or(())?;
@@ -485,4 +625,181 @@ pub async fn recapture_for_credential(
         result.fields.len(),
         result.token_ttl_seconds
     ))
+}
+
+// =============================================================================
+// Install / verify commands for the credential modal CLI tab
+// =============================================================================
+
+/// Public metadata for a CaptureSpec that the frontend uses to render the
+/// CLI tab (install hint, docs, auth instruction). Never includes secrets.
+#[derive(Debug, Clone, Serialize)]
+pub struct CliSpecInfo {
+    pub service_type: String,
+    pub binary: String,
+    pub display_label: String,
+    pub install_hint: String,
+    pub auth_instruction: String,
+    pub docs_url: String,
+}
+
+/// Return metadata for every registered CLI spec so the frontend can decide
+/// whether to render a CLI tab for a given connector card. Unlike
+/// [`list_cli_capturable_services`] this does NOT filter by install state --
+/// the frontend needs to know the spec exists even if the binary is missing,
+/// so it can show install instructions.
+#[tauri::command]
+pub async fn list_cli_specs(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CliSpecInfo>, AppError> {
+    require_auth(&state).await?;
+
+    Ok(CAPTURE_SPECS
+        .iter()
+        .map(|s| CliSpecInfo {
+            service_type: s.service_type.to_string(),
+            binary: s.binary.to_string(),
+            display_label: s.display_label.to_string(),
+            install_hint: s.install_hint.to_string(),
+            auth_instruction: s.auth_instruction.to_string(),
+            docs_url: s.docs_url.to_string(),
+        })
+        .collect())
+}
+
+/// Result of checking whether a CLI binary is installed on this machine.
+#[derive(Debug, Clone, Serialize)]
+pub struct CliInstallStatus {
+    pub service_type: String,
+    pub installed: bool,
+    pub binary_path: Option<String>,
+    pub version: Option<String>,
+}
+
+/// Probe whether the CLI for `service_type` is installed and on the allowlist.
+/// Does not attempt auth. Returns install path + a version string when
+/// available (best-effort, 2s timeout).
+#[tauri::command]
+pub async fn cli_check_installed(
+    state: State<'_, Arc<AppState>>,
+    service_type: String,
+) -> Result<CliInstallStatus, AppError> {
+    require_auth(&state).await?;
+
+    let spec = find_spec(&service_type).ok_or(CliCaptureError::UnknownService)?;
+    let binary_name = spec.binary;
+    let bin_path = tokio::task::spawn_blocking(move || resolve_cli_path(binary_name, &[]))
+        .await
+        .unwrap_or(None);
+
+    let Some(path) = bin_path else {
+        return Ok(CliInstallStatus {
+            service_type,
+            installed: false,
+            binary_path: None,
+            version: None,
+        });
+    };
+
+    // Best-effort version probe. We tolerate failure since some CLIs use
+    // `version` instead of `--version`.
+    let version_step = CliStep {
+        cmd: spec.binary,
+        args: &["--version"],
+    };
+    let version = run_step(&path, &version_step)
+        .await
+        .ok()
+        .map(|s| s.lines().next().unwrap_or("").to_string());
+
+    Ok(CliInstallStatus {
+        service_type,
+        installed: true,
+        binary_path: Some(path.to_string_lossy().to_string()),
+        version,
+    })
+}
+
+/// Result of verifying CLI auth (Test Connection).
+#[derive(Debug, Clone, Serialize)]
+pub struct CliVerifyResult {
+    pub service_type: String,
+    pub authenticated: bool,
+    pub identity: Option<String>,
+    pub message: String,
+}
+
+/// Run the auth check + verify_step for `service_type`. Used by the
+/// "Test Connection" button and by the healthcheck engine when a credential
+/// is sourced from CLI capture.
+#[tauri::command]
+pub async fn cli_verify_auth(
+    state: State<'_, Arc<AppState>>,
+    service_type: String,
+) -> Result<CliVerifyResult, AppError> {
+    require_auth(&state).await?;
+    Ok(run_verify(&service_type).await)
+}
+
+/// Internal verify helper -- callable from both the Tauri command and the
+/// healthcheck engine without going through the Tauri state machinery.
+pub(crate) async fn run_verify(service_type: &str) -> CliVerifyResult {
+    let Some(spec) = find_spec(service_type) else {
+        return CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: format!("No CLI spec registered for `{}`", service_type),
+        };
+    };
+
+    let binary_name = spec.binary;
+    let bin_path = tokio::task::spawn_blocking(move || resolve_cli_path(binary_name, &[]))
+        .await
+        .unwrap_or(None);
+
+    let Some(path) = bin_path else {
+        return CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: format!("`{}` not installed or not on the allowlist", spec.binary),
+        };
+    };
+
+    // Auth check first so an unauthenticated state produces a targeted message.
+    match run_step(&path, &spec.auth_check).await {
+        Ok(identity) => {
+            // If the spec has a dedicated verify step, run it too.
+            if let Some(vs) = spec.verify_step.as_ref() {
+                match run_step(&path, vs).await {
+                    Ok(_) => CliVerifyResult {
+                        service_type: service_type.to_string(),
+                        authenticated: true,
+                        identity: Some(identity.clone()),
+                        message: format!("Authenticated as {}", identity),
+                    },
+                    Err(e) => CliVerifyResult {
+                        service_type: service_type.to_string(),
+                        authenticated: false,
+                        identity: Some(identity),
+                        message: format!("Auth check passed but verify step failed: {}", e),
+                    },
+                }
+            } else {
+                CliVerifyResult {
+                    service_type: service_type.to_string(),
+                    authenticated: true,
+                    identity: Some(identity.clone()),
+                    message: format!("Authenticated as {}", identity),
+                }
+            }
+        }
+        Err(_) => CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: spec.auth_instruction.to_string(),
+        },
+    }
 }

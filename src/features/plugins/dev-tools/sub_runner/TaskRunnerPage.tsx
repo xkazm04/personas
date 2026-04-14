@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
-  Zap, Layers, Building2,
+  Zap, Layers, Building2, AlertTriangle,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -36,6 +36,7 @@ interface RunnerTask {
   output?: string;
   createdAt: string;
   depth: string;
+  contextWarnings?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -230,14 +231,18 @@ function TaskCard({
   index: number;
   outputLines: string[];
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { staggerDelay: _staggerDelay } = useMotion();
   const phaseCfg = PHASE_CONFIG[task.phase];
   const hasOutput = outputLines.length > 0 || task.output;
+  const hasWarnings = task.contextWarnings && task.contextWarnings.length > 0;
 
   return (
     <div
-      className="animate-fade-slide-in border border-primary/10 rounded-xl overflow-hidden hover:border-primary/20 transition-colors"
+      className={`animate-fade-slide-in border rounded-xl overflow-hidden transition-colors ${
+        hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
+      }`}
     >
       <div className="flex items-center gap-3 px-4 py-3">
         <StatusBadge status={task.status} />
@@ -245,6 +250,14 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-medium text-foreground/80 truncate">{task.title}</h4>
+            {hasWarnings && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full border text-amber-400 border-amber-500/25 bg-amber-500/10"
+                title={task.contextWarnings!.join('\n')}
+              >
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {t.plugins.dev_tools.partial_context}
+              </span>
+            )}
             {task.depth && task.depth !== 'quick' && (
               <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${
                 task.depth === 'campaign'
@@ -298,6 +311,21 @@ function TaskCard({
         </div>
       )}
 
+      {/* Context warnings banner */}
+      {hasWarnings && expanded && (
+        <div className="mx-4 mb-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <AlertTriangle className="w-3 h-3 text-amber-400" />
+            <span className="text-[10px] font-medium text-amber-400">{t.plugins.dev_tools.context_warnings_title}</span>
+          </div>
+          <ul className="space-y-0.5">
+            {task.contextWarnings!.map((w, i) => (
+              <li key={i} className="text-[10px] text-amber-300/70 font-mono">{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Expanded output */}
       {expanded && hasOutput && (
           <div
@@ -334,9 +362,12 @@ export default function TaskRunnerPage() {
   const fetchTasks = useSystemStore((s) => s.fetchTasks);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const taskOutputBuffers = useSystemStore((s) => s.taskOutputBuffers);
-  const appendTaskOutput = useSystemStore((s) => s.appendTaskOutput);
 
   const [showModal, setShowModal] = useState(false);
+  const [taskWarnings, setTaskWarnings] = useState<Record<string, string[]>>({});
+
+  const activeProjectIdRef = useRef(activeProjectId);
+  activeProjectIdRef.current = activeProjectId;
 
   // Map DevTask to RunnerTask view model
   const tasks: RunnerTask[] = storeTasks.map((t) => ({
@@ -351,6 +382,7 @@ export default function TaskRunnerPage() {
     output: undefined,
     createdAt: t.created_at,
     depth: t.depth ?? 'quick',
+    contextWarnings: taskWarnings[t.id],
   }));
 
   // Fetch tasks on mount and when project changes
@@ -360,23 +392,25 @@ export default function TaskRunnerPage() {
     }
   }, [activeProjectId, fetchTasks]);
 
-  // Event listeners for task execution streaming
+  // Event listeners for task execution streaming — mount once to prevent accumulation
   useEffect(() => {
     const outputUn = listen<{ job_id: string; line: string }>(EventName.TASK_EXEC_OUTPUT, (event) => {
       const { job_id, line } = event.payload;
-      appendTaskOutput(job_id, line);
+      useSystemStore.getState().appendTaskOutput(job_id, line);
     });
 
-    const statusUn = listen<{ job_id: string; status: string; error?: string }>(EventName.TASK_EXEC_STATUS, (event) => {
-      const { job_id: _job_id, status: _status } = event.payload;
-      // Refetch tasks to get updated status
-      if (activeProjectId) fetchTasks(activeProjectId);
+    const statusUn = listen<{ job_id: string; status: string; error?: string }>(EventName.TASK_EXEC_STATUS, () => {
+      const pid = activeProjectIdRef.current;
+      if (pid) useSystemStore.getState().fetchTasks(pid);
     });
 
-    const completeUn = listen<{ task_id: string; output_lines: number }>(EventName.TASK_EXEC_COMPLETE, () => {
-      // Refetch tasks to get final state
-      if (activeProjectId) fetchTasks(activeProjectId);
-      // End process in activity drawer if no more running tasks
+    const completeUn = listen<{ task_id: string; output_lines: number; context_warnings?: string[] }>(EventName.TASK_EXEC_COMPLETE, (event) => {
+      const { task_id, context_warnings } = event.payload;
+      if (context_warnings && context_warnings.length > 0) {
+        setTaskWarnings((prev) => ({ ...prev, [task_id]: context_warnings }));
+      }
+      const pid = activeProjectIdRef.current;
+      if (pid) useSystemStore.getState().fetchTasks(pid);
       setTimeout(() => {
         const store = useSystemStore.getState();
         const stillRunning = store.tasks.some((t) => t.status === 'running');
@@ -389,7 +423,7 @@ export default function TaskRunnerPage() {
       statusUn.then(fn => fn());
       completeUn.then(fn => fn());
     };
-  }, [activeProjectId, fetchTasks, appendTaskOutput]);
+  }, []);
 
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const runningCount = tasks.filter((t) => t.status === 'running').length;

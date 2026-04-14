@@ -909,9 +909,16 @@
       {
         "id": "expense_sheet",
         "question": "What is the Google Sheets URL for your expense tracking spreadsheet?",
-        "type": "text",
-        "placeholder": "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit",
-        "helpText": "The agent will append expense rows to this sheet. It will create header rows automatically if the sheet is empty."
+        "type": "select",
+        "helpText": "The agent will append expense rows to this sheet. It will create header rows automatically if the sheet is empty.",
+        "vault_category": "database",
+        "option_service_types": [
+          "google_sheets"
+        ],
+        "dynamic_source": {
+          "service_type": "google_sheets",
+          "operation": "list_sheets"
+        }
       },
       {
         "id": "budget_monthly",

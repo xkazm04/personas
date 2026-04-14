@@ -89,8 +89,8 @@ pub async fn genome_start_breeding(
         }
     }
 
-    let objective_json =
-        serde_json::to_string(&fitness_objective).unwrap_or_else(|_| "{}".into());
+    let objective_json = serde_json::to_string(&fitness_objective)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize fitness objective: {e}")))?;
 
     let input = CreateBreedingRunInput {
         project_id,

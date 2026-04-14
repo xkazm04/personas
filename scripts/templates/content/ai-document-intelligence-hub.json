@@ -894,10 +894,19 @@
         "id": "aq_configuration_1",
         "category": "configuration",
         "question": "Which Google Drive folder(s) should be monitored? (names or IDs, comma-separated)",
-        "type": "text",
+        "type": "select",
         "default": "Team Drive root",
         "context": "Scopes the polling loop to avoid processing unrelated personal or archived folders and reduces API quota usage.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "productivity",
+        "option_service_types": [
+          "google_workspace_oauth_template"
+        ],
+        "dynamic_source": {
+          "service_type": "google_workspace_oauth_template",
+          "operation": "list_drive_folders",
+          "multi": true
+        }
       },
       {
         "id": "aq_configuration_2",

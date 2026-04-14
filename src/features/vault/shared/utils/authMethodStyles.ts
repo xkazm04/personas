@@ -1,8 +1,10 @@
-import { Key, User, Bot, Shield, Server, Lock, Database, Link2, KeyRound } from 'lucide-react';
+import { Key, User, Bot, Shield, Server, Lock, Database, Link2, KeyRound, Terminal } from 'lucide-react';
 import type { ConnectorAuthMethod } from '@/lib/types/types';
 
 /** Returns Tailwind classes for auth method badge styling. */
 export function getAuthBadgeClasses(method: ConnectorAuthMethod): string {
+  if (method.type === 'cli')
+    return 'bg-amber-500/10 border-amber-500/20 text-amber-400';
   if (method.type === 'mcp')
     return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400';
   if (method.type === 'oauth' || method.label.toLowerCase() === 'oauth')
@@ -18,6 +20,7 @@ export function getAuthBadgeClasses(method: ConnectorAuthMethod): string {
 
 /** Map auth type id -> lucide icon component. */
 export function getAuthIcon(method: ConnectorAuthMethod): typeof Key {
+  if (method.type === 'cli') return Terminal;
   if (method.type === 'mcp') return Server;
   if (method.type === 'oauth' || method.label.toLowerCase() === 'oauth') return Shield;
 

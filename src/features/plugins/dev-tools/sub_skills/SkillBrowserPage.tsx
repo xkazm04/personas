@@ -77,6 +77,7 @@ export default function SkillBrowserPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fileLoading, setFileLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Fetch skills
   const fetchSkills = useCallback(async () => {
@@ -97,6 +98,7 @@ export default function SkillBrowserPage() {
   const loadFile = useCallback(async (skill: SkillEntry, fileName: string) => {
     setFileLoading(true);
     setEditing(false);
+    setLoadFailed(false);
     try {
       const result = await devApi.readSkillFile(skill.name, fileName);
       setFileContent(result.content);
@@ -104,6 +106,7 @@ export default function SkillBrowserPage() {
     } catch {
       setFileContent('');
       setEditContent('');
+      setLoadFailed(true);
       addToast(`Failed to read ${skill.name}/${fileName}`, 'error');
     } finally {
       setFileLoading(false);
@@ -159,7 +162,7 @@ export default function SkillBrowserPage() {
             onClick={fetchSkills}
             disabled={loading}
           >
-            Refresh
+            {t.common.refresh}
           </Button>
         }
       />
@@ -189,7 +192,7 @@ export default function SkillBrowserPage() {
                 <div className="text-center py-8">
                   <AlertCircle className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground/50">
-                    {search ? 'No matching skills' : 'No skills found'}
+                    {search ? t.plugins.dev_tools.no_matching_skills : t.plugins.dev_tools.no_skills_found}
                   </p>
                 </div>
               ) : (
@@ -210,7 +213,7 @@ export default function SkillBrowserPage() {
             {!selectedSkill ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                 <FolderOpen className="w-10 h-10 text-muted-foreground/20 mb-3" />
-                <p className="typo-body text-foreground/40">Select a skill to view its contents</p>
+                <p className="typo-body text-foreground/40">{t.plugins.dev_tools.select_skill}</p>
               </div>
             ) : (
               <>
@@ -257,7 +260,7 @@ export default function SkillBrowserPage() {
                           loading={saving}
                           disabled={editContent === fileContent}
                         >
-                          Save
+                          {t.plugins.dev_tools.save}
                         </Button>
                       </>
                     ) : (
@@ -265,8 +268,9 @@ export default function SkillBrowserPage() {
                         variant="secondary"
                         size="sm"
                         onClick={() => setEditing(true)}
+                        disabled={loadFailed}
                       >
-                        Edit
+                        {t.plugins.dev_tools.edit}
                       </Button>
                     )}
                   </div>
@@ -274,6 +278,15 @@ export default function SkillBrowserPage() {
 
                 {/* Content area */}
                 <div className="flex-1 overflow-y-auto p-4">
+                  {loadFailed && !fileLoading && (
+                    <div className="flex items-center gap-2 p-3 mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <div>
+                        <p className="font-medium">{t.plugins.dev_tools.file_load_failed}</p>
+                        <p className="text-amber-200/60 mt-0.5">{t.plugins.dev_tools.file_load_failed_hint}</p>
+                      </div>
+                    </div>
+                  )}
                   {fileLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground/40" />
@@ -287,11 +300,11 @@ export default function SkillBrowserPage() {
                     />
                   ) : fileContent ? (
                     <MarkdownRenderer content={fileContent} />
-                  ) : (
+                  ) : !loadFailed ? (
                     <p className="text-sm text-muted-foreground/40 text-center py-8">
-                      File is empty or could not be loaded.
+                      {t.plugins.dev_tools.file_empty}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </>
             )}

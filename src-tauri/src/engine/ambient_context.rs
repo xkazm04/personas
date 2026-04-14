@@ -604,9 +604,9 @@ const VALIDATION_SCREENSHOT_MAX_AGE: std::time::Duration =
 ///   3. Agent reads the resulting PNG via its multimodal Read path
 ///   4. Agent confirms the change worked or iterates
 ///
-/// TODO(per-window-capture): full-screen fallback is v1 behavior. When
-/// per-window captures become reliable on all platforms (xcap 0.7 is
-/// inconsistent on Wayland), widen the match logic.
+/// NOTE: full-screen capture is the current fallback. `xcap 0.7`
+/// per-window captures are inconsistent on Wayland, so the match logic
+/// stays conservative until upstream stabilizes.
 #[cfg(feature = "desktop")]
 pub async fn capture_validation_screenshot(
     target_window_title: Option<&str>,

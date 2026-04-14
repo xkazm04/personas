@@ -749,10 +749,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "Which Linear team and project should feedback issues be created under?",
-        "type": "text",
+        "type": "select",
         "default": "e.g., Team: Product / Project: Customer Feedback",
         "context": "Ensures issues land in the right Linear workspace context and inherit the correct workflow states and labels.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "project-mgmt",
+        "option_service_types": [
+          "linear"
+        ],
+        "dynamic_source": {
+          "service_type": "linear",
+          "operation": "list_teams"
+        }
       },
       {
         "id": "aq_memory_1",

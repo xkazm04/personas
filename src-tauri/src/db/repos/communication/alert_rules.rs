@@ -253,10 +253,13 @@ pub fn create_fired_alert(db: &DbPool, alert: &FiredAlert) -> Result<(), AppErro
 pub fn dismiss_fired_alert(db: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("alert_rules", "alert_rules::dismiss_fired_alert", {
         let conn = db.get()?;
-        conn.execute(
+        let changed = conn.execute(
             "UPDATE fired_alerts SET dismissed = 1 WHERE id = ?1",
             [id],
         )?;
+        if changed == 0 {
+            return Err(AppError::NotFound(format!("Fired alert {} not found", id)));
+        }
         Ok(())
     })
 }

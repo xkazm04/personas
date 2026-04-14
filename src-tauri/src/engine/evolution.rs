@@ -13,7 +13,7 @@ use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::genome::{
-    self, breed_generation, compute_fitness, FitnessObjective, FitnessScore, PersonaGenome,
+    self, breed_generation, compute_fitness, parse_fitness_objective, FitnessScore, PersonaGenome,
 };
 use super::test_runner::{generate_scenarios, execute_scenario, score_result, TestModelConfig};
 
@@ -73,6 +73,10 @@ pub struct EvolutionCycleSummary {
     /// Whether all status updates succeeded during the cycle.
     /// `false` means the frontend may have shown stale status at some point.
     pub status_reliable: bool,
+    /// Warnings encountered during the cycle (e.g. fitness objective fallback).
+    pub warnings: Vec<String>,
+    /// Raw fitness objective JSON from the policy, preserved for forensic debugging.
+    pub raw_fitness_objective: Option<String>,
 }
 
 // =============================================================================
@@ -156,8 +160,21 @@ pub async fn run_evolution_cycle(
     let incumbent_genome = PersonaGenome::from_persona(&persona, tool_ids);
 
     // Compute incumbent fitness
-    let objective: FitnessObjective = serde_json::from_str(&policy.fitness_objective)
-        .unwrap_or_default();
+    let (objective, objective_warnings) = parse_fitness_objective(&policy.fitness_objective);
+    if !objective_warnings.is_empty() {
+        let warning_msg = objective_warnings.join("; ");
+        tracing::warn!(
+            cycle_id = %cycle_id,
+            persona_id = %persona_id,
+            raw_objective = %policy.fitness_objective,
+            "Evolution cycle using fitness objective with warnings: {warning_msg}",
+        );
+        // Persist warning in cycle error field so frontend can show it
+        let _ = evolution_repo::update_cycle_status(
+            &pool, &cycle_id, EvolutionCycleStatus::Breeding,
+            Some(&format!("Warning: {warning_msg}")),
+        );
+    }
     let incumbent_fitness = compute_fitness(&pool, &persona_id, &objective);
 
     // Create variants by self-breeding (cloning + mutation)
@@ -327,6 +344,8 @@ pub async fn run_evolution_cycle(
         promoted,
         promoted_persona_id: if promoted { Some(persona_id.clone()) } else { None },
         status_reliable,
+        warnings: objective_warnings,
+        raw_fitness_objective: Some(policy.fitness_objective.clone()),
     };
 
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();

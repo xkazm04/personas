@@ -10,7 +10,9 @@
 //!
 //! - `Http` — renders a path template (interpolating credential fields and
 //!   caller-supplied params), routes the request through `api_proxy`, and
-//!   extracts values from the JSON response via simple dotted paths.
+//!   extracts values from the JSON response via simple dotted paths. Supports
+//!   optional body (for POST / GraphQL) and static extra headers (e.g.
+//!   `Notion-Version`).
 //! - `LocalCodebases` — bypasses the HTTP proxy and reads from the
 //!   `dev_projects` table directly (codebases is a builtin bridge connector,
 //!   not an HTTP API).
@@ -54,6 +56,13 @@ enum DiscoveryOp {
         /// Path relative to the credential's resolved base URL. May embed
         /// `{{field}}` (credential field) or `{{param.x}}` (caller-supplied).
         path: &'static str,
+        /// Optional static JSON body for POST/PATCH requests. Sent verbatim.
+        /// Used by Notion search (`POST /v1/search` with filter body) and
+        /// GraphQL endpoints (Linear, Monday) whose query lives in the body.
+        body: Option<&'static str>,
+        /// Static extra headers beyond the credential strategy's auth header.
+        /// Example: `Notion-Version: 2022-06-28` for the Notion API.
+        headers: &'static [(&'static str, &'static str)],
         /// Dotted path to the array root in the response. `None` means the
         /// response body itself is the array.
         items_path: Option<&'static str>,
@@ -76,29 +85,28 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     let mut m: HashMap<RegistryKey, DiscoveryOp> = HashMap::new();
 
     // ---------------- Sentry ----------------
-    //
-    // GET /api/0/organizations/{org}/projects/ →
-    //   [{ id, slug, name, platform, ... }, ...]
+    // GET /api/0/organizations/{org}/projects/ → [{ id, slug, name, ... }, ...]
     m.insert(
         ("sentry", "list_projects"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/api/0/organizations/{{organization_slug}}/projects/",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "slug",
             label_path: Some("name"),
             sublabel_path: Some("platform"),
         },
     );
-    //
-    // GET /api/0/organizations/{org}/tags/environment/values/ →
-    //   { results: [{ key, name, value, count, ... }, ...] }
-    // (Sentry's tag-values endpoint returns a paginated object.)
+    // GET /api/0/organizations/{org}/tags/environment/values/
     m.insert(
         ("sentry", "list_environments"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/api/0/organizations/{{organization_slug}}/tags/environment/values/",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "value",
             label_path: Some("name"),
@@ -107,36 +115,39 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- GitHub ----------------
-    // GET /user/repos → [{ id, name, full_name, description, ... }, ...]
     m.insert(
         ("github", "list_repos"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/user/repos?per_page=100&sort=updated",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "full_name",
             label_path: Some("full_name"),
             sublabel_path: Some("description"),
         },
     );
-    // GET /user/orgs → [{ login, ... }, ...]
     m.insert(
         ("github", "list_orgs"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/user/orgs?per_page=100",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "login",
             label_path: Some("login"),
             sublabel_path: None,
         },
     );
-    // Alias for GitHub Actions credentials (same API surface).
     m.insert(
         ("github_actions", "list_repos"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/user/repos?per_page=100&sort=updated",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "full_name",
             label_path: Some("full_name"),
@@ -145,12 +156,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Slack ----------------
-    // GET /conversations.list → { channels: [{ id, name, is_private, ... }] }
     m.insert(
         ("slack", "list_channels"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/conversations.list?types=public_channel,private_channel&limit=200&exclude_archived=true",
+            body: None,
+            headers: &[],
             items_path: Some("channels"),
             value_path: "name",
             label_path: Some("name"),
@@ -159,23 +171,194 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Notion ----------------
-    // POST /v1/search filtered to databases — but we use GET search via
-    // proxy doesn't support POST body in discovery yet. Use the v1/databases
-    // search endpoint via GET; if Notion ever requires POST we'll extend.
-    // Notion's actual search is POST-only, so we use the (deprecated but still
-    // working) `databases` listing for compatibility:
-    // GET /v1/databases (legacy endpoint, returns { results: [...], ... })
-    // Skipped because it's deprecated and Notion requires POST. Templates can
-    // still ask the user to paste a database id until POST-body discovery
-    // lands. (Phase 2 work.)
+    // POST /v1/search filtered to databases. Notion's search endpoint is
+    // POST-only and requires the Notion-Version header; both are served by
+    // the body + headers fields on the Http op.
+    m.insert(
+        ("notion", "list_databases"),
+        DiscoveryOp::Http {
+            method: "POST",
+            path: "/v1/search",
+            body: Some(r#"{"filter":{"value":"database","property":"object"},"page_size":100}"#),
+            headers: &[("Notion-Version", "2022-06-28")],
+            items_path: Some("results"),
+            value_path: "id",
+            // Notion titles are an array of rich_text blocks. We walk to the
+            // first element's `plain_text` which is populated for unstyled titles.
+            label_path: Some("title.0.plain_text"),
+            sublabel_path: None,
+        },
+    );
+
+    // ---------------- Jira ----------------
+    // Jira credentials carry `domain` (e.g. `your-company.atlassian.net`) so
+    // api_proxy constructs `https://{domain}` as the base URL. Uses Basic
+    // Auth (email:api_token) via the JiraStrategy registered in
+    // connector_strategy.rs.
+    m.insert(
+        ("jira", "list_projects"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/rest/api/3/project/search?maxResults=100&expand=description",
+            body: None,
+            headers: &[("Accept", "application/json")],
+            items_path: Some("values"),
+            value_path: "key",
+            label_path: Some("name"),
+            sublabel_path: Some("projectTypeKey"),
+        },
+    );
+
+    // ---------------- Confluence ----------------
+    // Same Atlassian Basic Auth + domain-based base URL as Jira.
+    m.insert(
+        ("confluence", "list_spaces"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/wiki/rest/api/space?limit=100",
+            body: None,
+            headers: &[("Accept", "application/json")],
+            items_path: Some("results"),
+            value_path: "key",
+            label_path: Some("name"),
+            sublabel_path: Some("type"),
+        },
+    );
+
+    // ---------------- Linear ----------------
+    // Linear is GraphQL-only; we POST the query as a JSON body.
+    // Response shape: { data: { teams: { nodes: [{ id, name, ... }] } } }
+    m.insert(
+        ("linear", "list_teams"),
+        DiscoveryOp::Http {
+            method: "POST",
+            path: "/graphql",
+            body: Some(r#"{"query":"{ teams(first: 100) { nodes { id name key } } }"}"#),
+            headers: &[],
+            items_path: Some("data.teams.nodes"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("key"),
+        },
+    );
+    m.insert(
+        ("linear", "list_projects"),
+        DiscoveryOp::Http {
+            method: "POST",
+            path: "/graphql",
+            body: Some(r#"{"query":"{ projects(first: 100) { nodes { id name state } } }"}"#),
+            headers: &[],
+            items_path: Some("data.projects.nodes"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("state"),
+        },
+    );
+
+    // ---------------- Monday.com ----------------
+    // Monday also GraphQL-only. Auth field is `api_key_v2` — see the
+    // TOKEN_KEYS extension in connector_strategy.rs so the default resolver
+    // finds it.
+    m.insert(
+        ("monday_com", "list_boards"),
+        DiscoveryOp::Http {
+            method: "POST",
+            path: "/v2",
+            body: Some(r#"{"query":"{ boards(limit: 100) { id name state } }"}"#),
+            headers: &[],
+            items_path: Some("data.boards"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("state"),
+        },
+    );
+    // Also register under "monday" for credentials created via older code
+    // paths that use the short name.
+    m.insert(
+        ("monday", "list_boards"),
+        DiscoveryOp::Http {
+            method: "POST",
+            path: "/v2",
+            body: Some(r#"{"query":"{ boards(limit: 100) { id name state } }"}"#),
+            headers: &[],
+            items_path: Some("data.boards"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("state"),
+        },
+    );
+
+    // ---------------- Google Drive ----------------
+    // GET /drive/v3/files?q=mimeType='application/vnd.google-apps.folder'
+    // Auth via GoogleOAuthStrategy (handles refresh). Credentials have no
+    // fields locally — tokens live in the OAuth session store.
+    // service_type aliases: multiple Google credentials exist, we support
+    // google_workspace_oauth_template (the unified entry) as well as the
+    // specific google_sheets and gmail service types.
+    const DRIVE_FOLDERS_Q: &str =
+        "/drive/v3/files?q=mimeType%3D%27application%2Fvnd.google-apps.folder%27\
+         +and+trashed%3Dfalse&fields=files(id,name,parents)&pageSize=100";
+    const DRIVE_SHEETS_Q: &str =
+        "/drive/v3/files?q=mimeType%3D%27application%2Fvnd.google-apps.spreadsheet%27\
+         +and+trashed%3Dfalse&fields=files(id,name,modifiedTime)&pageSize=100";
+
+    for svc in ["google_workspace_oauth_template", "google_sheets", "gmail"].iter() {
+        m.insert(
+            (svc, "list_drive_folders"),
+            DiscoveryOp::Http {
+                method: "GET",
+                path: DRIVE_FOLDERS_Q,
+                body: None,
+                headers: &[],
+                items_path: Some("files"),
+                value_path: "id",
+                label_path: Some("name"),
+                sublabel_path: None,
+            },
+        );
+        m.insert(
+            (svc, "list_sheets"),
+            DiscoveryOp::Http {
+                method: "GET",
+                path: DRIVE_SHEETS_Q,
+                body: None,
+                headers: &[],
+                items_path: Some("files"),
+                value_path: "id",
+                label_path: Some("name"),
+                sublabel_path: Some("modifiedTime"),
+            },
+        );
+    }
+
+    // ---------------- Gmail ----------------
+    // GET /gmail/v1/users/me/labels → { labels: [{ id, name, type, ... }] }
+    // Registered under both `gmail` and the unified Google template so either
+    // credential works.
+    for svc in ["gmail", "google_workspace_oauth_template"].iter() {
+        m.insert(
+            (svc, "list_gmail_labels"),
+            DiscoveryOp::Http {
+                method: "GET",
+                path: "/gmail/v1/users/me/labels",
+                body: None,
+                headers: &[],
+                items_path: Some("labels"),
+                value_path: "name",
+                label_path: Some("name"),
+                sublabel_path: Some("type"),
+            },
+        );
+    }
 
     // ---------------- Airtable ----------------
-    // GET /v0/meta/bases → { bases: [{ id, name, permissionLevel }] }
     m.insert(
         ("airtable", "list_bases"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/v0/meta/bases",
+            body: None,
+            headers: &[],
             items_path: Some("bases"),
             value_path: "id",
             label_path: Some("name"),
@@ -184,24 +367,26 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Asana ----------------
-    // GET /workspaces → { data: [{ gid, name }] }
     m.insert(
         ("asana", "list_workspaces"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/workspaces?opt_fields=name&limit=100",
+            body: None,
+            headers: &[],
             items_path: Some("data"),
             value_path: "gid",
             label_path: Some("name"),
             sublabel_path: None,
         },
     );
-    // GET /projects → { data: [{ gid, name }] }
     m.insert(
         ("asana", "list_projects"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/projects?opt_fields=name,owner&limit=100",
+            body: None,
+            headers: &[],
             items_path: Some("data"),
             value_path: "gid",
             label_path: Some("name"),
@@ -210,12 +395,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- ClickUp ----------------
-    // GET /team → { teams: [{ id, name, ... }] }
     m.insert(
         ("clickup", "list_teams"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/team",
+            body: None,
+            headers: &[],
             items_path: Some("teams"),
             value_path: "id",
             label_path: Some("name"),
@@ -224,12 +410,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Netlify ----------------
-    // GET /api/v1/sites → [{ id, name, url, ... }]
     m.insert(
         ("netlify", "list_sites"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/api/v1/sites?per_page=100",
+            body: None,
+            headers: &[],
             items_path: None,
             value_path: "name",
             label_path: Some("name"),
@@ -238,12 +425,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Vercel ----------------
-    // GET /v9/projects → { projects: [{ id, name, ... }], pagination }
     m.insert(
         ("vercel", "list_projects"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/v9/projects?limit=100",
+            body: None,
+            headers: &[],
             items_path: Some("projects"),
             value_path: "name",
             label_path: Some("name"),
@@ -252,12 +440,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- Cloudflare ----------------
-    // GET /zones → { result: [{ id, name, status }], success, ... }
     m.insert(
         ("cloudflare", "list_zones"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/zones?per_page=50",
+            body: None,
+            headers: &[],
             items_path: Some("result"),
             value_path: "name",
             label_path: Some("name"),
@@ -265,17 +454,14 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
         },
     );
 
-    // ---------------- Linear ----------------
-    // Linear is GraphQL-only — discovery deferred until POST-body support
-    // lands in the discovery engine. Until then, Linear questions stay text.
-
     // ---------------- Neon ----------------
-    // GET /projects → { projects: [{ id, name, region_id, ... }] }
     m.insert(
         ("neon", "list_projects"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/projects",
+            body: None,
+            headers: &[],
             items_path: Some("projects"),
             value_path: "id",
             label_path: Some("name"),
@@ -284,14 +470,13 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- BetterStack ----------------
-    // GET /api/v2/monitors → { data: [{ id, attributes: { url, ... } }] }
-    // Note: BetterStack's response shape uses JSON:API style — `attributes`
-    // is nested. Our extract_string walks dot paths so this works.
     m.insert(
         ("betterstack", "list_monitors"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/api/v2/monitors?per_page=50",
+            body: None,
+            headers: &[],
             items_path: Some("data"),
             value_path: "id",
             label_path: Some("attributes.url"),
@@ -300,15 +485,44 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
     );
 
     // ---------------- PostHog ----------------
-    // GET /api/projects/ → { results: [{ id, name, ... }] }
     m.insert(
         ("posthog", "list_projects"),
         DiscoveryOp::Http {
             method: "GET",
             path: "/api/projects/",
+            body: None,
+            headers: &[],
             items_path: Some("results"),
             value_path: "id",
             label_path: Some("name"),
+            sublabel_path: None,
+        },
+    );
+
+    // ---------------- HubSpot ----------------
+    m.insert(
+        ("hubspot", "list_deal_pipelines"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/crm/v3/pipelines/deals",
+            body: None,
+            headers: &[],
+            items_path: Some("results"),
+            value_path: "id",
+            label_path: Some("label"),
+            sublabel_path: None,
+        },
+    );
+    m.insert(
+        ("hubspot", "list_ticket_pipelines"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/crm/v3/pipelines/tickets",
+            body: None,
+            headers: &[],
+            items_path: Some("results"),
+            value_path: "id",
+            label_path: Some("label"),
             sublabel_path: None,
         },
     );
@@ -358,13 +572,13 @@ pub async fn discover_resources(
         DiscoveryOp::Http {
             method,
             path,
+            body,
+            headers,
             items_path,
             value_path,
             label_path,
             sublabel_path,
         } => {
-            // Codebases is the only op that ignores the credential; every
-            // other op requires a real credential.
             if credential_id.is_empty() {
                 return Err(AppError::Validation(
                     "Discovery op requires a credential_id".into(),
@@ -372,8 +586,6 @@ pub async fn discover_resources(
             }
             let credential = cred_repo::get_by_id(pool, credential_id)?;
 
-            // Guard against mismatched service_type: the registry key says
-            // "sentry" so the credential must actually be a Sentry credential.
             if credential.service_type != *service_type {
                 return Err(AppError::Validation(format!(
                     "Credential service_type '{}' does not match discovery op '{}'",
@@ -384,13 +596,19 @@ pub async fn discover_resources(
             let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
             let rendered_path = interpolate(path, &fields, &params)?;
 
+            let mut custom_headers: HashMap<String, String> = HashMap::new();
+            for (k, v) in headers.iter() {
+                custom_headers.insert((*k).to_string(), (*v).to_string());
+            }
+            let body_arg = body.map(|s| s.to_string());
+
             let response = super::api_proxy::execute_api_request(
                 pool,
                 credential_id,
                 method,
                 &rendered_path,
-                HashMap::new(),
-                None,
+                custom_headers,
+                body_arg,
             )
             .await?;
 
@@ -447,8 +665,9 @@ pub async fn discover_resources(
 
 /// Interpolate `{{field}}` and `{{param.x}}` tokens in a path template.
 ///
-/// Rejects any resolved value that contains `/` or control characters so a
-/// malicious credential field can't break out of the intended path segment.
+/// Rejects any resolved value that contains `/`, `?`, `#`, or control
+/// characters so a malicious credential field can't break out of the
+/// intended path segment.
 fn interpolate(
     template: &str,
     fields: &HashMap<String, String>,
@@ -498,11 +717,17 @@ fn interpolate(
     Ok(out)
 }
 
-/// Walk a dotted path through a JSON value.
+/// Walk a dotted path through a JSON value. Numeric segments index into
+/// arrays (so `title.0.plain_text` walks a Notion rich-text title).
 fn extract_path<'a>(val: &'a serde_json::Value, path: &str) -> Option<&'a serde_json::Value> {
     let mut cur = val;
     for part in path.split('.') {
-        cur = cur.get(part)?;
+        // Array index (all-digit segment) — walk into the N-th element.
+        if let Ok(idx) = part.parse::<usize>() {
+            cur = cur.get(idx)?;
+        } else {
+            cur = cur.get(part)?;
+        }
     }
     Some(cur)
 }
@@ -566,5 +791,19 @@ mod tests {
         assert_eq!(extract_string(&v, "project.slug").as_deref(), Some("web-api"));
         assert_eq!(extract_string(&v, "project.meta.count").as_deref(), Some("42"));
         assert_eq!(extract_string(&v, "missing"), None);
+    }
+
+    #[test]
+    fn extract_path_walks_array_indices() {
+        // Notion title shape: title[0].plain_text
+        let v: serde_json::Value = serde_json::json!({
+            "title": [
+                { "plain_text": "My Database", "type": "text" }
+            ]
+        });
+        assert_eq!(
+            extract_string(&v, "title.0.plain_text").as_deref(),
+            Some("My Database")
+        );
     }
 }

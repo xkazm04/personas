@@ -811,9 +811,17 @@
       {
         "id": "gmail_label",
         "question": "What Gmail label will you use for contracts submitted for review?",
-        "type": "text",
+        "type": "select",
         "default": "contract-review",
-        "help_text": "Create this label in Gmail and apply it to emails containing contracts you want analyzed."
+        "help_text": "Create this label in Gmail and apply it to emails containing contracts you want analyzed.",
+        "vault_category": "email",
+        "option_service_types": [
+          "gmail"
+        ],
+        "dynamic_source": {
+          "service_type": "gmail",
+          "operation": "list_gmail_labels"
+        }
       },
       {
         "id": "reminder_recipients",

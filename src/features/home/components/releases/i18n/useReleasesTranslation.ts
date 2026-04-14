@@ -11,6 +11,7 @@
  * non-English files start as English placeholders with `// TODO(i18n-XX)`
  * markers — keep that pattern when extending.
  */
+import { useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { en } from './en';
 
@@ -37,17 +38,29 @@ const cache = new Map<Language, WhatsNewTranslations>();
 cache.set('en', en.whatsNew);
 
 const listeners = new Set<() => void>();
+let bundleVersion = 0;
+
+function subscribe(callback: () => void): () => void {
+  listeners.add(callback);
+  return () => { listeners.delete(callback); };
+}
+
+function getSnapshot(): number {
+  return bundleVersion;
+}
 
 function preload(lang: Language) {
   if (cache.has(lang)) return;
   loaders[lang]().then(bundle => {
     cache.set(lang, { ...en.whatsNew, ...bundle.whatsNew });
+    bundleVersion++;
     listeners.forEach(fn => fn());
   });
 }
 
 export function useReleasesTranslation() {
   const { language } = useI18nStore();
+  useSyncExternalStore(subscribe, getSnapshot);
 
   if (!cache.has(language)) {
     preload(language);

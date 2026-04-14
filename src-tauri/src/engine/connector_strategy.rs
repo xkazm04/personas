@@ -237,11 +237,18 @@ pub fn init_registry() {
     REGISTRY.get_or_init(|| {
         let mut reg = StrategyRegistry::new();
         reg.register("google-oauth", Box::new(GoogleOAuthStrategy));
+        // Exact-match alias for gmail, which otherwise wouldn't hit the
+        // `service_type.contains("google")` substring rule below.
+        reg.register("gmail", Box::new(GoogleOAuthStrategy));
         reg.register("microsoft-oauth", Box::new(MicrosoftOAuthStrategy));
         reg.register("buffer", Box::new(BufferStrategy));
         reg.register("circleci", Box::new(CircleCIStrategy));
         reg.register("clickup", Box::new(ClickUpStrategy));
         reg.register("github", Box::new(GitHubStrategy));
+        // Atlassian Cloud Basic Auth (email:api_token). Two registrations so
+        // both service_types route to the same strategy — Jira + Confluence.
+        reg.register("jira", Box::new(AtlassianBasicAuthStrategy));
+        reg.register("confluence", Box::new(AtlassianBasicAuthStrategy));
         reg
     });
 }
@@ -274,6 +281,7 @@ fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
     const TOKEN_KEYS: &[&str] = &[
         "token",
         "api_key",
+        "api_key_v2",
         "bot_token",
         "access_token",
         "api_token",
@@ -602,3 +610,109 @@ pub struct GitHubStrategy;
 
 #[async_trait]
 impl ConnectorStrategy for GitHubStrategy {}
+
+// -- Atlassian Basic Auth (Jira / Confluence) ------------------------
+
+/// Strategy for Atlassian Cloud REST APIs (Jira, Confluence) which
+/// authenticate with HTTP Basic using `email:api_token` encoded in base64.
+/// The default bearer-auth fallback does not work for these services.
+///
+/// The `resolve_auth_token` path returns the already base64-encoded
+/// `email:api_token` pair so that `apply_auth` can emit the final header
+/// without keeping email + api_token paired through the trait.
+pub struct AtlassianBasicAuthStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for AtlassianBasicAuthStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        false
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        let Some(email) = find_nonempty(fields, &["email", "username"]) else {
+            return Err(AppError::Validation(
+                "Atlassian credential is missing 'email' field".into(),
+            ));
+        };
+        let Some(api_token) = find_nonempty(fields, &["api_token", "api_key", "token"]) else {
+            return Err(AppError::Validation(
+                "Atlassian credential is missing 'api_token' field".into(),
+            ));
+        };
+        let pair = format!("{email}:{api_token}");
+        let encoded = base64_encode(pair.as_bytes());
+        Ok(Some(ResolvedToken::plain(encoded)))
+    }
+
+    /// Apply the Basic auth header directly. The `token` here is the
+    /// base64-encoded `email:api_token` pair produced in `resolve_auth_token`.
+    fn apply_auth(
+        &self,
+        request: reqwest::RequestBuilder,
+        token: &str,
+    ) -> reqwest::RequestBuilder {
+        request.header("Authorization", format!("Basic {token}"))
+    }
+}
+
+/// Minimal base64 encoder (no padding tricks). Keeps the crate dependency
+/// graph untouched — Atlassian tokens are small so a hand-rolled encoder is
+/// perfectly fine here.
+fn base64_encode(input: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
+    let mut i = 0;
+    while i + 3 <= input.len() {
+        let b0 = input[i];
+        let b1 = input[i + 1];
+        let b2 = input[i + 2];
+        out.push(ALPHABET[(b0 >> 2) as usize] as char);
+        out.push(ALPHABET[(((b0 & 0x03) << 4) | (b1 >> 4)) as usize] as char);
+        out.push(ALPHABET[(((b1 & 0x0f) << 2) | (b2 >> 6)) as usize] as char);
+        out.push(ALPHABET[(b2 & 0x3f) as usize] as char);
+        i += 3;
+    }
+    match input.len() - i {
+        0 => {}
+        1 => {
+            let b0 = input[i];
+            out.push(ALPHABET[(b0 >> 2) as usize] as char);
+            out.push(ALPHABET[((b0 & 0x03) << 4) as usize] as char);
+            out.push('=');
+            out.push('=');
+        }
+        2 => {
+            let b0 = input[i];
+            let b1 = input[i + 1];
+            out.push(ALPHABET[(b0 >> 2) as usize] as char);
+            out.push(ALPHABET[(((b0 & 0x03) << 4) | (b1 >> 4)) as usize] as char);
+            out.push(ALPHABET[((b1 & 0x0f) << 2) as usize] as char);
+            out.push('=');
+        }
+        _ => unreachable!(),
+    }
+    out
+}
+
+#[cfg(test)]
+mod atlassian_tests {
+    use super::*;
+
+    #[test]
+    fn base64_matches_known_values() {
+        // Validated against the canonical base64 encoding of "Man" and "Ma".
+        assert_eq!(base64_encode(b"Man"), "TWFu");
+        assert_eq!(base64_encode(b"Ma"), "TWE=");
+        assert_eq!(base64_encode(b"M"), "TQ==");
+        assert_eq!(
+            base64_encode(b"user@example.com:mytoken"),
+            // python -c "import base64; print(base64.b64encode(b'user@example.com:mytoken').decode())"
+            "dXNlckBleGFtcGxlLmNvbTpteXRva2Vu"
+        );
+    }
+}

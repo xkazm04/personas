@@ -190,8 +190,8 @@ const KNOWN_CLIS: &[CliDetector] = &[
 ///
 /// CLIs are detected by probing `which` for each candidate binary name.
 /// Unlike `discover_apps`, no process-list check is done (CLIs are not
-/// long-running), and version detection is optional (see the
-/// `TODO(cli-version)` note below).
+/// long-running). Version detection runs `<bin> --version` with a 1s
+/// timeout per binary when a match is found.
 pub async fn discover_clis() -> Vec<DiscoveredApp> {
     let mut results = Vec::new();
 

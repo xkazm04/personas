@@ -733,10 +733,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "Which HubSpot pipeline should be monitored?",
-        "type": "text",
+        "type": "select",
         "default": "Default Pipeline",
         "context": "Multi-pipeline HubSpot accounts need explicit pipeline targeting to avoid cross-pollinating deals from different products, regions, or business units.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "crm",
+        "option_service_types": [
+          "hubspot"
+        ],
+        "dynamic_source": {
+          "service_type": "hubspot",
+          "operation": "list_deal_pipelines"
+        }
       },
       {
         "id": "aq_boundaries_1",

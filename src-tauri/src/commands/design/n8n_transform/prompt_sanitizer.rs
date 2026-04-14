@@ -14,28 +14,16 @@
 //! 6. Structural XML boundary wrapping with random nonce
 //! 7. Canary instruction asking the model to report manipulation attempts
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use rand::Rng;
 
 /// Maximum lengths for sanitized fields to prevent oversized payloads.
 const MAX_WORKFLOW_NAME: usize = 200;
 const MAX_JSON_PAYLOAD: usize = 50_000;
 const MAX_FREE_TEXT: usize = 10_000;
 
-/// Monotonic counter mixed with process start time for boundary nonces.
-static NONCE_COUNTER: AtomicU64 = AtomicU64::new(0);
-
-/// Generate a short random-ish nonce for XML boundary tags.
-/// Not cryptographic -- only needs to be unpredictable enough that untrusted
-/// content cannot guess the tag name ahead of time.
 fn generate_nonce() -> String {
-    let count = NONCE_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let seed = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    // Simple mix: XOR the counter with time nanos and format as hex
-    let mixed = (seed as u64) ^ count ^ 0x517cc1b727220a95;
-    format!("{:016x}", mixed)
+    let bytes: [u8; 16] = rand::thread_rng().gen();
+    hex::encode(bytes)
 }
 
 /// Check if a character is in the safe allowlist for names.

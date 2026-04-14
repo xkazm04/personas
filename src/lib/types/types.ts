@@ -201,11 +201,11 @@ export interface CredentialTemplateEvent {
   config_fields?: CredentialTemplateField[];
 }
 
-/** An auth method available for a connector (PAT, OAuth, MCP, etc.) */
+/** An auth method available for a connector (PAT, OAuth, MCP, CLI, etc.) */
 export interface ConnectorAuthMethod {
   id: string;
   label: string;
-  type: 'credential' | 'mcp' | 'oauth';
+  type: 'credential' | 'mcp' | 'oauth' | 'cli';
   is_default?: boolean;
   /** MCP: npm package name (e.g., "@supabase/mcp-server-supabase") */
   package?: string;

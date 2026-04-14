@@ -632,7 +632,7 @@ export interface EventPayloadMap {
   // Task executor (BackgroundJob pattern)
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.TASK_EXEC_OUTPUT]: { job_id: string; line: string };
-  [EventName.TASK_EXEC_COMPLETE]: { task_id: string; output_lines: number };
+  [EventName.TASK_EXEC_COMPLETE]: { task_id: string; output_lines: number; context_warnings?: string[] };
 
   // Artist creative session (BackgroundJob pattern)
   [EventName.ARTIST_SESSION_STATUS]: { job_id: string; status: string; error?: string };

@@ -3,4 +3,4 @@
 /**
  * Summary of an evolution cycle result.
  */
-export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null, promoted: boolean, promotedPersonaId: string | null, statusReliable: boolean, };
+export type EvolutionCycleSummary = { cycleId: string, personaId: string, generation: number, variantsTested: number, winnerFitness: number | null, incumbentFitness: number | null, promoted: boolean, promotedPersonaId: string | null, statusReliable: boolean, warnings: Array<string>, rawFitnessObjective: string | null, };

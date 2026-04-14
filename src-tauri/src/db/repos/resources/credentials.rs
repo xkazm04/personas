@@ -91,8 +91,9 @@ pub fn is_field_sensitive(
 crud_get_by_id!(PersonaCredential, "persona_credentials", "Credential", row_to_credential);
 crud_get_all!(PersonaCredential, "persona_credentials", row_to_credential, "created_at DESC");
 
-/// Count total credentials and plaintext (unencrypted) credentials via SQL.
-/// Much cheaper than `get_all` when only aggregate counts are needed.
+/// Count total credentials and how many lack field-level encryption.
+/// A credential is "encrypted" if it has at least one `credential_fields`
+/// row with a non-empty iv (i.e. at least one sensitive field is encrypted).
 pub fn count_vault_status(pool: &DbPool) -> Result<(i64, i64), AppError> {
     timed_query!("persona_credentials", "persona_credentials::count_vault_status", {
         let conn = pool.get()?;
@@ -101,11 +102,12 @@ pub fn count_vault_status(pool: &DbPool) -> Result<(i64, i64), AppError> {
             [],
             |row| row.get(0),
         ).map_err(AppError::Database)?;
-        let plaintext: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_credentials WHERE iv = ''",
+        let encrypted: i64 = conn.query_row(
+            "SELECT COUNT(DISTINCT credential_id) FROM credential_fields WHERE iv != ''",
             [],
             |row| row.get(0),
         ).map_err(AppError::Database)?;
+        let plaintext = total - encrypted;
         Ok((total, plaintext))
     })
 }
@@ -144,6 +146,63 @@ pub fn get_by_service_type(
     })
 }
 
+/// Insert a credential row and its encrypted fields within an existing
+/// transaction.  Does NOT commit — the caller owns the transaction lifecycle.
+/// Returns the generated credential ID.
+pub fn insert_credential_and_fields_tx(
+    pool: &DbPool,
+    tx: &rusqlite::Transaction<'_>,
+    input: &CreateCredentialInput,
+    fields: &HashMap<String, String>,
+) -> Result<String, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let sens_map = sensitivity_map_for_connector(pool, &input.service_type);
+
+    tx.execute(
+        "INSERT INTO persona_credentials
+         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            id,
+            input.name,
+            input.service_type,
+            input.encrypted_data,
+            input.iv,
+            input.metadata,
+            now,
+        ],
+    )?;
+
+    for (key, value) in fields {
+        let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
+        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+
+        let field_type = classify_field_type(key);
+        let field_id = uuid::Uuid::new_v4().to_string();
+
+        tx.execute(
+            "INSERT INTO credential_fields
+             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            params![
+                field_id,
+                id,
+                key,
+                enc_val,
+                field_iv,
+                field_type,
+                is_sensitive as i32,
+                now,
+            ],
+        )?;
+    }
+
+    Ok(id)
+}
+
 /// Create a credential and save its fields in a single SQLite transaction.
 /// If field encryption or insertion fails, the credential row is rolled back
 /// automatically -- no orphaned rows.
@@ -153,57 +212,11 @@ pub fn create_with_fields(
     fields: &HashMap<String, String>,
 ) -> Result<PersonaCredential, AppError> {
     timed_query!("persona_credentials", "persona_credentials::create_with_fields", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let sens_map = sensitivity_map_for_connector(pool, &input.service_type);
-
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-
-        tx.execute(
-            "INSERT INTO persona_credentials
-             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![
-                id,
-                input.name,
-                input.service_type,
-                input.encrypted_data,
-                input.iv,
-                input.metadata,
-                now,
-            ],
-        )?;
-
-        for (key, value) in fields {
-            let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
-
-            let field_type = classify_field_type(key);
-            let field_id = uuid::Uuid::new_v4().to_string();
-
-            tx.execute(
-                "INSERT INTO credential_fields
-                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                params![
-                    field_id,
-                    id,
-                    key,
-                    enc_val,
-                    field_iv,
-                    field_type,
-                    is_sensitive as i32,
-                    now,
-                ],
-            )?;
-        }
-
+        let id = insert_credential_and_fields_tx(pool, &tx, &input, fields)?;
         tx.commit().map_err(AppError::Database)?;
         get_by_id(pool, &id)
-
     })
 }
 

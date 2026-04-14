@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
+use crate::db::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
 use crate::db::DbPool;
 use crate::engine::{chain, crypto, scheduler};
 use crate::error::AppError;
@@ -113,6 +113,11 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         // Encrypt sensitive config fields before writing to DB
         let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
 
+        // Compute next_trigger_at from plaintext config so it can be written
+        // atomically in the same transaction as the INSERT.
+        let parsed_cfg = TriggerConfig::from_raw(&input.trigger_type, input.config.as_deref());
+        let next_trigger_at = scheduler::compute_next_from_config(&parsed_cfg, chrono::Utc::now());
+
         // Fix 4a: for schedule / polling / webhook source triggers, auto-create a
         // paired event_listener inside the same transaction so the target persona
         // actually runs when the trigger fires. Without this, the scheduler would
@@ -121,18 +126,8 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         let needs_auto_listener =
             AUTO_LISTENER_SOURCE_TYPES.contains(&input.trigger_type.as_str());
 
-        // Compute the event_type the listener should match. Mirrors
-        // TriggerConfig::event_type() — read from config.event_type or fall
-        // back to "trigger_fired" (same default the scheduler uses at
-        // publish time, see db/models/trigger.rs:367).
         let auto_listener_event_type: Option<String> = if needs_auto_listener {
-            let event_type = input
-                .config
-                .as_deref()
-                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-                .and_then(|v| v.get("event_type").and_then(|e| e.as_str()).map(String::from))
-                .unwrap_or_else(|| "trigger_fired".to_string());
-            Some(event_type)
+            Some(parsed_cfg.event_type().to_string())
         } else {
             None
         };
@@ -142,9 +137,9 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
             let tx = conn.transaction().map_err(AppError::Database)?;
             tx.execute(
                 "INSERT INTO persona_triggers
-                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, now],
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, next_trigger_at, now],
             )?;
 
             if let Some(event_type) = &auto_listener_event_type {
@@ -154,19 +149,7 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
             tx.commit().map_err(AppError::Database)?;
         }
 
-        // Immediately compute and persist next_trigger_at so the scheduler loop picks
-        // up schedule/polling triggers without requiring a separate update.
-        let trigger = get_by_id(pool, &id)?;
-        if let Some(next_at) = scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
-            let conn = pool.get()?;
-            conn.execute(
-                "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
-                params![next_at, chrono::Utc::now().to_rfc3339(), id],
-            )?;
-            return get_by_id(pool, &id);
-        }
-
-        Ok(trigger)
+        get_by_id(pool, &id)
 
     })
 }

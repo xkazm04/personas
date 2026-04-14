@@ -238,16 +238,60 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4" },
-          { "id": "e4", "source": "n4", "target": "n5" },
-          { "id": "e5", "source": "n5", "target": "n6", "label": "Anomaly detected", "variant": "yes" },
-          { "id": "e6", "source": "n5", "target": "n9", "label": "All normal", "variant": "no" },
-          { "id": "e7", "source": "n6", "target": "n7" },
-          { "id": "e8", "source": "n7", "target": "n8" },
-          { "id": "e9", "source": "n8", "target": "n9" },
-          { "id": "e10", "source": "n9", "target": "n10" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "label": "Anomaly detected",
+            "variant": "yes"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n9",
+            "label": "All normal",
+            "variant": "no"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
         ]
       },
       {
@@ -293,12 +337,39 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3", "label": "Auth error (401/403)", "variant": "error" },
-          { "id": "e3", "source": "n2", "target": "n4", "label": "Rate limit / 5xx" },
-          { "id": "e4", "source": "n3", "target": "n5" },
-          { "id": "e5", "source": "n4", "target": "n6" },
-          { "id": "e6", "source": "n5", "target": "n6" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Auth error (401/403)",
+            "variant": "error"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n4",
+            "label": "Rate limit / 5xx"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
         ]
       }
     ],
@@ -331,7 +402,12 @@
           "Microsoft Azure",
           "Other (custom billing API endpoint)"
         ],
-        "option_service_types": ["gcp_cloud", "aws_cloud", "azure_cloud", null],
+        "option_service_types": [
+          "gcp_cloud",
+          "aws_cloud",
+          "azure_cloud",
+          null
+        ],
         "vault_category": "cloud",
         "default": "Google Cloud Platform",
         "context": "Determines which billing API the agent queries. Each provider has different endpoints and authentication methods.",

@@ -668,11 +668,18 @@
       {
         "id": "spreadsheet_url",
         "question": "What is the Google Sheets URL containing your list of website URLs to analyze?",
-        "type": "text",
-        "placeholder": "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit",
+        "type": "select",
         "helpText": "The spreadsheet should have website URLs in column A. The agent will add classification columns automatically.",
         "required": true,
-        "maps_to": "connector.google_sheets.spreadsheet_id"
+        "maps_to": "connector.google_sheets.spreadsheet_id",
+        "vault_category": "database",
+        "option_service_types": [
+          "google_sheets"
+        ],
+        "dynamic_source": {
+          "service_type": "google_sheets",
+          "operation": "list_sheets"
+        }
       },
       {
         "id": "url_column",

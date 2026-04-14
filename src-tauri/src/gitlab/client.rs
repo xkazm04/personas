@@ -12,6 +12,22 @@ fn gitlab_err(e: impl std::fmt::Display) -> AppError {
     AppError::GitLab(e.to_string())
 }
 
+fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
+    if value.is_empty() {
+        return Err(AppError::GitLab(format!("{name} must not be empty")));
+    }
+    if value.contains('/')
+        || value.contains('\\')
+        || value.contains("..")
+        || value.contains('\0')
+    {
+        return Err(AppError::GitLab(format!(
+            "{name} contains invalid characters"
+        )));
+    }
+    Ok(())
+}
+
 // ============================================================================
 // Internal request types
 // ============================================================================
@@ -167,6 +183,7 @@ impl GitLabClient {
         agent_id: &str,
         definition: &GitLabAgentDefinition,
     ) -> Result<GitLabAgent, AppError> {
+        validate_path_segment(agent_id, "agent_id")?;
         let path = format!("/projects/{project_id}/duo/agents/{agent_id}");
         let req = self.authed(reqwest::Method::PUT, &path).json(definition);
         self.send_json(req).await
@@ -185,6 +202,7 @@ impl GitLabClient {
         project_id: i64,
         agent_id: &str,
     ) -> Result<(), AppError> {
+        validate_path_segment(agent_id, "agent_id")?;
         let path = format!("/projects/{project_id}/duo/agents/{agent_id}");
         self.send_ok(self.authed(reqwest::Method::DELETE, &path))
             .await
