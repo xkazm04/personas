@@ -81,7 +81,7 @@ export function useDesignReviews() {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
 
-    const seeds = getSeedReviews();
+    const seeds = await getSeedReviews();
 
     // Upsert ALL seeds (not just missing) to backfill new fields like category.
     // The backend uses ON CONFLICT DO UPDATE so this is safe -- it preserves
@@ -93,7 +93,7 @@ export function useDesignReviews() {
 
       // Prune stale seed templates whose IDs are no longer in the catalog
       // (e.g. renamed or deleted template files). Only affects seed rows.
-      const activeIds = getActiveSeedIds();
+      const activeIds = await getActiveSeedIds();
       if (activeIds.length > 0) {
         await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
       }

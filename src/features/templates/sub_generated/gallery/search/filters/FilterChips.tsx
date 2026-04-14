@@ -100,7 +100,41 @@ export function FilterChips({
       {onCoverageFilterChange && (
         <>
           {(selectedCategory || connectorFilter.length > 0) && <div className="w-px h-5 bg-primary/10 mx-0.5" />}
-          <div className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0">
+          <div
+            role="radiogroup"
+            aria-label="Coverage filter"
+            onKeyDown={(e) => {
+              const values = ['all', 'full', 'partial'];
+              const idx = values.indexOf(coverageFilter ?? 'all');
+              let next: number;
+
+              switch (e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                  next = (idx + 1) % values.length;
+                  break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                  next = (idx - 1 + values.length) % values.length;
+                  break;
+                case 'Home':
+                  next = 0;
+                  break;
+                case 'End':
+                  next = values.length - 1;
+                  break;
+                default:
+                  return;
+              }
+
+              e.preventDefault();
+              const nextValue = values[next]!;
+              onCoverageFilterChange(nextValue);
+              const target = e.currentTarget.querySelector<HTMLElement>(`[data-value="${nextValue}"]`);
+              target?.focus();
+            }}
+            className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0"
+          >
             {([
               { value: 'all', label: 'All', color: 'violet', countKey: 'all' as const },
               { value: 'full', label: 'Ready', color: 'emerald', icon: CheckCircle2, countKey: 'ready' as const },
@@ -112,6 +146,10 @@ export function FilterChips({
               return (
                 <button
                   key={opt.value}
+                  role="radio"
+                  aria-checked={isActive}
+                  tabIndex={isActive ? 0 : -1}
+                  data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
                   className={`px-2.5 py-1.5 text-sm font-medium transition-colors flex items-center gap-1 ${
                     isActive

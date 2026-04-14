@@ -122,6 +122,18 @@ fn emit_status(
     );
 }
 
+// -- Cancellation helper -----------------------------------------
+
+/// Poll an AtomicBool flag every 200ms, returning when it becomes `true`.
+async fn poll_cancelled(flag: &AtomicBool) {
+    loop {
+        if flag.load(Ordering::Acquire) {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+}
+
 // -- Command runner ----------------------------------------------
 
 struct CommandResult {
@@ -135,6 +147,7 @@ async fn run_command_streamed(
     target: &SetupTarget,
     command: &str,
     args: &[&str],
+    cancelled: &Arc<AtomicBool>,
 ) -> CommandResult {
     let mut cmd = tokio::process::Command::new(command);
     cmd.args(args)
@@ -160,6 +173,8 @@ async fn run_command_streamed(
             return CommandResult { success: false };
         }
     };
+
+    let child_pid = child.id();
 
     // Stream stdout in background
     if let Some(stdout) = child.stdout.take() {
@@ -187,11 +202,21 @@ async fn run_command_streamed(
         });
     }
 
-    match child.wait().await {
-        Ok(exit) => CommandResult {
-            success: exit.success(),
-        },
-        Err(_) => CommandResult { success: false },
+    // Race child completion against cancellation flag
+    tokio::select! {
+        result = child.wait() => {
+            match result {
+                Ok(exit) => CommandResult { success: exit.success() },
+                Err(_) => CommandResult { success: false },
+            }
+        }
+        _ = poll_cancelled(cancelled) => {
+            if let Some(pid) = child_pid {
+                crate::engine::kill_process(pid);
+            }
+            emit_output(app, install_id, target, "Installation cancelled.");
+            CommandResult { success: false }
+        }
     }
 }
 
@@ -203,6 +228,7 @@ async fn download_file(
     target: &SetupTarget,
     url: &str,
     filename: &str,
+    cancelled: &Arc<AtomicBool>,
 ) -> Result<std::path::PathBuf, String> {
     emit_output(app, install_id, target, &format!("Downloading {url}..."));
 
@@ -232,6 +258,10 @@ async fn download_file(
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
+        if cancelled.load(Ordering::Acquire) {
+            emit_output(app, install_id, target, "Download cancelled.");
+            return Err("Cancelled".into());
+        }
         let chunk = chunk.map_err(|e| e.to_string())?;
         file.write_all(&chunk).await.map_err(|e| e.to_string())?;
         downloaded += chunk.len() as u64;
@@ -292,7 +322,7 @@ async fn get_node_lts_version() -> String {
 
 // -- Node.js installation ----------------------------------------
 
-async fn install_node(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo) -> bool {
+async fn install_node(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo, cancelled: &Arc<AtomicBool>) -> bool {
     if command_version("node").is_ok() {
         emit_output(app, install_id, &SetupTarget::Node, "Node.js is already installed.");
         emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
@@ -302,16 +332,17 @@ async fn install_node(app: &tauri::AppHandle, install_id: &str, platform: &Platf
     emit_status(app, install_id, &SetupTarget::Node, "downloading", Some(0), None, None);
 
     match &platform.platform {
-        Platform::Windows => install_node_windows(app, install_id, platform).await,
-        Platform::MacOS => install_node_macos(app, install_id, platform).await,
-        Platform::Linux => install_node_linux(app, install_id, platform).await,
+        Platform::Windows => install_node_windows(app, install_id, platform, cancelled).await,
+        Platform::MacOS => install_node_macos(app, install_id, platform, cancelled).await,
+        Platform::Linux => install_node_linux(app, install_id, platform, cancelled).await,
     }
 }
 
-async fn install_node_windows(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo) -> bool {
+async fn install_node_windows(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo, cancelled: &Arc<AtomicBool>) -> bool {
     if platform.has_winget {
         emit_output(app, install_id, &SetupTarget::Node, "Installing Node.js via winget...");
-        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "winget", &["install", "OpenJS.NodeJS.LTS", "--silent", "--accept-package-agreements", "--accept-source-agreements"]).await;
+        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "winget", &["install", "OpenJS.NodeJS.LTS", "--silent", "--accept-package-agreements", "--accept-source-agreements"], cancelled).await;
+        if cancelled.load(Ordering::Acquire) { return false; }
         if result.success {
             emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
             return true;
@@ -323,12 +354,13 @@ async fn install_node_windows(app: &tauri::AppHandle, install_id: &str, platform
     let arch_label = if platform.arch == "arm64" { "arm64" } else { "x64" };
     let url = format!("https://nodejs.org/dist/v{node_version}/node-v{node_version}-{arch_label}.msi");
 
-    match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.msi").await {
+    match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.msi", cancelled).await {
         Ok(msi_path) => {
+            if cancelled.load(Ordering::Acquire) { return false; }
             emit_status(app, install_id, &SetupTarget::Node, "installing", Some(80), None, None);
             emit_output(app, install_id, &SetupTarget::Node, "Running Node.js installer...");
             let msi_str = msi_path.to_string_lossy().to_string();
-            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "msiexec", &["/i", &msi_str, "/qn", "/norestart"]).await;
+            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "msiexec", &["/i", &msi_str, "/qn", "/norestart"], cancelled).await;
             let _ = tokio::fs::remove_file(&msi_path).await;
             if result.success {
                 emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
@@ -344,10 +376,11 @@ async fn install_node_windows(app: &tauri::AppHandle, install_id: &str, platform
     }
 }
 
-async fn install_node_macos(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo) -> bool {
+async fn install_node_macos(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo, cancelled: &Arc<AtomicBool>) -> bool {
     if platform.has_brew {
         emit_output(app, install_id, &SetupTarget::Node, "Installing Node.js via Homebrew...");
-        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "brew", &["install", "node"]).await;
+        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "brew", &["install", "node"], cancelled).await;
+        if cancelled.load(Ordering::Acquire) { return false; }
         if result.success {
             emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
             return true;
@@ -359,12 +392,13 @@ async fn install_node_macos(app: &tauri::AppHandle, install_id: &str, platform: 
     let arch_label = if platform.arch == "arm64" { "arm64" } else { "x64" };
     let url = format!("https://nodejs.org/dist/v{node_version}/node-v{node_version}-darwin-{arch_label}.pkg");
 
-    match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.pkg").await {
+    match download_file(app, install_id, &SetupTarget::Node, &url, "node-installer.pkg", cancelled).await {
         Ok(pkg_path) => {
+            if cancelled.load(Ordering::Acquire) { return false; }
             emit_status(app, install_id, &SetupTarget::Node, "installing", Some(80), None, None);
             emit_output(app, install_id, &SetupTarget::Node, "Running Node.js installer (may require password)...");
             let pkg_str = pkg_path.to_string_lossy().to_string();
-            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["installer", "-pkg", &pkg_str, "-target", "/"]).await;
+            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["installer", "-pkg", &pkg_str, "-target", "/"], cancelled).await;
             let _ = tokio::fs::remove_file(&pkg_path).await;
             if result.success {
                 emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
@@ -380,20 +414,22 @@ async fn install_node_macos(app: &tauri::AppHandle, install_id: &str, platform: 
     }
 }
 
-async fn install_node_linux(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo) -> bool {
+async fn install_node_linux(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo, cancelled: &Arc<AtomicBool>) -> bool {
     if platform.has_apt {
         emit_output(app, install_id, &SetupTarget::Node, "Setting up NodeSource repository...");
-        let setup_result = run_command_streamed(app, install_id, &SetupTarget::Node, "bash", &["-c", "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"]).await;
+        let setup_result = run_command_streamed(app, install_id, &SetupTarget::Node, "bash", &["-c", "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"], cancelled).await;
+        if cancelled.load(Ordering::Acquire) { return false; }
         if setup_result.success {
             emit_status(app, install_id, &SetupTarget::Node, "installing", Some(60), None, None);
-            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["apt-get", "install", "-y", "nodejs"]).await;
+            let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["apt-get", "install", "-y", "nodejs"], cancelled).await;
+            if cancelled.load(Ordering::Acquire) { return false; }
             if result.success {
                 emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
                 return true;
             }
         }
         emit_output(app, install_id, &SetupTarget::Node, "Trying system package manager...");
-        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["apt-get", "install", "-y", "nodejs", "npm"]).await;
+        let result = run_command_streamed(app, install_id, &SetupTarget::Node, "sudo", &["apt-get", "install", "-y", "nodejs", "npm"], cancelled).await;
         if result.success {
             emit_status(app, install_id, &SetupTarget::Node, "completed", Some(100), None, None);
             return true;
@@ -405,7 +441,7 @@ async fn install_node_linux(app: &tauri::AppHandle, install_id: &str, platform: 
 
 // -- Claude CLI installation -------------------------------------
 
-async fn install_claude_cli(app: &tauri::AppHandle, install_id: &str, _platform: &PlatformInfo) -> bool {
+async fn install_claude_cli(app: &tauri::AppHandle, install_id: &str, _platform: &PlatformInfo, cancelled: &Arc<AtomicBool>) -> bool {
     let cli_candidates: &[&str] = if cfg!(target_os = "windows") {
         &["claude", "claude.cmd", "claude.exe", "claude-code"]
     } else {
@@ -425,8 +461,9 @@ async fn install_claude_cli(app: &tauri::AppHandle, install_id: &str, _platform:
 
     let npm_cmd = if cfg!(target_os = "windows") { "npm.cmd" } else { "npm" };
 
-    let result = run_command_streamed(app, install_id, &SetupTarget::ClaudeCli, npm_cmd, &["install", "-g", "@anthropic-ai/claude-code"]).await;
+    let result = run_command_streamed(app, install_id, &SetupTarget::ClaudeCli, npm_cmd, &["install", "-g", "@anthropic-ai/claude-code"], cancelled).await;
 
+    if cancelled.load(Ordering::Acquire) { return false; }
     if result.success {
         emit_status(app, install_id, &SetupTarget::ClaudeCli, "completed", Some(100), None, None);
         true
@@ -459,24 +496,36 @@ async fn run_setup_install(params: SetupRunParams) {
 
     match scope {
         InstallScope::NodeOnly => {
-            install_node(&app, &install_id, &platform).await;
+            install_node(&app, &install_id, &platform, &cancelled).await;
         }
         InstallScope::ClaudeCliOnly => {
-            install_claude_cli(&app, &install_id, &platform).await;
+            install_claude_cli(&app, &install_id, &platform, &cancelled).await;
         }
         InstallScope::All => {
-            let node_ok = install_node(&app, &install_id, &platform).await;
+            let node_ok = install_node(&app, &install_id, &platform, &cancelled).await;
             if cancelled.load(Ordering::Acquire) {
                 tracing::info!(install_id = %install_id, "Setup install cancelled");
+                emit_status(&app, &install_id, &SetupTarget::Node, "cancelled", None, None, None);
+                emit_status(&app, &install_id, &SetupTarget::ClaudeCli, "cancelled", None, None, None);
                 return;
             }
             if node_ok {
                 tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-                install_claude_cli(&app, &install_id, &platform).await;
+                if cancelled.load(Ordering::Acquire) {
+                    tracing::info!(install_id = %install_id, "Setup install cancelled during wait");
+                    emit_status(&app, &install_id, &SetupTarget::ClaudeCli, "cancelled", None, None, None);
+                    return;
+                }
+                install_claude_cli(&app, &install_id, &platform, &cancelled).await;
             } else {
                 emit_status(&app, &install_id, &SetupTarget::ClaudeCli, "failed", None, Some("Cannot install Claude CLI without Node.js. Fix Node.js installation first.".into()), Some("npm install -g @anthropic-ai/claude-code".into()));
             }
         }
+    }
+
+    // Emit final cancelled status if cancellation happened during the last install phase
+    if cancelled.load(Ordering::Acquire) {
+        tracing::info!(install_id = %install_id, "Setup install cancelled");
     }
 }
 

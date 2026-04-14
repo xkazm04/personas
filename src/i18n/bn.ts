@@ -207,8 +207,10 @@ export const bn = {
     appearance: "চেহারা",
     notifications: "বিজ্ঞপ্তি",
     engine: "ইঞ্জিন",
-    byom: "BYOM",
+    byom: "মডেল প্রদানকারী",
     data: "ডাটা",
+    quality_gates: "বিষয়বস্তু ফিল্টার",
+    config_resolution: "এজেন্ট কনফিগারেশন",
     admin: "অ্যাডমিন",
     create: "তৈরি করুন",
     all_agents: "সমস্ত এজেন্ট",
@@ -5914,6 +5916,7 @@ export const bn = {
   },
   settings: {
     title: "সেটিংস",
+    settings_saved: "সংরক্ষিত",
     account: {
       title: "অ্যাকাউন্ট",
       subtitle: "সাইন-ইন ও প্রোফাইল পরিচালনা",

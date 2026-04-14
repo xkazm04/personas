@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use rusqlite::OptionalExtension;
+use rusqlite::{params, OptionalExtension};
 use tauri::State;
 
 use crate::db::models::*;
-use crate::db::repos::core::personas as persona_repo;
-use crate::db::repos::execution::metrics as metrics_repo;
+use crate::db::repos::core::personas::{self as persona_repo, row_to_persona};
+use crate::db::repos::execution::metrics::{self as metrics_repo, row_to_prompt_version};
 use crate::db::repos::lab;
 use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::repos::lab::ratings as ratings_repo;
-use crate::db::repos::resources::tools as tool_repo;
+use crate::db::repos::resources::tools::{self as tool_repo, row_to_tool_def};
 use crate::engine::test_runner::{self, parse_model_configs};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
@@ -147,11 +147,53 @@ pub async fn lab_start_ab(
     test_input: Option<String>,
 ) -> Result<LabAbRun, AppError> {
     require_auth(&state).await?;
-    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
-    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
-    let version_a = metrics_repo::get_prompt_version_by_id(&state.db, &version_a_id)?;
-    let version_b = metrics_repo::get_prompt_version_by_id(&state.db, &version_b_id)?;
+    // Snapshot persona, versions, and tools in a single read transaction to prevent
+    // a concurrent persona update from creating a hybrid base+version state.
+    let (persona, version_a, version_b, tools) = {
+        let conn = state.db.get()?;
+        let tx = conn.unchecked_transaction()?;
+
+        let persona = tx.query_row(
+            "SELECT * FROM personas WHERE id = ?1",
+            params![persona_id],
+            row_to_persona,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {persona_id}")),
+            other => AppError::Database(other),
+        })?;
+
+        let version_a = tx.query_row(
+            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+            params![version_a_id],
+            row_to_prompt_version,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {version_a_id}")),
+            other => AppError::Database(other),
+        })?;
+
+        let version_b = tx.query_row(
+            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+            params![version_b_id],
+            row_to_prompt_version,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {version_b_id}")),
+            other => AppError::Database(other),
+        })?;
+
+        let mut stmt = tx.prepare(
+            "SELECT d.* FROM persona_tool_definitions d
+             INNER JOIN persona_tools pt ON pt.tool_id = d.id
+             WHERE pt.persona_id = ?1
+             ORDER BY d.category, d.name",
+        )?;
+        let tools = stmt.query_map(params![persona_id], row_to_tool_def)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+
+        // Read-only — no commit needed, drop releases the snapshot.
+        (persona, version_a, version_b, tools)
+    };
 
     if version_a.persona_id != persona_id || version_b.persona_id != persona_id {
         return Err(AppError::Validation("Both versions must belong to the specified persona".into()));

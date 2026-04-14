@@ -479,6 +479,10 @@ pub fn batch_update_importance(pool: &DbPool, updates: &[(String, i32)]) -> Resu
         let now = chrono::Utc::now().to_rfc3339();
         let mut total_updated: i64 = 0;
 
+        for (_id, importance) in updates {
+            validate_importance(*importance)?;
+        }
+
         let mut stmt = tx.prepare(
             "UPDATE persona_memories SET importance = ?1, updated_at = ?2 WHERE id = ?3",
         )?;
@@ -838,5 +842,84 @@ mod tests {
         assert!(update_importance(&pool, &m.id, 0).is_err());
         assert!(update_importance(&pool, &m.id, 6).is_err());
         assert!(update_importance(&pool, &m.id, -1).is_err());
+    }
+
+    #[test]
+    fn test_batch_update_importance_validates_range() {
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Batch Agent".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let m1 = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona.id.clone(),
+                title: "mem1".into(),
+                content: "content1".into(),
+                category: None,
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+            },
+        )
+        .unwrap();
+
+        let m2 = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona.id.clone(),
+                title: "mem2".into(),
+                content: "content2".into(),
+                category: None,
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+            },
+        )
+        .unwrap();
+
+        // Valid batch update succeeds
+        let result = batch_update_importance(&pool, &[
+            (m1.id.clone(), 5),
+            (m2.id.clone(), 1),
+        ]);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 2);
+
+        // Out-of-range value in batch is rejected (no partial writes)
+        assert!(batch_update_importance(&pool, &[
+            (m1.id.clone(), 3),
+            (m2.id.clone(), 0), // invalid
+        ]).is_err());
+        assert!(batch_update_importance(&pool, &[
+            (m1.id.clone(), 6), // invalid
+        ]).is_err());
+        assert!(batch_update_importance(&pool, &[
+            (m1.id.clone(), -1), // invalid
+        ]).is_err());
+
+        // Verify no partial write happened — m1 should still be 5 from the valid batch
+        let m1_after = get_by_id(&pool, &m1.id).unwrap();
+        assert_eq!(m1_after.importance, 5);
     }
 }

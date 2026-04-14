@@ -60,7 +60,7 @@ export function LabProgress() {
                     )}
                   </div>
                   <span
-                    className={`text-[10px] leading-tight transition-colors ${
+                    className={`typo-caption leading-tight transition-colors ${
                       isCompleted
                         ? 'text-emerald-400/70'
                         : isActive

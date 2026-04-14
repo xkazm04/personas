@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
+import { ExportReportButton } from '../shared/ExportReportButton';
 import { AbResultsView } from './AbResultsView';
 import type { LabAbRun } from '@/lib/bindings/LabAbRun';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
@@ -69,7 +70,10 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
           }
           footerActions={
             activeRun.status === 'completed' ? (
-              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="ab" />
+              <>
+                <ExportReportButton mode="ab" run={activeRun} results={resultsMap[activeRun.id] ?? []} />
+                <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="ab" />
+              </>
             ) : undefined
           }
         >

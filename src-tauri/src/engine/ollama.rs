@@ -10,7 +10,7 @@ use std::time::Instant;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
+use crate::engine::events::{ExecutionEventEmitter, emit_to};
 
 use crate::db::DbPool;
 use crate::db::models::Persona;
@@ -83,7 +83,7 @@ fn build_system_prompt(persona: &Persona) -> String {
 /// Bypasses Claude Code CLI entirely — makes a streaming HTTP request to
 /// the Ollama server and emits `EXECUTION_OUTPUT` events for each chunk.
 pub async fn execute_native(
-    app: &AppHandle,
+    emitter: &dyn ExecutionEventEmitter,
     pool: &DbPool,
     execution_id: &str,
     persona: &Persona,
@@ -104,7 +104,7 @@ pub async fn execute_native(
     let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
 
     // Announce start
-    emit_output(app, execution_id, &format!(
+    emit_output(emitter, execution_id, &format!(
         "[OLLAMA] Using model '{}' at {}", model, base_url
     ));
 
@@ -126,11 +126,11 @@ pub async fn execute_native(
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
             let err = format!("Ollama API error ({}): {}", status, &text[..text.len().min(200)]);
-            return fail(app, pool, execution_id, &err, &start_time).await;
+            return fail(emitter, pool, execution_id, &err, &start_time).await;
         }
         Err(e) => {
             let err = format!("Cannot connect to Ollama at {}: {}", url, e);
-            return fail(app, pool, execution_id, &err, &start_time).await;
+            return fail(emitter, pool, execution_id, &err, &start_time).await;
         }
     };
 
@@ -145,7 +145,7 @@ pub async fn execute_native(
 
     while let Some(chunk_result) = stream.next().await {
         if cancelled.load(Ordering::Relaxed) {
-            emit_output(app, execution_id, "[CANCELLED] Execution cancelled");
+            emit_output(emitter, execution_id, "[CANCELLED] Execution cancelled");
             let duration_ms = start_time.elapsed().as_millis() as u64;
             let _ = exec_repo::update_status(pool, execution_id, crate::db::models::UpdateExecutionStatus {
                 status: ExecutionState::Cancelled,
@@ -179,7 +179,7 @@ pub async fn execute_native(
                         if let Some(ref msg) = chunk.message {
                             if !msg.content.is_empty() {
                                 full_output.push_str(&msg.content);
-                                emit_output(app, execution_id, &msg.content);
+                                emit_output(emitter, execution_id, &msg.content);
                             }
                         }
                         if chunk.done {
@@ -191,7 +191,7 @@ pub async fn execute_native(
             }
             Err(e) => {
                 let err = format!("Stream error: {}", e);
-                return fail(app, pool, execution_id, &err, &start_time).await;
+                return fail(emitter, pool, execution_id, &err, &start_time).await;
             }
         }
     }
@@ -199,7 +199,7 @@ pub async fn execute_native(
     // Success
     let duration_ms = start_time.elapsed().as_millis() as u64;
 
-    let _ = app.emit(event_name::EXECUTION_STATUS, ExecutionStatusEvent {
+    emit_to(emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
         execution_id: execution_id.to_string(),
         status: ExecutionState::Completed,
         error: None,
@@ -237,15 +237,15 @@ pub async fn execute_native(
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-fn emit_output(app: &AppHandle, execution_id: &str, line: &str) {
-    let _ = app.emit(event_name::EXECUTION_OUTPUT, ExecutionOutputEvent {
+fn emit_output(emitter: &dyn ExecutionEventEmitter, execution_id: &str, line: &str) {
+    emit_to(emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
         execution_id: execution_id.to_string(),
         line: line.to_string(),
     });
 }
 
 async fn fail(
-    app: &AppHandle,
+    emitter: &dyn ExecutionEventEmitter,
     pool: &DbPool,
     execution_id: &str,
     error_msg: &str,
@@ -253,8 +253,8 @@ async fn fail(
 ) -> ExecutionResult {
     let duration_ms = start_time.elapsed().as_millis() as u64;
 
-    emit_output(app, execution_id, &format!("[OLLAMA ERROR] {}", error_msg));
-    let _ = app.emit(event_name::EXECUTION_STATUS, ExecutionStatusEvent {
+    emit_output(emitter, execution_id, &format!("[OLLAMA ERROR] {}", error_msg));
+    emit_to(emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
         execution_id: execution_id.to_string(),
         status: ExecutionState::Failed,
         error: Some(error_msg.to_string()),

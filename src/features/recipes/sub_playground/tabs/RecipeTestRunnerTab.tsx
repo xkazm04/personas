@@ -10,7 +10,7 @@ interface RecipeTestRunnerTabProps {
 }
 
 export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
-  const fields = useMemo(() => parseInputSchema(recipe.input_schema), [recipe.input_schema]);
+  const { fields, parseError } = useMemo(() => parseInputSchema(recipe.input_schema), [recipe.input_schema]);
   const mockValues = useMemo(() => parseMockValues(recipe.sample_inputs), [recipe.sample_inputs]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
     const defaults: Record<string, string> = {};
@@ -60,6 +60,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
         executionPhase={executionPhase}
         onExecute={handleExecute}
         onSetFieldValues={setFieldValues}
+        schemaParseError={parseError}
       />
 
       <RecipeOutputSection

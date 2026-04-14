@@ -293,7 +293,7 @@ function CompetitionCard({
   const handlePickWinner = useCallback(async (taskId: string) => {
     setPicking(taskId);
     try {
-      await pickCompetitionWinner(competition.id, taskId, null);
+      await pickCompetitionWinner(competition.id, taskId, null, null);
       addToast('Winner selected. Merge the winning branch when ready.', 'success');
       onRefresh();
     } catch (err) {

@@ -16,7 +16,10 @@ import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
 } from '../constants/scanAgents';
-import { ProjectSelector } from '../DevToolsPage';
+import {
+  HEX_COLOR_MAP, DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor,
+} from '../constants/ideaColors';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
@@ -98,33 +101,8 @@ interface ScanHistoryEntry {
   durationMs: number | null;
 }
 
-// ---------------------------------------------------------------------------
-// Tailwind-safe color map (hex colors from constants -> Tailwind classes)
-// ---------------------------------------------------------------------------
-
-const COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  '#3B82F6': { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' },
-  '#EF4444': { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/25' },
-  '#8B5CF6': { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/25' },
-  '#10B981': { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/25' },
-  '#F59E0B': { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/25' },
-  '#EC4899': { bg: 'bg-pink-500/15', text: 'text-pink-400', border: 'border-pink-500/25' },
-  '#6366F1': { bg: 'bg-indigo-500/15', text: 'text-indigo-400', border: 'border-indigo-500/25' },
-  '#14B8A6': { bg: 'bg-teal-500/15', text: 'text-teal-400', border: 'border-teal-500/25' },
-  '#F97316': { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/25' },
-  '#06B6D4': { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/25' },
-};
-
-const DEFAULT_CAT_TW = { bg: 'bg-blue-500/15', text: 'text-blue-400', dot: 'bg-blue-400', border: 'border-blue-500/25' };
-const CATEGORY_TW: Record<string, { bg: string; text: string; dot: string; border: string }> = {
-  technical: { bg: 'bg-blue-500/15', text: 'text-blue-400', dot: 'bg-blue-400', border: 'border-blue-500/25' },
-  user: { bg: 'bg-pink-500/15', text: 'text-pink-400', dot: 'bg-pink-400', border: 'border-pink-500/25' },
-  business: { bg: 'bg-amber-500/15', text: 'text-amber-400', dot: 'bg-amber-400', border: 'border-amber-500/25' },
-  mastermind: { bg: 'bg-violet-500/15', text: 'text-violet-400', dot: 'bg-violet-400', border: 'border-violet-500/25' },
-};
-
 function agentColor(agent: ScanAgentDef) {
-  return COLOR_MAP[agent.color] ?? { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
+  return HEX_COLOR_MAP[agent.color] ?? { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
 }
 
 function relativeTime(iso: string): string {
@@ -145,12 +123,6 @@ const SCAN_STATUS_STYLES: Record<string, string> = {
 // ---------------------------------------------------------------------------
 // Badge helpers
 // ---------------------------------------------------------------------------
-
-function levelColor(value: number): string {
-  if (value <= 3) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-  if (value <= 6) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
-  return 'bg-red-500/15 text-red-400 border-red-500/25';
-}
 
 function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
@@ -254,7 +226,7 @@ function ScanProgress({
 
 function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
   const { staggerDelay } = useMotion();
-  const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_CAT_TW;
+  const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_CATEGORY_TW;
   const agent = SCAN_AGENTS.find((a) => a.key === idea.agentKey);
   const ac = agent ? agentColor(agent) : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
   const catLabel = AGENT_CATEGORIES.find((c) => c.key === idea.category)?.label ?? idea.category;
@@ -590,6 +562,7 @@ export default function IdeaScannerPage() {
         subtitle="Run specialized agents to generate improvement ideas"
         actions={
           <div className="flex items-center gap-2">
+            <LifecycleProjectPicker />
             <Button
               variant="secondary"
               size="sm"
@@ -621,9 +594,7 @@ export default function IdeaScannerPage() {
             </Button>
           </div>
         }
-      >
-        <ProjectSelector />
-      </ContentHeader>
+      />
 
       <ContentBody centered>
         <div className="space-y-6">
@@ -665,7 +636,7 @@ export default function IdeaScannerPage() {
           <div className="space-y-5">
             {AGENT_CATEGORIES.map((cat) => {
               const agents = agentsByCategory.get(cat.key) ?? [];
-              const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CAT_TW;
+              const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
               if (agents.length === 0) return null;
               return (
                 <div key={cat.key}>
@@ -705,7 +676,7 @@ export default function IdeaScannerPage() {
                   All
                 </Button>
                 {AGENT_CATEGORIES.map((cat) => {
-                  const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CAT_TW;
+                  const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
                   return (
                     <Button
                       key={cat.key}

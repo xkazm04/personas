@@ -9,6 +9,14 @@ export const vi = {
     summary_stats: "Bạn có {personasCount} agent và {credentialsCount} thông tin xác thực đã cấu hình.",
     quick_navigation: "Điều Hướng Nhanh",
     platform_label: "nền tảng personas",
+    get_started: "Bắt Đầu",
+    language_section: "Ngôn Ngữ",
+    fleet: {
+      executions_today: "Chạy Hôm Nay",
+      success_rate: "Tỷ Lệ Thành Công",
+      active_agents: "Agent Hoạt Động",
+      credentials: "Thông Tin Xác Thực",
+    },
     nav: {
       overview: {
         label: "Tổng Quan",
@@ -45,6 +53,49 @@ export const vi = {
       settings: {
         label: "Cài Đặt",
         description: "Tài khoản, giao diện, thông báo và cấu hình engine"
+      }
+    },
+    setup: {
+      choose_role: "Chọn vai trò của bạn",
+      choose_role_hint: "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
+      pick_tool: "Chọn công cụ yêu thích",
+      pick_tool_hint: "Đây sẽ là tích hợp kết nối đầu tiên của bạn.",
+      automation_goal: "Bạn muốn tự động hóa điều gì?",
+      automation_goal_hint: "Mô tả mục tiêu tự động hóa đầu tiên — chúng tôi sẽ giúp bạn thiết lập.",
+      min_chars: "Tối thiểu 10 ký tự ({count}/10)",
+      ready: "Sẵn sàng lưu",
+      step_role: "Vai trò",
+      step_tool: "Công cụ",
+      step_goal: "Mục tiêu",
+      back: "Quay lại",
+      next: "Tiếp theo",
+      finish: "Hoàn thành",
+      card_role_title: "Vai Trò Của Bạn",
+      card_role_desc: "Cho chúng tôi biết vai trò của bạn để tùy chỉnh trải nghiệm.",
+      card_tool_title: "Công Cụ Yêu Thích",
+      card_tool_desc: "Chọn kết nối đầu tiên bạn muốn tích hợp.",
+      card_goal_title: "Mục Tiêu Tự Động Hóa",
+      card_goal_desc: "Mô tả điều bạn muốn tự động hóa trước tiên.",
+      lock_tool: "Chọn vai trò trước để mở khóa tùy chọn công cụ.",
+      lock_goal: "Chọn công cụ trước để đặt mục tiêu.",
+      roles: {
+        office_pro: "Office Pro",
+        office_pro_sub: "Người dùng phi kỹ thuật",
+        developer: "Developer",
+        developer_sub: "Người dùng kỹ thuật",
+        manager: "Manager",
+        manager_sub: "Lập kế hoạch & phối hợp",
+        explorer: "Explorer",
+        explorer_sub: "Tất cả công cụ, không lọc"
+      },
+      celebration: {
+        title: "Bạn đã sẵn sàng!",
+        subtitle: "Đây là tóm tắt thiết lập của bạn",
+        role_label: "Vai trò",
+        tool_label: "Công cụ",
+        goal_label: "Mục tiêu",
+        cta: "Tạo agent đầu tiên",
+        dismiss: "Tự khám phá"
       }
     }
   }

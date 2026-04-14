@@ -224,22 +224,35 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
   },
 
   deleteAlertRule: async (id) => {
+    // Optimistic: remove from list immediately
+    const prevRules = get().alertRules;
+    const prevCooldowns = get().alertFiredCooldowns;
+    set((state) => {
+      const rules = state.alertRules.filter(r => r.id !== id);
+      const { [id]: _, ...rest } = state.alertFiredCooldowns;
+      return { alertRules: rules, alertFiredCooldowns: rest };
+    });
     try {
       await api.deleteAlertRule(id);
-      set((state) => {
-        const rules = state.alertRules.filter(r => r.id !== id);
-        const { [id]: _, ...rest } = state.alertFiredCooldowns;
-        return { alertRules: rules, alertFiredCooldowns: rest };
-      });
     } catch (err) {
+      // Revert optimistic removal
+      set({ alertRules: prevRules, alertFiredCooldowns: prevCooldowns });
       const msg = err instanceof Error ? err.message : String(err);
       useToastStore.getState().addToast(`${en.alerts.error_delete_rule} ${msg}`, 'error');
     }
   },
 
   toggleAlertRule: async (id) => {
+    // Optimistic: flip enabled state immediately
+    const prevRules = get().alertRules;
+    set((state) => ({
+      alertRules: state.alertRules.map(r =>
+        r.id === id ? { ...r, enabled: !r.enabled } : r
+      ),
+    }));
     try {
       const toggled = await api.toggleAlertRule(id);
+      // Reconcile with authoritative backend state
       set((state) => {
         const rules = state.alertRules.map(r => r.id === id ? toggled : r);
         if (!toggled.enabled) {
@@ -249,6 +262,8 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         return { alertRules: rules };
       });
     } catch (err) {
+      // Revert optimistic toggle
+      set({ alertRules: prevRules });
       const msg = err instanceof Error ? err.message : String(err);
       useToastStore.getState().addToast(`${en.alerts.error_toggle_rule} ${msg}`, 'error');
     }

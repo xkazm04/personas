@@ -144,6 +144,11 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Check dependency policies
+        run: cd src-tauri && cargo deny check
+
       - name: Show sccache stats
         if: always()
         run: sccache --show-stats

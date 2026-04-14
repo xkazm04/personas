@@ -43,36 +43,6 @@ impl CronSchedule {
     pub fn has_day_of_week(&self, v: u32) -> bool {
         v < 8 && (self.days_of_week & (1u8 << v)) != 0
     }
-
-    #[allow(dead_code)]
-    /// Count how many values are set in the minutes bitfield.
-    pub fn minutes_count(&self) -> u32 {
-        self.minutes.count_ones()
-    }
-
-    #[allow(dead_code)]
-    /// Count how many values are set in the hours bitfield.
-    pub fn hours_count(&self) -> u32 {
-        self.hours.count_ones()
-    }
-
-    #[allow(dead_code)]
-    /// Count how many values are set in the days_of_month bitfield.
-    pub fn days_of_month_count(&self) -> u32 {
-        self.days_of_month.count_ones()
-    }
-
-    #[allow(dead_code)]
-    /// Count how many values are set in the months bitfield.
-    pub fn months_count(&self) -> u32 {
-        self.months.count_ones()
-    }
-
-    #[allow(dead_code)]
-    /// Count how many values are set in the days_of_week bitfield.
-    pub fn days_of_week_count(&self) -> u32 {
-        self.days_of_week.count_ones()
-    }
 }
 
 /// Parse a 5-field cron expression. Returns Err on invalid input.
@@ -353,11 +323,11 @@ mod tests {
     #[test]
     fn test_parse_star() {
         let s = parse_cron("* * * * *").unwrap();
-        assert_eq!(s.minutes_count(), 60);
-        assert_eq!(s.hours_count(), 24);
-        assert_eq!(s.days_of_month_count(), 31);
-        assert_eq!(s.months_count(), 12);
-        assert_eq!(s.days_of_week_count(), 7);
+        assert_eq!(s.minutes.count_ones(), 60);
+        assert_eq!(s.hours.count_ones(), 24);
+        assert_eq!(s.days_of_month.count_ones(), 31);
+        assert_eq!(s.months.count_ones(), 12);
+        assert_eq!(s.days_of_week.count_ones(), 7);
     }
 
     #[test]
@@ -367,7 +337,7 @@ mod tests {
         assert!(s.has_minute(15));
         assert!(s.has_minute(30));
         assert!(s.has_minute(45));
-        assert_eq!(s.minutes_count(), 4);
+        assert_eq!(s.minutes.count_ones(), 4);
     }
 
     #[test]
@@ -386,7 +356,7 @@ mod tests {
         assert!(s.has_minute(1));
         assert!(s.has_minute(15));
         assert!(s.has_minute(30));
-        assert_eq!(s.minutes_count(), 3);
+        assert_eq!(s.minutes.count_ones(), 3);
     }
 
     #[test]

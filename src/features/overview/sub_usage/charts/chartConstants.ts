@@ -31,6 +31,31 @@ export function getAxisTickFill(): string {
   return getCSSVar('--chart-axis-fill', AXIS_TICK_FILL_FALLBACK);
 }
 
+/**
+ * 6-stop chart palette derived from theme CSS variables.
+ * Uses --primary, --accent, and brand tokens so the palette adapts to every theme.
+ */
+export function getThemeChartPalette(): string[] {
+  return [
+    getCSSVar('--primary', '#06b6d4'),
+    getCSSVar('--accent', '#22d3ee'),
+    getCSSVar('--brand-purple', '#a78bfa'),
+    getCSSVar('--brand-emerald', '#34d399'),
+    getCSSVar('--brand-amber', '#fbbf24'),
+    getCSSVar('--brand-rose', '#fb7185'),
+  ];
+}
+
+/** Tooltip style object derived from theme CSS variables. */
+export function getTooltipStyle(): React.CSSProperties {
+  return {
+    background: getCSSVar('--background', '#0a0e14'),
+    border: `1px solid ${getCSSVar('--card-border', 'rgba(255,255,255,0.10)')}`,
+    borderRadius: 10,
+    color: getCSSVar('--foreground', '#e2e8f0'),
+  };
+}
+
 export const CHART_HEIGHT = { sm: 160, md: 200, lg: 240 } as const;
 
 export type MetricUnit = 'count' | 'tokens' | 'usd' | 'ms' | 'percent';

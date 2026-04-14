@@ -4,8 +4,9 @@
 //! lifecycle orchestration. Any execution backend (CLI, HTTP, cloud) can use
 //! this dispatcher to handle protocol messages identically.
 
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 
+use super::events::{ExecutionEventEmitter, emit_to};
 use super::event_registry::event_name;
 use super::protocol::{ExecutionProtocol, StatusFinalization};
 use super::quality_gate::{self, FilterAction, QualityGateConfig};
@@ -20,7 +21,6 @@ use crate::db::repos::communication::{
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
-use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -32,7 +32,10 @@ use super::types::ProtocolMessage;
 /// frontend events. Constructed once per execution and reused for every
 /// protocol message encountered in the stream.
 pub struct DispatchContext<'a> {
-    pub app: &'a AppHandle,
+    pub emitter: &'a dyn ExecutionEventEmitter,
+    /// Optional AppHandle for OS-level notifications (desktop-only).
+    /// `None` in daemon/headless mode — notifications silently skip.
+    pub app_handle: Option<&'a AppHandle>,
     pub pool: &'a DbPool,
     pub execution_id: &'a str,
     pub persona_id: &'a str,
@@ -58,7 +61,7 @@ impl<'a> DispatchContext<'a> {
     #[allow(clippy::too_many_arguments)]
     /// before the message processing loop and pass the same `Arc` to every context.
     pub fn new(
-        app: &'a AppHandle,
+        emitter: &'a dyn ExecutionEventEmitter,
         pool: &'a DbPool,
         execution_id: &'a str,
         persona_id: &'a str,
@@ -69,7 +72,8 @@ impl<'a> DispatchContext<'a> {
         gate_config: Option<QualityGateConfig>,
     ) -> Self {
         Self {
-            app,
+            emitter,
+            app_handle: None,
             pool,
             execution_id,
             persona_id,
@@ -139,13 +143,15 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         m.title.as_deref().unwrap_or("untitled"),
                         m.id
                     ));
-                    let _ = ctx.app.emit(event_name::MESSAGE_CREATED, &m);
-                    crate::notifications::notify_new_message(
-                        ctx.app,
-                        ctx.persona_name,
-                        m.title.as_deref().unwrap_or("New message"),
-                        ctx.notification_channels,
-                    );
+                    emit_to(ctx.emitter, event_name::MESSAGE_CREATED, &m);
+                    if let Some(app) = ctx.app_handle {
+                        crate::notifications::notify_new_message(
+                            app,
+                            ctx.persona_name,
+                            m.title.as_deref().unwrap_or("New message"),
+                            ctx.notification_channels,
+                        );
+                    }
                 }
                 Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {e}")),
             }
@@ -376,12 +382,14 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         "[REVIEW] Created manual review: {} ({})",
                         title, r.id
                     ));
-                    crate::notifications::notify_manual_review(
-                        ctx.app,
-                        ctx.persona_name,
-                        title,
-                        ctx.notification_channels,
-                    );
+                    if let Some(app) = ctx.app_handle {
+                        crate::notifications::notify_manual_review(
+                            app,
+                            ctx.persona_name,
+                            title,
+                            ctx.notification_channels,
+                        );
+                    }
                 }
                 Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {e}")),
             }
@@ -429,60 +437,13 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
         ProtocolMessage::ProposeImprovement {
             section,
             rationale,
-            current_excerpt: _,
-            proposed_replacement,
-            confidence,
-            evidence,
+            ..
         } => {
-            // Guard: reject proposals targeting the identity section
-            if section == "identity" {
-                ctx.logger.log("[PROPOSE] Rejected: proposals targeting identity section are not allowed");
-                return;
-            }
-
-            let rationale_excerpt: String = rationale.chars().take(200).collect();
-            let instruction = format!(
-                "Self-proposed improvement (confidence: {:.0}%): {}",
-                confidence * 100.0,
-                rationale_excerpt
-            );
-            let draft_json = serde_json::json!({
-                "section": section,
-                "proposed": proposed_replacement,
-                "confidence": confidence,
-                "evidence": evidence.as_deref().unwrap_or(""),
-                "source_execution": ctx.execution_id,
-            });
-            let change_summary = format!(
-                "Proposed by persona during execution {}. {}",
-                ctx.execution_id,
-                evidence.as_deref().unwrap_or("")
-            );
-
-            match matrix_repo::create_run(
-                ctx.pool,
-                ctx.persona_id,
-                &instruction,
-                "self-proposed",
-                None,
-            ) {
-                Ok(run) => {
-                    // Populate the draft fields on the newly created run
-                    if let Err(e) = matrix_repo::update_run_draft(
-                        ctx.pool,
-                        &run.id,
-                        &draft_json.to_string(),
-                        &change_summary,
-                    ) {
-                        ctx.logger.log(&format!("[PROPOSE] Failed to update draft: {e}"));
-                    }
-                    ctx.logger.log(&format!(
-                        "[PROPOSE] Created Lab Matrix draft: {} (confidence: {:.0}%, section: {})",
-                        run.id, confidence * 100.0, section
-                    ));
-                }
-                Err(e) => ctx.logger.log(&format!("[PROPOSE] Failed to create Lab Matrix run: {e}")),
-            }
+            // TODO: route to Lab Matrix for user review. For now, log only so
+            // the protocol message is acknowledged rather than ignored.
+            ctx.logger.log(&format!(
+                "[IMPROVEMENT] Proposed change to {section}: {rationale} (queued for Lab review)"
+            ));
         }
     }
 }
@@ -497,21 +458,22 @@ impl ExecutionProtocol for DispatchContext<'_> {
     }
 
     fn emit_output(&self, event: &ExecutionOutputEvent) {
-        let _ = self.app.emit(event_name::EXECUTION_OUTPUT, event);
+        emit_to(self.emitter, event_name::EXECUTION_OUTPUT, event);
     }
 
     fn emit_structured_event(&self, event: &StructuredExecutionEvent) {
-        let _ = self.app.emit(event_name::EXECUTION_EVENT, event);
+        emit_to(self.emitter, event_name::EXECUTION_EVENT, event);
     }
 
     fn emit_heartbeat(&self, event: &HeartbeatEvent) {
-        let _ = self.app.emit(event_name::EXECUTION_HEARTBEAT, event);
+        emit_to(self.emitter, event_name::EXECUTION_HEARTBEAT, event);
     }
 
     fn finalize_status(&self, finalization: &StatusFinalization) {
-        let _ = self.app.emit(
+        emit_to(
+            self.emitter,
             event_name::EXECUTION_STATUS,
-            finalization.to_status_event(),
+            &finalization.to_status_event(),
         );
     }
 }

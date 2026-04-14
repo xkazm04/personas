@@ -11,36 +11,28 @@ import {
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
-  const completedStages = useMemo(() => {
-    if (!trace) return new Set<PipelineStage>();
-    return new Set(
-      trace.spans
-        .filter((s) => isPipelineStage(s.span_type))
-        .map((s) => s.span_type as PipelineStage),
-    );
-  }, [trace]);
-
-  const errorStages = useMemo(() => {
-    if (!trace) return new Set<PipelineStage>();
-    return new Set(
-      trace.spans
-        .filter((s) => isPipelineStage(s.span_type) && s.error)
-        .map((s) => s.span_type as PipelineStage),
-    );
+  const { stages, errors, lastStage } = useMemo(() => {
+    const s = new Set<PipelineStage>();
+    const e = new Set<PipelineStage>();
+    let last: PipelineStage | null = null;
+    if (trace) {
+      for (const span of trace.spans) {
+        if (!isPipelineStage(span.span_type)) continue;
+        const ps = span.span_type as PipelineStage;
+        s.add(ps);
+        if (span.error) e.add(ps);
+        last = ps;
+      }
+    }
+    return { stages: s, errors: e, lastStage: last };
   }, [trace]);
 
   return (
     <div className="flex items-center gap-1">
       {PIPELINE_STAGES.map((stage) => {
-        const completed = completedStages.has(stage);
-        const hasError = errorStages.has(stage);
-        const pStages = trace?.spans.filter((s) => isPipelineStage(s.span_type)) ?? [];
-        const lastStage = pStages[pStages.length - 1];
-        const isLast =
-          trace &&
-          lastStage &&
-          lastStage.span_type === stage &&
-          !trace.completedAt;
+        const completed = stages.has(stage);
+        const hasError = errors.has(stage);
+        const isLast = lastStage === stage && trace && !trace.completedAt;
 
         return (
           <Tooltip content={STAGE_META[stage].label} placement="bottom">

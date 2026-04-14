@@ -30,27 +30,11 @@ export interface OnboardingSlice {
   dismissOnboarding: () => void;
 }
 
-// -- Sentry metrics helpers ---------------------------------------------
+// -- Sentry metrics helper ----------------------------------------------
 
-function trackStepCompletion(step: OnboardingStep) {
+function trackMetric(name: string, attributes?: Record<string, string>) {
   try {
-    Sentry.metrics.count("onboarding.step_completed", 1, { attributes: { step } });
-  } catch {
-    // intentional: non-critical -- Sentry may not be initialized in dev
-  }
-}
-
-function trackOnboardingComplete() {
-  try {
-    Sentry.metrics.count("onboarding.flow_completed", 1);
-  } catch {
-    // intentional: non-critical -- Sentry may not be initialized in dev
-  }
-}
-
-function trackOnboardingDismissed(atStep: OnboardingStep) {
-  try {
-    Sentry.metrics.count("onboarding.dismissed", 1, { attributes: { at_step: atStep } });
+    Sentry.metrics.count(name, 1, attributes ? { attributes } : undefined);
   } catch {
     // intentional: non-critical -- Sentry may not be initialized in dev
   }
@@ -83,11 +67,7 @@ export const createOnboardingSlice: StateCreator<
   startOnboarding: () => {
     // Don't start if already completed or if user has personas already
     if (get().onboardingCompleted || storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS).length > 0) return;
-    try {
-      Sentry.metrics.count("onboarding.started", 1);
-    } catch {
-      // intentional: non-critical -- Sentry may not be initialized in dev
-    }
+    trackMetric("onboarding.started");
     set({
       onboardingActive: true,
       onboardingStep: "appearance",
@@ -101,11 +81,7 @@ export const createOnboardingSlice: StateCreator<
   resumeOnboarding: () => {
     const { onboardingDismissedAtStep, onboardingCompleted } = get();
     if (onboardingCompleted || !onboardingDismissedAtStep) return;
-    try {
-      Sentry.metrics.count("onboarding.resumed", 1, { attributes: { at_step: onboardingDismissedAtStep } });
-    } catch {
-      // intentional: non-critical -- Sentry may not be initialized in dev
-    }
+    trackMetric("onboarding.resumed", { at_step: onboardingDismissedAtStep });
     set({
       onboardingActive: true,
       onboardingStep: onboardingDismissedAtStep,
@@ -116,7 +92,7 @@ export const createOnboardingSlice: StateCreator<
   setOnboardingStep: (step) => set({ onboardingStep: step }),
 
   completeOnboardingStep: (step) => {
-    trackStepCompletion(step);
+    trackMetric("onboarding.step_completed", { step });
     set((state) => ({
       onboardingStepCompleted: {
         ...state.onboardingStepCompleted,
@@ -132,7 +108,7 @@ export const createOnboardingSlice: StateCreator<
     set({ onboardingCreatedPersonaId: personaId }),
 
   finishOnboarding: () => {
-    trackOnboardingComplete();
+    trackMetric("onboarding.flow_completed");
     set({
       onboardingActive: false,
       onboardingCompleted: true,
@@ -143,7 +119,7 @@ export const createOnboardingSlice: StateCreator<
 
   dismissOnboarding: () => {
     const currentStep = get().onboardingStep;
-    trackOnboardingDismissed(currentStep);
+    trackMetric("onboarding.dismissed", { at_step: currentStep });
     set({
       onboardingActive: false,
       onboardingDismissedAtStep: currentStep,

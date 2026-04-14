@@ -19,6 +19,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   // -- Dry run --
   const [dryRunning, setDryRunning] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
+  const [dryRunError, setDryRunError] = useState<{ message: string } | null>(null);
 
   // -- Activity --
   const [activityOpen, setActivityOpen] = useState(false);
@@ -67,17 +68,18 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   const handleDryRun = useCallback(async () => {
     setDryRunning(true);
     setDryRunResult(null);
+    setDryRunError(null);
     try {
       const result = await ops.dryRun(triggerId);
       if (result.ok && result.data) {
         setDryRunResult(result.data);
       } else {
-        setTestResult({ success: false, message: result.error ?? 'Dry run failed' });
-        setTimeout(() => setTestResult(null), 8000);
+        setDryRunError({ message: result.error ?? 'Dry run failed' });
+        setTimeout(() => setDryRunError(null), 8000);
       }
     } catch (err) {
-      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Dry run failed' });
-      setTimeout(() => setTestResult(null), 8000);
+      setDryRunError({ message: err instanceof Error ? err.message : 'Dry run failed' });
+      setTimeout(() => setDryRunError(null), 8000);
     } finally {
       setDryRunning(false);
     }
@@ -162,12 +164,13 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   }, [triggerId]);
 
   const clearDryRunResult = useCallback(() => setDryRunResult(null), []);
+  const clearDryRunError = useCallback(() => setDryRunError(null), []);
 
   return {
     // Test fire
     testing, testResult, handleTestFire,
     // Dry run
-    dryRunning, dryRunResult, handleDryRun, clearDryRunResult,
+    dryRunning, dryRunResult, dryRunError, handleDryRun, clearDryRunResult, clearDryRunError,
     // Activity
     activityOpen, activityLog, activityLoading, activityError, toggleActivityLog, retryActivityLog,
     // Delete

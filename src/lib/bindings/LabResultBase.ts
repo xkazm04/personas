@@ -16,5 +16,6 @@ export interface LabResultBase {
   rationale: string | null;
   suggestions: string | null;
   errorMessage: string | null;
+  evalMethod: string | null;
   createdAt: string;
 }

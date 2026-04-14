@@ -4,7 +4,7 @@
  * Maps template IDs and categories to agent-icon values so that
  * adopted personas automatically get a themed icon.
  */
-import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
+import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import { iconIdForCategories, toAgentIconValue, getAgentIconEntry } from './agentIconCatalog';
 
 interface ResolvedIcon {
@@ -16,9 +16,9 @@ interface ResolvedIcon {
  * Given a template name or ID, resolve the best agent-icon value and color.
  * Returns null if the template can't be found in the catalog.
  */
-export function resolveTemplateAgentIcon(templateNameOrId: string): ResolvedIcon | null {
-  // Find the template in the catalog by ID or name
-  const template = TEMPLATE_CATALOG.find(
+export async function resolveTemplateAgentIcon(templateNameOrId: string): Promise<ResolvedIcon | null> {
+  const catalog = await getTemplateCatalog();
+  const template = catalog.find(
     (t) => t.id === templateNameOrId || t.name === templateNameOrId,
   );
   if (!template) return null;

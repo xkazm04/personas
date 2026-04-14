@@ -249,9 +249,13 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   const seekTo = useCallback((value: number, isMs = false) => {
     const wasPlaying = playingRef.current;
 
-    // Pause playback and flag seeking to prevent tick() from emitting mid-seek
+    // Stop the tick loop: clear the interval so no tick fires mid-seek
     isSeekingRef.current = true;
     playingRef.current = false;
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
 
     const total = rangeEndRef.current - rangeStartRef.current;
     const ms = isMs ? Math.max(0, Math.min(value, total)) : Math.max(0, Math.min(value, 1)) * total;
@@ -268,13 +272,14 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     setReplayEvents([]); // clear current particles on seek
     animationMapRef.current.clear();
 
-    // Resume playback if it was active before the seek
+    // Resume playback with a fresh interval if it was active before the seek
     isSeekingRef.current = false;
     if (wasPlaying) {
       lastTickRef.current = Date.now();
       playingRef.current = true;
+      timerRef.current = window.setInterval(tick, TICK_INTERVAL);
     }
-  }, [findFirstAfter]);
+  }, [findFirstAfter, tick]);
 
   return {
     active,

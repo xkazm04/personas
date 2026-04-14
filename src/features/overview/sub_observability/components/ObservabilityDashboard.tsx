@@ -1,8 +1,9 @@
-import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity } from 'lucide-react';
+import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
+import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -23,8 +24,61 @@ import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
 import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 import SystemTraceViewer from './SystemTraceViewer';
 
+const PANEL_SOURCES = [
+  { key: 'observabilityMetrics', label: 'Metrics' },
+  { key: 'alertRules', label: 'Alerts' },
+  { key: 'alertHistory', label: 'Alert History' },
+  { key: 'healingIssues', label: 'Health' },
+] as const;
+
+function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: {
+  pipelineErrors: Record<string, string>;
+  pipelineFetchedAt: Record<string, number>;
+  errorRecovery: { panel_loaded: string; panel_failed: string; panel_stale: string };
+}) {
+  const hasAnyIssue = PANEL_SOURCES.some(s => pipelineErrors[s.key] || !pipelineFetchedAt[s.key]);
+  if (!hasAnyIssue) return null;
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-secondary/10">
+      {PANEL_SOURCES.map(({ key, label }) => {
+        const hasError = !!pipelineErrors[key];
+        const hasFetched = !!pipelineFetchedAt[key];
+        const isStale = hasFetched && (Date.now() - pipelineFetchedAt[key]!) > 300_000;
+
+        if (hasError) {
+          return (
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-red-500/10 text-red-400 border border-red-500/20">
+              <AlertCircle className="w-3 h-3" />
+              {label}: {errorRecovery.panel_failed}
+            </span>
+          );
+        }
+        if (isStale) {
+          return (
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <AlertCircle className="w-3 h-3" />
+              {label}: {errorRecovery.panel_stale}
+            </span>
+          );
+        }
+        if (hasFetched) {
+          return (
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <CheckCircle2 className="w-3 h-3" />
+              {label}
+            </span>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
 export default function ObservabilityDashboard() {
   const { t } = useTranslation();
+  const { t: tOverview } = useOverviewTranslation();
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
   const activeAlertCount = useOverviewStore(selectActiveAlertCount);
@@ -119,6 +173,13 @@ export default function ObservabilityDashboard() {
         <PersonaSelect value={d.selectedPersonaId} onChange={d.setSelectedPersonaId} personas={d.personas} />
         <DayRangePicker value={d.days} onChange={d.setDays} customDateRange={d.customDateRange} onCustomDateRangeChange={d.setCustomDateRange} />
       </div>
+
+      {/* Per-panel status chips for partial failures */}
+      <PanelStatusChips
+        pipelineErrors={pipelineErrors}
+        pipelineFetchedAt={pipelineFetchedAt}
+        errorRecovery={tOverview.errorRecovery}
+      />
 
       <ContentBody>
       <div className="space-y-4">

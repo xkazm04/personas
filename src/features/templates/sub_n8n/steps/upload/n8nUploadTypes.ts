@@ -1,5 +1,6 @@
 import { FileCode2, FileJson } from 'lucide-react';
 
+// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export const MAX_PASTE_LENGTH = 5 * 1024 * 1024; // 5MB text
 

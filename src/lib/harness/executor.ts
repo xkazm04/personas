@@ -4,7 +4,7 @@
    ============================================================================== */
 
 import { spawn } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type {
   ExecutorConfig,

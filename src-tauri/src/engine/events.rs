@@ -15,20 +15,10 @@
 //! (it has a `Self: Sized` bound and is not callable through
 //! `&dyn ExecutionEventEmitter`).
 //!
-//! ## Threading status (2026-04-13, /research run on A2A-Kit video)
-//!
-//! As of 2026-04-13 the trait is wired into `runner.rs` for the four
-//! `EXECUTION_STATUS` transition sites: early credential failure, post-spawn
-//! failure, stream loop failure, and the final-status emission at the end of
-//! `run_execution`. Other emit sites in `runner.rs` (circuit breaker, trace
-//! spans, raw output lines) still call `app.emit(...)` directly because they
-//! emit non-state-transition payloads and have no consumers in the daemon
-//! path yet. Migrating those is a follow-up when daemon mode or test-time
-//! event capture grows a real consumer.
-//!
-//! The first scaffolding pass landed 2026-04-08 (run 1, A2A gateway). The
-//! "follow-up pass" referenced in that run's comment is this module's
-//! current state — additive but no longer dead code.
+//! Phase 1 (2026-04-08/09): the emitter is now threaded through `runner.rs`,
+//! `dispatch.rs`, `ollama.rs`, and `provider/mod.rs`. The `run_execution`
+//! function accepts `Arc<dyn ExecutionEventEmitter>` and all event emission
+//! goes through `emit_to()` instead of calling `app.emit()` directly.
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -109,6 +99,20 @@ impl ExecutionEventEmitter for NoOpEmitter {
     fn emit_json(&self, _event: &str, _payload: serde_json::Value) {
         // intentional no-op
     }
+}
+
+/// Serialize a typed payload and emit through a trait object.
+///
+/// This is the workhorse helper for call sites that hold
+/// `Arc<dyn ExecutionEventEmitter>` or `&dyn ExecutionEventEmitter`
+/// (where the generic `emit()` method is not callable due to the
+/// `Self: Sized` bound).
+///
+/// ```ignore
+/// emit_to(&*emitter, event_name::EXECUTION_STATUS, &status_event);
+/// ```
+pub fn emit_to<P: Serialize>(emitter: &dyn ExecutionEventEmitter, event: &str, payload: &P) {
+    emitter.emit_json(event, serde_json::to_value(payload).unwrap_or(serde_json::Value::Null));
 }
 
 #[cfg(test)]

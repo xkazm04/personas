@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, Plus, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -15,6 +16,8 @@ import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/rev
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { BulkActionBar } from './BulkActionBar';
+import { dashboardItem } from '@/features/templates/animationPresets';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("manual-review");
@@ -152,6 +155,8 @@ export default function ManualReviewList() {
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 
+  const { shouldAnimate } = useMotion();
+
   const handleSeedReview = useCallback(async () => {
     try { await seedMockManualReview(); await fetchManualReviews(); }
     catch (err) { logger.error('Failed to seed mock review', { error: err }); }
@@ -192,8 +197,16 @@ export default function ManualReviewList() {
       />
 
       <ContentBody flex>
+        <AnimatePresence mode="wait">
         {filteredReviews.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-6">
+          <motion.div
+            key="empty"
+            className="flex-1 flex items-center justify-center p-6"
+            variants={shouldAnimate ? dashboardItem : undefined}
+            initial={shouldAnimate ? "hidden" : false}
+            animate="show"
+            exit={shouldAnimate ? "exit" : undefined}
+          >
             <EmptyState
               icon={ClipboardCheck}
               title={t.overview.review.empty_title}
@@ -201,28 +214,45 @@ export default function ManualReviewList() {
               action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
               secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
             />
-          </div>
+          </motion.div>
         ) : filter === 'pending' ? (
-          <div className="flex-1 overflow-hidden">
+          <motion.div
+            key="focus"
+            className="flex-1 overflow-hidden"
+            variants={shouldAnimate ? dashboardItem : undefined}
+            initial={shouldAnimate ? "hidden" : false}
+            animate="show"
+            exit={shouldAnimate ? "exit" : undefined}
+          >
             <ReviewFocusFlow
               reviews={filteredReviews as TriageReview[]}
               onApprove={(id: string, notes?: string) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
               onReject={(id: string, notes?: string) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
               isProcessing={isProcessing}
             />
-          </div>
+          </motion.div>
         ) : (
-          <ReviewInboxPanel
-            filteredReviews={filteredReviews}
-            activeReviewId={activeReviewId}
-            activeReview={activeReview}
-            selectedIds={selectedIds}
-            isProcessing={isProcessing}
-            onSelectReview={setActiveReviewId}
-            onToggleSelect={toggleSelect}
-            onAction={handleAction}
-          />
+          <motion.div
+            key={`inbox-${filter}`}
+            className="flex-1 min-h-0 flex flex-col"
+            variants={shouldAnimate ? dashboardItem : undefined}
+            initial={shouldAnimate ? "hidden" : false}
+            animate="show"
+            exit={shouldAnimate ? "exit" : undefined}
+          >
+            <ReviewInboxPanel
+              filteredReviews={filteredReviews}
+              activeReviewId={activeReviewId}
+              activeReview={activeReview}
+              selectedIds={selectedIds}
+              isProcessing={isProcessing}
+              onSelectReview={setActiveReviewId}
+              onToggleSelect={toggleSelect}
+              onAction={handleAction}
+            />
+          </motion.div>
         )}
+        </AnimatePresence>
       </ContentBody>
 
       <BulkActionBar

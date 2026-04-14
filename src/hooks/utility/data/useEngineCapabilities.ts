@@ -30,7 +30,7 @@ interface UseEngineCapabilitiesResult {
   resetToDefaults: () => void;
 }
 
-export function useEngineCapabilities(): UseEngineCapabilitiesResult {
+export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngineCapabilitiesResult {
   const [capabilities, setCapabilities] = useState<EngineCapabilityMap>(DEFAULT_CAPABILITIES);
   const [installedProviders, setInstalledProviders] = useState<Set<CliEngine>>(new Set());
   const [loaded, setLoaded] = useState(false);
@@ -71,10 +71,15 @@ export function useEngineCapabilities(): UseEngineCapabilitiesResult {
   }, []);
 
   // Debounced persist
+  const onSaveRef = useRef(opts?.onSave);
+  onSaveRef.current = opts?.onSave;
+
   const persist = useCallback((next: EngineCapabilityMap) => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      setAppSetting(CAPABILITY_SETTING_KEY, JSON.stringify(next)).catch(silentCatch("engineCapabilities:persistSettings"));
+      setAppSetting(CAPABILITY_SETTING_KEY, JSON.stringify(next))
+        .then(() => onSaveRef.current?.())
+        .catch(silentCatch("engineCapabilities:persistSettings"));
     }, 500);
   }, []);
 

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Play, Download, Save, Check, Database } from 'lucide-react';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
+import { SchemaParseErrorBanner } from '../../shared/SchemaParseErrorBanner';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { updateRecipe } from '@/api/templates/recipes';
 import type { InputField } from './recipeTestHelpers';
@@ -18,6 +19,7 @@ interface RecipeInputSectionProps {
   executionPhase: string;
   onExecute: () => void;
   onSetFieldValues: (updater: (prev: Record<string, string>) => Record<string, string>) => void;
+  schemaParseError?: string | null;
 }
 
 export function RecipeInputSection({
@@ -32,6 +34,7 @@ export function RecipeInputSection({
   executionPhase,
   onExecute,
   onSetFieldValues,
+  schemaParseError,
 }: RecipeInputSectionProps) {
   const { t } = useTranslation();
   const [mockSaved, setMockSaved] = useState(false);
@@ -99,6 +102,8 @@ export function RecipeInputSection({
           </button>
         </div>
       </div>
+
+      {schemaParseError && <SchemaParseErrorBanner parseError={schemaParseError} />}
 
       <div className="grid grid-cols-2 gap-4">
         {/* Left: Test Input */}

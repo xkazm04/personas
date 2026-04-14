@@ -207,8 +207,10 @@ export const id = {
     appearance: "Tampilan",
     notifications: "Notifikasi",
     engine: "Mesin",
-    byom: "BYOM",
+    byom: "Penyedia Model",
     data: "Data",
+    quality_gates: "Filter Konten",
+    config_resolution: "Konfigurasi Agen",
     admin: "Admin",
     create: "Buat",
     all_agents: "Semua Agen",
@@ -5914,6 +5916,7 @@ export const id = {
   },
   settings: {
     title: "Pengaturan",
+    settings_saved: "Tersimpan",
     account: {
       title: "Akun",
       subtitle: "Kelola masuk dan profil Anda",

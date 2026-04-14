@@ -7,7 +7,7 @@ import type { ToolImpactData } from '../libs/toolImpactTypes';
 
 export function ConnectorGroup({
   connectorKey, tools, assignedToolIds, credentialTypeSet,
-  credentialLabel, justToggledId, usageByTool, impactDataMap,
+  credentialLabel, usageByTool, impactDataMap,
   onToggleTool, onBulkToggle, onAddCredential,
 }: {
   connectorKey: string;
@@ -15,7 +15,6 @@ export function ConnectorGroup({
   assignedToolIds: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
-  justToggledId: string | null;
   usageByTool: Map<string, number>;
   impactDataMap: Map<string, ToolImpactData>;
   onToggleTool: (id: string, name: string, assigned: boolean) => void;
@@ -91,7 +90,6 @@ export function ConnectorGroup({
               tool={tool}
               isAssigned={isAssigned}
               missingCredential={missingCredential}
-              justToggledId={justToggledId}
               usageByTool={usageByTool}
               impactData={impactDataMap.get(tool.name)}
               onToggle={onToggleTool}

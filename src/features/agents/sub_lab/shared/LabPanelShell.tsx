@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { LabProgress } from '../components/shared/LabProgress';
 import { LabActionButtons } from './LabActionButtons';
+import type { GuideItem } from './DisabledGuide';
 
 interface LabPanelShellProps {
   children: ReactNode;
@@ -10,6 +11,7 @@ interface LabPanelShellProps {
   onCancel: () => void;
   disabled: boolean;
   disabledReason: string;
+  guideItems?: GuideItem[];
   runLabel: ReactNode;
   cancelLabel: string;
   cancelTestId: string;
@@ -27,6 +29,7 @@ export function LabPanelShell({
   onCancel,
   disabled,
   disabledReason,
+  guideItems,
   runLabel,
   cancelLabel,
   cancelTestId,
@@ -49,6 +52,7 @@ export function LabPanelShell({
           onCancel={onCancel}
           disabled={disabled}
           disabledReason={disabledReason}
+          guideItems={guideItems}
           runLabel={runLabel}
           cancelLabel={cancelLabel}
           cancelTestId={cancelTestId}

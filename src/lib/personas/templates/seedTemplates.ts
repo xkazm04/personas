@@ -4,7 +4,7 @@
  *
  * Source of truth: templateCatalog.ts (single template catalog).
  */
-import { TEMPLATE_CATALOG } from './templateCatalog';
+import { getTemplateCatalog } from './templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
 const SEED_RUN_ID = 'seed-category-v1';
@@ -56,13 +56,15 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
 }
 
 /** All seed templates that should be present in the Generated tab. */
-export function getSeedReviews(): SeedReviewInput[] {
-  return TEMPLATE_CATALOG.map((t) => templateToReviewInput(t, SEED_RUN_ID));
+export async function getSeedReviews(): Promise<SeedReviewInput[]> {
+  const catalog = await getTemplateCatalog();
+  return catalog.map((t) => templateToReviewInput(t, SEED_RUN_ID));
 }
 
 /** IDs of all templates currently in the catalog (used to prune stale seeds). */
-export function getActiveSeedIds(): string[] {
-  return TEMPLATE_CATALOG.map((t) => t.id);
+export async function getActiveSeedIds(): Promise<string[]> {
+  const catalog = await getTemplateCatalog();
+  return catalog.map((t) => t.id);
 }
 
 export { SEED_RUN_ID };

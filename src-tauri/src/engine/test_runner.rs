@@ -233,7 +233,7 @@ pub async fn run_test(
                         tool_accuracy: None, output_quality: None, protocol_compliance: None,
                         output_preview: None, tool_calls_actual: None,
                         input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some("Cancelled".to_string()), rationale: None, suggestions: None,
+                        error_message: Some("Cancelled".to_string()), rationale: None, suggestions: None, eval_method: None,
                     });
                 }
                 let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
@@ -248,7 +248,7 @@ pub async fn run_test(
                             tool_accuracy: None, output_quality: None, protocol_compliance: None,
                             output_preview: Some(e.clone()), tool_calls_actual: None,
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                            error_message: Some(e.clone()), rationale: None, suggestions: None,
+                            error_message: Some(e.clone()), rationale: None, suggestions: None, eval_method: None,
                         },
                     ),
                 };
@@ -430,6 +430,13 @@ pub(crate) async fn generate_scenarios(
     let output = spawn_cli_and_collect(&cli_args, &coordinator_prompt).await?;
     let scenarios = parse_scenarios_from_output(&output)?;
 
+    // Never cache empty results — doing so would poison the cache for up to 10 minutes,
+    // causing all subsequent runs to silently complete with zero scenarios.
+    if scenarios.is_empty() {
+        tracing::warn!(persona_id = %persona.id, "Scenario generation produced no results, skipping cache");
+        return Ok(scenarios);
+    }
+
     // Store in cache when no fixture inputs
     if fixture_inputs.is_none() {
         let key = scenario_cache_key(persona, tools, use_case_filter);
@@ -610,6 +617,7 @@ pub(crate) struct ScoreResult {
     pub(crate) error_message: Option<String>,
     pub(crate) rationale: Option<String>,
     pub(crate) suggestions: Option<String>,
+    pub(crate) eval_method: Option<String>,
 }
 
 pub(crate) async fn execute_scenario(
@@ -808,6 +816,7 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
         error_message: output.error.clone(),
         rationale: Some(serde_json::to_string(&rationale_json).unwrap_or(llm_result.rationale)),
         suggestions: Some(llm_result.suggestions),
+        eval_method: Some(llm_result.eval_method.as_str().to_string()),
     }
 }
 
@@ -1211,7 +1220,7 @@ async fn run_lab_loop(
                             output_preview: None, tool_calls_actual: None,
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                             error_message: Some("Cancelled".to_string()),
-                            rationale: None, suggestions: None,
+                            rationale: None, suggestions: None, eval_method: None,
                         });
                     }
                     let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
@@ -1222,7 +1231,7 @@ async fn run_lab_loop(
                             output_preview: Some(e.clone()), tool_calls_actual: None,
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                             error_message: Some(e.clone()),
-                            rationale: None, suggestions: None,
+                            rationale: None, suggestions: None, eval_method: None,
                         }),
                     };
                     (mi, vi, status, scores)
@@ -1398,6 +1407,7 @@ fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, s
         error_message: scores.error_message.clone(),
         rationale: scores.rationale.clone(),
         suggestions: scores.suggestions.clone(),
+        eval_method: scores.eval_method.clone(),
     }
 }
 

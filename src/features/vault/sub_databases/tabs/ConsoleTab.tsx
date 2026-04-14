@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Play, Shield, ShieldOff, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -38,20 +38,26 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const queryGenRef = useRef(0);
 
   const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
+    const gen = ++queryGenRef.current;
     setExecuting(true); setError(null); setResult(null);
     try {
       const res = await executeDbQuery(credentialId, text, undefined, allowMutation);
+      if (gen !== queryGenRef.current) return;
       setResult(res);
       setHistory((prev) => {
         const filtered = prev.filter((h) => h.query !== text);
         return [{ query: text, timestamp: Date.now() }, ...filtered].slice(0, 10);
       });
     } catch (err) {
+      if (gen !== queryGenRef.current) return;
       setError(extractErrorMessage(err));
     } finally {
-      setExecuting(false);
+      if (gen === queryGenRef.current) {
+        setExecuting(false);
+      }
     }
   }, [credentialId, executeDbQuery]);
 

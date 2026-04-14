@@ -17,7 +17,11 @@ export const createSetupSlice: StateCreator<SystemStore, [], [], SetupSlice> = (
   setupTool: null,
   setupGoal: null,
   setupCompleted: false,
-  setSetupRole: (role) => set({ setupRole: role }),
+  setSetupRole: (role) => set((state) => ({
+    setupRole: role,
+    // Clear downstream selections when role changes — tools differ per role
+    ...(state.setupRole !== role ? { setupTool: null, setupGoal: null } : {}),
+  })),
   setSetupTool: (tool) => set({ setupTool: tool }),
   setSetupGoal: (goal) => set({ setupGoal: goal }),
   dismissSetup: () => set({ setupCompleted: true }),

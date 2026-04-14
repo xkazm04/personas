@@ -39,6 +39,30 @@ pub struct EvalResult {
     pub passed: Option<bool>,
 }
 
+/// Indicates which evaluation method produced the scores.
+/// Propagated to the frontend so users know when scores came from degraded evaluation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum EvalMethod {
+    /// Full LLM-based evaluation with Claude scoring and rationale.
+    Llm,
+    /// Heuristic fallback: keyword-match + tool-accuracy scoring (LLM eval failed after retries).
+    HeuristicFallback,
+    /// Heuristic fallback triggered specifically by a timeout.
+    Timeout,
+}
+
+impl EvalMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Llm => "llm",
+            Self::HeuristicFallback => "heuristic_fallback",
+            Self::Timeout => "timeout",
+        }
+    }
+}
+
 /// Identifies which strategy produced an EvalResult.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -399,6 +423,13 @@ pub struct LlmEvalResult {
     /// Verdict: one-line summary of the overall result.
     #[serde(default)]
     pub verdict: Option<String>,
+    /// How the evaluation was performed: full LLM, heuristic fallback, or timeout.
+    #[serde(default = "default_eval_method")]
+    pub eval_method: EvalMethod,
+}
+
+fn default_eval_method() -> EvalMethod {
+    EvalMethod::Llm
 }
 
 /// Ask an LLM to evaluate a persona's test result, providing scores, rationale,
@@ -420,7 +451,7 @@ pub async fn eval_with_llm(
         match run_llm_eval(&eval_prompt).await {
             Ok(result) => return result,
             Err(e) => {
-                last_err = e;
+                last_err = e.clone();
                 if attempt == 0 {
                     tracing::debug!("LLM eval attempt 1 failed, retrying: {last_err}");
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -428,8 +459,12 @@ pub async fn eval_with_llm(
             }
         }
     }
-    tracing::warn!("LLM eval failed after 2 attempts, falling back to heuristic: {last_err}");
-    fallback_heuristic(input)
+
+    // Distinguish timeout from other failures
+    let is_timeout = last_err.contains("timed out");
+    let method = if is_timeout { EvalMethod::Timeout } else { EvalMethod::HeuristicFallback };
+    tracing::warn!("LLM eval failed after 2 attempts (method={:?}), falling back to heuristic: {last_err}", method);
+    fallback_heuristic(input, method)
 }
 
 fn build_llm_eval_prompt(
@@ -588,7 +623,7 @@ fn validate_llm_result(mut result: LlmEvalResult) -> Result<LlmEvalResult, Strin
 }
 
 /// Fallback to heuristic scoring when LLM evaluation fails.
-fn fallback_heuristic(input: &EvalInput<'_>) -> LlmEvalResult {
+fn fallback_heuristic(input: &EvalInput<'_>, method: EvalMethod) -> LlmEvalResult {
     let tool = eval_tool_accuracy(input);
     let keyword = eval_keyword_match(input);
     let protocol = eval_protocol_compliance(input);
@@ -608,6 +643,7 @@ fn fallback_heuristic(input: &EvalInput<'_>) -> LlmEvalResult {
         output_quality_rationale: Some(keyword.explanation.clone()),
         protocol_rationale: Some(protocol.explanation.clone()),
         verdict: Some("Scored using heuristic fallback (LLM eval was unavailable).".to_string()),
+        eval_method: method,
     }
 }
 

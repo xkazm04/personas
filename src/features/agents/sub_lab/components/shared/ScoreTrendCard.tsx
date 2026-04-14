@@ -199,7 +199,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
 
           {hoveredIdx != null && svgPoints[hoveredIdx] && (
             <div
-              className="absolute bottom-full mb-1 -translate-x-1/2 pointer-events-none z-10 whitespace-nowrap rounded bg-popover border border-border px-1.5 py-0.5 text-[10px] text-popover-foreground shadow-sm"
+              className="absolute bottom-full mb-1 -translate-x-1/2 pointer-events-none z-10 whitespace-nowrap rounded bg-popover border border-border px-1.5 py-0.5 typo-caption text-popover-foreground shadow-sm"
               style={{
                 left: `${(svgPoints[hoveredIdx].x / SVG_W) * 100}%`,
               }}

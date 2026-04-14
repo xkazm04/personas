@@ -144,32 +144,6 @@ pub fn get_by_service_type(
     })
 }
 
-pub fn create(pool: &DbPool, input: CreateCredentialInput) -> Result<PersonaCredential, AppError> {
-    timed_query!("persona_credentials", "persona_credentials::create", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO persona_credentials
-             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![
-                id,
-                input.name,
-                input.service_type,
-                input.encrypted_data,
-                input.iv,
-                input.metadata,
-                now,
-            ],
-        )?;
-
-        get_by_id(pool, &id)
-
-    })
-}
-
 /// Create a credential and save its fields in a single SQLite transaction.
 /// If field encryption or insertion fails, the credential row is rolled back
 /// automatically -- no orphaned rows.
@@ -339,6 +313,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
         tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
         tx.execute("DELETE FROM oauth_token_metrics WHERE credential_id = ?1", params![id])?;
+        tx.execute("DELETE FROM credential_audit_log WHERE credential_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
 
         tx.commit().map_err(AppError::Database)?;

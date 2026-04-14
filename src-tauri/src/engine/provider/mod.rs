@@ -202,7 +202,7 @@ pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
 /// Like [`load_engine_kind`] but emits an `engine-fallback` event to the
 /// frontend when an unrecognized engine setting triggers the ClaudeCode
 /// fallback, so the user sees a toast notification.
-pub fn load_engine_kind_notified(pool: &DbPool, app: &tauri::AppHandle) -> EngineKind {
+pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::ExecutionEventEmitter) -> EngineKind {
     use super::event_registry::event_name;
 
     let raw = crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CLI_ENGINE)
@@ -213,13 +213,10 @@ pub fn load_engine_kind_notified(pool: &DbPool, app: &tauri::AppHandle) -> Engin
         Some(ref s) if s.parse::<EngineKind>().is_err() => {
             // Unrecognized value — from_setting will log the warning
             let kind = EngineKind::from_setting(s);
-            let _ = app.emit(
-                event_name::ENGINE_FALLBACK,
-                serde_json::json!({
+            super::events::emit_to(emitter, event_name::ENGINE_FALLBACK, &serde_json::json!({
                     "requested": s,
                     "actual": kind.as_setting(),
-                }),
-            );
+                }));
             kind
         }
         Some(ref s) => EngineKind::from_setting(s),

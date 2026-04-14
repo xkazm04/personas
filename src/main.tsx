@@ -57,10 +57,17 @@ window.onerror = (_message, _source, _lineno, _colno, error) => {
 };
 
 window.addEventListener("unhandledrejection", (event) => {
-  const ctx = getErrorContext();
   const reason = event.reason;
+  // Suppress Tauri IPC "send before connect" noise — fires in bulk when
+  // the Rust backend emits events before the WebView IPC bridge is ready.
+  // These are harmless (events are re-fetched on connect) and generate
+  // tens of thousands of log lines otherwise.
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  if (msg === "send was called before connect") return;
+
+  const ctx = getErrorContext();
   globalErrorLogger.error("Unhandled promise rejection", {
-    message: reason instanceof Error ? reason.message : String(reason),
+    message: msg,
     ...ctx,
   });
   if (sentryReady) {

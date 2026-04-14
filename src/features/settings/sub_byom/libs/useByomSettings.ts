@@ -1,6 +1,8 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import * as Sentry from "@sentry/react";
 import { useToastStore } from '@/stores/toastStore';
+import { errMsg } from '@/stores/storeTypes';
 import {
   getByomPolicy,
   setByomPolicy,
@@ -70,7 +72,8 @@ export function useByomSettings() {
 
   // --- Dirty-state tracking ---
   const savedSnapshotRef = useRef<ByomPolicy>(defaultPolicy());
-  const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy]);
+  const [saveGeneration, setSaveGeneration] = useState(0);
+  const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy, saveGeneration]);
 
   // Track which tab-specific data has already been fetched to avoid re-fetching on tab switches
   const fetchedTabs = useRef<Set<ByomSection>>(new Set());
@@ -81,6 +84,7 @@ export function useByomSettings() {
       const initial = p ?? defaultPolicy();
       setPolicy(initial);
       savedSnapshotRef.current = initial;
+      setSaveGeneration((g) => g + 1);
       setCorruptPolicyError(null);
       setLoaded(true);
     }).catch((err: unknown) => {
@@ -116,18 +120,30 @@ export function useByomSettings() {
       );
       return;
     }
-    await setByomPolicy(policy);
-    savedSnapshotRef.current = policy;
-    useToastStore.getState().addToast('Policy saved', 'success');
+    try {
+      await setByomPolicy(policy);
+      savedSnapshotRef.current = policy;
+      setSaveGeneration((g) => g + 1);
+      useToastStore.getState().addToast('Policy saved', 'success');
+    } catch (e) {
+      Sentry.captureException(e);
+      useToastStore.getState().addToast(errMsg(e, 'Failed to save policy'), 'error');
+    }
   }, [policy]);
 
   const handleReset = useCallback(async () => {
-    await deleteByomPolicy();
-    const reset = defaultPolicy();
-    setPolicy(reset);
-    savedSnapshotRef.current = reset;
-    setCorruptPolicyError(null);
-    useToastStore.getState().addToast('Policy reset to defaults', 'success');
+    try {
+      await deleteByomPolicy();
+      const reset = defaultPolicy();
+      setPolicy(reset);
+      savedSnapshotRef.current = reset;
+      setSaveGeneration((g) => g + 1);
+      setCorruptPolicyError(null);
+      useToastStore.getState().addToast('Policy reset to defaults', 'success');
+    } catch (e) {
+      Sentry.captureException(e);
+      useToastStore.getState().addToast(errMsg(e, 'Failed to reset policy'), 'error');
+    }
   }, []);
 
   const discardChanges = useCallback(() => {

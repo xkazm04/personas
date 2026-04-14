@@ -103,27 +103,6 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<TeamMemory, AppError> {
     })
 }
 
-pub fn get_by_team(
-    pool: &DbPool,
-    team_id: &str,
-    limit: Option<i64>,
-) -> Result<Vec<TeamMemory>, AppError> {
-    timed_query!("team_memories", "team_memories::get_by_team", {
-        let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM team_memories WHERE team_id = ?1
-             ORDER BY importance DESC, created_at DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![team_id, limit], row_to_team_memory)?;
-        let results: Vec<TeamMemory> = rows
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)?;
-        Ok(results)
-
-    })
-}
-
 pub fn get_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<TeamMemory>, AppError> {
     timed_query!("team_memories", "team_memories::get_by_run", {
         let conn = pool.get()?;

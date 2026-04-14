@@ -49,6 +49,7 @@ export interface OverviewSlice {
 
   // State -- execution dashboard (canonical metrics source)
   executionDashboard: ExecutionDashboardData | null;
+  executionDashboardDays: number | null;
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
 
@@ -121,6 +122,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   observabilityMetrics: null,
   observabilityError: null,
   executionDashboard: null,
+  executionDashboardDays: null,
   executionDashboardLoading: false,
   executionDashboardError: null,
   pipelineErrors: {},
@@ -167,10 +169,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         });
       }
 
+      // Use raw row count (before dedup) for hasMore so duplicates don't
+      // trick the heuristic into hiding the Load More button prematurely.
+      const rawCount = rows.length;
       set({
         globalExecutions: merged,
-        // Signal hasMore when result count equals the limit
-        globalExecutionsTotal: merged.length + (merged.length >= limit ? 1 : 0),
+        globalExecutionsTotal: merged.length + (rawCount >= limit ? 1 : 0),
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
       });
@@ -279,7 +283,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       // When no persona filter is active, derive the summary from the
       // execution dashboard (already loaded) to avoid a redundant SQL scan.
       const dashboard = get().executionDashboard;
-      const canReuseDashboard = !personaId && dashboard;
+      const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days;
 
       const [summary, chartData] = await withRetry(
         () => Promise.all([
@@ -317,7 +321,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
           "Failed to load execution dashboard",
         ),
       );
-      set({ executionDashboard: data, executionDashboardError: null, executionDashboardLoading: false });
+      set({ executionDashboard: data, executionDashboardDays: days, executionDashboardError: null, executionDashboardLoading: false });
     } catch (err) {
       const classified = err instanceof ApiError ? err : classifyError(err, "Failed to load execution dashboard");
       const prefix = classified.isTransient ? '[Temporary] ' : '';

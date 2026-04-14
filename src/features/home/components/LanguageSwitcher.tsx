@@ -91,7 +91,7 @@ export default function LanguageSwitcher() {
               className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-elevation-3 z-50 overflow-hidden p-2"
             >
               {/* Card grid with illustration backgrounds */}
-              <div className="grid grid-cols-4 gap-2" style={{ width: '420px' }}>
+              <div className="grid grid-cols-4 gap-2 max-w-[420px] w-[calc(100vw-2rem)]">
                 {LANGUAGES.map((lang) => {
                   const isActive = language === lang.code;
                   return (

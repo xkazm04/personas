@@ -6,18 +6,7 @@ import {
   generateSynthesisSuggestions,
   findSimilarPairs,
 } from './ideaEvolution';
-
-function fitnessColor(fitness: number): string {
-  if (fitness > 0.3) return 'text-emerald-400';
-  if (fitness > 0) return 'text-amber-400';
-  return 'text-red-400';
-}
-
-function fitnessBar(fitness: number): string {
-  if (fitness > 0.3) return 'bg-emerald-400';
-  if (fitness > 0) return 'bg-amber-400';
-  return 'bg-red-400';
-}
+import { fitnessColor, fitnessBar } from '../constants/ideaColors';
 
 export function IdeaEvolutionPanel() {
   const ideas = useSystemStore((s) => s.ideas);

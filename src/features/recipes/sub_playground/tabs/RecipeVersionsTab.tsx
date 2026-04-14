@@ -198,7 +198,8 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                   versioning.reset();
                   handleGenerate();
                 }}
-                className="rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                disabled={!requirements.trim()}
+                className="rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
               >
                 Regenerate
               </button>

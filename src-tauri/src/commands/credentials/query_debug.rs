@@ -328,7 +328,7 @@ async fn run_query_debug(params: RunParams) {
         }
 
         // Execute the extracted query
-        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, allow_mutations).await {
+        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, allow_mutations, false).await {
             Ok(result) => {
                 let summary = format!(
                     "> Query succeeded: {} row{} in {}ms",

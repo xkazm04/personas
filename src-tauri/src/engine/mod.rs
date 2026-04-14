@@ -4,9 +4,11 @@ pub mod build_session;
 pub mod events;
 pub mod event_registry;
 pub mod config_merge;
+#[cfg(feature = "p2p")]
 pub mod identity;
 pub mod bundle;
 pub mod enclave;
+#[cfg(feature = "p2p")]
 pub mod p2p;
 pub mod background;
 pub mod bus;
@@ -95,8 +97,11 @@ pub mod output_assertions;
 pub mod genome;
 pub mod evolution;
 pub mod chunker;
+#[cfg(feature = "ml")]
 pub mod embedder;
+#[cfg(feature = "ml")]
 pub mod vector_store;
+#[cfg(feature = "ml")]
 pub mod kb_ingest;
 pub mod api_proxy;
 pub mod discovery;
@@ -399,10 +404,15 @@ async fn run_execution_with_ceiling(
 ) -> ExecutionResult {
     let ceiling = std::time::Duration::from_secs(ENGINE_MAX_EXECUTION_SECS);
 
+    // Wrap the AppHandle in a TauriEmitter so runner::run_execution
+    // works through the abstracted ExecutionEventEmitter trait.
+    let emitter: Arc<dyn events::ExecutionEventEmitter> =
+        Arc::new(events::TauriEmitter::new(app));
+
     match tokio::time::timeout(
         ceiling,
         runner::run_execution(
-            app,
+            emitter,
             pool,
             execution_id.clone(),
             persona,

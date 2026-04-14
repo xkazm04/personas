@@ -4,6 +4,7 @@ import { parseWorkflowFile } from '@/lib/personas/parsers/workflowParser';
 import { isSupportedFile } from '@/lib/personas/parsers/workflowDetector';
 import type { N8nImportAction } from './useN8nImportReducer';
 
+// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 interface UseWorkflowImportOptions {

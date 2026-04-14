@@ -197,6 +197,11 @@ pub fn spawn_cdc_drain_task(
     db: crate::db::DbPool,
 ) {
     tauri::async_runtime::spawn(async move {
+        // Wait for the WebView IPC bridge to be established before emitting
+        // events.  Without this delay, every `app_handle.emit()` fires a
+        // "send was called before connect" unhandled‐promise rejection on the
+        // frontend, producing tens of thousands of log lines and wasting CPU.
+        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
         tracing::info!("CDC drain task started");
 
         // We run the blocking recv in a dedicated thread to avoid holding up
