@@ -1119,3 +1119,28 @@ Every research run now ends with an explicit commit step. The design choices:
 - Will users respect the explicit stage rule, or will they push to include unrelated drift? The "unexpected files" prompt in 13b is the checkpoint — watch whether it fires often or never.
 - Does the `research:` prefix get picked up by `/gsd:pr-branch`? It should — verify on next PR cycle.
 - Is the commit message template too verbose for single-finding runs? Possibly — the "optional 1-2 line summary" slot is there to let short runs stay short.
+
+### 2026-04-14 — "consumer web-app build tutorial" as a new zero-yield source type
+
+**Context:** `/research` run on "Build and Deploy A Production Ready Events Manager Website | NextJS, React, TailwindCSS, PostgreSQL" (Pedro Tech, sponsored by Neon). Focus was templates + credentials. The video is a ~1h55m walkthrough of building a consumer-facing events-planner web app from scratch (Next.js + Prisma + Neon Postgres + Neon Auth + Vercel). **Result: 5 candidates extracted in Phase 3, zero survived Phase 4.** Every candidate was either already in the catalog (Neon, Vercel, GitHub) or not connector-shaped (Neon Auth = user-login primitive, Prisma = Node library, Event RSVP template = consumer web app flow, not an agent workflow).
+
+**Rules added (Phase 3 calibration table):**
+
+- **New source-type row — "Consumer web-app build tutorial."** Title pattern: "Build [and Deploy] X with [React|Next|Vue|Svelte] + DB + deploy stack" where X is a consumer-facing web app (events planner, dashboard, landing page, SaaS clone, etc.). Expected yield: **0 findings + 1-4 already-existed catches**. The overlap between "personas orchestrates AI agents that call APIs" and "how to build a React CRUD app for end users" is near-zero. The only findings such a source can produce are (a) a credential for a service the video uses, if not already in the catalog, or (b) an agent-shaped template that RE-imagines the consumer domain as an automation flow — but the re-imagining rarely survives the dedup check against existing calendar/meeting/notification templates.
+
+- **Recommended action for this source type:** do the full Phase 3 extraction (5 candidates) to prove the drop, write a stub Research note + Lessons entry, commit. Do NOT stretch into a weak finding — a forced template that duplicates existing agent-shaped templates is net negative for the catalog.
+
+- **New Phase 4 filter: "user-login auth vs machine-to-machine API auth"** (first observation, not yet a codebase-stack rule). When a new auth product appears as a credential candidate, test whether it's *user-facing login for end users of YOUR app* (Clerk, Auth0, Better Auth, Neon Auth, Supabase Auth — **drop**) or *machine-to-machine API auth your agent consumes* (**connector-shaped, keep**). This run was the first time the distinction mattered — Neon Auth was the borderline case and dropped cleanly once the filter was applied. Watch for a second observation. If it happens again, promote to `codebase-stack.md` as a permanent rule in Section 3 (connector binding model).
+
+**Phase 6 tool-grep-first heuristic validated as the highest-leverage early move.** For sources where the title hints at "build X with Y and Z", running a tool-name grep across the cleaned transcript (`neon|prisma|vercel|clerk|stripe|resend|...`) before the deep read catches the entire "services mentioned" surface in one call. If every grep hit is already-existed or not-connector-shaped, the run is probably zero-findings — bail to stub-note early with confidence. Time cost: ~30 seconds. Benefit on this run: confirmed within ~2 minutes of loading the transcript that no new credentials were in play, which freed me to focus the deep read on the template question.
+
+**Rules considered but not added:**
+
+- "Auto-skip any video whose title matches the consumer web-app build pattern." Too aggressive — occasionally such videos DO surface a new deploy/DB/auth service worth adding. Better to do the full Phase 3 extraction and prove the drop, which takes ~15 minutes and produces a permanent Research note that prevents re-harvesting. The stub note is the insurance, not the bail-out.
+
+- "Promote the user-login vs M2M auth filter to codebase-stack.md now." One observation isn't enough. If the same filter saves a second run, promote then.
+
+**Open questions for future runs:**
+
+- How common is the consumer-web-app-tutorial source type in practice? This is the first one in 14 runs. If it stays rare, the calibration table entry is documentation-only; if it becomes common (the YouTube algorithm feeds a lot of them), the early-bail heuristic becomes load-bearing.
+- Does the stub-note-only path feel right to users, or will they push for at least one speculative template even on zero-yield runs? This run got approval for stub-only framing, but that's n=1. Watch the next zero-yield run.
