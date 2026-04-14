@@ -521,27 +521,35 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   }, [designResult]);
 
   if (!seeded) {
+    // Render the questionnaire inline as the wizard's primary content while
+    // the user fills it in. Static questions are interactive immediately;
+    // dynamic-source questions show a per-card loading spinner that flips to
+    // the real options as the API call resolves. We only fall back to the
+    // "Loading template…" placeholder AFTER the user submits, while seed
+    // creates the draft persona — so the user is never blocked behind a
+    // generic loading screen with the questionnaire trapped underneath it.
+    if (hasAdoptionQuestions && !questionsComplete) {
+      return (
+        <QuestionnaireFormGrid
+          inline
+          questions={adoptionQuestions}
+          userAnswers={adoptionAnswers}
+          autoDetectedIds={autoDetectedIds}
+          blockedQuestionIds={blockedQuestionIds}
+          filteredOptions={filteredOptions}
+          dynamicOptions={dynamicOptions}
+          onRetryDynamic={retryDynamic}
+          onAddCredential={handleAddCredentialForCategory}
+          onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
+          onSubmit={() => setQuestionsComplete(true)}
+          onClose={onClose}
+        />
+      );
+    }
     return (
-      <>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
-        </div>
-        {hasAdoptionQuestions && !questionsComplete && (
-          <QuestionnaireFormGrid
-            questions={adoptionQuestions}
-            userAnswers={adoptionAnswers}
-            autoDetectedIds={autoDetectedIds}
-            blockedQuestionIds={blockedQuestionIds}
-            filteredOptions={filteredOptions}
-            dynamicOptions={dynamicOptions}
-            onRetryDynamic={retryDynamic}
-            onAddCredential={handleAddCredentialForCategory}
-            onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
-            onSubmit={() => setQuestionsComplete(true)}
-            onClose={onClose}
-          />
-        )}
-      </>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+      </div>
     );
   }
 
@@ -604,22 +612,9 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         />
       )}
 
-      {/* Adoption questions — FormGrid variant */}
-      {hasAdoptionQuestions && !questionsComplete && (
-        <QuestionnaireFormGrid
-          questions={adoptionQuestions}
-          userAnswers={adoptionAnswers}
-          autoDetectedIds={autoDetectedIds}
-          blockedQuestionIds={blockedQuestionIds}
-          filteredOptions={filteredOptions}
-          dynamicOptions={dynamicOptions}
-          onRetryDynamic={retryDynamic}
-          onAddCredential={handleAddCredentialForCategory}
-          onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
-          onSubmit={() => setQuestionsComplete(true)}
-          onClose={onClose}
-        />
-      )}
+      {/* Note: questionnaire is rendered inline in the !seeded branch above.
+          Once seeded === true the user has already submitted, so no need
+          to render the questionnaire again here. */}
     </div>
   );
 }

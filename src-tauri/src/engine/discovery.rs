@@ -106,6 +106,213 @@ static REGISTRY: LazyLock<HashMap<RegistryKey, DiscoveryOp>> = LazyLock::new(|| 
         },
     );
 
+    // ---------------- GitHub ----------------
+    // GET /user/repos → [{ id, name, full_name, description, ... }, ...]
+    m.insert(
+        ("github", "list_repos"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/user/repos?per_page=100&sort=updated",
+            items_path: None,
+            value_path: "full_name",
+            label_path: Some("full_name"),
+            sublabel_path: Some("description"),
+        },
+    );
+    // GET /user/orgs → [{ login, ... }, ...]
+    m.insert(
+        ("github", "list_orgs"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/user/orgs?per_page=100",
+            items_path: None,
+            value_path: "login",
+            label_path: Some("login"),
+            sublabel_path: None,
+        },
+    );
+    // Alias for GitHub Actions credentials (same API surface).
+    m.insert(
+        ("github_actions", "list_repos"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/user/repos?per_page=100&sort=updated",
+            items_path: None,
+            value_path: "full_name",
+            label_path: Some("full_name"),
+            sublabel_path: Some("description"),
+        },
+    );
+
+    // ---------------- Slack ----------------
+    // GET /conversations.list → { channels: [{ id, name, is_private, ... }] }
+    m.insert(
+        ("slack", "list_channels"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/conversations.list?types=public_channel,private_channel&limit=200&exclude_archived=true",
+            items_path: Some("channels"),
+            value_path: "name",
+            label_path: Some("name"),
+            sublabel_path: Some("topic.value"),
+        },
+    );
+
+    // ---------------- Notion ----------------
+    // POST /v1/search filtered to databases — but we use GET search via
+    // proxy doesn't support POST body in discovery yet. Use the v1/databases
+    // search endpoint via GET; if Notion ever requires POST we'll extend.
+    // Notion's actual search is POST-only, so we use the (deprecated but still
+    // working) `databases` listing for compatibility:
+    // GET /v1/databases (legacy endpoint, returns { results: [...], ... })
+    // Skipped because it's deprecated and Notion requires POST. Templates can
+    // still ask the user to paste a database id until POST-body discovery
+    // lands. (Phase 2 work.)
+
+    // ---------------- Airtable ----------------
+    // GET /v0/meta/bases → { bases: [{ id, name, permissionLevel }] }
+    m.insert(
+        ("airtable", "list_bases"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/v0/meta/bases",
+            items_path: Some("bases"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("permissionLevel"),
+        },
+    );
+
+    // ---------------- Asana ----------------
+    // GET /workspaces → { data: [{ gid, name }] }
+    m.insert(
+        ("asana", "list_workspaces"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/workspaces?opt_fields=name&limit=100",
+            items_path: Some("data"),
+            value_path: "gid",
+            label_path: Some("name"),
+            sublabel_path: None,
+        },
+    );
+    // GET /projects → { data: [{ gid, name }] }
+    m.insert(
+        ("asana", "list_projects"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/projects?opt_fields=name,owner&limit=100",
+            items_path: Some("data"),
+            value_path: "gid",
+            label_path: Some("name"),
+            sublabel_path: None,
+        },
+    );
+
+    // ---------------- ClickUp ----------------
+    // GET /team → { teams: [{ id, name, ... }] }
+    m.insert(
+        ("clickup", "list_teams"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/team",
+            items_path: Some("teams"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: None,
+        },
+    );
+
+    // ---------------- Netlify ----------------
+    // GET /api/v1/sites → [{ id, name, url, ... }]
+    m.insert(
+        ("netlify", "list_sites"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/api/v1/sites?per_page=100",
+            items_path: None,
+            value_path: "name",
+            label_path: Some("name"),
+            sublabel_path: Some("url"),
+        },
+    );
+
+    // ---------------- Vercel ----------------
+    // GET /v9/projects → { projects: [{ id, name, ... }], pagination }
+    m.insert(
+        ("vercel", "list_projects"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/v9/projects?limit=100",
+            items_path: Some("projects"),
+            value_path: "name",
+            label_path: Some("name"),
+            sublabel_path: Some("framework"),
+        },
+    );
+
+    // ---------------- Cloudflare ----------------
+    // GET /zones → { result: [{ id, name, status }], success, ... }
+    m.insert(
+        ("cloudflare", "list_zones"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/zones?per_page=50",
+            items_path: Some("result"),
+            value_path: "name",
+            label_path: Some("name"),
+            sublabel_path: Some("status"),
+        },
+    );
+
+    // ---------------- Linear ----------------
+    // Linear is GraphQL-only — discovery deferred until POST-body support
+    // lands in the discovery engine. Until then, Linear questions stay text.
+
+    // ---------------- Neon ----------------
+    // GET /projects → { projects: [{ id, name, region_id, ... }] }
+    m.insert(
+        ("neon", "list_projects"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/projects",
+            items_path: Some("projects"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: Some("region_id"),
+        },
+    );
+
+    // ---------------- BetterStack ----------------
+    // GET /api/v2/monitors → { data: [{ id, attributes: { url, ... } }] }
+    // Note: BetterStack's response shape uses JSON:API style — `attributes`
+    // is nested. Our extract_string walks dot paths so this works.
+    m.insert(
+        ("betterstack", "list_monitors"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/api/v2/monitors?per_page=50",
+            items_path: Some("data"),
+            value_path: "id",
+            label_path: Some("attributes.url"),
+            sublabel_path: Some("attributes.monitor_type"),
+        },
+    );
+
+    // ---------------- PostHog ----------------
+    // GET /api/projects/ → { results: [{ id, name, ... }] }
+    m.insert(
+        ("posthog", "list_projects"),
+        DiscoveryOp::Http {
+            method: "GET",
+            path: "/api/projects/",
+            items_path: Some("results"),
+            value_path: "id",
+            label_path: Some("name"),
+            sublabel_path: None,
+        },
+    );
+
     // ---------------- Codebases (local dev projects) ----------------
     m.insert(("codebases", "list_projects"), DiscoveryOp::LocalCodebases);
 

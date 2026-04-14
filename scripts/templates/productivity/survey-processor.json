@@ -928,10 +928,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Where should Slack response summaries be posted?",
-        "type": "text",
+        "type": "select",
         "default": "",
         "context": "Specify the Slack channel name (e.g., #survey-responses, #cs-alerts) so the agent routes the right summaries to the right audience without cross-posting noise.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_memory_1",

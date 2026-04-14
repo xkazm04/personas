@@ -39,6 +39,14 @@ interface QuestionnaireFormGridProps {
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onSubmit: () => void;
   onClose: () => void;
+  /**
+   * When true, render the questionnaire as inline content (no BaseModal
+   * wrapper). Used by `MatrixAdoptionView` to embed the questionnaire as the
+   * primary view of the Adoption Wizard, avoiding the stacked-portal /
+   * loading-screen confusion that happened when this rendered its own modal
+   * on top of the wizard.
+   */
+  inline?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -422,6 +430,7 @@ function QuestionCard({
 }) {
   const { t } = useTranslation();
   const [flash, setFlash] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
   const prevAnswer = useRef(answer);
 
   useEffect(() => {
@@ -435,6 +444,7 @@ function QuestionCard({
   }, [answer]);
 
   const isAnswered = !!answer;
+  const hasTip = !!question.context && !isBlocked;
 
   return (
     <div
@@ -442,7 +452,7 @@ function QuestionCard({
         flash ? 'bg-emerald-500/[0.06]' : isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
       }`}
     >
-      {/* Question label + status indicator */}
+      {/* Question label + status indicator + collapsible tip toggle */}
       <div className="flex items-start gap-2 mb-1.5">
         {isBlocked ? (
           <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
@@ -451,7 +461,7 @@ function QuestionCard({
         ) : (
           <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
         )}
-        <span className="text-base font-medium text-foreground/90 leading-snug">
+        <span className="flex-1 text-base font-medium text-foreground/90 leading-snug">
           {question.question}
         </span>
         {isAutoDetected && !isBlocked && (
@@ -460,13 +470,27 @@ function QuestionCard({
             {t.templates.adopt_modal.auto_detected}
           </span>
         )}
+        {hasTip && (
+          <button
+            type="button"
+            onClick={() => setTipOpen((v) => !v)}
+            aria-expanded={tipOpen}
+            aria-label={tipOpen ? 'Hide explanation' : 'Show explanation'}
+            className={`flex-shrink-0 mt-0.5 p-0.5 rounded transition-colors ${
+              tipOpen
+                ? 'text-primary/80 hover:text-primary'
+                : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+            }`}
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
-      {/* Context */}
-      {question.context && !isBlocked && (
-        <div className="flex items-start gap-1.5 ml-5.5 mb-2">
-          <Info className="w-3.5 h-3.5 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
-          <span className="text-sm text-muted-foreground/70 leading-relaxed">
+      {/* Context — collapsed by default, expands on Info icon click */}
+      {hasTip && tipOpen && (
+        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.05]">
+          <span className="text-sm text-muted-foreground/80 leading-relaxed">
             {question.context}
           </span>
         </div>
@@ -560,6 +584,7 @@ export function QuestionnaireFormGrid({
   onAnswerUpdated,
   onSubmit,
   onClose,
+  inline = false,
 }: QuestionnaireFormGridProps) {
   const { t } = useTranslation();
   const grouped = useMemo(() => groupByCategory(questions), [questions]);
@@ -605,9 +630,8 @@ export function QuestionnaireFormGrid({
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <BaseModal isOpen onClose={onClose} titleId="questionnaire-form-grid" size="6xl" portal>
-      <div className="flex flex-col max-h-[85vh]">
+  const body = (
+      <div className={inline ? "flex flex-col h-full min-h-0" : "flex flex-col max-h-[85vh]"}>
         {/* ── Header ─────────────────────────────────────────── */}
         <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-3">
@@ -753,6 +777,13 @@ export function QuestionnaireFormGrid({
           </div>
         </div>
       </div>
+  );
+
+  if (inline) return body;
+
+  return (
+    <BaseModal isOpen onClose={onClose} titleId="questionnaire-form-grid" size="6xl" portal>
+      {body}
     </BaseModal>
   );
 }

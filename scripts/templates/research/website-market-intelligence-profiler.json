@@ -700,11 +700,18 @@
       {
         "id": "slack_channel",
         "question": "Which Slack channel should receive the market landscape reports?",
-        "type": "text",
-        "placeholder": "#market-intelligence",
+        "type": "select",
         "helpText": "The bot must be invited to this channel. Reports include industry breakdowns, tech trends, and white space analysis.",
         "required": true,
-        "maps_to": "connector.slack.channel"
+        "maps_to": "connector.slack.channel",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "batch_size",

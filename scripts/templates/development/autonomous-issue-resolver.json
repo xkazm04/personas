@@ -798,24 +798,40 @@
       {
         "id": "slack_alert_channel",
         "question": "Which Slack channel for escalation alerts and daily digests?",
-        "type": "text",
+        "type": "select",
         "default": "#engineering-alerts",
         "context": "Daily summaries, escalation notices, and weekly health reports go here.",
         "connector_names": [
           "slack"
         ],
-        "category": "configuration"
+        "category": "configuration",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "slack_escalation_channel",
         "question": "Which Slack channel for high-priority escalations?",
-        "type": "text",
+        "type": "select",
         "default": "#engineering-escalations",
         "context": "Angry reporter P1/P2 issues are posted here for immediate visibility.",
         "connector_names": [
           "slack"
         ],
-        "category": "configuration"
+        "category": "configuration",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "eng_manager_email",

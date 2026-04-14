@@ -824,10 +824,19 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel(s) should receive deadline reminders and overdue alerts?",
-        "type": "text",
+        "type": "select",
         "default": "#project-deadlines",
         "context": "Specifying channels (or 'DM assignees only') ensures alerts reach the right audience without spamming unrelated team members.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_quality_1",

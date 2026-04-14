@@ -797,9 +797,17 @@
       {
         "id": "slack_channel",
         "question": "Which Slack channel should receive weekly data quality reports?",
-        "type": "text",
+        "type": "select",
         "default": "#data-quality",
-        "hint": "The bot must be invited to this channel. Reports include score, issue breakdown, and top fix recommendations."
+        "hint": "The bot must be invited to this channel. Reports include score, issue breakdown, and top fix recommendations.",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "notion_database",

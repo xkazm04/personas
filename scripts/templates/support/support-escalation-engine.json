@@ -909,10 +909,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should escalation alerts be posted to?",
-        "type": "text",
+        "type": "select",
         "default": "#support-escalations",
         "context": "The engine posts all SLA breach alerts to this channel. Use a dedicated escalation channel to avoid flooding general support channels.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_memory_1",

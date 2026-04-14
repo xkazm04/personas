@@ -674,10 +674,18 @@
         "id": "aq_configuration_1",
         "category": "configuration",
         "question": "Which Slack channel should receive the morning briefing, and should severe anomalies route to a separate escalation channel or @mention?",
-        "type": "text",
+        "type": "select",
         "default": "#analytics for the daily briefing; same channel with @here for anomalies",
         "context": "Configures Slack routing — broad teams often want briefings in #analytics but critical drops pinging #oncall or a specific person",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_boundaries_1",

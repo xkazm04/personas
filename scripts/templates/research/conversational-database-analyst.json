@@ -776,8 +776,16 @@
         "id": "slack_channel",
         "question": "Which Slack channel should receive questions and answers?",
         "helpText": "The channel where team members will ask data questions and receive results (e.g., #data-questions, #analytics).",
-        "type": "text",
-        "required": false
+        "type": "select",
+        "required": false,
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "telegram_group",

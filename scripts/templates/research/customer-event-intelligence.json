@@ -738,10 +738,19 @@
         "id": "aq_configuration_1",
         "category": "configuration",
         "question": "Which Slack channel(s) should receive high-intent sales alerts?",
-        "type": "text",
+        "type": "select",
         "default": "#sales-signals",
         "context": "Determines Slack routing. Some teams use a single shared channel; others route by account tier (e.g., #enterprise-signals vs #smb-signals).",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_configuration_2",

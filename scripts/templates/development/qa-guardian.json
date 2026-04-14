@@ -37,7 +37,9 @@
           "path": "/qa-guardian/github",
           "method": "POST",
           "secret": "configured-during-adoption",
-          "events": ["pull_request"]
+          "events": [
+            "pull_request"
+          ]
         },
         "description": "GitHub pull request webhook -- triggers review when a PR is opened or updated with new commits"
       }
@@ -199,7 +201,10 @@
         "default_value": "deliberate",
         "value": "deliberate",
         "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
-        "options": ["autonomous", "deliberate"]
+        "options": [
+          "autonomous",
+          "deliberate"
+        ]
       }
     ],
     "use_case_flows": [
@@ -299,20 +304,80 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4" },
-          { "id": "e4", "source": "n4", "target": "n5" },
-          { "id": "e5", "source": "n5", "target": "n6" },
-          { "id": "e6", "source": "n6", "target": "n7" },
-          { "id": "e7", "source": "n7", "target": "n8" },
-          { "id": "e8", "source": "n8", "target": "n9", "label": "Score >= threshold", "variant": "yes" },
-          { "id": "e9", "source": "n8", "target": "n10", "label": "Score below threshold", "variant": "no" },
-          { "id": "e10", "source": "n9", "target": "n11" },
-          { "id": "e11", "source": "n10", "target": "n11" },
-          { "id": "e12", "source": "n11", "target": "n12" },
-          { "id": "e13", "source": "n12", "target": "n13" },
-          { "id": "e14", "source": "n13", "target": "n14" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "label": "Score >= threshold",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n10",
+            "label": "Score below threshold",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n11"
+          },
+          {
+            "id": "e11",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e13",
+            "source": "n12",
+            "target": "n13"
+          },
+          {
+            "id": "e14",
+            "source": "n13",
+            "target": "n14"
+          }
         ]
       },
       {
@@ -386,17 +451,69 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3", "label": "Enabled", "variant": "yes" },
-          { "id": "e3", "source": "n2", "target": "n9", "label": "Disabled", "variant": "no" },
-          { "id": "e4", "source": "n3", "target": "n4" },
-          { "id": "e5", "source": "n4", "target": "n5" },
-          { "id": "e6", "source": "n5", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7", "label": "Tests pass", "variant": "yes" },
-          { "id": "e8", "source": "n6", "target": "n8", "label": "Tests fail", "variant": "no" },
-          { "id": "e9", "source": "n7", "target": "n10" },
-          { "id": "e10", "source": "n8", "target": "n10" },
-          { "id": "e11", "source": "n9", "target": "n10" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Enabled",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n9",
+            "label": "Disabled",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Tests pass",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n8",
+            "label": "Tests fail",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n10"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          }
         ]
       },
       {
@@ -448,13 +565,45 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n5", "label": "Fixed in later commit", "variant": "yes" },
-          { "id": "e4", "source": "n3", "target": "n4", "label": "Merged as-is", "variant": "no" },
-          { "id": "e5", "source": "n4", "target": "n6" },
-          { "id": "e6", "source": "n5", "target": "n7" },
-          { "id": "e7", "source": "n6", "target": "n7" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n5",
+            "label": "Fixed in later commit",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4",
+            "label": "Merged as-is",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          }
         ]
       }
     ],
@@ -480,11 +629,18 @@
         "id": "aq_domain_1",
         "category": "domain",
         "question": "Which GitHub repository should QA Guardian review?",
-        "type": "text",
-        "placeholder": "owner/repo-name",
+        "type": "select",
         "default": "",
         "context": "Should match the repository Dev Clone works on (if using as a companion). Enter as owner/repo.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "devops",
+        "option_service_types": [
+          "github"
+        ],
+        "dynamic_source": {
+          "service_type": "github",
+          "operation": "list_repos"
+        }
       },
       {
         "id": "aq_domain_2",

@@ -787,10 +787,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should receive deal-stage updates and the Monday pipeline report?",
-        "type": "text",
+        "type": "select",
         "default": "#sales",
         "context": "All deal notifications and weekly reports post here. Specify separate channels with a comma (e.g. #deal-updates, #sales-reports) if you want them split.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_quality_1",

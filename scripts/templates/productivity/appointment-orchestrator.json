@@ -776,10 +776,19 @@
         "id": "aq_domain_1",
         "category": "domain",
         "question": "Which Slack channel(s) should receive new booking and cancellation alerts?",
-        "type": "text",
+        "type": "select",
         "default": "#sales-pipeline",
         "context": "Ensures team notifications route to the right channel instead of a generic default.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_domain_2",

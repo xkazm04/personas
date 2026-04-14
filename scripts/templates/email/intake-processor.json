@@ -773,10 +773,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "List the Slack channel names where routed summaries should be posted (e.g., #support-triage, #sales-leads, #ops-inbox). Include a fallback channel for unclassified emails.",
-        "type": "text",
+        "type": "select",
         "default": "#general-intake",
         "context": "Maps email categories to specific Slack destinations; the agent needs this routing table to post to the right channels",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_quality_1",

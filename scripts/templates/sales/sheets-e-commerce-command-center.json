@@ -752,10 +752,19 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channels should receive each alert type?",
-        "type": "text",
+        "type": "select",
         "default": "#sales-alerts for high-value orders, #ops-alerts for inventory warnings, #daily-digest for the 9 PM report",
         "context": "Routing alerts to the wrong channel is the most common setup mistake — lets the agent target the right audiences from day one",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_boundaries_1",

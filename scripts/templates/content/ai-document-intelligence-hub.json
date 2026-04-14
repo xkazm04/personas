@@ -903,10 +903,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should receive the weekly knowledge growth report?",
-        "type": "text",
+        "type": "select",
         "default": "#team-updates",
         "context": "Ensures the Friday 5 PM digest reaches the right audience (leadership, whole team, or a dedicated knowledge-ops channel).",
-        "dimension": "triggers"
+        "dimension": "triggers",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_quality_1",

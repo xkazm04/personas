@@ -787,10 +787,19 @@
         "id": "aq_domain_2",
         "category": "domain",
         "question": "Which Slack channels should receive subscription events and MRR reports? (e.g., #revenue, #billing-alerts, #finance)",
-        "type": "text",
+        "type": "select",
         "default": "#revenue",
         "context": "Ensures Slack notifications route to the right audience — sales team, finance, or exec — without spamming unrelated channels.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_configuration_1",
@@ -811,10 +820,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "What is the name of your Airtable base and table used to store customer subscription records?",
-        "type": "text",
+        "type": "select",
         "default": "Billing / Subscriptions",
         "context": "Required to correctly target Airtable API calls for record creation, updates, and MRR aggregation queries.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "database",
+        "option_service_types": [
+          "airtable"
+        ],
+        "dynamic_source": {
+          "service_type": "airtable",
+          "operation": "list_bases"
+        }
       },
       {
         "id": "aq_boundaries_1",

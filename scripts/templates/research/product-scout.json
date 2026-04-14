@@ -803,10 +803,18 @@
         "id": "aq_configuration_1",
         "category": "configuration",
         "question": "Which Slack channel should triage cards be posted to?",
-        "type": "text",
+        "type": "select",
         "default": "#product-opportunities",
         "context": "The scout posts one card per opportunity with Accept/Reject buttons — pick a channel your team monitors",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_configuration_2",

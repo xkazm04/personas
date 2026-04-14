@@ -714,13 +714,21 @@
       {
         "id": "slack_alert_channel",
         "question": "Which Slack channel should receive critical error alerts and reports?",
-        "type": "text",
+        "type": "select",
         "default": "#ops-alerts",
         "context": "This channel receives real-time critical alerts, daily digests, and weekly reliability reports",
         "connector_names": [
           "slack"
         ],
-        "category": "configuration"
+        "category": "configuration",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "severity_threshold",

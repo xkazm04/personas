@@ -941,11 +941,19 @@
       {
         "id": "slack_channels",
         "question": "Which Slack channels should receive revenue intelligence alerts?",
-        "type": "text",
-        "placeholder": "#revenue-alerts, #revenue-wins, #revenue-reports",
+        "type": "select",
         "default": "#revenue-alerts, #revenue-wins, #revenue-reports",
         "helpText": "Specify separate channels for alerts (churn risks, payment failures), wins (new subscriptions, upgrades), and reports (monthly intelligence). The bot must be invited to each channel.",
-        "impact": "Determines where different types of revenue intelligence are posted."
+        "impact": "Determines where different types of revenue intelligence are posted.",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "outreach_enabled",

@@ -277,6 +277,7 @@ fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
         "bot_token",
         "access_token",
         "api_token",
+        "auth_token",
         "personal_access_token",
         "personal_token",
         "apiKey",

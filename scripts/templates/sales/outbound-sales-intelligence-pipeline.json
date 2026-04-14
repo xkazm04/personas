@@ -865,13 +865,20 @@
       {
         "id": "slack_channel",
         "question": "Which Slack channel should receive daily enrichment summaries?",
-        "type": "text",
-        "placeholder": "#sales-outbound",
+        "type": "select",
         "helpText": "The bot must be invited to this channel. Summaries include daily metrics, top prospects, and any API issues.",
         "required": true,
         "affectsConfig": [
           "slack.channel"
-        ]
+        ],
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "daily_batch_limit",

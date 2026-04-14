@@ -660,8 +660,16 @@
       {
         "id": "slack_channel",
         "question": "Slack channel for pre-meeting reminders",
-        "type": "text",
-        "category": "configuration"
+        "type": "select",
+        "category": "configuration",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "reminder_minutes",

@@ -183,7 +183,12 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "save_api_definition",
     "load_api_definition",
     // Credentials -- Dynamic discovery (adoption questionnaire)
-    "discover_connector_resources",
+    // NOT listed here because the wrapper-level header check fails
+    // intermittently on Windows WebView2 (same race as the data-portability
+    // commands below). The command body calls `require_privileged` for
+    // defense-in-depth + audit logging, and the only data ever returned is
+    // a list of resource names — credential secrets never leave the backend.
+    // "discover_connector_resources",
     // Credentials -- MCP Tools
     "list_mcp_tools",
     "execute_mcp_tool",

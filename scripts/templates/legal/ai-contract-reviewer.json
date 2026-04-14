@@ -796,9 +796,17 @@
       {
         "id": "legal_team_channel",
         "question": "What Slack channel should high-risk contract alerts be posted to?",
-        "type": "text",
+        "type": "select",
         "default": "#legal-review",
-        "help_text": "The Slack channel where your legal team monitors alerts."
+        "help_text": "The Slack channel where your legal team monitors alerts.",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "gmail_label",

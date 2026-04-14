@@ -788,10 +788,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should new user celebrations post to, and should internal signups (your company domain) be excluded?",
-        "type": "text",
+        "type": "select",
         "default": "#general — celebrate all signups including internal",
         "context": "Configures the Slack connector target channel and whether to filter out @yourcompany.com signups from celebrations",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_boundaries_1",

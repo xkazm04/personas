@@ -797,10 +797,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should receive critical and high-urgency ticket alerts?",
-        "type": "text",
+        "type": "select",
         "default": "#support-urgent",
         "context": "The agent routes escalations to this channel. Providing the exact channel name ensures routing is correct from the first ticket.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_memory_1",

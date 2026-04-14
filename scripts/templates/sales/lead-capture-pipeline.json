@@ -910,10 +910,19 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel should receive hot lead alerts, and should different score tiers route to different channels?",
-        "type": "text",
+        "type": "select",
         "default": "#sales-alerts",
         "context": "Routes notifications to the right audience. Example: On Fire → #sales-hot for immediate response, Hot → #sales-pipeline for daily review. Specify one channel or a tier→channel mapping.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_boundaries_1",

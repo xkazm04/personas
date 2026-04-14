@@ -768,10 +768,17 @@
       {
         "id": "slack_channel",
         "question": "Which Slack channel should receive brand protection alerts?",
-        "type": "text",
-        "placeholder": "#brand-protection",
+        "type": "select",
         "helpText": "The Slack channel for immediate high-threat alerts, daily digests, and weekly reports. Create a dedicated channel for brand protection to keep alerts organized.",
-        "required": true
+        "required": true,
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       }
     ],
     "protocol_capabilities": [

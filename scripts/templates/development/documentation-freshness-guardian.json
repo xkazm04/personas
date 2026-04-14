@@ -796,10 +796,18 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Where should the weekly Slack digest be posted?",
-        "type": "text",
+        "type": "select",
         "default": "#docs-health",
         "context": "The digest channel is where the team sees the aggregate staleness report. A dedicated channel avoids alert fatigue.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_memory_1",

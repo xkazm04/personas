@@ -734,10 +734,19 @@
         "id": "aq_configuration_2",
         "category": "configuration",
         "question": "Which Slack channel(s) should receive feature flag change notifications vs. experiment result summaries?",
-        "type": "text",
+        "type": "select",
         "default": "#product-experiments for results, #eng-deploys for flag changes",
         "context": "Routing different signal types to the right audiences avoids noise. Enter channel names or describe your channel structure.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels",
+          "multi": true
+        }
       },
       {
         "id": "aq_configuration_3",

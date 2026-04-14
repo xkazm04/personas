@@ -830,10 +830,18 @@
         "id": "slack_alert_channel",
         "question": "Which Slack channel should receive critical operational alerts?",
         "helpText": "The channel where service health alerts, rollback notifications, and daily summaries will be posted. Example: #ops-alerts",
-        "type": "text",
+        "type": "select",
         "required": true,
         "maps_to_connector": "slack",
-        "maps_to_field": "alert_channel"
+        "maps_to_field": "alert_channel",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "health_check_services",

@@ -924,10 +924,18 @@
         "id": "aq_credentials_1",
         "category": "credentials",
         "question": "Which Slack channel should weekly cash flow summaries and anomaly escalations be posted to?",
-        "type": "text",
+        "type": "select",
         "default": "#finance",
         "context": "Ensures summaries reach the right audience (exec team, finance team, or both). Anomaly alerts may go to a separate ops/alert channel if preferred — specify both if needed.",
-        "dimension": "connectors"
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
         "id": "aq_quality_1",
