@@ -5,13 +5,13 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command as TokioCommand;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
@@ -129,7 +129,7 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 // FFmpeg detection
 // =============================================================================
 
-fn find_ffmpeg_path() -> Option<PathBuf> {
+async fn find_ffmpeg_path() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         let candidates = [
@@ -146,10 +146,7 @@ fn find_ffmpeg_path() -> Option<PathBuf> {
     }
     #[cfg(target_os = "macos")]
     {
-        let candidates = [
-            "/usr/local/bin/ffmpeg",
-            "/opt/homebrew/bin/ffmpeg",
-        ];
+        let candidates = ["/usr/local/bin/ffmpeg", "/opt/homebrew/bin/ffmpeg"];
         for c in &candidates {
             let p = PathBuf::from(c);
             if p.exists() {
@@ -157,26 +154,13 @@ fn find_ffmpeg_path() -> Option<PathBuf> {
             }
         }
     }
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(output) = Command::new("which").arg("ffmpeg").output() {
-            if output.status.success() {
-                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if !path.is_empty() {
-                    return Some(PathBuf::from(path));
-                }
-            }
-        }
-    }
-    // Fallback: try PATH
-    let mut cmd = Command::new("ffmpeg");
+
+    // Fallback: try PATH (async)
+    let mut cmd = TokioCommand::new("ffmpeg");
     cmd.arg("-version");
     #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-    if let Ok(output) = cmd.output() {
+    cmd.creation_flags(0x08000000);
+    if let Ok(output) = cmd.output().await {
         if output.status.success() {
             return Some(PathBuf::from("ffmpeg"));
         }
@@ -184,19 +168,16 @@ fn find_ffmpeg_path() -> Option<PathBuf> {
     None
 }
 
-fn get_ffmpeg_version(ffmpeg_path: &Path) -> Result<String, AppError> {
-    let mut cmd = Command::new(ffmpeg_path);
+async fn get_ffmpeg_version_async(ffmpeg_path: &Path) -> Result<String, AppError> {
+    let mut cmd = TokioCommand::new(ffmpeg_path);
     cmd.arg("-version");
     #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
+    cmd.creation_flags(0x08000000);
     let output = cmd
         .output()
+        .await
         .map_err(|e| AppError::ProcessSpawn(e.to_string()))?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    // First line: "ffmpeg version N.N.N ..."
     let version = stdout
         .lines()
         .next()
@@ -212,11 +193,10 @@ fn get_ffmpeg_version(ffmpeg_path: &Path) -> Result<String, AppError> {
 // =============================================================================
 
 #[tauri::command]
-pub fn artist_check_ffmpeg() -> Result<FfmpegStatus, AppError> {
-    let path = find_ffmpeg_path();
-    match &path {
+pub async fn artist_check_ffmpeg() -> Result<FfmpegStatus, AppError> {
+    match find_ffmpeg_path().await {
         Some(p) => {
-            let version = get_ffmpeg_version(p).ok();
+            let version = get_ffmpeg_version_async(&p).await.ok();
             Ok(FfmpegStatus {
                 found: true,
                 path: Some(p.to_string_lossy().to_string()),
@@ -233,11 +213,12 @@ pub fn artist_check_ffmpeg() -> Result<FfmpegStatus, AppError> {
 
 /// Probe a media file using ffprobe to get duration, dimensions, codecs.
 #[tauri::command]
-pub fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, AppError> {
+pub async fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, AppError> {
     let ffprobe_path = find_ffprobe_path()
+        .await
         .ok_or_else(|| AppError::NotFound("ffprobe not found (install ffmpeg)".into()))?;
 
-    let mut cmd = Command::new(&ffprobe_path);
+    let mut cmd = TokioCommand::new(&ffprobe_path);
     cmd.args([
         "-v", "quiet",
         "-print_format", "json",
@@ -246,13 +227,11 @@ pub fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, AppErro
         &file_path,
     ]);
     #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
+    cmd.creation_flags(0x08000000);
 
     let output = cmd
         .output()
+        .await
         .map_err(|e| AppError::ProcessSpawn(format!("ffprobe failed: {e}")))?;
 
     if !output.status.success() {
@@ -292,9 +271,9 @@ pub fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, AppErro
     })
 }
 
-fn find_ffprobe_path() -> Option<PathBuf> {
+async fn find_ffprobe_path() -> Option<PathBuf> {
     // ffprobe is co-located with ffmpeg
-    if let Some(ffmpeg) = find_ffmpeg_path() {
+    if let Some(ffmpeg) = find_ffmpeg_path().await {
         let ffprobe = ffmpeg
             .parent()
             .map(|dir| dir.join(if cfg!(target_os = "windows") { "ffprobe.exe" } else { "ffprobe" }));
@@ -323,6 +302,7 @@ pub async fn artist_export_composition(
     require_auth(&state).await?;
 
     let ffmpeg = find_ffmpeg_path()
+        .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
 
     let composition: CompositionInput = serde_json::from_str(&composition_json)

@@ -79,6 +79,13 @@ export function useBulkHealthcheck() {
     // Process in batches of CONCURRENCY
     const queue = [...credentials];
 
+    // Credentials tested within this window via per-card Test Connection
+    // should not be re-probed during the bulk run -- the bulk result can
+    // race manual tests and flip a freshly-succeeded card to a transient
+    // network failure (e.g. provider rate-limiting from the concurrent
+    // bulk sweep). Reuse the manual result instead.
+    const FRESH_RESULT_TTL_MS = 30_000;
+
     const worker = async () => {
       while (queue.length > 0 && !cancelRef.current) {
         const cred = queue.shift();
@@ -89,6 +96,34 @@ export function useBulkHealthcheck() {
         let message = 'Cancelled';
 
         if (!cancelRef.current) {
+          // Reuse a recent manual/bulk test result to avoid clobbering a
+          // freshly-verified credential with a concurrent probe failure.
+          const lastTestedAt = cred.healthcheck_last_tested_at
+            ? Date.parse(cred.healthcheck_last_tested_at)
+            : 0;
+          if (
+            lastTestedAt > 0 &&
+            Date.now() - lastTestedAt < FRESH_RESULT_TTL_MS &&
+            cred.healthcheck_last_success !== null &&
+            cred.healthcheck_last_success !== undefined
+          ) {
+            success = cred.healthcheck_last_success;
+            message = cred.healthcheck_last_message ?? (success ? 'Recently verified' : 'Recently failed');
+            results.push({
+              credentialId: cred.id,
+              credentialName: cred.name,
+              success,
+              message,
+              durationMs: 0,
+            });
+            doneCount++;
+            if (!success) failedCount++;
+            if (mountedRef.current) {
+              setProgress({ done: doneCount, total: credentials.length, failed: failedCount });
+            }
+            continue;
+          }
+
           try {
             const hcResult = await credApi.healthcheckCredential(cred.id);
             success = hcResult.success;

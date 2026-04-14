@@ -431,12 +431,12 @@
         "options": [
           "USD ($)",
           "EUR",
-          "GBP",
-          "Other"
+          "GBP"
         ],
         "default": "USD ($)",
-        "context": "Used for display formatting in alerts. The actual cost data comes from your cloud provider in their billing currency.",
-        "dimension": "use-cases"
+        "context": "Used for display formatting in alerts. Pick a preset or click Custom… to type another ISO 4217 code.",
+        "dimension": "use-cases",
+        "allow_custom": true
       },
       {
         "id": "aq_quality_1",

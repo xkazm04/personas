@@ -93,6 +93,53 @@ const SAFE_DIRS: &[&str] = &[
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 const SAFE_DIRS: &[&str] = &[];
 
+/// Additional safe directories expanded at runtime from user environment.
+/// Covers common user-scoped install locations for CLIs that don't ship to
+/// system-wide paths (npm-global, gcloud bundled installer, flyctl, scoop).
+fn user_safe_dirs() -> &'static [String] {
+    use std::sync::OnceLock;
+    static DIRS: OnceLock<Vec<String>> = OnceLock::new();
+    DIRS.get_or_init(|| {
+        let mut out: Vec<String> = Vec::new();
+        #[cfg(target_os = "windows")]
+        {
+            if let Ok(local) = std::env::var("LOCALAPPDATA") {
+                out.push(format!("{}\\Google\\Cloud SDK", local));
+                out.push(format!("{}\\Programs", local));
+                out.push(format!("{}\\Microsoft\\WinGet\\Packages", local));
+            }
+            if let Ok(appdata) = std::env::var("APPDATA") {
+                out.push(format!("{}\\npm", appdata));
+            }
+            if let Ok(profile) = std::env::var("USERPROFILE") {
+                out.push(format!("{}\\.fly\\bin", profile));
+                out.push(format!("{}\\scoop\\shims", profile));
+                out.push(format!("{}\\scoop\\apps", profile));
+                out.push(format!("{}\\AppData\\Roaming\\npm", profile));
+            }
+        }
+        #[cfg(target_os = "macos")]
+        {
+            if let Ok(home) = std::env::var("HOME") {
+                out.push(format!("{}/.fly/bin", home));
+                out.push(format!("{}/.local/bin", home));
+                out.push(format!("{}/.npm-global/bin", home));
+                out.push(format!("{}/google-cloud-sdk/bin", home));
+            }
+        }
+        #[cfg(target_os = "linux")]
+        {
+            if let Ok(home) = std::env::var("HOME") {
+                out.push(format!("{}/.fly/bin", home));
+                out.push(format!("{}/.local/bin", home));
+                out.push(format!("{}/.npm-global/bin", home));
+                out.push(format!("{}/google-cloud-sdk/bin", home));
+            }
+        }
+        out
+    }).as_slice()
+}
+
 /// Resolve a CLI tool name to an absolute path and validate it.
 ///
 /// Returns `None` if the tool is not found or resolves to a directory outside
@@ -120,22 +167,28 @@ pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<Path
 fn is_path_allowed(binary_path: &Path, extra_allowed: &[&str]) -> bool {
     let path_str = binary_path.to_string_lossy();
 
-    for dir in SAFE_DIRS.iter().chain(extra_allowed.iter()) {
-        #[cfg(target_os = "windows")]
-        {
-            // Case-insensitive comparison on Windows
-            if path_str.to_lowercase().starts_with(&dir.to_lowercase()) {
-                return true;
-            }
+    let static_iter = SAFE_DIRS.iter().copied().chain(extra_allowed.iter().copied());
+    for dir in static_iter {
+        if path_matches_dir(&path_str, dir) {
+            return true;
         }
-        #[cfg(not(target_os = "windows"))]
-        {
-            if path_str.starts_with(dir) {
-                return true;
-            }
+    }
+    for dir in user_safe_dirs() {
+        if path_matches_dir(&path_str, dir.as_str()) {
+            return true;
         }
     }
     false
+}
+
+#[cfg(target_os = "windows")]
+fn path_matches_dir(path_str: &str, dir: &str) -> bool {
+    path_str.to_lowercase().starts_with(&dir.to_lowercase())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn path_matches_dir(path_str: &str, dir: &str) -> bool {
+    path_str.starts_with(dir)
 }
 
 /// Read up to `limit` bytes from an `AsyncRead`, returning the buffer.
@@ -318,12 +371,10 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
                     // HOME/USERPROFILE (needed by many CLIs for config dirs).
                     .env_clear()
                     .envs(sanitized_env());
-                // Prevent empty console windows flashing on Windows
+                // Prevent empty console windows flashing on Windows.
+                // tokio's Command exposes creation_flags inherently.
                 #[cfg(windows)]
-                {
-                    use std::os::windows::process::CommandExt;
-                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-                }
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
                 let mut child = match cmd.spawn()
                 {
                     Ok(c) => c,

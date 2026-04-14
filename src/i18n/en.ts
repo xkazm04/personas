@@ -3842,6 +3842,28 @@ export const en = {
       configure_fields: "Configure credential fields",
       oauth_required: "Use the authorize button below to connect this credential.",
     },
+    // CLI connection panel (install -> verify -> save flow)
+    cli_panel: {
+      credential_name: "Credential Name",
+      binary_label: "Binary",
+      docs_link: "Docs",
+      checking_install: "Checking installation...",
+      error: "Error",
+      retry: "Retry",
+      not_installed_title: "Not installed",
+      not_installed_desc: "{label} is not detected on this machine.",
+      copy: "Copy",
+      recheck: "Re-check",
+      installed_title: "Installed",
+      verify_auth: "Verify Auth",
+      verifying_auth: "Verifying authentication...",
+      not_authenticated_title: "Not authenticated",
+      authenticated_title: "Authenticated",
+      test_connection: "Test Connection",
+      cancel: "Cancel",
+      save_connection: "Save Connection",
+      save_failed: "Failed to capture credential from CLI",
+    },
     // Audit log
     audit_log: {
       empty: "No audit entries yet",

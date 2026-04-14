@@ -90,6 +90,12 @@ export function useCatalogHandlers({
     }
   };
 
+  const handleCliSaved = async () => {
+    await fetchCredentials();
+    dispatch({ type: 'GO_LIST' });
+    setCredentialSearch('');
+  };
+
   const handleTemplateOAuthConsent = (values: Record<string, string>) => {
     if (!catalogFormData) return;
     setError(null);
@@ -128,6 +134,7 @@ export function useCatalogHandlers({
     templateHealth,
     handlePickType,
     handleCreateCredential,
+    handleCliSaved,
     handleTemplateOAuthConsent,
     handleTemplateHealthcheck,
     handleAutoSetup,

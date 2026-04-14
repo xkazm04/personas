@@ -37,7 +37,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'devops/workflow-error-intelligence.json': '000a52a46bd914c8',
   'email/intake-processor.json': '0013c99cd29d8dee',
   'finance/accounting-reconciliation-use-case.json': '001784be84b542e9',
-  'finance/budget-spending-monitor.json': '000e649651621bd7',
+  'finance/budget-spending-monitor.json': '000cc85b0ad119c2',
   'finance/expense-receipt-processor.json': '0001485171741009',
   'finance/finance-controller.json': '001ce4af31af91c5',
   'finance/financial-stocks-signaller.json': '0013fe11690b5b1f',

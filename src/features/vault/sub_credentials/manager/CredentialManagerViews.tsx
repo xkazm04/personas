@@ -29,6 +29,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
     templateHealth,
     handlePickType,
     handleCreateCredential,
+    handleCliSaved,
     handleDeleteRequest,
     handleTemplateOAuthConsent,
     handleTemplateHealthcheck,
@@ -96,6 +97,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
             onHealthcheck={handleTemplateHealthcheck}
             isHealthchecking={templateHealth.isHealthchecking}
             healthcheckResult={templateHealth.result}
+            onCliSaved={handleCliSaved}
           />
         )}
 

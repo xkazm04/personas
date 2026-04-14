@@ -42,6 +42,8 @@ export interface CredentialTemplateFormProps {
   onHealthcheck?: (values: Record<string, string>) => void;
   isHealthchecking?: boolean;
   healthcheckResult?: { success: boolean; message: string } | null;
+  /** Called after a CLI-sourced credential is saved successfully. */
+  onCliSaved?: () => void | Promise<void>;
 }
 
 export function CredentialTemplateForm({
@@ -67,6 +69,7 @@ export function CredentialTemplateForm({
   onHealthcheck,
   isHealthchecking,
   healthcheckResult,
+  onCliSaved,
 }: CredentialTemplateFormProps) {
   const { t } = useTranslation();
   const metadata = (selectedConnector.metadata ?? {}) as Record<string, unknown>;
@@ -182,7 +185,7 @@ export function CredentialTemplateForm({
           spec={activeCliSpec}
           credentialName={credentialName}
           onCredentialNameChange={onCredentialNameChange}
-          onCreateCredential={onCreateCredential}
+          onSaved={onCliSaved ?? onCancel}
           onCancel={onCancel}
         />
       ) : (

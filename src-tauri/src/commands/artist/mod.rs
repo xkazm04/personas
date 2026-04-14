@@ -1,10 +1,8 @@
 pub mod ffmpeg;
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::Arc;
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
+use tokio::process::Command as TokioCommand;
 
 use chrono::Utc;
 use serde_json::json;
@@ -48,20 +46,20 @@ const MODEL_EXTENSIONS: &[&str] = &["glb", "gltf", "obj", "fbx", "stl", "blend",
 // ---------------------------------------------------------------------------
 
 /// Check if Blender is installed and get its version and path.
+///
+/// Fully async — all subprocess spawns use tokio so the IPC worker thread
+/// is never blocked. Blender + MCP checks run concurrently.
 #[tauri::command]
-pub fn artist_check_blender() -> Result<BlenderMcpStatus, AppError> {
-    let blender_path = find_blender_path();
+pub async fn artist_check_blender() -> Result<BlenderMcpStatus, AppError> {
+    let (blender, mcp_installed) = tokio::join!(
+        detect_blender_async(),
+        check_blender_mcp_installed_async(),
+    );
 
-    let (installed, version, path_str) = match &blender_path {
-        Some(p) => {
-            let version = get_blender_version(p).ok();
-            (true, version, Some(p.to_string_lossy().to_string()))
-        }
+    let (installed, version, path_str) = match blender {
+        Some((path, ver)) => (true, ver, Some(path.to_string_lossy().to_string())),
         None => (false, None, None),
     };
-
-    // Check if blender-mcp is installed (via pip/uvx)
-    let mcp_installed = check_blender_mcp_installed();
 
     Ok(BlenderMcpStatus {
         installed,
@@ -73,19 +71,117 @@ pub fn artist_check_blender() -> Result<BlenderMcpStatus, AppError> {
     })
 }
 
-/// Install the Blender MCP server package via pip.
-#[tauri::command]
-pub fn artist_install_blender_mcp() -> Result<String, AppError> {
-    // Try uvx first, fall back to pip
-    let result = run_silent(&["uvx", "install", "blender-mcp"])
-        .or_else(|_| run_silent(&["pip", "install", "blender-mcp"]))
-        .or_else(|_| run_silent(&["pip3", "install", "blender-mcp"]));
+/// Probe common Blender install locations and return `(path, version)` if found.
+///
+/// Never blocks — uses `tokio::process::Command`. Existence checks are cheap
+/// filesystem syscalls that we keep synchronous.
+async fn detect_blender_async() -> Option<(PathBuf, Option<String>)> {
+    #[cfg(target_os = "windows")]
+    {
+        let candidates = [
+            r"C:\Program Files\Blender Foundation\Blender 4.4\blender.exe",
+            r"C:\Program Files\Blender Foundation\Blender 4.3\blender.exe",
+            r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe",
+            r"C:\Program Files\Blender Foundation\Blender 4.1\blender.exe",
+            r"C:\Program Files\Blender Foundation\Blender 4.0\blender.exe",
+            r"C:\Program Files\Blender Foundation\Blender 3.6\blender.exe",
+        ];
+        for c in &candidates {
+            let p = PathBuf::from(c);
+            if p.exists() {
+                let ver = get_blender_version_async(&p).await.ok();
+                return Some((p, ver));
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let p = PathBuf::from("/Applications/Blender.app/Contents/MacOS/Blender");
+        if p.exists() {
+            let ver = get_blender_version_async(&p).await.ok();
+            return Some((p, ver));
+        }
+    }
 
-    match result {
-        Ok(output) => Ok(output),
-        Err(e) => Err(AppError::Execution(format!(
-            "Failed to install blender-mcp. Ensure pip or uvx is available: {e}"
-        ))),
+    // Fallback: try PATH via `blender --version`
+    let mut cmd = TokioCommand::new("blender");
+    cmd.arg("--version");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    if let Ok(output) = cmd.output().await {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let ver = stdout.lines().next().map(|l| l.trim().to_string());
+            return Some((PathBuf::from("blender"), ver));
+        }
+    }
+    None
+}
+
+async fn get_blender_version_async(blender_path: &Path) -> Result<String, AppError> {
+    let mut cmd = TokioCommand::new(blender_path);
+    cmd.arg("--version");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| AppError::ProcessSpawn(e.to_string()))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(stdout.lines().next().unwrap_or("").trim().to_string())
+}
+
+async fn check_blender_mcp_installed_async() -> bool {
+    for bin in &["pip", "pip3"] {
+        let mut cmd = TokioCommand::new(bin);
+        cmd.args(["show", "blender-mcp"]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000);
+        if let Ok(output) = cmd.output().await {
+            if output.status.success() {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Install the Blender MCP server package via pip. Fully async.
+#[tauri::command]
+pub async fn artist_install_blender_mcp() -> Result<String, AppError> {
+    for args in [
+        &["uvx", "install", "blender-mcp"][..],
+        &["pip", "install", "blender-mcp"][..],
+        &["pip3", "install", "blender-mcp"][..],
+    ] {
+        match run_silent_async(args).await {
+            Ok(output) => return Ok(output),
+            Err(_) => continue,
+        }
+    }
+    Err(AppError::Execution(
+        "Failed to install blender-mcp. Ensure pip or uvx is available.".into(),
+    ))
+}
+
+async fn run_silent_async(args: &[&str]) -> Result<String, AppError> {
+    if args.is_empty() {
+        return Err(AppError::Execution("Empty command".into()));
+    }
+    let mut cmd = TokioCommand::new(args[0]);
+    cmd.args(&args[1..]);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| AppError::ProcessSpawn(e.to_string()))?;
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(AppError::Execution(
+            String::from_utf8_lossy(&output.stderr).to_string(),
+        ))
     }
 }
 
@@ -465,99 +561,6 @@ async fn run_creative_cli(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-fn find_blender_path() -> Option<PathBuf> {
-    // Try common locations
-    #[cfg(target_os = "windows")]
-    {
-        let candidates = [
-            r"C:\Program Files\Blender Foundation\Blender 4.4\blender.exe",
-            r"C:\Program Files\Blender Foundation\Blender 4.3\blender.exe",
-            r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe",
-            r"C:\Program Files\Blender Foundation\Blender 4.1\blender.exe",
-            r"C:\Program Files\Blender Foundation\Blender 4.0\blender.exe",
-            r"C:\Program Files\Blender Foundation\Blender 3.6\blender.exe",
-        ];
-        for c in &candidates {
-            let p = PathBuf::from(c);
-            if p.exists() {
-                return Some(p);
-            }
-        }
-    }
-    #[cfg(target_os = "macos")]
-    {
-        let p = PathBuf::from("/Applications/Blender.app/Contents/MacOS/Blender");
-        if p.exists() {
-            return Some(p);
-        }
-    }
-    #[cfg(target_os = "linux")]
-    {
-        // Try which
-        if let Ok(output) = Command::new("which").arg("blender").output() {
-            if output.status.success() {
-                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if !path.is_empty() {
-                    return Some(PathBuf::from(path));
-                }
-            }
-        }
-    }
-    // Fallback: try PATH
-    if let Ok(output) = Command::new("blender").arg("--version").output() {
-        if output.status.success() {
-            return Some(PathBuf::from("blender"));
-        }
-    }
-    None
-}
-
-fn get_blender_version(blender_path: &Path) -> Result<String, AppError> {
-    let mut cmd = Command::new(blender_path);
-    cmd.args(["--version"]);
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    let output = cmd.output().map_err(|e| AppError::ProcessSpawn(e.to_string()))?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    // First line is typically "Blender X.Y.Z"
-    let version = stdout.lines().next().unwrap_or("").trim().to_string();
-    Ok(version)
-}
-
-fn check_blender_mcp_installed() -> bool {
-    let result = Command::new("pip")
-        .args(["show", "blender-mcp"])
-        .output();
-    if let Ok(output) = result {
-        if output.status.success() {
-            return true;
-        }
-    }
-    // Try pip3
-    let result = Command::new("pip3")
-        .args(["show", "blender-mcp"])
-        .output();
-    matches!(result, Ok(output) if output.status.success())
-}
-
-fn run_silent(args: &[&str]) -> Result<String, AppError> {
-    if args.is_empty() {
-        return Err(AppError::Execution("Empty command".into()));
-    }
-    let mut cmd = Command::new(args[0]);
-    cmd.args(&args[1..]);
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x08000000);
-    let output = cmd.output().map_err(|e| AppError::ProcessSpawn(e.to_string()))?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(AppError::Execution(
-            String::from_utf8_lossy(&output.stderr).to_string(),
-        ))
-    }
-}
 
 fn scan_dir_recursive(dir: &Path, assets: &mut Vec<ArtistAsset>) -> Result<(), AppError> {
     let entries = std::fs::read_dir(dir)?;

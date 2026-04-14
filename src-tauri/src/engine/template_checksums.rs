@@ -46,7 +46,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("devops/workflow-error-intelligence.json", "000a52a46bd914c8");
     m.insert("email/intake-processor.json", "0013c99cd29d8dee");
     m.insert("finance/accounting-reconciliation-use-case.json", "001784be84b542e9");
-    m.insert("finance/budget-spending-monitor.json", "000e649651621bd7");
+    m.insert("finance/budget-spending-monitor.json", "000cc85b0ad119c2");
     m.insert("finance/expense-receipt-processor.json", "0001485171741009");
     m.insert("finance/finance-controller.json", "001ce4af31af91c5");
     m.insert("finance/financial-stocks-signaller.json", "0013fe11690b5b1f");

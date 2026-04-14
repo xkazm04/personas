@@ -3,12 +3,13 @@ import { Terminal, CheckCircle2, AlertCircle, Loader2, Copy, ExternalLink, Refre
 import {
   cliCheckInstalled,
   cliVerifyAuth,
-  cliCaptureRun,
+  cliCaptureSave,
   type CliInstallStatus,
   type CliVerifyResult,
   type CliSpecInfo,
 } from '@/api/auth/cliCapture';
 import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 type PanelState =
@@ -25,7 +26,7 @@ interface CliConnectionPanelProps {
   spec: CliSpecInfo;
   credentialName: string;
   onCredentialNameChange: (name: string) => void;
-  onCreateCredential: (values: Record<string, string>) => void;
+  onSaved: () => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -34,9 +35,11 @@ export function CliConnectionPanel({
   spec,
   credentialName,
   onCredentialNameChange,
-  onCreateCredential,
+  onSaved,
   onCancel,
 }: CliConnectionPanelProps) {
+  const { t, tx } = useTranslation();
+  const l = t.vault.cli_panel;
   const [state, setState] = useState<PanelState>({ kind: 'checking' });
   const [saving, setSaving] = useState(false);
 
@@ -79,12 +82,13 @@ export function CliConnectionPanel({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const result = await cliCaptureRun(spec.service_type);
-      // Hand the captured fields back to the parent's create handler so
-      // persistence goes through the normal credential creation path.
-      onCreateCredential(result.fields);
+      // `cli_capture_save` runs the capture spec and persists the credential
+      // with metadata.source = "cli" so healthcheck + rotation recognize it
+      // as CLI-owned. Parent is notified via onSaved to refresh its list.
+      await cliCaptureSave(spec.service_type, credentialName.trim() || `${connector.label} CLI`);
+      await onSaved();
     } catch (err) {
-      toastCatch('CliConnectionPanel:save', 'Failed to capture credential from CLI')(err);
+      toastCatch('CliConnectionPanel:save', l.save_failed)(err);
     } finally {
       setSaving(false);
     }
@@ -101,7 +105,7 @@ export function CliConnectionPanel({
       {/* Credential name input */}
       <div>
         <label className="block text-xs font-medium text-muted-foreground mb-1">
-          Credential Name
+          {l.credential_name}
         </label>
         <input
           type="text"
@@ -117,7 +121,7 @@ export function CliConnectionPanel({
         <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-foreground">{spec.display_label}</div>
-          <div className="text-xs text-muted-foreground">Binary: <code className="font-mono">{spec.binary}</code></div>
+          <div className="text-xs text-muted-foreground">{l.binary_label}: <code className="font-mono">{spec.binary}</code></div>
         </div>
         <a
           href={spec.docs_url}
@@ -125,22 +129,22 @@ export function CliConnectionPanel({
           rel="noreferrer"
           className="text-xs text-amber-400 hover:text-amber-300 inline-flex items-center gap-1"
         >
-          Docs <ExternalLink className="w-3 h-3" />
+          {l.docs_link} <ExternalLink className="w-3 h-3" />
         </a>
       </div>
 
       {/* State-specific body */}
       {state.kind === 'checking' && (
         <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          title="Checking installation..." />
+          title={l.checking_install} />
       )}
 
       {state.kind === 'error' && (
         <StateBlock
           icon={<AlertCircle className="w-4 h-4 text-red-400" />}
-          title="Error"
+          title={l.error}
           description={state.message}
-          action={<button onClick={runInstallCheck} className="text-xs px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">Retry</button>}
+          action={<button onClick={runInstallCheck} className="text-xs px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">{l.retry}</button>}
         />
       )}
 
@@ -149,8 +153,8 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Not installed</div>
-              <div className="text-xs text-muted-foreground">{spec.display_label} is not detected on this machine.</div>
+              <div className="text-sm font-medium text-foreground">{l.not_installed_title}</div>
+              <div className="text-xs text-muted-foreground">{tx(l.not_installed_desc, { label: spec.display_label })}</div>
             </div>
           </div>
           <pre className="text-[11px] font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-primary/10 text-foreground/80">
@@ -161,13 +165,13 @@ export function CliConnectionPanel({
               onClick={copyInstallHint}
               className="text-xs px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
-              <Copy className="w-3 h-3" /> Copy
+              <Copy className="w-3 h-3" /> {l.copy}
             </button>
             <button
               onClick={runInstallCheck}
               className="text-xs px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
-              <RefreshCw className="w-3 h-3" /> Re-check
+              <RefreshCw className="w-3 h-3" /> {l.recheck}
             </button>
           </div>
         </div>
@@ -178,7 +182,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Installed</div>
+              <div className="text-sm font-medium text-foreground">{l.installed_title}</div>
               <div className="text-xs text-muted-foreground">
                 {state.status.version ?? state.status.binary_path}
               </div>
@@ -191,14 +195,14 @@ export function CliConnectionPanel({
             onClick={runVerify}
             className="text-xs px-3 py-1.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 inline-flex items-center gap-1"
           >
-            <CheckCircle2 className="w-3 h-3" /> Verify Auth
+            <CheckCircle2 className="w-3 h-3" /> {l.verify_auth}
           </button>
         </div>
       )}
 
       {state.kind === 'verifying' && (
         <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          title="Verifying authentication..." />
+          title={l.verifying_auth} />
       )}
 
       {state.kind === 'unauthenticated' && (
@@ -206,7 +210,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Not authenticated</div>
+              <div className="text-sm font-medium text-foreground">{l.not_authenticated_title}</div>
               <div className="text-xs text-muted-foreground">{state.verify.message}</div>
             </div>
           </div>
@@ -214,7 +218,7 @@ export function CliConnectionPanel({
             onClick={runVerify}
             className="text-xs px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
           >
-            <RefreshCw className="w-3 h-3" /> Re-check
+            <RefreshCw className="w-3 h-3" /> {l.recheck}
           </button>
         </div>
       )}
@@ -224,7 +228,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="text-sm font-medium text-foreground">Authenticated</div>
+              <div className="text-sm font-medium text-foreground">{l.authenticated_title}</div>
               <div className="text-xs text-muted-foreground break-all">{state.verify.message}</div>
             </div>
           </div>
@@ -233,7 +237,7 @@ export function CliConnectionPanel({
               onClick={runVerify}
               className="text-xs px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
-              <RefreshCw className="w-3 h-3" /> Test Connection
+              <RefreshCw className="w-3 h-3" /> {l.test_connection}
             </button>
           </div>
         </div>
@@ -245,7 +249,7 @@ export function CliConnectionPanel({
           onClick={onCancel}
           className="text-sm px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40"
         >
-          Cancel
+          {l.cancel}
         </button>
         <button
           onClick={handleSave}
@@ -253,7 +257,7 @@ export function CliConnectionPanel({
           className="text-sm px-3 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-          Save Connection
+          {l.save_connection}
         </button>
       </div>
     </div>

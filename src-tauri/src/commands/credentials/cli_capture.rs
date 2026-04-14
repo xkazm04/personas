@@ -26,11 +26,11 @@ use tokio::time::timeout;
 use crate::commands::credentials::auth_detect::{
     resolve_cli_path, read_limited, sanitized_env, MAX_CLI_OUTPUT_BYTES,
 };
-use crate::db::models::PersonaCredential;
+use crate::db::models::{CreateCredentialInput, PersonaCredential};
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth;
+use crate::ipc_auth::{require_auth, require_privileged};
 use crate::AppState;
 
 // =============================================================================
@@ -55,6 +55,20 @@ struct CaptureField {
     step: CliStep,
 }
 
+/// Extraction from a config file under the user's home directory. Some CLIs
+/// (wrangler, convex) store their auth tokens in local config files that
+/// aren't exposed via any CLI subcommand, so we read them directly.
+struct FileCaptureField {
+    /// Credential field key (must match the connector's `fields[].key`).
+    field_key: &'static str,
+    /// Path template relative to the user's home directory. `~/` is expanded
+    /// at runtime via USERPROFILE (Windows) or HOME (Unix).
+    path_template: &'static str,
+    /// Parser for the config file contents. Must return the extracted value
+    /// or None on any parse/absence failure so the caller can fall through.
+    extract: fn(&str) -> Option<String>,
+}
+
 /// Full capture spec for a single service.
 struct CaptureSpec {
     /// Connector `service_type` (must match the JSON catalog `name`).
@@ -66,6 +80,9 @@ struct CaptureSpec {
     /// Ordered field captures. Token field should come first so partial failure
     /// still surfaces a useful error.
     fields: &'static [CaptureField],
+    /// Optional config-file-based field captures, applied after `fields`.
+    /// Used for CLIs that don't expose their token via any subcommand.
+    file_fields: &'static [FileCaptureField],
     /// Lifetime of the captured token in seconds, or `None` for long-lived
     /// tokens that don't require proactive refresh.
     token_ttl_seconds: Option<i64>,
@@ -115,6 +132,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
                 },
             },
         ],
+        file_fields: &[],
         token_ttl_seconds: Some(3600),
         auth_instruction: "Run `gcloud auth login` in a terminal, then retry.",
         display_label: "Google Cloud SDK",
@@ -134,13 +152,16 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             args: &["auth", "status"],
         },
         fields: &[CaptureField {
-            field_key: "token",
+            // Must match the github connector's field key so the HTTP
+            // healthcheck and downstream agent calls can reference the value.
+            field_key: "personal_access_token",
             sensitive: true,
             step: CliStep {
                 cmd: "gh",
                 args: &["auth", "token"],
             },
         }],
+        file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `gh auth login` in a terminal, then retry.",
         display_label: "GitHub CLI",
@@ -151,7 +172,10 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }),
         docs_url: "https://cli.github.com/",
     },
-    // Vercel -- long-lived token from `vercel` CLI login.
+    // Vercel -- verify-only. `vercel tokens list` doesn't output a usable
+    // raw secret (it lists token metadata), so we verify session via whoami
+    // and let the user paste a token via the PAT tab if they need the value
+    // for agent calls.
     CaptureSpec {
         service_type: "vercel",
         binary: "vercel",
@@ -159,14 +183,8 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             cmd: "vercel",
             args: &["whoami"],
         },
-        fields: &[CaptureField {
-            field_key: "token",
-            sensitive: true,
-            step: CliStep {
-                cmd: "vercel",
-                args: &["tokens", "list", "--confirm"],
-            },
-        }],
+        fields: &[],
+        file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `vercel login` in a terminal, then retry.",
         display_label: "Vercel CLI",
@@ -174,7 +192,10 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         verify_step: Some(CliStep { cmd: "vercel", args: &["whoami"] }),
         docs_url: "https://vercel.com/docs/cli",
     },
-    // Netlify -- long-lived personal access token.
+    // Netlify -- verify-only. Creating a new access token via the CLI on
+    // every save would pollute the user's token list and is not idempotent,
+    // so we verify session via `netlify status` and let the user paste a
+    // token via the PAT tab if they need the raw value.
     CaptureSpec {
         service_type: "netlify",
         binary: "netlify",
@@ -182,14 +203,8 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             cmd: "netlify",
             args: &["status"],
         },
-        fields: &[CaptureField {
-            field_key: "token",
-            sensitive: true,
-            step: CliStep {
-                cmd: "netlify",
-                args: &["api", "createAccessToken", "--data", "{\"description\":\"personas-desktop\"}"],
-            },
-        }],
+        fields: &[],
+        file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `netlify login` in a terminal, then retry.",
         display_label: "Netlify CLI",
@@ -213,6 +228,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
                 args: &["auth:token"],
             },
         }],
+        file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `heroku login` in a terminal, then retry.",
         display_label: "Heroku CLI",
@@ -262,6 +278,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
                 },
             },
         ],
+        file_fields: &[],
         token_ttl_seconds: Some(3600),
         auth_instruction: "Run `az login` in a terminal, then retry.",
         display_label: "Azure CLI",
@@ -308,6 +325,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
                 },
             },
         ],
+        file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `aws configure` in a terminal to set credentials, then retry.",
         display_label: "AWS CLI",
@@ -318,11 +336,208 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }),
         docs_url: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
     },
+    // Cloudflare -- Wrangler OAuth token stored in default.toml. We read the
+    // file directly since `wrangler` has no subcommand to print the token.
+    CaptureSpec {
+        service_type: "cloudflare",
+        binary: "wrangler",
+        auth_check: CliStep {
+            cmd: "wrangler",
+            args: &["whoami"],
+        },
+        fields: &[],
+        file_fields: WRANGLER_FILE_FIELDS,
+        token_ttl_seconds: None,
+        auth_instruction: "Run `wrangler login` in a terminal, then retry.",
+        display_label: "Cloudflare Wrangler",
+        install_hint: "**All platforms:** `npm install -g wrangler`",
+        verify_step: Some(CliStep { cmd: "wrangler", args: &["whoami"] }),
+        docs_url: "https://developers.cloudflare.com/workers/wrangler/install-and-update/",
+    },
+    // Convex -- access token stored in ~/.convex/config.json by `convex login`.
+    // Read directly since there's no subcommand that prints the raw token.
+    CaptureSpec {
+        service_type: "convex",
+        binary: "convex",
+        auth_check: CliStep {
+            cmd: "convex",
+            args: &["whoami"],
+        },
+        fields: &[],
+        file_fields: CONVEX_FILE_FIELDS,
+        token_ttl_seconds: None,
+        auth_instruction: "Run `npx convex dev` or `convex login`, then retry.",
+        display_label: "Convex CLI",
+        install_hint: "**All platforms:** `npm install -g convex` (or invoke via `npx convex`)",
+        verify_step: Some(CliStep { cmd: "convex", args: &["whoami"] }),
+        docs_url: "https://docs.convex.dev/cli",
+    },
+    // Supabase -- verify-only. `supabase login` stores a management access
+    // token (different from the per-project anon/service_role keys that the
+    // Supabase connector actually uses), so we verify session via
+    // `projects list` and let the user paste project keys via the API Key
+    // tab. Session verification still runs via the CLI.
+    CaptureSpec {
+        service_type: "supabase",
+        binary: "supabase",
+        auth_check: CliStep {
+            cmd: "supabase",
+            args: &["projects", "list"],
+        },
+        fields: &[],
+        file_fields: &[],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `supabase login` in a terminal, then retry.",
+        display_label: "Supabase CLI",
+        install_hint: "**Windows:** `scoop install supabase`\n**macOS:** `brew install supabase/tap/supabase`\n**Linux:** See docs",
+        verify_step: Some(CliStep { cmd: "supabase", args: &["projects", "list"] }),
+        docs_url: "https://supabase.com/docs/guides/cli",
+    },
+    // Fly.io -- long-lived auth token from `flyctl auth token`.
+    CaptureSpec {
+        service_type: "fly_io",
+        binary: "flyctl",
+        auth_check: CliStep {
+            cmd: "flyctl",
+            args: &["auth", "whoami"],
+        },
+        fields: &[CaptureField {
+            field_key: "api_token",
+            sensitive: true,
+            step: CliStep { cmd: "flyctl", args: &["auth", "token"] },
+        }],
+        file_fields: &[],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `flyctl auth login` in a terminal, then retry.",
+        display_label: "Fly.io CLI (flyctl)",
+        install_hint: "**Windows:** `powershell -Command \"iwr https://fly.io/install.ps1 -useb | iex\"`\n**macOS/Linux:** `curl -L https://fly.io/install.sh | sh`",
+        verify_step: Some(CliStep { cmd: "flyctl", args: &["auth", "whoami"] }),
+        docs_url: "https://fly.io/docs/flyctl/install/",
+    },
+    // Railway -- long-lived API token from `railway whoami`.
+    CaptureSpec {
+        service_type: "railway",
+        binary: "railway",
+        auth_check: CliStep {
+            cmd: "railway",
+            args: &["whoami"],
+        },
+        fields: &[CaptureField {
+            field_key: "api_token",
+            sensitive: true,
+            step: CliStep { cmd: "railway", args: &["whoami"] },
+        }],
+        file_fields: &[],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `railway login` in a terminal, then retry.",
+        display_label: "Railway CLI",
+        install_hint: "**All platforms:** `npm install -g @railway/cli`\n**macOS:** `brew install railway`",
+        verify_step: Some(CliStep { cmd: "railway", args: &["whoami"] }),
+        docs_url: "https://docs.railway.app/guides/cli",
+    },
+    // Stripe -- verify-only. `stripe login` stores a session key but the raw
+    // secret key (sk_live_... / sk_test_...) is never output via CLI, so we
+    // verify session only and let the user paste the real secret key via the
+    // API Key tab when they need agent API access.
+    CaptureSpec {
+        service_type: "stripe",
+        binary: "stripe",
+        auth_check: CliStep {
+            cmd: "stripe",
+            args: &["config", "--list"],
+        },
+        fields: &[],
+        file_fields: &[],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `stripe login` in a terminal, then retry.",
+        display_label: "Stripe CLI",
+        install_hint: "**Windows:** `scoop install stripe`\n**macOS:** `brew install stripe/stripe-cli/stripe`\n**Linux:** See docs",
+        verify_step: Some(CliStep { cmd: "stripe", args: &["config", "--list"] }),
+        docs_url: "https://stripe.com/docs/stripe-cli",
+    },
+    // DigitalOcean -- verify-only. `doctl` stores its token in config.yaml
+    // but does not expose it via any CLI subcommand, so we verify session
+    // via `account get` and let the user paste the token via the API Token
+    // tab if they need the raw value.
+    CaptureSpec {
+        service_type: "digitalocean",
+        binary: "doctl",
+        auth_check: CliStep {
+            cmd: "doctl",
+            args: &["account", "get", "--format", "Email", "--no-header"],
+        },
+        fields: &[],
+        file_fields: &[],
+        token_ttl_seconds: None,
+        auth_instruction: "Run `doctl auth init` in a terminal, then retry.",
+        display_label: "DigitalOcean CLI (doctl)",
+        install_hint: "**Windows:** `scoop install doctl`\n**macOS:** `brew install doctl`\n**Linux:** `snap install doctl`",
+        verify_step: Some(CliStep {
+            cmd: "doctl",
+            args: &["account", "get", "--format", "Email", "--no-header"],
+        }),
+        docs_url: "https://docs.digitalocean.com/reference/doctl/how-to/install/",
+    },
 ];
 
 fn find_spec(service_type: &str) -> Option<&'static CaptureSpec> {
     CAPTURE_SPECS.iter().find(|s| s.service_type == service_type)
 }
+
+// =============================================================================
+// Config file readers
+// =============================================================================
+
+/// Expand a `~/`-prefixed path template against the current user's home
+/// directory. Returns None on non-Windows/Unix targets or when the env var
+/// is unset. Only the leading `~/` is expanded; the rest is appended verbatim.
+fn expand_home_path(template: &str) -> Option<std::path::PathBuf> {
+    let rest = template.strip_prefix("~/")?;
+    #[cfg(target_os = "windows")]
+    let base = std::env::var_os("USERPROFILE")?;
+    #[cfg(not(target_os = "windows"))]
+    let base = std::env::var_os("HOME")?;
+    Some(std::path::PathBuf::from(base).join(rest.replace('/', std::path::MAIN_SEPARATOR_STR)))
+}
+
+/// Read a config file from the user's home dir, capped at 64 KiB to guard
+/// against a malicious symlink pointing to a huge file.
+fn read_config_file(path_template: &str) -> Option<String> {
+    let path = expand_home_path(path_template)?;
+    let metadata = std::fs::metadata(&path).ok()?;
+    if metadata.len() > 64 * 1024 {
+        tracing::warn!(path = %path.display(), "CLI config file too large, skipping");
+        return None;
+    }
+    std::fs::read_to_string(&path).ok()
+}
+
+/// Parser for Wrangler's `~/.wrangler/config/default.toml` which stores an
+/// OAuth token under `oauth_token = "..."`.
+fn parse_wrangler_oauth_token(raw: &str) -> Option<String> {
+    let parsed: toml::Value = toml::from_str(raw).ok()?;
+    parsed.get("oauth_token")?.as_str().map(str::to_string)
+}
+
+/// Parser for Convex's `~/.convex/config.json` which stores the access
+/// token under `accessToken`.
+fn parse_convex_access_token(raw: &str) -> Option<String> {
+    let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
+    parsed.get("accessToken")?.as_str().map(str::to_string)
+}
+
+/// Shared spec definitions for Wrangler and Convex file-based captures.
+static WRANGLER_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
+    field_key: "api_token",
+    path_template: "~/.wrangler/config/default.toml",
+    extract: parse_wrangler_oauth_token,
+}];
+
+static CONVEX_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
+    field_key: "deploy_key",
+    path_template: "~/.convex/config.json",
+    extract: parse_convex_access_token,
+}];
 
 // =============================================================================
 // Error & result types
@@ -409,12 +624,11 @@ async fn run_step(
         .stderr(std::process::Stdio::piped())
         .env_clear()
         .envs(sanitized_env());
-    // Prevent empty console windows flashing on Windows.
+    // Prevent empty console windows flashing on Windows. tokio's Command
+    // exposes `creation_flags` as an inherent method on Windows targets, so
+    // we don't need to import `std::os::windows::process::CommandExt`.
     #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     let mut child = cmd.spawn().map_err(|e| CliCaptureError::CaptureFailed {
         step: step.cmd.to_string(),
         detail: format!("spawn failed: {}", e),
@@ -514,6 +728,35 @@ async fn run_spec(spec: &'static CaptureSpec) -> Result<CliCaptureResult, CliCap
             );
         }
         fields.insert(cf.field_key.to_string(), value);
+    }
+
+    // Config-file augments run after subprocess fields. Silently skip
+    // missing files so a CLI with an unusual install location doesn't
+    // break the capture -- the authoritative auth check already ran.
+    for ff in spec.file_fields {
+        let Some(raw) = read_config_file(ff.path_template) else {
+            tracing::debug!(
+                service_type = spec.service_type,
+                path = ff.path_template,
+                "CLI capture: config file not found, skipping file_field",
+            );
+            continue;
+        };
+        let Some(value) = (ff.extract)(&raw) else {
+            tracing::warn!(
+                service_type = spec.service_type,
+                field = ff.field_key,
+                "CLI capture: config file parse failed",
+            );
+            continue;
+        };
+        tracing::info!(
+            target: "audit",
+            service_type = spec.service_type,
+            field = ff.field_key,
+            "CLI capture: secret field captured from config file",
+        );
+        fields.insert(ff.field_key.to_string(), value);
     }
 
     let captured_at = chrono::Utc::now();
@@ -739,6 +982,108 @@ pub async fn cli_verify_auth(
 ) -> Result<CliVerifyResult, AppError> {
     require_auth(&state).await?;
     Ok(run_verify(&service_type).await)
+}
+
+/// Capture + persist in one call. Used by the CLI tab's "Save Connection"
+/// button so the credential is stamped with `metadata.source = "cli"` and the
+/// capture expiry, enabling CLI-aware healthchecks and proactive refresh.
+#[tauri::command]
+pub async fn cli_capture_save(
+    state: State<'_, Arc<AppState>>,
+    service_type: String,
+    credential_name: String,
+) -> Result<PersonaCredential, AppError> {
+    require_privileged(&state, "cli_capture_save").await?;
+
+    let spec = find_spec(&service_type).ok_or(CliCaptureError::UnknownService)?;
+    let result = run_spec(spec).await.map_err(AppError::from)?;
+
+    // Build source-tagged metadata so healthcheck and the refresh engine
+    // recognize this credential as CLI-owned.
+    let mut meta = serde_json::Map::new();
+    meta.insert("source".into(), serde_json::Value::String("cli".into()));
+    meta.insert(
+        "cli_captured_at".into(),
+        serde_json::Value::String(result.captured_at.clone()),
+    );
+    if let Some(exp) = result.expires_at.as_deref() {
+        meta.insert(
+            "oauth_token_expires_at".into(),
+            serde_json::Value::String(exp.to_string()),
+        );
+    }
+    let metadata_json = serde_json::Value::Object(meta).to_string();
+
+    let create_input = CreateCredentialInput {
+        name: credential_name.clone(),
+        service_type: service_type.clone(),
+        encrypted_data: String::new(),
+        iv: String::new(),
+        metadata: Some(metadata_json),
+        session_encrypted_data: None,
+        healthcheck_passed: Some(true),
+    };
+
+    let cred = cred_repo::create_with_fields(&state.db, create_input, &result.fields)?;
+
+    tracing::info!(
+        target: "audit",
+        service_type = %service_type,
+        credential_id = %cred.id,
+        "CLI capture: credential created"
+    );
+
+    Ok(cred)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every Phase A/B/C CaptureSpec must be retrievable via `find_spec` so
+    /// the CLI tab's `list_cli_specs` command surfaces it to the frontend.
+    #[test]
+    fn all_phase_specs_are_registered() {
+        let required = [
+            "gcp_cloud", "github", "vercel", "netlify", "heroku",
+            "azure_cloud", "aws_cloud",
+            "cloudflare", "convex", "supabase", "fly_io", "railway",
+            "stripe", "digitalocean",
+        ];
+        for svc in required {
+            assert!(
+                find_spec(svc).is_some(),
+                "CaptureSpec missing for service_type `{}`", svc,
+            );
+        }
+    }
+
+    /// Each spec must have an install hint, docs URL, and display label so
+    /// the frontend renders a complete CLI tab. An empty field here would
+    /// mean a hidden/broken state in the UI.
+    #[test]
+    fn every_spec_has_display_metadata() {
+        for spec in CAPTURE_SPECS {
+            assert!(!spec.display_label.is_empty(), "missing display_label for {}", spec.service_type);
+            assert!(!spec.install_hint.is_empty(), "missing install_hint for {}", spec.service_type);
+            assert!(!spec.docs_url.is_empty(), "missing docs_url for {}", spec.service_type);
+            assert!(!spec.auth_instruction.is_empty(), "missing auth_instruction for {}", spec.service_type);
+        }
+    }
+
+    /// Verify steps, when present, must reference the same binary as the
+    /// spec so the resolved path can be reused.
+    #[test]
+    fn verify_step_binary_matches_spec() {
+        for spec in CAPTURE_SPECS {
+            if let Some(vs) = &spec.verify_step {
+                assert_eq!(
+                    vs.cmd, spec.binary,
+                    "verify_step.cmd must match spec.binary for {}", spec.service_type,
+                );
+            }
+        }
+    }
 }
 
 /// Internal verify helper -- callable from both the Tauri command and the

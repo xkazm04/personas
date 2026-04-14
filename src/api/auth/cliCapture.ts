@@ -54,3 +54,10 @@ export async function cliCheckInstalled(serviceType: string): Promise<CliInstall
 export async function cliVerifyAuth(serviceType: string): Promise<CliVerifyResult> {
   return invoke<CliVerifyResult>("cli_verify_auth", { serviceType });
 }
+
+export async function cliCaptureSave(
+  serviceType: string,
+  credentialName: string,
+): Promise<{ id: string; name: string; service_type: string }> {
+  return invoke("cli_capture_save", { serviceType, credentialName });
+}

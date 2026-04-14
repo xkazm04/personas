@@ -13,6 +13,8 @@ import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
 import { QuestionnaireFormGrid } from "./QuestionnaireFormGrid";
+import { QuestionnaireFormCarousel } from "./QuestionnaireFormCarousel";
+import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
 import { useThemeStore } from "@/stores/themeStore";
 import type { ThemeId } from "@/stores/themeStore";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
@@ -200,6 +202,23 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     adoptionQuestions,
     adoptionAnswers,
   );
+
+  // Questionnaire layout variant. Three presentations share the same data
+  // and shared QuestionCard component — user can toggle between them at the
+  // top of the wizard. Choice persists in localStorage so power users keep
+  // their preferred layout across sessions.
+  type QVariant = 'grid' | 'carousel' | 'focus';
+  const [qVariant, setQVariant] = useState<QVariant>(() => {
+    try {
+      const stored = localStorage.getItem('personas:adoption:questionnaire-variant');
+      if (stored === 'carousel' || stored === 'focus' || stored === 'grid') return stored;
+    } catch { /* ignored */ }
+    return 'grid';
+  });
+  const handleVariantChange = useCallback((v: QVariant) => {
+    setQVariant(v);
+    try { localStorage.setItem('personas:adoption:questionnaire-variant', v); } catch { /* ignored */ }
+  }, []);
 
   // Pre-populate default answers from template questions + vault auto-detection.
   // For questions with vault_category + option_service_types:
@@ -529,21 +548,64 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // creates the draft persona — so the user is never blocked behind a
     // generic loading screen with the questionnaire trapped underneath it.
     if (hasAdoptionQuestions && !questionsComplete) {
+      const commonProps = {
+        questions: adoptionQuestions,
+        userAnswers: adoptionAnswers,
+        autoDetectedIds,
+        blockedQuestionIds,
+        filteredOptions,
+        dynamicOptions,
+        onRetryDynamic: retryDynamic,
+        onAddCredential: handleAddCredentialForCategory,
+        onAnswerUpdated: (id: string, answer: string) =>
+          setAdoptionAnswers((prev) => ({ ...prev, [id]: answer })),
+        onSubmit: () => setQuestionsComplete(true),
+        onClose,
+      };
       return (
-        <QuestionnaireFormGrid
-          inline
-          questions={adoptionQuestions}
-          userAnswers={adoptionAnswers}
-          autoDetectedIds={autoDetectedIds}
-          blockedQuestionIds={blockedQuestionIds}
-          filteredOptions={filteredOptions}
-          dynamicOptions={dynamicOptions}
-          onRetryDynamic={retryDynamic}
-          onAddCredential={handleAddCredentialForCategory}
-          onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
-          onSubmit={() => setQuestionsComplete(true)}
-          onClose={onClose}
-        />
+        <div className="flex flex-col h-full min-h-0">
+          {/* Variant switcher — tiny segmented control at the top of the
+              wizard body. Hidden entirely when fewer than 2 categories exist
+              (single-group questionnaires feel weirder in carousel mode). */}
+          <div className="flex-shrink-0 flex items-center justify-center gap-1 px-6 pt-3 pb-1">
+            <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-white/[0.06] bg-white/[0.02]">
+              {(
+                [
+                  { id: 'grid' as const, label: 'Grid' },
+                  { id: 'carousel' as const, label: 'Carousel' },
+                  { id: 'focus' as const, label: 'Focus + Preview' },
+                ]
+              ).map((variant) => (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => handleVariantChange(variant.id)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    qVariant === variant.id
+                      ? 'bg-primary/20 text-primary border border-primary/30'
+                      : 'text-muted-foreground/60 hover:text-foreground/80 border border-transparent'
+                  }`}
+                >
+                  {variant.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 min-h-0">
+            {qVariant === 'grid' && (
+              <QuestionnaireFormGrid inline {...commonProps} />
+            )}
+            {qVariant === 'carousel' && (
+              <QuestionnaireFormCarousel {...commonProps} />
+            )}
+            {qVariant === 'focus' && (
+              <QuestionnaireFormFocus
+                {...commonProps}
+                templateName={templateName}
+              />
+            )}
+          </div>
+        </div>
       );
     }
     return (

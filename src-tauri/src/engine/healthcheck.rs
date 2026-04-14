@@ -23,6 +23,17 @@ pub struct HealthcheckResult {
     pub message: String,
 }
 
+/// Inspect a credential's stored metadata JSON for `source == "cli"` so the
+/// healthcheck path can route CLI-owned credentials to the CLI verify helper
+/// instead of the HTTP path.
+fn is_cli_sourced(metadata: &Option<String>) -> bool {
+    let Some(raw) = metadata.as_deref() else { return false };
+    serde_json::from_str::<serde_json::Value>(raw)
+        .ok()
+        .and_then(|v| v.get("source").and_then(|s| s.as_str()).map(str::to_string))
+        .is_some_and(|s| s == "cli")
+}
+
 // ---------------------------------------------------------------------------
 // CLI-based healthcheck for locally-installed tools
 // ---------------------------------------------------------------------------
@@ -45,19 +56,19 @@ const CLI_HEALTH_PROBES: &[CliHealthProbe] = &[
         tool_name: "GitHub CLI (gh)",
     },
     CliHealthProbe {
-        service_type: "aws",
+        service_type: "aws_cloud",
         cmd: "aws",
         args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
         tool_name: "AWS CLI (aws)",
     },
     CliHealthProbe {
-        service_type: "google_cloud",
+        service_type: "gcp_cloud",
         cmd: "gcloud",
         args: &["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
         tool_name: "Google Cloud CLI (gcloud)",
     },
     CliHealthProbe {
-        service_type: "azure",
+        service_type: "azure_cloud",
         cmd: "az",
         args: &["account", "show", "--query", "user.name", "-o", "tsv"],
         tool_name: "Azure CLI (az)",
@@ -112,12 +123,9 @@ async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
         cmd.args(probe.args)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
-        // Prevent empty console windows flashing on Windows
+        // Prevent empty console windows flashing on Windows.
         #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        }
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.spawn()
             .ok()?
             .wait_with_output()
@@ -267,6 +275,17 @@ pub async fn run_healthcheck(
 ) -> Result<HealthcheckResult, AppError> {
     // Load credential
     let cred = cred_repo::get_by_id(pool, credential_id)?;
+
+    // Credentials captured via CLI carry `metadata.source = "cli"`. Their
+    // stored field values are short-lived access tokens that won't satisfy
+    // HTTP healthcheck contracts, so re-run the CLI verify step instead.
+    if is_cli_sourced(&cred.metadata) {
+        let verify = crate::commands::credentials::cli_capture::run_verify(&cred.service_type).await;
+        return Ok(HealthcheckResult {
+            success: verify.authenticated,
+            message: verify.message,
+        });
+    }
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
@@ -608,9 +627,12 @@ async fn execute_healthcheck_request_with_strategy(
     // Post-resolution SSRF defense: reject private/internal addresses
     validate_healthcheck_url(&resolved_endpoint)?;
 
-    // Build and send the request
+    // Build and send the request. 10s accommodates providers like Sentry's
+    // /organizations/{slug}/ endpoint which routinely takes 3-6 seconds on
+    // cold cache, especially when multiple credentials are probed in
+    // parallel during the daily bulk sweep.
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
