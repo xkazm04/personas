@@ -159,11 +159,12 @@ export function SourceDefinitionInput({
     return 'local';
   });
 
-  // If a stored value loads after mount, switch to its tab.
+  // If a stored value loads after mount, switch to its tab. We intentionally
+  // only track the parsed kind — reacting to activeKind here would fight the
+  // user's manual tab selection.
   useEffect(() => {
     if (parsed?.kind && parsed.kind !== activeKind) setActiveKind(parsed.kind);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed?.kind]);
+  }, [parsed?.kind, activeKind]);
 
   const commit = (next: SourceDefinitionValue) => onChange(JSON.stringify(next));
 
