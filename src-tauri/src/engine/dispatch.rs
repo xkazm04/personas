@@ -434,6 +434,17 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
             }
         }
+        ProtocolMessage::ProposeImprovement {
+            section,
+            rationale,
+            ..
+        } => {
+            // TODO: route to Lab Matrix for user review. For now, log only so
+            // the protocol message is acknowledged rather than ignored.
+            ctx.logger.log(&format!(
+                "[IMPROVEMENT] Proposed change to {section}: {rationale} (queued for Lab review)"
+            ));
+        }
     }
 }
 

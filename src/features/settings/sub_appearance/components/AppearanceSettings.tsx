@@ -11,7 +11,6 @@ import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS, TIER_CYCLE, TIER_LABELS } from '@/lib/constants/uiModes';
-import { useTranslation } from '@/i18n/useTranslation';
 
 const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -181,7 +180,6 @@ export default function AppearanceSettings() {
 
   const viewMode = useSystemStore((s) => s.viewMode);
   const setViewMode = useSystemStore((s) => s.setViewMode);
-  const { t } = useTranslation();
   const s = t.settings.appearance;
 
   const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);

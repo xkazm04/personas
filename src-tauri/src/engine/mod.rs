@@ -402,8 +402,6 @@ async fn run_execution_with_ceiling(
     chain_trace_id: Option<String>,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) -> ExecutionResult {
-    let emitter: Arc<dyn events::ExecutionEventEmitter> =
-        Arc::new(events::TauriEmitter::new(app));
     let ceiling = std::time::Duration::from_secs(ENGINE_MAX_EXECUTION_SECS);
 
     // Wrap the AppHandle in a TauriEmitter so runner::run_execution

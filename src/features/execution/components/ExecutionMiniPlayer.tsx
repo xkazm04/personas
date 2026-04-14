@@ -10,7 +10,6 @@ import {
   PinOff,
   Copy,
   Check,
-  Wrench,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -78,7 +77,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
         {/* Live reasoning trace for Simple mode */}
         {traceEntries.length > 0 && (
           <div className="mt-2">
-            <ReasoningTrace entries={traceEntries} isLive={traceLive} compact />
+            <ReasoningTrace entries={traceEntries} isLive={traceLive} />
           </div>
         )}
       </div>

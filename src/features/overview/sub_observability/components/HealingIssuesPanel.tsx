@@ -9,8 +9,8 @@ import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
 import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
-import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
@@ -51,13 +51,12 @@ export function HealingIssuesPanel({
   viewMode, setViewMode, timelineEvents, timelineLoading,
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
+  const { t: tOverview } = useOverviewTranslation();
   const { t } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
   };
-
-  const { t } = useOverviewTranslation();
 
   // Audit log state with 30-second cache to avoid duplicate API calls on toggle
   const [auditExpanded, setAuditExpanded] = useState(false);
@@ -79,11 +78,11 @@ export function HealingIssuesPanel({
       setAuditEntries(entries);
       auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
     } catch {
-      setAuditError(t.errorRecovery.audit_fetch_failed);
+      setAuditError(tOverview.errorRecovery.audit_fetch_failed);
     } finally {
       setAuditLoading(false);
     }
-  }, [selectedPersonaId, t.errorRecovery.audit_fetch_failed]);
+  }, [selectedPersonaId, tOverview.errorRecovery.audit_fetch_failed]);
 
   useEffect(() => {
     if (auditExpanded) fetchAudit();
@@ -255,9 +254,9 @@ export function HealingIssuesPanel({
                 <ErrorRecoveryBanner
                   severity="warning"
                   message={auditError}
-                  cause={t.errorRecovery.audit_fetch_cause}
+                  cause={tOverview.errorRecovery.audit_fetch_cause}
                   actionType="retry"
-                  actionLabel={t.errorRecovery.action_retry}
+                  actionLabel={tOverview.errorRecovery.action_retry}
                   onAction={() => { auditCacheRef.current = { personaId: null, ts: 0 }; fetchAudit(); }}
                   compact
                 />

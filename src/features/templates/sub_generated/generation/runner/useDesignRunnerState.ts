@@ -11,21 +11,27 @@ type RunMode = 'predefined' | 'custom' | 'batch';
 const EMPTY_CASE: CustomTemplateCase = { name: '', instruction: '' };
 
 interface UseDesignRunnerStateOptions {
+  isOpen: boolean;
   isRunning: boolean;
   lines: string[];
   runProgress: RunProgress | null;
   personaName?: string;
   onStart: (options?: { testCases?: PredefinedTestCase[] }) => void;
+  onClose: () => void;
 }
 
 export function useDesignRunnerState({
+  isOpen,
   isRunning,
   lines,
   runProgress,
   personaName,
   onStart,
+  onClose,
 }: UseDesignRunnerStateOptions) {
   const animateFromRef = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const [mode, setMode] = useState<RunMode>('predefined');
   const [customCases, setCustomCases] = useState<CustomTemplateCase[]>([{ ...EMPTY_CASE }]);
   const [copied, setCopied] = useState(false);
@@ -34,6 +40,49 @@ export function useDesignRunnerState({
 
   const hasPersona = !!personaName;
   const hasStarted = lines.length > 0 || isRunning;
+
+  // Focus management
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement as HTMLElement;
+    } else if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isRunning) {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !modalRef.current) return;
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    requestAnimationFrame(() => {
+      if (modalRef.current) {
+        const first = modalRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        first?.focus();
+      }
+    });
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isRunning, onClose]);
 
   // Reset animation index on new run
   useEffect(() => {
@@ -125,7 +174,7 @@ export function useDesignRunnerState({
   }, [runProgress]);
 
   return {
-    animateFromRef,
+    modalRef, animateFromRef,
     mode, setMode,
     customCases, setCustomCases,
     copied, handleCopyLog,

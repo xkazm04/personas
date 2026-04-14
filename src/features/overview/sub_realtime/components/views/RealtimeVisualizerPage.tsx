@@ -117,7 +117,7 @@ export default function RealtimeVisualizerPage() {
           <EventBusVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} onTestFlow={triggerTestFlow} />
         )}
         {variant === 'lanes' && (
-          <SwimLaneVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} onTestFlow={triggerTestFlow} />
+          <SwimLaneVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} animationMapRef={animationMapRef} animTick={animTick} onSelectEvent={selectEvent} />
         )}
         {selectedEvent && <EventDetailDrawer event={selectedEvent} onClose={() => selectEvent(null)} />}
       </div>

@@ -219,3 +219,6 @@ export const updateChannel = (
 
 export const deleteChannel = (id: string) =>
   invoke<boolean>("twin_delete_channel", { id });
+
+export const generateBio = (name: string, role: string | null, keywords: string) =>
+  invoke<string>("twin_generate_bio", { name, role, keywords });

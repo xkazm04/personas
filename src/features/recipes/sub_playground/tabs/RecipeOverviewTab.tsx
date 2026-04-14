@@ -11,7 +11,7 @@ interface RecipeOverviewTabProps {
 export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
   const { t } = useTranslation();
   const tags = parseTags(recipe.tags);
-  const inputs = parseInputSchema(recipe.input_schema);
+  const inputs = parseInputSchema(recipe.input_schema).fields;
 
   return (
     <div className="p-4 space-y-4">
