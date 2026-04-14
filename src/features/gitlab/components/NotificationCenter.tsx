@@ -65,17 +65,34 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
     // Navigate to the target section and tab
     setSidebarSection(redirectSection as Parameters<typeof setSidebarSection>[0]);
     if (redirectTab) {
-      // Plugins section uses devToolsTab; overview section uses overviewTab.
-      if (redirectSection === 'plugins') {
+      // Feedback-chat notifications land on the personas section with the
+      // chat editor tab + a specific chat session to restore. Route them
+      // through the agentStore instead of the plugins/overview tab setters.
+      if (redirectSection === 'personas' && redirectTab === 'chat' && notification.personaId) {
+        void import('@/stores/agentStore').then(({ useAgentStore }) => {
+          useAgentStore.getState().selectPersona(notification.personaId!);
+          void import('@/stores/systemStore').then(({ useSystemStore }) => {
+            useSystemStore.getState().setEditorTab('chat' as never);
+          });
+          if (notification.chatSessionId) {
+            void useAgentStore.getState().restoreChatSession(
+              notification.personaId!,
+              notification.chatSessionId,
+            );
+          }
+        });
+      } else if (redirectSection === 'plugins') {
+        // Plugins section uses devToolsTab
         setPluginTab('dev-tools' as never);
         setDevToolsTab(redirectTab as never);
       } else {
+        // overview section uses overviewTab
         void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
           useOverviewStore.getState().setOverviewTab(redirectTab as never);
         });
       }
     }
-  }, [notification.id, markRead, setOpen, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
+  }, [notification, markRead, setOpen, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
 
   const handleClick = useCallback(() => {
     if (!notification.read) markRead(notification.id);

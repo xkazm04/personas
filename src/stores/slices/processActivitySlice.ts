@@ -7,6 +7,8 @@ export interface ProcessNavigateTo {
   tab?: string;
   /** Optional persona ID to select */
   personaId?: string;
+  /** Optional chat session id — when present, restore that specific session in the chat tab */
+  chatSessionId?: string;
 }
 
 export interface ActiveProcess {

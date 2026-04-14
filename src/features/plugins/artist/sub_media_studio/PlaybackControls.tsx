@@ -1,9 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Square, SkipBack, SkipForward, Keyboard, Repeat } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import type { PlaybackEngine } from './hooks/useTimelinePlayback';
 
 interface PlaybackControlsProps {
-  currentTime: number;
+  engine: PlaybackEngine;
   totalDuration: number;
   playing: boolean;
   looping: boolean;
@@ -16,13 +18,19 @@ interface PlaybackControlsProps {
 
 /** Format seconds to MM:SS.s */
 function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const safe = Math.max(0, seconds);
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
   return `${String(m).padStart(2, '0')}:${s.toFixed(1).padStart(4, '0')}`;
 }
 
+/**
+ * PlaybackControls subscribes to `engine` for the timecode readout — the
+ * parent does not pass `currentTime` as a prop, so this component re-renders
+ * only when the time we display changes, not the whole tree.
+ */
 export default function PlaybackControls({
-  currentTime,
+  engine,
   totalDuration,
   playing,
   looping,
@@ -33,15 +41,28 @@ export default function PlaybackControls({
   onToggleLoop,
 }: PlaybackControlsProps) {
   const { t } = useTranslation();
+  const [displayTime, setDisplayTime] = useState(0);
+  const lastUpdateRef = useRef(0);
+
+  useEffect(() => {
+    return engine.subscribe((time) => {
+      // Throttle readout updates to ~10fps — the precision is tenths of a
+      // second anyway and this keeps React work off the hot path.
+      const now = performance.now();
+      if (now - lastUpdateRef.current >= 90) {
+        lastUpdateRef.current = now;
+        setDisplayTime(time);
+      }
+    });
+  }, [engine]);
 
   return (
     <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/15 bg-card/70">
-      {/* Transport controls */}
       <div className="flex items-center gap-0.5 bg-secondary/30 rounded-lg border border-primary/10 p-0.5">
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => onSeek(Math.max(0, currentTime - 5))}
+          onClick={() => onSeek(Math.max(0, engine.getTime() - 5))}
         >
           <SkipBack className="w-3.5 h-3.5" />
         </Button>
@@ -55,7 +76,6 @@ export default function PlaybackControls({
           <Square className="w-3.5 h-3.5" />
         </Button>
 
-        {/* Play / Pause — larger, accented */}
         {playing ? (
           <button
             onClick={onPause}
@@ -77,7 +97,7 @@ export default function PlaybackControls({
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => onSeek(Math.min(totalDuration, currentTime + 5))}
+          onClick={() => onSeek(Math.min(totalDuration, engine.getTime() + 5))}
         >
           <SkipForward className="w-3.5 h-3.5" />
         </Button>
@@ -99,7 +119,7 @@ export default function PlaybackControls({
       {/* Time display */}
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary/20 border border-primary/10">
         <span className="text-sm font-mono text-rose-400 tabular-nums font-semibold">
-          {formatTime(currentTime)}
+          {formatTime(displayTime)}
         </span>
         <span className="text-xs text-muted-foreground/40">/</span>
         <span className="text-sm font-mono text-muted-foreground/60 tabular-nums">

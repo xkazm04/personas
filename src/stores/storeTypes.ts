@@ -43,6 +43,7 @@ import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
+import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
 import type { ProcessActivitySlice } from "./slices/processActivitySlice";
@@ -189,6 +190,7 @@ export type AgentStore = CoreState &
   HealthCheckSlice &
   BudgetEnforcementSlice &
   ChatSlice &
+  BackgroundChatSlice &
   MatrixBuildSlice;
 
 /** Overview domain: dashboard, messages, events, healing, memories, cron, alerts, persona health, process activity */

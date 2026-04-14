@@ -8,9 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { getMessageDeliveries } from "@/api/overview/messages";
-import { sendAppNotification } from '@/api/system/system';
-import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
-import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { buildFeedbackInstruction, buildFeedbackChatTitle } from '../libs/feedbackInstruction';
 
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { deliveryStatusConfig, channelLabels } from '../libs/messageHelpers';
@@ -51,60 +49,34 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
     onClose();
   }, [onDelete, onClose]);
 
-  // -- Improve persona from feedback ----------------------------------------
+  // -- Respond with feedback → background advisory chat ---------------------
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [improving, setImproving] = useState<'idle' | 'loading' | 'sent'>('idle');
-  const startMatrix = useAgentStore((s) => s.startMatrix);
-  const updatePersona = useAgentStore((s) => s.updatePersona);
-  const isMatrixRunning = useAgentStore((s) => s.isMatrixRunning);
-  const prevMatrixRunning = useRef(isMatrixRunning);
-
-  // Watch for matrix completion to send notification
-  useEffect(() => {
-    const improvementPid = useSystemStore.getState().feedbackImprovementPersonaId;
-    if (prevMatrixRunning.current && !isMatrixRunning && improvementPid) {
-      useSystemStore.getState().setFeedbackImprovementComplete(true);
-      useSystemStore.getState().setFeedbackImprovementPersonaId(null);
-      sendAppNotification('Agent Improved', 'Your agent has been updated based on your feedback.').catch(() => {});
-    }
-    prevMatrixRunning.current = isMatrixRunning;
-  }, [isMatrixRunning]);
+  const startFeedbackChat = useAgentStore((s) => s.startFeedbackChat);
 
   const handleImprove = useCallback(async () => {
     if (!feedbackText.trim() || improving === 'loading') return;
     setImproving('loading');
     try {
-      // 1. Enrich design_context with message content + feedback
       const personas = useAgentStore.getState().personas;
       const persona = personas.find((p) => p.id === message.persona_id);
-      if (persona) {
-        const ctx = parseDesignContext(persona.design_context);
-        const enriched = serializeDesignContext({
-          ...ctx,
-          userFeedback: { message: msgContent.slice(0, 500), feedback: feedbackText, at: new Date().toISOString() },
-        });
-        await updatePersona(message.persona_id, { design_context: enriched });
-      }
+      const instruction = buildFeedbackInstruction(message, feedbackText);
+      const title = buildFeedbackChatTitle(message);
 
-      // 2. Start background improvement via Matrix
-      const instruction =
-        `Improve this agent based on user feedback about its output.\n\n` +
-        `Message output the user wants improved:\n${msgContent.slice(0, 500)}\n\n` +
-        `User feedback:\n${feedbackText}\n\n` +
-        `Apply non-aggressive improvements to address the feedback while preserving working behavior.`;
-
-      const models = selectedModelsToConfigs(new Set(['sonnet']));
-      await startMatrix(message.persona_id, instruction, models);
-
-      // 3. Mark for notification on completion
-      useSystemStore.getState().setFeedbackImprovementPersonaId(message.persona_id);
+      await startFeedbackChat({
+        personaId: message.persona_id,
+        personaName: persona?.name ?? message.persona_name ?? undefined,
+        sourceMessageId: message.id,
+        instruction,
+        title,
+      });
 
       setImproving('sent');
     } catch {
       setImproving('idle');
     }
-  }, [feedbackText, improving, message, startMatrix, updatePersona]);
+  }, [feedbackText, improving, message, startFeedbackChat]);
 
   return (
     <DetailModal

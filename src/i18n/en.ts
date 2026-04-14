@@ -9700,6 +9700,10 @@ export const en = {
     lab_run: "Lab Run",
     connector_test: "Connector Test",
     creative_session: "Creative Session",
+    // Shown in the notification center + process activity drawer when a user
+    // responds to a persona's message with feedback and a background advisory
+    // chat is running in the lab to address it.
+    feedback_chat: "Feedback Chat",
 
     // Notification title suffixes
     complete_suffix: "Complete",

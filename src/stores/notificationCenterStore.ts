@@ -15,7 +15,8 @@ export type ProcessType =
   | 'matrix-build'
   | 'lab-run'
   | 'connector-test'
-  | 'creative-session';
+  | 'creative-session'
+  | 'feedback-chat';
 
 export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled' | 'warning';
 
@@ -32,6 +33,12 @@ export interface PipelineNotification {
   title?: string;
   /** Optional persistent message body — used by process notifications. */
   message?: string;
+  /** Optional chat session id — used by feedback-chat notifications to restore
+   *  the specific background session when the user clicks the redirect. */
+  chatSessionId?: string;
+  /** Optional persona id — used by feedback-chat notifications to select the
+   *  correct persona before restoring the chat session. */
+  personaId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +87,8 @@ interface NotificationCenterStore {
     summary: string;
     redirectSection: string;
     redirectTab: string | null;
+    /** When present, clicking the redirect will restore this specific chat session */
+    chatSessionId?: string;
   }) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -128,6 +137,8 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
         read: false,
         title: n.title,
         message: n.summary,
+        ...(n.chatSessionId ? { chatSessionId: n.chatSessionId } : {}),
+        ...(n.personaId ? { personaId: n.personaId } : {}),
       };
       const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
       saveNotifications(updated);

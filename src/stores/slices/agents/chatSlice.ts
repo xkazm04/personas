@@ -38,7 +38,12 @@ export interface ChatSlice {
   clearChatSession: (personaId: string, sessionId: string) => Promise<void>;
   appendChatStreamLine: (line: string) => void;
   finishChatStream: (fullResponse: string, personaId: string, sessionId: string, executionId?: string) => Promise<void>;
-  restoreChatSession: (personaId: string) => Promise<void>;
+  /**
+   * Restore a chat session for a persona. When `sessionId` is omitted, the
+   * most-recently-used session is restored (previous behavior). When provided,
+   * that exact session is loaded — used by the feedback-chat adoption flow.
+   */
+  restoreChatSession: (personaId: string, sessionId?: string) => Promise<void>;
 }
 
 /** Maximum in-memory chat messages per session. Older messages are evicted FIFO. */
@@ -298,8 +303,27 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     }
   },
 
-  restoreChatSession: async (personaId) => {
+  restoreChatSession: async (personaId, requestedSessionId) => {
     try {
+      // If a specific session id was requested, load it directly. Used by the
+      // feedback-chat adoption flow to land on the exact background session
+      // the user clicked from the notification or activity drawer.
+      if (requestedSessionId) {
+        const [sessions, messages, ctx] = await Promise.all([
+          listChatSessions(personaId),
+          getChatMessages(personaId, requestedSessionId),
+          getChatSessionContext(requestedSessionId),
+        ]);
+        set({
+          chatSessions: sessions,
+          activeChatSessionId: requestedSessionId,
+          chatMessages: messages.slice(-MAX_CHAT_MESSAGES),
+          chatSessionContext: ctx,
+          chatMode: (ctx?.chatMode === 'agent' ? 'agent' : 'advisory') as ChatMode,
+        });
+        return;
+      }
+
       const { activeChatSessionId } = get();
 
       // Fetch sessions once — reused for both validation and latest-session lookup

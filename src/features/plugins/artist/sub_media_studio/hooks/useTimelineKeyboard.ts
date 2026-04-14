@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import type { PlaybackEngine } from './useTimelinePlayback';
 
 /**
  * Keyboard shortcuts for the Media Studio timeline.
@@ -10,25 +11,26 @@ import { useEffect, useCallback } from 'react';
  * - Home: seek to 0
  * - End: seek to total duration
  * - Escape: deselect
- * - D: duplicate selected
+ * - Ctrl+D: duplicate selected
+ *
+ * Uses the imperative `engine` to read the current time so this hook never
+ * needs to re-subscribe on every rAF tick.
  */
 export function useTimelineKeyboard({
-  playing,
+  engine,
   play,
   pause,
   seek,
-  currentTime,
   totalDuration,
   selectedItemId,
   removeItem,
   duplicateItem,
   deselectItem,
 }: {
-  playing: boolean;
+  engine: PlaybackEngine;
   play: () => void;
   pause: () => void;
   seek: (time: number) => void;
-  currentTime: number;
   totalDuration: number;
   selectedItemId: string | null;
   removeItem: (id: string) => void;
@@ -37,14 +39,14 @@ export function useTimelineKeyboard({
 }) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Don't capture when typing in inputs
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
       switch (e.code) {
         case 'Space':
           e.preventDefault();
-          if (playing) { pause(); } else { play(); }
+          if (engine.getPlaying()) pause();
+          else play();
           break;
 
         case 'Delete':
@@ -55,15 +57,19 @@ export function useTimelineKeyboard({
           }
           break;
 
-        case 'ArrowLeft':
+        case 'ArrowLeft': {
           e.preventDefault();
-          seek(Math.max(0, currentTime - (e.ctrlKey || e.metaKey ? 5 : 1)));
+          const step = e.ctrlKey || e.metaKey ? 5 : 1;
+          seek(Math.max(0, engine.getTime() - step));
           break;
+        }
 
-        case 'ArrowRight':
+        case 'ArrowRight': {
           e.preventDefault();
-          seek(Math.min(totalDuration, currentTime + (e.ctrlKey || e.metaKey ? 5 : 1)));
+          const step = e.ctrlKey || e.metaKey ? 5 : 1;
+          seek(Math.min(totalDuration, engine.getTime() + step));
           break;
+        }
 
         case 'Home':
           e.preventDefault();
@@ -87,7 +93,7 @@ export function useTimelineKeyboard({
           break;
       }
     },
-    [playing, play, pause, seek, currentTime, totalDuration, selectedItemId, removeItem, duplicateItem, deselectItem],
+    [engine, play, pause, seek, totalDuration, selectedItemId, removeItem, duplicateItem, deselectItem],
   );
 
   useEffect(() => {

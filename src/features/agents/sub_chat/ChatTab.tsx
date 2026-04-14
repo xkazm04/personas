@@ -44,9 +44,18 @@ export function ChatTab() {
     };
   }, [isExecuting, healthDigest, personaId]);
 
-  // Restore session on mount
+  // Restore session on mount. Skip the restore if a specific session has
+  // already been populated by an upstream caller (e.g. ProcessActivityDrawer
+  // or the TitleBar notification-center click handler restoring a feedback
+  // chat). fetchSessions still runs so the sidebar session list is accurate.
   useEffect(() => {
-    if (personaId) { fetchSessions(personaId); restoreSession(personaId); }
+    if (!personaId) return;
+    fetchSessions(personaId);
+    const current = useAgentStore.getState();
+    const hasPreloadedSession = !!current.activeChatSessionId && current.chatMessages.length > 0;
+    if (!hasPreloadedSession) {
+      restoreSession(personaId);
+    }
   }, [personaId, fetchSessions, restoreSession]);
 
   // Auto-scroll to bottom on new messages (only if already near bottom)

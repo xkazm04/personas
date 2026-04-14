@@ -153,11 +153,13 @@ function DrawerContent({ onClose }: DrawerProps) {
 
   const navigateToProcess = (process: ActiveProcess) => {
     if (!process.navigateTo) return;
-    const { section, tab, personaId } = process.navigateTo;
+    const { section, tab, personaId, chatSessionId } = process.navigateTo;
     setSidebarSection(section as SidebarSection);
     if (tab) {
       if (section === 'personas') {
-        setEditorTab(tab as "matrix" | "activity");
+        // 'chat' is a valid EditorTab — widen the cast from the legacy
+        // "matrix" | "activity" narrowing to include all tab variants.
+        setEditorTab(tab as Parameters<typeof setEditorTab>[0]);
       } else if (section === 'plugins') {
         // Plugins section: tab is the dev-tools sub-tab. Always activate dev-tools.
         setPluginTab('dev-tools' as PluginTab);
@@ -168,6 +170,13 @@ function DrawerContent({ onClose }: DrawerProps) {
     }
     if (personaId) {
       useAgentStore.getState().selectPersona(personaId);
+      // If this is a feedback-chat row with a specific session id, restore
+      // that exact session into the chat slice before the ChatTab mounts.
+      // The ChatTab's mount effect will detect the already-populated state
+      // and skip its own "latest session" restore.
+      if (chatSessionId && tab === 'chat') {
+        void useAgentStore.getState().restoreChatSession(personaId, chatSessionId);
+      }
     }
     onClose();
   };

@@ -20,6 +20,7 @@ const PROCESS_LABEL_KEYS: Record<ProcessType, keyof Translations['process_labels
   'lab-run': 'lab_run',
   'connector-test': 'connector_test',
   'creative-session': 'creative_session',
+  'feedback-chat': 'feedback_chat',
 };
 
 /** Resolve a ProcessType to its human-readable label from the given translations. */
