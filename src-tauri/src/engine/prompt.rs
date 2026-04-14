@@ -934,6 +934,14 @@ pub fn build_cli_args(
 
     cli_args.env_removals.push("CLAUDECODE".to_string());
     cli_args.env_removals.push("CLAUDE_CODE".to_string());
+    // Strip DISABLE_PROMPT_CACHING* inherited from the parent shell so personas
+    // executions always get prompt caching regardless of user env state. CLI
+    // 2.1.108 started warning at startup when these are set; the warning lands
+    // on stderr and can confuse log consumers. Keep enumerated — env_remove is
+    // exact-match, not prefix.
+    cli_args.env_removals.push("DISABLE_PROMPT_CACHING".to_string());
+    cli_args.env_removals.push("DISABLE_PROMPT_CACHING_1H".to_string());
+    cli_args.env_removals.push("DISABLE_PROMPT_CACHING_5M".to_string());
 
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
@@ -978,7 +986,13 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
         command,
         args,
         env_overrides: Vec::new(),
-        env_removals: vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()],
+        env_removals: vec![
+            "CLAUDECODE".to_string(),
+            "CLAUDE_CODE".to_string(),
+            "DISABLE_PROMPT_CACHING".to_string(),
+            "DISABLE_PROMPT_CACHING_1H".to_string(),
+            "DISABLE_PROMPT_CACHING_5M".to_string(),
+        ],
         cwd: None,
     }
 }
@@ -2273,6 +2287,35 @@ mod tests {
         assert!(args
             .args
             .contains(&"--exclude-dynamic-system-prompt-sections".to_string()));
+    }
+
+    #[test]
+    fn test_cli_args_strips_disable_prompt_caching_env() {
+        // Both build_cli_args and build_resume_cli_args must strip the
+        // DISABLE_PROMPT_CACHING* variants that CLI 2.1.108 warns about so
+        // personas executions always get caching regardless of parent-shell
+        // env state.
+        let expected = [
+            "DISABLE_PROMPT_CACHING",
+            "DISABLE_PROMPT_CACHING_1H",
+            "DISABLE_PROMPT_CACHING_5M",
+        ];
+
+        let fresh = build_cli_args(None, None);
+        for key in expected {
+            assert!(
+                fresh.env_removals.iter().any(|k| k == key),
+                "build_cli_args must strip {key} from child env"
+            );
+        }
+
+        let resumed = build_resume_cli_args("sess-1");
+        for key in expected {
+            assert!(
+                resumed.env_removals.iter().any(|k| k == key),
+                "build_resume_cli_args must strip {key} from child env"
+            );
+        }
     }
 
     #[test]

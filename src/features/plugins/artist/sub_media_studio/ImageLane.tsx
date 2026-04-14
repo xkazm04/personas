@@ -1,7 +1,10 @@
+import { memo, useCallback } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { ImageIcon, Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { ImageItem } from './types';
+import TimelineClip from './TimelineClip';
 
 interface ImageLaneProps {
   items: ImageItem[];
@@ -10,21 +13,49 @@ interface ImageLaneProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onUpdate?: (id: string, patch: Partial<ImageItem>) => void;
   hideHeader?: boolean;
   hideAdd?: boolean;
 }
 
-export default function ImageLane({
+function ImageLaneImpl({
   items,
   zoom,
   scrollX,
   selectedId,
   onSelect,
   onAdd,
+  onUpdate,
   hideHeader,
   hideAdd,
 }: ImageLaneProps) {
   const { t } = useTranslation();
+
+  const handleMove = useCallback(
+    (id: string, newStart: number) => {
+      onUpdate?.(id, { startTime: newStart });
+    },
+    [onUpdate],
+  );
+
+  const handleTrimLeft = useCallback(
+    (id: string, item: ImageItem, delta: number) => {
+      const newStart = Math.max(0, item.startTime + delta);
+      const actualDelta = newStart - item.startTime;
+      onUpdate?.(id, {
+        startTime: newStart,
+        duration: Math.max(0.25, item.duration - actualDelta),
+      });
+    },
+    [onUpdate],
+  );
+
+  const handleTrimRight = useCallback(
+    (id: string, item: ImageItem, delta: number) => {
+      onUpdate?.(id, { duration: Math.max(0.25, item.duration + delta) });
+    },
+    [onUpdate],
+  );
 
   return (
     <div className="flex flex-col">
@@ -50,35 +81,41 @@ export default function ImageLane({
             <span className="text-[10px] text-emerald-400/30">{t.media_studio.empty_lane}</span>
           </div>
         )}
-        {items.map((item) => {
-          const left = item.startTime * zoom - scrollX;
-          const width = item.duration * zoom;
-          const isSelected = item.id === selectedId;
-          return (
-            <button
-              key={item.id}
-              className={`absolute top-0.5 h-11 rounded-lg overflow-hidden cursor-pointer transition-all
-                ${isSelected
-                  ? 'border-2 border-emerald-400 ring-1 ring-emerald-400/40 shadow-sm'
-                  : 'border border-emerald-500/20 hover:border-emerald-500/40'
-                }`}
-              style={{ left: `${left}px`, width: `${Math.max(width, 28)}px` }}
-              onClick={() => onSelect(item.id)}
-              title={item.label}
-            >
-              {/* Thumbnail or placeholder */}
-              <div className="w-full h-full bg-emerald-500/15 flex items-center justify-center">
-                <ImageIcon className="w-4 h-4 text-emerald-400/60" />
-              </div>
-              {/* Label overlay at bottom */}
-              {width > 50 && (
-                <span className="absolute bottom-0 inset-x-0 text-[8px] text-emerald-200 bg-black/40 px-1 truncate">
+        {items.map((item) => (
+          <TimelineClip
+            key={item.id}
+            id={item.id}
+            startTime={item.startTime}
+            duration={item.duration}
+            zoom={zoom}
+            scrollX={scrollX}
+            isSelected={item.id === selectedId}
+            className="top-0.5 h-11 rounded-lg overflow-hidden bg-emerald-500/15 border border-emerald-500/20 hover:border-emerald-500/40"
+            selectedClassName="top-0.5 h-11 rounded-lg overflow-hidden bg-emerald-500/15 border-2 border-emerald-400 ring-1 ring-emerald-400/40 shadow-sm"
+            onClick={() => onSelect(item.id)}
+            onMove={(newStart) => handleMove(item.id, newStart)}
+            onTrimLeft={(delta) => handleTrimLeft(item.id, item, delta)}
+            onTrimRight={(delta) => handleTrimRight(item.id, item, delta)}
+          >
+            <div className="relative w-full h-full bg-emerald-500/5 flex items-center justify-center overflow-hidden">
+              <img
+                src={convertFileSrc(item.filePath)}
+                alt={item.label}
+                className="w-full h-full object-cover opacity-80"
+                draggable={false}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                }}
+              />
+              <ImageIcon className="absolute w-4 h-4 text-emerald-400/40" />
+              {item.duration * zoom > 50 && (
+                <span className="absolute bottom-0 inset-x-0 text-[8px] text-emerald-200 bg-black/50 px-1 truncate">
                   {item.label}
                 </span>
               )}
-            </button>
-          );
-        })}
+            </div>
+          </TimelineClip>
+        ))}
 
         {/* Add button */}
         {!hideAdd && (
@@ -101,3 +138,6 @@ export default function ImageLane({
     </div>
   );
 }
+
+const ImageLane = memo(ImageLaneImpl);
+export default ImageLane;

@@ -84,6 +84,81 @@ export function useMediaStudio() {
     [],
   );
 
+  /**
+   * Split an item at `time` (timeline-seconds). Non-destructive:
+   * - The left half keeps the original `startTime`, new `duration = time - startTime`.
+   * - The right half is a new clip at `startTime = time`, new `duration = remaining`.
+   * - For video/audio clips, trim values are adjusted so each half references
+   *   the correct sub-range of the source media.
+   * - For text/image clips, both halves reference the same content and the
+   *   user can edit them independently.
+   *
+   * Returns the id of the newly-created right half, or null if the split was
+   * a no-op (time outside the clip).
+   */
+  const splitItemAt = useCallback((id: string, time: number): string | null => {
+    // Generate the new id *outside* the updater so React StrictMode's
+    // double-invocation doesn't produce two different UUIDs.
+    const newId = crypto.randomUUID();
+    let applied = false;
+    setComposition((prev) => {
+      const source = prev.items.find((it) => it.id === id);
+      if (!source) return prev;
+      const local = time - source.startTime;
+      if (local <= 0.05 || local >= source.duration - 0.05) {
+        return prev;
+      }
+      applied = true;
+      const leftDuration = local;
+      const rightDuration = source.duration - local;
+
+      let left: TimelineItem;
+      let right: TimelineItem;
+
+      switch (source.type) {
+        case 'video': {
+          const v = source;
+          left = { ...v, duration: leftDuration, transition: 'cut', transitionDuration: 0 };
+          right = {
+            ...v,
+            id: newId,
+            startTime: time,
+            duration: rightDuration,
+            trimStart: v.trimStart + leftDuration,
+          };
+          break;
+        }
+        case 'audio': {
+          const a = source;
+          left = { ...a, duration: leftDuration };
+          right = {
+            ...a,
+            id: newId,
+            startTime: time,
+            duration: rightDuration,
+            trimStart: a.trimStart + leftDuration,
+          };
+          break;
+        }
+        default: {
+          left = { ...source, duration: leftDuration };
+          right = {
+            ...source,
+            id: newId,
+            startTime: time,
+            duration: rightDuration,
+          };
+        }
+      }
+
+      return {
+        ...prev,
+        items: prev.items.map((it) => (it.id === id ? left : it)).concat(right),
+      };
+    });
+    return applied ? newId : null;
+  }, []);
+
   // -- Derived ----------------------------------------------------------------
 
   const videoItems = useMemo(
@@ -124,6 +199,7 @@ export function useMediaStudio() {
     updateItem,
     removeItem,
     duplicateItem,
+    splitItemAt,
     selectedItemId,
     setSelectedItemId,
     selectedItem,

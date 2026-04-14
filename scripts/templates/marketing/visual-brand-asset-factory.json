@@ -395,37 +395,26 @@
     ],
     "adoption_questions": [
       {
-        "id": "aq_brief_concept",
+        "id": "aq_brief_source",
         "category": "domain",
-        "question": "Describe the product, who it's for, and how it should feel",
-        "type": "textarea",
-        "placeholder": "Either describe directly, OR paste a URL / local file path / directory path and the agent will read it. Example description: 'A community marathon site for runners who have already finished a major race. Should feel prestigious like a historic almanac, but approachable -- not stuffy. Honest, weathered, earned.' Example path: '/Users/me/projects/marathon-site' or 'https://example.com/about'.",
-        "context": "Becomes the empathy and emotional-anchor section of the design.md brief. You can write the description directly, OR paste a URL / local file path / directory path — the agent will read the source at build time using its native http_request and file_read tools and extract the product narrative. Be concrete: name a user archetype, list 3-5 emotions, optionally suggest a physical-world equivalent. Avoid abstract words like 'premium' or 'modern'.",
+        "question": "Where should the design brief be extracted from?",
+        "type": "source_definition",
+        "default": "",
+        "context": "Pick the source the agent should read at persona build time to generate the design.md brief. Local file or folder — paste a full local path (e.g. a design.md, a style guide, a project root). Codebase — pick a Dev Tools project and the agent will crawl its CSS/Tailwind for colors, typography, and emotional tone. Database — pick a database credential and the agent will query brand assets from it. Whatever source you pick becomes the empathy and sensory-language source for every asset generation.",
         "dimension": "use-cases"
       },
       {
-        "id": "aq_brief_source",
+        "id": "aq_brief_mode",
         "category": "configuration",
         "question": "How should the design.md brief be produced?",
         "type": "select",
         "options": [
-          "Auto-from-codebase (extract colors and fonts from CSS/Tailwind, then translate into sensory language)",
-          "Read from a local file or URL (paste the path in the field below)",
+          "Auto-extract from the source above (translate into sensory language)",
           "I'll paste my own design.md (e.g. one I wrote in Stitch, Figma, or Gemini)",
           "On-demand (skip at build time, I'll generate it later from the persona overview)"
         ],
-        "default": "Auto-from-codebase (extract colors and fonts from CSS/Tailwind, then translate into sensory language)",
-        "context": "Determines how Step 0 runs at persona build time. Auto-from-codebase reads your project files. Read-from-file/URL accepts a path or URL in the next field — the agent fetches it via native file_read or http_request. User-pasted accepts a brief verbatim. On-demand defers the brief and falls back to live codebase analysis on every run.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_brief_source_path",
-        "category": "configuration",
-        "question": "Path or URL to the design source (only if you picked 'Read from a local file or URL' above)",
-        "type": "text",
-        "placeholder": "/Users/me/project/design.md  or  https://example.com/brand/style.md",
-        "default": "",
-        "context": "Optional. Leave blank unless you selected 'Read from a local file or URL' in the previous question. The agent will read this path at build time using its native file_read tool (for local paths) or http_request (for URLs) and use the content as the design brief source.",
+        "default": "Auto-extract from the source above (translate into sensory language)",
+        "context": "Determines how Step 0 runs at persona build time. Auto-extract reads the source you picked above. User-pasted accepts a brief verbatim. On-demand defers the brief and falls back to live source analysis on every run.",
         "dimension": "use-cases"
       },
       {

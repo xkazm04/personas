@@ -81,6 +81,19 @@ function EnvironmentStatus({
     setSidebarSection('credentials');
   }, [setSidebarSection]);
 
+  // Only trigger the (potentially slow) subprocess check when the user
+  // actually expands the panel — keeps the Creative Studio tab from freezing
+  // on load while pip / blender-mcp detection runs.
+  const toggleExpanded = useCallback(() => {
+    setExpanded((prev) => {
+      const next = !prev;
+      if (next && !status && !checking) {
+        onCheck();
+      }
+      return next;
+    });
+  }, [status, checking, onCheck]);
+
   const allReady = status?.installed && status?.mcpInstalled &&
     connectors.some((c) => c.connected);
 
@@ -90,8 +103,8 @@ function EnvironmentStatus({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setExpanded(!expanded)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(!expanded); }}
+        onClick={toggleExpanded}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleExpanded(); }}
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">

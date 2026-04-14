@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { Music, Plus, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
@@ -17,7 +17,7 @@ interface AudioLaneProps {
   hideAdd?: boolean;
 }
 
-export default function AudioLane({
+function AudioLaneImpl({
   items,
   zoom,
   scrollX,
@@ -147,3 +147,6 @@ export default function AudioLane({
     </div>
   );
 }
+
+const AudioLane = memo(AudioLaneImpl);
+export default AudioLane;

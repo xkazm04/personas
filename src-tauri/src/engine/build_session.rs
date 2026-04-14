@@ -149,6 +149,8 @@ impl BuildSessionManager {
             .map(|c| {
                 if c.name == "codebase" {
                     format!("- {} (category: {}) — local codebase access for code analysis, impact assessment, and implementation tasks via Dev Tools projects", c.name, c.category)
+                } else if c.name == "obsidian_memory" {
+                    format!("- {} (category: {}) — graph-aware Obsidian vault access: search notes, walk backlinks, list MOCs/orphans, append to today's daily journal, write structured meeting notes. Prefer this connector for 'search my notes', 'what links to X', 'log this to my journal', and 'capture meeting' intents.", c.name, c.category)
                 } else {
                     format!("- {} (category: {})", c.name, c.category)
                 }
@@ -1520,6 +1522,7 @@ data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{
 - Check Available Credentials below to set has_credential correctly
 - Always include 1-2 alternatives per connector (similar services the user could swap to)
 - For tasks involving codebase analysis, code review, impact assessment, or implementation work, suggest the "codebase" connector (service_type: "codebase", category: "integration"). This connects to local project files registered in Dev Tools. Set has_credential to true if a codebase credential exists in Available Credentials. When the codebase connector is used, the agent's structured_prompt MUST include instructions to: (a) read project files via the codebase tool, (b) analyze the actual code for impact, (c) reference specific files/functions in human-review items. Generic reviews without codebase evidence are not acceptable.
+- For tasks involving personal knowledge retrieval, second-brain workflows, daily journaling, meeting capture, or "what do I know about X" intents, suggest the "obsidian_memory" connector (service_type: "obsidian_memory", category: "knowledge"). This connects to the user's Obsidian vault via the Obsidian Brain plugin and exposes graph-aware operations (search, backlinks, MOCs, daily notes, meeting notes). Only suggest it when the obsidian_memory connector is present in Available Connectors — it is hidden until the user finishes Obsidian Brain setup. When the obsidian_memory connector is used, the agent's structured_prompt SHOULD instruct the agent to (a) search the vault before answering knowledge questions, (b) write outcomes into a daily note or meeting note instead of an ephemeral chat reply, and (c) follow backlinks when the user asks for related context.
 
 ### 3. triggers — WHEN it runs
 Each trigger needs structured data so the UI can render config cards:

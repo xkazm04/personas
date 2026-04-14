@@ -1648,6 +1648,10 @@ pub fn run() {
             commands::artist::ffmpeg::artist_probe_media,
             commands::artist::ffmpeg::artist_export_composition,
             commands::artist::ffmpeg::artist_cancel_export,
+            commands::artist::ffmpeg::artist_extract_audio,
+            commands::artist::ffmpeg::artist_save_thumbnail,
+            commands::artist::ffmpeg::artist_trim_file,
+            commands::artist::ffmpeg::artist_measure_loudness,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_read,
@@ -1683,6 +1687,17 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_push_goals,
             commands::obsidian_brain::obsidian_brain_lint_vault,
             commands::obsidian_brain::obsidian_brain_semantic_lint_vault,
+            // Obsidian Brain — Graph (Obsidian Memory connector)
+            commands::obsidian_brain::graph::obsidian_graph_search,
+            commands::obsidian_brain::graph::obsidian_graph_outgoing_links,
+            commands::obsidian_brain::graph::obsidian_graph_backlinks,
+            commands::obsidian_brain::graph::obsidian_graph_list_orphans,
+            commands::obsidian_brain::graph::obsidian_graph_list_mocs,
+            commands::obsidian_brain::graph::obsidian_graph_stats,
+            commands::obsidian_brain::graph::obsidian_graph_append_daily_note,
+            commands::obsidian_brain::graph::obsidian_graph_write_meeting_note,
+            commands::obsidian_brain::graph::obsidian_graph_start_watcher,
+            commands::obsidian_brain::graph::obsidian_graph_stop_watcher,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

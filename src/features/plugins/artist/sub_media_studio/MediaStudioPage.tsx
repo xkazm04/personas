@@ -27,6 +27,7 @@ export default function MediaStudioPage() {
     updateItem,
     removeItem,
     duplicateItem,
+    splitItemAt,
     selectedItemId,
     setSelectedItemId,
     selectedItem,
@@ -37,15 +38,15 @@ export default function MediaStudioPage() {
     totalDuration,
   } = useMediaStudio();
 
-  const { currentTime, playing, looping, play, pause, stop, seek, toggleLoop } = useTimelinePlayback(totalDuration);
+  const { engine, playing, looping, play, pause, stop, seek, toggleLoop } =
+    useTimelinePlayback(totalDuration);
   const { pickVideo, pickAudio, pickImage } = useMediaFilePicker();
 
   useTimelineKeyboard({
-    playing,
+    engine,
     play,
     pause,
     seek,
-    currentTime,
     totalDuration,
     selectedItemId,
     removeItem,
@@ -224,7 +225,6 @@ export default function MediaStudioPage() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      {/* Drag overlay */}
       {dragOver && (
         <div className="absolute inset-0 z-50 bg-rose-500/10 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 pointer-events-none">
           <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-dashed border-rose-400/50 flex items-center justify-center">
@@ -234,7 +234,6 @@ export default function MediaStudioPage() {
         </div>
       )}
 
-      {/* FFmpeg banner (only when gating) */}
       {(!ffmpegReady || ffmpegChecking) && (
         <div className="px-4 md:px-6 xl:px-8 pt-4">
           <FfmpegStatusBanner
@@ -246,7 +245,6 @@ export default function MediaStudioPage() {
       )}
 
       {ffmpegReady && composition.items.length === 0 && (
-        /* Empty state — primary call-to-action */
         <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
           <div className="w-20 h-20 rounded-3xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
             <Film className="w-10 h-10 text-rose-400" />
@@ -281,37 +279,40 @@ export default function MediaStudioPage() {
 
       {ffmpegReady && composition.items.length > 0 && (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Preview + Inspector row */}
           <div className="flex flex-1 min-h-0">
-            {/* Preview — 62% */}
             <div className="w-[62%] p-4 flex items-start justify-center bg-background/40">
               <CompositionPreview
-                selectedItem={selectedItem}
-                currentTime={currentTime}
+                engine={engine}
+                playing={playing}
+                videoItems={videoItems}
+                audioItems={audioItems}
                 textItems={textItems}
                 imageItems={imageItems}
+                totalDuration={totalDuration}
+                compositionHeight={composition.height}
               />
             </div>
-            {/* Inspector — 38% */}
             <div className="w-[38%] border-l border-primary/10 bg-card/30 min-h-0 overflow-y-auto">
               <InspectorPanel
                 selectedItem={selectedItem}
                 composition={composition}
+                engine={engine}
                 onUpdate={updateItem}
                 onUpdateComposition={updateComposition}
+                onSplit={splitItemAt}
+                onAddItem={addItem}
               />
             </div>
           </div>
 
-          {/* Timeline — fixed height */}
           <div className="h-[260px] flex-shrink-0">
             <TimelinePanel
+              engine={engine}
               textItems={textItems}
               imageItems={imageItems}
               videoItems={videoItems}
               audioItems={audioItems}
               totalDuration={totalDuration}
-              currentTime={currentTime}
               selectedId={selectedItemId}
               onSelect={setSelectedItemId}
               onSeek={seek}
@@ -323,9 +324,8 @@ export default function MediaStudioPage() {
             />
           </div>
 
-          {/* Footer: Playback + Export */}
           <PlaybackControls
-            currentTime={currentTime}
+            engine={engine}
             totalDuration={totalDuration}
             playing={playing}
             looping={looping}

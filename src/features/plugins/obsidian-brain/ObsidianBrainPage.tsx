@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Brain, Settings, RefreshCw, FolderOpen, Cloud } from 'lucide-react';
+import { Brain, Settings, RefreshCw, FolderOpen, Cloud, Network } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const SyncPanel = lazy(() => import('./sub_sync/SyncPanel'));
 const BrowsePanel = lazy(() => import('./sub_browse/BrowsePanel'));
+const GraphPanel = lazy(() => import('./sub_graph/GraphPanel'));
 const CloudSyncPanel = lazy(() => import('./sub_cloud/CloudSyncPanel'));
 
 export default function ObsidianBrainPage() {
@@ -18,6 +19,7 @@ export default function ObsidianBrainPage() {
     { id: 'setup', label: t.plugins.obsidian_brain.tab_setup, icon: Settings },
     { id: 'sync', label: t.plugins.obsidian_brain.tab_sync, icon: RefreshCw },
     { id: 'browse', label: t.plugins.obsidian_brain.tab_browse, icon: FolderOpen },
+    { id: 'graph', label: t.plugins.obsidian_brain.tab_graph, icon: Network },
     { id: 'cloud', label: t.plugins.obsidian_brain.tab_cloud, icon: Cloud },
   ];
   const obsidianBrainTab = useSystemStore((s) => s.obsidianBrainTab);
@@ -65,6 +67,7 @@ export default function ObsidianBrainPage() {
             {obsidianBrainTab === 'setup' && <SetupPanel />}
             {obsidianBrainTab === 'sync' && <SyncPanel />}
             {obsidianBrainTab === 'browse' && <BrowsePanel />}
+            {obsidianBrainTab === 'graph' && <GraphPanel />}
             {obsidianBrainTab === 'cloud' && <CloudSyncPanel />}
           </Suspense>
         </div>

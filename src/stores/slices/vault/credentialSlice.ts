@@ -192,7 +192,21 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   fetchConnectorDefinitions: async () => {
     try {
       const raw = await listConnectors();
-      const connectorDefinitions = raw.map(parseConn);
+      const all = raw.map(parseConn);
+      // Plugin gating — exclude connectors that declare a `requires_plugin`
+      // dependency the user has not satisfied. Currently used by the
+      // `obsidian_memory` connector which depends on the Obsidian Brain
+      // plugin having a configured vault. Re-fetched when the system store
+      // signals the dependency state changed.
+      const { useSystemStore } = await import("@/stores/systemStore");
+      const sysState = useSystemStore.getState();
+      const obsidianReady = Boolean(sysState.obsidianVaultPath) && sysState.obsidianConnected;
+      const connectorDefinitions = all.filter((def) => {
+        const meta = def.metadata as Record<string, unknown> | null | undefined;
+        const requires = meta && typeof meta === "object" ? meta.requires_plugin : null;
+        if (requires === "obsidian-brain" && !obsidianReady) return false;
+        return true;
+      });
       set({ connectorDefinitions, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch connector definitions", set);

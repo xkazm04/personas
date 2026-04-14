@@ -153,3 +153,92 @@ export const loginWithGoogleDrive = () =>
 
 export const getGoogleDriveStatus = () =>
   invoke<boolean>("get_google_drive_status");
+
+// ── Phase 7: Obsidian Memory connector (graph operations) ─────────
+
+export interface VaultSearchHit {
+  path: string;
+  title: string;
+  snippet: string;
+  score: number;
+}
+
+export interface VaultLinkRef {
+  path: string;
+  title: string;
+}
+
+export interface VaultMocEntry {
+  path: string;
+  title: string;
+  outgoingLinkCount: number;
+}
+
+export interface VaultStats {
+  totalNotes: number;
+  totalLinks: number;
+  orphanCount: number;
+  mocCount: number;
+  dailyNoteCount: number;
+}
+
+export interface DailyNoteRef {
+  path: string;
+  date: string;
+  created: boolean;
+}
+
+export const obsidianGraphSearch = (query: string, limit?: number) =>
+  invoke<VaultSearchHit[]>("obsidian_graph_search", { query, limit: limit ?? null });
+
+export const obsidianGraphOutgoingLinks = (notePath: string) =>
+  invoke<VaultLinkRef[]>("obsidian_graph_outgoing_links", { notePath });
+
+export const obsidianGraphBacklinks = (notePath: string) =>
+  invoke<VaultLinkRef[]>("obsidian_graph_backlinks", { notePath });
+
+export const obsidianGraphListOrphans = (limit?: number) =>
+  invoke<VaultLinkRef[]>("obsidian_graph_list_orphans", { limit: limit ?? null });
+
+export const obsidianGraphListMocs = (minLinks?: number, limit?: number) =>
+  invoke<VaultMocEntry[]>("obsidian_graph_list_mocs", {
+    minLinks: minLinks ?? null,
+    limit: limit ?? null,
+  });
+
+export const obsidianGraphStats = () =>
+  invoke<VaultStats>("obsidian_graph_stats");
+
+export const obsidianGraphAppendDailyNote = (
+  body: string,
+  options?: { date?: string; section?: string },
+) =>
+  invoke<DailyNoteRef>("obsidian_graph_append_daily_note", {
+    date: options?.date ?? null,
+    section: options?.section ?? null,
+    body,
+  });
+
+export const obsidianGraphWriteMeetingNote = (
+  title: string,
+  body: string,
+  attendees?: string[],
+) =>
+  invoke<VaultLinkRef>("obsidian_graph_write_meeting_note", {
+    title,
+    attendees: attendees ?? null,
+    body,
+  });
+
+export const obsidianGraphStartWatcher = () =>
+  invoke<void>("obsidian_graph_start_watcher");
+
+export const obsidianGraphStopWatcher = () =>
+  invoke<void>("obsidian_graph_stop_watcher");
+
+export interface VaultChangedEvent {
+  vaultPath: string;
+  changedPaths: string[];
+}
+
+export const VAULT_CHANGED_EVENT = "obsidian:vault-changed";

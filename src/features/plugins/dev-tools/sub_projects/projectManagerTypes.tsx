@@ -126,7 +126,6 @@ export interface EditProjectData {
   id: string;
   name: string;
   path: string;
-  description: string;
   projectType: ProjectType;
   githubUrl: string;
 }

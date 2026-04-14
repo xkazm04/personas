@@ -58,7 +58,7 @@ export interface TransformQuestionResponse {
   id: string;
   category?: string;
   question: string;
-  type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project' | 'directory_picker';
+  type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project' | 'directory_picker' | 'source_definition';
   options?: string[];
   default?: string;
   context?: string;

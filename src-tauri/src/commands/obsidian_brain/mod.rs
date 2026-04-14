@@ -1,5 +1,6 @@
 pub mod conflict;
 pub mod drive;
+pub mod graph;
 pub mod lint;
 pub mod markdown;
 pub mod semantic_lint;
@@ -176,7 +177,7 @@ pub fn obsidian_brain_get_config(
 
 // ── Phase 2: Push Sync ───────────────────────────────────────────────
 
-fn get_config_or_err(pool: &crate::db::DbPool) -> Result<ObsidianVaultConfig, AppError> {
+pub(crate) fn get_config_or_err(pool: &crate::db::DbPool) -> Result<ObsidianVaultConfig, AppError> {
     match settings_repo::get(pool, SETTINGS_KEY)? {
         Some(json) => serde_json::from_str(&json)
             .map_err(|e| AppError::Internal(format!("Invalid obsidian config: {e}"))),

@@ -26,6 +26,10 @@ export interface TextItem extends TimelineItemBase {
   color: string;
   positionX: number;
   positionY: number;
+  /** Seconds of fade-in from transparent → opaque. */
+  fadeIn?: number;
+  /** Seconds of fade-out from opaque → transparent at clip end. */
+  fadeOut?: number;
 }
 
 export interface ImageItem extends TimelineItemBase {
@@ -36,6 +40,8 @@ export interface ImageItem extends TimelineItemBase {
   scale: number;
   positionX: number;
   positionY: number;
+  fadeIn?: number;
+  fadeOut?: number;
 }
 
 export interface VideoClip extends TimelineItemBase {
@@ -51,6 +57,12 @@ export interface VideoClip extends TimelineItemBase {
   height: number | null;
   transition: TransitionType;
   transitionDuration: number;
+  /** Playback speed multiplier. 1 = normal, 2 = 2× speed, 0.5 = half. */
+  speed?: number;
+  fadeIn?: number;
+  fadeOut?: number;
+  /** Drop this clip's audio track on export. */
+  stripAudio?: boolean;
 }
 
 export interface AudioClip extends TimelineItemBase {
@@ -61,6 +73,25 @@ export interface AudioClip extends TimelineItemBase {
   mediaDuration: number;
   /** 0–1 */
   volume: number;
+  speed?: number;
+  fadeIn?: number;
+  fadeOut?: number;
+  /** Apply EBU R128 loudness normalization (loudnorm) on export. */
+  normalize?: boolean;
+  /**
+   * Integrated program loudness measured once via ffmpeg loudnorm dry run.
+   * Used by the preview to compute a true linear gain so the in-browser
+   * playback matches what the export will render.
+   */
+  measuredLufs?: number;
+  /** Loudness range measurement (LU). Used by two-pass loudnorm on export. */
+  measuredLra?: number;
+  /** True peak measurement (dBTP). Used by two-pass loudnorm on export. */
+  measuredTruePeak?: number;
+  /** loudnorm threshold from the dry run. Used by two-pass loudnorm on export. */
+  measuredThreshold?: number;
+  /** `true` while the measurement is in flight. */
+  measuringLoudness?: boolean;
 }
 
 export type TimelineItem = TextItem | ImageItem | VideoClip | AudioClip;

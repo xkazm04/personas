@@ -5,6 +5,7 @@ import { batchImportDesignReviews, cancelDesignReviewRun, deleteDesignReview, de
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/templates/seedTemplates';
+import { invalidateTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { createSWRFetcher, invalidateSWRCache } from '@/lib/utils/staleWhileRevalidate';
 
@@ -75,11 +76,24 @@ export function useDesignReviews() {
 
   const seedDoneRef = useRef(false);
 
-  // Seed catalog templates into the database on first mount.
-  // Also prunes templates that were renamed or deleted from the catalog.
+  // Seed catalog templates into the database on mount.
+  //
+  // In production builds we gate with `seedDoneRef` so we only re-seed once
+  // per component mount. In dev we also force-invalidate the in-memory
+  // template catalog cache so edits to template JSON files (e.g. adding
+  // `allow_custom: true` to a question) flow through to the DB after a
+  // hot reload — without this, `_cached` in templateCatalog.ts would serve
+  // stale content and the seed upsert would re-write the same old JSON.
   const seedCatalogTemplates = useCallback(async () => {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
+
+    // Dev-mode: drop the Vite glob cache so each mount re-parses template
+    // JSON from disk. Cheap — the glob itself is still statically resolved,
+    // only the parsed objects get refreshed.
+    if (import.meta.env.DEV) {
+      invalidateTemplateCatalog();
+    }
 
     const seeds = await getSeedReviews();
 

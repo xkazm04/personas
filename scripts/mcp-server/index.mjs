@@ -13,8 +13,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import initSqlJs from "sql.js";
-import { join } from "path";
-import { existsSync, readFileSync } from "fs";
+import { join, dirname, extname, basename, relative } from "path";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from "fs";
 
 // =============================================================================
 // Database connection
@@ -914,6 +914,393 @@ server.tool(
       return errorResult(`Failed to configure: ${e.message}. Is the Personas app running?`);
     }
   }
+);
+
+// =============================================================================
+// Obsidian Memory tools — graph-aware vault operations
+//
+// These tools mirror the Rust commands in src-tauri/src/commands/obsidian_brain/
+// graph.rs but run in this MCP server's Node process so an agent connected to
+// Personas via Claude Desktop can call them at runtime. The vault path comes
+// from the obsidian_brain_config row in app_settings — the same source the
+// desktop plugin uses.
+// =============================================================================
+
+const WIKILINK_RE = /\[\[([^\]\|#]+)(?:[#\|][^\]]*)?\]\]/g;
+const TOKENIZE_RE = /[\p{L}\p{N}_]+/gu;
+
+function readObsidianConfig(d) {
+  const rows = query(d, `SELECT value FROM app_settings WHERE key = ?`, ["obsidian_brain_config"]);
+  if (!rows.length) return null;
+  try {
+    return JSON.parse(rows[0].value);
+  } catch {
+    return null;
+  }
+}
+
+function ensureVaultConfig() {
+  return getDb().then((d) => {
+    const cfg = readObsidianConfig(d);
+    if (!cfg || !cfg.vaultPath) {
+      throw new Error(
+        "Obsidian Brain is not configured. Open the Personas desktop app, go to Plugins → Obsidian Brain → Setup, and connect a vault.",
+      );
+    }
+    if (!existsSync(cfg.vaultPath)) {
+      throw new Error(`Configured vault path does not exist: ${cfg.vaultPath}`);
+    }
+    return cfg;
+  });
+}
+
+function walkVault(vaultRoot, maxDepth = 12) {
+  const notes = [];
+  function walk(dir, depth) {
+    if (depth > maxDepth) return;
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of entries) {
+      if (name.startsWith(".")) continue;
+      const full = join(dir, name);
+      let st;
+      try {
+        st = statSync(full);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) {
+        walk(full, depth + 1);
+        continue;
+      }
+      if (extname(name) !== ".md") continue;
+      let body;
+      try {
+        body = readFileSync(full, "utf-8");
+      } catch {
+        continue;
+      }
+      const title = name.slice(0, -3);
+      const outgoing = [];
+      let m;
+      WIKILINK_RE.lastIndex = 0;
+      while ((m = WIKILINK_RE.exec(body)) !== null) {
+        outgoing.push(m[1].trim());
+      }
+      notes.push({ path: full, title, body, outgoing });
+    }
+  }
+  walk(vaultRoot, 0);
+  return notes;
+}
+
+function buildBacklinkMap(notes) {
+  const map = new Map();
+  for (let i = 0; i < notes.length; i++) {
+    const seen = new Set(notes[i].outgoing.map((s) => s.toLowerCase()));
+    for (const target of seen) {
+      const arr = map.get(target) || [];
+      arr.push(i);
+      map.set(target, arr);
+    }
+  }
+  return map;
+}
+
+function tfidfScore(notes, queryTerms) {
+  const docCount = notes.length || 1;
+  const docFreq = new Map();
+  const tokenizedDocs = notes.map((n) => {
+    const tokens = (n.body.toLowerCase().match(TOKENIZE_RE) || []);
+    const tf = new Map();
+    for (const tok of tokens) tf.set(tok, (tf.get(tok) || 0) + 1);
+    for (const tok of tf.keys()) docFreq.set(tok, (docFreq.get(tok) || 0) + 1);
+    return tf;
+  });
+  const idf = new Map();
+  for (const term of queryTerms) {
+    const df = docFreq.get(term) || 0;
+    idf.set(term, Math.log((docCount + 1) / (df + 1)) + 1);
+  }
+  return tokenizedDocs.map((tf, i) => {
+    const titleLc = notes[i].title.toLowerCase();
+    let score = 0;
+    for (const term of queryTerms) {
+      const f = tf.get(term) || 0;
+      score += f * (idf.get(term) || 0);
+      if (titleLc.includes(term)) score += 5;
+    }
+    return score;
+  });
+}
+
+function snippetFor(body, queryLc) {
+  const bodyLc = body.toLowerCase();
+  const pos = bodyLc.indexOf(queryLc);
+  if (pos < 0) return body.slice(0, 160).replace(/\n/g, " ");
+  const start = Math.max(0, pos - 60);
+  const end = Math.min(body.length, pos + queryLc.length + 100);
+  let s = body.slice(start, end).replace(/\n/g, " ");
+  if (start > 0) s = "…" + s;
+  if (end < body.length) s = s + "…";
+  return s;
+}
+
+function safeFilename(s) {
+  return s.replace(/[^\p{L}\p{N} _-]+/gu, "-").trim();
+}
+
+function ensureWithinVault(vaultRoot, target) {
+  const rel = relative(vaultRoot, target);
+  if (rel.startsWith("..") || rel === target) {
+    throw new Error("Path is outside the configured vault");
+  }
+}
+
+server.tool(
+  "vault_search",
+  "Search the user's Obsidian vault by keyword. Returns matching notes with title, path, snippet, and TF-IDF relevance score. Use this BEFORE answering knowledge questions to ground your reply in the user's own notes.",
+  {
+    query: z.string().describe("Search query — single keyword or short phrase works best"),
+    limit: z.number().optional().default(15).describe("Max results to return (default 15)"),
+  },
+  async ({ query: q, limit }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const trimmed = q.trim();
+      if (!trimmed) return { content: [{ type: "text", text: "[]" }] };
+      const queryLc = trimmed.toLowerCase();
+      const queryTerms = (queryLc.match(TOKENIZE_RE) || []);
+      const notes = walkVault(cfg.vaultPath);
+      const scores = tfidfScore(notes, queryTerms);
+      const hits = notes
+        .map((n, i) => ({
+          path: n.path,
+          title: n.title,
+          snippet: snippetFor(n.body, queryLc),
+          score: Math.round(scores[i] * 100) / 100,
+        }))
+        .filter((h) => h.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+      return { content: [{ type: "text", text: JSON.stringify(hits, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_outgoing_links",
+  "List the wikilinks a note links out to. Use after vault_search to follow the user's mental model from one note to related notes.",
+  {
+    note_path: z.string().describe("Absolute path to the note (use the path returned by vault_search)"),
+  },
+  async ({ note_path }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      ensureWithinVault(cfg.vaultPath, note_path);
+      const body = readFileSync(note_path, "utf-8");
+      const notes = walkVault(cfg.vaultPath);
+      const titleIndex = new Map(notes.map((n) => [n.title.toLowerCase(), n]));
+      const seen = new Set();
+      const out = [];
+      let m;
+      WIKILINK_RE.lastIndex = 0;
+      while ((m = WIKILINK_RE.exec(body)) !== null) {
+        const raw = m[1].trim();
+        const key = raw.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const note = titleIndex.get(key);
+        out.push({ path: note ? note.path : "", title: note ? note.title : raw });
+      }
+      return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_backlinks",
+  "List notes that link TO a given note. Use to discover where the user has referenced a topic across their second brain.",
+  {
+    note_path: z.string().describe("Absolute path to the target note"),
+  },
+  async ({ note_path }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      ensureWithinVault(cfg.vaultPath, note_path);
+      const targetTitle = basename(note_path, ".md").toLowerCase();
+      if (!targetTitle) return { content: [{ type: "text", text: "[]" }] };
+      const notes = walkVault(cfg.vaultPath);
+      const map = buildBacklinkMap(notes);
+      const idxs = map.get(targetTitle) || [];
+      const out = idxs.map((i) => ({ path: notes[i].path, title: notes[i].title }));
+      return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_list_orphans",
+  "List notes that no other note links to. Useful for discovering forgotten or dangling content.",
+  {
+    limit: z.number().optional().default(50).describe("Max results (default 50)"),
+  },
+  async ({ limit }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const notes = walkVault(cfg.vaultPath);
+      const map = buildBacklinkMap(notes);
+      const orphans = [];
+      for (const n of notes) {
+        if (!map.has(n.title.toLowerCase())) {
+          orphans.push({ path: n.path, title: n.title });
+          if (orphans.length >= limit) break;
+        }
+      }
+      return { content: [{ type: "text", text: JSON.stringify(orphans, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_list_mocs",
+  "List Maps of Content (MOCs) — notes with many outgoing links that act as the user's hub pages.",
+  {
+    min_links: z.number().optional().default(8).describe("Minimum outgoing wikilinks to qualify as a MOC"),
+    limit: z.number().optional().default(20).describe("Max results"),
+  },
+  async ({ min_links, limit }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const notes = walkVault(cfg.vaultPath);
+      const mocs = notes
+        .filter((n) => n.outgoing.length >= min_links)
+        .map((n) => ({ path: n.path, title: n.title, outgoingLinkCount: n.outgoing.length }))
+        .sort((a, b) => b.outgoingLinkCount - a.outgoingLinkCount)
+        .slice(0, limit);
+      return { content: [{ type: "text", text: JSON.stringify(mocs, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_stats",
+  "Get aggregate statistics for the user's vault — total notes, total links, orphan count, MOC count, daily-note count.",
+  {},
+  async () => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const notes = walkVault(cfg.vaultPath);
+      const map = buildBacklinkMap(notes);
+      const totalLinks = notes.reduce((acc, n) => acc + n.outgoing.length, 0);
+      const orphanCount = notes.filter((n) => !map.has(n.title.toLowerCase())).length;
+      const mocCount = notes.filter((n) => n.outgoing.length >= 8).length;
+      const dailyNoteCount = notes.filter((n) => /^\d{4}-\d{2}-\d{2}/.test(n.title)).length;
+      const stats = {
+        totalNotes: notes.length,
+        totalLinks,
+        orphanCount,
+        mocCount,
+        dailyNoteCount,
+      };
+      return { content: [{ type: "text", text: JSON.stringify(stats, null, 2) }] };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_append_daily_note",
+  "Append a section to the user's daily note for a given date (defaults to today). Creates the daily note if missing. Use this to log decisions, observations, or capture material the user will revisit.",
+  {
+    body: z.string().describe("Markdown body to append"),
+    date: z.string().optional().describe("Date in YYYY-MM-DD format (defaults to today)"),
+    section: z.string().optional().describe("Optional H2 section heading to write under (e.g. 'Captured', 'Decisions')"),
+  },
+  async ({ body, date, section }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const dateStr = (date && /^\d{4}-\d{2}-\d{2}$/.test(date))
+        ? date
+        : new Date().toISOString().slice(0, 10);
+      const folder = join(cfg.vaultPath, "Daily");
+      mkdirSync(folder, { recursive: true });
+      const filePath = join(folder, `${dateStr}.md`);
+      const created = !existsSync(filePath);
+      let existing = created ? `# ${dateStr}\n\n` : readFileSync(filePath, "utf-8");
+      if (!existing.endsWith("\n")) existing += "\n";
+      const section_t = (section || "").trim();
+      if (section_t && !existing.includes(`## ${section_t}`)) {
+        existing += `\n## ${section_t}\n\n`;
+      } else {
+        existing += "\n";
+      }
+      existing += body.trimEnd() + "\n";
+      writeFileSync(filePath, existing);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ path: filePath, date: dateStr, created }, null, 2) }],
+      };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
+);
+
+server.tool(
+  "vault_write_meeting_note",
+  "Write a structured meeting note under Meetings/ with attendees as wikilinks. Use after a meeting transcript to capture decisions and action items into the user's second brain.",
+  {
+    title: z.string().describe("Meeting title — becomes the filename"),
+    body: z.string().describe("Markdown body — agenda, discussion, decisions, action items"),
+    attendees: z.array(z.string()).optional().describe("Attendee names — each becomes a [[wikilink]]"),
+  },
+  async ({ title, body, attendees }) => {
+    try {
+      const cfg = await ensureVaultConfig();
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) throw new Error("Meeting title is required");
+      const safe = safeFilename(trimmedTitle);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const folder = join(cfg.vaultPath, "Meetings");
+      mkdirSync(folder, { recursive: true });
+      const filePath = join(folder, `${dateStr} - ${safe}.md`);
+      let md = "---\n";
+      md += `title: "${trimmedTitle.replace(/"/g, "'")}"\n`;
+      md += `date: "${dateStr}"\n`;
+      md += `type: "meeting-note"\n`;
+      if (attendees && attendees.length) {
+        md += "attendees:\n";
+        for (const a of attendees) md += `  - "${a.replace(/"/g, "'")}"\n`;
+      }
+      md += "---\n\n";
+      md += `# ${trimmedTitle}\n\n`;
+      if (attendees && attendees.length) {
+        md += "**Attendees:** " + attendees.map((a) => `[[${a}]]`).join(", ") + "\n\n";
+      }
+      md += body.trimEnd() + "\n";
+      writeFileSync(filePath, md);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ path: filePath, title: trimmedTitle }, null, 2) }],
+      };
+    } catch (e) {
+      return errorResult(e.message);
+    }
+  },
 );
 
 // =============================================================================

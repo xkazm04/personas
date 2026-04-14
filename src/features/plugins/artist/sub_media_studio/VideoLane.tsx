@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { Film, Plus, Blend, Moon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
@@ -23,7 +23,7 @@ interface VideoLaneProps {
   hideAdd?: boolean;
 }
 
-export default function VideoLane({
+function VideoLaneImpl({
   items,
   zoom,
   scrollX,
@@ -163,3 +163,6 @@ export default function VideoLane({
     </div>
   );
 }
+
+const VideoLane = memo(VideoLaneImpl);
+export default VideoLane;

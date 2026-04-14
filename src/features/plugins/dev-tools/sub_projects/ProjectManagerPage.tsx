@@ -36,8 +36,8 @@ function ProjectModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; path: string; description: string; projectType: ProjectType; githubUrl: string }) => Promise<{ id: string } | undefined>;
-  onUpdate: (id: string, data: { name: string; description: string; projectType: ProjectType; githubUrl: string }) => Promise<void>;
+  onCreate: (data: { name: string; path: string; projectType: ProjectType; githubUrl: string }) => Promise<{ id: string } | undefined>;
+  onUpdate: (id: string, data: { name: string; projectType: ProjectType; githubUrl: string }) => Promise<void>;
   onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
   editProject?: EditProjectData | null;
 }) {
@@ -46,7 +46,6 @@ function ProjectModal({
   const [step, setStep] = useState<ModalStep>('form');
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
-  const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [githubUrl, setGithubUrl] = useState('');
   const [nameEdited, setNameEdited] = useState(false);
@@ -58,7 +57,6 @@ function ProjectModal({
     if (editProject) {
       setName(editProject.name);
       setPath(editProject.path);
-      setDescription(editProject.description);
       setProjectType(editProject.projectType);
       setGithubUrl(editProject.githubUrl);
       setNameEdited(true);
@@ -97,7 +95,6 @@ function ProjectModal({
     if (isEdit && editProject) {
       await onUpdate(editProject.id, {
         name: name.trim(),
-        description: description.trim(),
         projectType,
         githubUrl: githubUrl.trim(),
       });
@@ -106,7 +103,6 @@ function ProjectModal({
       const result = await onCreate({
         name: name.trim(),
         path: path.trim(),
-        description: description.trim(),
         projectType,
         githubUrl: githubUrl.trim(),
       });
@@ -121,7 +117,6 @@ function ProjectModal({
     setStep('form');
     setName('');
     setPath('');
-    setDescription('');
     setProjectType('other');
     setGithubUrl('');
     setNameEdited(false);
@@ -225,18 +220,6 @@ function ProjectModal({
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Purpose & Description</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="What does this project do? Used by the Codebases connector so agents know each project's purpose and capabilities."
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
-                  />
                 </div>
 
                 {/* GitHub URL -- repo selector (if PAT available) or manual input */}
@@ -551,7 +534,7 @@ export default function ProjectManagerPage() {
     if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
   }, [selectedGoalId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType; githubUrl: string }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -560,17 +543,16 @@ export default function ProjectManagerPage() {
       return { id: existing.id };
     }
     try {
-      const project = await storeCreateProject(data.name, data.path, data.description, data.projectType, data.githubUrl || undefined);
+      const project = await storeCreateProject(data.name, data.path, '', data.projectType, data.githubUrl || undefined);
       return { id: project.id };
     } catch {
       return undefined;
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; description: string; projectType: ProjectType; githubUrl: string }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string }) => {
     await storeUpdateProject(id, {
       name: data.name,
-      description: data.description,
       techStack: data.projectType,
       githubUrl: data.githubUrl || undefined,
     });
@@ -586,7 +568,6 @@ export default function ProjectManagerPage() {
       id: raw.id,
       name: raw.name,
       path: raw.root_path,
-      description: raw.description ?? '',
       projectType: matchedType?.id ?? 'other',
       githubUrl: raw.github_url ?? '',
     });

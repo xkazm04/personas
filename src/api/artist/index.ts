@@ -128,3 +128,54 @@ export const artistExportComposition = (
 
 export const artistCancelExport = (jobId: string) =>
   invoke<boolean>("artist_cancel_export", { jobId });
+
+// -- Quick-win one-shot operations -----------------------------------------
+
+/** Extract audio track from a media file to a standalone file. */
+export const artistExtractAudio = (inputPath: string, outputPath: string) =>
+  invoke<string>("artist_extract_audio", { inputPath, outputPath }, undefined, 120_000);
+
+/** Save a single frame from a video as an image file. */
+export const artistSaveThumbnail = (
+  inputPath: string,
+  timeSeconds: number,
+  outputPath: string,
+) =>
+  invoke<string>(
+    "artist_save_thumbnail",
+    { inputPath, timeSeconds, outputPath },
+    undefined,
+    60_000,
+  );
+
+export interface LoudnessStats {
+  /** Integrated program loudness (LUFS) — main value used for gain. */
+  integrated: number;
+  /** Loudness range (LU). */
+  lra: number;
+  /** True peak (dBTP). */
+  truePeak: number;
+  /** loudnorm's internal threshold. */
+  threshold: number;
+}
+
+/**
+ * Measure integrated loudness of a media file. Drives true linear gain in
+ * the preview so it matches the export's loudnorm pass.
+ */
+export const artistMeasureLoudness = (filePath: string) =>
+  invoke<LoudnessStats>("artist_measure_loudness", { filePath }, undefined, 120_000);
+
+/** Trim a media file between start/end seconds into a new file. */
+export const artistTrimFile = (
+  inputPath: string,
+  startSeconds: number,
+  endSeconds: number,
+  outputPath: string,
+) =>
+  invoke<string>(
+    "artist_trim_file",
+    { inputPath, startSeconds, endSeconds, outputPath },
+    undefined,
+    300_000,
+  );

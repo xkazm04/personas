@@ -94,6 +94,18 @@ export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
   return _cached.map((v) => v.template);
 }
 
+/**
+ * Invalidate the in-memory catalog cache so the next `getTemplateCatalog()`
+ * call re-parses every template JSON from the Vite glob loaders. Used by
+ * the design-reviews hook to pick up template JSON edits made while the dev
+ * server is running — without this, `_cached` survives remounts and serves
+ * stale content even after the files change on disk.
+ */
+export function invalidateTemplateCatalog(): void {
+  _cached = null;
+  _loading = null;
+}
+
 // -- Layer 2: Backend verification (async, authoritative) ----------------
 
 interface BackendIntegrityResult {

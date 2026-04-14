@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { BookMarked, Check, Trash2 } from 'lucide-react';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import {
   obsidianBrainSaveConfig,
   type ObsidianVaultConfig,
@@ -20,6 +21,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
   const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
   const setObsidianConnected = useSystemStore((s) => s.setObsidianConnected);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
   const { configs, remove } = useSavedVaultConfigs();
 
@@ -30,13 +32,14 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
         setObsidianVaultPath(config.vaultPath);
         setObsidianVaultName(config.vaultName);
         setObsidianConnected(true);
+        void fetchConnectorDefinitions();
         addToast(`Switched to "${config.vaultName}"`, 'success');
         onSelect?.(config);
       } catch (e) {
         addToast(`Failed to activate vault: ${e}`, 'error');
       }
     },
-    [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath],
+    [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath, fetchConnectorDefinitions],
   );
 
   const removeConfig = useCallback(

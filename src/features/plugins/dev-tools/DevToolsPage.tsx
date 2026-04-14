@@ -3,12 +3,14 @@ import { FolderKanban, ChevronDown, AlertCircle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 
+const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
 const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 const LifecyclePage = lazy(() => import('./sub_lifecycle/LifecyclePage'));
+const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 
 
 // ---------------------------------------------------------------------------
@@ -110,12 +112,14 @@ export default function DevToolsPage() {
           className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
         >
           <Suspense fallback={<SuspenseFallback />}>
+            {devToolsTab === 'overview' && <ProjectOverviewPage />}
             {devToolsTab === 'projects' && <ProjectManagerPage />}
             {devToolsTab === 'context-map' && <ContextMapPage />}
             {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
             {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
             {devToolsTab === 'task-runner' && <TaskRunnerPage />}
             {devToolsTab === 'lifecycle' && <LifecyclePage />}
+            {devToolsTab === 'skills' && <SkillBrowserPage />}
           </Suspense>
         </div>
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useOverviewStore } from '@/stores/overviewStore';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import {
@@ -49,6 +50,10 @@ export function useContextScanBackground() {
       pendingProjectName.current = null;
       setContextScanActive(false);
       setContextScanComplete(event.payload.success);
+      useOverviewStore.getState().processEnded(
+        'context_scan',
+        event.payload.success ? 'completed' : 'failed',
+      );
       notifyCompletion(name, event.payload.success);
     }).then((fn) => { unlisten = fn; });
     return () => { unlisten?.(); };
@@ -59,6 +64,12 @@ export function useContextScanBackground() {
       setContextScanActive(true);
       setContextScanComplete(false);
       pendingProjectName.current = projectName;
+      useOverviewStore.getState().processStarted(
+        'context_scan',
+        undefined,
+        `Context scan: ${projectName}`,
+        { section: 'plugins', tab: 'context-map' },
+      );
 
       try {
         await scanCodebase(projectId, rootPath);
@@ -67,6 +78,7 @@ export function useContextScanBackground() {
       } catch {
         pendingProjectName.current = null;
         setContextScanActive(false);
+        useOverviewStore.getState().processEnded('context_scan', 'failed');
         await notifyCompletion(projectName, false);
       }
     },

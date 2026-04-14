@@ -1,8 +1,9 @@
 import {
+  memo,
   useState,
   useCallback,
   useRef,
-  useLayoutEffect,
+  useEffect,
   type WheelEvent,
   type PointerEvent,
   type MouseEvent,
@@ -14,6 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { PIXELS_PER_SECOND_DEFAULT, MIN_ZOOM, MAX_ZOOM } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
+import type { PlaybackEngine } from './hooks/useTimelinePlayback';
 import TimelineRuler from './TimelineRuler';
 import TextLane from './TextLane';
 import ImageLane from './ImageLane';
@@ -21,12 +23,12 @@ import VideoLane from './VideoLane';
 import AudioLane from './AudioLane';
 
 interface TimelinePanelProps {
+  engine: PlaybackEngine;
   textItems: TextItem[];
   imageItems: ImageItem[];
   videoItems: VideoClip[];
   audioItems: AudioClip[];
   totalDuration: number;
-  currentTime: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onSeek: (time: number) => void;
@@ -49,13 +51,13 @@ const LANE_META: Record<LaneKey, { icon: typeof Type; color: string; label: stri
   audio: { icon: Music, color: 'blue', label: 'Audio' },
 };
 
-export default function TimelinePanel({
+function TimelinePanelImpl({
+  engine,
   textItems,
   imageItems,
   videoItems,
   audioItems,
   totalDuration,
-  currentTime,
   selectedId,
   onSelect,
   onSeek,
@@ -71,9 +73,53 @@ export default function TimelinePanel({
   const [dragging, setDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
   const visibleDuration = Math.max(totalDuration, 10);
   const contentWidth = visibleDuration * zoom;
+
+  // -- Imperative playhead sync -----------------------------------------------
+  //
+  // The playhead position is driven by the engine directly — no React state
+  // on the hot path. Subscribing here keeps the whole TimelinePanel tree from
+  // rendering 60 times a second.
+  useEffect(() => {
+    const apply = (time: number) => {
+      const x = time * zoomRef.current;
+      if (playheadRef.current) {
+        playheadRef.current.style.transform = `translateX(${x}px)`;
+      }
+      if (handleRef.current) {
+        handleRef.current.style.transform = `translateX(${x - 7}px)`;
+      }
+      // Auto-scroll to keep the playhead in view when playing
+      const scroller = scrollRef.current;
+      if (scroller && engine.getPlaying()) {
+        const { scrollLeft, clientWidth } = scroller;
+        const margin = 80;
+        if (x < scrollLeft + margin) {
+          scroller.scrollLeft = Math.max(0, x - margin);
+        } else if (x > scrollLeft + clientWidth - margin) {
+          scroller.scrollLeft = x - clientWidth + margin;
+        }
+      }
+    };
+    return engine.subscribe(apply);
+  }, [engine]);
+
+  // Re-apply playhead when zoom changes (without another subscription)
+  useEffect(() => {
+    const x = engine.getTime() * zoom;
+    if (playheadRef.current) {
+      playheadRef.current.style.transform = `translateX(${x}px)`;
+    }
+    if (handleRef.current) {
+      handleRef.current.style.transform = `translateX(${x - 7}px)`;
+    }
+  }, [zoom, engine]);
 
   const toggleLane = useCallback((lane: LaneKey) => {
     setCollapsedLanes((prev) => {
@@ -84,16 +130,13 @@ export default function TimelinePanel({
     });
   }, []);
 
-  // Ctrl+wheel to zoom; plain wheel falls through to native horizontal/vertical scroll.
-  const handleWheel = useCallback(
-    (e: WheelEvent<HTMLDivElement>) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        setZoom((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev - e.deltaY * 0.5)));
-      }
-    },
-    [],
-  );
+  // Ctrl+wheel to zoom; plain wheel falls through to native horizontal scroll.
+  const handleWheel = useCallback((e: WheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      setZoom((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev - e.deltaY * 0.5)));
+    }
+  }, []);
 
   const zoomIn = useCallback(() => {
     setZoom((prev) => Math.min(MAX_ZOOM, prev + 10));
@@ -111,21 +154,7 @@ export default function TimelinePanel({
     }
   }, [totalDuration]);
 
-  // Auto-scroll to keep the playhead in view during playback
-  useLayoutEffect(() => {
-    const scroller = scrollRef.current;
-    if (!scroller) return;
-    const playheadX = currentTime * zoom;
-    const { scrollLeft, clientWidth } = scroller;
-    const margin = 80;
-    if (playheadX < scrollLeft + margin) {
-      scroller.scrollLeft = Math.max(0, playheadX - margin);
-    } else if (playheadX > scrollLeft + clientWidth - margin) {
-      scroller.scrollLeft = playheadX - clientWidth + margin;
-    }
-  }, [currentTime, zoom]);
-
-  // -- Playhead drag handling --------------------------------------------------
+  // -- Seek handling -----------------------------------------------------------
 
   const seekFromClientX = useCallback(
     (clientX: number) => {
@@ -133,10 +162,9 @@ export default function TimelinePanel({
       if (!content) return;
       const rect = content.getBoundingClientRect();
       const x = clientX - rect.left;
-      const time = Math.max(0, x / zoom);
-      onSeek(time);
+      onSeek(Math.max(0, x / zoomRef.current));
     },
-    [zoom, onSeek],
+    [onSeek],
   );
 
   const handleRulerClick = useCallback(
@@ -165,15 +193,12 @@ export default function TimelinePanel({
     [dragging, seekFromClientX],
   );
 
-  const handleHandlePointerUp = useCallback(
-    (e: PointerEvent<HTMLDivElement>) => {
-      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-      setDragging(false);
-    },
-    [],
-  );
+  const handleHandlePointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    setDragging(false);
+  }, []);
 
-  // -- Lane rail row -----------------------------------------------------------
+  // -- Lane rail ---------------------------------------------------------------
 
   const renderRail = (lane: LaneKey, onAdd: () => void, count: number) => {
     const meta = LANE_META[lane];
@@ -201,7 +226,7 @@ export default function TimelinePanel({
       >
         <button
           onClick={() => toggleLane(lane)}
-          className={`flex items-center gap-1.5 flex-1 text-left hover:opacity-80 transition-opacity`}
+          className="flex items-center gap-1.5 flex-1 text-left hover:opacity-80 transition-opacity"
         >
           <Icon className={`w-3.5 h-3.5 text-${meta.color}-400`} />
           <span className={`typo-heading text-[10px] uppercase tracking-wider text-${meta.color}-400`}>
@@ -223,8 +248,6 @@ export default function TimelinePanel({
       </div>
     );
   };
-
-  const playheadX = currentTime * zoom;
 
   return (
     <div className="flex flex-col h-full border-t-2 border-primary/20 bg-card/30">
@@ -268,7 +291,6 @@ export default function TimelinePanel({
       <div className="flex flex-1 min-h-0">
         {/* Left rail — fixed width */}
         <div className="w-[132px] flex-shrink-0 border-r border-primary/15 bg-card/60 flex flex-col overflow-hidden">
-          {/* Ruler gutter */}
           <div
             className="border-b border-primary/15 flex items-center justify-end pr-2 flex-shrink-0"
             style={{ height: `${RULER_HEIGHT}px` }}
@@ -277,7 +299,6 @@ export default function TimelinePanel({
               timeline
             </span>
           </div>
-          {/* Lane rails */}
           {renderRail('text', onAddText, textItems.length)}
           {renderRail('image', onAddImage, imageItems.length)}
           {renderRail('video', onAddVideo, videoItems.length)}
@@ -330,6 +351,7 @@ export default function TimelinePanel({
                 selectedId={selectedId}
                 onSelect={onSelect}
                 onAdd={onAddImage}
+                onUpdate={onUpdate}
                 hideHeader
                 hideAdd
               />
@@ -372,12 +394,13 @@ export default function TimelinePanel({
               <div className="h-5 border-b border-primary/10 bg-blue-500/5" />
             )}
 
-            {/* Playhead line — spans ruler + all lanes, non-interactive */}
+            {/* Playhead line — imperatively positioned */}
             <div
-              className={`absolute top-0 bottom-0 w-px pointer-events-none z-30 ${
+              ref={playheadRef}
+              className={`absolute top-0 bottom-0 left-0 w-px pointer-events-none z-30 will-change-transform ${
                 dragging ? 'bg-red-400' : 'bg-red-500/90'
               }`}
-              style={{ left: `${playheadX}px` }}
+              style={{ transform: 'translateX(0px)' }}
             >
               {dragging && (
                 <div className="absolute top-0 bottom-0 -left-1 w-3 bg-red-500/10 pointer-events-none" />
@@ -386,8 +409,9 @@ export default function TimelinePanel({
 
             {/* Playhead handle — only in ruler area, draggable */}
             <div
-              className="absolute z-40"
-              style={{ left: `${playheadX - 7}px`, top: 0, width: '14px', height: `${RULER_HEIGHT}px` }}
+              ref={handleRef}
+              className="absolute left-0 z-40 will-change-transform"
+              style={{ top: 0, width: '14px', height: `${RULER_HEIGHT}px`, transform: 'translateX(-7px)' }}
             >
               <div
                 className="w-full h-full cursor-grab active:cursor-grabbing flex items-start justify-center"
@@ -399,11 +423,11 @@ export default function TimelinePanel({
                 <svg width="14" height="10" viewBox="0 0 14 10" className="pointer-events-none">
                   <path
                     d="M0 0 L14 0 L7 10 Z"
-                    className={`${
+                    className={
                       dragging
                         ? 'fill-red-400 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]'
                         : 'fill-red-500'
-                    }`}
+                    }
                   />
                 </svg>
               </div>
@@ -414,3 +438,6 @@ export default function TimelinePanel({
     </div>
   );
 }
+
+const TimelinePanel = memo(TimelinePanelImpl);
+export default TimelinePanel;

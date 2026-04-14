@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Type, Plus, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { TextItem } from './types';
+import TimelineClip from './TimelineClip';
 
 interface TextLaneProps {
   items: TextItem[];
@@ -84,7 +85,7 @@ function BeatEditModal({
   );
 }
 
-export default function TextLane({
+function TextLaneImpl({
   items,
   zoom,
   scrollX,
@@ -97,6 +98,32 @@ export default function TextLane({
 }: TextLaneProps) {
   const { t } = useTranslation();
   const [editingItem, setEditingItem] = useState<TextItem | null>(null);
+
+  const handleMove = useCallback(
+    (id: string, newStartTime: number) => {
+      onUpdate(id, { startTime: newStartTime });
+    },
+    [onUpdate],
+  );
+
+  const handleTrimLeft = useCallback(
+    (id: string, item: TextItem, delta: number) => {
+      const newStart = Math.max(0, item.startTime + delta);
+      const actualDelta = newStart - item.startTime;
+      onUpdate(id, {
+        startTime: newStart,
+        duration: Math.max(0.25, item.duration - actualDelta),
+      });
+    },
+    [onUpdate],
+  );
+
+  const handleTrimRight = useCallback(
+    (id: string, item: TextItem, delta: number) => {
+      onUpdate(id, { duration: Math.max(0.25, item.duration + delta) });
+    },
+    [onUpdate],
+  );
 
   return (
     <>
@@ -123,29 +150,31 @@ export default function TextLane({
               <span className="text-[10px] text-amber-400/30">{t.media_studio.empty_lane}</span>
             </div>
           )}
-          {items.map((item) => {
-            const left = item.startTime * zoom - scrollX;
-            const width = item.duration * zoom;
-            const isSelected = item.id === selectedId;
-            return (
-              <button
-                key={item.id}
-                className={`absolute top-0.5 h-9 rounded-lg px-2 flex items-center gap-1 overflow-hidden cursor-pointer transition-all
-                  ${isSelected
-                    ? 'bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-sm'
-                    : 'bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25'
-                  }`}
-                style={{ left: `${left}px`, width: `${Math.max(width, 32)}px` }}
-                onClick={() => onSelect(item.id)}
-                onDoubleClick={() => setEditingItem(item)}
-                title={item.text || item.label}
-              >
+          {items.map((item) => (
+            <TimelineClip
+              key={item.id}
+              id={item.id}
+              startTime={item.startTime}
+              duration={item.duration}
+              zoom={zoom}
+              scrollX={scrollX}
+              isSelected={item.id === selectedId}
+              className="top-0.5 h-9 rounded-lg bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25"
+              selectedClassName="top-0.5 h-9 rounded-lg bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-sm"
+              onClick={() => onSelect(item.id)}
+              onDoubleClick={() => setEditingItem(item)}
+              onMove={(newStart) => handleMove(item.id, newStart)}
+              onTrimLeft={(delta) => handleTrimLeft(item.id, item, delta)}
+              onTrimRight={(delta) => handleTrimRight(item.id, item, delta)}
+            >
+              <div className="flex items-center gap-1 h-full px-2 overflow-hidden">
+                <Type className="w-3 h-3 text-amber-400 flex-shrink-0" />
                 <span className="text-[11px] font-bold text-amber-200 truncate">
                   {item.label}
                 </span>
-              </button>
-            );
-          })}
+              </div>
+            </TimelineClip>
+          ))}
 
           {/* Add button */}
           {!hideAdd && (
@@ -180,3 +209,6 @@ export default function TextLane({
     </>
   );
 }
+
+const TextLane = memo(TextLaneImpl);
+export default TextLane;

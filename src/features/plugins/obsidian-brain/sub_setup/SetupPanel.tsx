@@ -7,6 +7,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import {
   obsidianBrainDetectVaults,
   obsidianBrainTestConnection,
@@ -25,6 +26,7 @@ export default function SetupPanel() {
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
   const setObsidianConnected = useSystemStore((s) => s.setObsidianConnected);
 
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const { configs: savedConfigs, addOrUpdate: saveConfigToList } = useSavedVaultConfigs();
   const savedPaths = useMemo(
     () => new Set(savedConfigs.map((c) => c.vaultPath)),
@@ -120,13 +122,15 @@ export default function SetupPanel() {
       saveConfigToList(config);
       setObsidianVaultPath(vaultPath);
       setObsidianVaultName(connectionResult.vaultName);
+      // Re-fetch gated connectors so obsidian_memory becomes visible elsewhere
+      void fetchConnectorDefinitions();
       addToast('Obsidian Brain configuration saved', 'success');
     } catch (e) {
       addToast(`Save failed: ${e}`, 'error');
     } finally {
       setSaving(false);
     }
-  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName]);
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, fetchConnectorDefinitions]);
 
   return (
     <div className="flex gap-4 py-2">
