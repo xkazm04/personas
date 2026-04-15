@@ -403,7 +403,7 @@ npm run build:builder   # builder tier
 ### Memory layers (don't confuse them)
 - **Agent memory** — `memories` table, episodic facts the *agent* learned during executions. Per-persona. Used by personas at runtime.
 - **Persona memory store** — frontend Zustand store mirroring the above for UI display.
-- **Obsidian vault** (`C:/Users/mkdol/Documents/Obsidian/personas`) — *user* memory for the `/research` skill, NOT exposed to runtime personas. Documented in `obsidian-integration` context group of `codebase-context.md`.
+- **Obsidian vault** (`C:/Users/kazda/Documents/Obsidian/personas` on this machine; path is user-specific and should be treated as a variable in docs) — *user* memory for the `/research` skill, NOT exposed to runtime personas. Documented in `obsidian-integration` context group of `codebase-context.md`. Note: older copies of `skill.md` reference a stale `mkdol` username for the same path — that is a skill-file bug, not a codebase fact. Cleanup tracked separately.
 
 ### Testing
 - Unit tests live alongside source as `#[cfg(test)] mod tests` (Rust) or `*.test.ts` (TS).
