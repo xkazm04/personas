@@ -1,0 +1,149 @@
+You already know SQL, so dashboards
+should be easy, right? But every time
+we're back doing the same thing. We're
+exporting CSVs, writing a quick script
+that we didn't actually plan to write.
+And those BI tickets, they're still
+sitting there, which is weird cuz
+nowadays this problem should be solved.
+And for a lot of people, it is. A lot of
+devs are now using Redash to ship
+internal analytics in just minutes. It's
+open source, over 28,000 stars on
+GitHub, and the latest version just
+dropped. And honestly, it might finally
+kill our endless spreadsheet workflow.
+I'll show you how to set all this up in
+just a few minutes.
+Now, Redash is pretty simple. It's a SQL
+client and a dashboard builder in one
+tool. You connect your data, so
+Postgres, MySQL, BigQuery, Snowflake,
+ you name it. You connect what you
+need. And then you just write SQL. You
+now get things like autocomplete, a
+schema browser, turn results into
+charts, and you can drop all this into
+your dashboards. All done. And that's
+exactly why devs like it, because it
+replaces a bunch of annoying little
+tasks with one clean workflow. Instead
+of exporting to Excel or watching
+reports, we just do it once in one
+interface across all of our different
+databases. There's no lock-ins, it's
+fully self-hosted, which makes it free.
+So, it's not just dashboards, it's less
+redundancy. Let me show you. If you
+enjoy coding tools and tips to speed up
+your workflow, be sure to subscribe. We
+have videos coming out all the time. All
+right, I got a fresh Redash instance
+running locally. First, I can add a data
+source, and right here it's done.
+Now, I can write a query, and notice
+this. Autocomplete, schema browser.
+Here, I can click tables instead of
+guessing names. Let's grab some events
+data, group by day, for example, and run
+it. Done.
+Now, one click, I can visualize. I can
+switch to a line chart or another chart,
+add a parameter so we can filter by a
+date range, and see it's already
+progressing kind of fast here. Now, if I
+drop it into a dashboard,
+I can now even schedule it to refresh
+every hour, and that's pretty much it.
+Query, chart, dashboard, shareable link,
+with no spreadsheets. It looks simple.
+That's the point. On paper, Redash looks
+like every other BI tool, but it doesn't
+feel like one. Redash is built for
+people who want to write SQL, not scale.
+That's the major difference here between
+others. Metabase is good for no-code
+teams, but once queries get complex,
+it's going to slow down. Superset gives
+you more visual power and scale, but
+it's heavier and not as fast for just
+writing queries. Then of course, there's
+Tableau and Power BI. These are very
+polished and honestly the baseline for
+getting into analytics for a long time,
+but these two tools are expensive and
+often overkill for what small tools do
+and what we actually need. Redash sits
+in a different spot. It feels like your
+SQL editor grew just enough to be useful
+to the rest of your team. You still get
+things like queries across multiple
+databases, great. Reusable snippets,
+results caching, API access, and the
+ability to remix someone else's queries
+instantly. That's why most dev teams are
+starting to pick up on this a lot
+quicker than these other blown-out
+expensive tools. So, what do people
+actually like? Well, first, the SQL
+workflow is fast. You're not fighting
+the tool, hence the point why SQL is
+built in. You write the query and you
+move on. Then, self-hosting is simple.
+This is an open-source tool, which means
+I can self-host it, and I'm just going
+to use Docker. So, we know Docker, it's
+one command, we're done, it's going.
+Then, there's tons of data sources plus
+scheduling and alerts. And the API and
+embedding, they're great if you're
+building internal tools. For a lot of
+teams, this becomes something they use
+every day, but again, open-source tools.
+This is not that polished, so there's
+going to be tradeoffs. The
+visualizations are good, but they're not
+amazing. If you need highly custom
+dashboards, then other alternatives are
+going to be better. Self-hosting also
+means you own the ops, updates, scaling,
+maintenance. That's on you, obviously,
+right? So, you have to be aware of that.
+If your team doesn't like SQL, this is
+not going to feel great. Search could be
+better, and mobile isn't good. So, it's
+not perfect, but it does one job really
+well, and that's kind of the point. So,
+should you use it? Well, if your team
+already works in SQL, probably, yeah.
+Especially if you have multiple
+databases, you want internal dashboards
+without paying a lot, or you're building
+dev-facing analytics. This is a cool,
+open-source, free tool. The use cases
+are practical, right? Pipeline
+monitoring, tracking, metrics, updates,
+even joining API data with database
+queries. That's where it does really
+well. Not because it's fancy, no, but
+because it removes pain from work that
+we're already doing every day. But
+honestly, this is cool, but just skip
+over this if your team wants no code.
+Just go to Metabase, right? If you need
+more massive dashboards, go to Tableau
+or Power BI. But for a lot of us, Redash
+still makes sense. It's actively
+maintained, it fits our stack well, the
+setup is fast, and that's the pretty
+good trait. It makes it simple to get
+started, and that's what a lot of us
+love. So, to get started, just clone the
+repo, run your Docker Compose, that's
+it. Just install it and see if it works
+for you. So, yeah, that's Redash. SQL,
+easy dashboard sharing, and way less
+nonsense. If you enjoy open-source tools
+and coding tips like this, be sure to
+subscribe to the Better Stack channel.
+We'll see you in another video.

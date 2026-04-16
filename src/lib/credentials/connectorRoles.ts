@@ -96,7 +96,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   role('security_scanning',   ['snyk']),
 
   // -- Analytics & Data ------------------------------------------
-  role('analytics',           ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment']),
+  role('analytics',           ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment', 'redash', 'metabase']),
   role('spreadsheet',         ['google_sheets', 'microsoft_excel', 'airtable']),
 
   // -- Customer-Facing -------------------------------------------

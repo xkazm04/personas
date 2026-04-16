@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useLocalImage } from '../hooks/useLocalImage';
@@ -28,6 +28,25 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
   const goPrev = useCallback(() => {
     setLightboxIndex((i) => (i !== null ? (i - 1 + assets.length) % assets.length : null));
   }, [assets.length]);
+
+  // Keyboard navigation while lightbox is open: ←/→ navigate, Esc closes.
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLightbox();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxIndex, goNext, goPrev, closeLightbox]);
 
   const currentAsset = lightboxIndex !== null ? assets[lightboxIndex] : null;
 

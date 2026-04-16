@@ -1,0 +1,1192 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.270 align:start position:0%
+ 
+You<00:00:00.240><c> already</c><00:00:00.560><c> know</c><00:00:00.720><c> SQL,</c><00:00:01.240><c> so</c><00:00:01.560><c> dashboards</c>
+
+00:00:02.270 --> 00:00:02.280 align:start position:0%
+You already know SQL, so dashboards
+ 
+
+00:00:02.280 --> 00:00:04.390 align:start position:0%
+You already know SQL, so dashboards
+should<00:00:02.440><c> be</c><00:00:02.640><c> easy,</c><00:00:03.120><c> right?</c><00:00:03.720><c> But</c><00:00:03.880><c> every</c><00:00:04.120><c> time</c>
+
+00:00:04.390 --> 00:00:04.400 align:start position:0%
+should be easy, right? But every time
+ 
+
+00:00:04.400 --> 00:00:06.310 align:start position:0%
+should be easy, right? But every time
+we're<00:00:04.520><c> back</c><00:00:04.760><c> doing</c><00:00:05.120><c> the</c><00:00:05.240><c> same</c><00:00:05.560><c> thing.</c><00:00:06.000><c> We're</c>
+
+00:00:06.310 --> 00:00:06.320 align:start position:0%
+we're back doing the same thing. We're
+ 
+
+00:00:06.320 --> 00:00:08.750 align:start position:0%
+we're back doing the same thing. We're
+exporting<00:00:06.840><c> CSVs,</c><00:00:07.600><c> writing</c><00:00:07.880><c> a</c><00:00:07.960><c> quick</c><00:00:08.320><c> script</c>
+
+00:00:08.750 --> 00:00:08.760 align:start position:0%
+exporting CSVs, writing a quick script
+ 
+
+00:00:08.760 --> 00:00:10.910 align:start position:0%
+exporting CSVs, writing a quick script
+that<00:00:09.200><c> we</c><00:00:09.320><c> didn't</c><00:00:09.520><c> actually</c><00:00:09.840><c> plan</c><00:00:10.200><c> to</c><00:00:10.360><c> write.</c>
+
+00:00:10.910 --> 00:00:10.920 align:start position:0%
+that we didn't actually plan to write.
+ 
+
+00:00:10.920 --> 00:00:12.710 align:start position:0%
+that we didn't actually plan to write.
+And<00:00:11.040><c> those</c><00:00:11.280><c> BI</c><00:00:11.640><c> tickets,</c><00:00:12.320><c> they're</c><00:00:12.440><c> still</c>
+
+00:00:12.710 --> 00:00:12.720 align:start position:0%
+And those BI tickets, they're still
+ 
+
+00:00:12.720 --> 00:00:14.430 align:start position:0%
+And those BI tickets, they're still
+sitting<00:00:13.000><c> there,</c><00:00:13.240><c> which</c><00:00:13.560><c> is</c><00:00:13.800><c> weird</c><00:00:14.240><c> cuz</c>
+
+00:00:14.430 --> 00:00:14.440 align:start position:0%
+sitting there, which is weird cuz
+ 
+
+00:00:14.440 --> 00:00:16.910 align:start position:0%
+sitting there, which is weird cuz
+nowadays<00:00:15.040><c> this</c><00:00:15.240><c> problem</c><00:00:15.680><c> should</c><00:00:16.000><c> be</c><00:00:16.160><c> solved.</c>
+
+00:00:16.910 --> 00:00:16.920 align:start position:0%
+nowadays this problem should be solved.
+ 
+
+00:00:16.920 --> 00:00:19.110 align:start position:0%
+nowadays this problem should be solved.
+And<00:00:17.040><c> for</c><00:00:17.200><c> a</c><00:00:17.240><c> lot</c><00:00:17.440><c> of</c><00:00:17.520><c> people,</c><00:00:18.000><c> it</c><00:00:18.200><c> is.</c><00:00:18.800><c> A</c><00:00:18.840><c> lot</c><00:00:19.040><c> of</c>
+
+00:00:19.110 --> 00:00:19.120 align:start position:0%
+And for a lot of people, it is. A lot of
+ 
+
+00:00:19.120 --> 00:00:21.030 align:start position:0%
+And for a lot of people, it is. A lot of
+devs<00:00:19.360><c> are</c><00:00:19.440><c> now</c><00:00:19.600><c> using</c><00:00:20.080><c> Redash</c><00:00:20.680><c> to</c><00:00:20.800><c> ship</c>
+
+00:00:21.030 --> 00:00:21.040 align:start position:0%
+devs are now using Redash to ship
+ 
+
+00:00:21.040 --> 00:00:23.270 align:start position:0%
+devs are now using Redash to ship
+internal<00:00:21.480><c> analytics</c><00:00:21.960><c> in</c><00:00:22.040><c> just</c><00:00:22.320><c> minutes.</c><00:00:23.080><c> It's</c>
+
+00:00:23.270 --> 00:00:23.280 align:start position:0%
+internal analytics in just minutes. It's
+ 
+
+00:00:23.280 --> 00:00:25.390 align:start position:0%
+internal analytics in just minutes. It's
+open<00:00:23.560><c> source,</c><00:00:23.960><c> over</c><00:00:24.120><c> 28,000</c><00:00:24.960><c> stars</c><00:00:25.280><c> on</c>
+
+00:00:25.390 --> 00:00:25.400 align:start position:0%
+open source, over 28,000 stars on
+ 
+
+00:00:25.400 --> 00:00:26.830 align:start position:0%
+open source, over 28,000 stars on
+GitHub,<00:00:25.720><c> and</c><00:00:25.800><c> the</c><00:00:25.880><c> latest</c><00:00:26.200><c> version</c><00:00:26.600><c> just</c>
+
+00:00:26.830 --> 00:00:26.840 align:start position:0%
+GitHub, and the latest version just
+ 
+
+00:00:26.840 --> 00:00:28.750 align:start position:0%
+GitHub, and the latest version just
+dropped.<00:00:27.480><c> And</c><00:00:27.640><c> honestly,</c><00:00:28.040><c> it</c><00:00:28.160><c> might</c><00:00:28.360><c> finally</c>
+
+00:00:28.750 --> 00:00:28.760 align:start position:0%
+dropped. And honestly, it might finally
+ 
+
+00:00:28.760 --> 00:00:30.670 align:start position:0%
+dropped. And honestly, it might finally
+kill<00:00:29.000><c> our</c><00:00:29.160><c> endless</c><00:00:29.440><c> spreadsheet</c><00:00:30.080><c> workflow.</c>
+
+00:00:30.670 --> 00:00:30.680 align:start position:0%
+kill our endless spreadsheet workflow.
+ 
+
+00:00:30.680 --> 00:00:32.310 align:start position:0%
+kill our endless spreadsheet workflow.
+I'll<00:00:30.840><c> show</c><00:00:31.000><c> you</c><00:00:31.120><c> how</c><00:00:31.240><c> to</c><00:00:31.360><c> set</c><00:00:31.600><c> all</c><00:00:31.720><c> this</c><00:00:31.920><c> up</c><00:00:32.200><c> in</c>
+
+00:00:32.310 --> 00:00:32.320 align:start position:0%
+I'll show you how to set all this up in
+ 
+
+00:00:32.320 --> 00:00:38.630 align:start position:0%
+I'll show you how to set all this up in
+just<00:00:32.599><c> a</c><00:00:32.680><c> few</c><00:00:32.840><c> minutes.</c>
+
+00:00:38.630 --> 00:00:38.640 align:start position:0%
+ 
+ 
+
+00:00:38.640 --> 00:00:40.790 align:start position:0%
+ 
+Now,<00:00:38.920><c> Redash</c><00:00:39.320><c> is</c><00:00:39.440><c> pretty</c><00:00:39.640><c> simple.</c><00:00:40.000><c> It's</c><00:00:40.240><c> a</c><00:00:40.320><c> SQL</c>
+
+00:00:40.790 --> 00:00:40.800 align:start position:0%
+Now, Redash is pretty simple. It's a SQL
+ 
+
+00:00:40.800 --> 00:00:43.150 align:start position:0%
+Now, Redash is pretty simple. It's a SQL
+client<00:00:41.280><c> and</c><00:00:41.400><c> a</c><00:00:41.440><c> dashboard</c><00:00:42.040><c> builder</c><00:00:42.480><c> in</c><00:00:42.720><c> one</c>
+
+00:00:43.150 --> 00:00:43.160 align:start position:0%
+client and a dashboard builder in one
+ 
+
+00:00:43.160 --> 00:00:45.190 align:start position:0%
+client and a dashboard builder in one
+tool.<00:00:43.880><c> You</c><00:00:44.080><c> connect</c><00:00:44.480><c> your</c><00:00:44.600><c> data,</c><00:00:45.000><c> so</c>
+
+00:00:45.190 --> 00:00:45.200 align:start position:0%
+tool. You connect your data, so
+ 
+
+00:00:45.200 --> 00:00:47.510 align:start position:0%
+tool. You connect your data, so
+Postgres,<00:00:45.760><c> MySQL,</c><00:00:46.400><c> BigQuery,</c><00:00:46.960><c> Snowflake,</c>
+
+00:00:47.510 --> 00:00:47.520 align:start position:0%
+Postgres, MySQL, BigQuery, Snowflake,
+ 
+
+00:00:47.520 --> 00:00:49.510 align:start position:0%
+Postgres, MySQL, BigQuery, Snowflake,
+ you<00:00:48.480><c> name</c><00:00:48.720><c> it.</c><00:00:48.800><c> You</c><00:00:48.960><c> connect</c><00:00:49.280><c> what</c><00:00:49.400><c> you</c>
+
+00:00:49.510 --> 00:00:49.520 align:start position:0%
+ you name it. You connect what you
+ 
+
+00:00:49.520 --> 00:00:52.470 align:start position:0%
+ you name it. You connect what you
+need.<00:00:50.240><c> And</c><00:00:50.360><c> then</c><00:00:50.480><c> you</c><00:00:50.600><c> just</c><00:00:51.000><c> write</c><00:00:51.480><c> SQL.</c><00:00:52.360><c> You</c>
+
+00:00:52.470 --> 00:00:52.480 align:start position:0%
+need. And then you just write SQL. You
+ 
+
+00:00:52.480 --> 00:00:54.310 align:start position:0%
+need. And then you just write SQL. You
+now<00:00:52.640><c> get</c><00:00:52.800><c> things</c><00:00:53.040><c> like</c><00:00:53.240><c> autocomplete,</c><00:00:54.200><c> a</c>
+
+00:00:54.310 --> 00:00:54.320 align:start position:0%
+now get things like autocomplete, a
+ 
+
+00:00:54.320 --> 00:00:56.710 align:start position:0%
+now get things like autocomplete, a
+schema<00:00:54.840><c> browser,</c><00:00:55.600><c> turn</c><00:00:56.000><c> results</c><00:00:56.480><c> into</c>
+
+00:00:56.710 --> 00:00:56.720 align:start position:0%
+schema browser, turn results into
+ 
+
+00:00:56.720 --> 00:00:58.950 align:start position:0%
+schema browser, turn results into
+charts,<00:00:57.560><c> and</c><00:00:57.680><c> you</c><00:00:57.760><c> can</c><00:00:57.880><c> drop</c><00:00:58.280><c> all</c><00:00:58.480><c> this</c><00:00:58.760><c> into</c>
+
+00:00:58.950 --> 00:00:58.960 align:start position:0%
+charts, and you can drop all this into
+ 
+
+00:00:58.960 --> 00:01:01.190 align:start position:0%
+charts, and you can drop all this into
+your<00:00:59.080><c> dashboards.</c><00:01:00.000><c> All</c><00:01:00.240><c> done.</c><00:01:00.960><c> And</c><00:01:01.040><c> that's</c>
+
+00:01:01.190 --> 00:01:01.200 align:start position:0%
+your dashboards. All done. And that's
+ 
+
+00:01:01.200 --> 00:01:03.110 align:start position:0%
+your dashboards. All done. And that's
+exactly<00:01:01.800><c> why</c><00:01:01.960><c> devs</c><00:01:02.280><c> like</c><00:01:02.520><c> it,</c><00:01:02.640><c> because</c><00:01:03.000><c> it</c>
+
+00:01:03.110 --> 00:01:03.120 align:start position:0%
+exactly why devs like it, because it
+ 
+
+00:01:03.120 --> 00:01:04.950 align:start position:0%
+exactly why devs like it, because it
+replaces<00:01:03.800><c> a</c><00:01:03.880><c> bunch</c><00:01:04.160><c> of</c><00:01:04.280><c> annoying</c><00:01:04.720><c> little</c>
+
+00:01:04.950 --> 00:01:04.960 align:start position:0%
+replaces a bunch of annoying little
+ 
+
+00:01:04.960 --> 00:01:07.830 align:start position:0%
+replaces a bunch of annoying little
+tasks<00:01:05.519><c> with</c><00:01:05.800><c> one</c><00:01:06.240><c> clean</c><00:01:06.560><c> workflow.</c><00:01:07.520><c> Instead</c>
+
+00:01:07.830 --> 00:01:07.840 align:start position:0%
+tasks with one clean workflow. Instead
+ 
+
+00:01:07.840 --> 00:01:10.190 align:start position:0%
+tasks with one clean workflow. Instead
+of<00:01:08.040><c> exporting</c><00:01:08.640><c> to</c><00:01:08.880><c> Excel</c><00:01:09.440><c> or</c><00:01:09.680><c> watching</c>
+
+00:01:10.190 --> 00:01:10.200 align:start position:0%
+of exporting to Excel or watching
+ 
+
+00:01:10.200 --> 00:01:12.950 align:start position:0%
+of exporting to Excel or watching
+reports,<00:01:10.800><c> we</c><00:01:10.920><c> just</c><00:01:11.120><c> do</c><00:01:11.240><c> it</c><00:01:11.480><c> once</c><00:01:12.400><c> in</c><00:01:12.680><c> one</c>
+
+00:01:12.950 --> 00:01:12.960 align:start position:0%
+reports, we just do it once in one
+ 
+
+00:01:12.960 --> 00:01:15.350 align:start position:0%
+reports, we just do it once in one
+interface<00:01:13.880><c> across</c><00:01:14.440><c> all</c><00:01:14.760><c> of</c><00:01:14.840><c> our</c><00:01:14.960><c> different</c>
+
+00:01:15.350 --> 00:01:15.360 align:start position:0%
+interface across all of our different
+ 
+
+00:01:15.360 --> 00:01:17.710 align:start position:0%
+interface across all of our different
+databases.<00:01:16.320><c> There's</c><00:01:16.480><c> no</c><00:01:16.720><c> lock-ins,</c><00:01:17.440><c> it's</c>
+
+00:01:17.710 --> 00:01:17.720 align:start position:0%
+databases. There's no lock-ins, it's
+ 
+
+00:01:17.720 --> 00:01:19.910 align:start position:0%
+databases. There's no lock-ins, it's
+fully<00:01:18.080><c> self-hosted,</c><00:01:18.840><c> which</c><00:01:19.080><c> makes</c><00:01:19.400><c> it</c><00:01:19.560><c> free.</c>
+
+00:01:19.910 --> 00:01:19.920 align:start position:0%
+fully self-hosted, which makes it free.
+ 
+
+00:01:19.920 --> 00:01:22.910 align:start position:0%
+fully self-hosted, which makes it free.
+So,<00:01:20.560><c> it's</c><00:01:20.720><c> not</c><00:01:20.880><c> just</c><00:01:21.440><c> dashboards,</c><00:01:22.240><c> it's</c><00:01:22.480><c> less</c>
+
+00:01:22.910 --> 00:01:22.920 align:start position:0%
+So, it's not just dashboards, it's less
+ 
+
+00:01:22.920 --> 00:01:25.350 align:start position:0%
+So, it's not just dashboards, it's less
+redundancy.<00:01:24.040><c> Let</c><00:01:24.240><c> me</c><00:01:24.360><c> show</c><00:01:24.640><c> you.</c><00:01:25.120><c> If</c><00:01:25.240><c> you</c>
+
+00:01:25.350 --> 00:01:25.360 align:start position:0%
+redundancy. Let me show you. If you
+ 
+
+00:01:25.360 --> 00:01:27.110 align:start position:0%
+redundancy. Let me show you. If you
+enjoy<00:01:25.680><c> coding</c><00:01:26.040><c> tools</c><00:01:26.320><c> and</c><00:01:26.480><c> tips</c><00:01:26.680><c> to</c><00:01:26.800><c> speed</c><00:01:27.000><c> up</c>
+
+00:01:27.110 --> 00:01:27.120 align:start position:0%
+enjoy coding tools and tips to speed up
+ 
+
+00:01:27.120 --> 00:01:29.230 align:start position:0%
+enjoy coding tools and tips to speed up
+your<00:01:27.320><c> workflow,</c><00:01:27.880><c> be</c><00:01:28.120><c> sure</c><00:01:28.320><c> to</c><00:01:28.440><c> subscribe.</c><00:01:29.120><c> We</c>
+
+00:01:29.230 --> 00:01:29.240 align:start position:0%
+your workflow, be sure to subscribe. We
+ 
+
+00:01:29.240 --> 00:01:31.550 align:start position:0%
+your workflow, be sure to subscribe. We
+have<00:01:29.400><c> videos</c><00:01:29.800><c> coming</c><00:01:30.120><c> out</c><00:01:30.400><c> all</c><00:01:30.680><c> the</c><00:01:30.800><c> time.</c><00:01:31.440><c> All</c>
+
+00:01:31.550 --> 00:01:31.560 align:start position:0%
+have videos coming out all the time. All
+ 
+
+00:01:31.560 --> 00:01:33.870 align:start position:0%
+have videos coming out all the time. All
+right,<00:01:31.880><c> I</c><00:01:31.960><c> got</c><00:01:32.120><c> a</c><00:01:32.200><c> fresh</c><00:01:32.720><c> Redash</c><00:01:33.360><c> instance</c>
+
+00:01:33.870 --> 00:01:33.880 align:start position:0%
+right, I got a fresh Redash instance
+ 
+
+00:01:33.880 --> 00:01:36.550 align:start position:0%
+right, I got a fresh Redash instance
+running<00:01:34.200><c> locally.</c><00:01:35.080><c> First,</c><00:01:35.560><c> I</c><00:01:35.600><c> can</c><00:01:35.840><c> add</c><00:01:36.200><c> a</c><00:01:36.280><c> data</c>
+
+00:01:36.550 --> 00:01:36.560 align:start position:0%
+running locally. First, I can add a data
+ 
+
+00:01:36.560 --> 00:01:39.310 align:start position:0%
+running locally. First, I can add a data
+source,<00:01:37.360><c> and</c><00:01:37.600><c> right</c><00:01:37.840><c> here</c><00:01:38.000><c> it's</c><00:01:38.200><c> done.</c>
+
+00:01:39.310 --> 00:01:39.320 align:start position:0%
+source, and right here it's done.
+ 
+
+00:01:39.320 --> 00:01:42.270 align:start position:0%
+source, and right here it's done.
+Now,<00:01:39.840><c> I</c><00:01:39.960><c> can</c><00:01:40.120><c> write</c><00:01:40.400><c> a</c><00:01:40.480><c> query,</c><00:01:41.720><c> and</c><00:01:41.920><c> notice</c>
+
+00:01:42.270 --> 00:01:42.280 align:start position:0%
+Now, I can write a query, and notice
+ 
+
+00:01:42.280 --> 00:01:45.070 align:start position:0%
+Now, I can write a query, and notice
+this.<00:01:43.080><c> Autocomplete,</c><00:01:44.080><c> schema</c><00:01:44.520><c> browser.</c>
+
+00:01:45.070 --> 00:01:45.080 align:start position:0%
+this. Autocomplete, schema browser.
+ 
+
+00:01:45.080 --> 00:01:47.150 align:start position:0%
+this. Autocomplete, schema browser.
+Here,<00:01:45.600><c> I</c><00:01:45.720><c> can</c><00:01:45.880><c> click</c><00:01:46.200><c> tables</c><00:01:46.680><c> instead</c><00:01:46.960><c> of</c>
+
+00:01:47.150 --> 00:01:47.160 align:start position:0%
+Here, I can click tables instead of
+ 
+
+00:01:47.160 --> 00:01:50.230 align:start position:0%
+Here, I can click tables instead of
+guessing<00:01:47.760><c> names.</c><00:01:48.960><c> Let's</c><00:01:49.240><c> grab</c><00:01:49.520><c> some</c><00:01:49.720><c> events</c>
+
+00:01:50.230 --> 00:01:50.240 align:start position:0%
+guessing names. Let's grab some events
+ 
+
+00:01:50.240 --> 00:01:53.510 align:start position:0%
+guessing names. Let's grab some events
+data,<00:01:51.160><c> group</c><00:01:51.520><c> by</c><00:01:51.760><c> day,</c><00:01:52.120><c> for</c><00:01:52.360><c> example,</c><00:01:52.960><c> and</c><00:01:53.280><c> run</c>
+
+00:01:53.510 --> 00:01:53.520 align:start position:0%
+data, group by day, for example, and run
+ 
+
+00:01:53.520 --> 00:01:55.310 align:start position:0%
+data, group by day, for example, and run
+it.<00:01:54.120><c> Done.</c>
+
+00:01:55.310 --> 00:01:55.320 align:start position:0%
+it. Done.
+ 
+
+00:01:55.320 --> 00:01:58.070 align:start position:0%
+it. Done.
+Now,<00:01:55.600><c> one</c><00:01:55.880><c> click,</c><00:01:56.400><c> I</c><00:01:56.480><c> can</c><00:01:56.680><c> visualize.</c><00:01:57.880><c> I</c><00:01:57.960><c> can</c>
+
+00:01:58.070 --> 00:01:58.080 align:start position:0%
+Now, one click, I can visualize. I can
+ 
+
+00:01:58.080 --> 00:01:59.990 align:start position:0%
+Now, one click, I can visualize. I can
+switch<00:01:58.320><c> to</c><00:01:58.440><c> a</c><00:01:58.520><c> line</c><00:01:58.800><c> chart</c><00:01:59.080><c> or</c><00:01:59.200><c> another</c><00:01:59.520><c> chart,</c>
+
+00:01:59.990 --> 00:02:00.000 align:start position:0%
+switch to a line chart or another chart,
+ 
+
+00:02:00.000 --> 00:02:02.310 align:start position:0%
+switch to a line chart or another chart,
+add<00:02:00.120><c> a</c><00:02:00.200><c> parameter</c><00:02:00.880><c> so</c><00:02:01.000><c> we</c><00:02:01.120><c> can</c><00:02:01.320><c> filter</c><00:02:01.840><c> by</c><00:02:02.160><c> a</c>
+
+00:02:02.310 --> 00:02:02.320 align:start position:0%
+add a parameter so we can filter by a
+ 
+
+00:02:02.320 --> 00:02:05.190 align:start position:0%
+add a parameter so we can filter by a
+date<00:02:02.800><c> range,</c><00:02:03.760><c> and</c><00:02:03.960><c> see</c><00:02:04.320><c> it's</c><00:02:04.640><c> already</c>
+
+00:02:05.190 --> 00:02:05.200 align:start position:0%
+date range, and see it's already
+ 
+
+00:02:05.200 --> 00:02:07.750 align:start position:0%
+date range, and see it's already
+progressing<00:02:06.040><c> kind</c><00:02:06.240><c> of</c><00:02:06.320><c> fast</c><00:02:06.680><c> here.</c><00:02:07.440><c> Now,</c><00:02:07.600><c> if</c><00:02:07.720><c> I</c>
+
+00:02:07.750 --> 00:02:07.760 align:start position:0%
+progressing kind of fast here. Now, if I
+ 
+
+00:02:07.760 --> 00:02:09.950 align:start position:0%
+progressing kind of fast here. Now, if I
+drop<00:02:08.039><c> it</c><00:02:08.119><c> into</c><00:02:08.360><c> a</c><00:02:08.440><c> dashboard,</c>
+
+00:02:09.950 --> 00:02:09.960 align:start position:0%
+drop it into a dashboard,
+ 
+
+00:02:09.960 --> 00:02:11.990 align:start position:0%
+drop it into a dashboard,
+I<00:02:10.080><c> can</c><00:02:10.240><c> now</c><00:02:10.440><c> even</c><00:02:10.679><c> schedule</c><00:02:11.160><c> it</c><00:02:11.280><c> to</c><00:02:11.400><c> refresh</c>
+
+00:02:11.990 --> 00:02:12.000 align:start position:0%
+I can now even schedule it to refresh
+ 
+
+00:02:12.000 --> 00:02:14.830 align:start position:0%
+I can now even schedule it to refresh
+every<00:02:12.360><c> hour,</c><00:02:13.200><c> and</c><00:02:13.480><c> that's</c><00:02:13.800><c> pretty</c><00:02:14.040><c> much</c><00:02:14.240><c> it.</c>
+
+00:02:14.830 --> 00:02:14.840 align:start position:0%
+every hour, and that's pretty much it.
+ 
+
+00:02:14.840 --> 00:02:17.710 align:start position:0%
+every hour, and that's pretty much it.
+Query,<00:02:15.440><c> chart,</c><00:02:16.000><c> dashboard,</c><00:02:16.680><c> shareable</c><00:02:17.160><c> link,</c>
+
+00:02:17.710 --> 00:02:17.720 align:start position:0%
+Query, chart, dashboard, shareable link,
+ 
+
+00:02:17.720 --> 00:02:20.910 align:start position:0%
+Query, chart, dashboard, shareable link,
+with<00:02:17.920><c> no</c><00:02:18.160><c> spreadsheets.</c><00:02:19.400><c> It</c><00:02:19.680><c> looks</c><00:02:20.000><c> simple.</c>
+
+00:02:20.910 --> 00:02:20.920 align:start position:0%
+with no spreadsheets. It looks simple.
+ 
+
+00:02:20.920 --> 00:02:23.750 align:start position:0%
+with no spreadsheets. It looks simple.
+That's<00:02:21.200><c> the</c><00:02:21.320><c> point.</c><00:02:22.040><c> On</c><00:02:22.360><c> paper,</c><00:02:23.000><c> Redash</c><00:02:23.520><c> looks</c>
+
+00:02:23.750 --> 00:02:23.760 align:start position:0%
+That's the point. On paper, Redash looks
+ 
+
+00:02:23.760 --> 00:02:25.870 align:start position:0%
+That's the point. On paper, Redash looks
+like<00:02:23.920><c> every</c><00:02:24.200><c> other</c><00:02:24.480><c> BI</c><00:02:24.920><c> tool,</c><00:02:25.280><c> but</c><00:02:25.440><c> it</c><00:02:25.480><c> doesn't</c>
+
+00:02:25.870 --> 00:02:25.880 align:start position:0%
+like every other BI tool, but it doesn't
+ 
+
+00:02:25.880 --> 00:02:27.750 align:start position:0%
+like every other BI tool, but it doesn't
+feel<00:02:26.200><c> like</c><00:02:26.480><c> one.</c><00:02:26.800><c> Redash</c><00:02:27.240><c> is</c><00:02:27.400><c> built</c><00:02:27.640><c> for</c>
+
+00:02:27.750 --> 00:02:27.760 align:start position:0%
+feel like one. Redash is built for
+ 
+
+00:02:27.760 --> 00:02:30.110 align:start position:0%
+feel like one. Redash is built for
+people<00:02:28.080><c> who</c><00:02:28.280><c> want</c><00:02:28.560><c> to</c><00:02:28.720><c> write</c><00:02:28.960><c> SQL,</c><00:02:29.440><c> not</c><00:02:29.720><c> scale.</c>
+
+00:02:30.110 --> 00:02:30.120 align:start position:0%
+people who want to write SQL, not scale.
+ 
+
+00:02:30.120 --> 00:02:32.110 align:start position:0%
+people who want to write SQL, not scale.
+That's<00:02:30.920><c> the</c><00:02:30.960><c> major</c><00:02:31.240><c> difference</c><00:02:31.640><c> here</c><00:02:31.760><c> between</c>
+
+00:02:32.110 --> 00:02:32.120 align:start position:0%
+That's the major difference here between
+ 
+
+00:02:32.120 --> 00:02:34.710 align:start position:0%
+That's the major difference here between
+others.<00:02:32.840><c> Metabase</c><00:02:33.280><c> is</c><00:02:33.520><c> good</c><00:02:33.920><c> for</c><00:02:34.120><c> no-code</c>
+
+00:02:34.710 --> 00:02:34.720 align:start position:0%
+others. Metabase is good for no-code
+ 
+
+00:02:34.720 --> 00:02:37.430 align:start position:0%
+others. Metabase is good for no-code
+teams,<00:02:35.240><c> but</c><00:02:35.760><c> once</c><00:02:36.040><c> queries</c><00:02:36.600><c> get</c><00:02:36.800><c> complex,</c>
+
+00:02:37.430 --> 00:02:37.440 align:start position:0%
+teams, but once queries get complex,
+ 
+
+00:02:37.440 --> 00:02:39.430 align:start position:0%
+teams, but once queries get complex,
+it's<00:02:37.560><c> going</c><00:02:37.680><c> to</c><00:02:37.760><c> slow</c><00:02:38.000><c> down.</c><00:02:38.640><c> Superset</c><00:02:39.240><c> gives</c>
+
+00:02:39.430 --> 00:02:39.440 align:start position:0%
+it's going to slow down. Superset gives
+ 
+
+00:02:39.440 --> 00:02:42.030 align:start position:0%
+it's going to slow down. Superset gives
+you<00:02:39.560><c> more</c><00:02:40.000><c> visual</c><00:02:40.440><c> power</c><00:02:40.880><c> and</c><00:02:41.080><c> scale,</c><00:02:41.920><c> but</c>
+
+00:02:42.030 --> 00:02:42.040 align:start position:0%
+you more visual power and scale, but
+ 
+
+00:02:42.040 --> 00:02:44.070 align:start position:0%
+you more visual power and scale, but
+it's<00:02:42.200><c> heavier</c><00:02:42.720><c> and</c><00:02:42.840><c> not</c><00:02:42.960><c> as</c><00:02:43.160><c> fast</c><00:02:43.560><c> for</c><00:02:43.720><c> just</c>
+
+00:02:44.070 --> 00:02:44.080 align:start position:0%
+it's heavier and not as fast for just
+ 
+
+00:02:44.080 --> 00:02:46.150 align:start position:0%
+it's heavier and not as fast for just
+writing<00:02:44.320><c> queries.</c><00:02:45.120><c> Then</c><00:02:45.240><c> of</c><00:02:45.360><c> course,</c><00:02:45.840><c> there's</c>
+
+00:02:46.150 --> 00:02:46.160 align:start position:0%
+writing queries. Then of course, there's
+ 
+
+00:02:46.160 --> 00:02:48.310 align:start position:0%
+writing queries. Then of course, there's
+Tableau<00:02:46.680><c> and</c><00:02:46.800><c> Power</c><00:02:47.120><c> BI.</c><00:02:47.800><c> These</c><00:02:47.960><c> are</c><00:02:48.040><c> very</c>
+
+00:02:48.310 --> 00:02:48.320 align:start position:0%
+Tableau and Power BI. These are very
+ 
+
+00:02:48.320 --> 00:02:50.750 align:start position:0%
+Tableau and Power BI. These are very
+polished<00:02:48.920><c> and</c><00:02:49.120><c> honestly</c><00:02:49.520><c> the</c><00:02:49.640><c> baseline</c><00:02:50.640><c> for</c>
+
+00:02:50.750 --> 00:02:50.760 align:start position:0%
+polished and honestly the baseline for
+ 
+
+00:02:50.760 --> 00:02:52.910 align:start position:0%
+polished and honestly the baseline for
+getting<00:02:51.040><c> into</c><00:02:51.360><c> analytics</c><00:02:51.880><c> for</c><00:02:52.040><c> a</c><00:02:52.120><c> long</c><00:02:52.520><c> time,</c>
+
+00:02:52.910 --> 00:02:52.920 align:start position:0%
+getting into analytics for a long time,
+ 
+
+00:02:52.920 --> 00:02:55.230 align:start position:0%
+getting into analytics for a long time,
+but<00:02:53.480><c> these</c><00:02:53.760><c> two</c><00:02:53.880><c> tools</c><00:02:54.200><c> are</c><00:02:54.320><c> expensive</c><00:02:55.000><c> and</c>
+
+00:02:55.230 --> 00:02:55.240 align:start position:0%
+but these two tools are expensive and
+ 
+
+00:02:55.240 --> 00:02:58.470 align:start position:0%
+but these two tools are expensive and
+often<00:02:55.720><c> overkill</c><00:02:56.440><c> for</c><00:02:56.760><c> what</c><00:02:57.120><c> small</c><00:02:57.480><c> tools</c><00:02:58.120><c> do</c>
+
+00:02:58.470 --> 00:02:58.480 align:start position:0%
+often overkill for what small tools do
+ 
+
+00:02:58.480 --> 00:03:00.910 align:start position:0%
+often overkill for what small tools do
+and<00:02:58.600><c> what</c><00:02:58.720><c> we</c><00:02:58.840><c> actually</c><00:02:59.280><c> need.</c><00:03:00.040><c> Redash</c><00:03:00.680><c> sits</c>
+
+00:03:00.910 --> 00:03:00.920 align:start position:0%
+and what we actually need. Redash sits
+ 
+
+00:03:00.920 --> 00:03:02.390 align:start position:0%
+and what we actually need. Redash sits
+in<00:03:01.040><c> a</c><00:03:01.080><c> different</c><00:03:01.400><c> spot.</c><00:03:01.880><c> It</c><00:03:02.000><c> feels</c><00:03:02.160><c> like</c><00:03:02.280><c> your</c>
+
+00:03:02.390 --> 00:03:02.400 align:start position:0%
+in a different spot. It feels like your
+ 
+
+00:03:02.400 --> 00:03:04.470 align:start position:0%
+in a different spot. It feels like your
+SQL<00:03:02.720><c> editor</c><00:03:03.040><c> grew</c><00:03:03.280><c> just</c><00:03:03.600><c> enough</c><00:03:03.800><c> to</c><00:03:03.880><c> be</c><00:03:04.000><c> useful</c>
+
+00:03:04.470 --> 00:03:04.480 align:start position:0%
+SQL editor grew just enough to be useful
+ 
+
+00:03:04.480 --> 00:03:06.510 align:start position:0%
+SQL editor grew just enough to be useful
+to<00:03:04.600><c> the</c><00:03:04.720><c> rest</c><00:03:04.960><c> of</c><00:03:05.080><c> your</c><00:03:05.200><c> team.</c><00:03:05.880><c> You</c><00:03:06.040><c> still</c><00:03:06.320><c> get</c>
+
+00:03:06.510 --> 00:03:06.520 align:start position:0%
+to the rest of your team. You still get
+ 
+
+00:03:06.520 --> 00:03:08.430 align:start position:0%
+to the rest of your team. You still get
+things<00:03:06.800><c> like</c><00:03:07.040><c> queries</c><00:03:07.600><c> across</c><00:03:08.000><c> multiple</c>
+
+00:03:08.430 --> 00:03:08.440 align:start position:0%
+things like queries across multiple
+ 
+
+00:03:08.440 --> 00:03:11.710 align:start position:0%
+things like queries across multiple
+databases,<00:03:09.400><c> great.</c><00:03:10.160><c> Reusable</c><00:03:10.920><c> snippets,</c>
+
+00:03:11.710 --> 00:03:11.720 align:start position:0%
+databases, great. Reusable snippets,
+ 
+
+00:03:11.720 --> 00:03:15.270 align:start position:0%
+databases, great. Reusable snippets,
+results<00:03:12.240><c> caching,</c><00:03:13.120><c> API</c><00:03:13.720><c> access,</c><00:03:14.960><c> and</c><00:03:15.200><c> the</c>
+
+00:03:15.270 --> 00:03:15.280 align:start position:0%
+results caching, API access, and the
+ 
+
+00:03:15.280 --> 00:03:17.310 align:start position:0%
+results caching, API access, and the
+ability<00:03:15.680><c> to</c><00:03:15.840><c> remix</c><00:03:16.280><c> someone</c><00:03:16.520><c> else's</c><00:03:16.880><c> queries</c>
+
+00:03:17.310 --> 00:03:17.320 align:start position:0%
+ability to remix someone else's queries
+ 
+
+00:03:17.320 --> 00:03:19.310 align:start position:0%
+ability to remix someone else's queries
+instantly.<00:03:18.080><c> That's</c><00:03:18.240><c> why</c><00:03:18.360><c> most</c><00:03:18.680><c> dev</c><00:03:18.880><c> teams</c><00:03:19.200><c> are</c>
+
+00:03:19.310 --> 00:03:19.320 align:start position:0%
+instantly. That's why most dev teams are
+ 
+
+00:03:19.320 --> 00:03:20.910 align:start position:0%
+instantly. That's why most dev teams are
+starting<00:03:19.800><c> to</c><00:03:19.920><c> pick</c><00:03:20.200><c> up</c><00:03:20.320><c> on</c><00:03:20.440><c> this</c><00:03:20.640><c> a</c><00:03:20.680><c> lot</c>
+
+00:03:20.910 --> 00:03:20.920 align:start position:0%
+starting to pick up on this a lot
+ 
+
+00:03:20.920 --> 00:03:22.430 align:start position:0%
+starting to pick up on this a lot
+quicker<00:03:21.360><c> than</c><00:03:21.480><c> these</c><00:03:21.720><c> other</c><00:03:22.000><c> blown-out</c>
+
+00:03:22.430 --> 00:03:22.440 align:start position:0%
+quicker than these other blown-out
+ 
+
+00:03:22.440 --> 00:03:24.670 align:start position:0%
+quicker than these other blown-out
+expensive<00:03:22.960><c> tools.</c><00:03:23.800><c> So,</c><00:03:24.120><c> what</c><00:03:24.280><c> do</c><00:03:24.360><c> people</c>
+
+00:03:24.670 --> 00:03:24.680 align:start position:0%
+expensive tools. So, what do people
+ 
+
+00:03:24.680 --> 00:03:26.990 align:start position:0%
+expensive tools. So, what do people
+actually<00:03:25.120><c> like?</c><00:03:25.440><c> Well,</c><00:03:25.840><c> first,</c><00:03:26.400><c> the</c><00:03:26.520><c> SQL</c>
+
+00:03:26.990 --> 00:03:27.000 align:start position:0%
+actually like? Well, first, the SQL
+ 
+
+00:03:27.000 --> 00:03:29.590 align:start position:0%
+actually like? Well, first, the SQL
+workflow<00:03:27.600><c> is</c><00:03:27.840><c> fast.</c><00:03:28.680><c> You're</c><00:03:28.840><c> not</c><00:03:29.200><c> fighting</c>
+
+00:03:29.590 --> 00:03:29.600 align:start position:0%
+workflow is fast. You're not fighting
+ 
+
+00:03:29.600 --> 00:03:31.550 align:start position:0%
+workflow is fast. You're not fighting
+the<00:03:29.760><c> tool,</c><00:03:30.200><c> hence</c><00:03:30.440><c> the</c><00:03:30.560><c> point</c><00:03:30.880><c> why</c><00:03:31.040><c> SQL</c><00:03:31.440><c> is</c>
+
+00:03:31.550 --> 00:03:31.560 align:start position:0%
+the tool, hence the point why SQL is
+ 
+
+00:03:31.560 --> 00:03:33.830 align:start position:0%
+the tool, hence the point why SQL is
+built<00:03:31.880><c> in.</c><00:03:32.480><c> You</c><00:03:32.640><c> write</c><00:03:32.920><c> the</c><00:03:33.000><c> query</c><00:03:33.560><c> and</c><00:03:33.720><c> you</c>
+
+00:03:33.830 --> 00:03:33.840 align:start position:0%
+built in. You write the query and you
+ 
+
+00:03:33.840 --> 00:03:36.670 align:start position:0%
+built in. You write the query and you
+move<00:03:34.080><c> on.</c><00:03:34.720><c> Then,</c><00:03:35.200><c> self-hosting</c><00:03:36.160><c> is</c><00:03:36.360><c> simple.</c>
+
+00:03:36.670 --> 00:03:36.680 align:start position:0%
+move on. Then, self-hosting is simple.
+ 
+
+00:03:36.680 --> 00:03:38.470 align:start position:0%
+move on. Then, self-hosting is simple.
+This<00:03:36.880><c> is</c><00:03:37.000><c> an</c><00:03:37.160><c> open-source</c><00:03:37.760><c> tool,</c><00:03:38.080><c> which</c><00:03:38.240><c> means</c>
+
+00:03:38.470 --> 00:03:38.480 align:start position:0%
+This is an open-source tool, which means
+ 
+
+00:03:38.480 --> 00:03:40.070 align:start position:0%
+This is an open-source tool, which means
+I<00:03:38.520><c> can</c><00:03:38.720><c> self-host</c><00:03:39.280><c> it,</c><00:03:39.680><c> and</c><00:03:39.760><c> I'm</c><00:03:39.800><c> just</c><00:03:39.960><c> going</c>
+
+00:03:40.070 --> 00:03:40.080 align:start position:0%
+I can self-host it, and I'm just going
+ 
+
+00:03:40.080 --> 00:03:42.110 align:start position:0%
+I can self-host it, and I'm just going
+to<00:03:40.120><c> use</c><00:03:40.400><c> Docker.</c><00:03:41.040><c> So,</c><00:03:41.160><c> we</c><00:03:41.280><c> know</c><00:03:41.440><c> Docker,</c><00:03:42.000><c> it's</c>
+
+00:03:42.110 --> 00:03:42.120 align:start position:0%
+to use Docker. So, we know Docker, it's
+ 
+
+00:03:42.120 --> 00:03:44.510 align:start position:0%
+to use Docker. So, we know Docker, it's
+one<00:03:42.320><c> command,</c><00:03:42.840><c> we're</c><00:03:43.000><c> done,</c><00:03:43.440><c> it's</c><00:03:43.680><c> going.</c>
+
+00:03:44.510 --> 00:03:44.520 align:start position:0%
+one command, we're done, it's going.
+ 
+
+00:03:44.520 --> 00:03:46.590 align:start position:0%
+one command, we're done, it's going.
+Then,<00:03:44.800><c> there's</c><00:03:45.080><c> tons</c><00:03:45.480><c> of</c><00:03:45.600><c> data</c><00:03:45.840><c> sources</c><00:03:46.320><c> plus</c>
+
+00:03:46.590 --> 00:03:46.600 align:start position:0%
+Then, there's tons of data sources plus
+ 
+
+00:03:46.600 --> 00:03:49.070 align:start position:0%
+Then, there's tons of data sources plus
+scheduling<00:03:47.160><c> and</c><00:03:47.280><c> alerts.</c><00:03:48.120><c> And</c><00:03:48.200><c> the</c><00:03:48.360><c> API</c><00:03:48.960><c> and</c>
+
+00:03:49.070 --> 00:03:49.080 align:start position:0%
+scheduling and alerts. And the API and
+ 
+
+00:03:49.080 --> 00:03:50.510 align:start position:0%
+scheduling and alerts. And the API and
+embedding,<00:03:49.640><c> they're</c><00:03:49.840><c> great</c><00:03:50.240><c> if</c><00:03:50.360><c> you're</c>
+
+00:03:50.510 --> 00:03:50.520 align:start position:0%
+embedding, they're great if you're
+ 
+
+00:03:50.520 --> 00:03:52.630 align:start position:0%
+embedding, they're great if you're
+building<00:03:50.920><c> internal</c><00:03:51.400><c> tools.</c><00:03:52.160><c> For</c><00:03:52.320><c> a</c><00:03:52.360><c> lot</c><00:03:52.520><c> of</c>
+
+00:03:52.630 --> 00:03:52.640 align:start position:0%
+building internal tools. For a lot of
+ 
+
+00:03:52.640 --> 00:03:54.470 align:start position:0%
+building internal tools. For a lot of
+teams,<00:03:53.000><c> this</c><00:03:53.160><c> becomes</c><00:03:53.480><c> something</c><00:03:53.840><c> they</c><00:03:54.040><c> use</c>
+
+00:03:54.470 --> 00:03:54.480 align:start position:0%
+teams, this becomes something they use
+ 
+
+00:03:54.480 --> 00:03:57.470 align:start position:0%
+teams, this becomes something they use
+every<00:03:54.760><c> day,</c><00:03:55.120><c> but</c><00:03:55.760><c> again,</c><00:03:56.400><c> open-source</c><00:03:56.960><c> tools.</c>
+
+00:03:57.470 --> 00:03:57.480 align:start position:0%
+every day, but again, open-source tools.
+ 
+
+00:03:57.480 --> 00:03:59.750 align:start position:0%
+every day, but again, open-source tools.
+This<00:03:57.720><c> is</c><00:03:57.960><c> not</c><00:03:58.360><c> that</c><00:03:58.760><c> polished,</c><00:03:59.400><c> so</c><00:03:59.560><c> there's</c>
+
+00:03:59.750 --> 00:03:59.760 align:start position:0%
+This is not that polished, so there's
+ 
+
+00:03:59.760 --> 00:04:01.150 align:start position:0%
+This is not that polished, so there's
+going<00:03:59.880><c> to</c><00:03:59.960><c> be</c><00:04:00.000><c> tradeoffs.</c><00:04:01.040><c> The</c>
+
+00:04:01.150 --> 00:04:01.160 align:start position:0%
+going to be tradeoffs. The
+ 
+
+00:04:01.160 --> 00:04:03.350 align:start position:0%
+going to be tradeoffs. The
+visualizations<00:04:01.960><c> are</c><00:04:02.520><c> good,</c><00:04:02.960><c> but</c><00:04:03.080><c> they're</c><00:04:03.200><c> not</c>
+
+00:04:03.350 --> 00:04:03.360 align:start position:0%
+visualizations are good, but they're not
+ 
+
+00:04:03.360 --> 00:04:05.590 align:start position:0%
+visualizations are good, but they're not
+amazing.<00:04:04.280><c> If</c><00:04:04.400><c> you</c><00:04:04.520><c> need</c><00:04:04.760><c> highly</c><00:04:05.200><c> custom</c>
+
+00:04:05.590 --> 00:04:05.600 align:start position:0%
+amazing. If you need highly custom
+ 
+
+00:04:05.600 --> 00:04:07.590 align:start position:0%
+amazing. If you need highly custom
+dashboards,<00:04:06.280><c> then</c><00:04:06.560><c> other</c><00:04:06.880><c> alternatives</c><00:04:07.520><c> are</c>
+
+00:04:07.590 --> 00:04:07.600 align:start position:0%
+dashboards, then other alternatives are
+ 
+
+00:04:07.600 --> 00:04:09.750 align:start position:0%
+dashboards, then other alternatives are
+going<00:04:07.720><c> to</c><00:04:07.800><c> be</c><00:04:07.920><c> better.</c><00:04:08.640><c> Self-hosting</c><00:04:09.440><c> also</c>
+
+00:04:09.750 --> 00:04:09.760 align:start position:0%
+going to be better. Self-hosting also
+ 
+
+00:04:09.760 --> 00:04:12.510 align:start position:0%
+going to be better. Self-hosting also
+means<00:04:10.040><c> you</c><00:04:10.280><c> own</c><00:04:10.560><c> the</c><00:04:10.800><c> ops,</c><00:04:11.320><c> updates,</c><00:04:11.960><c> scaling,</c>
+
+00:04:12.510 --> 00:04:12.520 align:start position:0%
+means you own the ops, updates, scaling,
+ 
+
+00:04:12.520 --> 00:04:14.870 align:start position:0%
+means you own the ops, updates, scaling,
+maintenance.<00:04:13.320><c> That's</c><00:04:13.560><c> on</c><00:04:13.720><c> you,</c><00:04:14.200><c> obviously,</c>
+
+00:04:14.870 --> 00:04:14.880 align:start position:0%
+maintenance. That's on you, obviously,
+ 
+
+00:04:14.880 --> 00:04:16.630 align:start position:0%
+maintenance. That's on you, obviously,
+right?<00:04:15.160><c> So,</c><00:04:15.280><c> you</c><00:04:15.400><c> have</c><00:04:15.600><c> to</c><00:04:15.680><c> be</c><00:04:15.800><c> aware</c><00:04:16.040><c> of</c><00:04:16.120><c> that.</c>
+
+00:04:16.630 --> 00:04:16.640 align:start position:0%
+right? So, you have to be aware of that.
+ 
+
+00:04:16.640 --> 00:04:18.590 align:start position:0%
+right? So, you have to be aware of that.
+If<00:04:16.799><c> your</c><00:04:16.920><c> team</c><00:04:17.160><c> doesn't</c><00:04:17.480><c> like</c><00:04:17.680><c> SQL,</c><00:04:18.320><c> this</c><00:04:18.480><c> is</c>
+
+00:04:18.590 --> 00:04:18.600 align:start position:0%
+If your team doesn't like SQL, this is
+ 
+
+00:04:18.600 --> 00:04:20.590 align:start position:0%
+If your team doesn't like SQL, this is
+not<00:04:18.760><c> going</c><00:04:18.880><c> to</c><00:04:18.959><c> feel</c><00:04:19.120><c> great.</c><00:04:19.760><c> Search</c><00:04:20.280><c> could</c><00:04:20.480><c> be</c>
+
+00:04:20.590 --> 00:04:20.600 align:start position:0%
+not going to feel great. Search could be
+ 
+
+00:04:20.600 --> 00:04:22.870 align:start position:0%
+not going to feel great. Search could be
+better,<00:04:20.959><c> and</c><00:04:21.160><c> mobile</c><00:04:21.720><c> isn't</c><00:04:22.040><c> good.</c><00:04:22.400><c> So,</c><00:04:22.720><c> it's</c>
+
+00:04:22.870 --> 00:04:22.880 align:start position:0%
+better, and mobile isn't good. So, it's
+ 
+
+00:04:22.880 --> 00:04:25.670 align:start position:0%
+better, and mobile isn't good. So, it's
+not<00:04:23.120><c> perfect,</c><00:04:23.920><c> but</c><00:04:24.080><c> it</c><00:04:24.240><c> does</c><00:04:24.680><c> one</c><00:04:24.960><c> job</c><00:04:25.360><c> really</c>
+
+00:04:25.670 --> 00:04:25.680 align:start position:0%
+not perfect, but it does one job really
+ 
+
+00:04:25.680 --> 00:04:27.950 align:start position:0%
+not perfect, but it does one job really
+well,<00:04:26.040><c> and</c><00:04:26.200><c> that's</c><00:04:26.440><c> kind</c><00:04:26.680><c> of</c><00:04:26.720><c> the</c><00:04:26.800><c> point.</c><00:04:27.520><c> So,</c>
+
+00:04:27.950 --> 00:04:27.960 align:start position:0%
+well, and that's kind of the point. So,
+ 
+
+00:04:27.960 --> 00:04:29.510 align:start position:0%
+well, and that's kind of the point. So,
+should<00:04:28.240><c> you</c><00:04:28.400><c> use</c><00:04:28.640><c> it?</c><00:04:28.760><c> Well,</c><00:04:28.960><c> if</c><00:04:29.080><c> your</c><00:04:29.200><c> team</c>
+
+00:04:29.510 --> 00:04:29.520 align:start position:0%
+should you use it? Well, if your team
+ 
+
+00:04:29.520 --> 00:04:32.470 align:start position:0%
+should you use it? Well, if your team
+already<00:04:29.920><c> works</c><00:04:30.200><c> in</c><00:04:30.320><c> SQL,</c><00:04:30.880><c> probably,</c><00:04:31.680><c> yeah.</c>
+
+00:04:32.470 --> 00:04:32.480 align:start position:0%
+already works in SQL, probably, yeah.
+ 
+
+00:04:32.480 --> 00:04:33.830 align:start position:0%
+already works in SQL, probably, yeah.
+Especially<00:04:32.920><c> if</c><00:04:33.000><c> you</c><00:04:33.120><c> have</c><00:04:33.360><c> multiple</c>
+
+00:04:33.830 --> 00:04:33.840 align:start position:0%
+Especially if you have multiple
+ 
+
+00:04:33.840 --> 00:04:35.710 align:start position:0%
+Especially if you have multiple
+databases,<00:04:34.480><c> you</c><00:04:34.600><c> want</c><00:04:34.720><c> internal</c><00:04:35.120><c> dashboards</c>
+
+00:04:35.710 --> 00:04:35.720 align:start position:0%
+databases, you want internal dashboards
+ 
+
+00:04:35.720 --> 00:04:38.190 align:start position:0%
+databases, you want internal dashboards
+without<00:04:36.000><c> paying</c><00:04:36.320><c> a</c><00:04:36.400><c> lot,</c><00:04:37.080><c> or</c><00:04:37.360><c> you're</c><00:04:37.560><c> building</c>
+
+00:04:38.190 --> 00:04:38.200 align:start position:0%
+without paying a lot, or you're building
+ 
+
+00:04:38.200 --> 00:04:40.870 align:start position:0%
+without paying a lot, or you're building
+dev-facing<00:04:39.000><c> analytics.</c><00:04:39.840><c> This</c><00:04:40.000><c> is</c><00:04:40.120><c> a</c><00:04:40.240><c> cool,</c>
+
+00:04:40.870 --> 00:04:40.880 align:start position:0%
+dev-facing analytics. This is a cool,
+ 
+
+00:04:40.880 --> 00:04:43.550 align:start position:0%
+dev-facing analytics. This is a cool,
+open-source,<00:04:41.640><c> free</c><00:04:41.880><c> tool.</c><00:04:42.600><c> The</c><00:04:42.800><c> use</c><00:04:43.040><c> cases</c>
+
+00:04:43.550 --> 00:04:43.560 align:start position:0%
+open-source, free tool. The use cases
+ 
+
+00:04:43.560 --> 00:04:45.190 align:start position:0%
+open-source, free tool. The use cases
+are<00:04:43.720><c> practical,</c><00:04:44.400><c> right?</c><00:04:44.680><c> Pipeline</c>
+
+00:04:45.190 --> 00:04:45.200 align:start position:0%
+are practical, right? Pipeline
+ 
+
+00:04:45.200 --> 00:04:48.030 align:start position:0%
+are practical, right? Pipeline
+monitoring,<00:04:45.960><c> tracking,</c><00:04:46.680><c> metrics,</c><00:04:47.280><c> updates,</c>
+
+00:04:48.030 --> 00:04:48.040 align:start position:0%
+monitoring, tracking, metrics, updates,
+ 
+
+00:04:48.040 --> 00:04:50.350 align:start position:0%
+monitoring, tracking, metrics, updates,
+even<00:04:48.400><c> joining</c><00:04:48.880><c> API</c><00:04:49.320><c> data</c><00:04:49.640><c> with</c><00:04:49.840><c> database</c>
+
+00:04:50.350 --> 00:04:50.360 align:start position:0%
+even joining API data with database
+ 
+
+00:04:50.360 --> 00:04:52.710 align:start position:0%
+even joining API data with database
+queries.<00:04:51.320><c> That's</c><00:04:51.720><c> where</c><00:04:51.920><c> it</c><00:04:52.040><c> does</c><00:04:52.440><c> really</c>
+
+00:04:52.710 --> 00:04:52.720 align:start position:0%
+queries. That's where it does really
+ 
+
+00:04:52.720 --> 00:04:55.670 align:start position:0%
+queries. That's where it does really
+well.<00:04:53.360><c> Not</c><00:04:53.640><c> because</c><00:04:54.280><c> it's</c><00:04:54.480><c> fancy,</c><00:04:55.160><c> no,</c><00:04:55.520><c> but</c>
+
+00:04:55.670 --> 00:04:55.680 align:start position:0%
+well. Not because it's fancy, no, but
+ 
+
+00:04:55.680 --> 00:04:57.590 align:start position:0%
+well. Not because it's fancy, no, but
+because<00:04:55.960><c> it</c><00:04:56.080><c> removes</c><00:04:56.640><c> pain</c><00:04:57.000><c> from</c><00:04:57.240><c> work</c><00:04:57.440><c> that</c>
+
+00:04:57.590 --> 00:04:57.600 align:start position:0%
+because it removes pain from work that
+ 
+
+00:04:57.600 --> 00:05:00.190 align:start position:0%
+because it removes pain from work that
+we're<00:04:57.800><c> already</c><00:04:58.200><c> doing</c><00:04:58.760><c> every</c><00:04:59.040><c> day.</c><00:04:59.800><c> But</c>
+
+00:05:00.190 --> 00:05:00.200 align:start position:0%
+we're already doing every day. But
+ 
+
+00:05:00.200 --> 00:05:02.910 align:start position:0%
+we're already doing every day. But
+honestly,<00:05:01.320><c> this</c><00:05:01.560><c> is</c><00:05:01.760><c> cool,</c><00:05:02.200><c> but</c><00:05:02.360><c> just</c><00:05:02.600><c> skip</c>
+
+00:05:02.910 --> 00:05:02.920 align:start position:0%
+honestly, this is cool, but just skip
+ 
+
+00:05:02.920 --> 00:05:04.910 align:start position:0%
+honestly, this is cool, but just skip
+over<00:05:03.200><c> this</c><00:05:03.520><c> if</c><00:05:03.640><c> your</c><00:05:03.800><c> team</c><00:05:04.120><c> wants</c><00:05:04.360><c> no</c><00:05:04.560><c> code.</c>
+
+00:05:04.910 --> 00:05:04.920 align:start position:0%
+over this if your team wants no code.
+ 
+
+00:05:04.920 --> 00:05:06.870 align:start position:0%
+over this if your team wants no code.
+Just<00:05:05.080><c> go</c><00:05:05.160><c> to</c><00:05:05.240><c> Metabase,</c><00:05:05.840><c> right?</c><00:05:06.440><c> If</c><00:05:06.560><c> you</c><00:05:06.680><c> need</c>
+
+00:05:06.870 --> 00:05:06.880 align:start position:0%
+Just go to Metabase, right? If you need
+ 
+
+00:05:06.880 --> 00:05:09.630 align:start position:0%
+Just go to Metabase, right? If you need
+more<00:05:07.080><c> massive</c><00:05:07.640><c> dashboards,</c><00:05:08.760><c> go</c><00:05:08.920><c> to</c><00:05:09.080><c> Tableau</c>
+
+00:05:09.630 --> 00:05:09.640 align:start position:0%
+more massive dashboards, go to Tableau
+ 
+
+00:05:09.640 --> 00:05:12.350 align:start position:0%
+more massive dashboards, go to Tableau
+or<00:05:09.720><c> Power</c><00:05:10.000><c> BI.</c><00:05:10.720><c> But</c><00:05:10.880><c> for</c><00:05:11.000><c> a</c><00:05:11.040><c> lot</c><00:05:11.240><c> of</c><00:05:11.360><c> us,</c><00:05:11.680><c> Redash</c>
+
+00:05:12.350 --> 00:05:12.360 align:start position:0%
+or Power BI. But for a lot of us, Redash
+ 
+
+00:05:12.360 --> 00:05:14.190 align:start position:0%
+or Power BI. But for a lot of us, Redash
+still<00:05:12.600><c> makes</c><00:05:12.840><c> sense.</c><00:05:13.600><c> It's</c><00:05:13.760><c> actively</c>
+
+00:05:14.190 --> 00:05:14.200 align:start position:0%
+still makes sense. It's actively
+ 
+
+00:05:14.200 --> 00:05:16.270 align:start position:0%
+still makes sense. It's actively
+maintained,<00:05:14.680><c> it</c><00:05:14.800><c> fits</c><00:05:15.080><c> our</c><00:05:15.240><c> stack</c><00:05:15.800><c> well,</c><00:05:16.160><c> the</c>
+
+00:05:16.270 --> 00:05:16.280 align:start position:0%
+maintained, it fits our stack well, the
+ 
+
+00:05:16.280 --> 00:05:18.590 align:start position:0%
+maintained, it fits our stack well, the
+setup<00:05:16.560><c> is</c><00:05:16.720><c> fast,</c><00:05:17.560><c> and</c><00:05:17.720><c> that's</c><00:05:18.120><c> the</c><00:05:18.280><c> pretty</c>
+
+00:05:18.590 --> 00:05:18.600 align:start position:0%
+setup is fast, and that's the pretty
+ 
+
+00:05:18.600 --> 00:05:20.430 align:start position:0%
+setup is fast, and that's the pretty
+good<00:05:18.840><c> trait.</c><00:05:19.320><c> It</c><00:05:19.440><c> makes</c><00:05:19.640><c> it</c><00:05:19.800><c> simple</c><00:05:20.120><c> to</c><00:05:20.240><c> get</c>
+
+00:05:20.430 --> 00:05:20.440 align:start position:0%
+good trait. It makes it simple to get
+ 
+
+00:05:20.440 --> 00:05:22.110 align:start position:0%
+good trait. It makes it simple to get
+started,<00:05:21.080><c> and</c><00:05:21.200><c> that's</c><00:05:21.480><c> what</c><00:05:21.600><c> a</c><00:05:21.640><c> lot</c><00:05:21.840><c> of</c><00:05:21.920><c> us</c>
+
+00:05:22.110 --> 00:05:22.120 align:start position:0%
+started, and that's what a lot of us
+ 
+
+00:05:22.120 --> 00:05:24.910 align:start position:0%
+started, and that's what a lot of us
+love.<00:05:23.120><c> So,</c><00:05:23.520><c> to</c><00:05:23.640><c> get</c><00:05:23.840><c> started,</c><00:05:24.240><c> just</c><00:05:24.480><c> clone</c><00:05:24.800><c> the</c>
+
+00:05:24.910 --> 00:05:24.920 align:start position:0%
+love. So, to get started, just clone the
+ 
+
+00:05:24.920 --> 00:05:27.830 align:start position:0%
+love. So, to get started, just clone the
+repo,<00:05:25.720><c> run</c><00:05:26.000><c> your</c><00:05:26.120><c> Docker</c><00:05:26.480><c> Compose,</c><00:05:27.520><c> that's</c>
+
+00:05:27.830 --> 00:05:27.840 align:start position:0%
+repo, run your Docker Compose, that's
+ 
+
+00:05:27.840 --> 00:05:29.630 align:start position:0%
+repo, run your Docker Compose, that's
+it.<00:05:28.360><c> Just</c><00:05:28.640><c> install</c><00:05:29.000><c> it</c><00:05:29.080><c> and</c><00:05:29.160><c> see</c><00:05:29.240><c> if</c><00:05:29.360><c> it</c><00:05:29.440><c> works</c>
+
+00:05:29.630 --> 00:05:29.640 align:start position:0%
+it. Just install it and see if it works
+ 
+
+00:05:29.640 --> 00:05:32.430 align:start position:0%
+it. Just install it and see if it works
+for<00:05:29.760><c> you.</c><00:05:30.200><c> So,</c><00:05:30.400><c> yeah,</c><00:05:30.800><c> that's</c><00:05:31.080><c> Redash.</c><00:05:31.720><c> SQL,</c>
+
+00:05:32.430 --> 00:05:32.440 align:start position:0%
+for you. So, yeah, that's Redash. SQL,
+ 
+
+00:05:32.440 --> 00:05:34.350 align:start position:0%
+for you. So, yeah, that's Redash. SQL,
+easy<00:05:32.680><c> dashboard</c><00:05:33.160><c> sharing,</c><00:05:33.840><c> and</c><00:05:34.000><c> way</c><00:05:34.120><c> less</c>
+
+00:05:34.350 --> 00:05:34.360 align:start position:0%
+easy dashboard sharing, and way less
+ 
+
+00:05:34.360 --> 00:05:36.590 align:start position:0%
+easy dashboard sharing, and way less
+nonsense.<00:05:35.240><c> If</c><00:05:35.360><c> you</c><00:05:35.480><c> enjoy</c><00:05:35.840><c> open-source</c><00:05:36.360><c> tools</c>
+
+00:05:36.590 --> 00:05:36.600 align:start position:0%
+nonsense. If you enjoy open-source tools
+ 
+
+00:05:36.600 --> 00:05:38.150 align:start position:0%
+nonsense. If you enjoy open-source tools
+and<00:05:36.680><c> coding</c><00:05:37.000><c> tips</c><00:05:37.200><c> like</c><00:05:37.360><c> this,</c><00:05:37.640><c> be</c><00:05:37.880><c> sure</c><00:05:38.040><c> to</c>
+
+00:05:38.150 --> 00:05:38.160 align:start position:0%
+and coding tips like this, be sure to
+ 
+
+00:05:38.160 --> 00:05:39.950 align:start position:0%
+and coding tips like this, be sure to
+subscribe<00:05:38.720><c> to</c><00:05:38.800><c> the</c><00:05:38.880><c> Better</c><00:05:39.160><c> Stack</c><00:05:39.440><c> channel.</c>
+
+00:05:39.950 --> 00:05:39.960 align:start position:0%
+subscribe to the Better Stack channel.
+ 
+
+00:05:39.960 --> 00:05:43.840 align:start position:0%
+subscribe to the Better Stack channel.
+We'll<00:05:40.240><c> see</c><00:05:40.480><c> you</c><00:05:40.760><c> in</c><00:05:40.880><c> another</c><00:05:41.240><c> video.</c>
+

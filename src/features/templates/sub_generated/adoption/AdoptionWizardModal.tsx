@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { X, Grid3X3 } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { MatrixAdoptionView } from './MatrixAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
 import {
@@ -53,6 +54,21 @@ export default function AdoptionWizardModal({
       confirmLabel: 'Discard & Close',
       onConfirm: () => {
         setConfirmConfig(null);
+        // Clean up the draft persona and build session — mirrors
+        // MatrixAdoptionView.handleDeleteDraft so we don't leave orphaned
+        // agents in the database when the user discards via the X button.
+        const agent = useAgentStore.getState();
+        const sys = useSystemStore.getState();
+        const pid = agent.buildPersonaId;
+        if (pid) {
+          void agent.deletePersona(pid).catch(() => { /* best-effort */ });
+        }
+        agent.resetBuildSession();
+        void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+          useOverviewStore.getState().processEnded('template_adopt', 'failed', pid ?? 'unknown');
+        }).catch(() => {});
+        sys.setTemplateAdoptActive(false);
+        sys.setAdoptionDraft(null);
         onClose();
       },
       onCancel: () => {

@@ -8,6 +8,7 @@ import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorP
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { TwinBindingCard } from './TwinBindingCard';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -156,6 +157,9 @@ export function PersonaSettingsTab({
           </div>
         </div>
       </div>
+
+      {/* Twin binding — pin this persona to a specific twin or inherit the active one */}
+      <TwinBindingCard />
 
       {/* Save status + Danger */}
       <div className="flex items-center justify-between pt-2 border-t border-primary/10">

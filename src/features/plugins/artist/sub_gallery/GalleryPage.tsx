@@ -75,7 +75,7 @@ export default function GalleryPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
+            placeholder={t.plugins.artist.search}
             className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 w-48"
           />
         </div>
@@ -86,9 +86,9 @@ export default function GalleryPage() {
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
           className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground"
         >
-          <option value="date">Date</option>
-          <option value="name">Name</option>
-          <option value="size">Size</option>
+          <option value="date">{t.plugins.artist.sort_date}</option>
+          <option value="name">{t.plugins.artist.sort_name}</option>
+          <option value="size">{t.plugins.artist.sort_size}</option>
         </select>
         <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
@@ -101,21 +101,21 @@ export default function GalleryPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
         >
           <FolderSearch className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
-          {scanning ? 'Scanning...' : 'Scan Folder'}
+          {scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
         </button>
       </div>
 
       {/* Folder info */}
       {artistFolder && (
         <p className="text-[11px] text-muted-foreground font-mono truncate">
-          Watching: {artistFolder}
+          {t.plugins.artist.watching} {artistFolder}
         </p>
       )}
 
       {/* Gallery content */}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground typo-body">
-          Loading assets...
+          {t.plugins.artist.loading_assets}
         </div>
       ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
@@ -126,10 +126,13 @@ export default function GalleryPage() {
               <Box className="w-7 h-7 text-rose-400" />
             )}
           </div>
-          <p className="typo-heading text-foreground">No {galleryMode === '2d' ? 'images' : 'models'} yet</p>
+          <p className="typo-heading text-foreground">
+            {galleryMode === '2d' ? t.plugins.artist.no_images_yet : t.plugins.artist.no_models_yet}
+          </p>
           <p className="typo-body text-muted-foreground max-w-xs text-center">
-            Click "Scan Folder" to import {galleryMode === '2d' ? 'images' : '3D models'} from your Artist folder,
-            or create them using the Blender Studio tab.
+            {galleryMode === '2d'
+              ? t.plugins.artist.scan_import_images_hint
+              : t.plugins.artist.scan_import_models_hint}
           </p>
         </div>
       ) : galleryMode === '2d' ? (

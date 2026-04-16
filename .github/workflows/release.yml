@@ -199,6 +199,10 @@ jobs:
           tauriScript: npx tauri
           beforeBuildCommand: ""
 
+      - name: Report build sizes
+        if: matrix.label == 'windows-x64'
+        run: node scripts/binary-size-report.mjs --budget 60
+
       - name: Upload source maps to Sentry
         if: matrix.label == 'linux-x64'
         env:

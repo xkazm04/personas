@@ -13,6 +13,30 @@ export interface ConnectorInfo {
   healthy: boolean;
 }
 
+/**
+ * Asset handoff from Gallery → Media Studio. When a user clicks "Send to
+ * Media Studio" on an AssetCard, the asset lands in this queue. The Media
+ * Studio page drains the queue on mount and adds the items as image clips.
+ */
+export interface QueuedMediaAsset {
+  id: string;
+  filePath: string;
+  fileName: string;
+}
+
+/**
+ * Persisted creative-session record. Each prompt-run produces one of these
+ * so the user can scroll through history and replay past conversations.
+ */
+export interface CreativeSessionRecord {
+  id: string;
+  startedAt: number;
+  prompt: string;
+  tools: string[];
+  output: string[];
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
+}
+
 export interface ArtistSlice {
   artistTab: ArtistTab;
   galleryMode: GalleryMode;
@@ -27,9 +51,13 @@ export interface ArtistSlice {
   creativeSessionId: string | null;
   creativeSessionRunning: boolean;
   creativeSessionOutput: string[];
+  creativeSessions: CreativeSessionRecord[];
 
   // Connector statuses for creative tools
   creativeConnectors: ConnectorInfo[];
+
+  // Pending handoff to Media Studio
+  pendingMediaStudioAssets: QueuedMediaAsset[];
 
   // Actions
   setArtistTab: (tab: ArtistTab) => void;
@@ -42,11 +70,24 @@ export interface ArtistSlice {
   appendCreativeOutput: (line: string) => void;
   clearCreativeOutput: () => void;
   setCreativeConnectors: (connectors: ConnectorInfo[]) => void;
+
+  // Session history
+  startCreativeSessionRecord: (record: CreativeSessionRecord) => void;
+  appendCreativeSessionLine: (id: string, line: string) => void;
+  finalizeCreativeSession: (id: string, status: CreativeSessionRecord['status']) => void;
+  deleteCreativeSessionRecord: (id: string) => void;
+  loadCreativeSessionIntoOutput: (id: string) => void;
+
+  // Gallery → Media Studio handoff
+  queueMediaStudioAsset: (asset: QueuedMediaAsset) => void;
+  consumeMediaStudioAssets: () => QueuedMediaAsset[];
 }
 
 const MAX_OUTPUT_LINES = 500;
+const MAX_SESSIONS = 25;
+const MAX_SESSION_LINES = 300;
 
-export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> = (set) => ({
+export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> = (set, get) => ({
   artistTab: "blender" as ArtistTab,
   galleryMode: "2d" as GalleryMode,
   blenderMcpState: "not-installed" as BlenderMcpState,
@@ -56,7 +97,9 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
   creativeSessionId: null,
   creativeSessionRunning: false,
   creativeSessionOutput: [],
+  creativeSessions: [],
   creativeConnectors: [],
+  pendingMediaStudioAssets: [],
 
   setArtistTab: (tab) => set({ artistTab: tab }),
   setGalleryMode: (mode) => set({ galleryMode: mode }),
@@ -72,4 +115,44 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     })),
   clearCreativeOutput: () => set({ creativeSessionOutput: [] }),
   setCreativeConnectors: (connectors) => set({ creativeConnectors: connectors }),
+
+  startCreativeSessionRecord: (record) =>
+    set((s) => ({
+      creativeSessions: [record, ...s.creativeSessions].slice(0, MAX_SESSIONS),
+    })),
+  appendCreativeSessionLine: (id, line) =>
+    set((s) => ({
+      creativeSessions: s.creativeSessions.map((sess) =>
+        sess.id === id
+          ? { ...sess, output: [...sess.output, line].slice(-MAX_SESSION_LINES) }
+          : sess,
+      ),
+    })),
+  finalizeCreativeSession: (id, status) =>
+    set((s) => ({
+      creativeSessions: s.creativeSessions.map((sess) =>
+        sess.id === id ? { ...sess, status } : sess,
+      ),
+    })),
+  deleteCreativeSessionRecord: (id) =>
+    set((s) => ({
+      creativeSessions: s.creativeSessions.filter((sess) => sess.id !== id),
+    })),
+  loadCreativeSessionIntoOutput: (id) => {
+    const sess = get().creativeSessions.find((r) => r.id === id);
+    if (!sess) return;
+    set({ creativeSessionOutput: sess.output.slice() });
+  },
+
+  queueMediaStudioAsset: (asset) =>
+    set((s) => {
+      if (s.pendingMediaStudioAssets.some((a) => a.id === asset.id)) return s;
+      return { pendingMediaStudioAssets: [...s.pendingMediaStudioAssets, asset] };
+    }),
+  consumeMediaStudioAssets: () => {
+    const queue = get().pendingMediaStudioAssets;
+    if (queue.length === 0) return [];
+    set({ pendingMediaStudioAssets: [] });
+    return queue;
+  },
 });

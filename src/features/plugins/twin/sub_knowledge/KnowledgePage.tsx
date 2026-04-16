@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, A
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Knowledge tab — two stable sections:
@@ -17,8 +18,9 @@ import { TwinEmptyState } from '../TwinEmptyState';
 type MemoryFilter = 'pending' | 'approved' | 'rejected';
 
 export default function KnowledgePage() {
+  const { t } = useTwinTranslation();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
-  const activeTwin = useSystemStore((s) => s.twinProfiles).find((t) => t.id === activeTwinId);
+  const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);
   const pendingLoading = useSystemStore((s) => s.twinPendingLoading);
   const communications = useSystemStore((s) => s.twinCommunications);
@@ -43,7 +45,7 @@ export default function KnowledgePage() {
     finally { setReviewingId(null); }
   };
 
-  if (!activeTwinId) return <TwinEmptyState icon={BookOpen} title="Knowledge" />;
+  if (!activeTwinId) return <TwinEmptyState icon={BookOpen} title={t.knowledge.title} />;
 
   const pendingCount = pendingMemories.filter((m) => m.status === 'pending').length;
 
@@ -52,8 +54,8 @@ export default function KnowledgePage() {
       <ContentHeader
         icon={<BookOpen className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title={`Knowledge — ${activeTwin?.name ?? 'Twin'}`}
-        subtitle="Review what the twin remembers. Approved memories power semantic recall; conversations log all interactions."
+        title={`${t.knowledge.title} — ${activeTwin?.name ?? ''}`}
+        subtitle={t.knowledge.subtitle}
       />
 
       <ContentBody>
@@ -66,7 +68,7 @@ export default function KnowledgePage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Inbox className="w-4 h-4 text-violet-400" />
-                  <h2 className="typo-heading text-foreground">Memory Inbox</h2>
+                  <h2 className="typo-heading text-foreground">{t.knowledge.memoryInbox}</h2>
                   {pendingCount > 0 && (
                     <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
                       {pendingCount}
@@ -74,27 +76,27 @@ export default function KnowledgePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  {(['pending', 'approved', 'rejected'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`px-2.5 py-1 text-[11px] rounded-interactive transition-colors capitalize ${
-                        filter === f
-                          ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                          : 'text-muted-foreground hover:bg-secondary/40 border border-transparent'
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
+                  {(['pending', 'approved', 'rejected'] as const).map((f) => {
+                    const labelMap = { pending: t.knowledge.filterPending, approved: t.knowledge.filterApproved, rejected: t.knowledge.filterRejected } as const;
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`px-2.5 py-1 text-[11px] rounded-interactive transition-colors capitalize ${
+                          filter === f
+                            ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                            : 'text-muted-foreground hover:bg-secondary/40 border border-transparent'
+                        }`}
+                      >
+                        {labelMap[f]}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Explanation */}
-              <p className="typo-caption text-muted-foreground mb-3">
-                When personas call <code className="typo-code">record_interaction</code>, memories land here for your review.
-                Approve to index them into the twin's knowledge base for future recall.
-              </p>
+              <p className="typo-caption text-muted-foreground mb-3">{t.knowledge.memoryExplanation}</p>
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto space-y-2">
@@ -106,12 +108,10 @@ export default function KnowledgePage() {
                   <div className="py-8 text-center">
                     <Inbox className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="typo-body text-foreground">
-                      {filter === 'pending' ? 'Inbox empty' : `No ${filter} memories`}
+                      {filter === 'pending' ? t.knowledge.inboxEmpty : t.knowledge.noFilteredMemories.replace('{filter}', filter)}
                     </p>
                     <p className="typo-caption text-muted-foreground mt-1">
-                      {filter === 'pending'
-                        ? 'New memories will appear here as your personas communicate.'
-                        : `Switch to "pending" to review new items.`}
+                      {filter === 'pending' ? t.knowledge.newMemoriesHint : t.knowledge.switchToPending}
                     </p>
                   </div>
                 ) : (
@@ -137,17 +137,17 @@ export default function KnowledgePage() {
                               {mem.channel && <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-secondary/40 text-muted-foreground">{mem.channel}</span>}
                               <span className="typo-caption text-muted-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                               {mem.importance > 3 && (
-                                <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-violet-500/15 text-violet-400">priority {mem.importance}</span>
+                                <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-violet-500/15 text-violet-400">{t.knowledge.priority} {mem.importance}</span>
                               )}
                             </div>
                           </div>
                           {isPending ? (
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} title="Approve — index into KB"
+                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} title={t.knowledge.approveTitle} aria-label={t.knowledge.approveTitle}
                                 className="p-1.5 rounded-interactive text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
                                 <CheckCircle2 className="w-4 h-4" />
                               </button>
-                              <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} title="Reject — discard"
+                              <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} title={t.knowledge.rejectTitle} aria-label={t.knowledge.rejectTitle}
                                 className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
                                 <XCircle className="w-4 h-4" />
                               </button>
@@ -173,13 +173,10 @@ export default function KnowledgePage() {
             <div className="p-4 rounded-card border border-primary/10 bg-card/40 flex flex-col flex-1">
               <div className="flex items-center gap-2 mb-4">
                 <History className="w-4 h-4 text-violet-400" />
-                <h2 className="typo-heading text-foreground">Conversation History</h2>
+                <h2 className="typo-heading text-foreground">{t.knowledge.conversationHistory}</h2>
               </div>
 
-              <p className="typo-caption text-muted-foreground mb-3">
-                Every message sent or received through the Twin connector is logged here.
-                This is the raw interaction trail — the memory inbox above is the curated extract.
-              </p>
+              <p className="typo-caption text-muted-foreground mb-3">{t.knowledge.conversationExplanation}</p>
 
               <div className="flex-1 overflow-y-auto space-y-2">
                 {commsLoading ? (
@@ -189,10 +186,8 @@ export default function KnowledgePage() {
                 ) : communications.length === 0 ? (
                   <div className="py-8 text-center">
                     <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="typo-body text-foreground">No conversations yet</p>
-                    <p className="typo-caption text-muted-foreground mt-1">
-                      Interactions appear here when personas use the Twin connector on any channel.
-                    </p>
+                    <p className="typo-body text-foreground">{t.knowledge.noConversationsYet}</p>
+                    <p className="typo-caption text-muted-foreground mt-1">{t.knowledge.conversationsHint}</p>
                   </div>
                 ) : (
                   communications.map((comm) => {

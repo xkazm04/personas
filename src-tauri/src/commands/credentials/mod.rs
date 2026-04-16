@@ -24,6 +24,7 @@ pub mod auth_detect;
 pub mod cli_capture;
 pub mod credential_recipes;
 pub mod nl_query;
+#[cfg(feature = "ml")]
 pub mod vector_kb;
 pub mod openapi_autopilot;
 pub mod external_api_keys;

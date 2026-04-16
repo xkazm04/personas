@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Voice tab — ElevenLabs voice configuration (picker mode).
@@ -26,6 +27,7 @@ const ELEVENLABS_MODELS = [
 ] as const;
 
 export default function VoicePage() {
+  const { t } = useTwinTranslation();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const voiceProfile = useSystemStore((s) => s.twinVoiceProfile);
   const isLoading = useSystemStore((s) => s.twinVoiceLoading);
@@ -90,12 +92,12 @@ export default function VoicePage() {
 
   const handleDelete = async () => {
     if (!activeTwinId) return;
-    if (!confirm('Remove voice configuration? The twin will have no voice until reconfigured.')) return;
+    if (!confirm(t.voice.removeVoiceConfirm)) return;
     await deleteVoiceProfile(activeTwinId);
   };
 
   if (!activeTwinId) {
-    return <TwinEmptyState icon={Volume2} title="Voice" />;
+    return <TwinEmptyState icon={Volume2} title={t.voice.title} />;
   }
 
   return (
@@ -103,22 +105,22 @@ export default function VoicePage() {
       <ContentHeader
         icon={<Volume2 className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Voice"
-        subtitle="Configure the twin's voice for speech synthesis via ElevenLabs."
+        title={t.voice.title}
+        subtitle={t.voice.subtitle}
       />
 
       <ContentBody centered>
         {isLoading ? (
-          <p className="typo-body text-foreground text-center py-12">Loading...</p>
+          <p className="typo-body text-foreground text-center py-12">{t.voice.loading}</p>
         ) : (
           <div className="max-w-2xl mx-auto space-y-6 pb-8">
             {/* Voice ID + Credential */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="space-y-1.5">
-                <span className="typo-caption text-foreground font-medium">Voice ID</span>
+                <span className="typo-caption text-foreground font-medium">{t.voice.voiceId}</span>
                 <input
                   type="text"
-                  placeholder="Paste from ElevenLabs dashboard"
+                  placeholder={t.voice.voiceIdPlaceholder}
                   value={voiceId}
                   onChange={(e) => { setVoiceId(e.target.value); markDirty(); }}
                   className={`${INPUT_FIELD} font-mono`}
@@ -130,27 +132,25 @@ export default function VoicePage() {
                   className="inline-flex items-center gap-1 typo-caption text-violet-400 hover:text-violet-300 mt-0.5"
                 >
                   <ExternalLink className="w-3 h-3" />
-                  Find voices on ElevenLabs
+                  {t.voice.findVoices}
                 </a>
               </label>
               <label className="space-y-1.5">
-                <span className="typo-caption text-foreground font-medium">Credential ID</span>
+                <span className="typo-caption text-foreground font-medium">{t.voice.credentialId}</span>
                 <input
                   type="text"
-                  placeholder="ElevenLabs API key credential (optional)"
+                  placeholder={t.voice.credentialIdPlaceholder}
                   value={credentialId}
                   onChange={(e) => { setCredentialId(e.target.value); markDirty(); }}
                   className={`${INPUT_FIELD} font-mono`}
                 />
-                <p className="typo-caption text-muted-foreground">
-                  From the credential vault. Required for speech synthesis.
-                </p>
+                <p className="typo-caption text-muted-foreground">{t.voice.credentialIdHint}</p>
               </label>
             </div>
 
             {/* Model selector */}
             <label className="space-y-1.5 block">
-              <span className="typo-caption text-foreground font-medium">Model</span>
+              <span className="typo-caption text-foreground font-medium">{t.voice.model}</span>
               <select
                 value={modelId}
                 onChange={(e) => { setModelId(e.target.value); markDirty(); }}
@@ -166,7 +166,7 @@ export default function VoicePage() {
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="typo-caption text-foreground font-medium">Stability</span>
+                  <span className="typo-caption text-foreground font-medium">{t.voice.stability}</span>
                   <span className="typo-caption text-muted-foreground">{stability.toFixed(2)}</span>
                 </div>
                 <input
@@ -177,14 +177,14 @@ export default function VoicePage() {
                   className="w-full accent-violet-400"
                 />
                 <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
-                  <span>More expressive</span>
-                  <span>More consistent</span>
+                  <span>{t.voice.moreExpressive}</span>
+                  <span>{t.voice.moreConsistent}</span>
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="typo-caption text-foreground font-medium">Similarity Boost</span>
+                  <span className="typo-caption text-foreground font-medium">{t.voice.similarityBoost}</span>
                   <span className="typo-caption text-muted-foreground">{similarityBoost.toFixed(2)}</span>
                 </div>
                 <input
@@ -195,14 +195,14 @@ export default function VoicePage() {
                   className="w-full accent-violet-400"
                 />
                 <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
-                  <span>More natural</span>
-                  <span>Closer to original</span>
+                  <span>{t.voice.moreNatural}</span>
+                  <span>{t.voice.closerToOriginal}</span>
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="typo-caption text-foreground font-medium">Style</span>
+                  <span className="typo-caption text-foreground font-medium">{t.voice.style}</span>
                   <span className="typo-caption text-muted-foreground">{style.toFixed(2)}</span>
                 </div>
                 <input
@@ -213,8 +213,8 @@ export default function VoicePage() {
                   className="w-full accent-violet-400"
                 />
                 <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
-                  <span>Neutral</span>
-                  <span>Exaggerated</span>
+                  <span>{t.voice.neutral}</span>
+                  <span>{t.voice.exaggerated}</span>
                 </div>
               </div>
             </div>
@@ -224,10 +224,11 @@ export default function VoicePage() {
               {voiceProfile ? (
                 <button
                   onClick={handleDelete}
+                  aria-label={t.voice.removeVoice}
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Remove voice
+                  {t.voice.removeVoice}
                 </button>
               ) : (
                 <span />
@@ -235,7 +236,7 @@ export default function VoicePage() {
               {(dirty || !voiceProfile) && (
                 <Button onClick={handleSave} disabled={saving || !voiceId.trim()} size="sm">
                   <Save className="w-4 h-4 mr-1.5" />
-                  {saving ? 'Saving...' : voiceProfile ? 'Save' : 'Configure Voice'}
+                  {saving ? t.voice.saving : voiceProfile ? t.voice.save : t.voice.configureVoice}
                 </Button>
               )}
             </div>

@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Brain tab — the twin's memory system.
@@ -23,6 +24,7 @@ interface KbInfo {
 }
 
 export default function BrainPage() {
+  const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const bindTwinKnowledgeBase = useSystemStore((s) => s.bindTwinKnowledgeBase);
@@ -109,15 +111,15 @@ export default function BrainPage() {
     lastLoadedKbId.current = null;
   };
 
-  if (!activeTwinId) return <TwinEmptyState icon={Brain} title="Brain" />;
+  if (!activeTwinId) return <TwinEmptyState icon={Brain} title={t.brain.title} />;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<Brain className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title={`Brain — ${activeTwin?.name ?? 'Twin'}`}
-        subtitle="The twin's memory has two layers: an Obsidian vault for human-readable notes and a knowledge base for semantic recall."
+        title={`${t.brain.title} — ${activeTwin?.name ?? ''}`}
+        subtitle={t.brain.subtitle}
       />
 
       <ContentBody>
@@ -127,61 +129,56 @@ export default function BrainPage() {
           <div className="p-4 rounded-card border border-violet-500/15 bg-violet-500/5">
             <div className="flex items-center gap-2 mb-2">
               <FolderTree className="w-4 h-4 text-violet-400" />
-              <span className="typo-heading text-foreground">Obsidian Vault</span>
-              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/30 text-muted-foreground">Optional</span>
+              <span className="typo-heading text-foreground">{t.brain.obsidianVault}</span>
+              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/30 text-muted-foreground">{t.brain.optional}</span>
             </div>
             <p className="typo-body text-foreground mb-2">
-              Human-readable notes you can browse and edit directly in Obsidian.
-              The twin reads from <code className="typo-code">{activeTwin?.obsidian_subpath}</code>.
+              {t.brain.obsidianDescription}{' '}
+              {t.brain.obsidianTwinReadsFrom} <code className="typo-code">{activeTwin?.obsidian_subpath}</code>.
             </p>
-            <p className="typo-caption text-muted-foreground">
-              Connect your vault in the Obsidian Brain plugin. The subfolder path is set in the Identity tab.
-              Not required — the twin works with just a knowledge base.
-            </p>
+            <p className="typo-caption text-muted-foreground">{t.brain.obsidianHint}</p>
           </div>
 
           {/* ── Layer 2: Knowledge Base ───────────────────────────────── */}
           <div className="p-4 rounded-card border border-primary/10 bg-card/40">
             <div className="flex items-center gap-2 mb-1">
               <Database className="w-4 h-4 text-violet-400" />
-              <span className="typo-heading text-foreground">Knowledge Base</span>
-              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">Required for recall</span>
+              <span className="typo-heading text-foreground">{t.brain.knowledgeBase}</span>
+              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{t.brain.requiredForRecall}</span>
             </div>
-            <p className="typo-caption text-muted-foreground mb-3">
-              A vector-indexed store that powers semantic search. When a persona calls <code className="typo-code">recall_memory</code>, it searches this KB.
-            </p>
+            <p className="typo-caption text-muted-foreground mb-3">{t.brain.kbDescription}</p>
 
             {kbLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
-                <span className="typo-body text-foreground ml-3">Loading knowledge base...</span>
+                <span className="typo-body text-foreground ml-3">{t.brain.loadingKb}</span>
               </div>
             ) : kbInfo ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="typo-body text-foreground font-medium">{kbInfo.name}</p>
-                    <p className="typo-caption text-foreground mt-0.5">{kbInfo.document_count} documents, {kbInfo.chunk_count} chunks</p>
+                    <p className="typo-caption text-foreground mt-0.5">{kbInfo.document_count} {t.brain.documents}, {kbInfo.chunk_count} {t.brain.chunks}</p>
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${
                     kbInfo.status === 'ready'
                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
                       : 'bg-amber-500/15 text-amber-400 border-amber-500/25'
-                  }`}>{kbInfo.status}</span>
+                  }`} role="status" aria-label={`Knowledge base status: ${kbInfo.status}`}>{kbInfo.status}</span>
                 </div>
                 <div className="flex items-center gap-2 pt-1">
-                  <Button onClick={refreshKb} variant="ghost" size="sm"><RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh</Button>
-                  <Button onClick={handleUnbind} variant="ghost" size="sm"><Unlink className="w-3.5 h-3.5 mr-1.5" />Unbind</Button>
+                  <Button onClick={refreshKb} variant="ghost" size="sm" aria-label={t.brain.refresh}><RefreshCw className="w-3.5 h-3.5 mr-1.5" />{t.brain.refresh}</Button>
+                  <Button onClick={handleUnbind} variant="ghost" size="sm" aria-label={t.brain.unbind}><Unlink className="w-3.5 h-3.5 mr-1.5" />{t.brain.unbind}</Button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Button onClick={handleCreateKb} disabled={creating} size="sm">
-                    <Database className="w-3.5 h-3.5 mr-1.5" />{creating ? 'Creating...' : 'Create New KB'}
+                    <Database className="w-3.5 h-3.5 mr-1.5" />{creating ? t.brain.creatingKb : t.brain.createNewKb}
                   </Button>
                   <Button onClick={() => { setPickMode(true); loadAllKbs(); }} variant="secondary" size="sm">
-                    <Link className="w-3.5 h-3.5 mr-1.5" />Link Existing
+                    <Link className="w-3.5 h-3.5 mr-1.5" />{t.brain.linkExisting}
                   </Button>
                 </div>
                 {createError && (
@@ -192,16 +189,16 @@ export default function BrainPage() {
                 )}
                 {pickMode && (
                   <div className="p-3 rounded-interactive border border-primary/15 bg-background space-y-2">
-                    <p className="typo-caption text-foreground font-medium">Select an existing knowledge base:</p>
+                    <p className="typo-caption text-foreground font-medium">{t.brain.selectExistingKb}</p>
                     {allKbs.length === 0 ? (
-                      <p className="typo-caption text-muted-foreground">No knowledge bases found. Create one from Credentials or use the button above.</p>
+                      <p className="typo-caption text-muted-foreground">{t.brain.noKbsFound}</p>
                     ) : allKbs.map((kb) => (
                       <button key={kb.id} onClick={() => handleBind(kb.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-interactive hover:bg-secondary/40 transition-colors text-left">
                         <span className="typo-body text-foreground">{kb.name}</span>
-                        <span className="typo-caption text-muted-foreground">{kb.document_count} docs</span>
+                        <span className="typo-caption text-muted-foreground">{kb.document_count} {t.brain.docs}</span>
                       </button>
                     ))}
-                    <button onClick={() => setPickMode(false)} className="typo-caption text-muted-foreground hover:text-foreground mt-1">Cancel</button>
+                    <button onClick={() => setPickMode(false)} className="typo-caption text-muted-foreground hover:text-foreground mt-1">{t.profiles.cancel}</button>
                   </div>
                 )}
               </div>
@@ -210,13 +207,13 @@ export default function BrainPage() {
 
           {/* ── How the brain grows ──────────────────────────────────── */}
           <div className="p-4 rounded-card border border-primary/5 bg-card/20">
-            <p className="typo-caption text-foreground font-medium mb-2">How the brain grows over time</p>
+            <p className="typo-caption text-foreground font-medium mb-2">{t.brain.howBrainGrows}</p>
             <ol className="typo-caption text-foreground space-y-1 list-decimal list-inside">
-              <li>Personas call <code className="typo-code">record_interaction</code> after each conversation</li>
-              <li>A pending memory is created for your review in the Knowledge tab</li>
-              <li>Approved memories get indexed into the knowledge base</li>
-              <li>Next time, <code className="typo-code">recall_memory</code> finds relevant context via semantic search</li>
-              <li>Obsidian notes (if connected) can be manually ingested too</li>
+              <li>{t.brain.brainStep1}</li>
+              <li>{t.brain.brainStep2}</li>
+              <li>{t.brain.brainStep3}</li>
+              <li>{t.brain.brainStep4}</li>
+              <li>{t.brain.brainStep5}</li>
             </ol>
           </div>
         </div>

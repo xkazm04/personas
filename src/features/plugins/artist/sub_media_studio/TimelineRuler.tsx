@@ -1,18 +1,9 @@
 import { useMemo } from 'react';
+import { formatRulerTime } from '../utils/format';
 
 interface TimelineRulerProps {
   zoom: number;       // pixels per second
   duration: number;   // total composition duration in seconds
-}
-
-/** Format seconds as M:SS or M:SS.s */
-function formatRulerTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  if (s === Math.floor(s)) {
-    return `${m}:${String(Math.floor(s)).padStart(2, '0')}`;
-  }
-  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
 }
 
 export default function TimelineRuler({ zoom, duration }: TimelineRulerProps) {

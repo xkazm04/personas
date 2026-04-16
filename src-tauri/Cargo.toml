@@ -18,6 +18,9 @@ dotenvy = "0.15"
 
 [features]
 default = []
+# Core desktop feature — all UI/desktop plugins, no heavy ML/P2P.
+# Use this for fast local builds (~5 min faster than desktop-full).
+# All #[cfg(feature = "desktop")] gates pass with this feature.
 desktop = [
     "tauri/tray-icon",
     "dep:arboard",
@@ -29,9 +32,9 @@ desktop = [
     "dep:tauri-plugin-window-state",
     "dep:tauri-plugin-updater",
     "dep:tauri-plugin-single-instance",
-    "ml",
-    "p2p",
 ]
+# Full desktop = core + ML + P2P. Used by CI and production builds.
+desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
 ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
@@ -43,14 +46,14 @@ test-automation = ["dep:xcap", "dep:image"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
-# Currently implies `desktop` because the lib has pre-existing
+# Currently implies `desktop-full` because the lib has pre-existing
 # `#[cfg(feature = "desktop")]` gaps in engine/enclave.rs,
 # engine/healthcheck.rs, commands/ocr/mod.rs, and commands/credentials/
 # auth_detect.rs — non-desktop builds fail to link. Fixing those is
 # tracked as Phase 1 cleanup; the daemon binary doesn't actually use
 # the desktop-specific plugins at runtime.
 # See .planning/research/2026-04-08-cloud-headless-personas.md.
-daemon = ["desktop"]
+daemon = ["desktop-full"]
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }

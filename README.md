@@ -267,8 +267,11 @@ npm install
 # 3. (optional) Preflight check only
 .\scripts\desktop-dev.ps1 -CheckOnly
 
-# 4. Build for production (all features)
-npm run tauri build
+# 4. Build for production (all features — ~15 min)
+npm run tauri:build
+
+# 5. Build lite installer (no ML/P2P — ~10 min, NSIS only)
+npm run tauri:build:lite
 ```
 
 ### Developer run (recommended)

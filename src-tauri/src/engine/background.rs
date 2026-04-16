@@ -453,7 +453,9 @@ pub fn start_loops(
                 ambient_ctx: ambient_ctx.clone(),
                 app: app.clone(),
                 user_db: app_state.user_db.clone(),
+                #[cfg(feature = "ml")]
                 embedding_manager: app_state.embedding_manager.clone(),
+                #[cfg(feature = "ml")]
                 vector_store: app_state.vector_store.clone(),
                 last_notification: Arc::new(tokio::sync::Mutex::new(None)),
                 watcher_enabled: app_state.clipboard_watcher_enabled.clone(),

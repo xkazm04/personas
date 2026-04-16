@@ -33,8 +33,11 @@ mod template_feedback;
 mod credential_recipe;
 mod saved_views;
 mod dev_tools;
+#[cfg(feature = "p2p")]
 mod identity;
+#[cfg(feature = "p2p")]
 mod exposure;
+#[cfg(feature = "ml")]
 mod knowledge_base;
 pub mod webhook_log;
 mod chat;
@@ -45,6 +48,7 @@ mod oauth_token_metric;
 mod output_assertion;
 mod genome;
 mod evolution;
+#[cfg(feature = "p2p")]
 mod signing;
 mod ocr;
 mod artist;
@@ -91,8 +95,11 @@ pub use template_feedback::*;
 pub use credential_recipe::*;
 pub use saved_views::*;
 pub use dev_tools::*;
+#[cfg(feature = "p2p")]
 pub use identity::*;
+#[cfg(feature = "p2p")]
 pub use exposure::*;
+#[cfg(feature = "ml")]
 pub use knowledge_base::*;
 pub use chat::*;
 pub use build_session::*;
@@ -102,6 +109,7 @@ pub use oauth_token_metric::*;
 pub use output_assertion::*;
 pub use genome::*;
 pub use evolution::*;
+#[cfg(feature = "p2p")]
 pub use signing::*;
 pub use ocr::*;
 pub use artist::*;

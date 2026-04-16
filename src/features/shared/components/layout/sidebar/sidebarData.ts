@@ -3,9 +3,10 @@ import {
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Globe, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
-  FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
+  FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy,
+  User, Mic, Volume2, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -105,6 +106,17 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'skills', label: 'Skills', icon: BookOpen },
 ];
 
+export const twinItems: SubNavItem[] = [
+  { id: 'profiles', label: 'Profiles', icon: Sparkles },
+  { id: 'identity', label: 'Identity', icon: User },
+  { id: 'tone', label: 'Tone', icon: Mic },
+  { id: 'brain', label: 'Brain', icon: Brain },
+  { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
+  { id: 'voice', label: 'Voice', icon: Volume2 },
+  { id: 'channels', label: 'Channels', icon: Radio },
+  { id: 'training', label: 'Training', icon: GraduationCap },
+];
+
 export const researchLabItems: SubNavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
@@ -113,6 +125,7 @@ export const researchLabItems: SubNavItem[] = [
   { id: 'experiments', label: 'Experiments', icon: FlaskConical },
   { id: 'findings', label: 'Findings', icon: Cpu },
   { id: 'reports', label: 'Reports', icon: Archive },
+  { id: 'graph', label: 'Graph', icon: Waypoints },
 ];
 
 export const cloudItems: SubNavItem[] = [

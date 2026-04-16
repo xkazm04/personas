@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { X, RotateCw, Grid3x3, Box } from 'lucide-react';
+import { X, RotateCw, Grid3x3, Box, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useModelViewer } from '../hooks/useModelViewer';
+import { formatFileSize } from '../utils/format';
 import AssetCard from './AssetCard';
+
+// Lazy-load three.js — the ~500KB gzipped bundle only matters when a user
+// actually opens a .glb/.gltf model for the first time.
+const ThreeViewer = lazy(() => import('./ThreeViewer'));
 
 interface Gallery3DProps {
   assets: ArtistAsset[];
@@ -97,22 +102,31 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             </div>
 
             {/* Viewer area */}
-            <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-zinc-900 to-zinc-950">
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-zinc-900 to-zinc-950 relative">
               {isViewable ? (
-                <ThreeViewer
-                  filePath={selectedAsset.filePath}
-                  wireframe={wireframe}
-                  autoRotate={autoRotate}
-                />
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
+                      <span className="text-[11px]">Loading viewer…</span>
+                    </div>
+                  }
+                >
+                  <ThreeViewer
+                    filePath={selectedAsset.filePath}
+                    wireframe={wireframe}
+                    autoRotate={autoRotate}
+                    lightingPreset={lightingPreset}
+                  />
+                </Suspense>
               ) : (
                 <div className="text-center space-y-3">
                   <Box className="w-16 h-16 text-rose-400 mx-auto" />
                   <p className="typo-heading text-foreground">
-                    Preview not available for .{selectedAsset.fileName.split('.').pop()} files
+                    {t.plugins.artist.preview_not_available}
                   </p>
                   <p className="typo-body text-muted-foreground max-w-sm">
-                    Only .glb and .gltf files can be previewed inline.
-                    Export from Blender as glTF for best compatibility.
+                    {t.plugins.artist.preview_glb_hint}
                   </p>
                 </div>
               )}
@@ -122,7 +136,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-[11px] text-muted-foreground">
               <span>{formatFileSize(selectedAsset.fileSize)}</span>
               <span>{selectedAsset.createdAt}</span>
-              {selectedAsset.tags && <span>Tags: {selectedAsset.tags}</span>}
+              {selectedAsset.tags && <span>{t.plugins.artist.tags_label} {selectedAsset.tags}</span>}
             </div>
           </div>
         </div>
@@ -131,47 +145,3 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
   );
 }
 
-// ---------------------------------------------------------------------------
-// Three.js Viewer placeholder — will use @react-three/fiber when installed
-// ---------------------------------------------------------------------------
-
-function ThreeViewer({
-  filePath,
-  wireframe,
-  autoRotate,
-}: {
-  filePath: string;
-  wireframe: boolean;
-  autoRotate: boolean;
-}) {
-  // Three.js integration requires @react-three/fiber and @react-three/drei.
-  // This placeholder renders a message until those deps are installed.
-  return (
-    <div className="text-center space-y-4 p-8">
-      <div className="w-24 h-24 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/15 flex items-center justify-center">
-        <Box className="w-12 h-12 text-rose-400" />
-      </div>
-      <div className="space-y-2">
-        <p className="typo-heading text-foreground">3D Viewer</p>
-        <p className="typo-body text-muted-foreground max-w-md">
-          Install <code className="text-[11px] bg-secondary/40 px-1.5 py-0.5 rounded">@react-three/fiber</code> and{' '}
-          <code className="text-[11px] bg-secondary/40 px-1.5 py-0.5 rounded">@react-three/drei</code> to
-          enable interactive 3D previews with orbit controls.
-        </p>
-        <p className="text-[11px] text-muted-foreground font-mono break-all mt-2">
-          {filePath}
-        </p>
-        <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-muted-foreground">
-          {wireframe && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">Wireframe</span>}
-          {autoRotate && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">Auto-rotate</span>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}

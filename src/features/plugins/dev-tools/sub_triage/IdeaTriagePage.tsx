@@ -8,6 +8,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor } from '../constants/ideaColors';
 import { TriageRulesPanel } from './TriageRulesPanel';
@@ -55,6 +56,8 @@ function SwipeCard({
   stackIndex: number;
   onSwipe: (direction: 'left' | 'right') => void;
 }) {
+  const { t } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
   const rejectOpacity = useTransform(x, [-SWIPE_THRESHOLD, -30, 0], [1, 0, 0]);
@@ -107,13 +110,13 @@ function SwipeCard({
             style={{ opacity: rejectOpacity }}
             className="absolute top-6 left-6 z-20 px-4 py-2 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg uppercase -rotate-12"
           >
-            Reject
+            {dt.swipe_reject}
           </motion.div>
           <motion.div
             style={{ opacity: acceptOpacity }}
             className="absolute top-6 right-6 z-20 px-4 py-2 rounded-xl border-2 border-emerald-500 text-emerald-500 font-bold text-lg uppercase rotate-12"
           >
-            Accept
+            {dt.swipe_accept}
           </motion.div>
         </>
       )}
@@ -145,7 +148,7 @@ function SwipeCard({
         {/* Reasoning */}
         {idea.reasoning && (
           <div className="bg-primary/5 rounded-xl p-3">
-            <p className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">Reasoning</p>
+            <p className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">{dt.reasoning_label}</p>
             <p className="text-md text-muted-foreground/60 leading-relaxed">{idea.reasoning}</p>
           </div>
         )}
@@ -159,6 +162,8 @@ function SwipeCard({
 // ---------------------------------------------------------------------------
 
 export default function IdeaTriagePage() {
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const { triageIdea, deleteIdea } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeIdeas = useSystemStore((s) => s.ideas);
@@ -257,24 +262,24 @@ export default function IdeaTriagePage() {
       <ContentHeader
         icon={<ArrowLeftRight className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Idea Triage"
-        subtitle="Evaluate and prioritize generated ideas"
+        title={dt.triage_title}
+        subtitle={dt.triage_subtitle}
         actions={
           <div className="flex items-center gap-2">
             <LifecycleProjectPicker />
             <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-              {acceptedCount} accepted
+              {tx(dt.accepted_badge, { count: acceptedCount })}
             </span>
             <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
-              {rejectedCount} rejected
+              {tx(dt.rejected_badge, { count: rejectedCount })}
             </span>
             <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
-              {pendingCount} pending
+              {tx(dt.pending_badge, { count: pendingCount })}
             </span>
             <button
               onClick={() => setShowShortcuts((p) => !p)}
               className="ml-1 w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
-              title="Keyboard shortcuts (?)"
+              title={dt.shortcuts_open_title}
             >
               <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
             </button>
@@ -294,7 +299,7 @@ export default function IdeaTriagePage() {
           {/* Left sidebar: category + scan type filters + effort/risk filter */}
           <div className="w-52 flex-shrink-0 space-y-1">
             <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-              Category
+              {dt.sidebar_category}
             </h3>
             <button
               onClick={() => { setFilterCategory('all'); setFilterScanType(null); }}
@@ -304,7 +309,7 @@ export default function IdeaTriagePage() {
                   : 'text-muted-foreground/60 hover:bg-primary/5'
               }`}
             >
-              All ({pendingCount})
+              {tx(dt.sidebar_all, { count: pendingCount })}
             </button>
             {AGENT_CATEGORIES.map((cat) => {
               const count = ideas.filter((i) => i.status === 'pending' && i.category === cat.key).length;
@@ -328,7 +333,7 @@ export default function IdeaTriagePage() {
 
             {/* Scan type filter */}
             <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mt-3 pt-3 border-t border-border/15 mb-2">
-              Scan Type
+              {dt.sidebar_scan_type}
             </h3>
             <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
               {SCAN_AGENTS.filter((a) => {
@@ -371,8 +376,8 @@ export default function IdeaTriagePage() {
             {totalCount > 0 && (
               <div className="w-full max-w-lg mb-6">
                 <div className="flex items-center justify-between text-md text-muted-foreground/50 mb-1.5">
-                  <span>{pendingIdeas.length} remaining</span>
-                  <span>{totalCount - pendingCount} / {totalCount} reviewed</span>
+                  <span>{tx(dt.remaining_count, { count: pendingIdeas.length })}</span>
+                  <span>{tx(dt.reviewed_count, { done: totalCount - pendingCount, total: totalCount })}</span>
                 </div>
                 <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
                   <div
@@ -390,12 +395,12 @@ export default function IdeaTriagePage() {
                   <ArrowLeftRight className="w-7 h-7 text-amber-400/50" />
                 </div>
                 <p className="text-md text-muted-foreground/60 mb-1">
-                  {totalCount === 0 ? 'No ideas to triage' : 'All ideas reviewed!'}
+                  {totalCount === 0 ? dt.empty_no_ideas : dt.empty_all_reviewed}
                 </p>
                 <p className="text-md text-muted-foreground/40">
                   {totalCount === 0
-                    ? 'Run the Idea Scanner first to generate ideas.'
-                    : `${acceptedCount} accepted, ${rejectedCount} rejected`}
+                    ? dt.empty_no_ideas_hint
+                    : tx(dt.empty_all_reviewed_summary, { accepted: acceptedCount, rejected: rejectedCount })}
                 </p>
               </div>
             ) : (
@@ -422,7 +427,7 @@ export default function IdeaTriagePage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleSwipe('left')}
                   className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-colors"
-                  title="Reject (Left Arrow / A)"
+                  title={dt.shortcuts_btn_reject_title}
                 >
                   <ThumbsDown className="w-5 h-5 text-red-400" />
                 </motion.button>
@@ -432,7 +437,7 @@ export default function IdeaTriagePage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={handleDelete}
                   className="w-10 h-10 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center hover:bg-primary/15 transition-colors"
-                  title="Delete"
+                  title={dt.shortcuts_btn_delete_title}
                 >
                   <Trash2 className="w-4 h-4 text-muted-foreground/60" />
                 </motion.button>
@@ -442,7 +447,7 @@ export default function IdeaTriagePage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleSwipe('right')}
                   className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 transition-colors"
-                  title="Accept (Right Arrow / Z)"
+                  title={dt.shortcuts_btn_accept_title}
                 >
                   <ThumbsUp className="w-5 h-5 text-emerald-400" />
                 </motion.button>
@@ -453,10 +458,10 @@ export default function IdeaTriagePage() {
             {pendingIdeas.length > 0 && (
               <p className="text-md text-muted-foreground/30 mt-3 flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <ChevronLeft className="w-3 h-3" /> / A = Reject
+                  <ChevronLeft className="w-3 h-3" /> / A = {dt.hint_reject}
                 </span>
                 <span className="flex items-center gap-1">
-                  <ChevronRight className="w-3 h-3" /> / Z = Accept
+                  <ChevronRight className="w-3 h-3" /> / Z = {dt.hint_accept}
                 </span>
               </p>
             )}
@@ -481,13 +486,13 @@ export default function IdeaTriagePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-elevation-4 p-6"
             >
-              <h3 className="text-md font-semibold text-foreground/90 mb-4">Keyboard Shortcuts</h3>
+              <h3 className="text-md font-semibold text-foreground/90 mb-4">{dt.shortcuts_title}</h3>
               <div className="space-y-2.5">
                 {[
-                  { keys: ['<-', 'A'], action: 'Reject idea' },
-                  { keys: ['->', 'Z'], action: 'Accept idea' },
-                  { keys: ['?'], action: 'Toggle this overlay' },
-                  { keys: ['Esc'], action: 'Close overlay' },
+                  { keys: ['<-', 'A'], action: dt.shortcuts_reject },
+                  { keys: ['->', 'Z'], action: dt.shortcuts_accept },
+                  { keys: ['?'], action: dt.shortcuts_toggle },
+                  { keys: ['Esc'], action: dt.shortcuts_close },
                 ].map((shortcut) => (
                   <div key={shortcut.action} className="flex items-center justify-between">
                     <span className="text-md text-muted-foreground/70">{shortcut.action}</span>
@@ -508,7 +513,7 @@ export default function IdeaTriagePage() {
                 onClick={() => setShowShortcuts(false)}
                 className="mt-5 w-full text-center text-md text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
               >
-                Press ? or Esc to close
+                {dt.shortcuts_dismiss_hint}
               </button>
             </motion.div>
           </motion.div>

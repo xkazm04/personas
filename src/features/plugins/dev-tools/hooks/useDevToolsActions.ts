@@ -12,41 +12,52 @@ export type { PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry, TestRunRe
  * methods that require it, matching the zero-arg signatures the UI expects.
  */
 export function useDevToolsActions() {
-  const store = useSystemStore.getState();
-  const pid = () => store.activeProjectId ?? '';
+  // Read the store lazily inside each action so callers always see the latest
+  // state at call time. Reading `useSystemStore.getState()` once at hook body
+  // and closing over that snapshot is a silent bug — the component calling
+  // this hook doesn't necessarily subscribe to `ideas`/`tasks`, so without a
+  // re-render the closed-over `store` stays frozen at first mount and
+  // `batchFromAcceptedIdeas` / `startBatch` / `cancelAllTasks` would operate
+  // on empty arrays after any backend-driven state change.
+  const s = () => useSystemStore.getState();
+  const pid = () => s().activeProjectId ?? '';
 
   return {
     // Context Map -- convenience wrappers that resolve projectId
     fetchContextMap: async () => {
       const id = pid();
       if (!id) return;
+      const store = s();
       await Promise.all([store.fetchContextGroups(id), store.fetchContexts(id)]);
     },
     createContextGroup: (data: { name: string; color: string }) =>
-      store.createContextGroup(pid(), data.name, data.color),
+      s().createContextGroup(pid(), data.name, data.color),
     scanCodebase: (rootPath?: string) => {
       const id = pid();
       if (!id) return Promise.resolve();
-      return store.scanCodebase(id, rootPath ?? '.');
+      return s().scanCodebase(id, rootPath ?? '.');
     },
 
     // Scanner
     runScan: (agentKeys: string[], contextId?: string) => {
+      const store = s();
       store.setScanAgentSelection(agentKeys);
       return store.runScan(pid(), contextId);
     },
 
     // Triage
     triageIdea: async (id: string, decision: 'accepted' | 'rejected') => {
+      const store = s();
       if (decision === 'accepted') await store.acceptIdea(id);
       else await store.rejectIdea(id);
     },
-    deleteIdea: store.deleteIdea,
+    deleteIdea: (id: string) => s().deleteIdea(id),
 
     // Tasks
     createTask: (data: { title: string; description?: string; goalId?: string; depth?: string }) =>
-      store.createTask(data.title, pid() || undefined, data.description, undefined, data.goalId, data.depth),
+      s().createTask(data.title, pid() || undefined, data.description, undefined, data.goalId, data.depth),
     batchFromAcceptedIdeas: async () => {
+      const store = s();
       const accepted = store.ideas.filter((i) => i.status === 'accepted');
       if (accepted.length === 0) return;
       await store.batchCreateTasks(
@@ -55,16 +66,15 @@ export function useDevToolsActions() {
       );
     },
     startBatch: async () => {
-      // Sort pending/queued tasks by effort ascending (quick wins first)
+      const store = s();
       const pending = store.tasks.filter((t) => t.status === 'queued' || t.status === 'pending');
       if (pending.length === 0) return;
-      const sorted = [...pending]; // Keep creation order (effort is on ideas, not tasks)
-      await store.startBatch(sorted.map((t) => t.id));
+      await store.startBatch(pending.map((t) => t.id));
     },
     cancelAllTasks: async () => {
+      const store = s();
       const active = store.tasks.filter((t) => t.status === 'running');
       await Promise.all(active.map((t) => devApi.cancelTaskExecution(t.id)));
-      // Also cancel queued tasks by updating their status
       const queued = store.tasks.filter((t) => t.status === 'queued' || t.status === 'pending');
       await Promise.all(queued.map((t) => store.cancelTask(t.id)));
     },

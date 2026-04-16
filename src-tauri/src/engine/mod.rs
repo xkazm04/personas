@@ -6,7 +6,9 @@ pub mod event_registry;
 pub mod config_merge;
 #[cfg(feature = "p2p")]
 pub mod identity;
+#[cfg(feature = "p2p")]
 pub mod bundle;
+#[cfg(feature = "p2p")]
 pub mod enclave;
 #[cfg(feature = "p2p")]
 pub mod p2p;
@@ -107,6 +109,7 @@ pub mod api_proxy;
 pub mod discovery;
 pub mod ssrf_safe_dns;
 pub mod api_definition;
+#[cfg(feature = "p2p")]
 pub mod share_link;
 pub mod mcp_tools;
 pub mod automation_runner;

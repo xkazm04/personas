@@ -130,6 +130,8 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   clockify:                        'personal',
   toggl:                           'personal',
   harvest:                         'personal',
+  redash:                          'personal',
+  metabase:                        'personal',
 
   elevenlabs:                      'personal',
   google_gemini:                   'personal',

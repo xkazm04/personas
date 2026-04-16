@@ -9,8 +9,10 @@ import { useCreativeConnectors } from '../hooks/useCreativeConnectors';
 import { useSystemStore } from '@/stores/systemStore';
 import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
+import CreativeSessionHistory from './CreativeSessionHistory';
 
 export default function CreativeStudioPanel() {
+  const { t } = useTranslation();
   const { status, checking, installing, check, installMcp } = useBlenderMcp();
   const connectors = useCreativeConnectors();
   const blenderMcpState = useSystemStore((s) => s.blenderMcpState);
@@ -21,10 +23,10 @@ export default function CreativeStudioPanel() {
       <div className="space-y-1">
         <h2 className="typo-heading text-foreground flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-rose-400" />
-          Creative Studio
+          {t.plugins.artist.creative_studio_title}
         </h2>
         <p className="typo-body text-muted-foreground">
-          Generate 3D models with Blender MCP, create images with Leonardo AI, and analyze with Gemini — all from one session.
+          {t.plugins.artist.creative_studio_desc}
         </p>
       </div>
 
@@ -37,6 +39,9 @@ export default function CreativeStudioPanel() {
         onInstall={installMcp}
         connectors={connectors}
       />
+
+      {/* Past sessions */}
+      <CreativeSessionHistory />
 
       {/* Creative Session Chat */}
       <CreativeSessionChat
@@ -114,7 +119,7 @@ function EnvironmentStatus({
               {checking && !status ? (
                 <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  Checking…
+                  {t.plugins.artist.checking_env}
                 </span>
               ) : status ? (
                 <>
@@ -124,13 +129,13 @@ function EnvironmentStatus({
                     <StatusDot key={c.id} ok={c.healthy} />
                   ))}
                   {allReady ? (
-                    <span className="text-[10px] text-emerald-400 ml-1">Ready</span>
+                    <span className="text-[10px] text-emerald-400 ml-1">{t.plugins.artist.ready}</span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/60 ml-1">Partial</span>
+                    <span className="text-[10px] text-muted-foreground/60 ml-1">{t.plugins.artist.status_partial}</span>
                   )}
                 </>
               ) : (
-                <span className="text-[10px] text-muted-foreground/60">Not checked</span>
+                <span className="text-[10px] text-muted-foreground/60">{t.plugins.artist.status_not_checked}</span>
               )}
             </div>
           )}
@@ -142,7 +147,7 @@ function EnvironmentStatus({
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-secondary/40 hover:bg-secondary/60 text-muted-foreground transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
-            Refresh
+            {t.plugins.artist.refresh}
           </button>
           <span className="text-muted-foreground text-md">{expanded ? '▲' : '▼'}</span>
         </div>
@@ -155,20 +160,20 @@ function EnvironmentStatus({
           {checking && !status ? (
             <div className="flex items-center gap-2 text-muted-foreground typo-body">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              Checking environment...
+              {t.plugins.artist.checking_env}
             </div>
           ) : status ? (
             <div className="space-y-2">
               <StatusRow
-                label="Blender"
+                label={t.plugins.artist.blender_label}
                 ok={status.installed}
-                detail={status.blenderVersion ?? 'Not found'}
-                hint={!status.installed ? 'Install from blender.org' : undefined}
+                detail={status.blenderVersion ?? t.plugins.artist.not_found}
+                hint={!status.installed ? t.plugins.artist.install_from_blender : undefined}
               />
               <StatusRow
-                label="Blender MCP"
+                label={t.plugins.artist.blender_mcp_label}
                 ok={status.mcpInstalled}
-                detail={status.mcpInstalled ? 'Installed' : 'Not installed'}
+                detail={status.mcpInstalled ? t.plugins.artist.installed : t.plugins.artist.not_installed}
                 action={!status.mcpInstalled && status.installed ? (
                   <button
                     onClick={onInstall}
@@ -176,7 +181,7 @@ function EnvironmentStatus({
                     className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
                   >
                     <Download className={`w-3 h-3 ${installing ? 'animate-bounce' : ''}`} />
-                    {installing ? 'Installing...' : 'Install'}
+                    {installing ? t.plugins.artist.installing : t.plugins.artist.install}
                   </button>
                 ) : undefined}
               />
@@ -194,7 +199,7 @@ function EnvironmentStatus({
           {/* Creative tool connectors */}
           <div className="space-y-2">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-              Image Generation Tools
+              {t.plugins.artist.image_gen_tools}
             </span>
             {connectors.map((c) => {
               const meta = getConnectorMeta(c.id);
@@ -215,8 +220,8 @@ function EnvironmentStatus({
                   </div>
                   <span className="typo-body text-muted-foreground text-md flex-1">
                     {c.connected
-                      ? c.healthy ? 'Connected & healthy' : 'Connected (not verified)'
-                      : 'Not connected'}
+                      ? c.healthy ? t.plugins.artist.connected_healthy : t.plugins.artist.connected_not_verified
+                      : t.plugins.artist.not_connected}
                   </span>
                   {!c.connected && (
                     <button
@@ -224,7 +229,7 @@ function EnvironmentStatus({
                       className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      Connect
+                      {t.plugins.artist.connect}
                     </button>
                   )}
                 </div>
@@ -286,18 +291,24 @@ function CreativeSessionChat({
           {running && (
             <span className="flex items-center gap-1 text-[10px] text-emerald-400 ml-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              streaming
+              {t.plugins.artist.streaming}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1">
           {/* Tool badges */}
-          {availableTools.map((t) => (
+          {availableTools.map((tool) => (
             <span
-              key={t}
+              key={tool}
               className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/10 text-rose-400"
             >
-              {t === 'blender' ? 'Blender' : t === 'leonardo_ai' ? 'Leonardo' : t === 'gemini' ? 'Gemini' : t}
+              {tool === 'blender'
+                ? t.plugins.artist.tool_blender
+                : tool === 'leonardo_ai'
+                  ? t.plugins.artist.tool_leonardo
+                  : tool === 'gemini'
+                    ? t.plugins.artist.tool_gemini
+                    : tool}
             </span>
           ))}
           {availableTools.length === 0 && (
@@ -308,7 +319,7 @@ function CreativeSessionChat({
               onClick={clear}
               disabled={running}
               className="p-1 rounded hover:bg-secondary/40 text-muted-foreground disabled:opacity-30 ml-2"
-              title="Clear session"
+              title={t.plugins.artist.clear_session}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -327,13 +338,13 @@ function CreativeSessionChat({
               <Wand2 className="w-6 h-6 text-rose-400/30" />
             </div>
             <p className="typo-body text-muted-foreground max-w-sm text-center">
-              Describe what you'd like to create. The session uses Claude CLI with access to your connected creative tools.
+              {t.plugins.artist.empty_session_hint}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {[
-                'Create a low-poly forest scene in Blender',
-                'Generate a cyberpunk character portrait',
-                'Design a product mockup with lighting',
+                t.plugins.artist.example_forest,
+                t.plugins.artist.example_portrait,
+                t.plugins.artist.example_mockup,
               ].map((example) => (
                 <button
                   key={example}
@@ -361,8 +372,8 @@ function CreativeSessionChat({
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder={
             availableTools.length > 0
-              ? 'Describe what to create...'
-              : 'Connect tools above to start creating...'
+              ? t.plugins.artist.describe_create
+              : t.plugins.artist.connect_tools_first
           }
           disabled={running}
           className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
@@ -371,7 +382,7 @@ function CreativeSessionChat({
           <button
             onClick={cancel}
             className="px-3 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
-            title="Cancel"
+            title={t.plugins.artist.cancel}
           >
             <Square className="w-4 h-4" />
           </button>

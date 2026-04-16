@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Identity tab — editable bio, role, gender for the active twin.
@@ -14,11 +15,8 @@ import { TwinEmptyState } from '../TwinEmptyState';
  */
 
 type Gender = 'male' | 'female' | 'neutral';
-const GENDER_OPTIONS: { id: Gender; label: string; icon: string }[] = [
-  { id: 'male', label: 'Male', icon: '♂' },
-  { id: 'female', label: 'Female', icon: '♀' },
-  { id: 'neutral', label: 'Neutral', icon: '⚧' },
-];
+// Labels resolved via useTwinTranslation in the component.
+const GENDER_ICONS: Record<Gender, string> = { male: '♂', female: '♀', neutral: '⚧' };
 
 function genderFromPronouns(pronouns: string | null): Gender {
   if (!pronouns) return 'neutral';
@@ -46,6 +44,7 @@ interface BioGeneratorPanelProps {
 }
 
 function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGeneratorPanelProps) {
+  const { t } = useTwinTranslation();
   const [bioKeywords, setBioKeywords] = useState('');
   const [generating, setGenerating] = useState(false);
 
@@ -67,12 +66,10 @@ function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGenerator
 
   return (
     <div className="p-3 rounded-card border border-violet-500/15 bg-violet-500/5 space-y-3">
-      <p className="typo-caption text-foreground">
-        Enter keywords or short phrases separated by commas. AI will compose a polished bio.
-      </p>
+      <p className="typo-caption text-foreground">{t.identity.bioGenHint}</p>
       <input
         type="text"
-        placeholder="e.g. full-stack developer, open source, AI tools, Czech Republic"
+        placeholder={t.identity.bioKeywordsPlaceholder}
         value={bioKeywords}
         onChange={(e) => setBioKeywords(e.target.value)}
         className={INPUT_FIELD}
@@ -81,7 +78,7 @@ function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGenerator
       <div className="flex justify-end">
         <Button onClick={handleGenerate} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
           <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-          {generating ? 'Generating...' : 'Generate Bio'}
+          {generating ? t.identity.generating : t.identity.generateBio}
         </Button>
       </div>
     </div>
@@ -93,10 +90,17 @@ function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGenerator
 /* ------------------------------------------------------------------ */
 
 export default function IdentityPage() {
+  const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
+
+  const genderOptions: { id: Gender; label: string }[] = [
+    { id: 'male', label: t.identity.genderMale },
+    { id: 'female', label: t.identity.genderFemale },
+    { id: 'neutral', label: t.identity.genderNeutral },
+  ];
 
   const activeTwin = twinProfiles.find((t) => t.id === activeTwinId);
 
@@ -150,15 +154,15 @@ export default function IdentityPage() {
 
   const markDirty = () => setDirty(true);
 
-  if (!activeTwin) return <TwinEmptyState icon={User} title="Identity" />;
+  if (!activeTwin) return <TwinEmptyState icon={User} title={t.identity.title} />;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<User className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title={`Identity — ${activeTwin.name}`}
-        subtitle="Who the twin is. These fields assemble into a prompt fragment injected when a persona adopts this twin."
+        title={`${t.identity.title} — ${activeTwin.name}`}
+        subtitle={t.identity.subtitle}
       />
 
       <ContentBody centered>
@@ -166,20 +170,20 @@ export default function IdentityPage() {
           {/* Name + Role */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="space-y-2">
-              <span className="typo-body text-foreground font-medium">Name</span>
+              <span className="typo-body text-foreground font-medium">{t.identity.name}</span>
               <input type="text" value={name} onChange={(e) => { setName(e.target.value); markDirty(); }} className={INPUT_FIELD} />
             </label>
             <label className="space-y-2">
-              <span className="typo-body text-foreground font-medium">Role / Title</span>
-              <input type="text" placeholder="Founder, Indie Dev, Community Manager..." value={role} onChange={(e) => { setRole(e.target.value); markDirty(); }} className={INPUT_FIELD} />
+              <span className="typo-body text-foreground font-medium">{t.identity.roleTitle}</span>
+              <input type="text" placeholder={t.identity.rolePlaceholder} value={role} onChange={(e) => { setRole(e.target.value); markDirty(); }} className={INPUT_FIELD} />
             </label>
           </div>
 
           {/* Gender icons */}
           <div className="space-y-2">
-            <span className="typo-body text-foreground font-medium">Gender</span>
+            <span className="typo-body text-foreground font-medium">{t.identity.gender}</span>
             <div className="flex items-center gap-2">
-              {GENDER_OPTIONS.map((g) => (
+              {genderOptions.map((g) => (
                 <button
                   key={g.id}
                   onClick={() => { setGender(g.id); markDirty(); }}
@@ -189,7 +193,7 @@ export default function IdentityPage() {
                       : 'text-muted-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                   }`}
                 >
-                  <span className="text-lg">{g.icon}</span>
+                  <span className="text-lg">{GENDER_ICONS[g.id]}</span>
                   <span className="typo-caption">{g.label}</span>
                 </button>
               ))}
@@ -199,13 +203,13 @@ export default function IdentityPage() {
           {/* Bio + AI generator */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="typo-body text-foreground font-medium">Bio</span>
+              <span className="typo-body text-foreground font-medium">{t.identity.bio}</span>
               <button
                 onClick={() => setShowBioGen(!showBioGen)}
                 className="flex items-center gap-1.5 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
               >
                 <Wand2 className="w-3.5 h-3.5" />
-                {showBioGen ? 'Cancel' : 'Generate with AI'}
+                {showBioGen ? t.identity.cancel : t.identity.generateWithAi}
               </button>
             </div>
 
@@ -220,7 +224,7 @@ export default function IdentityPage() {
 
             <textarea
               rows={5}
-              placeholder="A paragraph about who this twin is, their expertise, their communication style defaults. This text is injected verbatim into the persona's system prompt as the identity fragment."
+              placeholder={t.identity.bioPlaceholder}
               value={bio}
               onChange={(e) => { setBio(e.target.value); markDirty(); }}
               className={`${INPUT_FIELD} resize-y`}
@@ -231,22 +235,20 @@ export default function IdentityPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <FolderTree className="w-3.5 h-3.5 text-violet-400/60" />
-              <span className="typo-body text-foreground font-medium">Obsidian Vault Subpath</span>
+              <span className="typo-body text-foreground font-medium">{t.identity.obsidianVaultSubpath}</span>
             </div>
             <input type="text" value={obsidianSubpath} onChange={(e) => { setObsidianSubpath(e.target.value); markDirty(); }} className={`${INPUT_FIELD} font-mono`} />
-            <p className="typo-caption text-muted-foreground">
-              Folder inside the Obsidian vault where this twin's brain files live.
-            </p>
+            <p className="typo-caption text-muted-foreground">{t.identity.obsidianSubpathHint}</p>
           </div>
 
           {/* Prompt preview */}
           {(name.trim() || bio.trim() || role.trim()) && (
             <div className="p-4 rounded-card bg-violet-500/5 border border-violet-500/15">
-              <p className="typo-caption text-violet-400 font-medium mb-2">Prompt preview</p>
+              <p className="typo-caption text-violet-400 font-medium mb-2">{t.identity.promptPreview}</p>
               <pre className="typo-code text-foreground whitespace-pre-wrap text-xs leading-relaxed">
-{`You are speaking as ${name.trim() || '(name)'}${role.trim() ? `, ${role.trim()}` : ''}.
+{`${t.identity.promptYouAreSpeaking} ${name.trim() || t.identity.promptNoName}${role.trim() ? `, ${role.trim()}` : ''}.
 
-${bio.trim() || '(no bio set — fill in above)'}`}
+${bio.trim() || t.identity.promptNoBio}`}
               </pre>
             </div>
           )}
@@ -256,7 +258,7 @@ ${bio.trim() || '(no bio set — fill in above)'}`}
             <div className="flex justify-end pt-2">
               <Button onClick={handleSave} disabled={saving || !name.trim()} size="sm">
                 <Save className="w-4 h-4 mr-1.5" />
-                {saving ? 'Saving...' : 'Save Identity'}
+                {saving ? t.identity.saving : t.identity.saveIdentity}
               </Button>
             </div>
           )}

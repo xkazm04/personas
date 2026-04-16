@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { MonitorPlay } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { formatTimecode } from '../utils/format';
 import type {
   VideoClip,
   AudioClip,
@@ -512,12 +513,4 @@ export default function CompositionPreview({
       </div>
     </div>
   );
-}
-
-function formatTimecode(seconds: number): string {
-  const safe = Math.max(0, seconds);
-  const m = Math.floor(safe / 60);
-  const s = Math.floor(safe % 60);
-  const ms = Math.floor((safe % 1) * 100);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
 }

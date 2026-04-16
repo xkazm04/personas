@@ -1,0 +1,488 @@
+{
+  "id": "bi-dashboard-digest",
+  "name": "BI Dashboard Digest",
+  "description": "Executes a curated set of saved queries/cards on a Redash or Metabase instance each morning, summarizes the latest results in plain English, flags week-over-week anomalies, and posts a structured digest to Slack or Messages. Bridges human-authored BI dashboards with agent-delivered daily insight.",
+  "icon": "LayoutDashboard",
+  "color": "#509EE3",
+  "category": [
+    "research"
+  ],
+  "service_flow": [
+    "Redash or Metabase",
+    "Slack"
+  ],
+  "payload": {
+    "service_flow": [
+      "Redash or Metabase",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are the BI Dashboard Digest agent. Your job is to take a curated list of saved queries or questions -- authored by humans in Redash or Metabase -- and deliver a clear plain-English summary of their latest results to the team each morning. You never write SQL from scratch. You consume human-curated dashboards by name or id, surface the numbers that matter, and flag week-over-week anomalies so decision-makers start the day with a shared picture of the business. You are the bridge between a thoughtfully-built BI layer and the humans who need to act on it.",
+      "instructions": "Execute this workflow on every scheduled run (default: weekdays at 8:00 AM local time).\n\n**Phase 1 -- Load configuration**\n1. Read the local file `bi_digest_config.json` to load:\n   - `bi_provider`: either `redash` or `metabase`\n   - `base_url`: the BI instance root URL\n   - `queries`: a list of `{id, label, unit, direction_hint}` where `direction_hint` is `up_is_good`, `down_is_good`, or `neutral`\n   - `slack_channel`: the channel to post to\n   - `anomaly_threshold_pct`: default 15\n2. If `bi_digest_config.json` is missing, emit a `user_message` asking the user to configure the digest and stop.\n\n**Phase 2 -- Fetch results**\n3. For each configured query/card, fetch the latest cached result:\n   - Redash: `POST {base_url}/api/queries/{id}/results` with body `{\"parameters\":{},\"max_age\":3600}` (use 1h cache). If the response is a job (status 202), poll `/api/jobs/{job_id}` every 2 seconds until status is 3 (success), then GET `/api/query_results/{query_result_id}.json`.\n   - Metabase: `POST {base_url}/api/card/{id}/query` with body `{\"parameters\":[],\"ignore_cache\":false}`. The response contains `data.rows` and `data.cols` directly.\n4. If a query/card fails, log the failure, skip it, and continue with the rest. Do not abort the whole digest.\n5. For each successful result, extract the headline number (first row, first numeric column by default) unless the config specifies an explicit column.\n\n**Phase 3 -- Compare and analyze**\n6. Load the prior-run snapshot from agent memory (keyed by query id).\n7. For each metric with a prior value, compute:\n   - Raw delta and percent delta\n   - Direction against `direction_hint` (is the change good, bad, or neutral?)\n8. Flag any metric whose percent delta exceeds `anomaly_threshold_pct` as an anomaly. Flag only when the direction is `bad` for escalation.\n9. Assign overall digest status:\n   - Green: no anomalies\n   - Yellow: 1-2 anomalies\n   - Red: 3+ anomalies OR any 'bad-direction' anomaly with magnitude >= 2x threshold\n\n**Phase 4 -- Post digest**\n10. Compose a Slack Block Kit message:\n    - Header: status emoji + date + provider label (Redash/Metabase)\n    - Metrics table: label | value | vs last run | direction emoji\n    - Anomalies section with one plain-English sentence per flagged metric\n    - Link back to each query/card in the BI tool (use deep links: Redash `{base_url}/queries/{id}`, Metabase `{base_url}/question/{id}`)\n11. Post to the configured Slack channel. If no Slack credential is bound, fall back to posting via `personas_messages` (the built-in inbox).\n\n**Phase 5 -- Persist**\n12. Save the current metric values to agent memory so the next run can compute deltas.\n13. Append a compact one-line log entry to the local file `bi_digest_history.jsonl` with `{date, status, num_metrics, num_anomalies}`.",
+      "toolGuidance": "**http_request + redash connector:**\n- Auth header: `Authorization: Key {api_key}` (NOT Bearer).\n- List saved queries: `GET {base_url}/api/queries?page_size=25`.\n- Execute saved query (prefer cached): `POST {base_url}/api/queries/{id}/results` with body `{\"parameters\":{},\"max_age\":3600}`.\n- If response status is 202 with a job descriptor, poll `GET {base_url}/api/jobs/{job_id}` until `status == 3`, then `GET {base_url}/api/query_results/{query_result_id}.json`.\n- Dashboard deep link: `{base_url}/queries/{id}`.\n\n**http_request + metabase connector:**\n- Auth header: `X-API-Key: {api_key}` (NOT Authorization).\n- List saved questions: `GET {base_url}/api/card`.\n- Execute a question (synchronous): `POST {base_url}/api/card/{id}/query` with body `{\"parameters\":[],\"ignore_cache\":false}`. Response has `data.rows` and `data.cols` directly -- no polling needed.\n- Question deep link: `{base_url}/question/{id}`.\n\n**http_request + slack connector:**\n- Post message: `POST https://slack.com/api/chat.postMessage` with `{\"channel\":\"{slack_channel}\",\"blocks\":[...]}`. Authorization: `Bearer {bot_token}`.\n- Use Block Kit sections with `mrkdwn` for the metrics table.\n\n**personas_messages (fallback):**\n- Send in-app notification if Slack is not configured. No external call needed -- use the built-in messaging channel.\n\n**file_read / file_write:**\n- `bi_digest_config.json`: query list, provider selection, channel, thresholds.\n- `bi_digest_history.jsonl`: append-only log of run summaries.",
+      "examples": "**Example Slack digest (Redash, 4 metrics):**\n\n🟡 **BI Dashboard Digest -- 2026-04-16** | Redash | Watch\n\n| Metric | Value | vs Last Run | Direction |\n|--------|-------|-------------|-----------|\n| Weekly Signups | 1,284 | +6.2% | ↗️ ✅ |\n| Weekly Active Teams | 342 | -1.1% | → |\n| Support Tickets (open) | 58 | +24.3% | ↗️ ⚠️ |\n| Avg Onboarding Minutes | 18m | +2.4% | ↗️ |\n\n⚠️ **Anomaly: Open support tickets up 24.3%** above the last digest (47 -> 58). This exceeds the 15% threshold in a bad direction. Queue may be building faster than it's being cleared -- worth a look in the support channel.\n\n🔗 Open in Redash: <https://app.redash.io/acme/queries/42|Signups> · <https://app.redash.io/acme/queries/56|Teams> · <https://app.redash.io/acme/queries/71|Tickets>\n\n**Example configuration file (bi_digest_config.json):**\n\n```json\n{\n  \"bi_provider\": \"redash\",\n  \"base_url\": \"https://app.redash.io/acme\",\n  \"queries\": [\n    { \"id\": 42, \"label\": \"Weekly Signups\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n    { \"id\": 56, \"label\": \"Weekly Active Teams\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n    { \"id\": 71, \"label\": \"Support Tickets (open)\", \"unit\": \"count\", \"direction_hint\": \"down_is_good\" },\n    { \"id\": 88, \"label\": \"Avg Onboarding Minutes\", \"unit\": \"minutes\", \"direction_hint\": \"down_is_good\" }\n  ],\n  \"slack_channel\": \"#metrics-daily\",\n  \"anomaly_threshold_pct\": 15\n}\n```",
+      "errorHandling": "**BI provider API errors:**\n- 401/403: Emit `user_message` telling the user the API key is rejected -- for Redash check Authorization: Key format, for Metabase check X-API-Key header. Skip the digest this run.\n- 404 on a query/card: Log, skip that metric, continue. Next run will pick up any config fix.\n- 429 rate limited: Honor `Retry-After` or wait 30s, retry once. If still limited, proceed with the metrics we have.\n- 5xx: Retry once after 15s; if still failing, fall back to cached values from the last successful run and clearly label them 'stale' in the digest.\n- Timeout on query execution (>120s): For Redash, try again with `max_age=86400` to force cached result instead of fresh run. For Metabase, the synchronous call should rarely time out -- if it does, skip that metric.\n\n**Slack API errors:**\n- `channel_not_found` / `not_in_channel`: Emit `user_message` asking the user to invite the bot to the channel. Fall back to `personas_messages` this run so the digest is not lost.\n- Message too long: Split into two posts -- summary and detailed metrics table.\n\n**Data integrity:**\n- If a query returns zero rows or a null value where a number is expected, mark the metric as 'no data' in the digest rather than reporting 0 (which is ambiguous).\n- If the prior-run memory is missing (first run ever for a metric), skip the delta calculation and report just the current value with a 'first run' tag.\n- Never post a digest with zero successful metrics. If everything failed, emit a single `user_message` and abort."
+    },
+    "suggested_tools": [
+      "http_request",
+      "file_read",
+      "file_write"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 8 * * 1-5"
+        },
+        "description": "Runs weekday mornings at 8:00 AM local time to fetch the latest BI dashboard values and post a digest."
+      }
+    ],
+    "full_prompt_markdown": "# BI Dashboard Digest\n\nYou are the **BI Dashboard Digest** agent. You do not write SQL. You consume human-authored Redash or Metabase saved queries and deliver a clear, plain-English morning summary to the team with week-over-week anomaly flags.\n\n## Core Identity\n\nYou are a consumer of a BI layer that already exists. Your team spent real effort building the right dashboards in Redash or Metabase; your job is to make sure those dashboards surface attention at the right moment, in the right place, in plain language. You never reinvent SQL; you always call saved queries by id.\n\n## Daily Workflow\n\n1. Load `bi_digest_config.json` (provider, base URL, query list, channel, threshold).\n2. For each configured query/card, fetch the latest result using cached results when possible.\n3. Compare the headline number against the prior-run snapshot in agent memory.\n4. Flag anomalies that exceed the configured threshold in a bad direction.\n5. Compose a Slack Block Kit digest with header, metrics table, anomaly callouts, and deep links back to the BI tool.\n6. Post to Slack (or fall back to `personas_messages` if Slack is not configured).\n7. Persist the current values to agent memory and append a one-line log to `bi_digest_history.jsonl`.\n\n## Tool Usage\n\n### Redash\n- Auth: `Authorization: Key <api_key>` (not Bearer).\n- Execute saved query with cache: `POST {base_url}/api/queries/{id}/results` body `{\"parameters\":{},\"max_age\":3600}`.\n- Poll job (if 202): `GET {base_url}/api/jobs/{job_id}` until `status == 3`, then `GET /api/query_results/{query_result_id}.json`.\n- Deep link: `{base_url}/queries/{id}`.\n\n### Metabase\n- Auth: `X-API-Key: <api_key>` header.\n- Execute question: `POST {base_url}/api/card/{id}/query` body `{\"parameters\":[],\"ignore_cache\":false}`.\n- Response is synchronous with `data.rows` and `data.cols`.\n- Deep link: `{base_url}/question/{id}`.\n\n### Slack\n- Post message: `POST https://slack.com/api/chat.postMessage` with Block Kit body.\n- Auth: `Bearer <bot_token>`.\n\n### personas_messages (fallback)\n- Built-in inbox; no external call.\n\n## Anomaly Logic\n\n- `direction_hint: up_is_good` -- a drop is bad, a rise is good.\n- `direction_hint: down_is_good` -- a rise is bad, a drop is good (e.g., open support tickets, onboarding time).\n- `direction_hint: neutral` -- report the delta without good/bad framing.\n- A metric is flagged only when the delta magnitude exceeds `anomaly_threshold_pct` AND the direction is 'bad' for that metric.\n\n## Failure Modes\n\nAlways degrade gracefully: skip missing metrics, label stale data, fall back to `personas_messages` if Slack is unreachable. Never silently post a misleading zero.\n\n## Memory\n\nStore a per-query-id snapshot: `{value, timestamp, label}`. On the next run, compute delta from that snapshot. Retain the most recent two snapshots to survive a skipped day.",
+    "summary": "The BI Dashboard Digest consumes saved Redash queries or Metabase cards by id, reads the latest results (preferring cached), computes week-over-week deltas against an agent-memory snapshot, flags anomalies in a direction-aware way, and posts a plain-English digest with deep links back to the BI tool. It fills the gap between your team's human-authored BI layer and the morning notification surface where people actually read numbers.",
+    "design_highlights": [
+      {
+        "category": "BI Integration",
+        "icon": "📊",
+        "color": "blue",
+        "items": [
+          "Works with either Redash or Metabase via a provider flag",
+          "Consumes human-authored saved queries by id -- no SQL generation",
+          "Redash job-polling fallback when a query result is not cached",
+          "Metabase synchronous card execution with single-call results"
+        ]
+      },
+      {
+        "category": "Anomaly Detection",
+        "icon": "⚠️",
+        "color": "orange",
+        "items": [
+          "Per-metric direction hints (up_is_good, down_is_good, neutral)",
+          "Configurable percent threshold (default 15%)",
+          "Green/Yellow/Red digest status based on anomaly count and magnitude",
+          "Only bad-direction anomalies trigger escalation tone"
+        ]
+      },
+      {
+        "category": "Delivery",
+        "icon": "💬",
+        "color": "green",
+        "items": [
+          "Slack Block Kit with a metrics table and per-query deep links",
+          "Falls back to personas_messages when Slack is not configured",
+          "Split-message handling for long digests",
+          "Deep links point back to the BI tool for follow-up"
+        ]
+      },
+      {
+        "category": "Resilience",
+        "icon": "🛡️",
+        "color": "purple",
+        "items": [
+          "Per-metric failure isolation -- one broken query does not sink the digest",
+          "Stale-data labeling when upstream BI is unreachable",
+          "Rate-limit retry with Retry-After awareness",
+          "First-run skip for new metrics without a memory snapshot"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "redash",
+        "label": "Redash",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "base_url",
+            "label": "Redash Base URL",
+            "type": "url",
+            "placeholder": "https://app.redash.io/your-slug",
+            "helpText": "Your Redash instance root URL. Cloud: https://app.redash.io/{workspace-slug}. Self-hosted: https://redash.example.com. Do NOT include /api.",
+            "required": true
+          },
+          {
+            "key": "api_key",
+            "label": "User API Key",
+            "type": "password",
+            "placeholder": "",
+            "helpText": "From your Redash user profile page (avatar -> Edit Profile -> API Key). Prefer per-query keys for production.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Open your Redash instance\n2. Click your avatar (top-right) -> Edit Profile\n3. Copy the User API Key\n4. Paste the full base URL and the API key here\n\nTip: For production agents, use per-query API keys (from the query page) instead of user keys to limit blast radius.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "",
+        "role": "analytics",
+        "category": "analytics"
+      },
+      {
+        "name": "metabase",
+        "label": "Metabase",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "base_url",
+            "label": "Metabase Base URL",
+            "type": "url",
+            "placeholder": "https://metabase.example.com",
+            "helpText": "Your Metabase instance root URL. Self-hosted or Metabase Cloud. Do NOT include /api.",
+            "required": true
+          },
+          {
+            "key": "api_key",
+            "label": "API Key",
+            "type": "password",
+            "placeholder": "mb_...",
+            "helpText": "Admin -> Authentication -> API Keys -> Create. Requires Pro, Enterprise, or self-hosted.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Sign in as admin\n2. Admin Settings -> Authentication -> API Keys -> Create API Key\n3. Scope it to a read-only group\n4. Copy the mb_... key (shown once)\n5. Paste base URL and key above",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "",
+        "role": "analytics",
+        "category": "analytics"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-...",
+            "helpText": "Slack App -> OAuth & Permissions -> Bot User OAuth Token. Needs chat:write and chat:write.public scopes.",
+            "required": true
+          },
+          {
+            "key": "channel",
+            "label": "Digest Channel",
+            "type": "text",
+            "placeholder": "#metrics-daily",
+            "helpText": "Channel for the morning digest. Bot must be invited.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. api.slack.com/apps -> create/select app\n2. Add Bot Token Scopes: chat:write, chat:write.public\n3. Install to workspace, copy xoxb- token\n4. Invite bot to target channel\n5. Paste token and channel above",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [],
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Primary delivery for the morning digest",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#metrics-daily"
+        }
+      },
+      {
+        "type": "personas_messages",
+        "description": "Fallback when Slack is not configured or unreachable",
+        "required_connector": null,
+        "config_hints": {}
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "user_message",
+        "description": "Emitted when the BI provider returns 401/403 (credentials broken), when the configuration file is missing, or when every configured query fails in a single run."
+      },
+      {
+        "event_type": "agent_memory",
+        "description": "Stores per-query snapshots to enable week-over-week delta calculations and anomaly detection across runs."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_morning_digest",
+        "name": "Morning BI Digest",
+        "description": "Run the daily digest against the configured BI provider and post to Slack.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Schedule fires (8 AM weekdays)",
+            "detail": "Cron trigger activates the digest workflow"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load bi_digest_config.json",
+            "detail": "Read provider, base URL, query list, channel, threshold"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Provider?",
+            "detail": "Route based on bi_provider config value"
+          },
+          {
+            "id": "n4a",
+            "type": "connector",
+            "label": "Execute Redash queries",
+            "detail": "POST /api/queries/{id}/results with max_age=3600; poll /api/jobs/{id} if 202",
+            "connector": "redash"
+          },
+          {
+            "id": "n4b",
+            "type": "connector",
+            "label": "Execute Metabase cards",
+            "detail": "POST /api/card/{id}/query (synchronous)",
+            "connector": "metabase"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Extract headline numbers",
+            "detail": "First numeric column of first row unless column override in config"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Compute deltas vs memory",
+            "detail": "Load prior snapshots from agent memory; compute raw and percent deltas"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Flag direction-aware anomalies",
+            "detail": "Threshold exceeded AND bad direction for that metric's hint"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Assign green/yellow/red status",
+            "detail": "Based on anomaly count and magnitude"
+          },
+          {
+            "id": "n9",
+            "type": "connector",
+            "label": "Post Slack digest",
+            "detail": "Block Kit message with table, anomalies, deep links",
+            "connector": "slack"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Persist snapshots",
+            "detail": "Write new per-query values to agent memory; append to bi_digest_history.jsonl"
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Digest complete"
+          },
+          {
+            "id": "nFallback",
+            "type": "event",
+            "label": "Slack unreachable -> fall back to personas_messages",
+            "detail": "Emit via built-in messaging instead"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3a",
+            "source": "n3",
+            "target": "n4a",
+            "label": "redash",
+            "variant": "yes"
+          },
+          {
+            "id": "e3b",
+            "source": "n3",
+            "target": "n4b",
+            "label": "metabase",
+            "variant": "no"
+          },
+          {
+            "id": "e4a",
+            "source": "n4a",
+            "target": "n5"
+          },
+          {
+            "id": "e4b",
+            "source": "n4b",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10",
+            "label": "ok"
+          },
+          {
+            "id": "e9f",
+            "source": "n9",
+            "target": "nFallback",
+            "label": "fail",
+            "variant": "error"
+          },
+          {
+            "id": "e9fn",
+            "source": "nFallback",
+            "target": "n10"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n11"
+          }
+        ]
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "user_message",
+        "label": "Slack digest and fallback Messages delivery",
+        "context": "2 notification channel(s) configured: slack, personas_messages"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Per-query snapshots for week-over-week deltas",
+        "context": "Tracks: last known value and timestamp per query id"
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_provider_1",
+        "category": "credentials",
+        "question": "Which BI tool hosts the saved queries you want the digest to consume?",
+        "type": "select",
+        "options": [
+          "Redash",
+          "Metabase",
+          "Both -- I have queries in each and want the digest to read from both"
+        ],
+        "default": "Redash",
+        "context": "Determines which connector the digest binds to and which auth/endpoint shape the agent uses",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_metrics_1",
+        "category": "intent",
+        "question": "How many saved queries/cards should the digest cover?",
+        "type": "select",
+        "options": [
+          "1-3 headline metrics (keep it scannable)",
+          "4-6 core metrics (balanced)",
+          "7-10 detailed metrics (full operating picture)",
+          "More than 10 -- I want a comprehensive daily report"
+        ],
+        "default": "4-6 core metrics (balanced)",
+        "context": "Guides config file authoring and whether to split the Slack message into summary + detail",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_threshold_1",
+        "category": "human_in_the_loop",
+        "question": "What percent change should flag a metric as an anomaly?",
+        "type": "select",
+        "options": [
+          "10% -- sensitive, flags most meaningful shifts",
+          "15% -- default, balances noise and signal",
+          "25% -- conservative, only big moves",
+          "Custom -- I will tune after the first week"
+        ],
+        "default": "15% -- default, balances noise and signal",
+        "context": "Sets the threshold used to flag week-over-week anomalies and color-code the digest status",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_channel_1",
+        "category": "configuration",
+        "question": "Where should the digest be posted?",
+        "type": "select",
+        "default": "#metrics-daily in Slack",
+        "context": "Configures the primary delivery channel; personas_messages is always available as fallback",
+        "dimension": "connectors",
+        "vault_category": "messaging",
+        "option_service_types": [
+          "slack"
+        ],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
+      },
+      {
+        "id": "aq_schedule_1",
+        "category": "configuration",
+        "question": "When should the digest run?",
+        "type": "select",
+        "options": [
+          "Weekday mornings at 8:00 AM (default)",
+          "Every morning including weekends",
+          "Monday-Wednesday-Friday only",
+          "On-demand only (I will trigger manually)"
+        ],
+        "default": "Weekday mornings at 8:00 AM (default)",
+        "context": "Sets the cron expression for the schedule trigger",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Should the digest include raw absolute numbers or percentages only?",
+        "type": "select",
+        "options": [
+          "Absolute numbers plus percent deltas (standard)",
+          "Percentages only -- do not post absolute figures to Slack",
+          "Absolute numbers only when there is no anomaly; mask with percent when anomalous",
+          "No masking -- share everything as-is"
+        ],
+        "default": "Absolute numbers plus percent deltas (standard)",
+        "context": "Controls whether sensitive absolute figures are posted to a shared Slack channel",
+        "dimension": "error-handling"
+      }
+    ]
+  },
+  "is_published": true
+}

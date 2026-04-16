@@ -112,7 +112,7 @@ function GlassCell({ dim, items, status }: {
           {/* Label with accent dot + status */}
           <div className="flex items-center gap-2.5 mb-3">
             <span className={`w-2 h-2 rounded-full ${dim.dotCls}`} />
-            <span className="text-[12px] font-semibold uppercase tracking-[0.2em] text-foreground/70">
+            <span className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground/70">
               {CELL_LABELS[dim.key] ?? dim.key}
             </span>
             <div className="ml-auto"><StatusPill status={status} /></div>
@@ -123,19 +123,21 @@ function GlassCell({ dim, items, status }: {
             <DimIcon className={`w-24 h-24 ${dim.iconCls}`} />
           </div>
 
-          {/* Bullet items — readable contrast */}
+          {/* Bullet items — readable contrast, scrollable when content overflows */}
+          <div className="max-h-[180px] overflow-y-auto mt-2 scrollbar-thin">
           {items && items.length > 0 ? (
-            <ul className="space-y-1.5 mt-2">
+            <ul className="space-y-1.5">
               {items.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-foreground/80 leading-relaxed">
+                <li key={i} className="flex items-start gap-2 text-md text-foreground/80 leading-relaxed">
                   <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground/25 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[13px] text-muted-foreground italic mt-2">No data yet</p>
+            <p className="text-md text-muted-foreground italic">No data yet</p>
           )}
+          </div>
 
         </div>
       </div>

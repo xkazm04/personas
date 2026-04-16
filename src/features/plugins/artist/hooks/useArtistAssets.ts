@@ -11,8 +11,10 @@ import {
 } from '@/api/artist';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function useArtistAssets() {
+  const { t, tx } = useTranslation();
   const [assets, setAssets] = useState<ArtistAsset[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -44,8 +46,11 @@ export function useArtistAssets() {
         const result = await artistImportAsset(asset);
         if (result !== null) imported++;
       }
+      const template = imported === 1
+        ? t.plugins.artist.scan_result_one
+        : t.plugins.artist.scan_result_other;
       useToastStore.getState().addToast(
-        `Found ${scanned.length} assets, imported ${imported} new.`,
+        tx(template, { scanned: scanned.length, imported }),
         'success',
       );
       await loadAssets();
@@ -57,7 +62,7 @@ export function useArtistAssets() {
     } finally {
       setScanning(false);
     }
-  }, [loadAssets]);
+  }, [loadAssets, t, tx]);
 
   const deleteAsset = useCallback(async (id: string) => {
     try {

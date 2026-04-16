@@ -9,7 +9,7 @@ import {
   type MouseEvent,
 } from 'react';
 import {
-  ZoomIn, ZoomOut, Maximize2, Plus, Type, ImageIcon, Film, Music,
+  ZoomIn, ZoomOut, Maximize2, Plus, Type, ImageIcon, Film, Music, Undo2, Redo2,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
@@ -37,6 +37,10 @@ interface TimelinePanelProps {
   onAddImage: () => void;
   onAddVideo: () => void;
   onAddAudio: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 const RULER_HEIGHT = 28;
@@ -44,11 +48,78 @@ const LANE_HEIGHTS = { text: 41, image: 49, video: 57, audio: 57 } as const;
 
 type LaneKey = 'text' | 'image' | 'video' | 'audio';
 
-const LANE_META: Record<LaneKey, { icon: typeof Type; color: string; label: string }> = {
-  text: { icon: Type, color: 'amber', label: 'Text' },
-  image: { icon: ImageIcon, color: 'emerald', label: 'Image' },
-  video: { icon: Film, color: 'rose', label: 'Video' },
-  audio: { icon: Music, color: 'blue', label: 'Audio' },
+// Tailwind 4 JIT scans source for literal class names — dynamic template
+// strings like `bg-${color}-500/5` never get compiled. Every color shade used
+// for a lane must therefore appear as a literal string somewhere Tailwind can
+// see. This map centralizes those literals per lane.
+interface LaneClasses {
+  collapsedRail: string;
+  collapsedIcon: string;
+  collapsedLabel: string;
+  rail: string;
+  railLabel: string;
+  countBadge: string;
+  addButton: string;
+  collapsedStripe: string;
+}
+
+const LANE_META: Record<LaneKey, { icon: typeof Type; label: string; classes: LaneClasses }> = {
+  text: {
+    icon: Type,
+    label: 'Text',
+    classes: {
+      collapsedRail: 'bg-amber-500/5 hover:bg-amber-500/10',
+      collapsedIcon: 'text-amber-400/40',
+      collapsedLabel: 'text-amber-400/50',
+      rail: 'bg-amber-500/5',
+      railLabel: 'text-amber-400',
+      countBadge: 'bg-amber-500/15 text-amber-400/80',
+      addButton: 'border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400',
+      collapsedStripe: 'bg-amber-500/5',
+    },
+  },
+  image: {
+    icon: ImageIcon,
+    label: 'Image',
+    classes: {
+      collapsedRail: 'bg-emerald-500/5 hover:bg-emerald-500/10',
+      collapsedIcon: 'text-emerald-400/40',
+      collapsedLabel: 'text-emerald-400/50',
+      rail: 'bg-emerald-500/5',
+      railLabel: 'text-emerald-400',
+      countBadge: 'bg-emerald-500/15 text-emerald-400/80',
+      addButton: 'border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400',
+      collapsedStripe: 'bg-emerald-500/5',
+    },
+  },
+  video: {
+    icon: Film,
+    label: 'Video',
+    classes: {
+      collapsedRail: 'bg-rose-500/5 hover:bg-rose-500/10',
+      collapsedIcon: 'text-rose-400/40',
+      collapsedLabel: 'text-rose-400/50',
+      rail: 'bg-rose-500/5',
+      railLabel: 'text-rose-400',
+      countBadge: 'bg-rose-500/15 text-rose-400/80',
+      addButton: 'border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400',
+      collapsedStripe: 'bg-rose-500/5',
+    },
+  },
+  audio: {
+    icon: Music,
+    label: 'Audio',
+    classes: {
+      collapsedRail: 'bg-blue-500/5 hover:bg-blue-500/10',
+      collapsedIcon: 'text-blue-400/40',
+      collapsedLabel: 'text-blue-400/50',
+      rail: 'bg-blue-500/5',
+      railLabel: 'text-blue-400',
+      countBadge: 'bg-blue-500/15 text-blue-400/80',
+      addButton: 'border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400',
+      collapsedStripe: 'bg-blue-500/5',
+    },
+  },
 };
 
 function TimelinePanelImpl({
@@ -66,6 +137,10 @@ function TimelinePanelImpl({
   onAddImage,
   onAddVideo,
   onAddAudio,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: TimelinePanelProps) {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(PIXELS_PER_SECOND_DEFAULT);
@@ -203,16 +278,17 @@ function TimelinePanelImpl({
   const renderRail = (lane: LaneKey, onAdd: () => void, count: number) => {
     const meta = LANE_META[lane];
     const Icon = meta.icon;
+    const c = meta.classes;
     const collapsed = collapsedLanes.has(lane);
     if (collapsed) {
       return (
         <button
           key={lane}
           onClick={() => toggleLane(lane)}
-          className={`h-5 flex items-center gap-2 px-3 border-b border-primary/10 bg-${meta.color}-500/5 hover:bg-${meta.color}-500/10 transition-colors`}
+          className={`h-5 flex items-center gap-2 px-3 border-b border-primary/10 transition-colors ${c.collapsedRail}`}
         >
-          <Icon className={`w-3 h-3 text-${meta.color}-400/40`} />
-          <span className={`text-[9px] font-semibold uppercase tracking-wider text-${meta.color}-400/50`}>
+          <Icon className={`w-3 h-3 ${c.collapsedIcon}`} />
+          <span className={`text-[9px] font-semibold uppercase tracking-wider ${c.collapsedLabel}`}>
             {meta.label}
           </span>
         </button>
@@ -221,26 +297,26 @@ function TimelinePanelImpl({
     return (
       <div
         key={lane}
-        className={`flex items-center gap-2 px-2.5 border-b border-primary/10 bg-${meta.color}-500/5`}
+        className={`flex items-center gap-2 px-2.5 border-b border-primary/10 ${c.rail}`}
         style={{ height: `${LANE_HEIGHTS[lane]}px` }}
       >
         <button
           onClick={() => toggleLane(lane)}
           className="flex items-center gap-1.5 flex-1 text-left hover:opacity-80 transition-opacity"
         >
-          <Icon className={`w-3.5 h-3.5 text-${meta.color}-400`} />
-          <span className={`typo-heading text-[10px] uppercase tracking-wider text-${meta.color}-400`}>
+          <Icon className={`w-3.5 h-3.5 ${c.railLabel}`} />
+          <span className={`typo-heading text-[10px] uppercase tracking-wider ${c.railLabel}`}>
             {meta.label}
           </span>
           {count > 0 && (
-            <span className={`text-[9px] bg-${meta.color}-500/15 text-${meta.color}-400/80 rounded-full px-1.5 py-px tabular-nums`}>
+            <span className={`text-[9px] rounded-full px-1.5 py-px tabular-nums ${c.countBadge}`}>
               {count}
             </span>
           )}
         </button>
         <button
           onClick={onAdd}
-          className={`w-5 h-5 rounded-md border border-${meta.color}-500/25 bg-${meta.color}-500/10 hover:bg-${meta.color}-500/20 text-${meta.color}-400 flex items-center justify-center transition-colors`}
+          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${c.addButton}`}
           aria-label={`add-${lane}`}
         >
           <Plus className="w-3 h-3" />
@@ -279,6 +355,30 @@ function TimelinePanelImpl({
         <Button variant="ghost" size="icon-sm" onClick={fitToView} title={t.media_studio.fit_to_view}>
           <Maximize2 className="w-3.5 h-3.5" />
         </Button>
+
+        {onUndo && (
+          <>
+            <div className="w-px h-4 bg-primary/10 mx-1" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onUndo}
+              disabled={!canUndo}
+              title={`${t.media_studio.undo} (Ctrl+Z)`}
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onRedo}
+              disabled={!canRedo}
+              title={`${t.media_studio.redo} (Ctrl+Shift+Z)`}
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
+        )}
 
         <div className="flex-1" />
 

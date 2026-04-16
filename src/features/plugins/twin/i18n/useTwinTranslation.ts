@@ -16,10 +16,19 @@ import { cs } from './cs';
 
 const translations = { en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs };
 
+/**
+ * The Twin translation contract is the English bundle's shape. Non-English
+ * bundles may lag behind on newly-added keys; at runtime missing keys
+ * fall back to English (`translations[language]?.twin ?? translations.en.twin`).
+ * Casting here keeps consumers from seeing a narrowed union that drops
+ * keys absent from any single locale.
+ */
+type TwinDictionary = typeof en.twin;
+
 export function useTwinTranslation() {
   const { language } = useI18nStore();
 
-  const t = translations[language]?.twin ?? translations.en.twin;
+  const t = (translations[language]?.twin ?? translations.en.twin) as TwinDictionary;
 
   return { t, language };
 }

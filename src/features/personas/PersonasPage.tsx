@@ -33,6 +33,7 @@ const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
 const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
+const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
@@ -215,6 +216,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'drive') {
         return <ErrorBoundary name="Drive"><Suspense fallback={SectionFallback}><DrivePage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'twin') {
+        return <ErrorBoundary name="Twin"><Suspense fallback={SectionFallback}><TwinPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

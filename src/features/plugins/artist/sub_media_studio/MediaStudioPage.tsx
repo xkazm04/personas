@@ -1,7 +1,8 @@
-import { useCallback, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { useSystemStore } from '@/stores/systemStore';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaStudio } from './hooks/useMediaStudio';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
@@ -36,6 +37,10 @@ export default function MediaStudioPage() {
     videoItems,
     audioItems,
     totalDuration,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useMediaStudio();
 
   const { engine, playing, looping, play, pause, stop, seek, toggleLoop } =
@@ -52,7 +57,58 @@ export default function MediaStudioPage() {
     removeItem,
     duplicateItem,
     deselectItem: () => setSelectedItemId(null),
+    undo,
+    redo,
   });
+
+  // -- Gallery → Media Studio handoff -----------------------------------------
+  //
+  // When the user clicks "Send to Media Studio" on a gallery AssetCard, the
+  // asset lands in the `pendingMediaStudioAssets` queue on the artist slice.
+  // Drain the queue on mount (and whenever it grows while we're already
+  // mounted) and add each asset as a ~5s ImageItem on the timeline.
+  const pendingAssets = useSystemStore((s) => s.pendingMediaStudioAssets);
+  const consumeMediaStudioAssets = useSystemStore((s) => s.consumeMediaStudioAssets);
+  const imageItemsRef = useRef(imageItems);
+  imageItemsRef.current = imageItems;
+
+  useEffect(() => {
+    if (pendingAssets.length === 0) return;
+    const queue = consumeMediaStudioAssets();
+    let cursor = imageItemsRef.current.reduce(
+      (end, c) => Math.max(end, c.startTime + c.duration),
+      0,
+    );
+    (async () => {
+      for (const asset of queue) {
+        let width: number | null = null;
+        let height: number | null = null;
+        try {
+          const probe = await artistProbeMedia(asset.filePath);
+          width = probe.width;
+          height = probe.height;
+        } catch {
+          // Non-critical — dimensions fall back to null and the preview will
+          // letterbox the image to its natural size.
+        }
+        const clip: ImageItem = {
+          id: crypto.randomUUID(),
+          type: 'image',
+          label: asset.fileName,
+          startTime: cursor,
+          duration: 5,
+          filePath: asset.filePath,
+          width,
+          height,
+          scale: 1,
+          positionX: 0.5,
+          positionY: 0.5,
+        };
+        addItem(clip);
+        cursor += 5;
+      }
+    })();
+  }, [pendingAssets, consumeMediaStudioAssets, addItem]);
 
   // -- Drag-and-drop import ---------------------------------------------------
 
@@ -321,6 +377,10 @@ export default function MediaStudioPage() {
               onAddImage={handleAddImage}
               onAddVideo={handleAddVideo}
               onAddAudio={handleAddAudio}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
             />
           </div>
 

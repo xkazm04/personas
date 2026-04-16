@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, type PointerEvent, type ReactNode } from 'react';
+import { formatRulerTime } from '../utils/format';
 
 /**
  * TimelineClip — shared draggable + trimmable clip wrapper for all lane types.
@@ -17,12 +18,6 @@ const SNAP_SECONDS = 0.25;
 
 function snap(val: number): number {
   return Math.round(val / SNAP_SECONDS) * SNAP_SECONDS;
-}
-
-function fmtTime(s: number): string {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec.toFixed(1).padStart(4, '0')}`;
 }
 
 interface TimelineClipProps {
@@ -136,7 +131,7 @@ export default function TimelineClip({
     [onContextMenu],
   );
 
-  const tooltipText = `${fmtTime(startTime)} — ${fmtTime(startTime + duration)}`;
+  const tooltipText = `${formatRulerTime(startTime)} — ${formatRulerTime(startTime + duration)}`;
 
   return (
     <div

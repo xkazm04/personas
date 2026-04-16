@@ -1,7 +1,7 @@
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import type { DevToolsTab } from '@/lib/types/types';
-import { devToolsItems, researchLabItems } from '../sidebarData';
+import type { DevToolsTab, TwinTab } from '@/lib/types/types';
+import { devToolsItems, researchLabItems, twinItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function PluginsSidebarNav() {
@@ -12,11 +12,16 @@ export function PluginsSidebarNav() {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const researchLabTab = useSystemStore((s) => s.researchLabTab);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
+  const twinTab = useSystemStore((s) => s.twinTab);
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const activeTwinId = useSystemStore((s) => s.activeTwinId);
+  const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
+  const activeTwin = activeTwinId ? twinProfiles.find((tw) => tw.id === activeTwinId) : null;
 
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
 
@@ -138,6 +143,56 @@ export function PluginsSidebarNav() {
             <HardDrive className="w-4 h-4 flex-shrink-0" />
             Drive
           </button>
+        )}
+
+        {/* Twin */}
+        {enabledPlugins.has('twin') && (
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('twin')}
+              aria-current={pluginTab === 'twin' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'twin'
+                  ? 'bg-primary/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 flex-shrink-0" />
+              Twin
+              {!activeTwin && twinProfiles.length === 0 && pluginTab === 'twin' && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
+              )}
+            </button>
+            {pluginTab === 'twin' && (
+              <>
+                <div className="ml-4 space-y-0.5">
+                  {twinItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setTwinTab(item.id as TwinTab)}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                        twinTab === item.id
+                          ? 'bg-primary/10 text-foreground/80'
+                          : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                      }`}
+                    >
+                      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                {activeTwin && (
+                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/15">
+                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">Active Twin</p>
+                    <p className="typo-caption text-foreground truncate">{activeTwin.name}</p>
+                    {activeTwin.role && (
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{activeTwin.role}</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
 
         {/* Research Lab */}

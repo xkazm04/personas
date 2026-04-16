@@ -15,7 +15,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
 import { SelfHealingPanel } from './SelfHealingPanel';
+import { PrBridge } from './PrBridge';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DevTask } from '@/lib/bindings/DevTask';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -224,10 +226,12 @@ function TaskModal({
 
 function TaskCard({
   task,
+  rawTask,
   index: _index,
   outputLines,
 }: {
   task: RunnerTask;
+  rawTask: DevTask;
   index: number;
   outputLines: string[];
 }) {
@@ -346,6 +350,9 @@ function TaskCard({
             </div>
           </div>
         )}
+
+      {/* Draft PR bridge — only shows itself when status === 'completed' */}
+      <PrBridge task={rawTask} />
     </div>
   );
 }
@@ -576,14 +583,19 @@ export default function TaskRunnerPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {tasks.map((task, i) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    index={i}
-                    outputLines={taskOutputBuffers[task.id] ?? []}
-                  />
-                ))}
+                {tasks.map((task, i) => {
+                  const raw = storeTasks.find((st) => st.id === task.id);
+                  if (!raw) return null;
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      rawTask={raw}
+                      index={i}
+                      outputLines={taskOutputBuffers[task.id] ?? []}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>

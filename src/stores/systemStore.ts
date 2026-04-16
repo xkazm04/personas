@@ -65,6 +65,7 @@ export const useSystemStore = create<SystemStore>()(
         setupCompleted: state.setupCompleted,
         artistTab: state.artistTab,
         artistFolder: state.artistFolder,
+        creativeSessions: state.creativeSessions,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,

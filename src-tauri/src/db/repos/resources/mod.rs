@@ -12,11 +12,14 @@ pub mod db_schema;
 pub mod recipes;
 pub mod automations;
 pub mod credential_recipes;
+#[cfg(feature = "p2p")]
 pub mod identity;
+#[cfg(feature = "p2p")]
 pub mod exposure;
 pub mod tool_audit_log;
 pub mod oauth_token_metrics;
 pub mod ocr;
+#[cfg(feature = "p2p")]
 pub mod signing;
 pub mod artist;
 pub mod webhook_log;

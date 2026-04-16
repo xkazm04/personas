@@ -294,6 +294,13 @@ pub struct DesignContextData {
     pub summary: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub connector_pipeline: Option<Vec<ConnectorPipelineStep>>,
+    /// Twin profile this persona is pinned to. When `Some`, the
+    /// `builtin-twin` connector should resolve this id instead of the
+    /// globally-active twin. Connector resolution wiring is a separate
+    /// follow-up — for now this is a pure config field round-tripped
+    /// through the design_context envelope.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub twin_id: Option<String>,
 }
 
 impl DesignContextData {
@@ -413,6 +420,7 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
             || data.credential_links.is_some()
             || data.use_cases.is_some()
             || data.summary.is_some()
+            || data.twin_id.is_some()
         {
             return data;
         }

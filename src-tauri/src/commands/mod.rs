@@ -9,6 +9,7 @@ pub mod infrastructure;
 pub mod recipes;
 pub mod network;
 pub mod ocr;
+#[cfg(feature = "p2p")]
 pub mod signing;
 pub mod artist;
 pub mod obsidian_brain;

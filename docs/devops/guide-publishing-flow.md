@@ -266,30 +266,110 @@ Then update the `tauri-action` step in `release.yml` to pass these as environmen
 
 ---
 
-## Ad-Hoc Local Builds (Claude Code CLI)
+## Ad-Hoc Local Builds
 
-When you need a production installer without going through CI (e.g., for manual testing or a quick demo):
+When you need a production installer without going through CI (e.g., for manual testing or a quick demo).
 
-```bash
-npx tauri build
+### Build Profiles
+
+The project supports multiple build configurations via Cargo profiles and Tauri feature flags. Choose based on your situation:
+
+| Command | Features | Bundles | Build Time | Use Case |
+|---------|----------|---------|------------|----------|
+| `npm run tauri:build` | `desktop-full` (ml + p2p) | NSIS + MSI | ~15 min | CI / production release |
+| `npm run tauri:build:lite` | `desktop` (no ml/p2p) | NSIS only | ~10 min | Quick local testing, UI work |
+| `npm run tauri:build:stable` | `desktop-full` | NSIS + MSI | ~15 min | Milestone builds (explicit config) |
+| `npx tauri build` | `desktop-full` (from tauri.conf.json) | NSIS + MSI | ~15 min | Default, same as CI |
+
+### Feature Flag Architecture
+
+```
+desktop-full          ← CI and production builds use this
+├── desktop           ← Core desktop: UI, tray, updater, clipboard, keyring, etc.
+│   ├── tauri/tray-icon
+│   ├── arboard, notify, keyring, which, xcap, image
+│   └── tauri-plugin-{window-state, updater, single-instance}
+├── ml                ← Vector Knowledge Base (ONNX, embeddings)
+│   ├── sqlite-vec
+│   ├── fastembed
+│   └── ort (ONNX Runtime)
+└── p2p               ← LAN Discovery & Transport (Invisible Apps)
+    ├── ed25519-dalek, bs58
+    ├── mdns-sd, quinn
+    └── rcgen, rmp-serde
 ```
 
-This runs the full pipeline locally: frontend build (`npm run build`) then Rust release compilation + bundling. On Windows it produces both installers:
+The `desktop` feature includes all 186+ desktop-specific code gates. The `desktop-full` feature adds `ml` and `p2p` on top. When building with `desktop` alone (lite mode), ML-powered knowledge base search and P2P LAN discovery are disabled, but all UI, triggers, execution engine, vault, and observability features work normally.
+
+### Cargo Release Profiles
+
+| Profile | Command | LTO | Codegen Units | Strip | Use Case |
+|---------|---------|-----|---------------|-------|----------|
+| `release` | `cargo tauri build` | thin | 2 | yes | Daily builds (default) |
+| `stable` | `cargo tauri build --profile stable` | full | 1 | yes | Milestone releases (~20% slower build, ~2% smaller binary) |
+| `ci` | `cargo build --profile ci` | thin | 4 | no | CI test + clippy (faster, keeps debug symbols) |
+| `dev-release` | `cargo build --profile dev-release` | thin | inherited | no | Fast local perf testing (~3x faster than release) |
+
+### Combining Flags
+
+You can mix features and profiles for specific scenarios:
+
+```bash
+# Lite build with stable profile (smallest possible binary)
+npx tauri build --config src-tauri/tauri.lite.conf.json -- --profile stable
+
+# Full build, NSIS only (skip MSI generation)
+npx tauri build --bundles nsis
+
+# Lite build for quick UI testing
+npm run tauri:build:lite
+
+# Dev mode with lite features (faster iteration)
+npm run tauri:dev:lite
+```
+
+### Config Override Files
+
+| File | Features | Bundles | Purpose |
+|------|----------|---------|---------|
+| `src-tauri/tauri.conf.json` | `desktop-full` | all | Base config (CI/production) |
+| `src-tauri/tauri.lite.conf.json` | `desktop` | NSIS only | Fast local builds |
+| `src-tauri/tauri.stable.conf.json` | `desktop-full` | NSIS + MSI | Milestone releases |
+
+These override files are merged on top of the base config via the `--config` flag.
+
+### Output Locations
+
+On Windows, a successful build produces:
 
 - **NSIS**: `src-tauri/target/release/bundle/nsis/Personas_<version>_x64-setup.exe`
 - **MSI**: `src-tauri/target/release/bundle/msi/Personas_<version>_x64_en-US.msi`
+- **Binary**: `src-tauri/target/release/personas-desktop.exe`
 
 ### What to expect
 
 - The frontend build takes ~5s, the Rust release build takes **10-15 minutes** on a typical machine (first build is slower due to no incremental cache).
-- The `bundle.targets` setting is `"all"`, so both MSI (WiX) and NSIS installers are always generated.
+- Lite builds skip ML (ONNX/fastembed) and P2P (quinn/mdns) crate compilation, saving ~5 minutes.
 - No signing occurs locally unless `TAURI_SIGNING_PRIVATE_KEY` is set in the environment. Unsigned builds work fine for local testing but cannot be used with the auto-updater.
+
+### Build Size Report
+
+After building, run the size report to check for regressions:
+
+```bash
+node scripts/binary-size-report.mjs                    # Show current sizes
+node scripts/binary-size-report.mjs --save-baseline     # Save as comparison baseline
+node scripts/binary-size-report.mjs --budget 55         # Fail if any installer > 55 MB
+```
+
+The CI release pipeline runs this automatically with a 60 MB budget on Windows x64 builds.
 
 ### Common build errors
 
 - **Unused imports / dead code**: The release build enables `#[deny(unused)]` via the `desktop` feature flag. Fix any unused imports before building.
 - **Type mismatches**: Ensure struct fields use the correct wrapper types (e.g., `Json<Vec<String>>` not bare `Vec<String>` for JSON columns).
 - **Private module imports**: Use the re-exported path (e.g., `crate::db::models::Json`) not the internal module path.
+- **Feature-gated modules**: If adding imports to `engine::embedder`, `engine::vector_store`, `engine::kb_ingest`, wrap them with `#[cfg(feature = "ml")]`. For `engine::identity` or `engine::p2p`, use `#[cfg(feature = "p2p")]`.
 
 ### Launch after build
 
@@ -299,7 +379,57 @@ start "" "src-tauri/target/release/bundle/nsis/Personas_<version>_x64-setup.exe"
 
 # Or run the binary directly (skips install)
 ./src-tauri/target/release/personas-desktop.exe
+
+# Health check mode (verifies binary can initialize without GUI)
+./src-tauri/target/release/personas-desktop.exe --health-check
 ```
+
+---
+
+## Health Check Mode
+
+The binary supports a `--health-check` flag for smoke testing without launching the full GUI:
+
+```bash
+personas-desktop.exe --health-check
+```
+
+This verifies:
+1. TLS provider initializes (rustls/ring)
+2. SQLite opens an in-memory database and reports its version
+3. Sentry initializes (no-op without DSN)
+4. Local data directory is accessible
+
+Exits with code 0 on success, non-zero on failure. Used by the installer acceptance test script and CI.
+
+---
+
+## Installer Acceptance Testing
+
+Automated installer testing runs via `.github/workflows/installer-test.yml`.
+
+### What it tests
+
+1. **Silent install** — NSIS installer runs with `/S` flag
+2. **File verification** — binary exists, correct size (>20 MB), uninstaller present
+3. **Registry** — uninstall registry key created, deep link protocol registered
+4. **Health check** — binary launches with `--health-check` and exits cleanly
+5. **Silent uninstall** — uninstaller removes files
+
+### Running locally
+
+```powershell
+# After building
+.\scripts\test-installer.ps1
+
+# Or with a specific installer path
+.\scripts\test-installer.ps1 -Installer "path\to\Personas_0.0.1_x64-setup.exe"
+```
+
+### CI triggers
+
+- **Automatic**: runs after every successful Release workflow
+- **Manual**: `workflow_dispatch` — test from HEAD or a specific tag
 
 ---
 

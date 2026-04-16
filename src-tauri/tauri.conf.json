@@ -9,7 +9,7 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
     "features": [
-      "desktop"
+      "desktop-full"
     ]
   },
   "app": {

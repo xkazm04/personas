@@ -22,10 +22,12 @@ import supabase from '../../../scripts/connectors/builtin/supabase.json';
 import sentry from '../../../scripts/connectors/builtin/sentry.json';
 import betterstack from '../../../scripts/connectors/builtin/betterstack.json';
 import mixpanel from '../../../scripts/connectors/builtin/mixpanel.json';
+import metabase from '../../../scripts/connectors/builtin/metabase.json';
 import twilioSegment from '../../../scripts/connectors/builtin/twilio-segment.json';
 import monday from '../../../scripts/connectors/builtin/monday.json';
 import linear from '../../../scripts/connectors/builtin/linear.json';
 import posthog from '../../../scripts/connectors/builtin/posthog.json';
+import redash from '../../../scripts/connectors/builtin/redash.json';
 import circleci from '../../../scripts/connectors/builtin/circleci.json';
 import convex from '../../../scripts/connectors/builtin/convex.json';
 import buffer from '../../../scripts/connectors/builtin/buffer.json';
@@ -119,10 +121,12 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   sentry,
   betterstack,
   mixpanel,
+  metabase,
   twilioSegment,
   monday,
   linear,
   posthog,
+  redash,
   circleci,
   convex,
   buffer,

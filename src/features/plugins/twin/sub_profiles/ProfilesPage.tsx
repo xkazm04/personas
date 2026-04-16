@@ -4,6 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 
 interface DraftForm {
@@ -14,6 +15,7 @@ interface DraftForm {
 const EMPTY_DRAFT: DraftForm = { name: '', role: '' };
 
 export default function ProfilesPage() {
+  const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);
@@ -66,7 +68,7 @@ export default function ProfilesPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete twin "${name}"? This removes the profile only — no Obsidian files are touched.`)) return;
+    if (!confirm(t.profiles.deleteConfirm.replace('{name}', name))) return;
     await deleteTwinProfile(id);
   };
 
@@ -75,12 +77,12 @@ export default function ProfilesPage() {
       <ContentHeader
         icon={<Sparkles className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Twin Profiles"
-        subtitle="Each twin is a digital identity that personas adopt via the Twin connector."
+        title={t.profiles.title}
+        subtitle={t.profiles.subtitle}
         actions={
           <Button onClick={() => setCreating(true)} size="sm" variant="accent" accentColor="violet">
             <Plus className="w-4 h-4 mr-1.5" />
-            New Twin
+            {t.profiles.newTwin}
           </Button>
         }
       />
@@ -90,30 +92,30 @@ export default function ProfilesPage() {
         {creating && (
           <div className="mb-6 p-4 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="typo-heading text-foreground">New Twin</h3>
-              <button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} className="text-muted-foreground hover:text-foreground" aria-label="Cancel">
+              <h3 className="typo-heading text-foreground">{t.profiles.newTwin}</h3>
+              <button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} className="text-muted-foreground hover:text-foreground" aria-label={t.profiles.cancel}>
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input type="text" placeholder="Name (e.g. Founder Twin)" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={INPUT_FIELD} autoFocus />
-              <input type="text" placeholder="Role (e.g. Indie Dev)" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} className={INPUT_FIELD} />
+              <input type="text" placeholder={t.profiles.namePlaceholder} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={INPUT_FIELD} autoFocus />
+              <input type="text" placeholder={t.profiles.rolePlaceholder} value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} className={INPUT_FIELD} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} variant="ghost" size="sm">Cancel</Button>
-              <Button onClick={handleCreate} disabled={!draft.name.trim() || submitting} size="sm">{submitting ? 'Creating...' : 'Create Twin'}</Button>
+              <Button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} variant="ghost" size="sm">{t.profiles.cancel}</Button>
+              <Button onClick={handleCreate} disabled={!draft.name.trim() || submitting} size="sm">{submitting ? t.profiles.creating : t.profiles.createTwin}</Button>
             </div>
           </div>
         )}
 
         {/* List */}
         {isLoading && sorted.length === 0 ? (
-          <p className="typo-body text-foreground text-center py-12">Loading...</p>
+          <p className="typo-body text-foreground text-center py-12">{t.profiles.loading}</p>
         ) : sorted.length === 0 && !creating ? (
           <div className="py-12 text-center">
             <Sparkles className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-            <p className="typo-body text-foreground">No twins yet.</p>
-            <p className="typo-caption text-muted-foreground mt-1">Create your first digital twin to give personas a voice.</p>
+            <p className="typo-body text-foreground">{t.profiles.noTwinsYet}</p>
+            <p className="typo-caption text-muted-foreground mt-1">{t.profiles.noTwinsHint}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -124,11 +126,11 @@ export default function ProfilesPage() {
               if (isEditing) {
                 return (
                   <div key={profile.id} className="p-4 rounded-card border border-violet-500/30 bg-violet-500/5 space-y-3 col-span-1">
-                    <input type="text" placeholder="Name" value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} className={INPUT_FIELD} />
-                    <input type="text" placeholder="Role" value={editDraft.role} onChange={(e) => setEditDraft({ ...editDraft, role: e.target.value })} className={INPUT_FIELD} />
+                    <input type="text" placeholder={t.profiles.name} value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} className={INPUT_FIELD} />
+                    <input type="text" placeholder={t.profiles.role} value={editDraft.role} onChange={(e) => setEditDraft({ ...editDraft, role: e.target.value })} className={INPUT_FIELD} />
                     <div className="flex justify-end gap-2">
-                      <Button onClick={() => setEditingId(null)} variant="ghost" size="sm">Cancel</Button>
-                      <Button onClick={handleSaveEdit} disabled={!editDraft.name.trim() || submitting} size="sm">Save</Button>
+                      <Button onClick={() => setEditingId(null)} variant="ghost" size="sm">{t.profiles.cancel}</Button>
+                      <Button onClick={handleSaveEdit} disabled={!editDraft.name.trim() || submitting} size="sm">{t.profiles.save}</Button>
                     </div>
                   </div>
                 );
@@ -153,7 +155,7 @@ export default function ProfilesPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="typo-heading text-foreground truncate">{profile.name}</h3>
                         {isActive && (
-                          <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25 flex-shrink-0">Active</span>
+                          <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25 flex-shrink-0">{t.profiles.active}</span>
                         )}
                       </div>
                       {profile.role && <p className="typo-caption text-foreground mt-0.5 truncate">{profile.role}</p>}
@@ -165,14 +167,14 @@ export default function ProfilesPage() {
                   </div>
                   <div className="flex items-center gap-1 mt-3 pt-3 border-t border-primary/5">
                     {!isActive && (
-                      <button onClick={() => setActiveTwin(profile.id)} title="Set active" className="p-1.5 rounded-interactive text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors">
+                      <button onClick={() => setActiveTwin(profile.id)} title={t.profiles.setActive} aria-label={`${t.profiles.setActive} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors">
                         <Check className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => startEdit(profile)} title="Edit" className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+                    <button onClick={() => startEdit(profile)} title={t.profiles.edit} aria-label={`${t.profiles.edit} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(profile.id, profile.name)} title="Delete" className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                    <button onClick={() => handleDelete(profile.id, profile.name)} title={t.profiles.delete} aria-label={`${t.profiles.delete} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

@@ -121,8 +121,10 @@ pub struct ClipboardSubscription {
     /// User database pool (for KB lookups).
     pub user_db: crate::db::UserDbPool,
     /// Embedding manager for vectorising error queries.
+    #[cfg(feature = "ml")]
     pub embedding_manager: Option<Arc<crate::engine::embedder::EmbeddingManager>>,
     /// Vector store for KB similarity search.
+    #[cfg(feature = "ml")]
     pub vector_store: Option<Arc<super::vector_store::SqliteVectorStore>>,
     /// Cooldown: last time a clipboard error notification was sent.
     pub last_notification: Arc<tokio::sync::Mutex<Option<std::time::Instant>>>,
@@ -428,59 +430,63 @@ impl ClipboardSubscription {
             "Clipboard error detected"
         );
 
-        // Search KB for the error summary
-        let matches = match self.search_kb(&detection.summary) {
-            Ok(m) => m,
-            Err(e) => {
-                tracing::debug!("KB search for clipboard error failed: {e}");
+        // Search KB for the error summary (requires ML feature)
+        #[cfg(feature = "ml")]
+        {
+            let matches = match self.search_kb(&detection.summary) {
+                Ok(m) => m,
+                Err(e) => {
+                    tracing::debug!("KB search for clipboard error failed: {e}");
+                    return;
+                }
+            };
+
+            // Filter to similarity > 0.5 threshold
+            let good_matches: Vec<_> = matches
+                .into_iter()
+                .filter(|m| m.similarity > 0.5)
+                .collect();
+
+            if good_matches.is_empty() {
                 return;
             }
-        };
 
-        // Filter to similarity > 0.5 threshold
-        let good_matches: Vec<_> = matches
-            .into_iter()
-            .filter(|m| m.similarity > 0.5)
-            .collect();
+            // Send OS notification with top match
+            let top = &good_matches[0];
+            let body = format!(
+                "KB \"{}\": {}",
+                top.kb_name,
+                top.chunk_text.chars().take(120).collect::<String>()
+            );
+            crate::notifications::send(&self.app, "Possible fix found", &body);
 
-        if good_matches.is_empty() {
-            return;
+            // Emit Tauri event with full detection + matches payload
+            {
+                use tauri::Emitter;
+                let payload = serde_json::json!({
+                    "detection": detection,
+                    "matches": good_matches,
+                });
+                let _ = self.app.emit(event_name::CLIPBOARD_ERROR_DETECTED, payload);
+            }
+
+            // Update cooldown timestamp
+            {
+                let mut last = self.last_notification.lock().await;
+                *last = Some(Instant::now());
+            }
+
+            tracing::info!(
+                error_type = %detection.error_type,
+                kb_matches = good_matches.len(),
+                "Clipboard watcher: notified user of KB match for detected error"
+            );
         }
-
-        // Send OS notification with top match
-        let top = &good_matches[0];
-        let body = format!(
-            "KB \"{}\": {}",
-            top.kb_name,
-            top.chunk_text.chars().take(120).collect::<String>()
-        );
-        crate::notifications::send(&self.app, "Possible fix found", &body);
-
-        // Emit Tauri event with full detection + matches payload
-        {
-            use tauri::Emitter;
-            let payload = serde_json::json!({
-                "detection": detection,
-                "matches": good_matches,
-            });
-            let _ = self.app.emit(event_name::CLIPBOARD_ERROR_DETECTED, payload);
-        }
-
-        // Update cooldown timestamp
-        {
-            let mut last = self.last_notification.lock().await;
-            *last = Some(Instant::now());
-        }
-
-        tracing::info!(
-            error_type = %detection.error_type,
-            kb_matches = good_matches.len(),
-            "Clipboard watcher: notified user of KB match for detected error"
-        );
     }
 
     /// Search all KBs for the given query. Wraps the command module's logic
     /// with direct field access to avoid needing the full AppState.
+    #[cfg(feature = "ml")]
     fn search_kb(
         &self,
         query: &str,

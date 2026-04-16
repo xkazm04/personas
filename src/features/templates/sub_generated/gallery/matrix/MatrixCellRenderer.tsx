@@ -71,7 +71,7 @@ function BulletItem({ item, color }: { item: string; color: string }) {
           {split.title}
         </button>
         {showDescription && (
-          <p className="text-[12px] text-muted-foreground/60 leading-snug mt-0.5 animate-fade-slide-in">
+          <p className="text-sm text-muted-foreground/60 leading-snug mt-0.5 animate-fade-slide-in">
             {split.description}
           </p>
         )}
@@ -231,12 +231,12 @@ export function MatrixCellRenderer({
       </div>
       {/* Header: label only (badge moved to bottom) */}
       <div className={`${compact ? 'mb-1' : 'mb-2.5'} flex items-center gap-2`}>
-        <span className={`${compact ? 'text-[10px]' : 'text-[13px]'} font-bold uppercase tracking-[0.15em] text-foreground/60`}>{cell.label}</span>
+        <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold uppercase tracking-[0.15em] text-foreground/60`}>{cell.label}</span>
         {cell.filled !== undefined && (
           <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
         )}
       </div>
-      <div className={`relative flex-1 flex flex-col justify-center transition-[max-height] duration-300 ${compact ? 'overflow-hidden max-h-[40px]' : 'max-h-[500px]'}`}>
+      <div className={`relative flex-1 flex flex-col justify-center transition-[max-height] duration-300 ${compact ? 'overflow-hidden max-h-[40px]' : 'max-h-[220px] overflow-y-auto scrollbar-thin'}`}>
         {/* Background status icon — always visible as watermark */}
         {cellBuildStatus && (cellBuildStatus as string) !== 'hidden' && (cellBuildStatus as string) !== 'revealed' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

@@ -10,5 +10,5 @@ pub mod test_suites;
 pub mod tests;
 #[cfg(feature = "desktop")]
 pub mod ambient;
-#[cfg(feature = "desktop")]
+#[cfg(all(feature = "desktop", feature = "ml"))]
 pub mod clipboard_intel;

@@ -1478,6 +1478,63 @@ const harvest: EP[] = [
   ], ['Invoices']),
 ];
 
+// -- Redash ----------------------------------------------------------
+
+const redash: EP[] = [
+  ep('GET', '/api/queries', 'List saved queries', [
+    queryP('page', false, 'Page number (default 1)'),
+    queryP('page_size', false, 'Results per page (max 250)'),
+    queryP('q', false, 'Search term for query name/description'),
+  ], ['Queries']),
+  ep('GET', '/api/queries/{query_id}', 'Get a query', [
+    pathP('query_id', 'Redash query ID'),
+  ], ['Queries']),
+  ep('POST', '/api/queries/{query_id}/results', 'Execute a saved query', [
+    pathP('query_id'),
+  ], ['Queries'], jsonBody(),
+    'Body: { "parameters": {}, "max_age": 0 }. max_age=0 forces fresh run; positive integer returns cached results younger than that many seconds. May return a job descriptor (202) -- poll /api/jobs/{id} then GET /api/query_results/{query_result_id}.'),
+  ep('GET', '/api/query_results/{query_result_id}', 'Get query result (JSON)', [
+    pathP('query_result_id'),
+  ], ['Query Results']),
+  ep('GET', '/api/jobs/{job_id}', 'Poll job status', [
+    pathP('job_id'),
+  ], ['Jobs'], null,
+    'Job statuses: 1=pending, 2=started, 3=success, 4=failure, 5=cancelled.'),
+  ep('GET', '/api/dashboards', 'List dashboards', [
+    queryP('page', false),
+    queryP('page_size', false),
+  ], ['Dashboards']),
+  ep('GET', '/api/dashboards/{slug}', 'Get a dashboard', [
+    pathP('slug', 'Dashboard slug (not ID)'),
+  ], ['Dashboards']),
+  ep('GET', '/api/alerts', 'List alerts', [], ['Alerts']),
+];
+
+// -- Metabase --------------------------------------------------------
+
+const metabase: EP[] = [
+  ep('GET', '/api/card', 'List saved questions (cards)', [
+    queryP('f', false, 'Filter: all, mine, bookmarked, database, table, using_model'),
+  ], ['Cards']),
+  ep('GET', '/api/card/{id}', 'Get a card', [
+    pathP('id', 'Card ID'),
+  ], ['Cards']),
+  ep('POST', '/api/card/{card-id}/query', 'Execute a card and return results', [
+    pathP('card-id'),
+  ], ['Cards'], jsonBody(),
+    'Body: { "parameters": [], "ignore_cache": false }. Returns result set directly (synchronous).'),
+  ep('POST', '/api/card/{card-id}/query/{export-format}', 'Export card results as CSV/JSON/XLSX', [
+    pathP('card-id'),
+    pathP('export-format', 'csv | json | xlsx'),
+  ], ['Cards']),
+  ep('GET', '/api/dashboard', 'List dashboards', [], ['Dashboards']),
+  ep('GET', '/api/dashboard/{id}', 'Get a dashboard with cards', [
+    pathP('id'),
+  ], ['Dashboards']),
+  ep('GET', '/api/alert', 'List alerts', [], ['Alerts']),
+  ep('GET', '/api/user/current', 'Get current user (healthcheck)', [], ['Users']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   alpha_vantage,
   azure_devops,
@@ -1549,4 +1606,6 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   clockify,
   toggl,
   harvest,
+  redash,
+  metabase,
 };

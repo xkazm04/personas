@@ -1,25 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen } from 'lucide-react';
+import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import * as twinApi from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Training Room — teach the twin through conversation.
  *
- * Flow:
- * 1. User picks a topic area (e.g. "my work background", "tech opinions",
- *    "communication preferences") or enters a custom prompt.
- * 2. The AI generates a set of interview questions tailored to that topic,
- *    using the twin's existing memory + web context if needed.
- * 3. The user answers each question in their own voice/tone.
- * 4. Each Q&A pair is saved as a pending memory for review, building the
- *    twin's knowledge base over time.
- *
- * Powered by Claude Code CLI (same pattern as the Chat module).
+ * Adaptive flow (P5):
+ * 1. User picks a topic. We fetch approved memories so generated questions
+ *    don't re-cover ground we already have.
+ * 2. AI generates 5 interview questions grounded in what's missing.
+ * 3. User answers each. After each answer:
+ *    - If the answer is terse (< MIN_RICH_WORDS) we generate one follow-up
+ *      and insert it into the queue, marked as a follow-up.
+ *    - Otherwise we advance normally.
+ * 4. At session end we ask the AI for a session summary, save it as a
+ *    high-signal pending memory, and show it on the complete screen.
  */
 
 interface QAPair {
@@ -27,20 +29,32 @@ interface QAPair {
   question: string;
   answer: string;
   saved: boolean;
+  isFollowup?: boolean;
 }
 
+// Heuristic: short answers trigger one (and only one) follow-up.
+const MIN_RICH_WORDS = 15;
+
+// How many approved memories we surface to the model as "already known".
+const GROUNDING_LIMIT = 12;
+
 const TOPIC_PRESETS = [
-  { id: 'background', label: 'Work & Background', prompt: 'Ask me about my professional background, career history, and current role.' },
-  { id: 'opinions', label: 'Tech Opinions', prompt: 'Ask me about my opinions on technology, tools, and frameworks I use or recommend.' },
-  { id: 'communication', label: 'Communication Style', prompt: 'Ask me how I prefer to communicate — formality, humor, directness, and what I avoid.' },
-  { id: 'values', label: 'Values & Principles', prompt: 'Ask me about my core values, principles, and what matters most to me professionally.' },
-  { id: 'expertise', label: 'Domain Expertise', prompt: 'Ask me deep questions about my areas of expertise and specialized knowledge.' },
-  { id: 'personal', label: 'Personal Interests', prompt: 'Ask me about my interests, hobbies, and things I enjoy outside of work.' },
-];
+  { id: 'background', labelKey: 'topicBackground', prompt: 'Ask me about my professional background, career history, and current role.' },
+  { id: 'opinions', labelKey: 'topicOpinions', prompt: 'Ask me about my opinions on technology, tools, and frameworks I use or recommend.' },
+  { id: 'communication', labelKey: 'topicCommunication', prompt: 'Ask me how I prefer to communicate — formality, humor, directness, and what I avoid.' },
+  { id: 'values', labelKey: 'topicValues', prompt: 'Ask me about my core values, principles, and what matters most to me professionally.' },
+  { id: 'expertise', labelKey: 'topicExpertise', prompt: 'Ask me deep questions about my areas of expertise and specialized knowledge.' },
+  { id: 'personal', labelKey: 'topicPersonal', prompt: 'Ask me about my interests, hobbies, and things I enjoy outside of work.' },
+] as const;
+
+function wordCount(s: string): number {
+  return s.trim().split(/\s+/).filter(Boolean).length;
+}
 
 export default function TrainingPage() {
+  const { t } = useTwinTranslation();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
-  const activeTwin = useSystemStore((s) => s.twinProfiles).find((t) => t.id === activeTwinId);
+  const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const recordTwinInteraction = useSystemStore((s) => s.recordTwinInteraction);
 
   const [phase, setPhase] = useState<'topic' | 'interview' | 'complete'>('topic');
@@ -49,7 +63,20 @@ export default function TrainingPage() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answerDraft, setAnswerDraft] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [followupLoading, setFollowupLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Track which question slots already triggered a follow-up so a second
+  // terse answer doesn't spawn an infinite chain.
+  const followupSpawnedFor = useRef<Set<string>>(new Set());
+
+  // Already-known memories (approved) used as grounding context.
+  const [groundingFacts, setGroundingFacts] = useState<string[]>([]);
+
+  // Session summary generated at completion.
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
+
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -60,26 +87,56 @@ export default function TrainingPage() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [currentIdx]);
 
+  // Fetch approved memories once per active twin so question generation can
+  // ground on what we already know. Failures are non-blocking.
+  useEffect(() => {
+    if (!activeTwinId) { setGroundingFacts([]); return; }
+    twinApi.listPendingMemories(activeTwinId, 'approved')
+      .then((mems) => {
+        const facts = mems
+          .slice(0, GROUNDING_LIMIT)
+          .map((m) => m.title ? `${m.title}: ${m.content}` : m.content);
+        setGroundingFacts(facts);
+      })
+      .catch(() => setGroundingFacts([]));
+  }, [activeTwinId]);
+
+  const callAi = async (prompt: string): Promise<string> => {
+    if (!activeTwin) throw new Error('no active twin');
+    // Backend exposes only `twin_generate_bio` for free-form CLI completion
+    // today; we reuse it as a generic prompt channel until a dedicated
+    // training-prompt command lands. Name + role anchor the persona so the
+    // CLI replies in-voice rather than as a generic assistant.
+    return invoke<string>('twin_generate_bio', {
+      name: activeTwin.name,
+      role: activeTwin.role ?? null,
+      keywords: prompt,
+    });
+  };
+
   const generateQuestions = useCallback(async (topicPrompt: string) => {
     if (!activeTwin) return;
     setGenerating(true);
+    setSessionSummary(null);
+    followupSpawnedFor.current = new Set();
+
+    const groundingBlock = groundingFacts.length > 0
+      ? `\n\nAlready known about ${activeTwin.name} (do NOT re-ask these — build on or around them):\n${groundingFacts.map((f, i) => `- ${f.slice(0, 200)}${f.length > 200 ? '…' : ''}`).join('\n')}`
+      : '';
+
     try {
       const prompt = `You are interviewing someone to build a digital twin profile. Their name is "${activeTwin.name}"${activeTwin.role ? `, role: ${activeTwin.role}` : ''}${activeTwin.bio ? `. Bio: ${activeTwin.bio}` : ''}.
 
-Topic: ${topicPrompt}
+Topic: ${topicPrompt}${groundingBlock}
 
 Generate exactly 5 interview questions. Each question should:
 - Be specific and conversational (not generic)
 - Help capture their unique perspective, tone, and knowledge
-- Build on their existing profile where possible
+- Build on existing facts where possible — never duplicate them
 
 Output ONLY the questions, one per line, numbered 1-5. No other text.`;
 
-      const result = await invoke<string>("twin_generate_bio", {
-        name: activeTwin.name,
-        role: activeTwin.role ?? null,
-        keywords: prompt,
-      });
+      const result = await callAi(prompt);
 
       const lines = result.split('\n')
         .map((l) => l.replace(/^\d+[\.\)]\s*/, '').trim())
@@ -118,44 +175,144 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
     } finally {
       setGenerating(false);
     }
-  }, [activeTwin]);
+  }, [activeTwin, groundingFacts]);
+
+  const generateFollowup = async (parent: QAPair, parentAnswer: string): Promise<string | null> => {
+    if (!activeTwin) return null;
+    try {
+      const followupPrompt = `Original question: "${parent.question}"
+Their (terse) answer: "${parentAnswer}"
+
+Ask ONE concise follow-up question that gets them to elaborate — pick the most interesting unexplored angle. Output the question only, no preamble.`;
+      const raw = await callAi(followupPrompt);
+      const cleaned = raw.split('\n').map((l) => l.replace(/^\d+[\.\)]\s*/, '').trim()).find((l) => l.length > 5);
+      return cleaned ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const summarizeSession = async (qaPairs: QAPair[]): Promise<string | null> => {
+    if (!activeTwin) return null;
+    const transcript = qaPairs
+      .filter((q) => q.answer.trim())
+      .map((q, i) => `Q${i + 1}: ${q.question}\nA: ${q.answer}`)
+      .join('\n\n');
+    if (!transcript) return null;
+    try {
+      const prompt = `Below is a training interview with ${activeTwin.name}. Write a 3-5 sentence summary capturing the most distinctive, persona-shaping facts and patterns from these answers — what someone would need to know to speak as ${activeTwin.name}. No preamble, no headings, just the summary paragraph.
+
+${transcript}`;
+      const raw = await callAi(prompt);
+      return raw.trim() || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const advanceOrComplete = async (qaPairs: QAPair[], nextIdx: number) => {
+    if (nextIdx < qaPairs.length) {
+      setCurrentIdx(nextIdx);
+      setTimeout(() => answerRef.current?.focus(), 100);
+      return;
+    }
+
+    // End of queue — generate session summary, save it, then move to complete.
+    setSummarizing(true);
+    try {
+      const summary = await summarizeSession(qaPairs);
+      if (summary && activeTwinId) {
+        setSessionSummary(summary);
+        await recordTwinInteraction(
+          activeTwinId,
+          'training',
+          'out',
+          summary,
+          undefined,
+          `Training session summary — ${new Date().toLocaleDateString()}`,
+          JSON.stringify({ kind: 'session_summary', qa_count: qaPairs.length }),
+          true,
+        );
+      }
+    } finally {
+      setSummarizing(false);
+      setPhase('complete');
+    }
+  };
 
   const handleSubmitAnswer = async () => {
     if (!answerDraft.trim() || !activeTwinId) return;
     const q = questions[currentIdx];
     if (!q) return;
 
-    // Save answer into the Q&A pair
+    const trimmedAnswer = answerDraft.trim();
     const updated = [...questions];
-    updated[currentIdx] = { ...q, answer: answerDraft.trim() };
+    updated[currentIdx] = { ...q, answer: trimmedAnswer };
     setQuestions(updated);
 
-    // Record as a twin interaction + pending memory
+    // Persist the Q&A as a pending memory.
     setSaving(true);
     try {
       await recordTwinInteraction(
         activeTwinId,
         'training',
         'out',
-        answerDraft.trim(),
+        trimmedAnswer,
         undefined,
         `Training Q&A: ${q.question}`,
-        JSON.stringify([{ q: q.question, a: answerDraft.trim() }]),
+        JSON.stringify([{ q: q.question, a: trimmedAnswer }]),
         true,
       );
-      updated[currentIdx] = { ...updated[currentIdx]!, saved: true };
+      updated[currentIdx] = { ...updated[currentIdx]!, answer: trimmedAnswer, saved: true };
       setQuestions([...updated]);
     } finally {
       setSaving(false);
     }
 
-    // Move to next question or complete
     setAnswerDraft('');
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx(currentIdx + 1);
-      setTimeout(() => answerRef.current?.focus(), 100);
+
+    // Adaptive: terse answer → generate one follow-up and insert it.
+    const isTerse = wordCount(trimmedAnswer) < MIN_RICH_WORDS;
+    const alreadySpawned = followupSpawnedFor.current.has(q.id);
+
+    if (isTerse && !alreadySpawned) {
+      followupSpawnedFor.current.add(q.id);
+      setFollowupLoading(true);
+      const followupQ = await generateFollowup(q, trimmedAnswer);
+      setFollowupLoading(false);
+
+      if (followupQ) {
+        const followup: QAPair = {
+          id: `fu-${Date.now()}`,
+          question: followupQ,
+          answer: '',
+          saved: false,
+          isFollowup: true,
+        };
+        const next = [...updated.slice(0, currentIdx + 1), followup, ...updated.slice(currentIdx + 1)];
+        setQuestions(next);
+        await advanceOrComplete(next, currentIdx + 1);
+        return;
+      }
+    }
+
+    await advanceOrComplete(updated, currentIdx + 1);
+  };
+
+  const handleSkipFollowup = async () => {
+    // User explicitly opts out of the current follow-up — skip without saving.
+    const next = [...questions.slice(0, currentIdx), ...questions.slice(currentIdx + 1)];
+    setQuestions(next);
+    setAnswerDraft('');
+    if (next.length === 0) {
+      await advanceOrComplete(questions.filter((_, i) => i !== currentIdx), questions.length - 1);
+      return;
+    }
+    if (currentIdx >= next.length) {
+      await advanceOrComplete(next, next.length);
     } else {
-      setPhase('complete');
+      setCurrentIdx(currentIdx);
+      setTimeout(() => answerRef.current?.focus(), 100);
     }
   };
 
@@ -169,20 +326,25 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
     setCurrentIdx(0);
     setAnswerDraft('');
     setCustomTopic('');
+    setSessionSummary(null);
+    followupSpawnedFor.current = new Set();
   };
 
-  if (!activeTwinId || !activeTwin) return <TwinEmptyState icon={GraduationCap} title="Training Room" />;
+  if (!activeTwinId || !activeTwin) return <TwinEmptyState icon={GraduationCap} title={t.training.title} />;
+
+  const currentQ = questions[currentIdx];
+  const isOnFollowup = !!currentQ?.isFollowup;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<GraduationCap className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title={`Training Room — ${activeTwin.name}`}
-        subtitle="Teach the twin by answering questions in your own voice. Each answer becomes a memory."
+        title={`${t.training.title} — ${activeTwin.name}`}
+        subtitle={t.training.subtitle}
         actions={phase !== 'topic' ? (
           <Button onClick={handleReset} variant="ghost" size="sm">
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />New Session
+            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />{t.training.newSession}
           </Button>
         ) : undefined}
       />
@@ -194,12 +356,16 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
           {phase === 'topic' && (
             <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 py-8">
               <GraduationCap className="w-12 h-12 text-violet-400/40 mb-4" />
-              <h2 className="typo-heading text-foreground mb-1">What should we train on?</h2>
-              <p className="typo-caption text-muted-foreground mb-6 text-center">
-                Pick a topic area or describe your own. AI will generate tailored questions for you to answer.
-              </p>
+              <h2 className="typo-heading text-foreground mb-1">{t.training.whatToTrain}</h2>
+              <p className="typo-caption text-muted-foreground mb-2 text-center">{t.training.topicHint}</p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full mb-6">
+              {groundingFacts.length > 0 && (
+                <p className="typo-caption text-violet-400/80 mb-4 text-center">
+                  {t.training.groundingHint.replace('{count}', String(groundingFacts.length))}
+                </p>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full mb-6 mt-2">
                 {TOPIC_PRESETS.map((topic) => (
                   <button
                     key={topic.id}
@@ -207,7 +373,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                     disabled={generating}
                     className="p-3 rounded-card border border-primary/10 bg-card/40 hover:border-violet-500/20 hover:bg-violet-500/5 transition-colors text-left"
                   >
-                    <p className="typo-body text-foreground font-medium">{topic.label}</p>
+                    <p className="typo-body text-foreground font-medium">{t.training[topic.labelKey as keyof typeof t.training]}</p>
                   </button>
                 ))}
               </div>
@@ -215,7 +381,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
               <div className="flex items-center gap-2 w-full">
                 <input
                   type="text"
-                  placeholder="Or describe a custom topic..."
+                  placeholder={t.training.customTopicPlaceholder}
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && customTopic.trim()) generateQuestions(customTopic.trim()); }}
@@ -235,7 +401,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
               </div>
 
               {generating && (
-                <p className="typo-caption text-violet-400 mt-4 animate-pulse">Generating questions...</p>
+                <p className="typo-caption text-violet-400 mt-4 animate-pulse">{t.training.generatingQuestions}</p>
               )}
             </div>
           )}
@@ -246,13 +412,15 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
               {/* Progress bar */}
               <div className="px-4 py-3 border-b border-primary/5">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="typo-caption text-foreground">Question {currentIdx + 1} of {questions.length}</span>
-                  <span className="typo-caption text-muted-foreground">{savedCount} saved</span>
+                  <span className="typo-caption text-foreground">
+                    {t.training.questionProgress.replace('{current}', String(currentIdx + 1)).replace('{total}', String(questions.length))}
+                  </span>
+                  <span className="typo-caption text-muted-foreground">{t.training.savedCount.replace('{count}', String(savedCount))}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-violet-400 transition-all duration-300"
-                    style={{ width: `${((currentIdx + (answerDraft ? 0.5 : 0)) / questions.length) * 100}%` }}
+                    style={{ width: `${((currentIdx + (answerDraft ? 0.5 : 0)) / Math.max(questions.length, 1)) * 100}%` }}
                   />
                 </div>
               </div>
@@ -264,10 +432,19 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                     <div key={qa.id} ref={idx === currentIdx ? scrollRef : undefined}>
                       {/* Question bubble */}
                       <div className="flex gap-3 mb-2">
-                        <div className="w-7 h-7 rounded-interactive bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <GraduationCap className="w-3.5 h-3.5 text-violet-400" />
+                        <div className={`w-7 h-7 rounded-interactive flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          qa.isFollowup ? 'bg-amber-500/10' : 'bg-violet-500/10'
+                        }`}>
+                          {qa.isFollowup
+                            ? <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                            : <GraduationCap className="w-3.5 h-3.5 text-violet-400" />}
                         </div>
                         <div className="flex-1">
+                          {qa.isFollowup && (
+                            <span className="inline-block px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 mb-1">
+                              {t.training.followupBadge}
+                            </span>
+                          )}
                           <p className={`typo-body ${idx <= currentIdx ? 'text-foreground' : 'text-muted-foreground/50'}`}>
                             {qa.question}
                           </p>
@@ -282,7 +459,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                             {qa.saved && (
                               <div className="flex items-center gap-1 mt-2">
                                 <Save className="w-3 h-3 text-emerald-400" />
-                                <span className="text-[10px] text-emerald-400">Saved to memory</span>
+                                <span className="text-[10px] text-emerald-400">{t.training.savedToMemory}</span>
                               </div>
                             )}
                           </div>
@@ -290,6 +467,13 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                       )}
                     </div>
                   ))}
+
+                  {followupLoading && (
+                    <p className="typo-caption text-amber-400 animate-pulse pl-10">{t.training.generatingFollowup}</p>
+                  )}
+                  {summarizing && (
+                    <p className="typo-caption text-violet-400 animate-pulse pl-10">{t.training.summarizingSession}</p>
+                  )}
                 </div>
               </div>
 
@@ -301,10 +485,11 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                     value={answerDraft}
                     onChange={(e) => setAnswerDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Answer in your own voice..."
-                    disabled={saving}
+                    placeholder={t.training.answerPlaceholder}
+                    disabled={saving || followupLoading || summarizing}
                     rows={1}
                     autoFocus
+                    aria-label={t.training.answerPlaceholder}
                     className="flex-1 resize-none rounded-card border border-primary/10 bg-background px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                     style={{ height: 'auto', overflow: 'auto' }}
                     onInput={(e) => {
@@ -313,9 +498,19 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                       el.style.height = Math.min(el.scrollHeight, 160) + 'px';
                     }}
                   />
+                  {isOnFollowup && (
+                    <button
+                      onClick={() => void handleSkipFollowup()}
+                      disabled={saving || followupLoading}
+                      className="flex-shrink-0 h-10 px-3 rounded-card border border-primary/10 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30"
+                    >
+                      {t.training.skipFollowup}
+                    </button>
+                  )}
                   <button
                     onClick={() => void handleSubmitAnswer()}
-                    disabled={!answerDraft.trim() || saving}
+                    disabled={!answerDraft.trim() || saving || followupLoading || summarizing}
+                    aria-label={t.training.answerPlaceholder}
                     className="flex-shrink-0 w-10 h-10 rounded-card bg-violet-500 text-white flex items-center justify-center hover:bg-violet-500/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {saving ? (
@@ -326,7 +521,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground/30 mt-1.5 text-center select-none max-w-2xl mx-auto">
-                  Enter to submit, Shift+Enter for new line
+                  {t.training.enterToSubmit}
                 </p>
               </div>
             </>
@@ -334,21 +529,31 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
 
           {/* ── Complete Phase ──────────────────────────────────────── */}
           {phase === 'complete' && (
-            <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 py-8">
+            <div className="flex-1 flex flex-col items-center max-w-2xl mx-auto px-4 py-8 overflow-y-auto">
               <div className="w-16 h-16 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
                 <BookOpen className="w-8 h-8 text-emerald-400" />
               </div>
-              <h2 className="typo-heading text-foreground mb-1">Training session complete</h2>
-              <p className="typo-caption text-muted-foreground mb-2 text-center">
-                {savedCount} of {questions.length} answers saved as pending memories.
-                Review them in the Knowledge tab.
+              <h2 className="typo-heading text-foreground mb-1">{t.training.sessionComplete}</h2>
+              <p className="typo-caption text-muted-foreground mb-4 text-center">
+                {t.training.sessionCompleteDetail
+                  .replace('{saved}', String(savedCount))
+                  .replace('{total}', String(questions.length))}
               </p>
-              <div className="flex items-center gap-3 mt-4">
+
+              {sessionSummary && (
+                <div className="w-full p-4 rounded-card border border-violet-500/20 bg-violet-500/5 mb-4">
+                  <p className="typo-caption text-violet-400 font-medium mb-2">{t.training.sessionSummaryHeading}</p>
+                  <p className="typo-body text-foreground whitespace-pre-wrap leading-relaxed">{sessionSummary}</p>
+                  <p className="typo-caption text-muted-foreground mt-3 italic">{t.training.summarySaved}</p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mt-2">
                 <Button onClick={handleReset} variant="accent" accentColor="violet" size="sm">
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Train More
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />{t.training.trainMore}
                 </Button>
                 <Button onClick={() => useSystemStore.getState().setTwinTab('knowledge')} variant="ghost" size="sm">
-                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />Review Memories
+                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />{t.training.reviewMemories}
                 </Button>
               </div>
             </div>

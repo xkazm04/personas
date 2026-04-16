@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
 import { Sparkles, ChevronDown, AlertCircle } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTwinTranslation } from './i18n/useTwinTranslation';
 
 /**
  * Active-twin selector banner. Mirrors DevToolsPage's ProjectSelector pattern:
@@ -12,23 +12,18 @@ import { useSystemStore } from '@/stores/systemStore';
  * The active twin is what the `builtin-twin` connector resolves when a
  * persona invokes a twin tool, so this banner is the canonical "who is
  * speaking right now" signal across the whole plugin.
+ *
+ * Profile hydration lives in TwinPage so we don't fire duplicate fetches
+ * when this banner remounts on tab switches.
  */
 export function TwinSelector() {
+  const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
-  const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
-  const loadedRef = useRef(false);
 
-  useEffect(() => {
-    if (!loadedRef.current) {
-      loadedRef.current = true;
-      fetchTwinProfiles();
-    }
-  }, [fetchTwinProfiles]);
-
-  const activeTwin = twinProfiles.find((t) => t.id === activeTwinId);
+  const activeTwin = twinProfiles.find((tw) => tw.id === activeTwinId);
 
   // No twins yet — prompt the user to create one.
   if (twinProfiles.length === 0) {
@@ -36,16 +31,14 @@ export function TwinSelector() {
       <div className="mx-4 mt-3 mb-1 px-4 py-3 rounded-card bg-violet-500/5 border border-violet-500/20 flex items-center gap-3">
         <AlertCircle className="w-4 h-4 text-violet-400/60 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="typo-caption text-foreground">No twin configured</p>
-          <p className="typo-caption text-muted-foreground">
-            Create a twin first so personas have an identity to speak as.
-          </p>
+          <p className="typo-caption text-foreground">{t.selector.noTwin}</p>
+          <p className="typo-caption text-muted-foreground">{t.selector.createFirst}</p>
         </div>
         <button
           onClick={() => setTwinTab('profiles')}
           className="px-3 py-1.5 text-[11px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-interactive hover:bg-violet-500/20 transition-colors flex-shrink-0"
         >
-          Create Twin
+          {t.selector.createTwin}
         </button>
       </div>
     );
@@ -73,15 +66,16 @@ export function TwinSelector() {
           onChange={(e) => {
             if (e.target.value) setActiveTwin(e.target.value);
           }}
+          aria-label={t.selector.selectTwin}
           className="w-full appearance-none px-3 py-2 pl-9 pr-8 typo-caption font-medium text-foreground bg-violet-500/5 border border-violet-500/10 rounded-card cursor-pointer hover:bg-violet-500/8 focus-ring transition-colors"
         >
           <option value="" disabled>
-            Select a twin...
+            {t.selector.selectTwin}
           </option>
-          {twinProfiles.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-              {t.role ? ` — ${t.role}` : ''}
+          {twinProfiles.map((tw) => (
+            <option key={tw.id} value={tw.id}>
+              {tw.name}
+              {tw.role ? ` — ${tw.role}` : ''}
             </option>
           ))}
         </select>

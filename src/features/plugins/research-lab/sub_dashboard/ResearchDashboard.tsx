@@ -1,10 +1,37 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   BookOpen, FolderSearch, Lightbulb, FlaskConical, Target, FileText,
   ArrowRight, Plus,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { projectStatusColor, projectStatusLabel } from '../_shared/tokens';
+import type { Translations } from '@/i18n/en';
+
+type TabId = 'projects' | 'literature' | 'hypotheses' | 'experiments' | 'findings' | 'reports';
+
+interface StatCard {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  sub?: string;
+  tab: TabId;
+}
+
+function buildStatCards(
+  t: Translations,
+  stats: ReturnType<typeof useSystemStore.getState>['researchDashboardStats'],
+): StatCard[] {
+  return [
+    { icon: FolderSearch, label: t.research_lab.projects, value: stats?.totalProjects ?? 0, sub: `${stats?.activeProjects ?? 0} ${t.research_lab.active}`, tab: 'projects' },
+    { icon: BookOpen, label: t.research_lab.sources, value: stats?.totalSources ?? 0, tab: 'literature' },
+    { icon: Lightbulb, label: t.research_lab.hypotheses, value: stats?.totalHypotheses ?? 0, tab: 'hypotheses' },
+    { icon: FlaskConical, label: t.research_lab.experiments, value: stats?.totalExperiments ?? 0, tab: 'experiments' },
+    { icon: Target, label: t.research_lab.findings, value: stats?.totalFindings ?? 0, tab: 'findings' },
+    { icon: FileText, label: t.research_lab.reports, value: stats?.totalReports ?? 0, tab: 'reports' },
+  ];
+}
 
 export default function ResearchDashboard() {
   const { t } = useTranslation();
@@ -20,14 +47,7 @@ export default function ResearchDashboard() {
     fetchProjects();
   }, [fetchStats, fetchProjects]);
 
-  const statCards = [
-    { icon: FolderSearch, label: t.research_lab.projects, value: stats?.totalProjects ?? 0, sub: `${stats?.activeProjects ?? 0} ${t.research_lab.active}`, tab: 'projects' as const },
-    { icon: BookOpen, label: t.research_lab.sources, value: stats?.totalSources ?? 0, tab: 'literature' as const },
-    { icon: Lightbulb, label: t.research_lab.hypotheses, value: stats?.totalHypotheses ?? 0, tab: 'hypotheses' as const },
-    { icon: FlaskConical, label: t.research_lab.experiments, value: stats?.totalExperiments ?? 0, tab: 'experiments' as const },
-    { icon: Target, label: t.research_lab.findings, value: stats?.totalFindings ?? 0, tab: 'findings' as const },
-    { icon: FileText, label: t.research_lab.reports, value: stats?.totalReports ?? 0, tab: 'reports' as const },
-  ];
+  const statCards = useMemo(() => buildStatCards(t, stats), [t, stats]);
 
   return (
     <div className="p-6 space-y-6 overflow-y-auto">
@@ -65,12 +85,12 @@ export default function ResearchDashboard() {
       {projects.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="typo-body text-foreground/80 font-medium">{t.research_lab.projects}</h3>
+            <h3 className="typo-body text-foreground/80 font-medium">{t.research_lab.recent_projects}</h3>
             <button
               onClick={() => setResearchLabTab('projects')}
               className="typo-caption text-primary/60 hover:text-primary/80 transition-colors"
             >
-              View all
+              {t.research_lab.view_all}
             </button>
           </div>
 
@@ -92,8 +112,8 @@ export default function ResearchDashboard() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/50 font-medium">
-                      {project.status.replace(/_/g, ' ')}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${projectStatusColor(project.status)}`}>
+                      {projectStatusLabel(t, project.status)}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>

@@ -143,6 +143,8 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   posthog:            { label: 'PostHog',            color: '#1D4AFF', iconUrl: 'https://cdn.simpleicons.org/posthog/1D4AFF',          Icon: BarChart },
   amplitude:          { label: 'Amplitude',          color: '#003E82', iconUrl: '/icons/connectors/amplitude.svg',                      Icon: BarChart },
   segment:            { label: 'Segment',            color: '#52BD95', iconUrl: '/icons/connectors/segment.svg',                        Icon: BarChart },
+  redash:             { label: 'Redash',             color: '#FF7964', iconUrl: '/icons/connectors/redash.svg',                         Icon: BarChart },
+  metabase:           { label: 'Metabase',           color: '#509EE3', iconUrl: '/icons/connectors/metabase.svg',                       Icon: BarChart },
 
   // -- Email & SMS -----------------------------------------------
   sendgrid:           { label: 'SendGrid',           color: '#1A82E2', iconUrl: '/icons/connectors/sendgrid.svg',                       Icon: Send },

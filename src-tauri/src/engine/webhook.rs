@@ -57,8 +57,9 @@ pub async fn start_webhook_server(
         .route("/webhook/{trigger_id}", get(webhook_info))
         .route("/health", get(health))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .with_state(Arc::new(state))
-        .merge(super::share_link::share_link_router());
+        .with_state(Arc::new(state));
+    #[cfg(feature = "p2p")]
+    let app = app.merge(super::share_link::share_link_router());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -106,8 +107,9 @@ pub async fn start_webhook_server_with_management(
         .route("/health", get(health))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(Arc::new(webhook_state))
-        .merge(super::management_api::management_router(mgmt_state))
-        .merge(super::share_link::share_link_router());
+        .merge(super::management_api::management_router(mgmt_state));
+    #[cfg(feature = "p2p")]
+    let app = app.merge(super::share_link::share_link_router());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
     let listener = tokio::net::TcpListener::bind(addr).await?;

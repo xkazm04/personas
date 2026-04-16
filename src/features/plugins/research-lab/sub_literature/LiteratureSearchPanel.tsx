@@ -1,9 +1,12 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
-import { BookOpen, ExternalLink, Plus, Trash2, Database } from 'lucide-react';
+import { useEffect, useState, lazy, Suspense, useMemo } from 'react';
+import { BookOpen, ExternalLink, Trash2, Database } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { SectionHeader } from '../_shared/SectionHeader';
+import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
+import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../_shared/tokens';
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 
@@ -14,6 +17,7 @@ export default function LiteratureSearchPanel() {
   const loading = useSystemStore((s) => s.researchSourcesLoading);
   const fetchSources = useSystemStore((s) => s.fetchResearchSources);
   const deleteSource = useSystemStore((s) => s.deleteResearchSource);
+  const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
 
   const updateSourceStatus = useSystemStore((s) => s.updateSourceStatus);
   const addToast = useToastStore((s) => s.addToast);
@@ -27,7 +31,6 @@ export default function LiteratureSearchPanel() {
     setIngestingId(sourceId);
     try {
       await updateSourceStatus(sourceId, 'ingesting');
-      // Mark as indexed — actual KB pipeline integration is wired via the backend
       await updateSourceStatus(sourceId, 'indexed');
       addToast(t.research_lab.source_indexed, 'success');
     } catch (err) {
@@ -42,19 +45,23 @@ export default function LiteratureSearchPanel() {
     if (activeProjectId) fetchSources(activeProjectId);
   }, [activeProjectId, fetchSources]);
 
-  const filtered = filter
-    ? sources.filter((s) =>
-        s.title.toLowerCase().includes(filter.toLowerCase()) ||
-        (s.authors ?? '').toLowerCase().includes(filter.toLowerCase())
-      )
-    : sources;
+  const filtered = useMemo(() => {
+    if (!filter.trim()) return sources;
+    const q = filter.toLowerCase();
+    return sources.filter((s) =>
+      s.title.toLowerCase().includes(q) ||
+      (s.authors ?? '').toLowerCase().includes(q),
+    );
+  }, [sources, filter]);
 
   if (!activeProjectId) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <BookOpen className="w-10 h-10 text-foreground/20" />
-        <p className="typo-body text-foreground/50">{t.research_lab.select_project_first}</p>
-      </div>
+      <NoActiveProject
+        icon={BookOpen}
+        message={t.research_lab.select_project_first}
+        onGoToProjects={() => setResearchLabTab('projects')}
+        goToProjectsLabel={t.research_lab.projects}
+      />
     );
   }
 
@@ -65,26 +72,23 @@ export default function LiteratureSearchPanel() {
 
   return (
     <div className="p-6 space-y-4 overflow-y-auto">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="typo-heading text-foreground">{t.research_lab.literature}</h2>
-        <div className="flex items-center gap-2">
-          <span className="typo-caption text-foreground/40">{filtered.length} {t.research_lab.sources_count}</span>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {t.research_lab.search_sources}
-          </button>
-        </div>
-      </div>
+      <SectionHeader
+        title={t.research_lab.literature}
+        actionLabel={t.research_lab.search_sources}
+        onAction={() => setShowAddForm(true)}
+        extra={
+          <span className="typo-caption text-foreground/40">
+            {filtered.length} / {sources.length} {t.research_lab.sources_count}
+          </span>
+        }
+      />
 
-      {sources.length > 5 && (
+      {sources.length > 2 && (
         <input
-          type="text"
+          type="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter by title or author..."
+          placeholder={t.research_lab.filter_sources_placeholder}
           className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40"
         />
       )}
@@ -94,13 +98,17 @@ export default function LiteratureSearchPanel() {
           <p className="typo-body text-foreground/50">{t.common.loading}</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <BookOpen className="w-10 h-10 text-foreground/20" />
-          <p className="typo-body text-foreground/50">{sources.length === 0 ? t.research_lab.no_sources : 'No matching sources'}</p>
-          {sources.length === 0 && (
-            <p className="typo-caption text-foreground/30 max-w-sm text-center">{t.research_lab.no_sources_hint}</p>
-          )}
-        </div>
+        sources.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title={t.research_lab.no_sources}
+            hint={t.research_lab.no_sources_hint}
+            actionLabel={t.research_lab.search_sources}
+            onAction={() => setShowAddForm(true)}
+          />
+        ) : (
+          <EmptyState icon={BookOpen} title={t.research_lab.no_matching_sources} />
+        )
       ) : (
         <div className="space-y-3">
           {filtered.map((source) => (
@@ -121,16 +129,20 @@ export default function LiteratureSearchPanel() {
                     <p className="typo-micro text-foreground/40 mt-2 line-clamp-3">{source.abstractText}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">{source.sourceType}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-                      source.status === 'indexed' ? 'bg-green-500/20 text-green-300' :
-                      source.status === 'ingesting' ? 'bg-amber-500/20 text-amber-300' :
-                      source.status === 'failed' ? 'bg-red-500/20 text-red-300' :
-                      'bg-foreground/10 text-foreground/40'
-                    }`}>{source.status}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">{sourceTypeLabel(t, source.sourceType)}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${sourceStatusColor(source.status)}`}>
+                      {sourceStatusLabel(t, source.status)}
+                    </span>
                     {source.doi && <span className="typo-micro text-foreground/30">{source.doi}</span>}
                     {source.url && (
-                      <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary/50 hover:text-primary/80">
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary/50 hover:text-primary/80"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={source.url}
+                      >
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
@@ -157,6 +169,8 @@ export default function LiteratureSearchPanel() {
                   <button
                     onClick={(e) => handleDelete(e, source.id)}
                     className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all"
+                    title={t.common.delete}
+                    aria-label={t.common.delete}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

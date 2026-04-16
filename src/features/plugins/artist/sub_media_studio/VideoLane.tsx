@@ -2,14 +2,10 @@ import { memo, useCallback } from 'react';
 import { Film, Plus, Blend, Moon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { formatDurationHuman } from '../utils/format';
+import { useVideoThumbnails } from './hooks/useVideoThumbnails';
 import type { VideoClip } from './types';
 import TimelineClip from './TimelineClip';
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
-}
 
 interface VideoLaneProps {
   items: VideoClip[];
@@ -123,22 +119,8 @@ function VideoLaneImpl({
             onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}
             onTrimRight={(delta) => handleTrimRight(clip.id, clip, delta)}
           >
-            <div className="relative flex items-center gap-1.5 h-full px-2 overflow-hidden">
-              {/* Filmstrip pattern background */}
-              <div className="absolute inset-0 pointer-events-none opacity-10">
-                <div className="h-full flex">
-                  {Array.from({ length: Math.max(1, Math.floor(clip.duration * zoom / 20)) }, (_, i) => (
-                    <div key={i} className="h-full flex-shrink-0 w-5 border-r border-rose-400" />
-                  ))}
-                </div>
-              </div>
-              <Film className="w-3 h-3 text-rose-400 flex-shrink-0 z-10" />
-              <span className="text-[11px] text-foreground/80 truncate z-10">{clip.label}</span>
-              {/* Duration badge */}
-              <span className="ml-auto text-[8px] text-rose-300/70 bg-black/30 rounded px-1 py-0.5 tabular-nums font-mono z-10 flex-shrink-0">
-                {formatDuration(clip.duration)}
-              </span>
-            </div>
+            <VideoClipBody clip={clip} />
+
           </TimelineClip>
         ))}
 
@@ -166,3 +148,46 @@ function VideoLaneImpl({
 
 const VideoLane = memo(VideoLaneImpl);
 export default VideoLane;
+
+// ---------------------------------------------------------------------------
+// VideoClipBody — real thumbnail strip when extraction succeeds, filmstrip
+// fallback otherwise.
+// ---------------------------------------------------------------------------
+
+function VideoClipBody({ clip }: { clip: VideoClip }) {
+  const frames = useVideoThumbnails(clip.filePath);
+
+  return (
+    <div className="relative flex items-center gap-1.5 h-full px-2 overflow-hidden">
+      {/* Thumbnail strip OR filmstrip fallback */}
+      <div className="absolute inset-0 pointer-events-none">
+        {frames && frames.length > 0 ? (
+          <div className="h-full flex opacity-60">
+            {frames.map((f, i) => (
+              <div
+                key={i}
+                className="h-full flex-1 bg-cover bg-center"
+                style={{ backgroundImage: `url(${f})` }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="h-full flex opacity-10">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="h-full flex-1 border-r border-rose-400" />
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Dark scrim so the label stays readable over the thumbs */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent pointer-events-none" />
+      <Film className="w-3 h-3 text-rose-400 flex-shrink-0 z-10" />
+      <span className="text-[11px] text-foreground/80 truncate z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+        {clip.label}
+      </span>
+      <span className="ml-auto text-[8px] text-rose-300/90 bg-black/50 rounded px-1 py-0.5 tabular-nums font-mono z-10 flex-shrink-0">
+        {formatDurationHuman(clip.duration)}
+      </span>
+    </div>
+  );
+}

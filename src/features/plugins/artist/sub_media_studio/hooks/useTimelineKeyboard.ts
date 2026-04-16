@@ -26,6 +26,8 @@ export function useTimelineKeyboard({
   removeItem,
   duplicateItem,
   deselectItem,
+  undo,
+  redo,
 }: {
   engine: PlaybackEngine;
   play: () => void;
@@ -36,6 +38,8 @@ export function useTimelineKeyboard({
   removeItem: (id: string) => void;
   duplicateItem?: (id: string) => void;
   deselectItem: () => void;
+  undo?: () => void;
+  redo?: () => void;
 }) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -91,9 +95,27 @@ export function useTimelineKeyboard({
             duplicateItem(selectedItemId);
           }
           break;
+
+        case 'KeyZ':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo?.();
+            } else {
+              undo?.();
+            }
+          }
+          break;
+
+        case 'KeyY':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            redo?.();
+          }
+          break;
       }
     },
-    [engine, play, pause, seek, totalDuration, selectedItemId, removeItem, duplicateItem, deselectItem],
+    [engine, play, pause, seek, totalDuration, selectedItemId, removeItem, duplicateItem, deselectItem, undo, redo],
   );
 
   useEffect(() => {

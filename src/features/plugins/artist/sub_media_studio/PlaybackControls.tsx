@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Square, SkipBack, SkipForward, Keyboard, Repeat } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { formatDurationShort } from '../utils/format';
 import type { PlaybackEngine } from './hooks/useTimelinePlayback';
 
 interface PlaybackControlsProps {
@@ -14,14 +15,6 @@ interface PlaybackControlsProps {
   onStop: () => void;
   onSeek: (time: number) => void;
   onToggleLoop: () => void;
-}
-
-/** Format seconds to MM:SS.s */
-function formatTime(seconds: number): string {
-  const safe = Math.max(0, seconds);
-  const m = Math.floor(safe / 60);
-  const s = safe % 60;
-  return `${String(m).padStart(2, '0')}:${s.toFixed(1).padStart(4, '0')}`;
 }
 
 /**
@@ -119,11 +112,11 @@ export default function PlaybackControls({
       {/* Time display */}
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary/20 border border-primary/10">
         <span className="text-sm font-mono text-rose-400 tabular-nums font-semibold">
-          {formatTime(displayTime)}
+          {formatDurationShort(displayTime)}
         </span>
         <span className="text-xs text-muted-foreground/40">/</span>
         <span className="text-sm font-mono text-muted-foreground/60 tabular-nums">
-          {formatTime(totalDuration)}
+          {formatDurationShort(totalDuration)}
         </span>
       </div>
 

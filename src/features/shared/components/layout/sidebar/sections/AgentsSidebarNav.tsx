@@ -74,11 +74,20 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
     return ids;
   }, [isExecuting, executionPersonaId, backgroundExecutions]);
 
-  // Active draft builds — one entry per session in the buildSessions map.
-  // Multiple drafts can be in progress at once; clicking switches the active one.
+  // Active draft builds — one entry per persona. Multiple sessions can
+  // reference the same persona (e.g. user closed and re-opened adoption);
+  // deduplicate by personaId so the sidebar shows one dot per agent draft,
+  // keeping the most recent session for each persona.
   const activeDrafts = useMemo(() => {
-    return Object.values(buildSessions)
-      .filter((sess) => sess.phase !== 'initializing' && sess.phase !== 'promoted')
+    const byPersona = new Map<string, (typeof buildSessions)[string]>();
+    for (const sess of Object.values(buildSessions)) {
+      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
+      const existing = byPersona.get(sess.personaId);
+      if (!existing || sess.createdAt > existing.createdAt) {
+        byPersona.set(sess.personaId, sess);
+      }
+    }
+    return [...byPersona.values()]
       .map((sess) => ({
         sessionId: sess.sessionId,
         personaId: sess.personaId,

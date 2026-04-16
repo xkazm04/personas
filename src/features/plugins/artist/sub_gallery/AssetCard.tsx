@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Trash2, Tag, Box, Loader2 } from 'lucide-react';
+import { Trash2, Tag, Box, Loader2, Film } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
+import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useLocalImage } from '../hooks/useLocalImage';
+import { formatFileSize } from '../utils/format';
+import TagEditorModal from './TagEditorModal';
 
 interface AssetCardProps {
   asset: ArtistAsset;
@@ -14,10 +18,23 @@ interface AssetCardProps {
 export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: AssetCardProps) {
   const { t } = useTranslation();
   const [hovering, setHovering] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
+  const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
+  const setArtistTab = useSystemStore((s) => s.setArtistTab);
   const isImage = asset.assetType === '2d';
   const sizeStr = formatFileSize(asset.fileSize);
   const ext = asset.fileName.split('.').pop()?.toUpperCase() ?? '';
   const dataUrl = useLocalImage(isImage ? asset.filePath : null);
+
+  const sendToMediaStudio = () => {
+    queueMediaStudioAsset({
+      id: asset.id,
+      filePath: asset.filePath,
+      fileName: asset.fileName,
+    });
+    setArtistTab('media-studio');
+    useToastStore.getState().addToast(t.plugins.artist.sent_to_media_studio, 'success');
+  };
 
   return (
     <div
@@ -59,14 +76,25 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const tags = prompt('Tags (comma-separated):', asset.tags ?? '');
-                if (tags !== null) onUpdateTags(asset.id, tags);
+                setEditingTags(true);
               }}
               className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
               title={t.plugins.artist.edit_tags}
             >
               <Tag className="w-4 h-4" />
             </button>
+            {isImage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  sendToMediaStudio();
+                }}
+                className="p-2 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
+                title={t.plugins.artist.send_to_media_studio}
+              >
+                <Film className="w-4 h-4" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -92,12 +120,15 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
           </div>
         )}
       </div>
+
+      {editingTags && (
+        <TagEditorModal
+          assetLabel={asset.fileName}
+          initialTags={asset.tags ?? ''}
+          onSave={(tags) => onUpdateTags(asset.id, tags)}
+          onClose={() => setEditingTags(false)}
+        />
+      )}
     </div>
   );
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

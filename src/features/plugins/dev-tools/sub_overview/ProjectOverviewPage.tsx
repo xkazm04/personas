@@ -29,6 +29,21 @@ import {
 // Stat card
 // ---------------------------------------------------------------------------
 
+type StatColor = 'amber' | 'blue' | 'violet' | 'emerald' | 'red' | 'primary';
+
+// Static class bundles so Tailwind's JIT can detect every class at build time.
+// Dynamic template strings like `bg-${color}-500/15` are invisible to the JIT
+// and silently produce no styles, which is why the overview stat tiles had no
+// background color before.
+const STAT_COLORS: Record<StatColor, { bg: string; border: string; icon: string }> = {
+  amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25', icon: 'text-amber-400' },
+  blue: { bg: 'bg-blue-500/15', border: 'border-blue-500/25', icon: 'text-blue-400' },
+  violet: { bg: 'bg-violet-500/15', border: 'border-violet-500/25', icon: 'text-violet-400' },
+  emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/25', icon: 'text-emerald-400' },
+  red: { bg: 'bg-red-500/15', border: 'border-red-500/25', icon: 'text-red-400' },
+  primary: { bg: 'bg-primary/15', border: 'border-primary/25', icon: 'text-primary' },
+};
+
 function StatCard({
   icon: Icon,
   value,
@@ -38,16 +53,17 @@ function StatCard({
   icon: typeof CircleDot;
   value: string | number;
   label: string;
-  color?: string;
+  color?: StatColor;
 }) {
+  const tw = STAT_COLORS[color] ?? STAT_COLORS.primary;
   return (
     <div className="rounded-xl border border-primary/10 bg-card/30 p-4 flex items-center gap-3">
-      <div className={`w-9 h-9 rounded-interactive bg-${color}-500/15 border border-${color}-500/25 flex items-center justify-center shrink-0`}>
-        <Icon className={`w-4.5 h-4.5 text-${color}-400`} />
+      <div className={`w-9 h-9 rounded-interactive ${tw.bg} border ${tw.border} flex items-center justify-center shrink-0`}>
+        <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
-      <div>
-        <p className="text-lg font-semibold text-foreground leading-tight">{value}</p>
-        <p className="text-[11px] text-foreground/50">{label}</p>
+      <div className="min-w-0">
+        <p className="text-lg font-semibold text-foreground leading-tight truncate">{value}</p>
+        <p className="text-[11px] text-foreground/50 truncate">{label}</p>
       </div>
     </div>
   );

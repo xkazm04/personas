@@ -5,13 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useMediaExport } from './hooks/useMediaExport';
+import { formatMMSS } from '../utils/format';
 import type { Composition } from './types';
-
-function formatCompDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 interface ExportPanelProps {
   composition: Composition;
@@ -45,7 +40,7 @@ export default function ExportPanel({ composition }: ExportPanelProps) {
         <span>{composition.items.length} items</span>
         <span className="text-foreground/15">|</span>
         <span>
-          {formatCompDuration(composition.items.reduce((max, it) => Math.max(max, it.startTime + it.duration), 0))}
+          {formatMMSS(composition.items.reduce((max, it) => Math.max(max, it.startTime + it.duration), 0))}
         </span>
       </div>
 

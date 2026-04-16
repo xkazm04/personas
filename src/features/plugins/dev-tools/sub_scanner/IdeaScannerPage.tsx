@@ -21,6 +21,7 @@ import {
 } from '../constants/ideaColors';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
+import { AgentScoreboard } from './AgentScoreboard';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import type { DevContext } from '@/lib/bindings/DevContext';
@@ -276,6 +277,11 @@ export default function IdeaScannerPage() {
 
   // Context map data for auto-scan
   const fetchContexts = useSystemStore((s) => s.fetchContexts);
+  // Agent Scoreboard needs tasks to compute per-agent implementation rates —
+  // pull them here so the panel has data even when the user hasn't opened
+  // the Task Runner yet this session.
+  const fetchTasks = useSystemStore((s) => s.fetchTasks);
+  const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
 
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
@@ -314,10 +320,15 @@ export default function IdeaScannerPage() {
     })),
   [scans]);
 
-  // Fetch scans when active project changes
+  // Fetch scans + ideas + tasks when active project changes. Ideas and tasks
+  // power the Agent Scoreboard's accept/impl rate aggregation; scans power
+  // the history table.
   useEffect(() => {
-    if (activeProjectId) fetchScans(activeProjectId);
-  }, [activeProjectId, fetchScans]);
+    if (!activeProjectId) return;
+    fetchScans(activeProjectId);
+    fetchIdeas(activeProjectId);
+    fetchTasks(activeProjectId);
+  }, [activeProjectId, fetchScans, fetchIdeas, fetchTasks]);
 
   // Finalization helper — reads everything from store, no closure deps
   const finalizeScan = useCallback((outcome: 'success' | 'warning' | 'failed', errorMessage?: string) => {
@@ -721,6 +732,9 @@ export default function IdeaScannerPage() {
               </div>
             )}
           </div>
+
+          {/* Agent performance scoreboard — per-agent acceptance & impl rates */}
+          <AgentScoreboard />
 
           {/* Idea Evolution */}
           <IdeaEvolutionPanel />

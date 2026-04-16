@@ -1,5 +1,10 @@
+#[cfg(feature = "p2p")]
 pub mod identity;
+#[cfg(feature = "p2p")]
 pub mod exposure;
+#[cfg(feature = "p2p")]
 pub mod bundle;
+#[cfg(feature = "p2p")]
 pub mod discovery;
+#[cfg(feature = "p2p")]
 pub mod enclave;

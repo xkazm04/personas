@@ -141,6 +141,21 @@ export const ja = {
             description:
               'A new template that proposes headline variants, deploys them with your approval, waits for statistical significance, and promotes winners automatically. Every change is human-gated before going live, and each experiment runs long enough for the results to actually mean something.',
           },
+          '16': {
+            title: "Read your team's BI dashboards from any agent",
+            description:
+              'Personas can now pull results from saved Redash queries and dashboards. If your team already maintains shared dashboards, your agents read the same numbers humans see — no SQL rewriting, no CSV exports, no copy-paste.',
+          },
+          '17': {
+            title: 'Metabase is now a connector',
+            description:
+              'Your agents can run saved Metabase questions and read dashboards straight from your workspace. Works with Metabase Pro, Enterprise, and any self-hosted instance.',
+          },
+          '18': {
+            title: 'Daily BI digest delivered to you',
+            description:
+              'A new template picks up the saved queries you already maintain in Redash or Metabase, summarizes the latest numbers each morning, and posts a plain-English digest with week-over-week anomaly flags. Your dashboards stay useful even when no one opens them.',
+          },
         },
       },
       roadmap: {

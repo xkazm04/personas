@@ -1,0 +1,72 @@
+{
+  "id": "builtin-metabase",
+  "name": "metabase",
+  "label": "Metabase",
+  "color": "#509EE3",
+  "icon_url": "/icons/connectors/metabase.svg",
+  "category": "analytics",
+  "fields": [
+    {
+      "key": "base_url",
+      "label": "Metabase Base URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://metabase.example.com",
+      "helpText": "Your Metabase instance root URL. For self-hosted: https://metabase.example.com. For Metabase Cloud: https://your-tenant.metabaseapp.com. Do NOT include /api at the end.",
+      "sensitive": false
+    },
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "mb_...",
+      "helpText": "Admin Settings -> Authentication -> API Keys -> Create API Key. Requires Pro/Enterprise or self-hosted instance.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url}}/api/user/current",
+    "method": "GET",
+    "headers": {
+      "X-API-Key": "{{api_key}}"
+    },
+    "description": "Validates API Key via current-user endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Metabase open-source BI -- execute saved questions (cards), read dashboards, and manage alerts/pulses across your connected databases.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://www.metabase.com/docs/latest/api",
+    "setup_guide": "1. Sign in to Metabase as an admin\n2. Go to Admin Settings -> Authentication -> API Keys\n3. Click 'Create API Key', name it, and choose the group whose permissions it should inherit\n4. Copy the mb_... key (shown only once)\n5. Paste your base URL (e.g. https://metabase.example.com) and the API key here\n\nNote: API keys require Metabase Pro, Enterprise, or a self-hosted instance.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ],
+    "llm_usage_hint": {
+      "overview": "Metabase REST API. Auth header: 'X-API-Key: <api_key>' (case-insensitive). Base URL is user-supplied; all endpoints under /api. Core resources: card (saved questions), dashboard, alert, pulse, database, collection.",
+      "examples": [
+        "curl -H 'X-API-Key: $METABASE_API_KEY' '$METABASE_BASE_URL/api/card'",
+        "curl -X POST -H 'X-API-Key: $METABASE_API_KEY' -H 'Content-Type: application/json' '$METABASE_BASE_URL/api/card/<card_id>/query' -d '{\"parameters\":[],\"ignore_cache\":false}'",
+        "curl -X POST -H 'X-API-Key: $METABASE_API_KEY' '$METABASE_BASE_URL/api/card/<card_id>/query/json'",
+        "curl -H 'X-API-Key: $METABASE_API_KEY' '$METABASE_BASE_URL/api/dashboard/<id>'",
+        "curl -H 'X-API-Key: $METABASE_API_KEY' '$METABASE_BASE_URL/api/alert'"
+      ],
+      "gotchas": [
+        "Auth header is 'X-API-Key', NOT 'Authorization'. Do not prefix with Bearer or Token.",
+        "POST /api/card/<id>/query returns results synchronously (rows + cols). Use /query/csv or /query/json for pre-formatted exports.",
+        "'parameters' in the query body is an ARRAY of {type, target, value} shapes, unlike Redash's object. Read the card definition first to discover parameter targets.",
+        "API keys inherit the permissions of the group they were created under -- scope them to read-only groups for agent consumption.",
+        "Base URL must not include trailing /api. The healthcheck appends /api/user/current itself."
+      ]
+    }
+  }
+}

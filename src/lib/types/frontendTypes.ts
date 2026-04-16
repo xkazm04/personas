@@ -263,6 +263,12 @@ export interface DesignContextData {
   summary?: string;
   connectorPipeline?: import('@/lib/types/designTypes').ConnectorPipelineStep[];
   watchedTables?: Record<string, string[]>;
+  /**
+   * Twin profile this persona is pinned to. When set, the `builtin-twin`
+   * connector resolves this twin instead of the globally active one. When
+   * unset (or null), the connector falls back to the active twin.
+   */
+  twinId?: string | null;
   /** Round-trip metadata for resuming builder from a draft. */
   builderMeta?: BuilderMeta;
   /** Lab test results metadata -- feedback loop from testing into persona building. */

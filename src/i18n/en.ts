@@ -8908,6 +8908,38 @@ export const en = {
       viewer_3d: "3D Viewer",
       viewer_3d_hint: "Install @react-three/fiber and @react-three/drei to enable interactive 3D previews with orbit controls.",
       tags_label: "Tags:",
+      // Creative Studio — short status chips above the env panel
+      status_partial: "Partial",
+      status_not_checked: "Not checked",
+      // Status row labels in the expanded env panel
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      // Creative session UI
+      session_cancelled: "Session cancelled.",
+      imported_assets_one: "Imported 1 new asset to gallery.",
+      imported_assets_other: "Imported {count} new assets to gallery.",
+      scan_result_one: "Found {scanned} assets, imported 1 new.",
+      scan_result_other: "Found {scanned} assets, imported {imported} new.",
+      // Tool labels shown as badges in the session header
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      // Tag editor
+      tag_editor_hint: "Enter or comma to add, Backspace to remove the last tag.",
+      tag_editor_placeholder: "tag, another-tag",
+      // Send-to-Media-Studio handoff
+      send_to_media_studio: "Send to Media Studio",
+      sent_to_media_studio: "Queued for Media Studio",
+      // Session history panel
+      session_history: "History",
+      session_history_empty: "Sessions you run will appear here.",
+      session_tools_label: "Tools:",
+      session_status_running: "Running",
+      session_status_completed: "Completed",
+      session_status_failed: "Failed",
+      session_status_cancelled: "Cancelled",
+      replay_session: "Replay",
+      delete_session: "Delete session",
     },
 
     dev_tools: {
@@ -9090,6 +9122,100 @@ export const en = {
       add_condition: "+ Add condition",
       accept: "Accept",
       reject: "Reject",
+
+      // -- Idea Triage page (Tinder-style swipe review) -----------------------
+      // Header
+      triage_title: "Idea Triage",
+      triage_subtitle: "Evaluate and prioritize generated ideas",
+      // Summary badges — "{count} accepted/rejected/pending"
+      // Keep these very short (1 word each) — they render inside pill badges
+      accepted_badge: "{count} accepted",
+      rejected_badge: "{count} rejected",
+      pending_badge: "{count} pending",
+      // Sidebar
+      sidebar_category: "Category",
+      sidebar_scan_type: "Scan Type",
+      sidebar_all: "All ({count})",
+      // Progress + empty states
+      remaining_count: "{count} remaining",
+      reviewed_count: "{done} / {total} reviewed",
+      empty_no_ideas: "No ideas to triage",
+      empty_no_ideas_hint: "Run the Idea Scanner first to generate ideas.",
+      empty_all_reviewed: "All ideas reviewed!",
+      empty_all_reviewed_summary: "{accepted} accepted, {rejected} rejected",
+      // Swipe overlays (drag labels that slide in over the card)
+      swipe_reject: "Reject",
+      swipe_accept: "Accept",
+      // Reasoning label inside card
+      reasoning_label: "Reasoning",
+      // Keyboard hints
+      hint_reject: "Reject",
+      hint_accept: "Accept",
+      // Shortcuts overlay
+      shortcuts_title: "Keyboard Shortcuts",
+      shortcuts_reject: "Reject idea",
+      shortcuts_accept: "Accept idea",
+      shortcuts_toggle: "Toggle this overlay",
+      shortcuts_close: "Close overlay",
+      shortcuts_dismiss_hint: "Press ? or Esc to close",
+      shortcuts_open_title: "Keyboard shortcuts (?)",
+      shortcuts_btn_reject_title: "Reject (Left Arrow / A)",
+      shortcuts_btn_accept_title: "Accept (Right Arrow / Z)",
+      shortcuts_btn_delete_title: "Delete",
+
+      // -- PR Bridge (Proposal A): idea -> draft PR -------------------------
+      // Section header + helper copy shown on a completed task card
+      pr_bridge_title: "Ship as Draft PR",
+      pr_bridge_subtitle: "Branch, commit, and pre-filled PR — agent reasoning carried into the description.",
+      // Field labels
+      pr_bridge_branch: "Branch",
+      pr_bridge_commit_msg: "Commit message",
+      pr_bridge_pr_title: "PR title",
+      pr_bridge_pr_body: "PR body",
+      pr_bridge_agent_citation: "Proposed by {label} {emoji}",
+      // States
+      pr_bridge_no_github: "Link a GitHub repo on this project to enable PR workflows.",
+      pr_bridge_link_project: "Open project settings",
+      pr_bridge_unsupported_host: "Auto-fill only works with GitHub right now. Copy the PR body and open manually.",
+      // Actions
+      pr_bridge_copy_body: "Copy PR body",
+      pr_bridge_copy_all: "Copy all",
+      pr_bridge_prepare: "Prepare branch & commit",
+      pr_bridge_open_github: "Open draft PR on GitHub",
+      pr_bridge_expand: "Show PR preview",
+      pr_bridge_collapse: "Hide PR preview",
+      // Toasts / inline messages
+      pr_bridge_copied: "PR body copied to clipboard",
+      pr_bridge_copy_failed: "Couldn't copy to clipboard",
+      pr_bridge_branch_prepared: "Branch prepared: {branch}",
+      pr_bridge_branch_failed: "Branch preparation failed: {message}",
+      pr_bridge_opening: "Opening GitHub...",
+      pr_bridge_open_failed: "Couldn't open external URL",
+      pr_bridge_draft_hint: "Tip: on the GitHub page, use the dropdown next to \"Create pull request\" to mark it as a draft.",
+
+      // -- Agent Scoreboard (Proposal B): per-agent quality stats -----------
+      scoreboard_title: "Agent Performance",
+      scoreboard_subtitle: "Acceptance & implementation rates per scan agent for this project.",
+      scoreboard_toggle_show: "Show scoreboard",
+      scoreboard_toggle_hide: "Hide scoreboard",
+      scoreboard_empty: "No data yet — run a scan and triage some ideas to populate the board.",
+      // Column headers (kept terse — rendered in a narrow table)
+      scoreboard_col_agent: "Agent",
+      scoreboard_col_ideas: "Ideas",
+      scoreboard_col_accept_rate: "Accept %",
+      scoreboard_col_impl_rate: "Impl %",
+      scoreboard_col_avg_impact: "Avg impact",
+      scoreboard_col_avg_effort: "Avg effort",
+      // Tooltips explaining each metric — shown on hover of column header
+      scoreboard_tip_ideas: "Total ideas this agent has generated across all scans.",
+      scoreboard_tip_accept_rate: "Accepted / (Accepted + Rejected). Pending ideas are excluded from the denominator.",
+      scoreboard_tip_impl_rate: "Completed tasks / tasks created from this agent's ideas.",
+      scoreboard_tip_avg_impact: "Mean impact score (1-10) of all ideas this agent generated.",
+      scoreboard_tip_avg_effort: "Mean effort score (1-10) of all ideas this agent generated.",
+      // Cell fallbacks — shown when there's no signal yet
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n} pending",
+      scoreboard_top_performer: "Top performer",
     },
 
     doc_signing: {
@@ -9323,6 +9449,10 @@ export const en = {
     // Context menu
     split: "Split at playhead",
 
+    // Timeline history
+    undo: "Undo",
+    redo: "Redo",
+
     // File import
     import_media: "Import media",
     supported_video: "Video files",
@@ -9367,21 +9497,29 @@ export const en = {
     experiments: "Experiments",
     findings: "Findings",
     reports: "Reports",
+    graph: "Graph",
 
     // Dashboard
     active: "active",
     sources: "Sources",
     sources_count: "sources",
+    recent_projects: "Recent projects",
+    view_all: "View all",
 
     // Project list
     no_projects: "No research projects yet",
     no_projects_hint: "Create a research project to start organizing your literature, hypotheses, and experiments.",
     create_project: "New Project",
+    edit_project: "Edit project",
+    save_changes: "Save changes",
 
     // Project form
     project_name: "Project name",
+    project_name_placeholder: "e.g. LLM reasoning chain-of-thought faithfulness",
     project_description: "Description",
+    project_description_placeholder: "Short summary of what this project investigates",
     project_thesis: "Research question or thesis",
+    project_thesis_placeholder: "The central claim or question you're testing",
     project_domain: "Domain",
     project_scope: "Scope constraints",
     // Obsidian vault picker label on project form
@@ -9390,6 +9528,8 @@ export const en = {
     obsidian_vault_hint: "Link an Obsidian vault to sync experiments and findings",
     // Button to select a vault folder via native dialog
     select_vault: "Select vault",
+    // Clear the currently-linked vault path
+    clear_vault: "Clear",
     // Badge shown when vault is connected
     vault_connected: "Vault connected",
     // Button to sync experiments to Obsidian vault
@@ -9405,7 +9545,7 @@ export const en = {
     // Status label for sources being ingested
     source_indexed: "Indexed",
 
-    // Project status tokens
+    // Project status tokens (legacy — prefer status_tokens.research_lab_project)
     status_scoping: "Scoping",
     status_literature_review: "Literature review",
     status_hypothesis: "Hypothesis",
@@ -9415,14 +9555,49 @@ export const en = {
     status_review: "Review",
     status_complete: "Complete",
 
+    // Domain labels (used by a resolver; keys match the stored code)
+    domain_cs: "Computer Science",
+    domain_biology: "Biology",
+    domain_chemistry: "Chemistry",
+    domain_physics: "Physics",
+    domain_mathematics: "Mathematics",
+    domain_business: "Business",
+    domain_medicine: "Medicine",
+    domain_general: "General",
+
     // Literature
     select_project_first: "Select a research project first",
     no_sources: "No sources yet",
     no_sources_hint: "Search arXiv, Semantic Scholar, or PubMed to find relevant papers, or add sources manually.",
+    no_matching_sources: "No sources match your filter",
+    filter_sources_placeholder: "Filter by title or author…",
     relevance: "Relevance",
-    search_sources: "Search sources",
+    search_sources: "Add source",
     ingest: "Ingest",
     ingesting: "Ingesting...",
+
+    // Source form fields
+    source_title: "Title",
+    source_title_placeholder: "Paper title",
+    source_type: "Source type",
+    source_year: "Year",
+    source_year_placeholder: "e.g. 2024",
+    source_authors: "Authors",
+    source_authors_placeholder: "Author 1, Author 2, …",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "Abstract",
+    source_abstract_placeholder: "Paper abstract…",
+
+    // Source type labels
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "Web page",
+    source_type_pdf: "PDF",
+    source_type_manual: "Manual entry",
 
     // Hypotheses
     no_hypotheses: "No hypotheses yet",
@@ -9432,25 +9607,45 @@ export const en = {
     confidence: "Confidence",
     supporting: "Supporting",
     counter: "Counter",
+    hypothesis_statement: "Statement",
+    hypothesis_statement_placeholder: "A testable claim — e.g. Prompt X improves accuracy over baseline by >5%",
+    hypothesis_rationale: "Rationale",
+    hypothesis_rationale_placeholder: "Why this hypothesis is worth testing",
 
     // Experiments
     no_experiments: "No experiments yet",
     no_experiments_hint: "Design an experiment to test a hypothesis.",
     create_experiment: "New experiment",
+    experiment_name: "Experiment name",
+    experiment_name_placeholder: "e.g. Compare baseline vs. fine-tuned on GSM8K",
     methodology: "Methodology",
+    methodology_placeholder: "How will this experiment be run?",
     success_criteria: "Success criteria",
+    success_criteria_placeholder: "What result would confirm the hypothesis?",
+    linked_hypothesis: "Linked hypothesis",
+    no_linked_hypothesis: "No hypothesis linked",
     run_experiment: "Run",
     run_count: "runs",
 
     // Findings
     no_findings: "No findings yet",
     no_findings_hint: "Findings are extracted from experiment results by analysis agents.",
+    create_finding: "New finding",
+    finding_title: "Title",
+    finding_title_placeholder: "Short headline for the finding",
+    finding_description: "Description",
+    finding_description_placeholder: "What did you observe and why does it matter?",
+    finding_category: "Category",
+    finding_category_placeholder: "e.g. performance, limitation, surprise",
 
     // Reports
     no_reports: "No reports yet",
     no_reports_hint: "Create a report to compile your findings into a structured document.",
     create_report: "New report",
+    report_title: "Title",
+    report_title_placeholder: "e.g. Q2 Research Summary",
     report_type: "Report type",
+    report_format: "Format",
     literature_review: "Literature review",
     experiment_report: "Experiment report",
     full_paper: "Full paper",

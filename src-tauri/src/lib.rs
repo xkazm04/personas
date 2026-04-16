@@ -342,16 +342,20 @@ pub struct AppState {
     #[cfg(feature = "desktop")]
     pub context_rule_engine: engine::context_rules::ContextRuleEngineHandle,
     /// P2P network service (LAN discovery, QUIC transport, manifest sync).
+    #[cfg(feature = "p2p")]
     pub network: Option<Arc<engine::p2p::NetworkService>>,
     /// Cached auth detection results with expiry time.
     /// Avoids re-spawning 9 CLI probes + cookie DB copies on repeated wizard calls.
     pub auth_detect_cache: Arc<tokio::sync::Mutex<Option<(std::time::Instant, Vec<commands::credentials::auth_detect::AuthDetection>)>>>,
     /// Embedding manager for vector knowledge bases (lazy-loaded model).
+    #[cfg(feature = "ml")]
     pub embedding_manager: Option<Arc<engine::embedder::EmbeddingManager>>,
     /// SQLite-vec vector store for knowledge bases.
+    #[cfg(feature = "ml")]
     pub vector_store: Option<Arc<engine::vector_store::SqliteVectorStore>>,
     /// Active KB ingestion jobs: maps kb_id → CancellationToken so that
     /// `delete_knowledge_base` can cancel in-flight ingestion before dropping tables.
+    #[cfg(feature = "ml")]
     pub kb_ingest_jobs: Arc<tokio::sync::Mutex<HashMap<String, tokio_util::sync::CancellationToken>>>,
     /// Cloud webhook relay state — shared with the background subscription so
     /// that the `cloud_webhook_relay_status` command can read live counters.
@@ -513,6 +517,7 @@ pub fn run() {
             st.checkpoint("credential_seed");
 
             // Initialize P2P identity (Invisible Apps Phase 1)
+            #[cfg(feature = "p2p")]
             match engine::identity::get_or_create_identity(&pool) {
                 Ok(identity) => {
                     tracing::info!(peer_id = %identity.peer_id, "P2P identity ready");
@@ -644,6 +649,7 @@ pub fn run() {
             st.checkpoint("gitlab_restore");
 
             // Initialize P2P NetworkService (Phase 2: Invisible Apps)
+            #[cfg(feature = "p2p")]
             let network_service = match engine::identity::get_or_create_identity(&pool) {
                 Ok(identity) => {
                     match engine::p2p::NetworkService::new(
@@ -670,18 +676,25 @@ pub fn run() {
             st.checkpoint("p2p_network_service");
 
             // Initialize vector knowledge base infrastructure
-            let models_dir = app_data_dir.join("models").join("onnx");
-            let embedding_manager = Arc::new(engine::embedder::EmbeddingManager::new(models_dir));
+            #[cfg(feature = "ml")]
+            let embedding_manager = Arc::new(engine::embedder::EmbeddingManager::new(
+                app_data_dir.join("models").join("onnx"),
+            ));
+            #[cfg(feature = "ml")]
             let vector_store = Arc::new(engine::vector_store::SqliteVectorStore::new(user_db_pool.clone()));
+            #[cfg(feature = "ml")]
             st.checkpoint("vector_kb_init");
 
             // Reconcile orphaned KB records left by crashes during creation
-            commands::credentials::vector_kb::reconcile_orphaned_kb_records(
-                &pool,
-                &user_db_pool,
-                &vector_store,
-            );
-            st.checkpoint("kb_reconciliation");
+            #[cfg(feature = "ml")]
+            {
+                commands::credentials::vector_kb::reconcile_orphaned_kb_records(
+                    &pool,
+                    &user_db_pool,
+                    &vector_store,
+                );
+                st.checkpoint("kb_reconciliation");
+            }
 
             let smee_notifier = engine::smee_relay::SmeeRelayNotifier::new();
 
@@ -711,9 +724,13 @@ pub fn run() {
                 #[cfg(feature = "desktop")]
                 context_rule_engine: engine::context_rules::create_context_rule_engine(),
                 auth_detect_cache: Arc::new(tokio::sync::Mutex::new(None)),
+                #[cfg(feature = "p2p")]
                 network: network_service.clone(),
+                #[cfg(feature = "ml")]
                 embedding_manager: Some(embedding_manager),
+                #[cfg(feature = "ml")]
                 vector_store: Some(vector_store),
+                #[cfg(feature = "ml")]
                 kb_ingest_jobs: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 cloud_webhook_relay_state: Arc::new(tokio::sync::Mutex::new(
                     engine::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
@@ -922,6 +939,7 @@ pub fn run() {
             });
 
             // Auto-start P2P network service after a brief delay
+            #[cfg(feature = "p2p")]
             if let Some(ns) = network_service {
                 let ns_pool = state_arc.db.clone();
                 let p2p_app_handle = restore_handle.clone();
@@ -1417,7 +1435,7 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::execution::ambient::capture_validation_screenshot,
             // Clipboard Intelligence -- error detection + KB search
-            #[cfg(feature = "desktop")]
+            #[cfg(all(feature = "desktop", feature = "ml"))]
             commands::execution::clipboard_intel::search_kb_for_clipboard_error,
             // Credential Recipes -- shared discovery cache
             commands::credentials::credential_recipes::get_credential_recipe,
@@ -1614,14 +1632,23 @@ pub fn run() {
             commands::tools::triggers::get_composite_partial_matches,
             commands::tools::triggers::get_composite_partial_match,
             // Signing -- Document Signatures
+            #[cfg(feature = "p2p")]
             commands::signing::sign_document,
+            #[cfg(feature = "p2p")]
             commands::signing::verify_document,
+            #[cfg(feature = "p2p")]
             commands::signing::generate_signing_key,
+            #[cfg(feature = "p2p")]
             commands::signing::list_document_signatures,
+            #[cfg(feature = "p2p")]
             commands::signing::get_document_signature,
+            #[cfg(feature = "p2p")]
             commands::signing::delete_document_signature,
+            #[cfg(feature = "p2p")]
             commands::signing::export_signature_sidecar,
+            #[cfg(feature = "p2p")]
             commands::signing::write_sidecar_file,
+            #[cfg(feature = "p2p")]
             commands::signing::read_sidecar_file,
             // OCR -- Document Text Extraction
             commands::ocr::ocr_with_gemini,
@@ -1989,65 +2016,120 @@ pub fn run() {
             notifications::test_notification_channel,
             notifications::get_notification_delivery_stats,
             // Network -- Identity (Invisible Apps Phase 1)
+            #[cfg(feature = "p2p")]
             commands::network::identity::get_local_identity,
+            #[cfg(feature = "p2p")]
             commands::network::identity::reinitialize_identity,
+            #[cfg(feature = "p2p")]
             commands::network::identity::set_display_name,
+            #[cfg(feature = "p2p")]
             commands::network::identity::export_identity_card,
+            #[cfg(feature = "p2p")]
             commands::network::identity::list_trusted_peers,
+            #[cfg(feature = "p2p")]
             commands::network::identity::import_trusted_peer,
+            #[cfg(feature = "p2p")]
             commands::network::identity::update_trusted_peer,
+            #[cfg(feature = "p2p")]
             commands::network::identity::revoke_peer_trust,
+            #[cfg(feature = "p2p")]
             commands::network::identity::delete_trusted_peer,
             // Network -- Exposure Manifest (Invisible Apps Phase 1)
+            #[cfg(feature = "p2p")]
             commands::network::exposure::list_exposed_resources,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::get_exposed_resource,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::create_exposed_resource,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::update_exposed_resource,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::delete_exposed_resource,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::get_exposure_manifest,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::list_provenance,
+            #[cfg(feature = "p2p")]
             commands::network::exposure::get_resource_provenance,
             // Network -- Bundle (Invisible Apps Phase 1)
+            #[cfg(feature = "p2p")]
             commands::network::bundle::export_persona_bundle,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::preview_bundle_import,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::apply_bundle_import,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::verify_bundle,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::export_bundle_to_clipboard,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::preview_bundle_from_clipboard,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::apply_bundle_from_clipboard,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::create_share_link,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::preview_share_link,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::import_from_share_link,
+            #[cfg(feature = "p2p")]
             commands::network::bundle::resolve_share_deep_link,
             // Network -- Sovereign Enclaves
+            #[cfg(feature = "p2p")]
             commands::network::enclave::seal_enclave,
+            #[cfg(feature = "p2p")]
             commands::network::enclave::verify_enclave,
             // Network -- P2P Discovery (Invisible Apps Phase 2)
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_discovered_peers,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::connect_to_peer,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::disconnect_peer,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_peer_manifest,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::sync_peer_manifest,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_connection_status,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_status,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_connection_health,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_snapshot,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_messaging_metrics,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::send_agent_message,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::get_received_messages,
+            #[cfg(feature = "p2p")]
             commands::network::discovery::set_network_config,
             // Vector Knowledge Base
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::create_knowledge_base,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::list_knowledge_bases,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::get_knowledge_base,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::delete_knowledge_base,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_pick_files,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_pick_directory,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_ingest_files,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_ingest_text,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_ingest_directory,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_search,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_list_documents,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_delete_document,
         ]))
         .run(tauri::generate_context!())

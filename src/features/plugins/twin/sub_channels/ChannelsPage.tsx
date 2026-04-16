@@ -8,6 +8,7 @@ import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/compone
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 /**
  * Channels tab — deployment cockpit.
@@ -49,6 +50,7 @@ interface ChannelCardProps {
 }
 
 function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelCardProps) {
+  const { t } = useTwinTranslation();
   return (
     <div className={`p-4 rounded-card border transition-colors ${
       channel.is_active ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30 opacity-60'
@@ -62,7 +64,7 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelC
             <span className="typo-heading text-foreground">{channel.label ?? meta.label}</span>
             <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
             {!channel.is_active && (
-              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-muted-foreground">Paused</span>
+              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-muted-foreground">{t.channels.paused}</span>
             )}
           </div>
           <div className="flex items-center gap-3 mt-1">
@@ -77,10 +79,10 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelC
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={() => onToggle(channel)} title={channel.is_active ? 'Pause' : 'Activate'} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button onClick={() => onToggle(channel)} title={channel.is_active ? t.channels.pause : t.channels.activate} aria-label={`${channel.is_active ? t.channels.pause : t.channels.activate} — ${meta.label}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             {channel.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
           </button>
-          <button onClick={() => onDelete(channel)} title="Remove" className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+          <button onClick={() => onDelete(channel)} title={t.channels.remove} aria-label={`${t.channels.remove} — ${meta.label}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -94,6 +96,7 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelC
 /* ------------------------------------------------------------------ */
 
 export default function ChannelsPage() {
+  const { t } = useTwinTranslation();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
   const isLoading = useSystemStore((s) => s.twinChannelsLoading);
@@ -177,7 +180,7 @@ export default function ChannelsPage() {
 
   const handleDelete = async (ch: TwinChannel) => {
     const label = ch.label ?? `${ch.channel_type} channel`;
-    if (!confirm(`Remove "${label}"? The credential and persona are not deleted.`)) return;
+    if (!confirm(t.channels.removeConfirm.replace('{label}', label))) return;
     try {
       await deleteChannel(ch.id);
     } catch {
@@ -185,19 +188,19 @@ export default function ChannelsPage() {
     }
   };
 
-  if (!activeTwinId) return <TwinEmptyState icon={Radio} title="Channels" />;
+  if (!activeTwinId) return <TwinEmptyState icon={Radio} title={t.channels.title} />;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<Radio className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Channels"
-        subtitle="Where the twin speaks. Each channel binds a credential to an optional persona that operates there."
+        title={t.channels.title}
+        subtitle={t.channels.subtitle}
         actions={
           !adding ? (
             <Button onClick={() => setAdding(true)} size="sm" variant="accent" accentColor="violet">
-              <Plus className="w-4 h-4 mr-1.5" />Add Channel
+              <Plus className="w-4 h-4 mr-1.5" />{t.channels.addChannel}
             </Button>
           ) : undefined
         }
@@ -209,29 +212,29 @@ export default function ChannelsPage() {
           {adding && (
             <div className="p-4 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="typo-heading text-foreground">Add Channel</h3>
-                <button onClick={resetForm} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                <h3 className="typo-heading text-foreground">{t.channels.addChannel}</h3>
+                <button onClick={resetForm} aria-label={t.channels.cancelBtn} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <span className="typo-caption text-foreground font-medium">Channel Type</span>
+                  <span className="typo-caption text-foreground font-medium">{t.channels.channelType}</span>
                   <ThemedSelect
                     filterable
                     options={channelOptions}
                     value={newType}
                     onValueChange={setNewType}
-                    placeholder="Select channel..."
+                    placeholder={t.channels.selectChannel}
                   />
                 </div>
                 <div className="space-y-1">
-                  <span className="typo-caption text-foreground font-medium">Label</span>
-                  <input type="text" placeholder="My Discord Server" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} className={INPUT_FIELD} />
+                  <span className="typo-caption text-foreground font-medium">{t.channels.label}</span>
+                  <input type="text" placeholder={t.channels.labelPlaceholder} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} className={INPUT_FIELD} />
                 </div>
                 <div className="space-y-1">
                   <span className="typo-caption text-foreground font-medium">
-                    Credential
+                    {t.channels.credential}
                     {filteredCredentials.length === 0 && (
-                      <span className="text-amber-400 ml-1">(none found — add in Credentials)</span>
+                      <span className="text-amber-400 ml-1">({t.channels.credentialNoneFound})</span>
                     )}
                   </span>
                   {filteredCredentials.length > 0 ? (
@@ -240,35 +243,35 @@ export default function ChannelsPage() {
                       options={credentialOptions}
                       value={newCredId}
                       onValueChange={setNewCredId}
-                      placeholder="Select credential..."
+                      placeholder={t.channels.credentialPlaceholder}
                     />
                   ) : (
-                    <input type="text" placeholder="No credentials for this channel" disabled className={`${INPUT_FIELD} opacity-50`} />
+                    <input type="text" placeholder={t.channels.noCredentialsForChannel} disabled className={`${INPUT_FIELD} opacity-50`} />
                   )}
                 </div>
                 <div className="space-y-1">
-                  <span className="typo-caption text-foreground font-medium">Persona ID (optional)</span>
-                  <input type="text" placeholder="Persona that operates here" value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)} className={`${INPUT_FIELD} font-mono`} />
+                  <span className="typo-caption text-foreground font-medium">{t.channels.personaIdOptional}</span>
+                  <input type="text" placeholder={t.channels.personaIdPlaceholder} value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)} className={`${INPUT_FIELD} font-mono`} />
                 </div>
               </div>
               {formError && (
                 <p className="typo-caption text-red-400">{formError}</p>
               )}
               <div className="flex justify-end gap-2">
-                <Button onClick={resetForm} variant="ghost" size="sm">Cancel</Button>
-                <Button onClick={handleCreate} disabled={!newCredId.trim() || submitting} size="sm">{submitting ? 'Adding...' : 'Add Channel'}</Button>
+                <Button onClick={resetForm} variant="ghost" size="sm">{t.channels.cancelBtn}</Button>
+                <Button onClick={handleCreate} disabled={!newCredId.trim() || submitting} size="sm">{submitting ? t.channels.adding : t.channels.addChannel}</Button>
               </div>
             </div>
           )}
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (
-            <p className="typo-body text-foreground text-center py-12">Loading...</p>
+            <p className="typo-body text-foreground text-center py-12">{t.channels.loading}</p>
           ) : channels.length === 0 && !adding ? (
             <div className="py-12 text-center">
               <Radio className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-              <p className="typo-body text-foreground">No channels configured.</p>
-              <p className="typo-caption text-muted-foreground mt-1">Add a channel to deploy the twin on Discord, Slack, or other platforms.</p>
+              <p className="typo-body text-foreground">{t.channels.noChannelsConfigured}</p>
+              <p className="typo-caption text-muted-foreground mt-1">{t.channels.noChannelsHint}</p>
             </div>
           ) : (
             <div className="space-y-2">

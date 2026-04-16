@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+.baseline/
 
 # Rust build artifacts (any target/ dir, including nested)
 **/target/

@@ -1,0 +1,72 @@
+{
+  "id": "builtin-redash",
+  "name": "redash",
+  "label": "Redash",
+  "color": "#FF7964",
+  "icon_url": "/icons/connectors/redash.svg",
+  "category": "analytics",
+  "fields": [
+    {
+      "key": "base_url",
+      "label": "Redash Base URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://app.redash.io/your-slug",
+      "helpText": "Your Redash instance root URL. For Redash Cloud: https://app.redash.io/{workspace-slug}. For self-hosted: https://redash.example.com. Do NOT include /api at the end.",
+      "sensitive": false
+    },
+    {
+      "key": "api_key",
+      "label": "User API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From your Redash user profile page (top-right avatar -> Edit Profile -> API Key). Prefer per-query API keys for production.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url}}/api/queries?page_size=1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Key {{api_key}}"
+    },
+    "description": "Validates User API Key by listing a single query"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Redash open-source BI -- execute saved SQL queries, read dashboards, and manage alerts across any connected database.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://redash.io/help/user-guide/integrations-and-api/api",
+    "setup_guide": "1. Open your Redash instance (cloud or self-hosted)\n2. Click your avatar (top-right) -> Edit Profile\n3. Copy the User API Key shown in the profile\n4. Paste the full base URL (e.g. https://app.redash.io/your-slug or https://redash.example.com) and the API key here\n\nTip: For production agents, prefer per-query API keys (found on each query page) over user keys.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "User API Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ],
+    "llm_usage_hint": {
+      "overview": "Redash REST API. Auth: 'Authorization: Key <api_key>' OR '?api_key=<key>' query param. Base URL is user-supplied; all endpoints are under /api. Core resources: queries (saved SQL), query_results (execution outputs), dashboards, alerts, data_sources.",
+      "examples": [
+        "curl -H 'Authorization: Key $REDASH_API_KEY' '$REDASH_BASE_URL/api/queries?page_size=25'",
+        "curl -X POST -H 'Authorization: Key $REDASH_API_KEY' -H 'Content-Type: application/json' '$REDASH_BASE_URL/api/queries/<query_id>/results' -d '{\"parameters\":{},\"max_age\":0}'",
+        "curl -H 'Authorization: Key $REDASH_API_KEY' '$REDASH_BASE_URL/api/query_results/<query_result_id>.json'",
+        "curl -H 'Authorization: Key $REDASH_API_KEY' '$REDASH_BASE_URL/api/dashboards'",
+        "curl -H 'Authorization: Key $REDASH_API_KEY' '$REDASH_BASE_URL/api/alerts'"
+      ],
+      "gotchas": [
+        "Auth header uses 'Key <token>', NOT 'Bearer <token>'. Getting this wrong returns 401.",
+        "POST /api/queries/<id>/results may return a job descriptor (202) instead of results when a fresh run is triggered. Poll /api/jobs/<job_id> until status is 3 (success), then GET /api/query_results/<query_result_id>.",
+        "'max_age' in the POST body controls cache freshness: 0 forces a fresh run, any positive seconds returns cached results younger than that age.",
+        "For public-share endpoints use query API keys (per-query) instead of user keys -- scoped permissions reduce blast radius if leaked.",
+        "Base URL must not include trailing /api. The healthcheck appends /api/queries itself."
+      ]
+    }
+  }
+}

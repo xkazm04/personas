@@ -143,7 +143,7 @@ function BlueprintCell({ dim, index, items, status }: {
           <span className="font-mono text-[10px] text-foreground/40 tabular-nums">
             {String(index + 1).padStart(2, '0')}
           </span>
-          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-foreground/70">
+          <span className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-foreground/70">
             {CELL_LABELS[dim.key]}
           </span>
         </div>
@@ -153,14 +153,16 @@ function BlueprintCell({ dim, index, items, status }: {
           <DimIcon className={`w-20 h-20 ${dim.colorClass}`} />
         </div>
 
-        {/* Bullet items — full readable contrast */}
-        <div className="space-y-1 relative z-10">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-start gap-2 font-mono text-[12px] leading-snug">
-              <span className="text-foreground/30 mt-px flex-shrink-0">{'\u203A'}</span>
-              <span className="text-foreground/90">{item}</span>
-            </div>
-          ))}
+        {/* Bullet items — full readable contrast, scrollable */}
+        <div className="max-h-[180px] overflow-y-auto relative z-10 scrollbar-thin">
+          <div className="space-y-1">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-start gap-2 font-mono text-md leading-snug">
+                <span className="text-foreground/30 mt-px flex-shrink-0">{'\u203A'}</span>
+                <span className="text-foreground/90">{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Status circuit dot */}

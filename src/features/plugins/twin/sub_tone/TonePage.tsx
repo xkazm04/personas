@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 
 /**
@@ -49,6 +50,7 @@ function toneToForm(tone: TwinTone): ToneForm {
 }
 
 export default function TonePage() {
+  const { t } = useTwinTranslation();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const twinTones = useSystemStore((s) => s.twinTones);
   const isLoading = useSystemStore((s) => s.twinTonesLoading);
@@ -99,9 +101,9 @@ export default function TonePage() {
   };
 
   const handleDelete = async (channel: string) => {
-    const tone = twinTones.find((t) => t.channel === channel);
+    const tone = twinTones.find((tn) => tn.channel === channel);
     if (!tone) return;
-    if (!confirm(`Remove the ${channel} tone? The persona will fall back to the generic tone.`)) return;
+    if (!confirm(t.tone.removeConfirm.replace('{channel}', channel))) return;
     await deleteTwinTone(tone.id);
     setForms((prev) => {
       const { [channel]: _, ...rest } = prev;
@@ -109,12 +111,12 @@ export default function TonePage() {
     });
   };
 
-  const hasTone = (channel: string) => twinTones.some((t) => t.channel === channel);
+  const hasTone = (channel: string) => twinTones.some((tn) => tn.channel === channel);
+
   const toggle = (ch: string) => setExpandedChannel(expandedChannel === ch ? null : ch);
 
   if (!activeTwinId) {
-    return (<TwinEmptyState icon={Mic} title="Tone" />
-    );
+    return <TwinEmptyState icon={Mic} title={t.tone.title} />;
   }
 
   return (
@@ -122,13 +124,13 @@ export default function TonePage() {
       <ContentHeader
         icon={<Mic className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Tone Profiles"
-        subtitle="Each channel can have its own voice. The generic profile is the default fallback when a channel has no override."
+        title={t.tone.title}
+        subtitle={t.tone.subtitle}
       />
 
       <ContentBody centered>
         {isLoading ? (
-          <p className="typo-body text-foreground text-center py-12">Loading...</p>
+          <p className="typo-body text-foreground text-center py-12">{t.tone.loading}</p>
         ) : (
           <div className="max-w-2xl mx-auto space-y-3 pb-8">
             {WELL_KNOWN_CHANNELS.map(({ id: channel, label, color, bg }) => {
@@ -160,12 +162,12 @@ export default function TonePage() {
                     <span className="typo-heading text-foreground flex-1">{label}</span>
                     {exists && (
                       <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">
-                        Configured
+                        {t.tone.configured}
                       </span>
                     )}
                     {!exists && channel !== 'generic' && (
                       <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-muted-foreground">
-                        Falls back to generic
+                        {t.tone.fallsBackToGeneric}
                       </span>
                     )}
                   </button>
@@ -174,10 +176,10 @@ export default function TonePage() {
                   {isExpanded && (
                     <div className="px-4 pb-4 space-y-4 border-t border-primary/5 pt-4">
                       <label className="space-y-1.5 block">
-                        <span className="typo-caption text-foreground font-medium">Voice Directives</span>
+                        <span className="typo-caption text-foreground font-medium">{t.tone.voiceDirectives}</span>
                         <textarea
                           rows={4}
-                          placeholder={`How should the twin speak on ${label}? e.g. "Casual, dry humor, short sentences. Skip formality."`}
+                          placeholder={t.tone.voiceDirectivesPlaceholder.replace('{channel}', label)}
                           value={form.voiceDirectives}
                           onChange={(e) => setForm(channel, { voiceDirectives: e.target.value })}
                           className={`${INPUT_FIELD} resize-y`}
@@ -186,20 +188,20 @@ export default function TonePage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label className="space-y-1.5">
-                          <span className="typo-caption text-foreground font-medium">Length Hint</span>
+                          <span className="typo-caption text-foreground font-medium">{t.tone.lengthHint}</span>
                           <input
                             type="text"
-                            placeholder="1-3 sentences, short paragraph..."
+                            placeholder={t.tone.lengthHintPlaceholder}
                             value={form.lengthHint}
                             onChange={(e) => setForm(channel, { lengthHint: e.target.value })}
                             className={INPUT_FIELD}
                           />
                         </label>
                         <label className="space-y-1.5">
-                          <span className="typo-caption text-foreground font-medium">Constraints</span>
+                          <span className="typo-caption text-foreground font-medium">{t.tone.constraints}</span>
                           <input
                             type="text"
-                            placeholder='["No emoji", "No corporate speak"]'
+                            placeholder={t.tone.constraintsPlaceholder}
                             value={form.constraintsJson}
                             onChange={(e) => setForm(channel, { constraintsJson: e.target.value })}
                             className={`${INPUT_FIELD} font-mono`}
@@ -208,10 +210,10 @@ export default function TonePage() {
                       </div>
 
                       <label className="space-y-1.5 block">
-                        <span className="typo-caption text-foreground font-medium">Example Messages</span>
+                        <span className="typo-caption text-foreground font-medium">{t.tone.exampleMessages}</span>
                         <textarea
                           rows={3}
-                          placeholder={'["Hey, good question — here\'s the thing...", "Sure, shipped that yesterday actually."]'}
+                          placeholder={t.tone.exampleMessagesPlaceholder}
                           value={form.examplesJson}
                           onChange={(e) => setForm(channel, { examplesJson: e.target.value })}
                           className={`${INPUT_FIELD} font-mono resize-y`}
@@ -222,10 +224,11 @@ export default function TonePage() {
                         {exists && channel !== 'generic' ? (
                           <button
                             onClick={() => handleDelete(channel)}
+                            aria-label={`${t.tone.removeOverride} — ${label}`}
                             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            Remove override
+                            {t.tone.removeOverride}
                           </button>
                         ) : (
                           <span />
@@ -236,9 +239,9 @@ export default function TonePage() {
                           size="sm"
                         >
                           {exists ? (
-                            <><Save className="w-4 h-4 mr-1.5" />{isSaving ? 'Saving...' : 'Save'}</>
+                            <><Save className="w-4 h-4 mr-1.5" />{isSaving ? t.tone.saving : t.tone.save}</>
                           ) : (
-                            <><Plus className="w-4 h-4 mr-1.5" />{isSaving ? 'Creating...' : 'Create'}</>
+                            <><Plus className="w-4 h-4 mr-1.5" />{isSaving ? t.tone.creating : t.tone.create}</>
                           )}
                         </Button>
                       </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type {
   Composition,
   TimelineItem,
@@ -27,49 +27,111 @@ function createDefaultComposition(): Composition {
 }
 
 /**
- * Core composition state — kept local to Media Studio for Phase 1.
+ * Mutation tags. Consecutive mutations with the same tag inside the coalesce
+ * window merge into one history entry, so dragging a clip produces a single
+ * undoable step instead of dozens.
+ */
+type MutationTag =
+  | 'replace'
+  | 'addItem'
+  | 'removeItem'
+  | 'duplicateItem'
+  | 'splitItem'
+  | 'updateComposition'
+  | `updateItem:${string}`;
+
+const COALESCE_WINDOW_MS = 400;
+const MAX_HISTORY = 80;
+
+interface HistoryState {
+  past: Composition[];
+  present: Composition;
+  future: Composition[];
+  lastTag: MutationTag | null;
+  lastAt: number;
+}
+
+/**
+ * Core composition state with undo/redo. The reducer-style history is kept
+ * internal — consumers get the same shape as before plus `undo`, `redo`,
+ * `canUndo`, `canRedo`.
  */
 export function useMediaStudio() {
-  const [composition, setComposition] = useState<Composition>(createDefaultComposition);
+  const [history, setHistory] = useState<HistoryState>(() => ({
+    past: [],
+    present: createDefaultComposition(),
+    future: [],
+    lastTag: null,
+    lastAt: 0,
+  }));
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const selectedIdRef = useRef(selectedItemId);
+  selectedIdRef.current = selectedItemId;
 
-  // -- Mutators ---------------------------------------------------------------
+  const composition = history.present;
+
+  // -- Core mutator with coalescing -----------------------------------------
+  //
+  // `tag` identifies the mutation class. Same tag within COALESCE_WINDOW_MS
+  // overwrites the present state without pushing a new past frame — perfect
+  // for drag gestures. Different tag or expired window pushes onto `past`.
+  const commit = useCallback((tag: MutationTag, recipe: (prev: Composition) => Composition) => {
+    setHistory((h) => {
+      const next = recipe(h.present);
+      if (next === h.present) return h;
+      const now = Date.now();
+      const shouldCoalesce =
+        h.lastTag === tag && now - h.lastAt < COALESCE_WINDOW_MS && h.past.length > 0;
+
+      if (shouldCoalesce) {
+        return { ...h, present: next, lastAt: now, future: [] };
+      }
+      const past = [...h.past, h.present];
+      if (past.length > MAX_HISTORY) past.shift();
+      return {
+        past,
+        present: next,
+        future: [],
+        lastTag: tag,
+        lastAt: now,
+      };
+    });
+  }, []);
+
+  // -- Mutators --------------------------------------------------------------
 
   const updateComposition = useCallback((patch: Partial<Composition>) => {
-    setComposition((prev) => ({ ...prev, ...patch }));
-  }, []);
+    commit('updateComposition', (prev) => ({ ...prev, ...patch }));
+  }, [commit]);
 
   const addItem = useCallback((item: TimelineItem) => {
-    setComposition((prev) => ({
-      ...prev,
-      items: [...prev.items, item],
-    }));
+    commit('addItem', (prev) => ({ ...prev, items: [...prev.items, item] }));
     setSelectedItemId(item.id);
-  }, []);
+  }, [commit]);
 
   const updateItem = useCallback((id: string, patch: Partial<TimelineItem>) => {
-    setComposition((prev) => ({
+    commit(`updateItem:${id}`, (prev) => ({
       ...prev,
       items: prev.items.map((it) =>
         it.id === id ? ({ ...it, ...patch } as TimelineItem) : it,
       ),
     }));
-  }, []);
+  }, [commit]);
 
   const removeItem = useCallback(
     (id: string) => {
-      setComposition((prev) => ({
+      commit('removeItem', (prev) => ({
         ...prev,
         items: prev.items.filter((it) => it.id !== id),
       }));
-      if (selectedItemId === id) setSelectedItemId(null);
+      if (selectedIdRef.current === id) setSelectedItemId(null);
     },
-    [selectedItemId],
+    [commit],
   );
 
   const duplicateItem = useCallback(
     (id: string) => {
-      setComposition((prev) => {
+      commit('duplicateItem', (prev) => {
         const source = prev.items.find((it) => it.id === id);
         if (!source) return prev;
         const clone: TimelineItem = {
@@ -81,7 +143,7 @@ export function useMediaStudio() {
         return { ...prev, items: [...prev.items, clone] };
       });
     },
-    [],
+    [commit],
   );
 
   /**
@@ -101,7 +163,7 @@ export function useMediaStudio() {
     // double-invocation doesn't produce two different UUIDs.
     const newId = crypto.randomUUID();
     let applied = false;
-    setComposition((prev) => {
+    commit('splitItem', (prev) => {
       const source = prev.items.find((it) => it.id === id);
       if (!source) return prev;
       const local = time - source.startTime;
@@ -157,7 +219,41 @@ export function useMediaStudio() {
       };
     });
     return applied ? newId : null;
+  }, [commit]);
+
+  // -- History controls ------------------------------------------------------
+
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      const past = h.past.slice();
+      const prev = past.pop();
+      if (!prev) return h;
+      return {
+        past,
+        present: prev,
+        future: [h.present, ...h.future],
+        lastTag: null,
+        lastAt: 0,
+      };
+    });
   }, []);
+
+  const redo = useCallback(() => {
+    setHistory((h) => {
+      const next = h.future[0];
+      if (!next) return h;
+      return {
+        past: [...h.past, h.present],
+        present: next,
+        future: h.future.slice(1),
+        lastTag: null,
+        lastAt: 0,
+      };
+    });
+  }, []);
+
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
 
   // -- Derived ----------------------------------------------------------------
 
@@ -208,5 +304,9 @@ export function useMediaStudio() {
     textItems,
     imageItems,
     totalDuration,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   };
 }

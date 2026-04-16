@@ -1,22 +1,15 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { FolderSearch, Plus, Trash2, ChevronRight, BookMarked, CalendarDays } from 'lucide-react';
+import { FolderSearch, Trash2, ChevronRight, BookMarked, CalendarDays, Pencil } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { SectionHeader } from '../_shared/SectionHeader';
+import { EmptyState } from '../_shared/EmptyState';
+import { projectStatusColor, projectStatusLabel, domainLabel } from '../_shared/tokens';
+import type { ResearchProject } from '@/api/researchLab/researchLab';
 
 const ResearchProjectForm = lazy(() => import('./ResearchProjectForm'));
-
-const STATUS_COLORS: Record<string, string> = {
-  scoping: 'bg-amber-500/20 text-amber-300',
-  literature_review: 'bg-blue-500/20 text-blue-300',
-  hypothesis: 'bg-violet-500/20 text-violet-300',
-  experiment: 'bg-emerald-500/20 text-emerald-300',
-  analysis: 'bg-cyan-500/20 text-cyan-300',
-  writing: 'bg-pink-500/20 text-pink-300',
-  review: 'bg-orange-500/20 text-orange-300',
-  complete: 'bg-green-500/20 text-green-300',
-};
 
 export default function ResearchProjectList() {
   const { t } = useTranslation();
@@ -33,6 +26,7 @@ export default function ResearchProjectList() {
   const addToast = useToastStore((s) => s.addToast);
 
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<ResearchProject | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
@@ -42,7 +36,7 @@ export default function ResearchProjectList() {
     setSyncing(projectId);
     try {
       const count = await syncToObsidian(projectId);
-      addToast(`${t.research_lab.sync_complete} (${count} experiments)`, 'success');
+      addToast(`${t.research_lab.sync_complete} · ${count} ${t.research_lab.experiments.toLowerCase()}`, 'success');
     } catch (err) { toastCatch("ResearchProjectList:sync")(err); }
     finally { setSyncing(null); }
   };
@@ -71,6 +65,17 @@ export default function ResearchProjectList() {
     }
   };
 
+  const handleEdit = (e: React.MouseEvent, project: ResearchProject) => {
+    e.stopPropagation();
+    setEditing(project);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditing(null);
+  };
+
   if (loading && projects.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -81,30 +86,20 @@ export default function ResearchProjectList() {
 
   return (
     <div className="p-6 space-y-4 overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="typo-heading text-foreground">{t.research_lab.projects}</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          {t.research_lab.create_project}
-        </button>
-      </div>
+      <SectionHeader
+        title={t.research_lab.projects}
+        actionLabel={t.research_lab.create_project}
+        onAction={() => setShowForm(true)}
+      />
 
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <FolderSearch className="w-12 h-12 text-foreground/20" />
-          <p className="typo-body text-foreground/50">{t.research_lab.no_projects}</p>
-          <p className="typo-caption text-foreground/30 max-w-sm text-center">{t.research_lab.no_projects_hint}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t.research_lab.create_project}
-          </button>
-        </div>
+        <EmptyState
+          icon={FolderSearch}
+          title={t.research_lab.no_projects}
+          hint={t.research_lab.no_projects_hint}
+          actionLabel={t.research_lab.create_project}
+          onAction={() => setShowForm(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((project) => (
@@ -130,13 +125,22 @@ export default function ResearchProjectList() {
                     <p className="typo-micro text-foreground/40 mt-2 italic line-clamp-2">{project.thesis}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[project.status] ?? 'bg-foreground/10 text-foreground/50'}`}>
-                    {project.status.replace(/_/g, ' ')}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${projectStatusColor(project.status)}`}>
+                    {projectStatusLabel(t, project.status)}
                   </span>
+                  <button
+                    onClick={(e) => handleEdit(e, project)}
+                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary/80 text-foreground/50 hover:text-foreground transition-all"
+                    title={t.research_lab.edit_project}
+                    aria-label={t.research_lab.edit_project}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={(e) => handleDelete(e, project.id)}
                     className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all"
+                    title={t.common.delete}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -144,7 +148,9 @@ export default function ResearchProjectList() {
               </div>
               <div className="mt-3 flex items-center gap-2 flex-wrap">
                 {project.domain && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">{project.domain}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
+                    {domainLabel(t, project.domain)}
+                  </span>
                 )}
                 {project.obsidianVaultPath && (
                   <>
@@ -177,7 +183,7 @@ export default function ResearchProjectList() {
 
       {showForm && (
         <Suspense fallback={null}>
-          <ResearchProjectForm onClose={() => setShowForm(false)} />
+          <ResearchProjectForm onClose={handleCloseForm} editing={editing ?? undefined} />
         </Suspense>
       )}
     </div>

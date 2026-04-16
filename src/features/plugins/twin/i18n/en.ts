@@ -133,6 +133,15 @@ export const en = {
       sessionCompleteDetail: '{saved} of {total} answers saved as pending memories. Review them in the Knowledge tab.',
       trainMore: 'Train More',
       reviewMemories: 'Review Memories',
+      // Adaptive interview keys (KB grounding, follow-ups, session summary)
+      groundingHint: 'Already known: {count} memories — questions will avoid duplicates.',
+      followupBadge: 'Follow-up',
+      followupCta: 'Go deeper',
+      skipFollowup: 'Skip',
+      generatingFollowup: 'Generating follow-up...',
+      summarizingSession: 'Summarizing what we learned...',
+      sessionSummaryHeading: 'What we learned this session',
+      summarySaved: 'Summary saved as a high-priority memory.',
     },
     brain: {
       title: 'Brain',

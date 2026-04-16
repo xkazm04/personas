@@ -2,6 +2,18 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+    // Health check mode: verify the binary can initialize core subsystems
+    // without launching the full Tauri GUI. Used by installer acceptance tests
+    // and CI smoke tests.
+    //
+    //   personas-desktop.exe --health-check
+    //
+    // Exits 0 on success, non-zero on failure.
+    if std::env::args().any(|a| a == "--health-check") {
+        run_health_check();
+        return;
+    }
+
     // Install the rustls CryptoProvider before any TLS connections are made.
     // Required since rustls 0.23 when no single default feature is enabled.
     if rustls::crypto::ring::default_provider().install_default().is_err() {
@@ -13,6 +25,47 @@ fn main() {
     let _sentry_guard = sentry::init(sentry_options());
 
     app_lib::run();
+}
+
+/// Minimal startup validation without launching the GUI.
+fn run_health_check() {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("health-check: personas-desktop v{version}");
+
+    // 1. TLS provider
+    if rustls::crypto::ring::default_provider().install_default().is_err() {
+        // Already installed — fine
+    }
+    println!("health-check: tls provider ok");
+
+    // 2. SQLite in-memory database
+    match rusqlite::Connection::open_in_memory() {
+        Ok(conn) => {
+            // Verify bundled SQLite can execute a basic query
+            let ver: String = conn
+                .query_row("SELECT sqlite_version()", [], |r| r.get(0))
+                .unwrap_or_else(|_| "unknown".into());
+            println!("health-check: sqlite {ver} ok");
+        }
+        Err(e) => {
+            eprintln!("health-check: sqlite failed: {e}");
+            std::process::exit(1);
+        }
+    }
+
+    // 3. Sentry init (no-op without DSN, but validates the codepath)
+    let _guard = sentry::init(sentry_options());
+    println!("health-check: sentry init ok");
+
+    // 4. Data directory accessible
+    if let Some(dir) = dirs::data_local_dir() {
+        println!("health-check: data dir {}", dir.display());
+    } else {
+        eprintln!("health-check: cannot determine local data directory");
+        std::process::exit(1);
+    }
+
+    println!("health-check: passed");
 }
 
 fn sentry_options() -> sentry::ClientOptions {

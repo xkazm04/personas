@@ -399,18 +399,16 @@
         "options": [
           "Google Cloud Platform",
           "Amazon Web Services (AWS)",
-          "Microsoft Azure",
-          "Other (custom billing API endpoint)"
+          "Microsoft Azure"
         ],
         "option_service_types": [
           "gcp_cloud",
           "aws_cloud",
-          "azure_cloud",
-          null
+          "azure_cloud"
         ],
         "vault_category": "cloud",
-        "default": "Google Cloud Platform",
-        "context": "Determines which billing API the agent queries. Each provider has different endpoints and authentication methods.",
+        "allow_custom": true,
+        "context": "Determines which billing API the agent queries. Auto-detects from your connected cloud credentials. Click Custom to enter a custom billing API endpoint.",
         "dimension": "connectors"
       },
       {

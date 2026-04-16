@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef } from 'react';
 import { FolderKanban, ChevronDown, AlertCircle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
@@ -18,6 +19,8 @@ const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 // ---------------------------------------------------------------------------
 
 export function ProjectSelector() {
+  const { t } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const projects = useSystemStore((s) => s.projects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
@@ -48,14 +51,14 @@ export function ProjectSelector() {
       <div className="mx-4 mt-3 mb-1 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center gap-3">
         <AlertCircle className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-foreground/70">No dev project configured</p>
-          <p className="text-[10px] text-muted-foreground/50">Create a project first to use scanner tools.</p>
+          <p className="text-xs text-foreground/70">{dt.no_project_configured}</p>
+          <p className="text-[10px] text-muted-foreground/50">{dt.create_project_hint}</p>
         </div>
         <button
           onClick={() => setDevToolsTab('projects')}
           className="px-3 py-1.5 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors flex-shrink-0"
         >
-          Create Project
+          {dt.create_project}
         </button>
       </div>
     );
@@ -83,7 +86,7 @@ export function ProjectSelector() {
           }}
           className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground/70 bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
         >
-          <option value="" disabled>Select a project...</option>
+          <option value="" disabled>{dt.select_project}</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} — {p.root_path}

@@ -1,27 +1,34 @@
 import { useState } from 'react';
-import { X, FolderOpen } from 'lucide-react';
+import { FolderOpen, X } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-
-const DOMAINS = ['cs', 'biology', 'chemistry', 'physics', 'mathematics', 'business', 'medicine', 'general'];
+import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
+import { TextField, TextAreaField, SelectField, Field } from '../_shared/FormField';
+import { DOMAINS, domainLabel, type Domain } from '../_shared/tokens';
+import type { ResearchProject } from '@/api/researchLab/researchLab';
 
 interface Props {
   onClose: () => void;
+  /** If provided, the modal edits this project instead of creating a new one. */
+  editing?: ResearchProject;
 }
 
-export default function ResearchProjectForm({ onClose }: Props) {
+export default function ResearchProjectForm({ onClose, editing }: Props) {
   const { t } = useTranslation();
   const createProject = useSystemStore((s) => s.createResearchProject);
+  const updateProject = useSystemStore((s) => s.updateResearchProject);
   const setActiveProject = useSystemStore((s) => s.setActiveResearchProject);
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [thesis, setThesis] = useState('');
-  const [domain, setDomain] = useState('general');
-  const [obsidianVaultPath, setObsidianVaultPath] = useState('');
+  const [name, setName] = useState(editing?.name ?? '');
+  const [description, setDescription] = useState(editing?.description ?? '');
+  const [thesis, setThesis] = useState(editing?.thesis ?? '');
+  const [domain, setDomain] = useState<Domain>((editing?.domain as Domain) ?? 'general');
+  const [obsidianVaultPath, setObsidianVaultPath] = useState(editing?.obsidianVaultPath ?? '');
   const [saving, setSaving] = useState(false);
+
+  const domainOptions = DOMAINS.map((d) => ({ value: d, label: domainLabel(t, d) }));
 
   const handlePickVault = async () => {
     const selected = await open({ directory: true, title: t.research_lab.select_vault });
@@ -33,88 +40,81 @@ export default function ResearchProjectForm({ onClose }: Props) {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const project = await createProject({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        thesis: thesis.trim() || undefined,
-        domain,
-        obsidianVaultPath: obsidianVaultPath.trim() || undefined,
-      });
-      setActiveProject(project.id);
+      if (editing) {
+        await updateProject(editing.id, {
+          name: name.trim(),
+          description: description.trim() || null,
+          thesis: thesis.trim() || null,
+          domain,
+          obsidianVaultPath: obsidianVaultPath.trim() || null,
+        });
+      } else {
+        const project = await createProject({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          thesis: thesis.trim() || undefined,
+          domain,
+          obsidianVaultPath: obsidianVaultPath.trim() || undefined,
+        });
+        setActiveProject(project.id);
+      }
       onClose();
     } catch (err) {
-      toastCatch("ResearchProjectForm:create")(err);
+      toastCatch(editing ? "ResearchProjectForm:update" : "ResearchProjectForm:create")(err);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-card bg-background border border-border/50 shadow-2xl p-6 space-y-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="typo-heading text-foreground">{t.research_lab.create_project}</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-secondary/50 text-foreground/50">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <ResearchLabFormModal
+      title={editing ? t.research_lab.edit_project : t.research_lab.create_project}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      submitLabel={editing ? t.research_lab.save_changes : t.research_lab.create_project}
+      submitDisabled={!name.trim()}
+      saving={saving}
+    >
+      <TextField
+        label={t.research_lab.project_name}
+        value={name}
+        onChange={setName}
+        placeholder={t.research_lab.project_name_placeholder}
+        autoFocus
+        required
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="typo-caption text-foreground/60 block mb-1">{t.research_lab.project_name}</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t.research_lab.project_name}
-              className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40"
-              autoFocus
-            />
-          </div>
+      <TextAreaField
+        label={t.research_lab.project_thesis}
+        value={thesis}
+        onChange={setThesis}
+        placeholder={t.research_lab.project_thesis_placeholder}
+        rows={2}
+      />
 
-          <div>
-            <label className="typo-caption text-foreground/60 block mb-1">{t.research_lab.project_thesis}</label>
-            <textarea
-              value={thesis}
-              onChange={(e) => setThesis(e.target.value)}
-              placeholder={t.research_lab.project_thesis}
-              rows={2}
-              className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40 resize-none"
-            />
-          </div>
+      <TextAreaField
+        label={t.research_lab.project_description}
+        value={description}
+        onChange={setDescription}
+        placeholder={t.research_lab.project_description_placeholder}
+        rows={3}
+      />
 
-          <div>
-            <label className="typo-caption text-foreground/60 block mb-1">{t.research_lab.project_description}</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t.research_lab.project_description}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40 resize-none"
-            />
-          </div>
+      <SelectField
+        label={t.research_lab.project_domain}
+        value={domain}
+        onChange={setDomain}
+        options={domainOptions}
+      />
 
-          <div>
-            <label className="typo-caption text-foreground/60 block mb-1">{t.research_lab.project_domain}</label>
-            <select
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body focus:outline-none focus:border-primary/40"
-            >
-              {DOMAINS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="typo-caption text-foreground/60 block mb-1">{t.research_lab.obsidian_vault}</label>
-            <div
+      <Field label={t.research_lab.obsidian_vault}>
+        {(id) => (
+          <div className="flex items-stretch gap-2">
+            <button
+              id={id}
+              type="button"
               onClick={handlePickVault}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body cursor-pointer hover:border-primary/40 transition-colors"
+              className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body cursor-pointer hover:border-primary/40 transition-colors text-left"
             >
               <FolderOpen className="w-4 h-4 text-foreground/40 flex-shrink-0" />
               {obsidianVaultPath ? (
@@ -122,27 +122,21 @@ export default function ResearchProjectForm({ onClose }: Props) {
               ) : (
                 <span className="text-foreground/30">{t.research_lab.obsidian_vault_hint}</span>
               )}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg typo-body text-foreground/60 hover:bg-secondary/50 transition-colors"
-            >
-              {t.common.cancel}
             </button>
-            <button
-              type="submit"
-              disabled={!name.trim() || saving}
-              className="px-4 py-2 rounded-lg typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50"
-            >
-              {saving ? t.common.loading : t.research_lab.create_project}
-            </button>
+            {obsidianVaultPath && (
+              <button
+                type="button"
+                onClick={() => setObsidianVaultPath('')}
+                className="px-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground/50 hover:text-foreground hover:border-primary/40 transition-colors"
+                title={t.research_lab.clear_vault}
+                aria-label={t.research_lab.clear_vault}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </Field>
+    </ResearchLabFormModal>
   );
 }
