@@ -84,7 +84,7 @@ export function DriveToolbar({
           const isLast = i === segments.length - 1;
           return (
             <div key={subPath} className="flex items-center gap-0.5 min-w-0">
-              <ChevronRight className="w-3 h-3 text-foreground/40 flex-shrink-0" />
+              <ChevronRight className="w-3 h-3 text-foreground/90 flex-shrink-0" />
               <BreadcrumbPill
                 label={seg}
                 onClick={() => drive.navigate(subPath)}
@@ -97,19 +97,19 @@ export function DriveToolbar({
 
       {/* Search */}
       <div className="relative flex items-center group">
-        <Search className="absolute left-2.5 w-3.5 h-3.5 text-foreground/50 pointer-events-none transition-colors group-focus-within:text-cyan-400" />
+        <Search className="absolute left-2.5 w-3.5 h-3.5 text-foreground/90 pointer-events-none transition-colors group-focus-within:text-cyan-400" />
         <input
           type="text"
           value={drive.searchQuery}
           onChange={(e) => drive.setSearchQuery(e.target.value)}
           placeholder={t.plugins.drive.search_placeholder}
-          className="pl-8 pr-7 py-1.5 w-56 rounded-lg bg-secondary/40 border border-primary/15 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+          className="pl-8 pr-7 py-1.5 w-56 rounded-lg bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/90 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 transition-all"
         />
         {drive.searchQuery && (
           <button
             type="button"
             onClick={() => drive.setSearchQuery("")}
-            className="absolute right-1.5 p-0.5 rounded text-foreground/50 hover:text-foreground hover:bg-primary/10"
+            className="absolute right-1.5 p-0.5 rounded text-foreground/90 hover:text-foreground hover:bg-primary/10"
             aria-label="clear"
           >
             <X className="w-3 h-3" />
@@ -187,7 +187,7 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-md text-foreground/75 hover:text-foreground hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+      className="p-1.5 rounded-md text-foreground hover:text-foreground hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
     >
       <Icon className="w-4 h-4" />
     </button>
@@ -209,10 +209,10 @@ function BreadcrumbPill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-md typo-caption truncate max-w-[160px] transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1 rounded-md typo-body truncate max-w-[160px] transition-colors ${
         isLast
           ? "text-foreground font-semibold"
-          : "text-foreground/70 hover:text-foreground hover:bg-primary/10"
+          : "text-foreground/90 hover:text-foreground hover:bg-primary/10"
       }`}
     >
       {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
@@ -240,10 +240,10 @@ function ViewSegment({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-md typo-caption-sm font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-md typo-body font-medium transition-all ${
         active
           ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-sm border border-cyan-500/40"
-          : "text-foreground/65 hover:text-foreground hover:bg-primary/10 border border-transparent"
+          : "text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent"
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ function ActionButton({
     primary:
       "bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_12px_-4px_rgba(34,211,238,0.4)]",
     ghost:
-      "bg-secondary/50 text-foreground/85 border border-primary/15 hover:bg-secondary/70 hover:text-foreground",
+      "bg-secondary/50 text-foreground border border-primary/15 hover:bg-secondary/70 hover:text-foreground",
     accent:
       "bg-gradient-to-b from-fuchsia-500/25 to-rose-500/10 text-fuchsia-100 border border-fuchsia-500/40 hover:from-fuchsia-500/35 hover:to-rose-500/15 shadow-[0_0_12px_-4px_rgba(217,70,239,0.4)]",
   } as const;
@@ -274,7 +274,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption font-semibold transition-all ${styles[variant]}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-body font-semibold transition-all ${styles[variant]}`}
     >
       <Icon className="w-3.5 h-3.5" />
       {label}

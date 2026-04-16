@@ -78,7 +78,7 @@ export function DriveSignaturesPanel({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-foreground/50 hover:text-foreground hover:bg-secondary/50"
+            className="p-1 rounded-md text-foreground/90 hover:text-foreground hover:bg-secondary/50"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -87,18 +87,18 @@ export function DriveSignaturesPanel({
 
         <div className="flex-1 overflow-y-auto">
           {signing.loadingSignatures && signing.signatures.length === 0 && (
-            <div className="flex items-center justify-center py-10 typo-caption text-foreground/50">
+            <div className="flex items-center justify-center py-10 typo-body text-foreground/90">
               {t.plugins.drive.loading}
             </div>
           )}
 
           {!signing.loadingSignatures && signing.signatures.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-2 py-10 px-6 text-center">
-              <FileSignature className="w-10 h-10 text-foreground/20" />
-              <div className="typo-body text-foreground/70">
+              <FileSignature className="w-10 h-10 text-foreground/90" />
+              <div className="typo-body text-foreground/90">
                 {t.plugins.doc_signing.no_signatures}
               </div>
-              <div className="typo-caption text-foreground/40">
+              <div className="typo-body text-foreground/90">
                 {t.plugins.doc_signing.no_signatures_hint}
               </div>
             </div>
@@ -119,11 +119,11 @@ export function DriveSignaturesPanel({
                         onClose();
                       }
                     }}
-                    className="typo-caption font-medium text-foreground/90 truncate hover:text-sky-300 text-left"
+                    className="typo-body font-medium text-foreground truncate hover:text-sky-300 text-left"
                   >
                     {sig.file_name}
                   </button>
-                  <div className="mt-1 flex items-center gap-3 typo-caption-sm text-foreground/50">
+                  <div className="mt-1 flex items-center gap-3 typo-body text-foreground/90">
                     <span className="flex items-center gap-1">
                       <User className="w-3 h-3" />
                       {sig.signer_display_name}
@@ -133,7 +133,7 @@ export function DriveSignaturesPanel({
                       {new Date(sig.signed_at).toLocaleString()}
                     </span>
                   </div>
-                  <div className="mt-1 font-mono text-[10px] text-foreground/40 truncate">
+                  <div className="mt-1 font-mono typo-body text-foreground/90 truncate">
                     {sig.file_hash}
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleExport(sig.id)}
                     title={t.plugins.doc_signing.export_sig}
-                    className="p-1.5 rounded-md text-foreground/60 hover:text-sky-300 hover:bg-sky-500/10"
+                    className="p-1.5 rounded-md text-foreground/90 hover:text-sky-300 hover:bg-sky-500/10"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -150,7 +150,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleDelete(sig.id)}
                     title={t.plugins.doc_signing.delete_signature}
-                    className="p-1.5 rounded-md text-foreground/60 hover:text-rose-300 hover:bg-rose-500/10"
+                    className="p-1.5 rounded-md text-foreground/90 hover:text-rose-300 hover:bg-rose-500/10"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

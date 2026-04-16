@@ -213,7 +213,7 @@ export default function DrivePage() {
         actions={
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-            <span className="typo-caption text-cyan-100 font-medium tabular-nums">
+            <span className="typo-body text-cyan-100 font-medium tabular-nums">
               {statusLine}
             </span>
           </div>

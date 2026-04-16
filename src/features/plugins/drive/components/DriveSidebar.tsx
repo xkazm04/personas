@@ -29,17 +29,17 @@ export function DriveSidebar({ drive }: Props) {
             <HardDrive className="w-4 h-4 text-cyan-200" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="typo-caption font-semibold text-foreground tracking-tight">
+            <div className="typo-body font-semibold text-foreground tracking-tight">
               {t.plugins.drive.sidebar_root}
             </div>
-            <div className="typo-caption-sm text-foreground/60">
+            <div className="typo-body text-foreground/90">
               {drive.storage?.isDev
                 ? t.plugins.drive.dev_badge
                 : "Managed local"}
             </div>
           </div>
           {drive.storage?.isDev && (
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            <span className="px-1.5 py-0.5 rounded typo-body font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
               dev
             </span>
           )}
@@ -48,13 +48,13 @@ export function DriveSidebar({ drive }: Props) {
 
       {/* Folder tree */}
       <div className="flex-1 overflow-y-auto py-2 px-1">
-        <div className="px-2 mb-1 typo-caption-sm font-semibold text-foreground/50 uppercase tracking-wider">
+        <div className="px-2 mb-1 typo-body font-semibold text-foreground/90 uppercase tracking-wider">
           Folders
         </div>
         {drive.tree ? (
           <TreeNode node={drive.tree} drive={drive} depth={0} initiallyOpen />
         ) : (
-          <div className="px-3 py-2 typo-caption-sm text-foreground/40">
+          <div className="px-3 py-2 typo-body text-foreground/90">
             {t.plugins.drive.loading}
           </div>
         )}
@@ -64,7 +64,7 @@ export function DriveSidebar({ drive }: Props) {
       {drive.storage && (
         <div className="border-t border-primary/10 px-4 py-3 bg-background/40">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="typo-caption-sm font-semibold text-foreground/70 uppercase tracking-wider">
+            <div className="typo-body font-semibold text-foreground/90 uppercase tracking-wider">
               {t.plugins.drive.sidebar_storage}
             </div>
             <Sparkles className="w-3 h-3 text-cyan-400/70" />
@@ -73,14 +73,14 @@ export function DriveSidebar({ drive }: Props) {
             usedBytes={drive.storage.usedBytes}
             capBytes={STORAGE_METER_CAP_BYTES}
           />
-          <div className="mt-1.5 typo-caption-sm text-foreground/70">
+          <div className="mt-1.5 typo-body text-foreground/90">
             {tx(t.plugins.drive.storage_used, {
               used: driveFormatBytes(drive.storage.usedBytes),
               count: drive.storage.entryCount,
             })}
           </div>
           <div
-            className="mt-1 text-[10px] text-foreground/45 font-mono truncate"
+            className="mt-1 typo-body text-foreground/90 font-mono truncate"
             title={drive.storage.root}
           >
             {drive.storage.root}
@@ -153,10 +153,10 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
           if (hasChildren && !expanded) setExpanded(true);
         }}
         onDoubleClick={toggle}
-        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-md text-left typo-caption transition-all ${
+        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-md text-left typo-body transition-all ${
           isActive
             ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
-            : "text-foreground/75 hover:bg-secondary/50 hover:text-foreground"
+            : "text-foreground hover:bg-secondary/50 hover:text-foreground"
         }`}
         style={{ paddingLeft: `${10 + depth * 14}px` }}
       >

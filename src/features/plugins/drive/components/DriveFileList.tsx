@@ -128,10 +128,10 @@ function ListView({
       <button
         type="button"
         onClick={() => drive.setSort(column)}
-        className={`flex items-center gap-1 py-2 typo-caption-sm font-semibold uppercase tracking-wider transition-colors ${
+        className={`flex items-center gap-1 py-2 typo-body font-semibold uppercase tracking-wider transition-colors ${
           active
             ? "text-cyan-300"
-            : "text-foreground/55 hover:text-foreground"
+            : "text-foreground/90 hover:text-foreground"
         } ${className}`}
       >
         {label}
@@ -182,7 +182,7 @@ function ListView({
   }
   if (drive.error) {
     return (
-      <div className="flex-1 flex items-center justify-center typo-caption text-rose-300">
+      <div className="flex-1 flex items-center justify-center typo-body text-rose-300">
         {t.plugins.drive.error_prefix} {drive.error}
       </div>
     );
@@ -253,15 +253,15 @@ function ListView({
                   {entry.name}
                 </span>
               </div>
-              <div className="typo-caption text-foreground/75 self-center tabular-nums">
+              <div className="typo-body text-foreground/90 self-center tabular-nums">
                 {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
               </div>
-              <div className="typo-caption text-foreground/75 self-center truncate">
+              <div className="typo-body text-foreground/90 self-center truncate">
                 {entry.kind === "folder"
                   ? t.plugins.drive.folder_kind
                   : visualForEntry(entry).label}
               </div>
-              <div className="typo-caption text-foreground/75 self-center tabular-nums">
+              <div className="typo-body text-foreground/90 self-center tabular-nums">
                 {formatRelativeTime(entry.modified)}
               </div>
             </div>
@@ -331,7 +331,7 @@ function IconsView({
               >
                 <visual.Icon className={`w-8 h-8 ${visual.text}`} />
               </div>
-              <div className="w-full typo-caption text-center text-foreground truncate">
+              <div className="w-full typo-body text-center text-foreground truncate">
                 {entry.name}
               </div>
             </button>
@@ -452,24 +452,24 @@ function ColumnEntries({
               if (!selected) drive.selectOnly(entry.path);
               onContextMenu(entry, e.clientX, e.clientY);
             }}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 typo-caption text-left transition-colors ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-colors ${
               isActive
                 ? "bg-gradient-to-r from-cyan-500/25 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.9)]"
                 : selected
                 ? "bg-cyan-500/10 text-foreground"
-                : "hover:bg-secondary/40 text-foreground/85"
+                : "hover:bg-secondary/40 text-foreground"
             }`}
           >
             <FileChip entry={entry} size={22} />
             <span className="truncate flex-1">{entry.name}</span>
             {entry.kind === "folder" && (
-              <span className="text-foreground/50 text-sm">›</span>
+              <span className="text-foreground/90 text-sm">›</span>
             )}
           </button>
         );
       })}
       {entries.length === 0 && (
-        <div className="px-3 py-6 typo-caption-sm text-foreground/50 italic text-center">
+        <div className="px-3 py-6 typo-body text-foreground/90 italic text-center">
           Empty
         </div>
       )}
@@ -501,7 +501,7 @@ function AsyncColumnEntries(props: {
   }, [props.path]);
   if (!loaded) {
     return (
-      <div className="px-3 py-6 typo-caption-sm text-foreground/50 italic text-center">
+      <div className="px-3 py-6 typo-body text-foreground/90 italic text-center">
         Loading...
       </div>
     );
@@ -525,7 +525,7 @@ function LoadingState() {
   const { t } = useTranslation();
   return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="flex items-center gap-2 typo-caption text-foreground/60">
+      <div className="flex items-center gap-2 typo-body text-foreground/90">
         <span className="w-3 h-3 rounded-full bg-cyan-500/60 animate-ping" />
         {t.plugins.drive.loading}
       </div>
@@ -559,7 +559,7 @@ function DriveEmptyState({
           {t.plugins.drive.empty_folder}
         </div>
         {isRoot && (
-          <p className="typo-caption text-foreground/65">
+          <p className="typo-body text-foreground/90">
             {t.plugins.drive.empty_hint}
           </p>
         )}
@@ -567,7 +567,7 @@ function DriveEmptyState({
       <button
         type="button"
         onClick={onNewFolder}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-caption font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
       >
         {t.plugins.drive.empty_cta}
       </button>

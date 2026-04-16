@@ -85,7 +85,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-foreground/50 hover:text-foreground hover:bg-secondary/50"
+            className="p-1 rounded-md text-foreground/90 hover:text-foreground hover:bg-secondary/50"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -95,10 +95,10 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {/* File info */}
           <div className="mb-3 rounded-lg border border-primary/10 bg-secondary/30 px-3 py-2">
-            <div className="typo-caption-sm text-foreground/50 uppercase tracking-wide">
+            <div className="typo-body text-foreground/90 uppercase tracking-wide">
               {t.plugins.drive.details_path}
             </div>
-            <div className="typo-caption font-mono text-foreground/90 break-all">
+            <div className="typo-body font-mono text-foreground break-all">
               {entry.path}
             </div>
           </div>
@@ -106,10 +106,10 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           {/* Sidecar lookup status */}
           {sidecarFound !== null && phase === "input" && (
             <div
-              className={`mb-3 flex items-center gap-2 typo-caption rounded-md px-3 py-2 border ${
+              className={`mb-3 flex items-center gap-2 typo-body rounded-md px-3 py-2 border ${
                 sidecarFound
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-primary/10 bg-secondary/30 text-foreground/60"
+                  : "border-primary/10 bg-secondary/30 text-foreground/90"
               }`}
             >
               <Search className="w-3.5 h-3.5 flex-shrink-0" />
@@ -122,7 +122,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           {/* Sidecar input */}
           {phase !== "done" && (
             <div>
-              <label className="typo-caption-sm text-foreground/50 uppercase tracking-wide block mb-1">
+              <label className="typo-body text-foreground/90 uppercase tracking-wide block mb-1">
                 {t.plugins.doc_signing.signature_label}
               </label>
               <textarea
@@ -130,7 +130,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 onChange={(e) => setSidecarJson(e.target.value)}
                 rows={6}
                 spellCheck={false}
-                className="w-full px-3 py-2 rounded-md bg-secondary/40 border border-primary/15 typo-caption-sm font-mono text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
+                className="w-full px-3 py-2 rounded-md bg-secondary/40 border border-primary/15 typo-body font-mono text-foreground placeholder:text-foreground/90 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
                 placeholder={"{\n  \"version\": 1,\n  \"algorithm\": \"Ed25519\",\n  ...\n}"}
               />
             </div>
@@ -145,7 +145,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-caption font-medium hover:bg-sky-500/30 transition-colors"
+              className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 transition-colors"
             >
               {t.plugins.drive.confirm}
             </button>
@@ -155,7 +155,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={onClose}
                 disabled={phase === "verifying"}
-                className="px-3 py-1.5 rounded-md typo-caption font-medium text-foreground/70 hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-md typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -163,7 +163,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-caption font-medium hover:bg-sky-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying
@@ -205,20 +205,20 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
         </span>
       </div>
 
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 typo-caption">
-        <dt className="text-foreground/50">{t.plugins.doc_signing.signer}</dt>
-        <dd className="text-foreground/90 truncate">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 typo-body">
+        <dt className="text-foreground/90">{t.plugins.doc_signing.signer}</dt>
+        <dd className="text-foreground truncate">
           {result.signer_display_name}
         </dd>
 
-        <dt className="text-foreground/50">
+        <dt className="text-foreground/90">
           {t.plugins.doc_signing.signed_at}
         </dt>
-        <dd className="text-foreground/90">
+        <dd className="text-foreground">
           {new Date(result.signed_at).toLocaleString()}
         </dd>
 
-        <dt className="text-foreground/50">
+        <dt className="text-foreground/90">
           {t.plugins.doc_signing.file_integrity}
         </dt>
         <dd
@@ -231,7 +231,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
             : t.plugins.doc_signing.modified}
         </dd>
 
-        <dt className="text-foreground/50">
+        <dt className="text-foreground/90">
           {t.plugins.doc_signing.crypto_signature}
         </dt>
         <dd
@@ -246,7 +246,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
       </dl>
 
       {result.error && (
-        <div className="mt-3 px-2 py-1.5 rounded bg-rose-500/15 typo-caption-sm text-rose-300 font-mono">
+        <div className="mt-3 px-2 py-1.5 rounded bg-rose-500/15 typo-body text-rose-300 font-mono">
           {result.error}
         </div>
       )}

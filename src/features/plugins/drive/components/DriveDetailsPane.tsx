@@ -24,7 +24,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
       <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/60 px-5 py-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-cyan-300" />
-          <span className="typo-caption font-semibold text-foreground uppercase tracking-wider">
+          <span className="typo-body font-semibold text-foreground uppercase tracking-wider">
             {t.plugins.drive.details_title}
           </span>
         </div>
@@ -33,16 +33,16 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500/15 to-sky-500/5 border border-cyan-500/20 flex items-center justify-center mb-3">
               <Info className="w-7 h-7 text-cyan-300/70" />
             </div>
-            <div className="typo-caption text-foreground/65 max-w-[200px]">
+            <div className="typo-body text-foreground/90 max-w-[200px]">
               Select a file or folder to see its details and inline preview.
             </div>
           </div>
         </div>
         <div className="pt-3 border-t border-primary/10">
-          <div className="typo-caption-sm text-foreground/45 uppercase tracking-wider">
+          <div className="typo-body text-foreground/90 uppercase tracking-wider">
             Location
           </div>
-          <div className="mt-1 font-mono text-[10px] text-foreground/65 break-all">
+          <div className="mt-1 font-mono typo-body text-foreground break-all">
             {currentPath || "/"}
           </div>
         </div>
@@ -71,7 +71,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             {multi ? `${entries.length} items selected` : primary.name}
           </div>
           {!multi && (
-            <div className="mt-1 typo-caption-sm text-foreground/65">
+            <div className="mt-1 typo-body text-foreground/90">
               {primary.kind === "folder"
                 ? t.plugins.drive.folder_kind
                 : visual.label}
@@ -95,7 +95,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             </DetailRow>
             <DetailRow label={t.plugins.drive.details_path}>
               <div className="flex items-start gap-1.5">
-                <span className="font-mono text-[10px] break-all flex-1">
+                <span className="font-mono typo-body break-all flex-1">
                   {primary.path || "/"}
                 </span>
                 <button
@@ -107,7 +107,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
                         /* ignore */
                       });
                   }}
-                  className="p-1 rounded text-foreground/55 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex-shrink-0"
+                  className="p-1 rounded text-foreground/90 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex-shrink-0"
                   aria-label="Copy path"
                   title="Copy path"
                 >
@@ -120,12 +120,12 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
         {multi && (
           <div className="rounded-lg border border-primary/10 bg-secondary/30 p-3">
-            <div className="typo-caption-sm text-foreground/55 uppercase tracking-wider">
+            <div className="typo-body text-foreground/90 uppercase tracking-wider">
               {t.plugins.drive.details_items}
             </div>
             <div className="mt-1 typo-body text-foreground">
               {entries.length}
-              <span className="ml-1.5 typo-caption text-foreground/65">
+              <span className="ml-1.5 typo-body text-foreground/90">
                 • {driveFormatBytes(
                   entries.reduce(
                     (sum, e) => sum + (e.kind === "file" ? e.size : 0),
@@ -139,7 +139,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
         {!multi && primary.kind === "file" && (
           <div className="space-y-2">
-            <div className="typo-caption-sm font-semibold text-foreground/55 uppercase tracking-wider">
+            <div className="typo-body font-semibold text-foreground/90 uppercase tracking-wider">
               {t.plugins.drive.details_preview}
             </div>
             <FilePreview entry={primary} />
@@ -167,10 +167,10 @@ function DetailRow({
 }) {
   return (
     <div className="px-3 py-2">
-      <div className="typo-caption-sm text-foreground/55 uppercase tracking-wider mb-1">
+      <div className="typo-body text-foreground/90 uppercase tracking-wider mb-1">
         {label}
       </div>
-      <div className="typo-caption text-foreground break-words">{children}</div>
+      <div className="typo-body text-foreground break-words">{children}</div>
     </div>
   );
 }
@@ -228,21 +228,21 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
 
   if (state === "loading") {
     return (
-      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-4 text-center typo-caption-sm text-foreground/55">
+      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-4 text-center typo-body text-foreground/90">
         {t.plugins.drive.loading}
       </div>
     );
   }
   if (state === "too_large") {
     return (
-      <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-3 typo-caption-sm text-amber-200">
+      <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-3 typo-body text-amber-200">
         {t.plugins.drive.preview_too_large}
       </div>
     );
   }
   if (state === "unsupported") {
     return (
-      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-caption-sm text-foreground/60">
+      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
         {t.plugins.drive.preview_binary}
       </div>
     );
@@ -252,13 +252,13 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
   }
   if (text !== null) {
     return (
-      <pre className="max-h-72 overflow-auto rounded-lg border border-primary/10 bg-background/60 p-3 typo-caption-sm font-mono text-foreground/85 whitespace-pre-wrap break-words leading-relaxed">
+      <pre className="max-h-72 overflow-auto rounded-lg border border-primary/10 bg-background/60 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
         {text.slice(0, 4000)}
       </pre>
     );
   }
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-caption-sm text-foreground/55">
+    <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
       {t.plugins.drive.preview_unavailable}
     </div>
   );

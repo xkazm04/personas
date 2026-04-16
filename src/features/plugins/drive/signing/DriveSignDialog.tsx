@@ -95,7 +95,7 @@ export function DriveSignDialog({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-foreground/50 hover:text-foreground hover:bg-secondary/50"
+            className="p-1 rounded-md text-foreground/90 hover:text-foreground hover:bg-secondary/50"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -105,22 +105,22 @@ export function DriveSignDialog({
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {/* File info */}
           <div className="mb-3 rounded-lg border border-primary/10 bg-secondary/30 px-3 py-2">
-            <div className="typo-caption-sm text-foreground/50 uppercase tracking-wide">
+            <div className="typo-body text-foreground/90 uppercase tracking-wide">
               {t.plugins.drive.details_path}
             </div>
-            <div className="typo-caption font-mono text-foreground/90 break-all">
+            <div className="typo-body font-mono text-foreground break-all">
               {entry.path}
             </div>
           </div>
 
           {/* Signer identity */}
           {signing.identity && (
-            <div className="mb-3 typo-caption text-foreground/60">
+            <div className="mb-3 typo-body text-foreground/90">
               {t.plugins.doc_signing.signing_as}:{" "}
-              <span className="text-foreground/90 font-medium">
+              <span className="text-foreground font-medium">
                 {signing.identity.displayName}
               </span>
-              <div className="typo-caption-sm text-foreground/40 font-mono mt-0.5 truncate">
+              <div className="typo-body text-foreground/90 font-mono mt-0.5 truncate">
                 {signing.identity.peerId}
               </div>
             </div>
@@ -129,14 +129,14 @@ export function DriveSignDialog({
           {/* Metadata */}
           {phase !== "done" && (
             <div>
-              <label className="typo-caption-sm text-foreground/50 uppercase tracking-wide block mb-1">
+              <label className="typo-body text-foreground/90 uppercase tracking-wide block mb-1">
                 {t.plugins.doc_signing.notes_label}
               </label>
               <textarea
                 value={metadata}
                 onChange={(e) => setMetadata(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 rounded-md bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
+                className="w-full px-3 py-2 rounded-md bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/90 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
                 placeholder="Optional context stored alongside the signature..."
               />
             </div>
@@ -147,11 +147,11 @@ export function DriveSignDialog({
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="typo-caption font-medium text-emerald-300">
+                <span className="typo-body font-medium text-emerald-300">
                   {t.plugins.doc_signing.signed_success}
                 </span>
               </div>
-              <pre className="max-h-64 overflow-auto rounded-md border border-primary/10 bg-secondary/20 p-2 typo-caption-sm font-mono text-foreground/80 whitespace-pre-wrap break-words">
+              <pre className="max-h-64 overflow-auto rounded-md border border-primary/10 bg-secondary/20 p-2 typo-body font-mono text-foreground whitespace-pre-wrap break-words">
                 {sidecarJson}
               </pre>
             </div>
@@ -164,7 +164,7 @@ export function DriveSignDialog({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md typo-caption font-medium text-foreground/80 hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {t.plugins.doc_signing.copy}
@@ -172,7 +172,7 @@ export function DriveSignDialog({
               <button
                 type="button"
                 onClick={handleSaveToDrive}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-caption font-medium hover:bg-sky-500/30 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 {t.plugins.doc_signing.save_sig_json}
@@ -180,7 +180,7 @@ export function DriveSignDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-md typo-caption font-medium text-foreground/70 hover:bg-secondary/50 transition-colors"
+                className="px-3 py-1.5 rounded-md typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 {t.plugins.drive.confirm}
               </button>
@@ -191,7 +191,7 @@ export function DriveSignDialog({
                 type="button"
                 onClick={onClose}
                 disabled={phase === "signing"}
-                className="px-3 py-1.5 rounded-md typo-caption font-medium text-foreground/70 hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-md typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -199,7 +199,7 @@ export function DriveSignDialog({
                 type="button"
                 onClick={handleSign}
                 disabled={phase === "signing"}
-                className="px-3 py-1.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 typo-caption font-medium hover:bg-rose-500/30 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 typo-body font-medium hover:bg-rose-500/30 disabled:opacity-50 transition-colors"
               >
                 {phase === "signing"
                   ? t.plugins.doc_signing.signing

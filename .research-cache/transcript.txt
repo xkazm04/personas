@@ -1,1 +1,193 @@
-[00:00:00] In this video, I'm going to show you how to use Claude Code channels. With channels, you can access your Claude code instances from anywhere. And by the way, this is useful for a lot more things than just coding tasks. As of recently, Claude started blocking users from using the claw subscriptions with AI assistant tools like OpenClaw. This means if I wanted to continue using my OpenClaw agent, I would have to start paying for the API costs, which are simply too expensive. Either that or I need to switch over to something like [00:00:31] open AAI and personally I just enjoy the types of responses I get from claude. So by looking for an alternative solution which allows me to use my claude code subscription I came across claude code channels and there's actually two really cool benefits of using claude code channels. The first one is for everyone who wants to use tools like open claw and what you're seeing here is actually not open claw. This is simply calling a cla code session using claw code channels and my claude code subscription [00:01:01] and it acts and behaves exactly like my open claw agent. It's got all of the same skills, the same memories. It can set up recurring tasks. Everything just works. And yes, this can do everything that OpenClaw can do like responding with images and text. And we're not limited to using this for AI assistance either. Here I've got a folder open for a new SAS app that I'm working on. So I can simply start Claw Code with channels enabled and I'll send a message to Claude Code like describe the current [00:01:31] project. And that message was instantly sent to Claude Code running within a project folder. And once the agent is done, I received a response on Telegram. And what's really cool is that this agent has access to all the functionality available in Claw Code like skills and everything else. It even has access to the loop command. So I can just do something fun like loop every 10 minutes and then we can pass a prompt like identify one meaningful improvement to the app and implement it. And on the [00:02:01] back end cla will actually create a crown job that will run every 10 minutes and then run this command. Now I actually don't want this to run. So I'm just going to also say please stop the cron job. And there you go. The agent was actually able to start that crown job as well. So yes, you can set up recurring jobs, you can run scripts, you can store memories, whatever you want. In this video, I am going to show you how to set up cloud code channels with Telegram, but you're definitely not [00:02:31] limited to Telegram. At the time of recording, Discord, iMessage, Telegram, and fake chat is currently supported. But I also want to show you this article. So if you are interested in building integration from your own chat app into claude code as well, this article gives you all the instructions that you need to build an MCP server that will allow claude code to connect to your chat app. So I do see a lot of different integrations being released in the near future or if not just build [00:03:01] your own. Before we jump into the video, there is one bonus tip I want to give you, and that is if you want to migrate your OpenClaw bot over to this solution, you can simply ask your bot to send you all of the important files. So that would include things like the memory files like the agents.md, the heartbeat, identity, memory, soul, tools, and user. I think what I did is I should just ask my bot to back itself up and to add all of the critical files to a zip file. And then I simply extracted that zip file [00:03:31] into this project folder. And now if I start Cloud Code channels in this folder, I have access to my assistant. A quick shout out to Scrumba, the sponsor of today's video. The problem with most coding courses is that they're passive. You watch someone else code for hours, you feel like you're learning, but then when you sit down to build something, you're stuck. And that is tutorial hell. Scrimar is completely different though. The lessons are interactive. This means you can pause the video at any point and edit the instructor's code right there [00:04:02] in the player. I've always been an advocate for learning by doing. Scribbots has been very well known for front-end learning, but last summer they began offering support for backend and full stack languages. Their full stack developer path offers over 100 hours of content designed to take you from zero to job ready in 6 to 12 months. It covers everything you need to know to be a full stack engineer. JavaScript, React, Node, Express, Nex.js, TypeScript, SQL, and they even have AI [00:04:33] engineering built in. Everything runs in the browser, too. So, there's no messing around with local setups. You just open it and start coding. Scrumar has over two million learners, an active Discord channel with over 70,000 members, and they've even partnered with Mozilla MDN on their curriculum. They've also got tons of free content if you just want to dip your toes in first. But if you're ready to go allin, I've got a link in the description with 20% off Scrimar Pro. And if you grab the annual plan, you save even more on top of that. [00:05:03] Thanks to Scrimar for sponsoring this video. If you want to follow along, you have to install Telegram. So you can either install the desktop app or just install it on your mobile device. Then we have to launch Telegram's botfather. So you can just Google Telegram botfather and open the first link that you see. I'll open this in the Telegram desktop app which looks something like this. Now we have to create our very first bot. So we can enter front slash. Let's select new bot. I'll just call [00:05:34] mine Luna Coding Assistant. Now we have to give it a name that ends with the word bot like Luna_coding assistant_bot. And cool. Now we have our bot and we also have this access token. This will be really important in a second. The next step is to install a plugin that will allow us to connect cla to telegram. Now you can do this from anywhere on your PC. I'll just open it in a terminal window in this project. Then let's run the command claude. Then [00:06:05] what we have to do is go to the plugins command and you have to ensure that you've got the Claude plugins official marketplace installed. If you don't yet have it installed, you can simply copy this URL. Then go to add marketplace and paste in that URL, but you should have it by default. Then let's search for the Telegram plugin. Let's press enter. Then I'm going to install this at user level. So let's continue. And now that the plug-in is installed, all we have to do [00:06:35] is call the reload plugins command. Actually, I prefer to just exit out of cloud code entirely just to make sure the plugin is actually installed. Then we can run the command telegram colon configure. I'll just say yes to everything. All right. So, because I've already set all of this up, it's saying that the token and allow senders have already been configured. So, I'm just going to ask claw to reset the state. so that we can start from scratch. All right, that's much better. So Claude is [00:07:05] going to ask us for that token. So I'll simply copy my token and I am going to revoke this token after this video. So please use your own and let's send it to Claude. All right, cool. So we've now set our access token. What I'm going to do next is exit out of Claude and let's simply start Claude again. Back in Telegram, let's go to our new agent which looks something like this. Let's say anything. And that will give us this pairing code. So let's actually just [00:07:36] copy all of this. Then back in Claude, I'm just going to resume that conversation. Then let's just paste in that pairing code. And by the way, if you do get stuck at any point with this process, you can simply ask Claude what the next steps are. It's actually really useful, right? So actually Claude wants us to run the command like this. So let's run it. And cool. Now we get a response back from Claude meaning that everything was paired successfully. Now what we want to do and this is really a critical step is we want to prevent any other users from messaging our bot. So [00:08:07] to do that we can add our user to an allow list. So all we have to do is run the command telegram access policy allow list which means that only you are allowed to message your own bot. If you want friends and family to have access to your bot as well you can add their users to the allow list as well. Now finally for the moment we've all been waiting for in order to start this Claude code session on channels we can run d- channels plugin colon telegram at [00:08:39] claude plugins official and yes this is optional but you can also pass dangerously skip permissions which means that claude will never ask your permission to run any commands or make changes I'll just run it without dangerously skip permissions and now cla is actively listening for messages from this channel. If you want more tips and tricks on using Claude code, then consider joining my school community at Gentic Labs. We have classrooms on claude code and I just released my agent coding master class which teaches you [00:09:09] everything you need to know about building real world solutions using coding agents.
+[00:00:00] Just a couple hours ago Anthropic
+released a huge upgrade for anybody who
+[00:00:04] uses Claude code for scheduled tasks,
+and that is routines. Because now we can
+[00:00:09] have Claude code do things for us
+automatically in the cloud. We no longer
+[00:00:13] are stuck with session-based loops and
+session-based scheduled tasks. And
+[00:00:17] there's three ways we can do this. We
+can run them on a schedule like, I want
+[00:00:21] you to do X Y or Z every morning at 9:00
+a.m. We can do it from an API call, so
+[00:00:25] it's pretty much on demand, or we can
+have it be event-based, have it res-
+[00:00:30] respond to an event, like something
+going on in your GitHub repo. And the
+[00:00:34] big thing here is it runs on Claude
+code's web infrastructure, so nothing
+[00:00:38] depends on your laptop being open. I'm
+sure we've all been in situations where
+[00:00:42] like, wow, I wish I could have Claude
+just do this one thing every single day
+[00:00:46] and I didn't have to have that exact
+terminal up. And I also didn't have to
+[00:00:49] create a web app, go host it on Railway,
+and pay for API fees. We can now do
+[00:00:53] that. Now, this comes with a few
+restrictions, namely how many runs we
+[00:00:56] can do in a 24-hour period. For max
+users, it's 15 runs every 24 hours. We
+[00:01:00] will see if that changes, but don't
+think of this as some replacement for,
+[00:01:04] you know, what you've created in N8N in
+the past where you're running hundreds
+[00:01:08] of automations in a single day. This is
+more small-scale stuff for a single user
+[00:01:13] where you want it to run when you're not
+at your computer and you don't want to
+[00:01:16] have to pay for API costs. But even with
+those restrictions, this is a
+[00:01:20] much-needed addition to the Claude code
+ecosystem. So today I'm going to show
+[00:01:24] you how it works and we're going to run
+through an example. Now, the way it
+[00:01:26] works is pretty simple. If we are in the
+CLI, it's going to be done with
+[00:01:30] /schedule, or we can do all this through
+the actual Claude code desktop app as
+[00:01:35] well. If I'm on the Claude code desktop
+app, I'm just showing this because it's
+[00:01:38] a little easier to tell what's going on
+visually, you just go over here to the
+[00:01:42] left, you go to scheduled, and you go to
+new task, and you hit new remote task,
+[00:01:47] cuz again it's going to be on the cloud.
+And what we fill out here is the same
+[00:01:50] thing we would fill out in a prompt in
+the CLI. We're going to tell it what we
+[00:01:53] want to call it, what we want it to do.
+We need to connect it to some sort of
+[00:01:57] GitHub repository because whatever it
+completes in the cloud, it's going to
+[00:02:02] shoot it into some sort of repository.
+We need to set up some sort of cloud
+[00:02:06] environment. If you haven't done that
+before, if you've used Ultra plan, it's
+[00:02:08] probably already happened for you. If
+not, you just need to add it. And then
+[00:02:11] you need to select your trigger. For
+most people, it's just going to be a
+[00:02:15] daily schedule trigger, like a cron job.
+But again, you can tie this to specific
+[00:02:19] GitHub events, or you can do this as an
+API. Now, for today's example, we are
+[00:02:23] going to create a Claude code routine
+that scrapes GitHub for the top 10
+[00:02:27] trending GitHub repos in the AI space
+over the last week, as well as the top
+[00:02:31] five over the last month. What you see
+here is what I already do automatically,
+[00:02:35] but it's done through Windows and it's a
+simple API call. But now we're going to
+[00:02:39] offload that to Claude code, and better
+yet, since it's now AI-powered, it can
+[00:02:43] do some additional analysis for me. Now,
+for this to work, you need a GitHub repo
+[00:02:47] tied to that routine because Claude code
+needs somewhere to put whatever it
+[00:02:51] delivers. And to make sure that works,
+you need a couple things ready to go. If
+[00:02:55] you're going to eventually use stuff
+like GitHub webhooks, you need the
+[00:02:58] GitHub the Claude GitHub app installed.
+I'll put a link to that in the
+[00:03:02] description. And if you're doing just
+basic scheduled routines, you need the
+[00:03:05] GitHub integration connected, which you
+can do inside of the settings tab on
+[00:03:09] claude.ai. So this is the prompt I'm
+going to give Claude code. I'm saying I
+[00:03:13] want this routine done. I give it a link
+to the GitHub repo I created, and I'm
+[00:03:17] saying, "Call the GitHub search API,
+search the top 10 repos of the last 7
+[00:03:21] days, check it over the last 30 days,
+figure out if it's relevant, and then I
+[00:03:26] want you to write a markdown file
+explaining all this, including something
+[00:03:29] like an editor's take." And I had Claude
+code open in another session, and I had
+[00:03:33] Claude code create the prompt for Claude
+code for routines. And so things you
+[00:03:37] need to include in this prompt is the
+name, the repository you've created, the
+[00:03:41] environment,
+you can just go with default, a
+[00:03:44] schedule, and then obviously the prompt
+itself. So I gave it the prompt, and
+[00:03:48] it's saying it's creating the trigger,
+8:00 a.m.,
+[00:03:51] what model it's using, and I'm just
+going to have it use Sonnet 4.6. We
+[00:03:54] don't need Opus for this. The repo, and
+then the environment is my default is my
+[00:03:58] Ultra plan one environment. So hey, the
+trigger's been created. And let's tell
+[00:04:02] it to run the routine right now to make
+sure it actually works. And it said the
+[00:04:06] GitHub access is unauthorized, so I just
+need to reauthorize GitHub real fast.
+[00:04:10] And to do that, you go into your
+settings, and you just head to your
+[00:04:12] connectors, and you click on GitHub.
+And so you can see mine is now
+[00:04:17] connected. So we'll have it
+have it try again, and we'll move over
+[00:04:22] here so you can see this better. It
+gives me a link where I can actually
+[00:04:26] watch the run happening in real time. So
+you can see the instructions I gave it.
+[00:04:29] This is basically the prompts, and then
+now it's manually doing the run. So it
+[00:04:33] completed the run, and it posted it
+inside of my GitHub. And
+[00:04:37] let's make this not so freakishly huge.
+So we can see right away GitHub
+[00:04:42] trending. Here's the editor's take. If
+we compare that to what I usually have,
+[00:04:47] you know, it's kind of just like
+straight data. And here it gives me a,
+[00:04:51] you know, quick summary of what's been
+going on just right up front. Then we
+[00:04:55] get the top 10 trending repos.
+The links seem to work. So this is
+[00:05:00] exactly what I asked for, and now I'll
+have it every single day inside my
+[00:05:03] GitHub. Now, we mentioned there's two
+additional ways to use this routine, and
+[00:05:07] that's APIs and have it be event-based.
+If you do want to do use this as an API
+[00:05:12] trigger, just remember we only have so
+many hits we can do each day, which is
+[00:05:16] 15, so you know, understand what your
+use case is going to be. But you can't
+[00:05:21] do the API trigger set it up via the
+CLI. You actually have to do it through
+[00:05:25] the web. So if you go to Claude code
+docs, it sort of walks you through how
+[00:05:28] to do that. You have to go to
+claude.ai/code/routines,
+[00:05:33] and you'll set it up through here. And
+same thing with adding GitHub triggers,
+[00:05:37] they can be configured from the web UI
+only. So same exact place, but the
+[00:05:41] documents walk you through exactly how
+to do that, as well as a bunch of actual
+[00:05:45] supported events. So if you're like,
+"Hey, does this actually make sense to
+[00:05:48] use something like this inside of
+GitHub?" Well, you can check right here.
+[00:05:52] But all in all, I think this is a great
+update. Pretty much everyone I know has
+[00:05:55] at least a handful of tasks they wish
+Claude code could do automatically every
+[00:05:59] day, whether they're at the computer,
+whether their session's open, or whether
+[00:06:02] their computer's even turned on at all.
+And this solves that problem. So let me
+[00:06:06] know what you think about this. Make
+sure to check out Chase AI Plus if you
+[00:06:09] want to get your hands on my Claude code
+masterclass. But besides that, I'll see
+[00:06:12] you around.
