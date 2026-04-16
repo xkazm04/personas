@@ -270,6 +270,20 @@ DB tables owned by the plugin: `dev_projects`, `dev_context_groups`, `dev_contex
 
 This rule was added after `/research` run 3 (2026-04-08), where findings [3] (worktree isolation) and [4] (CLAUDE.md auto-update) were initially misrouted to the core engine.
 
+### Claude Code plugin walkthrough → GSD skill layer (routing rule)
+
+When a `/research` source is a walkthrough of a **Claude Code plugin** (Superpowers, Compound Engineering, a2a-kit, Ultra Plan, etc.), default-route findings to the **GSD skill layer**, NOT the core engine. Personas wraps Claude Code as its LLM provider, but plugin-layer features (planning shapes, TDD-style workflows, adaptive question flows, compound-learnings stores, orchestration skills) overlap architecturally with the GSD skill suite (`/gsd-discuss-phase`, `/gsd-plan-phase`, `/gsd-add-tests`, `/gsd-autonomous`, `/gsd-review`, `--power` mode). The catch dominance on these sources is a load-bearing signal: most Claude Code plugin features are already implemented as GSD skills or as engine primitives with production callers.
+
+**When to override:** the plugin exposes a new CLI flag, a new stream-JSON event type, a new prompt-delivery mechanism (stdin vs argv), or a new management-API protocol that personas' engine must track. In those cases the finding DOES belong in the engine (typically at `engine/prompt.rs::build_cli_args` — the 30-caller funnel — or `engine/provider/` for new provider shapes).
+
+**Observations:**
+- 2026-04-13 — Superpowers walkthrough (first)
+- 2026-04-13 — a2a-kit tutorial (second)
+- 2026-04-15 — Compound Engineering (Every Ink) walkthrough (third)
+- 2026-04-16 — Ultra Plan vs Superpowers comparison (fourth — promotion threshold reached)
+
+**Practical effect on Phase 6:** when the source matches this profile, run the host-first grep once across both the engine AND the GSD skill list (`.claude/skills/gsd-*`). A plugin feature that has no engine match but has a GSD skill match is a **catch**, not a finding. The source's value on these runs is usually the catch table (confirmation that personas already covers the competitor's surface), not new code.
+
 ---
 
 ## 4. Tech Stack
