@@ -15,10 +15,10 @@ export function PersonaOverviewEmptyState({ onResetFilters }: PersonaOverviewEmp
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-12 h-12 rounded-2xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-        <Bot className="w-6 h-6 text-muted-foreground/40" />
+        <Bot className="w-6 h-6 text-foreground" />
       </div>
-      <p className="typo-heading text-foreground/80">{t.agents.persona_list.no_match_filters}</p>
-      <p className="typo-body text-muted-foreground/60 mt-1 max-w-sm">
+      <p className="typo-heading text-foreground">{t.agents.persona_list.no_match_filters}</p>
+      <p className="typo-body text-foreground mt-1 max-w-sm">
         {t.agents.persona_list.adjust_filters_hint}
       </p>
       <button

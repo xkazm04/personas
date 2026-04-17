@@ -79,7 +79,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           {stats.map((s) => (
             <span
               key={s.label}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-mono bg-secondary/50 border border-primary/10 text-muted-foreground/80"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-mono bg-secondary/50 border border-primary/10 text-foreground"
             >
               <span className="text-foreground/90 font-semibold">{s.count}</span>
               {s.label}
@@ -92,7 +92,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
       <div
         className="animate-fade-slide-in w-full max-w-sm"
       >
-        <p className="text-sm font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
+        <p className="text-sm font-mono text-foreground uppercase tracking-widest mb-2 text-center">
           {t.agents.design.next_steps}
         </p>
         <div className="space-y-1.5">
@@ -117,11 +117,11 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                   <div className="text-sm font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
                     {step.title}
                   </div>
-                  <div className="text-sm text-muted-foreground/60">
+                  <div className="text-sm text-foreground">
                     {step.description}
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-foreground group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
             );
           })}

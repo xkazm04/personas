@@ -52,13 +52,13 @@ export function GroupedToolRow({
           onToggle={() => onToggle(tool.id, tool.name, isAssigned)}
         />
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-foreground/80">{tool.name}</span>
+          <span className="text-sm text-foreground">{tool.name}</span>
           {tool.description && (
-            <p className="text-sm text-muted-foreground/80 truncate">{tool.description}</p>
+            <p className="text-sm text-foreground truncate">{tool.description}</p>
           )}
         </div>
         {usageCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/10 flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-foreground border border-primary/10 flex-shrink-0">
             <BarChart3 className="w-2.5 h-2.5" />
             {usageCount.toLocaleString()}
           </span>
@@ -66,7 +66,7 @@ export function GroupedToolRow({
         {hasImpact && (
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-sm text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
+            className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-sm text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
             title={expanded ? t.agents.lab.hide_impact : t.agents.lab.show_impact}
           >
             <span>

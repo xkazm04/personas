@@ -32,7 +32,7 @@ export function EventTooltip({
         <PersonaIcon icon={event.agentIcon} color={event.agentColor ?? null} display="pop" frameSize="lg" />
         <span className="font-medium text-foreground/90 truncate">{event.agentName}</span>
       </div>
-      <div className="text-muted-foreground/60 space-y-0.5">
+      <div className="text-foreground space-y-0.5">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {event.time.toLocaleString(undefined, {

@@ -157,10 +157,10 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}
             </span>
-            <span className="text-sm text-muted-foreground/80">{new Date(issue.created_at).toLocaleDateString()}</span>
+            <span className="text-sm text-foreground">{new Date(issue.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
+        <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -179,8 +179,8 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           </div>
         )}
         <div>
-          <h4 className="text-sm font-mono uppercase text-muted-foreground/90 mb-2">{t.overview.healing_issue_modal.analysis}</h4>
-          <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{issue.description}</div>
+          <h4 className="text-sm font-mono uppercase text-foreground mb-2">{t.overview.healing_issue_modal.analysis}</h4>
+          <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.description}</div>
         </div>
         {issue.suggested_fix && (
           <div className={`p-4 rounded-modal ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
@@ -194,11 +194,11 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
                 {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
               </button>
             </div>
-            <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
+            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
           </div>
         )}
         {issue.execution_id && (
-          <div className="text-sm font-mono text-muted-foreground/80">Execution: {issue.execution_id}</div>
+          <div className="text-sm font-mono text-foreground">Execution: {issue.execution_id}</div>
         )}
       </div>
 
@@ -211,7 +211,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
               This issue is marked as {issue.severity} severity
             </div>
           )}
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             {t.overview.healing_issue_modal.marking_resolved_note}
           </p>
         </div>
@@ -231,7 +231,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className="text-sm text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
           </div>
         )}
-        <button onClick={onClose} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
           Close
         </button>
         {!isAutoFixed && !isAutoFixPending && (

@@ -51,7 +51,7 @@ export function ColumnDropdownFilter({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{isFiltered ? selected?.label ?? label : label}</span>
         {isFiltered ? (
@@ -76,7 +76,7 @@ export function ColumnDropdownFilter({
               className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
                 value === opt.value
                   ? 'bg-primary/10 text-foreground'
-                  : 'text-muted-foreground/70 hover:bg-secondary/30'
+                  : 'text-foreground hover:bg-secondary/30'
               }`}
             >
               {opt.label}

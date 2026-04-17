@@ -285,31 +285,31 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-card/30 max-w-[1280px]">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             type="text"
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
             placeholder={t.triggers.builder.filter_events_placeholder}
-            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
           />
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-muted-foreground/50 tabular-nums">
+          <span className="text-xs text-foreground tabular-nums">
             {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''} · {totalConnections} connection{totalConnections !== 1 ? 's' : ''}
           </span>
           <button
             onClick={() => void handleInitializeHandlers()}
             disabled={isBackfilling}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={t.triggers.builder.init_handlers_title}
           >
             <Wand2 className={`w-4 h-4 ${isBackfilling ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => void reload()}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
             title={t.triggers.builder.refresh}
           >
             <RefreshCw className="w-4 h-4" />
@@ -319,7 +319,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
 
       {/* ── Table header ── */}
       <div className="flex items-center px-4 py-2.5 border-b border-primary/10 bg-card/20 max-w-[1280px]">
-        <span className="w-14 typo-label text-foreground/80">{t.triggers.builder.source}</span>
+        <span className="w-14 typo-label text-foreground">{t.triggers.builder.source}</span>
         <div className="w-[260px] min-w-[260px] pl-3">
           <ColumnDropdownFilter
             label="Source Personas"
@@ -328,8 +328,8 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             onChange={(v) => setSourceFilter(v || 'all')}
           />
         </div>
-        <span className="w-[300px] min-w-[300px] typo-label text-foreground/80 pl-3">Event</span>
-        <span className="flex-1 typo-label text-foreground/80">{t.triggers.builder.connected_personas}</span>
+        <span className="w-[300px] min-w-[300px] typo-label text-foreground pl-3">Event</span>
+        <span className="flex-1 typo-label text-foreground">{t.triggers.builder.connected_personas}</span>
         <span className="w-10" />
       </div>
 
@@ -338,8 +338,8 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
         {filteredRows.length === 0 && (
           <div className="flex items-center justify-center py-16 text-center">
             <div>
-              <Radio className="w-8 h-8 text-muted-foreground/15 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground/50">
+              <Radio className="w-8 h-8 text-foreground mx-auto mb-3" />
+              <p className="text-sm text-foreground">
                 {eventSearch ? t.triggers.builder.no_matching_events : t.triggers.builder.no_events_filter}
               </p>
             </div>
@@ -389,11 +389,11 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                     />
                   ))
                 ) : row.externalSourceLabels.length > 0 ? (
-                  <span className="text-xs text-muted-foreground/50 italic">
+                  <span className="text-xs text-foreground italic">
                     {row.externalSourceLabels.join(', ')}
                   </span>
                 ) : (
-                  <span className="text-sm text-muted-foreground/25">—</span>
+                  <span className="text-sm text-foreground">—</span>
                 )}
               </div>
 
@@ -404,14 +404,14 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                 </div>
                 <div className="min-w-0">
                   <div className="text-base font-medium text-foreground truncate">{row.template?.label ?? row.eventType}</div>
-                  <div className="text-xs text-muted-foreground/40 truncate">{row.eventType}</div>
+                  <div className="text-xs text-foreground truncate">{row.eventType}</div>
                 </div>
               </div>
 
               {/* Connected personas */}
               <div className="flex-1 flex flex-wrap items-center gap-1.5 min-h-[32px]">
                 {row.connections.length === 0 && (
-                  <span className="text-sm text-muted-foreground/30 italic">{t.triggers.builder.no_personas_connected}</span>
+                  <span className="text-sm text-foreground italic">{t.triggers.builder.no_personas_connected}</span>
                 )}
                 {row.connections.map(conn => (
                   <PersonaChip
@@ -435,7 +435,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
               <div className="w-10 flex-shrink-0 flex items-center justify-center relative">
                 <button
                   onClick={() => setActionMenuRow(isActionOpen ? null : row.eventType)}
-                  className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
@@ -450,7 +450,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                         setActionMenuRow(null);
                         setAddPersonaForEvent({ eventType: row.eventType });
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-secondary/40 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5 text-emerald-400" />
                       {t.triggers.builder.add_persona_action}
@@ -475,7 +475,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                           ? 'Built-in events cannot be renamed'
                           : 'Rename this event across all stores'
                       }
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <Pencil className="w-3.5 h-3.5 text-cyan-400" />
                       {t.triggers.builder.rename_event_action}

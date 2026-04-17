@@ -49,7 +49,7 @@ export function ProviderSection({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">{provider.label}</h3>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-foreground">
               {isSelectPhase && t.vault.workspace_panel.select_services}
               {ws.phase === 'authorizing' && t.vault.workspace_panel.browser_sign_in}
               {ws.phase === 'provisioning' && t.vault.workspace_panel.creating_credentials}
@@ -64,7 +64,7 @@ export function ProviderSection({
       {isSelectPhase && (
         <>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground/50">
+            <span className="text-xs text-foreground">
               {ws.selectedServices.length} of {provider.services.length} selected
             </span>
             {ws.selectedServices.length < provider.services.length && (
@@ -109,10 +109,10 @@ export function ProviderSection({
       {ws.phase === 'authorizing' && (
         <div className="flex flex-col items-center gap-3 py-8">
           <LoadingSpinner size="2xl" className="text-blue-400" />
-          <p className="text-sm text-muted-foreground/70 text-center">
+          <p className="text-sm text-foreground text-center">
             Sign in with your Google account in the browser window.
             <br />
-            <span className="text-xs text-muted-foreground/60">
+            <span className="text-xs text-foreground">
               This will grant access to {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''}
             </span>
           </p>

@@ -36,7 +36,7 @@ export function DatabaseCard({ credential, connector, tableCount, queryCount, on
           <h3 className="text-sm font-medium text-foreground/90 truncate group-hover:text-foreground transition-colors">
             {credential.name}
           </h3>
-          <p className="text-sm text-muted-foreground/60 mt-0.5">
+          <p className="text-sm text-foreground mt-0.5">
             {connector?.label || credential.service_type}
           </p>
         </div>

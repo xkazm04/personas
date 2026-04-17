@@ -96,8 +96,8 @@ export function PromptSectionSidebar({
               tabIndex={active ? 0 : -1}
               className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-modal transition-colors text-left relative ${
                 active
-                  ? 'bg-primary/10 text-foreground/80 border border-primary/30'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+                  ? 'bg-primary/10 text-foreground border border-primary/30'
+                  : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <span
@@ -131,11 +131,11 @@ export function PromptSectionSidebar({
             transform="rotate(-90 16 16)"
             style={{ transition: 'stroke-dashoffset 0.5s ease' }}
           />
-          <text x="16" y="17" textAnchor="middle" dominantBaseline="central" fontSize="8" fontWeight="600" fill="currentColor" className="text-foreground/70">
+          <text x="16" y="17" textAnchor="middle" dominantBaseline="central" fontSize="8" fontWeight="600" fill="currentColor" className="text-foreground">
             {filled}/{total}
           </text>
         </svg>
-        <span className="text-xs text-muted-foreground/50">{t.agents.prompt_editor.sections}</span>
+        <span className="text-xs text-foreground">{t.agents.prompt_editor.sections}</span>
         <style>{`
           @keyframes prompt-gauge-glow {
             0%, 100% { filter: drop-shadow(0 0 0px transparent); }
@@ -158,7 +158,7 @@ export function PromptSectionSidebar({
             </div>
           )}
         {isSaving && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground/90">
+          <div className="flex items-center gap-1 text-sm text-foreground">
             <Save className="w-3 h-3 animate-pulse" />
             {t.common.saving}
           </div>

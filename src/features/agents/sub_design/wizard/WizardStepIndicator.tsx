@@ -33,7 +33,7 @@ export function WizardStepIndicator({ stepIndex, onGoToStep }: WizardStepIndicat
                   ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                   : isComplete
                   ? 'text-emerald-400/70 hover:bg-secondary/50 cursor-pointer'
-                  : 'text-muted-foreground/80 cursor-default'
+                  : 'text-foreground cursor-default'
               }`}
             >
               {isComplete ? (

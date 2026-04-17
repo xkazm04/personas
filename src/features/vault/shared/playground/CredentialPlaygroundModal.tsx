@@ -79,7 +79,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
             <Button key={tab.id} variant="ghost" size="sm"
               icon={<Icon className="w-3.5 h-3.5" />}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative ${isActive ? 'text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
+              className={`relative ${isActive ? 'text-foreground/90' : 'text-foreground hover:text-muted-foreground/70'}`}>
               {tab.label}
               {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
             </Button>

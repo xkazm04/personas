@@ -72,7 +72,7 @@ export function CredentialToolbar({
       {/* Search */}
       {showSearchBar && (
         <div className="relative flex-1 min-w-0 max-w-md">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             ref={searchInputRef}
             data-testid="credential-search"
@@ -89,7 +89,7 @@ export function CredentialToolbar({
           {credentialSearch && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/80 transition-colors"
               title={t.vault.manager.clear_search}
             >
               <X className="w-3 h-3" />

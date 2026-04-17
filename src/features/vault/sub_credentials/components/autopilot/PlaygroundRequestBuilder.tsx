@@ -39,7 +39,7 @@ export function PlaygroundRequestBuilder({
     <>
       {/* Base URL */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.base_url}</label>
+        <label className="text-xs text-foreground">{t.vault.autopilot.base_url}</label>
         <input
           type="url"
           value={baseUrl}
@@ -53,13 +53,13 @@ export function PlaygroundRequestBuilder({
       <div className="flex items-center gap-2 px-3 py-2 bg-secondary/30 border border-primary/15 rounded-card">
         <MethodBadge method={selectedTool.method} />
         <span className="text-sm font-mono text-foreground">{selectedTool.path}</span>
-        <span className="text-xs text-muted-foreground/40 ml-auto">{selectedTool.description}</span>
+        <span className="text-xs text-foreground ml-auto">{selectedTool.description}</span>
       </div>
 
       {/* Headers */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.headers_label}</label>
+          <label className="text-xs text-foreground">{t.vault.autopilot.headers_label}</label>
           <button onClick={addHeader} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
             <Plus className="w-3 h-3" /> Add
           </button>
@@ -78,7 +78,7 @@ export function PlaygroundRequestBuilder({
               placeholder="Value"
               className="flex-[2] px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-card text-xs font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
-            <button onClick={() => removeHeader(i)} className="text-muted-foreground/40 hover:text-red-400">
+            <button onClick={() => removeHeader(i)} className="text-foreground hover:text-red-400">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -88,7 +88,7 @@ export function PlaygroundRequestBuilder({
       {/* Query Params */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.query_parameters}</label>
+          <label className="text-xs text-foreground">{t.vault.autopilot.query_parameters}</label>
           <button onClick={addQueryParam} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
             <Plus className="w-3 h-3" /> Add
           </button>
@@ -107,7 +107,7 @@ export function PlaygroundRequestBuilder({
               placeholder="Value"
               className="flex-[2] px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-card text-xs font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
-            <button onClick={() => removeQueryParam(i)} className="text-muted-foreground/40 hover:text-red-400">
+            <button onClick={() => removeQueryParam(i)} className="text-foreground hover:text-red-400">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -117,7 +117,7 @@ export function PlaygroundRequestBuilder({
       {/* Body (for POST/PUT/PATCH) */}
       {['POST', 'PUT', 'PATCH'].includes(selectedTool.method) && (
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.request_body}</label>
+          <label className="text-xs text-foreground">{t.vault.autopilot.request_body}</label>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}

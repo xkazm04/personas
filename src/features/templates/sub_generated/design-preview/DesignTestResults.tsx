@@ -113,18 +113,18 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           <Icon className={`w-4 h-4 ${colors.text}`} />
           <span className={`text-sm font-medium ${colors.text}`}>{meta.label}</span>
         </div>
-        <span className="text-sm text-muted-foreground/90">{t.templates.design.feasibility_assessment}</span>
+        <span className="text-sm text-foreground">{t.templates.design.feasibility_assessment}</span>
       </div>
 
       {/* Plain-language explanation */}
-      <p className="text-sm text-muted-foreground/80 leading-relaxed">
+      <p className="text-sm text-foreground leading-relaxed">
         {explanation}
       </p>
 
       {/* Confirmed capabilities */}
       {result.confirmed_capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+          <h4 className="text-sm font-mono text-foreground uppercase tracking-wider">
             Confirmed Capabilities
           </h4>
           <motion.div
@@ -146,7 +146,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Issues */}
       {result.issues.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+          <h4 className="text-sm font-mono text-foreground uppercase tracking-wider">
             Issues
           </h4>
           <motion.div
@@ -168,7 +168,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Next steps (non-ready only) */}
       {nextSteps.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="text-sm font-mono text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
             Suggested Next Steps
           </h4>
@@ -180,8 +180,8 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
           >
             {nextSteps.map((step, i) => (
               <motion.div key={i} variants={item} className="flex items-start gap-2 text-sm">
-                <span className="text-muted-foreground/80 mt-0.5 flex-shrink-0 text-sm">{i + 1}.</span>
-                <span className="text-foreground/80">{step}</span>
+                <span className="text-foreground mt-0.5 flex-shrink-0 text-sm">{i + 1}.</span>
+                <span className="text-foreground">{step}</span>
               </motion.div>
             ))}
           </motion.div>

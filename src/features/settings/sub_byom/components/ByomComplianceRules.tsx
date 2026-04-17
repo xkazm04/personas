@@ -36,12 +36,12 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
             </button>
           }
         />
-        <p className="text-sm text-muted-foreground/60 mt-1">
+        <p className="text-sm text-foreground mt-1">
           {s.compliance_hint}
         </p>
 
         {rules.length === 0 ? (
-          <p className="text-sm text-muted-foreground/50 text-center py-6">
+          <p className="text-sm text-foreground text-center py-6">
             {s.compliance_empty}
           </p>
         ) : (
@@ -90,12 +90,12 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                       <button onClick={() => onUpdate(idx, { enabled: !rule.enabled })} className="text-sm">
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
-                          : <ToggleLeft className="w-5 h-5 text-muted-foreground/50" />
+                          : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
                       </button>
                       <button
                         onClick={() => onRemove(idx)}
-                        className="text-muted-foreground/50 hover:text-red-400 transition-colors"
+                        className="text-foreground hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -104,7 +104,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
 
                   <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">
+                      <label className="text-xs text-foreground mb-1 block">
                         {s.workflow_tags}
                       </label>
                       <input
@@ -118,11 +118,11 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                           })
                         }
                         placeholder={s.workflow_tags_placeholder}
-                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-muted-foreground/30"
+                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">
+                      <label className="text-xs text-foreground mb-1 block">
                         {s.allowed_providers_label}
                       </label>
                       <div className="flex flex-wrap gap-1.5">
@@ -147,7 +147,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                                   ? 'border-blue-500/40 bg-blue-500/15 text-blue-400'
                                   : isSelected
                                   ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
-                                  : 'border-primary/10 text-muted-foreground/50 hover:text-foreground'
+                                  : 'border-primary/10 text-foreground hover:text-foreground'
                               }`}
                             >
                               {prov.label}

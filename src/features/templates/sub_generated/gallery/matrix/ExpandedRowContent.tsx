@@ -126,7 +126,7 @@ export function ExpandedRowContent({
               title={`${stat.count} ${stat.label}`}
             >
               <Icon className="w-4 h-4" style={{ color: hasItems ? stat.color : undefined }} />
-              <span className="text-sm tabular-nums text-muted-foreground/70">{stat.count}</span>
+              <span className="text-sm tabular-nums text-foreground">{stat.count}</span>
             </div>
           );
         })}

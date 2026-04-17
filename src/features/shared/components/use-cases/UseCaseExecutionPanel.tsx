@@ -39,13 +39,13 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             {modeBadge.label}
           </span>
           {exec.isExecuting && exec.isThisUseCaseExecution && (
-            <div className="flex items-center gap-1.5 text-muted-foreground/60">
+            <div className="flex items-center gap-1.5 text-foreground">
               <Clock className="w-3 h-3" />
               <span className="typo-code">{formatElapsed(exec.elapsedMs)}</span>
             </div>
           )}
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-muted-foreground/60 hover:text-foreground/80">
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-foreground hover:text-foreground/80">
           <X className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -69,7 +69,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           </div>
         ) : (
           <>
-            <p className="typo-label text-muted-foreground/60">{t.shared.use_cases_extra.input_data}</p>
+            <p className="typo-label text-foreground">{t.shared.use_cases_extra.input_data}</p>
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}

@@ -87,9 +87,9 @@ export function ModelABCompare() {
         <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/70 flex-shrink-0" />
         <span className="text-sm font-medium text-foreground/85 flex-1">
           {mc.compare_models}
-          <span className="text-muted-foreground/50 font-normal ml-1.5">{mc.side_by_side}</span>
+          <span className="text-foreground font-normal ml-1.5">{mc.side_by_side}</span>
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       {expanded && (
@@ -101,7 +101,7 @@ export function ModelABCompare() {
               <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
                 <ModelDropdown label={mc.model_a} value={modelA} onChange={setModelA} disabled={isLabRunning} accentColor="text-blue-400" />
                 <div className="pb-2">
-                  <ArrowLeftRight className="w-4 h-4 text-muted-foreground/40" />
+                  <ArrowLeftRight className="w-4 h-4 text-foreground" />
                 </div>
                 <ModelDropdown label={mc.model_b} value={modelB} onChange={setModelB} disabled={isLabRunning} accentColor="text-amber-400" />
               </div>
@@ -146,7 +146,7 @@ export function ModelABCompare() {
               {/* Progress */}
               {progress && (
                 <div className="px-3 py-2.5 rounded-modal bg-secondary/40 border border-primary/20 space-y-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+                  <div className="flex items-center gap-2 text-sm text-foreground">
                     <LoadingSpinner size="sm" className="text-indigo-400" />
                     <span>
                       {progress.phase === 'generating' ? mc.generating_scenarios :

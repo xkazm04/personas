@@ -84,7 +84,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   useEffect(() => { onMissingCountChange?.(unlinked); }, [unlinked, onMissingCountChange]);
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">{t.agents.connectors.ct_no_persona}</div>;
+    return <div className="flex items-center justify-center py-8 text-foreground">{t.agents.connectors.ct_no_persona}</div>;
   }
 
   const hasGraphContent = dependencyGraph.nodes.length > 0;
@@ -96,14 +96,14 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       {/* Connector icons row */}
       {connectorNames.length > 0 && (
         <div className="flex items-center gap-3 px-1">
-          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
+          <span className="text-xs font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
           <div className="flex items-center gap-1.5">
             {connectorNames.map((name) => {
               const meta = getConnectorMeta(name);
               return (
                 <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-card bg-secondary/30 border border-primary/10" title={meta.label}>
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
-                  <span className="text-xs text-foreground/70">{meta.label}</span>
+                  <span className="text-xs text-foreground">{meta.label}</span>
                 </div>
               );
             })}
@@ -116,7 +116,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-foreground hover:text-muted-foreground/70'}`}
             title={t.agents.connectors.ct_list_view}
           >
             <List className="w-4 h-4" />
@@ -124,7 +124,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           <button
             type="button"
             onClick={() => setViewMode('graph')}
-            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-foreground hover:text-muted-foreground/70'}`}
             title={t.agents.connectors.ct_graph_view}
           >
             <Network className="w-4 h-4" />

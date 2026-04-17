@@ -31,7 +31,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
           </span>
         </div>
         <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
-          <X className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <X className="w-3.5 h-3.5 text-foreground" />
         </button>
       </div>
 
@@ -40,26 +40,26 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedPersonas}</div>
-            <div className="text-[10px] text-muted-foreground/60">{dep.personas_affected}</div>
+            <div className="text-[10px] text-foreground">{dep.personas_affected}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedWorkflows}</div>
-            <div className="text-[10px] text-muted-foreground/60">{dep.workflows_broken}</div>
+            <div className="text-[10px] text-foreground">{dep.workflows_broken}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
-            <div className="text-[10px] text-muted-foreground/60">{dep.daily_execs_lost}</div>
+            <div className="text-[10px] text-foreground">{dep.daily_execs_lost}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">
               ${simulation.estimatedDailyRevenueLost.toFixed(2)}
             </div>
-            <div className="text-[10px] text-muted-foreground/60">{dep.daily_cost_impact}</div>
+            <div className="text-[10px] text-foreground">{dep.daily_cost_impact}</div>
           </div>
         </div>
 
         {/* Scenario description */}
-        <div className="text-xs text-muted-foreground/70 leading-relaxed px-1">
+        <div className="text-xs text-foreground leading-relaxed px-1">
           {simulation.severity === 'critical' ? (
             <span>
               Revoking <strong className="text-fuchsia-400">{simulation.credentialName}</strong> would break{' '}

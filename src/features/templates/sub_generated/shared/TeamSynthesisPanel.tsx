@@ -60,13 +60,13 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             </div>
             <div>
               <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
-              <p className="text-sm text-muted-foreground/60">
+              <p className="text-sm text-foreground">
                 AI selects templates and assembles a connected team
               </p>
             </div>
           </div>
           <button onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground/70" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -75,7 +75,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
           {!result ? (
             <>
               <div>
-                <label className="text-sm font-medium text-foreground/70 block mb-1.5">
+                <label className="text-sm font-medium text-foreground block mb-1.5">
                   Team Name
                 </label>
                 <input
@@ -83,13 +83,13 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g., Content Pipeline Team"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground/70 block mb-1.5">
+                <label className="text-sm font-medium text-foreground block mb-1.5">
                   Describe what this team should do
                 </label>
                 <textarea
@@ -97,7 +97,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="e.g., Monitor social media mentions, analyze sentiment, generate reports, and send alerts to Slack when negative trends are detected"
                   rows={4}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>
@@ -118,10 +118,10 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                 <h3 className="text-base font-semibold text-foreground/90">
                   {result.team_name}
                 </h3>
-                <p className="text-sm text-muted-foreground/60 mt-1">
+                <p className="text-sm text-foreground mt-1">
                   {result.member_count} personas created and connected
                 </p>
-                <p className="text-sm text-muted-foreground/50 mt-2 max-w-sm leading-relaxed">
+                <p className="text-sm text-foreground mt-2 max-w-sm leading-relaxed">
                   {result.description}
                 </p>
               </div>

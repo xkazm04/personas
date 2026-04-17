@@ -55,7 +55,7 @@ export function StepIndicator({
                   ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                   : isCompleted
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-secondary/30 text-muted-foreground/50 border border-primary/10'
+                    : 'bg-secondary/30 text-foreground border border-primary/10'
               }`}
             >
               {isCompleted ? (
@@ -66,7 +66,7 @@ export function StepIndicator({
               {step.label}
             </div>
             {i < steps.length - 1 && (
-              <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
+              <ArrowRight className="w-3 h-3 text-foreground" />
             )}
           </div>
         );

@@ -94,7 +94,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
         return (
           <div key={status.connector_name} className="flex items-center gap-2 pl-6">
             <Icon className={`w-3.5 h-3.5 ${color}`} />
-            <span className="text-sm text-foreground/80">{status.connector_name}</span>
+            <span className="text-sm text-foreground">{status.connector_name}</span>
             {!status.has_credential && status.installed && (
               <span className="text-sm text-status-warning/60">{t.templates.connector_readiness.needs_credential}</span>
             )}

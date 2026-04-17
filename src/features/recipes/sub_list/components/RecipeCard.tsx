@@ -77,7 +77,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-medium text-foreground truncate">{recipe.name}</h3>
           {recipe.description && (
-            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{recipe.description}</p>
+            <p className="text-sm text-foreground mt-0.5 line-clamp-2">{recipe.description}</p>
           )}
         </div>
       </div>
@@ -92,7 +92,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         {tags.slice(0, 3).map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center rounded-card border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-muted-foreground"
+            className="inline-flex items-center rounded-card border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-foreground"
           >
             {tag}
           </span>
@@ -112,14 +112,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         )}
         <button
           onClick={() => onEdit(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.edit_recipe}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onPlayground(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.open_settings}
         >
           <Settings className="w-3.5 h-3.5" />
@@ -142,11 +142,11 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
               <p className="text-sm text-foreground mb-1">
                 Delete <span className="font-semibold">{recipe.name}</span>?
               </p>
-              <p className="text-sm text-muted-foreground/70 mb-3">{t.common.confirm_destructive_cannot_undo}</p>
+              <p className="text-sm text-foreground mb-3">{t.common.confirm_destructive_cannot_undo}</p>
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="rounded-card px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                  className="rounded-card px-2.5 py-1 text-sm text-foreground hover:bg-muted/50 transition-colors"
                 >
                   Cancel
                 </button>

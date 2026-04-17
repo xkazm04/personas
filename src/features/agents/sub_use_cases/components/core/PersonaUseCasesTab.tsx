@@ -48,7 +48,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
+      <div className="flex items-center justify-center py-8 text-foreground">
         {t.agents.use_cases.no_persona_selected}
       </div>
     );
@@ -123,7 +123,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
       {/* Summary */}
       {contextData.summary && (
         <div className="px-1 mt-2">
-          <p className="text-sm text-muted-foreground/60 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             {contextData.summary}
           </p>
         </div>

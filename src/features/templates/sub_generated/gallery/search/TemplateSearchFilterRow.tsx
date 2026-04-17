@@ -63,7 +63,7 @@ export function TemplateSearchControls({
     <>
       {/* Count */}
       {total > 0 && (
-        <span className="text-sm text-muted-foreground/50 tabular-nums flex-shrink-0 hidden sm:inline">
+        <span className="text-sm text-foreground tabular-nums flex-shrink-0 hidden sm:inline">
           {loadedCount < total ? `${loadedCount}/${total}` : `${total}`}
         </span>
       )}
@@ -76,7 +76,7 @@ export function TemplateSearchControls({
             className={`p-1.5 transition-colors ${
               viewMode === 'list'
                 ? 'bg-violet-500/20 text-violet-300'
-                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
             title={t.templates.search.list_view}
           >
@@ -87,7 +87,7 @@ export function TemplateSearchControls({
             className={`p-1.5 transition-colors ${
               viewMode === 'explore'
                 ? 'bg-violet-500/20 text-violet-300'
-                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
             title={t.templates.search.explore_view}
           >

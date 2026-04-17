@@ -34,8 +34,8 @@ export function QueryToolbar({
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
-      <span className="text-sm font-semibold text-foreground/70 flex-1 truncate">{selectedTitle}</span>
-      <span className="text-sm uppercase tracking-wider text-muted-foreground/60 px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
+      <span className="text-sm font-semibold text-foreground flex-1 truncate">{selectedTitle}</span>
+      <span className="text-sm uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
         {language}
       </span>
 
@@ -46,8 +46,8 @@ export function QueryToolbar({
           saveState === 'saved'
             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-elevation-1 shadow-emerald-500/10'
             : saveState === 'saving'
-              ? 'text-muted-foreground/40 border-transparent'
-              : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/40 border-transparent hover:border-primary/10'
+              ? 'text-foreground border-transparent'
+              : 'text-foreground hover:text-foreground/70 hover:bg-secondary/40 border-transparent hover:border-primary/10'
         }`}
       >
         {saveState === 'saved' ? <Check className="w-3 h-3" /> : saveState === 'saving' ? <LoadingSpinner size="xs" /> : <Save className="w-3 h-3" />}

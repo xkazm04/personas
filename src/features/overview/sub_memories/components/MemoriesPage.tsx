@@ -155,7 +155,7 @@ export default function MemoriesPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${
                 viewTab === 'memories'
                   ? 'bg-primary/10 text-foreground border border-primary/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
+                  : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
               }`}
             >
               <Brain className="w-4 h-4" />
@@ -166,7 +166,7 @@ export default function MemoriesPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${
                 viewTab === 'conflicts'
                   ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
+                  : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -203,29 +203,29 @@ export default function MemoriesPage() {
           {/* Consolidated search + stats row */}
           <div className="flex items-center gap-3 px-4 md:px-6 py-1.5 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search memories..."
-                className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+                className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground/40 hover:text-foreground/70">
+                <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
             {memoryStats && memoryStats.total > 0 && (
               <>
-                <span className="text-xs font-mono text-foreground/60 flex-shrink-0 tabular-nums">{memoryStats.total} total</span>
+                <span className="text-xs font-mono text-foreground flex-shrink-0 tabular-nums">{memoryStats.total} total</span>
                 <div className="flex items-center gap-1.5 flex-shrink-0" title={`Avg importance: ${memoryStats.avg_importance.toFixed(1)}/5`}>
                   <svg width="18" height="18" viewBox="0 0 18 18" className="flex-shrink-0">
-                    <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/15" />
+                    <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground" />
                     <circle cx="9" cy="9" r="7" fill="none" stroke={(() => { const p = (memoryStats.avg_importance / 5) * 100; return p <= 40 ? '#34d399' : p <= 60 ? '#fbbf24' : '#fb7185'; })()}
                       strokeWidth="2" strokeDasharray={`${((memoryStats.avg_importance / 5) * 100 / 100) * 44} 44`} strokeLinecap="round" transform="rotate(-90 9 9)" style={{ transition: 'stroke-dasharray 300ms' }} />
                   </svg>
-                  <span className="text-xs text-foreground/50 tabular-nums">{memoryStats.avg_importance.toFixed(1)}</span>
+                  <span className="text-xs text-foreground tabular-nums">{memoryStats.avg_importance.toFixed(1)}</span>
                 </div>
                 {memoryStats.category_counts.length > 0 && (
                   <div className="flex h-2 rounded-full overflow-hidden flex-1 bg-muted-foreground/10">
@@ -237,22 +237,22 @@ export default function MemoriesPage() {
                 )}
               </>
             )}
-            <span className="text-sm font-mono text-foreground/60 flex-shrink-0">{memories.length}/{memoriesTotal}</span>
+            <span className="text-sm font-mono text-foreground flex-shrink-0">{memories.length}/{memoriesTotal}</span>
             {hasFilters && (
-              <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors">
+              <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors">
                 <X className="w-3 h-3" /> Clear
               </button>
             )}
           </div>
 
           {memories.length === 0 && !hasFilters ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground/60">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground">
               <div className="w-16 h-16 rounded-modal bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
                 <Brain className="w-8 h-8 text-violet-400/40" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground/80">No memories yet</p>
-                <p className="text-sm text-foreground/60 mt-1 max-w-xs">When agents run, they can store valuable notes and learnings here.</p>
+                <p className="text-sm font-medium text-foreground">No memories yet</p>
+                <p className="text-sm text-foreground mt-1 max-w-xs">When agents run, they can store valuable notes and learnings here.</p>
               </div>
             </div>
           ) : (
@@ -266,7 +266,7 @@ export default function MemoriesPage() {
                     personas={personas}
                   />
                 </div>
-                <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>
+                <div className="flex items-center px-4 py-1.5 typo-label text-foreground">Title</div>
                 <div className="px-2 py-1.5 flex items-center">
                   <ColumnDropdownFilter
                     label="Type"
@@ -276,14 +276,14 @@ export default function MemoriesPage() {
                     allValue=""
                   />
                 </div>
-                <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Priority</div>
-                <div className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Created</div>
+                <div className="flex items-center px-4 py-1.5 typo-label text-foreground">Priority</div>
+                <div className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">Created</div>
                 <div className="px-2 py-1.5" />
               </div>
 
               {memories.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground/40">No memories match current filters</p>
+                  <p className="text-sm text-foreground">No memories match current filters</p>
                 </div>
               ) : (
                 <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label="Memory list" onKeyDown={handleListKeyDown}>

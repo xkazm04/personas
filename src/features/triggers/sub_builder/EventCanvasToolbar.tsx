@@ -27,7 +27,7 @@ interface ToolbarProps {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const BTN = 'flex items-center gap-1 px-2 py-1.5 rounded-input border transition-colors text-muted-foreground';
+const BTN = 'flex items-center gap-1 px-2 py-1.5 rounded-input border transition-colors text-foreground';
 const BTN_DEFAULT = `${BTN} bg-card border-primary/10 hover:bg-secondary/60`;
 const DIVIDER = 'w-px h-5 bg-primary/10 mx-0.5 shrink-0';
 const COLLAPSE_THRESHOLD = 520; // px — below this, secondary groups collapse
@@ -92,7 +92,7 @@ export function EventCanvasToolbar({
       title="Add Sticky Note"
     >
       <StickyNote className={`w-3.5 h-3.5 ${inDropdown ? 'text-amber-400' : 'text-amber-400'}`} />
-      <span className="text-[10px] text-muted-foreground">Note</span>
+      <span className="text-[10px] text-foreground">Note</span>
     </button>
   );
 
@@ -135,8 +135,8 @@ export function EventCanvasToolbar({
         title={paletteCollapsed ? 'Show sidebar' : 'Hide sidebar'}
       >
         {paletteCollapsed
-          ? <PanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
-          : <PanelLeftClose className="w-3.5 h-3.5 text-muted-foreground" />}
+          ? <PanelLeft className="w-3.5 h-3.5 text-foreground" />
+          : <PanelLeftClose className="w-3.5 h-3.5 text-foreground" />}
       </button>
 
       <button
@@ -176,16 +176,16 @@ export function EventCanvasToolbar({
               className={`p-1.5 rounded-input border transition-colors ${moreOpen ? 'bg-secondary/80 border-primary/20' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
               title="More tools"
             >
-              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+              <MoreHorizontal className="w-3.5 h-3.5 text-foreground" />
             </button>
 
             {moreOpen && (
               <div className="absolute top-full left-0 mt-1.5 z-[60] min-w-[150px] rounded-card bg-card border border-primary/10 shadow-elevation-3 py-1">
-                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Layout</div>
+                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-foreground font-medium">Layout</div>
                 {layoutBtn(true)}
                 {noteBtn(true)}
                 <div className="h-px bg-primary/10 my-1" />
-                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Tools</div>
+                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-foreground font-medium">Tools</div>
                 {dryRunBtn(true)}
                 {assistantBtn(true)}
               </div>

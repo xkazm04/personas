@@ -88,7 +88,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
             <p className="text-sm font-medium text-violet-300">{sh.drop_to_ingest}</p>
-            <p className="text-xs text-muted-foreground/50">{sh.drop_supported}</p>
+            <p className="text-xs text-foreground">{sh.drop_supported}</p>
           </div>
         </div>
       )}
@@ -98,7 +98,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-            <span className="text-sm text-foreground/70">{sh.starting_ingestion}</span>
+            <span className="text-sm text-foreground">{sh.starting_ingestion}</span>
           </div>
         </div>
       )}

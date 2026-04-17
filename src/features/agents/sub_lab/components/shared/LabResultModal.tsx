@@ -38,8 +38,8 @@ export function LabResultModal({
             {headerChips}
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs text-muted-foreground/50">{new Date(run.createdAt).toLocaleString()}</span>
-            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label="Close results" className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <span className="text-xs text-foreground">{new Date(run.createdAt).toLocaleString()}</span>
+            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label="Close results" className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

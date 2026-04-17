@@ -98,14 +98,14 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           <div className="p-4 space-y-3">
             {selectedReview.description && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.description}</div>
-                <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedReview.description}</p>
+                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.description}</div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{selectedReview.description}</p>
               </div>
             )}
             {selectedReview.context_data && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.context}</div>
-                <pre className="text-sm text-foreground/60 bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
+                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.context}</div>
+                <pre className="text-sm text-foreground bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
             {selectedReview.status === 'pending' && (
@@ -128,8 +128,8 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             )}
             {selectedReview.reviewer_notes && (
               <div>
-                <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
-                <p className="text-sm text-foreground/70 italic">{selectedReview.reviewer_notes}</p>
+                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
+                <p className="text-sm text-foreground italic">{selectedReview.reviewer_notes}</p>
               </div>
             )}
           </div>

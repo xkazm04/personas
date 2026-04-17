@@ -26,7 +26,7 @@ export function IdleSuggestions({
 
   return (
     <div className="p-3 rounded-modal border border-primary/15 bg-secondary/20 space-y-2">
-      <p className="text-sm text-muted-foreground/75">{t.vault.design_phases.saved_catalog}</p>
+      <p className="text-sm text-foreground">{t.vault.design_phases.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
@@ -35,7 +35,7 @@ export function IdleSuggestions({
         className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
-        <p className="text-sm text-muted-foreground/90">{t.vault.design_phases.no_catalog}</p>
+        <p className="text-sm text-foreground">{t.vault.design_phases.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (
@@ -56,7 +56,7 @@ export function IdleSuggestions({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm text-foreground truncate">{conn.label}</p>
-                    <p className="text-sm text-muted-foreground/65 truncate">{conn.category}</p>
+                    <p className="text-sm text-foreground truncate">{conn.category}</p>
                   </div>
                 </div>
                 <button
@@ -86,7 +86,7 @@ export function IdleSuggestions({
                 <div
                   className="animate-fade-slide-in overflow-hidden border-t border-primary/10"
                 >
-                  <div className="px-2.5 py-2 text-sm text-muted-foreground/80">
+                  <div className="px-2.5 py-2 text-sm text-foreground">
                     {(() => {
                       const meta = (conn.metadata ?? {}) as Record<string, unknown>;
                       if (typeof meta.summary === 'string' && meta.summary.trim()) {

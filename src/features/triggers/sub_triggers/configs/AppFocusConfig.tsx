@@ -37,7 +37,7 @@ export function AppFocusConfig({
               className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
             />
             {appNames.length > 1 && (
-              <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -48,7 +48,7 @@ export function AppFocusConfig({
         </button>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>Window Title Pattern <span className="text-muted-foreground/50">(optional regex)</span></>}
+        label={<>Window Title Pattern <span className="text-foreground">(optional regex)</span></>}
       >
         <input
           type="text"

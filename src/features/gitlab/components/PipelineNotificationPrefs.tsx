@@ -16,7 +16,7 @@ function Toggle({ checked, onChange, label, id }: {
 }) {
   return (
     <label htmlFor={id} className="flex items-center justify-between py-1.5 cursor-pointer group">
-      <span className="text-sm text-foreground/80 group-hover:text-foreground/95 transition-colors">
+      <span className="text-sm text-foreground group-hover:text-foreground/95 transition-colors">
         {label}
       </span>
       <button
@@ -59,7 +59,7 @@ export function PipelineNotificationPrefs() {
           {prefs.enabled ? (
             <Bell className="w-4 h-4 text-orange-400" />
           ) : (
-            <BellOff className="w-4 h-4 text-muted-foreground/50" />
+            <BellOff className="w-4 h-4 text-foreground" />
           )}
           {t.gitlab.pipeline_notifications}
         </h3>
@@ -84,7 +84,7 @@ export function PipelineNotificationPrefs() {
 
       {prefs.enabled && (
         <div className="space-y-0.5 pl-0.5">
-          <p className="text-xs text-muted-foreground/50 mb-2">
+          <p className="text-xs text-foreground mb-2">
             {t.gitlab.notification_description}
           </p>
           <Toggle
@@ -107,8 +107,8 @@ export function PipelineNotificationPrefs() {
           />
           <div className="pt-1.5 mt-1.5 border-t border-primary/5">
             <label htmlFor="notif-sound" className="flex items-center justify-between py-1.5 cursor-pointer group">
-              <span className="flex items-center gap-1.5 text-sm text-foreground/80 group-hover:text-foreground/95 transition-colors">
-                <Volume2 className="w-3.5 h-3.5 text-muted-foreground/50" />
+              <span className="flex items-center gap-1.5 text-sm text-foreground group-hover:text-foreground/95 transition-colors">
+                <Volume2 className="w-3.5 h-3.5 text-foreground" />
                 {t.gitlab.play_sound}
               </span>
               <button

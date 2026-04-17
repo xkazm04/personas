@@ -78,11 +78,11 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-          <Activity className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="typo-heading text-muted-foreground/70">{e.trace_spans}</span>
+          <Activity className="w-3.5 h-3.5 text-foreground" />
+          <span className="typo-heading text-foreground">{e.trace_spans}</span>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="typo-body text-muted-foreground/50 italic">{e.no_trace_available}</p>
+          <p className="typo-body text-foreground italic">{e.no_trace_available}</p>
         </div>
       </div>
     );
@@ -91,9 +91,9 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Activity className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">{e.engine_activity}</span>
-        <span className="ml-auto typo-body tabular-nums text-muted-foreground/50">
+        <Activity className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-heading text-foreground">{e.engine_activity}</span>
+        <span className="ml-auto typo-body tabular-nums text-foreground">
           {tx(e.active_count, { count: activeSpans.length })}
         </span>
       </div>
@@ -126,7 +126,7 @@ export function ReplayTracePanel({ spans, currentMs }: ReplayTracePanelProps) {
         {/* Upcoming */}
         {pendingSpans.length > 0 && (
           <div className="space-y-1">
-            <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider px-1">
+            <div className="text-[10px] font-mono text-foreground uppercase tracking-wider px-1">
               {e.upcoming}
             </div>
             {pendingSpans.map((span) => (
@@ -151,7 +151,7 @@ function SpanCard({
   const config = SPAN_CONFIG[span.span_type];
   const Icon = config?.icon ?? Activity;
   const label = config?.label ?? span.span_type;
-  const color = config?.color ?? 'text-muted-foreground/60';
+  const color = config?.color ?? 'text-foreground';
 
   // Extract useful metadata
   const toolName = span.metadata && typeof span.metadata === 'object' && !Array.isArray(span.metadata)
@@ -167,9 +167,9 @@ function SpanCard({
           : 'border-primary/5 bg-secondary/10 opacity-50'
     }`}>
       <div className="flex items-center gap-2">
-        <Icon className={`w-3 h-3 shrink-0 ${variant === 'pending' ? 'text-muted-foreground/30' : color}`} />
+        <Icon className={`w-3 h-3 shrink-0 ${variant === 'pending' ? 'text-foreground' : color}`} />
         <span className={`typo-code truncate${
-          variant === 'pending' ? 'text-muted-foreground/40' : 'text-foreground/80'
+          variant === 'pending' ? 'text-foreground' : 'text-foreground'
         }`}>
           {toolName ? `${label}: ${toolName}` : span.name}
         </span>
@@ -179,7 +179,7 @@ function SpanCard({
           </span>
         )}
         {variant === 'completed' && span.duration_ms != null && (
-          <span className="ml-auto text-[10px] font-mono text-muted-foreground/50 tabular-nums shrink-0">
+          <span className="ml-auto text-[10px] font-mono text-foreground tabular-nums shrink-0">
             {formatDuration(span.duration_ms)}
           </span>
         )}
@@ -194,7 +194,7 @@ function SpanCard({
 
       {/* Token info for active spans */}
       {variant === 'active' && (span.input_tokens || span.output_tokens) && (
-        <div className="mt-1 flex items-center gap-2 text-[10px] font-mono text-muted-foreground/40">
+        <div className="mt-1 flex items-center gap-2 text-[10px] font-mono text-foreground">
           {span.input_tokens != null && <span>{span.input_tokens.toLocaleString()} in</span>}
           {span.output_tokens != null && <span>{span.output_tokens.toLocaleString()} out</span>}
           {span.cost_usd != null && span.cost_usd > 0 && <span>${span.cost_usd.toFixed(4)}</span>}

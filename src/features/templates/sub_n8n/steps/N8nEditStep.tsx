@@ -208,11 +208,11 @@ export function N8nEditStep({
           >
             <div className="flex items-center gap-2">
               {testPanelOpen ? (
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" />
+                <ChevronDown className="w-3.5 h-3.5 text-foreground" />
               ) : (
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />
+                <ChevronRight className="w-3.5 h-3.5 text-foreground" />
               )}
-              <span className="text-sm font-mono text-muted-foreground/80">
+              <span className="text-sm font-mono text-foreground">
                 Test Output
               </span>
               {testPhase === 'running' && (
@@ -225,7 +225,7 @@ export function N8nEditStep({
                 <span className="w-2 h-2 rounded-full bg-red-400" />
               )}
             </div>
-            <span className="text-sm text-muted-foreground/60 font-mono">{testLines.length} lines</span>
+            <span className="text-sm text-foreground font-mono">{testLines.length} lines</span>
           </button>
 
           <AnimatePresence initial={false}>

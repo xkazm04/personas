@@ -38,7 +38,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
-          <span className="typo-heading text-foreground/80 uppercase tracking-widest hidden sm:inline">
+          <span className="typo-heading text-foreground uppercase tracking-widest hidden sm:inline">
             {isPaused ? t.overview.realtime_page.paused : isConnected ? t.overview.realtime_page.live : t.overview.realtime_page.offline}
           </span>
           <span className="sr-only">{isPaused ? t.overview.realtime_page.connection_paused : isConnected ? t.overview.realtime_page.connection_live : t.overview.realtime_page.connection_offline}</span>
@@ -51,7 +51,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.events_per_min}</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.events_per_min}</span>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.pending}</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.pending}</span>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.success}</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.success}</span>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.in_window}</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.in_window}</span>
           </div>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           className={`p-2 rounded-modal border transition-all shadow-elevation-1 active:scale-[0.95] ${
             isPaused
               ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-transparent text-emerald-400 hover:from-emerald-500/30'
-              : 'border-primary/20 bg-background/50 text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+              : 'border-primary/20 bg-background/50 text-foreground hover:text-foreground hover:bg-secondary/60'
           }`}
           title={isPaused ? t.overview.realtime_page.resume : t.overview.realtime_page.pause}
         >

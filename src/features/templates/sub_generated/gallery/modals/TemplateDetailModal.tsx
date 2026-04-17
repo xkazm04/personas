@@ -115,7 +115,7 @@ export function TemplateDetailModal({
     passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: t.templates.detail.review_passed },
     failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: t.templates.detail.review_failed },
     error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: t.templates.detail.review_error },
-  }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
+  }[review.status] || { Icon: Clock, color: 'text-foreground bg-secondary/30 border-primary/10', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
 
@@ -175,7 +175,7 @@ export function TemplateDetailModal({
               </div>
             </div>
             <Button onClick={onClose} variant="ghost" size="icon-sm" className="flex-shrink-0 hover:bg-white/5">
-              <X className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground" />
+              <X className="w-5 h-5 text-foreground hover:text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -203,7 +203,7 @@ export function TemplateDetailModal({
                 className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors rounded-t-lg ${
                   isActive
                     ? 'text-violet-300'
-                    : 'text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-white/3'
+                    : 'text-foreground hover:text-muted-foreground/80 hover:bg-white/3'
                 }`}
               >
                 <TabIcon className={`w-4 h-4 ${isActive ? 'text-violet-400/80' : ''}`} />
@@ -246,7 +246,7 @@ export function TemplateDetailModal({
             {!designResult && (
               <div className="flex flex-col items-center justify-center py-20 text-sm text-foreground gap-3">
                 <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-muted-foreground/40" />
+                  <AlertTriangle className="w-5 h-5 text-foreground" />
                 </div>
                 {t.templates.detail_modal.design_unavailable}
               </div>

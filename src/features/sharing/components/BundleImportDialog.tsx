@@ -210,7 +210,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
             )}
             {isEnclave ? st.verify_enclave_title : st.import_title}
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-foreground mt-1">
             {isEnclave
               ? st.verify_enclave_subtitle
               : st.import_subtitle}
@@ -230,7 +230,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
         }`}>
           <div className="overflow-hidden">
             <div className="rounded-modal border border-dashed border-border p-8 text-center space-y-3">
-              <Download className="w-8 h-8 mx-auto mb-1 text-muted-foreground/40" />
+              <Download className="w-8 h-8 mx-auto mb-1 text-foreground" />
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={handlePickFile}
@@ -248,7 +248,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
               </div>
               <div className="flex items-center gap-1.5 mt-2 w-full max-w-xs mx-auto">
                 <div className="relative flex-1">
-                  <Link2 className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                  <Link2 className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-foreground" />
                   <input
                     type="text"
                     value={shareLinkInput}
@@ -266,7 +266,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                   {st.open}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-foreground mt-2">
                 {st.import_pick_hint}
               </p>
             </div>
@@ -278,7 +278,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
           phase === 'previewing' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}>
           <div className="overflow-hidden">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+            <div className="flex items-center gap-2 text-sm text-foreground py-8 justify-center">
               <LoadingSpinner />
               {isEnclave ? st.verifying_enclave : st.verifying_bundle}
             </div>
@@ -322,7 +322,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
           phase === 'importing' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}>
           <div className="overflow-hidden">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+            <div className="flex items-center gap-2 text-sm text-foreground py-8 justify-center">
               <LoadingSpinner />
               {st.importing_resources}
             </div>

@@ -53,7 +53,7 @@ function Dot({ dot }: { dot: DotData }) {
             <div className="text-foreground/90">
               {dot.timestamp ? formatTimestamp(dot.timestamp) : 'No timestamp'}
             </div>
-            <div className="text-muted-foreground/70">
+            <div className="text-foreground">
               {formatDuration(dot.durationMs)}
             </div>
           </div>

@@ -29,7 +29,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
           </h4>
         </div>
 
-        <p className="text-xs text-muted-foreground/70">
+        <p className="text-xs text-foreground">
           <strong>{app.label}</strong> requests the following capabilities.
           Review and approve to enable this connector.
         </p>
@@ -53,7 +53,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground">{info.label}</p>
-                  <p className="text-xs text-muted-foreground/50">{info.description}</p>
+                  <p className="text-xs text-foreground">{info.description}</p>
                 </div>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
@@ -72,7 +72,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         </div>
 
         {manifest.allowed_binaries.length > 0 && (
-          <div className="text-xs text-muted-foreground/60">
+          <div className="text-xs text-foreground">
             <span className="font-medium">{t.vault.desktop_discovery.allowed_binaries}</span>
             {manifest.allowed_binaries.join(', ')}
           </div>
@@ -81,7 +81,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 px-3 py-1.5 text-xs font-medium text-muted-foreground/80 bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+            className="flex-1 px-3 py-1.5 text-xs font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
           >
             Cancel
           </button>

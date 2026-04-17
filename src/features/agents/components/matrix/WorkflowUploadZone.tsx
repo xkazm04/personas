@@ -95,7 +95,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${PLATFORM_COLORS[platform] ?? PLATFORM_COLORS.unknown}`}>
                 {PLATFORM_LABELS[platform] ?? "Workflow"}
               </span>
-              <span className="text-[12px] font-medium text-foreground/80 truncate">
+              <span className="text-[12px] font-medium text-foreground truncate">
                 {workflowName}
               </span>
             </div>
@@ -103,12 +103,12 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
           <button
             type="button"
             onClick={handleClear}
-            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+            className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/80 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-[11px] text-muted-foreground/50 px-1">
+        <p className="text-[11px] text-foreground px-1">
           {t.agents.workflow_upload.build_hint}
         </p>
       </div>
@@ -120,7 +120,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
     return (
       <div className="space-y-2">
         <textarea
-          className="w-full min-h-[80px] max-h-[120px] rounded-card border border-primary/15 bg-background/40 px-3 py-2 text-[12px] text-foreground/80 placeholder-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full min-h-[80px] max-h-[120px] rounded-card border border-primary/15 bg-background/40 px-3 py-2 text-[12px] text-foreground placeholder-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
           placeholder={t.agents.workflow_upload.paste_placeholder}
           value={pasteValue}
           onChange={(e) => setPasteValue(e.target.value)}
@@ -138,7 +138,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
           <button
             type="button"
             onClick={() => { setPasteMode(false); setPasteValue(""); clearImportError(); }}
-            className="px-3 py-1 rounded text-[11px] text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors"
+            className="px-3 py-1 rounded text-[11px] text-foreground hover:text-muted-foreground/80 transition-colors"
           >
             {t.common.cancel}
           </button>
@@ -164,12 +164,12 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
             : "border-primary/15 bg-background/20 hover:border-primary/25 hover:bg-background/30"
         }`}
       >
-        <Upload className="w-5 h-5 text-muted-foreground/40" />
+        <Upload className="w-5 h-5 text-foreground" />
         <div className="text-center">
-          <p className="text-[12px] text-foreground/60">
+          <p className="text-[12px] text-foreground">
             {t.agents.workflow_upload.drop_file}
           </p>
-          <p className="text-[10px] text-muted-foreground/40 mt-0.5">
+          <p className="text-[10px] text-foreground mt-0.5">
             {t.agents.workflow_upload.file_types}
           </p>
         </div>
@@ -188,7 +188,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
       <button
         type="button"
         onClick={() => setPasteMode(true)}
-        className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+        className="flex items-center gap-1.5 text-[11px] text-foreground hover:text-muted-foreground/70 transition-colors"
       >
         <FileJson className="w-3.5 h-3.5" />
         {t.agents.workflow_upload.paste_json}

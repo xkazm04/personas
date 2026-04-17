@@ -23,7 +23,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           {e.duration}
         </div>
@@ -33,7 +33,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
           {e.cost}
         </div>
@@ -43,7 +43,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" />
           {e.tokens}
         </div>
@@ -53,7 +53,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
           {e.spans}
         </div>
@@ -63,7 +63,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
           {e.errors}
         </div>

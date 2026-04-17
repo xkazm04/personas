@@ -94,11 +94,11 @@ export function VersionItem({
             {version.tag}
           </span>
           {version.icon && (
-            <span className="text-[10px] text-muted-foreground/50 font-mono">{version.icon}</span>
+            <span className="text-[10px] text-foreground font-mono">{version.icon}</span>
           )}
           {version.resolved_cells && (() => {
             const rc = parseJsonOrDefault<Record<string, unknown> | null>(version.resolved_cells, null);
-            return rc ? <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span> : null;
+            return rc ? <span className="text-[10px] text-foreground">{Object.keys(rc).length} dims</span> : null;
           })()}
           {isBaseline && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
@@ -108,13 +108,13 @@ export function VersionItem({
           )}
           {isCompareA && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-blue-500/20 text-blue-400">A</span>}
           {isCompareB && <span className="px-1.5 py-0.5 rounded text-sm font-mono bg-violet-500/20 text-violet-400">B</span>}
-          <span className="ml-auto text-sm text-muted-foreground/60 flex items-center gap-1">
+          <span className="ml-auto text-sm text-foreground flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {formatRelative(version.created_at)}
           </span>
         </div>
         {version.change_summary && (
-          <p className="mt-1 text-sm text-muted-foreground/70 truncate">{version.change_summary}</p>
+          <p className="mt-1 text-sm text-foreground truncate">{version.change_summary}</p>
         )}
       </button>
 
@@ -125,7 +125,7 @@ export function VersionItem({
           data-testid={`version-actions-toggle-${version.version_number}`}
           aria-expanded={showActions}
           aria-label={`${showActions ? 'Hide' : 'Show'} actions for version ${version.version_number}`}
-          className="text-sm text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1 transition-colors"
+          className="text-sm text-foreground hover:text-muted-foreground flex items-center gap-1 transition-colors"
         >
           {showActions ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           Actions
@@ -134,7 +134,7 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); onSetCompareA(); }}
           data-testid={`version-compare-a-${version.version_number}`}
-          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareA ? 'bg-blue-500/20 text-blue-400' : 'text-muted-foreground/50 hover:text-blue-400 hover:bg-blue-500/10'}`}
+          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareA ? 'bg-blue-500/20 text-blue-400' : 'text-foreground hover:text-blue-400 hover:bg-blue-500/10'}`}
           title="Set as Compare A"
         >
           A
@@ -142,7 +142,7 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); onSetCompareB(); }}
           data-testid={`version-compare-b-${version.version_number}`}
-          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareB ? 'bg-violet-500/20 text-violet-400' : 'text-muted-foreground/50 hover:text-violet-400 hover:bg-violet-500/10'}`}
+          className={`px-1.5 py-0.5 rounded text-sm transition-colors ${isCompareB ? 'bg-violet-500/20 text-violet-400' : 'text-foreground hover:text-violet-400 hover:bg-violet-500/10'}`}
           title="Set as Compare B"
         >
           B

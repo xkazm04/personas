@@ -101,7 +101,7 @@ export function InteractiveSetupInstructions({
 
           <div className="animate-fade-in"
           >
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
+            <ChevronDown className="w-3.5 h-3.5 text-foreground" />
           </div>
         </button>
 

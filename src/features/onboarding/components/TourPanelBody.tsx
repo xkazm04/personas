@@ -65,7 +65,7 @@ export function TourPanelBody({
             </span>
           )}
         </h4>
-        <p className="typo-body text-muted-foreground/60 leading-relaxed mt-1">{currentStep.description}</p>
+        <p className="typo-body text-foreground leading-relaxed mt-1">{currentStep.description}</p>
       </div>
 
       {/* Sub-step indicators */}
@@ -80,7 +80,7 @@ export function TourPanelBody({
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : i === subStepIndex
                     ? `${colors.bg} ${colors.text} font-medium`
-                    : 'bg-secondary/20 text-muted-foreground/40'
+                    : 'bg-secondary/20 text-foreground'
               }`}
             >
               {i < subStepIndex ? <Check className="w-2.5 h-2.5" /> : null}
@@ -92,7 +92,7 @@ export function TourPanelBody({
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-3" key={currentStep.id}>
-        <Suspense fallback={<div className="py-4 text-center text-muted-foreground/40 text-sm">{t.onboarding.tour_loading}</div>}>
+        <Suspense fallback={<div className="py-4 text-center text-foreground text-sm">{t.onboarding.tour_loading}</div>}>
           {/* Tour 1: Getting Started - specialized content */}
           {isGettingStarted && currentStep.id === 'appearance-setup' && <TourAppearanceContent />}
           {isGettingStarted && currentStep.id === 'credentials-intro' && <CredentialsTourContent subStepIndex={subStepIndex} />}
@@ -111,7 +111,7 @@ export function TourPanelBody({
           onClick={onPrev}
           disabled={currentIndex === 0}
           data-testid="tour-btn-prev"
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card border border-primary/10 text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card border border-primary/10 text-foreground hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           {t.onboarding.back}
@@ -164,7 +164,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
       {/* Sub-step hints as checklist */}
       {step.subSteps.length > 0 && (
         <div className="space-y-2">
-          <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.what_to_explore}</span>
+          <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.what_to_explore}</span>
           {step.subSteps.map((sub, i) => (
             <div
               key={sub.id}
@@ -181,7 +181,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
                   i === subStepIndex ? `${colors.border} ${colors.bg}` : 'border-primary/15'
                 }`} />
               )}
-              <p className={`text-sm leading-relaxed ${i <= subStepIndex ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+              <p className={`text-sm leading-relaxed ${i <= subStepIndex ? 'text-foreground' : 'text-foreground'}`}>
                 {sub.hint}
               </p>
             </div>
@@ -190,7 +190,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
       )}
 
       {/* Step auto-completion notice */}
-      <p className="text-[11px] text-muted-foreground/40 italic text-center">
+      <p className="text-[11px] text-foreground italic text-center">
         {t.onboarding.auto_complete_hint}
       </p>
     </div>

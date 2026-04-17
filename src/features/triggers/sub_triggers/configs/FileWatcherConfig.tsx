@@ -43,7 +43,7 @@ export function FileWatcherConfig({
               }`}
             />
             {watchPaths.length > 1 && (
-              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -63,7 +63,7 @@ export function FileWatcherConfig({
               className={`px-2.5 py-1 rounded-modal text-sm font-medium transition-all border ${
                 watchEvents.includes(evt)
                   ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
               }`}
             >
               {evt}
@@ -74,7 +74,7 @@ export function FileWatcherConfig({
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
-          <span className="text-sm text-foreground/80">{t.triggers.watch_subdirs}</span>
+          <span className="text-sm text-foreground">{t.triggers.watch_subdirs}</span>
         </label>
       </div>
       <TriggerFieldGroup label={t.triggers.file_watcher.glob_filter} optional>

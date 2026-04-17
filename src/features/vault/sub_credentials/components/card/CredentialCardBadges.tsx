@@ -121,7 +121,7 @@ export function BadgeRow({
       key: 'service',
       label: credential.service_type,
       node: (
-        <span className="text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
+        <span className="text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 bg-secondary/40 border-primary/15 text-foreground">
           {credential.service_type}
         </span>
       ),
@@ -135,7 +135,7 @@ export function BadgeRow({
       key: 'fields',
       label: `${count} field${count !== 1 ? 's' : ''}`,
       node: (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/50 shrink-0">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground shrink-0">
           <Lock className="w-2.5 h-2.5" />
           <span className="text-sm font-medium">{count} field{count !== 1 ? 's' : ''}</span>
         </span>

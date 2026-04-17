@@ -14,7 +14,7 @@ export function statusIcon(s: DeployStatus) {
     case 'active': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
     case 'paused': return <PauseCircle className="w-3.5 h-3.5 text-amber-400" />;
     case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-    default: return <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/50" />;
+    default: return <AlertCircle className="w-3.5 h-3.5 text-foreground" />;
   }
 }
 
@@ -26,7 +26,7 @@ export function SummaryCard({
   icon: Icon,
   label,
   value,
-  color = 'text-foreground/80',
+  color = 'text-foreground',
   connected,
 }: {
   icon: typeof Activity;
@@ -42,7 +42,7 @@ export function SummaryCard({
       </div>
       <div className="min-w-0">
         <div className={`text-lg font-semibold tabular-nums ${color}`}>{value}</div>
-        <div className="text-xs text-muted-foreground/50 flex items-center gap-1">
+        <div className="text-xs text-foreground flex items-center gap-1">
           {label}
           {connected !== undefined && (
             <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
@@ -75,14 +75,14 @@ export function SortHeader({
   const isActive = current === key;
   return (
     <th
-      className={`px-4 py-2.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider cursor-pointer hover:text-muted-foreground/90 transition-colors select-none ${
+      className={`px-4 py-2.5 text-xs font-medium text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/90 transition-colors select-none ${
         align === 'right' ? 'text-right' : 'text-left'
       }`}
       onClick={() => onToggle(key)}
     >
       <span className="inline-flex items-center gap-1">
         {label}
-        <ArrowUpDown className={`w-3 h-3 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground/50'}`} />
+        <ArrowUpDown className={`w-3 h-3 transition-colors ${isActive ? 'text-primary' : 'text-foreground'}`} />
         {isActive && (
           <span className="text-primary text-[10px]">{dir === 'asc' ? '\u2191' : '\u2193'}</span>
         )}
@@ -114,7 +114,7 @@ export function ActionButton({
       title={title}
       onClick={onClick}
       disabled={busy}
-      className={`p-1.5 rounded-card text-muted-foreground/50 ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
+      className={`p-1.5 rounded-card text-foreground ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
     >
       {busy ? <LoadingSpinner size="sm" /> : <Icon className="w-3.5 h-3.5" />}
     </button>

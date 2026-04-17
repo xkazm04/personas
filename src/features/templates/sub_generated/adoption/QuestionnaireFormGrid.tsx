@@ -134,7 +134,7 @@ export function QuestionnaireFormGrid({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-card text-muted-foreground/50 hover:text-foreground/80 hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-white/[0.06] transition-colors"
             >
               <X className="w-4.5 h-4.5" />
             </button>
@@ -164,7 +164,7 @@ export function QuestionnaireFormGrid({
                   <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-rose-500/[0.04] border border-rose-500/15">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground/90 capitalize">{category}</div>
-                      <div className="text-xs text-muted-foreground/60 truncate">
+                      <div className="text-xs text-foreground truncate">
                         {questionLabels.join(' · ')}
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export function QuestionnaireFormGrid({
                     <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
                       {meta.label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/40 ml-auto">
+                    <span className="text-[10px] text-foreground ml-auto">
                       {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
                     </span>
                   </div>
@@ -239,7 +239,7 @@ export function QuestionnaireFormGrid({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            className="text-sm text-foreground hover:text-foreground/70 transition-colors"
           >
             {t.templates.adopt_modal.cancel}
           </button>
@@ -258,7 +258,7 @@ export function QuestionnaireFormGrid({
               className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal transition-all ${
                 canSubmit
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
-                  : 'bg-white/[0.06] text-muted-foreground/40 cursor-not-allowed'
+                  : 'bg-white/[0.06] text-foreground cursor-not-allowed'
               }`}
             >
               <Send className="w-3.5 h-3.5" />

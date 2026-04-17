@@ -26,8 +26,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-3 py-2.5 border-b border-primary/10">
-        <h3 className="text-xs font-semibold text-foreground/80 tracking-wide">{t.triggers.studio.building_blocks}</h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{t.triggers.studio.drag_or_click_to_add}</p>
+        <h3 className="text-xs font-semibold text-foreground tracking-wide">{t.triggers.studio.building_blocks}</h3>
+        <p className="text-[10px] text-foreground mt-0.5">{t.triggers.studio.drag_or_click_to_add}</p>
       </div>
 
       {/* Trigger Sources */}
@@ -36,10 +36,10 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
           onClick={() => toggle('triggers')}
           className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
         >
-          {expandedSections.triggers ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+          {expandedSections.triggers ? <ChevronDown className="w-3 h-3 text-foreground" /> : <ChevronRight className="w-3 h-3 text-foreground" />}
           <Zap className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.trigger_sources}</span>
-          <span className="ml-auto text-[9px] text-muted-foreground/60">{TRIGGER_BLOCK_TEMPLATES.length}</span>
+          <span className="text-[11px] font-medium text-foreground">{t.triggers.studio.trigger_sources}</span>
+          <span className="ml-auto text-[9px] text-foreground">{TRIGGER_BLOCK_TEMPLATES.length}</span>
         </button>
 
         {expandedSections.triggers && (
@@ -56,8 +56,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                     <Icon className="w-3 h-3" />
                   </div>
                   <div className="flex flex-col items-start min-w-0">
-                    <span className="text-[11px] text-foreground/80 group-hover:text-foreground truncate">{template.label}</span>
-                    <span className="text-[9px] text-muted-foreground/60 truncate">{template.description}</span>
+                    <span className="text-[11px] text-foreground group-hover:text-foreground truncate">{template.label}</span>
+                    <span className="text-[9px] text-foreground truncate">{template.description}</span>
                   </div>
                 </button>
               );
@@ -72,10 +72,10 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
           onClick={() => toggle('personas')}
           className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
         >
-          {expandedSections.personas ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+          {expandedSections.personas ? <ChevronDown className="w-3 h-3 text-foreground" /> : <ChevronRight className="w-3 h-3 text-foreground" />}
           <Bot className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.persona_steps}</span>
-          <span className="ml-auto text-[9px] text-muted-foreground/60">{personas.length}</span>
+          <span className="text-[11px] font-medium text-foreground">{t.triggers.studio.persona_steps}</span>
+          <span className="ml-auto text-[9px] text-foreground">{personas.length}</span>
         </button>
 
         {expandedSections.personas && (
@@ -88,13 +88,13 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
               >
                 <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="lg" />
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-[11px] text-foreground/80 group-hover:text-foreground truncate">{persona.name}</span>
-                  <span className="text-[9px] text-muted-foreground/60 truncate">{persona.description ?? 'Agent'}</span>
+                  <span className="text-[11px] text-foreground group-hover:text-foreground truncate">{persona.name}</span>
+                  <span className="text-[9px] text-foreground truncate">{persona.description ?? 'Agent'}</span>
                 </div>
               </button>
             ))}
             {personas.length === 0 && (
-              <p className="text-[10px] text-muted-foreground/50 px-2 py-2">{t.triggers.builder.no_personas_created}</p>
+              <p className="text-[10px] text-foreground px-2 py-2">{t.triggers.builder.no_personas_created}</p>
             )}
           </div>
         )}
@@ -106,9 +106,9 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
           onClick={() => toggle('logic')}
           className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
         >
-          {expandedSections.logic ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+          {expandedSections.logic ? <ChevronDown className="w-3 h-3 text-foreground" /> : <ChevronRight className="w-3 h-3 text-foreground" />}
           <GitBranch className="w-3.5 h-3.5 text-violet-400" />
-          <span className="text-[11px] font-medium text-foreground/80">{t.triggers.studio.logic_gates}</span>
+          <span className="text-[11px] font-medium text-foreground">{t.triggers.studio.logic_gates}</span>
         </button>
 
         {expandedSections.logic && (
@@ -121,8 +121,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground/80 group-hover:text-foreground">If / Else</span>
-                <span className="text-[9px] text-muted-foreground/60">Binary conditional branch</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">If / Else</span>
+                <span className="text-[9px] text-foreground">Binary conditional branch</span>
               </div>
             </button>
 
@@ -138,8 +138,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground/80 group-hover:text-foreground">Classifier</span>
-                <span className="text-[9px] text-muted-foreground/60">Multi-way routing (support, sales, ...)</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">Classifier</span>
+                <span className="text-[9px] text-foreground">Multi-way routing (support, sales, ...)</span>
               </div>
             </button>
 
@@ -155,8 +155,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground/80 group-hover:text-foreground">Fan-Out (Parallel)</span>
-                <span className="text-[9px] text-muted-foreground/60">Run multiple branches in parallel</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">Fan-Out (Parallel)</span>
+                <span className="text-[9px] text-foreground">Run multiple branches in parallel</span>
               </div>
             </button>
           </div>
@@ -165,7 +165,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
 
       {/* Help text */}
       <div className="px-3 py-3 mt-auto">
-        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+        <p className="text-[10px] text-foreground leading-relaxed">
           Connect trigger sources to persona steps to build reactive chains.
           Add condition gates for branching logic and parallel fan-out.
         </p>

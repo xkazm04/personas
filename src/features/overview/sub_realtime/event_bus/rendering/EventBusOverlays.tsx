@@ -26,7 +26,7 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }}
                 />
-                <span className="text-sm font-mono text-muted-foreground/80">
+                <span className="text-sm font-mono text-foreground">
                   {EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
                 </span>
               </div>
@@ -51,7 +51,7 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-modal px-4 py-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan/40" />
-            <span className="text-sm text-muted-foreground/60">
+            <span className="text-sm text-foreground">
               {t.overview.realtime_idle.idle} -- <span className="font-medium text-purple-300/80">{t.overview.realtime_page.test_flow}</span>
             </span>
           </div>

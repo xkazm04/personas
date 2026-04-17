@@ -26,7 +26,7 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
+          className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 text-sm text-foreground hover:text-primary/80 transition-all w-full"
         >
           <Plus className="w-4 h-4" />
           {t.agents.connectors.ch_add}
@@ -42,14 +42,14 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
               onClick={() => { onAdd(ct.type); close(); }}
               role="option"
               aria-selected={false}
-              className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground/80 transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 text-sm text-foreground transition-colors"
             >
-              <Bell className="w-4 h-4 text-muted-foreground/90" />
+              <Bell className="w-4 h-4 text-foreground" />
               {ct.label}
             </button>
           ))}
           {available.length === 0 && (
-            <div className="px-4 py-2.5 text-sm text-muted-foreground/90">{t.agents.connectors.ch_all_added}</div>
+            <div className="px-4 py-2.5 text-sm text-foreground">{t.agents.connectors.ch_all_added}</div>
           )}
         </>
       )}

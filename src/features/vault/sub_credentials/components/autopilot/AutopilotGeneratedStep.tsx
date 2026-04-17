@@ -22,7 +22,7 @@ export function AutopilotGeneratedStep({
           <Check className="w-5 h-5 text-emerald-400" />
           <h4 className="text-sm font-medium text-emerald-400">{t.vault.autopilot.connector_generated}</h4>
         </div>
-        <p className="text-sm text-muted-foreground/70">
+        <p className="text-sm text-foreground">
           <strong>{generatedResult.connectorLabel}</strong> is now available in your connector catalog
           with {generatedResult.tools.length} tool definitions.
         </p>
@@ -30,15 +30,15 @@ export function AutopilotGeneratedStep({
 
       {/* Generated Tools */}
       <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+        <h4 className="text-xs font-medium text-foreground uppercase tracking-wider">
           Generated Tools ({generatedResult.tools.length})
         </h4>
         <div className="max-h-60 overflow-y-auto space-y-1 rounded-card border border-primary/10 p-2 bg-secondary/15">
           {generatedResult.tools.map((tool) => (
             <div key={tool.toolName} className="flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-secondary/30">
               <MethodBadge method={tool.method} />
-              <span className="text-xs font-mono text-muted-foreground/60">{tool.path}</span>
-              <span className="text-xs text-foreground/80 ml-auto truncate max-w-[200px]">{tool.label}</span>
+              <span className="text-xs font-mono text-foreground">{tool.path}</span>
+              <span className="text-xs text-foreground ml-auto truncate max-w-[200px]">{tool.label}</span>
             </div>
           ))}
         </div>
@@ -46,15 +46,15 @@ export function AutopilotGeneratedStep({
 
       {/* Credential Fields */}
       <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+        <h4 className="text-xs font-medium text-foreground uppercase tracking-wider">
           Credential Fields
         </h4>
         <div className="flex flex-wrap gap-2">
           {generatedResult.credentialFields.map((field: unknown, i) => {
             const f = field as { key: string; label: string; type: string };
             return (
-              <span key={i} className="px-2 py-1 bg-secondary/30 border border-primary/10 rounded text-xs text-muted-foreground/70">
-                {f.label} <span className="text-muted-foreground/40">({f.type})</span>
+              <span key={i} className="px-2 py-1 bg-secondary/30 border border-primary/10 rounded text-xs text-foreground">
+                {f.label} <span className="text-foreground">({f.type})</span>
               </span>
             );
           })}
@@ -74,7 +74,7 @@ export function AutopilotGeneratedStep({
           onClick={() => {
             navigator.clipboard.writeText(generatedResult.connectorId);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 border border-primary/15 text-muted-foreground hover:text-foreground rounded-card text-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 border border-primary/15 text-foreground hover:text-foreground rounded-card text-sm transition-colors"
         >
           <Copy className="w-4 h-4" />
           Copy Connector ID

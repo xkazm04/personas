@@ -70,7 +70,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
         {/* "Now" marker */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-sm text-muted-foreground/80 mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="text-sm text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
         </div>
 
         {/* Run dots */}
@@ -84,7 +84,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
               <span className={`text-sm mt-1.5 absolute top-full whitespace-nowrap ${
-                i === 0 ? 'text-primary/70 font-medium' : 'text-muted-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity'
+                i === 0 ? 'text-primary/70 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
               }`}>
                 {formatRunTime(run)}
               </span>
@@ -120,7 +120,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
           <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
           {' -- '}next run:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
-          <span className="text-muted-foreground/50 ml-1 text-xs">(local)</span>
+          <span className="text-foreground ml-1 text-xs">(local)</span>
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         {/* "Now" marker */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-sm text-muted-foreground/80 mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="text-sm text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
         </div>
 
         {/* Run dots */}
@@ -145,7 +145,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-400' : 'bg-amber-400/40'} ring-2 ring-amber-400/10`} />
               <span className={`text-sm mt-1.5 absolute top-full whitespace-nowrap ${
-                i === 0 ? 'text-amber-400/80 font-medium' : 'text-muted-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity'
+                i === 0 ? 'text-amber-400/80 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
               }`}>
                 {formatRunTime(run)}
               </span>

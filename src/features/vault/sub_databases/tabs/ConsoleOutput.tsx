@@ -30,7 +30,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
 
       {!result && !error && !executing && !pendingMutation && (
         <div className="flex items-center justify-center h-full">
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             {language === 'redis' ? db.redis_hint : db.sql_hint}
           </p>
         </div>
@@ -38,8 +38,8 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
 
       {executing && (
         <div className="flex items-center justify-center h-full gap-2">
-          <LoadingSpinner className="text-muted-foreground/60" />
-          <span className="text-sm text-muted-foreground/60">{db.executing_query}</span>
+          <LoadingSpinner className="text-foreground" />
+          <span className="text-sm text-foreground">{db.executing_query}</span>
         </div>
       )}
     </div>

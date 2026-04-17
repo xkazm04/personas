@@ -34,7 +34,7 @@ export function AdminToolsDropdown({
     <div ref={ref} className="relative flex-shrink-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2 rounded-card border border-primary/10 hover:bg-primary/5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        className="p-2 rounded-card border border-primary/10 hover:bg-primary/5 text-foreground hover:text-muted-foreground transition-colors"
         title={t.templates.search.admin_tools}
       >
         <Wrench className="w-4 h-4" />

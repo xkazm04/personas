@@ -201,7 +201,7 @@ export function GenomeBreedingPanel() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground" htmlFor="mutation-rate">
+              <label className="text-xs font-medium text-foreground" htmlFor="mutation-rate">
                 Mutation Rate
               </label>
               <div className="flex items-center gap-2 mt-1">
@@ -215,13 +215,13 @@ export function GenomeBreedingPanel() {
                   aria-label="Mutation rate"
                   className="flex-1 h-1.5 accent-violet-500"
                 />
-                <span className="text-xs text-muted-foreground w-10 text-right" aria-live="polite">
+                <span className="text-xs text-foreground w-10 text-right" aria-live="polite">
                   {Math.round(mutationRate * 100)}%
                 </span>
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground" htmlFor="generations-select">
+              <label className="text-xs font-medium text-foreground" htmlFor="generations-select">
                 Generations
               </label>
               <select
@@ -304,7 +304,7 @@ export function GenomeBreedingPanel() {
       )}
 
       {selectedRunId && results.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground/60 text-sm" role="status">
+        <div className="text-center py-8 text-foreground text-sm" role="status">
           <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin opacity-30" aria-hidden="true" />
           <p>{t.agents.lab.breeding_in_progress}</p>
           <p className="text-xs mt-1">Results will appear when the breeding run completes</p>

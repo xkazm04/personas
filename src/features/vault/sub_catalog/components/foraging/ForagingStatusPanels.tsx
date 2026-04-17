@@ -39,7 +39,7 @@ export function ForagingIdle({ onScan }: ForagingIdleProps) {
       >
         Start Scan
       </Button>
-      <div className="text-sm text-muted-foreground/60 space-y-0.5">
+      <div className="text-sm text-foreground space-y-0.5">
         <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
         <p>No secrets are uploaded -- scanning happens entirely on your machine.</p>
       </div>
@@ -55,8 +55,8 @@ export function ForagingScanning() {
       className="animate-fade-slide-in rounded-modal border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
     >
       <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
-      <p className="text-sm text-foreground/80">{t.vault.foraging.scanning}</p>
-      <p className="text-sm text-muted-foreground/50">
+      <p className="text-sm text-foreground">{t.vault.foraging.scanning}</p>
+      <p className="text-sm text-foreground">
         Checking environment variables, config files, and dev tool credentials
       </p>
     </div>
@@ -75,10 +75,10 @@ export function ForagingImporting({ forage }: ForagingImportingProps) {
     >
       <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
         <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
-        <p className="text-sm text-foreground/80">
+        <p className="text-sm text-foreground">
           Importing credentials to vault...
         </p>
-        <p className="text-sm text-muted-foreground/50">
+        <p className="text-sm text-foreground">
           {forage.imported.size} of {forage.selected.size} complete
         </p>
       </div>
@@ -127,11 +127,11 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
           variant="link"
           size="sm"
           onClick={forage.scan}
-          className="text-muted-foreground/60 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
         >
           Scan again
         </Button>
-        <span className="text-muted-foreground/20">|</span>
+        <span className="text-foreground">|</span>
         <Button
           variant="link"
           size="sm"
@@ -171,12 +171,12 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
         >
           Try again
         </Button>
-        <span className="text-muted-foreground/20">|</span>
+        <span className="text-foreground">|</span>
         <Button
           variant="link"
           size="sm"
           onClick={onBack}
-          className="text-muted-foreground/60 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
         >
           Back
         </Button>

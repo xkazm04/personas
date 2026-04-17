@@ -62,7 +62,7 @@ export function WizardDetectGrid({
       {/* Available services */}
       {available.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
+          <h3 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
             Available ({available.length})
           </h3>
           <motion.div
@@ -89,7 +89,7 @@ export function WizardDetectGrid({
       {/* Already added */}
       {alreadyAdded.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
+          <h3 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
             Already added ({alreadyAdded.length})
           </h3>
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>

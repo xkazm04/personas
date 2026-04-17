@@ -94,7 +94,7 @@ const CHIP_COLORS: Record<ChipColor, string> = {
   red:     'text-red-400/80 bg-red-500/8 border-red-500/15',
   blue:    'text-blue-400/80 bg-blue-500/8 border-blue-500/15',
   violet:  'text-violet-400/80 bg-violet-500/8 border-violet-500/15',
-  slate:   'text-muted-foreground/60 bg-secondary/20 border-primary/[0.08]',
+  slate:   'text-foreground bg-secondary/20 border-primary/[0.08]',
 };
 
 function StatChip({

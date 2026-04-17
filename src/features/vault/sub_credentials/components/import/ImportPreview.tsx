@@ -50,7 +50,7 @@ export function ImportPreview({
         <div className="flex items-center gap-2">
           <button
             onClick={onBack}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -58,15 +58,15 @@ export function ImportPreview({
             <h3 className="text-sm font-medium text-foreground">
               {secrets.length} secret{secrets.length !== 1 ? 's' : ''} found
             </h3>
-            <p className="text-sm text-muted-foreground/70">
+            <p className="text-sm text-foreground">
               {selectedCount} selected for import
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={onSelectAll} className="text-sm text-primary hover:underline">{t.vault.import.select_all}</button>
-          <span className="text-muted-foreground/40">|</span>
-          <button onClick={onDeselectAll} className="text-sm text-muted-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
+          <span className="text-foreground">|</span>
+          <button onClick={onDeselectAll} className="text-sm text-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
         </div>
       </div>
 
@@ -120,10 +120,10 @@ export function ImportPreview({
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-mono text-foreground truncate">{secret.key}</p>
                         {secret.sourcePath && (
-                          <p className="text-[11px] text-muted-foreground/50 truncate">{secret.sourcePath}</p>
+                          <p className="text-[11px] text-foreground truncate">{secret.sourcePath}</p>
                         )}
                       </div>
-                      <span className="text-sm text-muted-foreground/60 font-mono">
+                      <span className="text-sm text-foreground font-mono">
                         {secret.value.slice(0, 4)}{'...'}
                       </span>
                     </label>

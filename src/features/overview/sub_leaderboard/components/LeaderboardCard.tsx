@@ -14,12 +14,12 @@ const TIER_CONFIG: Record<PerformanceTier, { label: string; color: string }> = {
   elite:      { label: 'Elite', color: 'text-amber-400' },
   strong:     { label: 'Strong', color: 'text-emerald-400' },
   average:    { label: 'Average', color: 'text-blue-400' },
-  developing: { label: 'Developing', color: 'text-muted-foreground/60' },
+  developing: { label: 'Developing', color: 'text-foreground' },
 };
 
 const TREND_ICON = {
   improving: { Icon: TrendingUp, color: 'text-emerald-400' },
-  stable: { Icon: Minus, color: 'text-muted-foreground/50' },
+  stable: { Icon: Minus, color: 'text-foreground' },
   degrading: { Icon: TrendingDown, color: 'text-red-400' },
 };
 
@@ -55,11 +55,11 @@ function DimensionBar({ label, value, raw }: { label: string; value: number; raw
   const barColor = value >= 80 ? 'bg-emerald-500/60' : value >= 60 ? 'bg-blue-500/60' : value >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-muted-foreground/60 w-12 text-right flex-shrink-0">{label}</span>
+      <span className="text-[10px] text-foreground w-12 text-right flex-shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${value}%` }} />
       </div>
-      <span className="text-[10px] text-muted-foreground/50 w-14 flex-shrink-0">{raw}</span>
+      <span className="text-[10px] text-foreground w-14 flex-shrink-0">{raw}</span>
     </div>
   );
 }
@@ -97,7 +97,7 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
               {medalCfg.emoji}
             </span>
           ) : (
-            <span className="text-sm font-medium text-muted-foreground/40">#{entry.rank}</span>
+            <span className="text-sm font-medium text-foreground">#{entry.rank}</span>
           )}
         </div>
 
@@ -105,7 +105,7 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground/80 truncate">{entry.personaName}</p>
+            <p className="text-sm font-medium text-foreground truncate">{entry.personaName}</p>
             <div className="flex items-center gap-1.5">
               <span className={`text-[10px] font-medium ${tierCfg.color}`}>{tierCfg.label}</span>
               <TrendIcon className={`w-3 h-3 ${trendCfg.color}`} />

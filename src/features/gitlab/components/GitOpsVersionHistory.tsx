@@ -76,7 +76,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_for_versions}</p>
+        <p className="text-sm text-foreground">{t.gitlab.select_project_for_versions}</p>
       </div>
     );
   }
@@ -85,7 +85,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
     <div className="space-y-4">
       {/* Persona selector */}
       <div>
-        <label htmlFor="gitops-persona" className="block text-sm font-medium text-foreground/80 mb-1.5">
+        <label htmlFor="gitops-persona" className="block text-sm font-medium text-foreground mb-1.5">
           {t.gitlab.persona_label}
         </label>
         <select
@@ -112,16 +112,16 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
             <button
               onClick={() => setShowBranches(!showBranches)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground/80 hover:bg-secondary/20 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/20 transition-colors"
             >
               {showBranches ? (
-                <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+                <ChevronDown className="w-4 h-4 text-foreground" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
+                <ChevronRight className="w-4 h-4 text-foreground" />
               )}
               <GitBranch className="w-4 h-4 text-amber-400" />
               {t.gitlab.environment_branches}
-              <span className="ml-auto text-xs text-muted-foreground/50">
+              <span className="ml-auto text-xs text-foreground">
                 {branches.length} branch{branches.length !== 1 ? 'es' : ''}
               </span>
             </button>
@@ -130,7 +130,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               <div className="px-3 pb-3 space-y-2">
                 {branches.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground/60 mb-2">
+                    <p className="text-sm text-foreground mb-2">
                       {t.gitlab.no_environment_branches}
                     </p>
                     <button
@@ -149,10 +149,10 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                     >
                       <GitBranch className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium text-foreground/80">
+                        <span className="text-sm font-medium text-foreground">
                           {branch.environment}
                         </span>
-                        <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
+                        <span className="ml-2 text-xs text-foreground font-mono">
                           {branch.commitSha.slice(0, 8)}
                         </span>
                       </div>
@@ -172,12 +172,12 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-medium text-foreground/80">{t.gitlab.version_history}</h3>
+              <h3 className="text-sm font-medium text-foreground">{t.gitlab.version_history}</h3>
             </div>
             <button
               onClick={loadVersions}
               disabled={loading}
-              className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-foreground hover:text-foreground/80 transition-colors"
             >
               {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
               {t.common.refresh}
@@ -188,7 +188,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           {loading && versions.length === 0 && (
             <div className="text-center py-8">
               <LoadingSpinner />
-              <p className="text-sm text-muted-foreground/60 mt-2">{t.gitlab.loading_version_history}</p>
+              <p className="text-sm text-foreground mt-2">{t.gitlab.loading_version_history}</p>
             </div>
           )}
 
@@ -198,8 +198,8 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Tag className="w-6 h-6 text-amber-400/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80">{t.gitlab.no_versions}</p>
-              <p className="text-sm text-muted-foreground/60 mt-1">
+              <p className="text-sm text-foreground">{t.gitlab.no_versions}</p>
+              <p className="text-sm text-foreground mt-1">
                 {t.gitlab.deploy_with_versioning}
               </p>
             </div>
@@ -286,12 +286,12 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
           </div>
 
           {version.commitMessage && (
-            <p className="text-sm text-muted-foreground/60 mt-0.5 truncate">
+            <p className="text-sm text-foreground mt-0.5 truncate">
               {version.commitMessage}
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground/50">
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-foreground">
             <span className="font-mono">{version.commitSha.slice(0, 8)}</span>
             {version.createdBy && <span>{version.createdBy}</span>}
             {timeAgo && <span>{timeAgo}</span>}
@@ -318,7 +318,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                 <button
                   onClick={onCancelRollback}
                   disabled={rollingBack}
-                  className="px-2 py-1.5 text-xs rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                  className="px-2 py-1.5 text-xs rounded-card text-foreground hover:text-foreground/80 transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -326,7 +326,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
             ) : (
               <button
                 onClick={onRollback}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-muted-foreground/60 hover:text-amber-400 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
                 title={tx(t.gitlab.rollback_to_version, { version: version.version })}
               >
                 <RotateCcw className="w-3.5 h-3.5" />

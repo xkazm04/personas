@@ -98,7 +98,7 @@ export function PersonaSelectorModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.shared.search_ellipsis}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground outline-none"
               autoFocus
             />
             {search && (
@@ -119,7 +119,7 @@ export function PersonaSelectorModal({
                 className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
                   !value
                     ? 'bg-primary/8 text-primary'
-                    : 'text-foreground/70 hover:bg-secondary/40'
+                    : 'text-foreground hover:bg-secondary/40'
                 }`}
               >
                 <span className="text-sm truncate">All ({personas.length})</span>
@@ -137,7 +137,7 @@ export function PersonaSelectorModal({
                   className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
                     isActive
                       ? 'bg-primary/8 text-primary'
-                      : 'text-foreground/70 hover:bg-secondary/40'
+                      : 'text-foreground hover:bg-secondary/40'
                   }`}
                 >
                   <span className="text-sm truncate">{p.name}</span>

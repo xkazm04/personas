@@ -19,7 +19,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
   if (!impact) {
     return (
       <div className="px-3 pb-3 pt-1">
-        <p className="text-sm text-muted-foreground/60 italic">{t.agents.tools.no_impact}</p>
+        <p className="text-sm text-foreground italic">{t.agents.tools.no_impact}</p>
       </div>
     );
   }
@@ -40,18 +40,18 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
               <div className="space-y-1">
                 {useCaseRefs.slice(0, 4).map((uc) => (
                   <div key={uc.useCaseId} className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-foreground/70 truncate">{uc.title}</span>
-                    <span className="text-sm text-muted-foreground/60 flex-shrink-0 tabular-nums">
+                    <span className="text-sm text-foreground truncate">{uc.title}</span>
+                    <span className="text-sm text-foreground flex-shrink-0 tabular-nums">
                       {tx(t.agents.tools.runs, { count: uc.executionCount })}
                     </span>
                   </div>
                 ))}
                 {useCaseRefs.length > 4 && (
-                  <p className="text-sm text-muted-foreground/50">{tx(t.agents.tools.more_uc, { count: useCaseRefs.length - 4 })}</p>
+                  <p className="text-sm text-foreground">{tx(t.agents.tools.more_uc, { count: useCaseRefs.length - 4 })}</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground/50">{t.agents.tools.no_uc}</p>
+              <p className="text-sm text-foreground">{t.agents.tools.no_uc}</p>
             )}
             {isAssigned && hasUseCases && (
               <div className="flex items-center gap-1.5 mt-1 px-1.5 py-0.5 rounded bg-amber-500/8 border border-amber-500/15">
@@ -70,7 +70,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 <StatPill label={t.agents.tools.stat_agents} value={usage.unique_personas.toLocaleString()} />
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground/50">{t.agents.tools.no_usage}</p>
+              <p className="text-sm text-foreground">{t.agents.tools.no_usage}</p>
             )}
           </ImpactSection>
           {hasCost && (
@@ -78,14 +78,14 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
               <div className="flex items-center gap-3">
                 {avgCostPerInvocation !== null && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground/60">{t.agents.tools.per_call}</span>
-                    <span className="text-sm font-mono text-foreground/70">{formatCost(avgCostPerInvocation)}</span>
+                    <span className="text-sm text-foreground">{t.agents.tools.per_call}</span>
+                    <span className="text-sm font-mono text-foreground">{formatCost(avgCostPerInvocation)}</span>
                   </div>
                 )}
                 {totalCost > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground/60">{t.agents.tools.total_cost}</span>
-                    <span className="text-sm font-mono text-foreground/70">{formatCost(totalCost)}</span>
+                    <span className="text-sm text-foreground">{t.agents.tools.total_cost}</span>
+                    <span className="text-sm font-mono text-foreground">{formatCost(totalCost)}</span>
                   </div>
                 )}
               </div>
@@ -100,7 +100,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 <span className={`text-sm ${credentialLinked ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
                   {credentialType}
                 </span>
-                <span className="text-sm text-muted-foreground/50">
+                <span className="text-sm text-foreground">
                   {credentialLinked ? t.agents.tools.linked : t.agents.tools.cred_missing}
                 </span>
               </div>
@@ -112,11 +112,11 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 {coUsedTools.map((co) => (
                   <span
                     key={co.toolName}
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground/60`}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground`}
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}
-                    <span className="text-muted-foreground/60 tabular-nums">{co.coOccurrences}</span>
+                    <span className="text-foreground tabular-nums">{co.coOccurrences}</span>
                   </span>
                 ))}
               </div>
@@ -138,10 +138,10 @@ function ImpactSection({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground/50">{icon}</span>
-        <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{label}</span>
+        <span className="text-foreground">{icon}</span>
+        <span className="text-sm font-medium text-foreground uppercase tracking-wider">{label}</span>
         {badge && (
-          <span className={`ml-auto text-sm font-mono px-1 py-px rounded bg-primary/8 text-muted-foreground/60 border ${TOOLS_BORDER}`}>
+          <span className={`ml-auto text-sm font-mono px-1 py-px rounded bg-primary/8 text-foreground border ${TOOLS_BORDER}`}>
             {badge}
           </span>
         )}
@@ -154,8 +154,8 @@ function ImpactSection({
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className={`flex flex-col items-center px-2 py-1 rounded-card bg-background/30 border ${TOOLS_BORDER}`}>
-      <span className="text-sm font-mono text-foreground/70 tabular-nums">{value}</span>
-      <span className="text-sm text-muted-foreground/50 uppercase tracking-wider">{label}</span>
+      <span className="text-sm font-mono text-foreground tabular-nums">{value}</span>
+      <span className="text-sm text-foreground uppercase tracking-wider">{label}</span>
     </div>
   );
 }

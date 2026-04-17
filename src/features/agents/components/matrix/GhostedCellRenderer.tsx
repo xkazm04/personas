@@ -29,7 +29,7 @@ export function GhostedCellRenderer({ label, watermark: Watermark, watermarkColo
 
       {/* Label -- visible but faded */}
       <div className="mb-2.5 flex items-center gap-2">
-        <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground/20">
+        <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground">
           {label}
         </span>
       </div>

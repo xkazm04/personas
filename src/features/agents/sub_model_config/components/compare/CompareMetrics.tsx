@@ -62,10 +62,10 @@ function MetricRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-1 text-muted-foreground/70">
+    <div className="flex items-center gap-1 text-foreground">
       <Icon className="w-3 h-3 flex-shrink-0" />
       <span className="truncate">{label}:</span>
-      <span className="text-foreground/80 font-mono ml-auto">{value}</span>
+      <span className="text-foreground font-mono ml-auto">{value}</span>
     </div>
   );
 }
@@ -86,7 +86,7 @@ export function CompareBar({
   const max = Math.max(valueA, valueB, 1);
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+      <div className="flex items-center gap-1.5 text-xs text-foreground">
         <Icon className="w-3 h-3" />
         {label}
       </div>
@@ -99,7 +99,7 @@ export function CompareBar({
         </div>
         <div className="w-16 text-center text-xs font-mono tabular-nums">
           <span className={scoreColor(valueA)}>{valueA}</span>
-          <span className="text-muted-foreground/40 mx-0.5">:</span>
+          <span className="text-foreground mx-0.5">:</span>
           <span className={scoreColor(valueB)}>{valueB}</span>
         </div>
         {/* B bar (left-aligned, amber) */}

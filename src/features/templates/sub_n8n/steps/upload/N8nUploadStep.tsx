@@ -59,7 +59,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
               mode === m.id
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-elevation-1'
-                : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
+                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
             }`}
           >
             {m.icon}
@@ -154,10 +154,10 @@ function FileUploadTab({
           <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-violet-300' : 'text-violet-400'}`} />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-foreground/80">
+          <p className="text-sm font-medium text-foreground">
             {isDragging ? t.templates.n8n.drop_file_here : t.templates.n8n.import_from_any_platform}
           </p>
-          <p className="text-sm text-muted-foreground/90 mt-1">
+          <p className="text-sm text-foreground mt-1">
             {t.templates.n8n.click_to_browse}
           </p>
         </div>
@@ -170,7 +170,7 @@ function FileUploadTab({
           <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>
+          <p className="text-sm text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}
     </div>
@@ -192,8 +192,8 @@ function PasteTab({
       <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
-          <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.paste_workflow_json}</span>
-          <span className="text-sm text-muted-foreground/70 ml-auto">
+          <span className="text-sm font-medium text-foreground">{t.templates.n8n.paste_workflow_json}</span>
+          <span className="text-sm text-foreground ml-auto">
             {pasteText.length > 0 && formatFileSize(pasteText.length)}
           </span>
         </div>
@@ -202,7 +202,7 @@ function PasteTab({
           onChange={(e) => { setPasteText(e.target.value); validatePastedContent(e.target.value); }}
           aria-label="Workflow JSON content"
           placeholder='Paste your exported workflow JSON here...\n\nExample: {"nodes": [...], "connections": {...}}'
-          className="w-full h-48 px-4 py-3 bg-transparent text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/40 resize-none outline-none"
+          className="w-full h-48 px-4 py-3 bg-transparent text-sm font-mono text-foreground placeholder:text-foreground resize-none outline-none"
           spellCheck={false}
           data-testid="paste-json-textarea"
         />
@@ -214,7 +214,7 @@ function PasteTab({
             className={`flex items-center gap-2 px-4 py-1.5 rounded-modal text-sm font-medium transition-all ${
               pastePreview?.kind === 'valid'
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
-                : 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
+                : 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
             }`}
           >
             <ChevronRight className="w-3.5 h-3.5" />
@@ -245,9 +245,9 @@ function UrlTab({
       <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.import_from_url}</span>
+          <span className="text-sm font-medium text-foreground">{t.templates.n8n.import_from_url}</span>
         </div>
-        <p className="text-sm text-muted-foreground/70">
+        <p className="text-sm text-foreground">
           Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.
         </p>
         <div className="flex gap-2">
@@ -258,7 +258,7 @@ function UrlTab({
             onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
             aria-label="Workflow URL"
             placeholder="https://raw.githubusercontent.com/.../workflow.json"
-            className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/15 text-sm text-foreground placeholder:text-foreground outline-none focus-visible:border-violet-500/40 transition-colors"
             data-testid="url-input"
           />
           <button
@@ -266,7 +266,7 @@ function UrlTab({
             disabled={urlFetching || !urlValue.trim()}
             className={`flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium transition-all ${
               urlFetching || !urlValue.trim()
-                ? 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
+                ? 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
                 : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
             }`}
           >
@@ -277,7 +277,7 @@ function UrlTab({
             )}
           </button>
         </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
+        <div className="flex items-center gap-3 text-sm text-foreground">
           <span>{t.templates.n8n.accepts_label}</span>
           <span className="font-mono text-sm">github.com/*/blob/*</span>
           <span className="text-primary/20">|</span>
@@ -292,7 +292,7 @@ function UrlTab({
           <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>
+          <p className="text-sm text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>
       )}
     </div>

@@ -75,7 +75,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
   return (
     <SectionCard size="lg" blur>
       <SectionHeader className="mb-6" icon={<Radio className="w-3.5 h-3.5" />} label={t.agents.connectors.sub_title}
-        trailing={<span className="text-sm text-muted-foreground/80">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>} />
+        trailing={<span className="text-sm text-foreground">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>} />
       <div className="space-y-3">
         {error && <div role="alert" className="px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
         {loadError && (
@@ -101,7 +101,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
               <AddSubscriptionForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} />
             ) : (
               <button onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-ring">
+                className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 text-sm text-foreground hover:text-primary/80 transition-all w-full focus-ring">
                 <Plus className="w-4 h-4" /> {t.agents.connectors.sub_add}
               </button>
             )}

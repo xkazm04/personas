@@ -25,7 +25,7 @@ export function OperationRow({
       <td className="py-2.5 pr-4">
         <div className="flex flex-col">
           <span className="text-sm text-foreground/90">{label}</span>
-          <span className="text-[11px] text-muted-foreground/50 leading-tight">{description}</span>
+          <span className="text-[11px] text-foreground leading-tight">{description}</span>
         </div>
       </td>
       {PROVIDERS.map((p) => {
@@ -39,7 +39,7 @@ export function OperationRow({
             {!installed ? (
               <div className="flex justify-center">
                 <span className="w-6 h-6 rounded bg-secondary/20 border border-primary/5 flex items-center justify-center cursor-not-allowed">
-                  <Minus className="w-3 h-3 text-muted-foreground/20" />
+                  <Minus className="w-3 h-3 text-foreground" />
                 </span>
               </div>
             ) : locked ? (

@@ -80,13 +80,13 @@ export function CredentialTypePicker({
         <button
           onClick={onBack}
           data-testid="vault-back-btn"
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
           <h3 className="text-sm font-semibold text-foreground">{t.vault.type_picker.title}</h3>
-          <p className="text-sm text-muted-foreground/60">{t.vault.type_picker.subtitle}</p>
+          <p className="text-sm text-foreground">{t.vault.type_picker.subtitle}</p>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export function CredentialTypePicker({
           </div>
           <div>
             <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
-            <p className="text-sm text-muted-foreground/60">
+            <p className="text-sm text-foreground">
               One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
             </p>
           </div>
@@ -150,7 +150,7 @@ export function CredentialTypePicker({
             </div>
             <div>
               <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
-              <p className="text-sm text-muted-foreground/60">
+              <p className="text-sm text-foreground">
                 Scan your filesystem for existing API keys, AWS profiles, env vars, and more
               </p>
             </div>

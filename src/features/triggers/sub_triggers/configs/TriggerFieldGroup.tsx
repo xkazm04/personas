@@ -14,16 +14,16 @@ export function TriggerFieldGroup({
 }: TriggerFieldGroupProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground/80">
+      <label className="block text-sm font-medium text-foreground">
         {label}
-        {optional && <span className="text-muted-foreground/50 ml-1">(optional)</span>}
+        {optional && <span className="text-foreground ml-1">(optional)</span>}
       </label>
       {children}
       {error && (
         <p id={errorId} className="text-sm text-red-400/80">{error}</p>
       )}
       {helpText && (
-        <p className="text-sm text-muted-foreground/80">{helpText}</p>
+        <p className="text-sm text-foreground">{helpText}</p>
       )}
     </div>
   );

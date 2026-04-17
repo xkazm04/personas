@@ -46,7 +46,7 @@ export function ExamplePairCollector({
   return (
     <div className={`space-y-3 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-muted-foreground/70 leading-relaxed max-w-[80%]">
+        <p className="text-xs text-foreground leading-relaxed max-w-[80%]">
           {t.agents.design.example_instructions}
         </p>
         <button
@@ -81,7 +81,7 @@ export function ExamplePairCollector({
                     {tx(t.agents.design.example_n, { index: index + 1 })}
                   </span>
                   {isCollapsed && preview && (
-                    <span className="text-xs text-muted-foreground/50 truncate ml-1">
+                    <span className="text-xs text-foreground truncate ml-1">
                       {preview}
                     </span>
                   )}
@@ -89,7 +89,7 @@ export function ExamplePairCollector({
                 <button
                   onClick={() => removePair(pair.id)}
                   disabled={disabled}
-                  className="p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                  className="p-0.5 text-foreground hover:text-red-400 transition-colors"
                   title={t.agents.design.remove_example}
                 >
                   <Trash2 className="w-3 h-3" />
@@ -101,7 +101,7 @@ export function ExamplePairCollector({
                 <div className="px-3 pb-3 space-y-2">
                   {/* Input */}
                   <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
+                    <label className="flex items-center gap-1 text-xs font-medium text-foreground">
                       <FileInput className="w-3 h-3" />
                       {t.agents.design.input_label}
                     </label>
@@ -122,7 +122,7 @@ export function ExamplePairCollector({
 
                   {/* Output */}
                   <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
+                    <label className="flex items-center gap-1 text-xs font-medium text-foreground">
                       <FileOutput className="w-3 h-3" />
                       {t.agents.design.output_label}
                     </label>
@@ -152,7 +152,7 @@ export function ExamplePairCollector({
             <ArrowRight className="w-3.5 h-3.5" />
             <FileOutput className="w-4 h-4" />
           </div>
-          <span className="text-sm text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">
+          <span className="text-sm text-foreground group-hover:text-muted-foreground/80 transition-colors">
             {t.agents.design.add_first_example}
           </span>
         </button>

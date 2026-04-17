@@ -39,7 +39,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
   }, [issues]);
 
   const TrendIcon = stats.trend === 'improving' ? TrendingDown : stats.trend === 'worsening' ? TrendingUp : ArrowRight;
-  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-muted-foreground/90';
+  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-foreground';
   const trendBg = stats.trend === 'improving' ? 'bg-emerald-500/10' : stats.trend === 'worsening' ? 'bg-red-500/10' : 'bg-secondary/40';
   const trendLabel = stats.trend === 'improving' ? 'Improving' : stats.trend === 'worsening' ? 'Worsening' : 'Stable';
 
@@ -48,14 +48,14 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
       <div className="flex items-center gap-3 flex-wrap typo-body">
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-foreground/90">{stats.openIssues}</span>
-          <span className="text-muted-foreground/90">open</span>
+          <span className="text-foreground">open</span>
         </div>
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
-          <span className="text-muted-foreground/90">auto-fixed this week</span>
+          <span className="text-foreground">auto-fixed this week</span>
         </div>
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />

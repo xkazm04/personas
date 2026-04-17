@@ -118,12 +118,12 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
               className={`flex items-center gap-1.5 px-3 py-1 rounded-modal text-sm font-medium transition-all ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground'
+                  : 'text-foreground hover:text-muted-foreground'
               }`}
             >
               {chip.label}
               <span className={`px-1.5 py-0.5 text-sm font-bold rounded-full ${
-                issueFilter === chip.key ? 'bg-primary/15 text-foreground/90' : 'bg-secondary/60 text-muted-foreground/80'
+                issueFilter === chip.key ? 'bg-primary/15 text-foreground/90' : 'bg-secondary/60 text-foreground'
               }`}>{chip.count}</span>
             </button>
           ))}
@@ -137,8 +137,8 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
             <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_open_issues}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t.overview.analytics_dashboard.run_analysis_hint}</p>
+            <p className="text-sm font-medium text-foreground">{t.overview.analytics_dashboard.no_open_issues}</p>
+            <p className="text-sm text-foreground mt-1">{t.overview.analytics_dashboard.run_analysis_hint}</p>
           </div>
         </div>
       ) : (
@@ -168,14 +168,14 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
                 )}
                 <button
                   onClick={() => onSelectIssue(issue)}
-                  className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
+                  className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground hover:text-foreground'}`}
                 >
                   {issue.title}
                 </button>
-                <span className={`text-sm font-mono min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-muted-foreground/80'}`}>
+                <span className={`text-sm font-mono min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-foreground'}`}>
                   {issue.category}
                 </span>
-                <span className="text-sm text-muted-foreground/80 w-16 text-right">{ageLabel}</span>
+                <span className="text-sm text-foreground w-16 text-right">{ageLabel}</span>
                 {!isAutoFixed && (
                   <button
                     onClick={() => resolveHealingIssue(issue.id)}

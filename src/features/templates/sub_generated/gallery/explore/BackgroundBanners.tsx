@@ -84,14 +84,14 @@ export function BackgroundBanners({
                 <span className="text-sm font-medium text-amber-300 block truncate">
                   {t.templates.banners.draft_prefix}{adoptionDraft.templateName}
                 </span>
-                <span className="text-sm text-muted-foreground/80">
+                <span className="text-sm text-foreground">
                   {t.templates.banners.step_click_resume.replace('{step}', ADOPT_STEP_LABELS[adoptionDraft.step] ?? adoptionDraft.step)}
                 </span>
               </div>
             </button>
             <button
               onClick={onDiscardDraft}
-              className="p-1 rounded-card hover:bg-amber-500/15 text-muted-foreground/50 hover:text-amber-400 transition-colors flex-shrink-0"
+              className="p-1 rounded-card hover:bg-amber-500/15 text-foreground hover:text-amber-400 transition-colors flex-shrink-0"
               title={t.templates.banners.discard_draft}
             >
               <X className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export function BackgroundBanners({
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium text-violet-300 block">{t.templates.banners.adoption_in_progress}</span>
-              <span className="text-sm text-muted-foreground/80">{t.templates.banners.click_to_view_progress}</span>
+              <span className="text-sm text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
           </button>
@@ -133,7 +133,7 @@ export function BackgroundBanners({
               <span className="text-sm font-medium text-blue-300 block">
                 {t.templates.banners.rebuilding.replace('{name}', rebuildReviewName ?? 'template')}
               </span>
-              <span className="text-sm text-muted-foreground/80">{t.templates.banners.click_to_view_progress}</span>
+              <span className="text-sm text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
           </button>
@@ -206,14 +206,14 @@ export function BackgroundBanners({
                   <span className={`text-sm font-medium ${textClass} block truncate`}>
                     {statusText}: {previewReviewName ?? 'template'}
                   </span>
-                  <span className="text-sm text-muted-foreground/80">{subtitleText}</span>
+                  <span className="text-sm text-foreground">{subtitleText}</span>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${dotColor} ${!isDone ? 'animate-pulse' : ''} flex-shrink-0`} />
               </button>
               {isDone && (
                 <button
                   onClick={onDismissPreview}
-                  className="p-1 rounded-card hover:bg-secondary/40 text-muted-foreground/50 hover:text-foreground/70 transition-colors flex-shrink-0"
+                  className="p-1 rounded-card hover:bg-secondary/40 text-foreground hover:text-foreground/70 transition-colors flex-shrink-0"
                   title="Dismiss"
                 >
                   <X className="w-3.5 h-3.5" />

@@ -46,7 +46,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
           <h2 className="text-sm font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-6 h-6 rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-center w-6 h-6 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -55,14 +55,14 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* Search */}
         <div className="px-4 py-2 border-b border-border/30">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.recipes.search_recipes}
               autoFocus
-              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
+              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
             />
           </div>
         </div>
@@ -70,7 +70,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* List */}
         <div className="flex-1 overflow-y-auto p-2">
           {available.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60">
+            <div className="flex flex-col items-center justify-center py-8 text-sm text-foreground">
               {recipes.length === linkedRecipeIds.size
                 ? t.recipes.all_linked
                 : t.recipes.no_matching}
@@ -89,10 +89,10 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
                     {recipe.description && (
-                      <p className="text-sm text-muted-foreground/60 truncate">{recipe.description}</p>
+                      <p className="text-sm text-foreground truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <Plus className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                  <Plus className="w-3.5 h-3.5 text-foreground group-hover:text-primary transition-colors" />
                 </button>
               ))}
             </div>

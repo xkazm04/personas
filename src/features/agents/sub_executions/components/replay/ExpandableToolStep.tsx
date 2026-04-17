@@ -51,9 +51,9 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
         {/* Expand chevron */}
         {canExpand ? (
           expanded ? (
-            <ChevronDown className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+            <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
           ) : (
-            <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+            <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
           )
         ) : (
           <span className="w-3 shrink-0" />
@@ -62,7 +62,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
         {/* Step number */}
         <span className={`typo-code tabular-nums${
           state === 'active' ? 'text-blue-400' :
-          state === 'completed' ? 'text-emerald-400' : 'text-muted-foreground/40'
+          state === 'completed' ? 'text-emerald-400' : 'text-foreground'
         }`}>
           {step.step_index + 1}
         </span>
@@ -73,19 +73,19 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
         ) : state === 'completed' ? (
           <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
         ) : (
-          <Circle className="w-3 h-3 text-muted-foreground/20 shrink-0" />
+          <Circle className="w-3 h-3 text-foreground shrink-0" />
         )}
 
         {/* Tool name */}
         <span className={`typo-code truncate${
-          state === 'pending' ? 'text-muted-foreground/40' : 'text-foreground/80'
+          state === 'pending' ? 'text-foreground' : 'text-foreground'
         }`}>
           {step.tool_name}
         </span>
 
         {/* Duration */}
         {step.duration_ms != null && state === 'completed' && (
-          <span className="ml-auto flex items-center gap-1 typo-code text-muted-foreground/60 tabular-nums shrink-0">
+          <span className="ml-auto flex items-center gap-1 typo-code text-foreground tabular-nums shrink-0">
             <Clock className="w-2.5 h-2.5" />
             {formatDuration(step.duration_ms)}
           </span>
@@ -113,10 +113,10 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
               {/* Input preview */}
               {step.input_preview && (
                 <div>
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider mb-1">
                     {e.input}
                   </div>
-                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
+                  <pre className="typo-code text-foreground bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.input_preview)}
                   </pre>
                 </div>
@@ -125,10 +125,10 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
               {/* Output preview */}
               {step.output_preview && state !== 'active' && (
                 <div>
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider mb-1">
                     {e.output}
                   </div>
-                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
+                  <pre className="typo-code text-foreground bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.output_preview)}
                   </pre>
                 </div>
@@ -144,7 +144,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                   className={`flex items-center gap-1.5 typo-heading px-2.5 py-1 rounded-card transition-colors${
                     isFork
                       ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                      : 'bg-secondary/40 text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/60'
+                      : 'bg-secondary/40 text-foreground hover:text-muted-foreground/80 hover:bg-secondary/60'
                   }`}
                 >
                   <GitFork className="w-3 h-3" />

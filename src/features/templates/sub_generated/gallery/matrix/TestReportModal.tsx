@@ -52,7 +52,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
               <div className="flex items-center gap-3 mt-1">
                 {passedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{passedCount} passed</span>}
                 {failedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{failedCount} failed</span>}
-                {skippedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/50"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>}
+                {skippedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-foreground"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>}
               </div>
               {results.length > 0 && (
                 <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
@@ -64,7 +64,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-card hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground/60" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -73,7 +73,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
           {/* Left pane: Test Scope */}
           <div className="w-[280px] flex-shrink-0 border-r border-primary/10 flex flex-col min-h-0">
             <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-[10px] font-semibold text-foreground/50 uppercase tracking-wider">Test Scope</h3>
+              <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">Test Scope</h3>
             </div>
             <div className="flex-1 overflow-y-auto py-1">
               <button
@@ -84,7 +84,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
-                <span className="text-[13px] font-medium text-foreground/80">Overview</span>
+                <span className="text-[13px] font-medium text-foreground">Overview</span>
               </button>
               {results.map((r) => (
                 <ToolTab key={r.tool_name} result={r} isActive={selectedTool === r.tool_name} onClick={() => setSelectedTool(r.tool_name)} />
@@ -95,7 +95,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
           {/* Right pane: Analysis */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="px-5 py-2.5 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-[10px] font-semibold text-foreground/50 uppercase tracking-wider">
+              <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
                 {selectedTool ? selectedTool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Analysis'}
               </h3>
             </div>
@@ -121,7 +121,7 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
   const statusIcon = r.status === 'passed'
     ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
     : r.status === 'skipped'
-    ? <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground/35 flex-shrink-0" />
+    ? <AlertTriangle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
     : r.status === 'credential_missing'
     ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
     : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
@@ -143,8 +143,8 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
     >
       {statusIcon}
       <div className="flex-1 min-w-0">
-        <span className={`text-[13px] truncate block ${isActive ? 'font-medium text-foreground/90' : 'text-foreground/60'}`}>{label}</span>
-        {r.connector && <span className="text-[10px] text-muted-foreground/40 truncate block">{r.connector}</span>}
+        <span className={`text-[13px] truncate block ${isActive ? 'font-medium text-foreground/90' : 'text-foreground'}`}>{label}</span>
+        {r.connector && <span className="text-[10px] text-foreground truncate block">{r.connector}</span>}
       </div>
       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
         {r.http_status && (
@@ -191,20 +191,20 @@ function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: stri
     <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         <Key className="w-4 h-4 text-primary/50" />
-        <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Connector Credentials</h4>
+        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Connector Credentials</h4>
       </div>
       <div className="space-y-1.5">
         {matched.map((c) => (
           <div key={c.name} className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            <span className="text-foreground/70">{c.name}</span>
+            <span className="text-foreground">{c.name}</span>
             <span className="text-emerald-400/60 text-xs">matched</span>
           </div>
         ))}
         {missing.map((c) => (
           <div key={c.name} className="flex items-center gap-2 text-sm">
             <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-            <span className="text-foreground/70">{c.name}</span>
+            <span className="text-foreground">{c.name}</span>
             <span className="text-red-400/60 text-xs">not found</span>
           </div>
         ))}
@@ -229,7 +229,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
     return (
       <div className="space-y-5">
         <ConnectorHandshakeCard connectors={connectors} />
-        <p className="text-sm text-foreground/70 leading-relaxed">
+        <p className="text-sm text-foreground leading-relaxed">
           {failed.length === 0 && credentialMissing.length === 0 && passed.length > 0
             ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
             : (failed.length > 0 || credentialMissing.length > 0)
@@ -261,8 +261,8 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
       {sections.results && (
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-foreground/40" />
-            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Results</h4>
+            <Zap className="w-4 h-4 text-foreground" />
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Results</h4>
           </div>
           <div className="space-y-1.5">{sections.results.trim().split('\n').filter(Boolean).map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         </div>
@@ -281,7 +281,7 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
     <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{label}</h4>
+        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{label}</h4>
       </div>
       <div className="space-y-1.5">{children}</div>
     </div>
@@ -297,8 +297,8 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
           <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Connected Successfully</h4></div>
           <div className="space-y-1">{passed.map((r) => (
             <div key={r.tool_name} className="flex items-center justify-between text-sm">
-              <span className="text-foreground/70">{toolLabel(r)}{r.connector ? <span className="text-muted-foreground/40 ml-1.5">via {r.connector}</span> : null}</span>
-              {r.latency_ms != null && r.latency_ms > 0 && <span className="text-[10px] text-muted-foreground/40 font-mono">{r.latency_ms}ms</span>}
+              <span className="text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">via {r.connector}</span> : null}</span>
+              {r.latency_ms != null && r.latency_ms > 0 && <span className="text-[10px] text-foreground font-mono">{r.latency_ms}ms</span>}
             </div>
           ))}</div>
         </div>
@@ -306,7 +306,7 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
       {credentialMissing.length > 0 && (
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Needs Credentials</h4></div>
-          <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="text-sm text-foreground/70">{toolLabel(r)}{r.connector ? <span className="text-muted-foreground/40 ml-1.5">({r.connector})</span> : null}</div>)}</div>
+          <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="text-sm text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
           <p className="text-[11px] text-amber-400/60 mt-2">Add the required API keys in the Keys section to enable these tools.</p>
         </div>
       )}
@@ -315,14 +315,14 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
           <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider">Connection Failed</h4></div>
           <div className="space-y-1">{failed.map((r) => {
             const hint = r.http_status ? httpStatusHint(r.http_status) : null;
-            return <div key={r.tool_name} className="text-sm"><span className="text-foreground/70">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 text-xs">{hint}</span>}</div>;
+            return <div key={r.tool_name} className="text-sm"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 text-xs">{hint}</span>}</div>;
           })}</div>
         </div>
       )}
       {skipped.length > 0 && (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-muted-foreground/40" /><h4 className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">Built-in (No Test Needed)</h4></div>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="text-sm text-muted-foreground/50">{toolLabel(r)}</span>)}</div>
+          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Built-in (No Test Needed)</h4></div>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="text-sm text-foreground">{toolLabel(r)}</span>)}</div>
         </div>
       )}
     </div>
@@ -355,7 +355,7 @@ function MarkdownLine({ text }: { text: string }) {
   });
 
   return (
-    <div className="flex gap-2 text-sm text-foreground/60 leading-relaxed">
+    <div className="flex gap-2 text-sm text-foreground leading-relaxed">
       {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&bull;</span>}
       {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 font-medium text-xs min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
       <span>{parts}</span>
@@ -386,9 +386,9 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${
         isPassed ? 'bg-emerald-500/5 border-emerald-500/15' : isSkipped ? 'bg-secondary/30 border-primary/10' : result.status === 'credential_missing' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'
       }`}>
-        {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
+        {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
         <div className="flex-1">
-          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-muted-foreground/60' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
             {isPassed ? 'Passed' : isSkipped ? 'Skipped (Built-in)' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
           </span>
           {result.http_status && (
@@ -398,23 +398,23 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
           )}
         </div>
         {result.latency_ms != null && result.latency_ms > 0 && (
-          <div className="flex items-center gap-1 text-muted-foreground/40"><Clock className="w-3 h-3" /><span className="text-xs font-mono">{result.latency_ms}ms</span></div>
+          <div className="flex items-center gap-1 text-foreground"><Clock className="w-3 h-3" /><span className="text-xs font-mono">{result.latency_ms}ms</span></div>
         )}
       </div>
 
       <div>
-        <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">What happened</h4>
+        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">What happened</h4>
         {toolSummaryLine ? <MarkdownLine text={toolSummaryLine} /> : (
-          <div className="text-sm text-foreground/60 leading-relaxed space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
+          <div className="text-sm text-foreground leading-relaxed space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         )}
       </div>
 
-      {result.connector && <div><h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-1">Service</h4><p className="text-sm text-foreground/60">{result.connector}</p></div>}
+      {result.connector && <div><h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-1">Service</h4><p className="text-sm text-foreground">{result.connector}</p></div>}
 
       {result.output_preview && isPassed && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Response Preview</h4>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Response Preview</h4>
             <InlineCopyButton text={result.output_preview} />
           </div>
           <div className="rounded-card bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
@@ -426,7 +426,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       {!isPassed && !isSkipped && result.error && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Error Detail</h4>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Error Detail</h4>
             <InlineCopyButton text={result.error} />
           </div>
           <div className="rounded-card bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
@@ -446,7 +446,7 @@ function InlineCopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
   return (
-    <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-secondary/30 transition-colors">
+    <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-muted-foreground/70 hover:bg-secondary/30 transition-colors">
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
@@ -463,14 +463,14 @@ function FormattedPreview({ text }: { text: string }) {
         {formatted.split('\n').map((line, i) => {
           const keyMatch = line.match(/^(\s*)"([^"]+)":/);
           if (keyMatch) {
-            return <div key={i}><span className="text-muted-foreground/30">{keyMatch[1]}</span><span className="text-primary/70">&quot;{keyMatch[2]}&quot;</span><span className="text-muted-foreground/40">:</span><span className="text-emerald-400/60">{line.slice(keyMatch[0].length)}</span></div>;
+            return <div key={i}><span className="text-foreground">{keyMatch[1]}</span><span className="text-primary/70">&quot;{keyMatch[2]}&quot;</span><span className="text-foreground">:</span><span className="text-emerald-400/60">{line.slice(keyMatch[0].length)}</span></div>;
           }
-          return <div key={i} className="text-muted-foreground/50">{line}</div>;
+          return <div key={i} className="text-foreground">{line}</div>;
         })}
       </pre>
     );
   } catch {
-    return <span className="text-muted-foreground/50 whitespace-pre-wrap">{truncated}</span>;
+    return <span className="text-foreground whitespace-pre-wrap">{truncated}</span>;
   }
 }
 

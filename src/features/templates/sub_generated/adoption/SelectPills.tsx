@@ -127,7 +127,7 @@ export function SelectPills({
             className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
               isAllSelected
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+                : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06] hover:border-white/[0.1]'
             }`}
           >
             {t.templates.adopt_modal.all_option}
@@ -146,7 +146,7 @@ export function SelectPills({
               className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
                 selected
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                  : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+                  : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06] hover:border-white/[0.1]'
               }`}
               title={opt.sublabel ?? undefined}
             >
@@ -179,7 +179,7 @@ export function SelectPills({
             className={`px-3 py-1.5 text-sm rounded-card border transition-all ${
               showCustomInput
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+                : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06] hover:border-white/[0.1]'
             }`}
           >
             {multi ? t.templates.adopt_modal.custom_prefix : t.templates.adopt_modal.custom_plain}
@@ -207,7 +207,7 @@ export function SelectPills({
               if (!multi) commitCustom();
             }}
             placeholder={t.templates.adopt_modal.type_custom_value}
-            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-card border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-card border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
           {multi && (
             <button

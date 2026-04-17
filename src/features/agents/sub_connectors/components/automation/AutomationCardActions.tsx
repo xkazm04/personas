@@ -32,7 +32,7 @@ export function AutomationCardActions({
     <div className="relative">
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex items-center justify-center w-7 h-7 rounded-card text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+        className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
       >
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
@@ -43,7 +43,7 @@ export function AutomationCardActions({
           >
             <button
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
             >
               <Pencil className="w-3 h-3" /> {t.common.edit}
             </button>
@@ -51,7 +51,7 @@ export function AutomationCardActions({
             {automation.deploymentStatus === 'active' && (
               <button
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
               >
                 <Pause className="w-3 h-3" /> {t.agents.connectors.auto_pause}
               </button>
@@ -60,7 +60,7 @@ export function AutomationCardActions({
             {(automation.deploymentStatus === 'paused' || automation.deploymentStatus === 'draft') && (
               <button
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
               >
                 <Play className="w-3 h-3" /> {t.agents.connectors.auto_activate}
               </button>

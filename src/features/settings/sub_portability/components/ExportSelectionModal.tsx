@@ -145,11 +145,11 @@ function CategorySection({
           </div>
           <div className="flex-1 text-left min-w-0">
             <div className="text-sm font-semibold text-foreground/90">{config.label}</div>
-            <div className="text-xs text-muted-foreground/60">
+            <div className="text-xs text-foreground">
               {count} of {config.items.length} selected
             </div>
           </div>
-          <div className="text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors">
+          <div className="text-foreground group-hover:text-muted-foreground/60 transition-colors">
             <ChevronRight
               className={`w-4 h-4 transition-transform duration-250 ease-out ${
                 expanded ? 'rotate-90' : 'rotate-0'
@@ -185,7 +185,7 @@ function CategorySection({
                 <div className="min-w-0">
                   <div className="text-sm text-foreground/85 truncate">{item.name}</div>
                   {item.description && (
-                    <div className="text-xs text-muted-foreground/50 truncate">
+                    <div className="text-xs text-foreground truncate">
                       {item.description}
                     </div>
                   )}
@@ -360,7 +360,7 @@ export function ExportSelectionModal({
           <h2 id="export-selection-title" className="text-lg font-semibold text-foreground/90">
             {s.export_title}
           </h2>
-          <p className="text-sm text-muted-foreground/60 mt-0.5">
+          <p className="text-sm text-foreground mt-0.5">
             {s.export_subtitle}
           </p>
         </div>
@@ -374,7 +374,7 @@ export function ExportSelectionModal({
       {/* Body */}
       <div className="px-6 py-5 overflow-y-auto max-h-[60vh] space-y-5">
         {loading ? (
-          <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground/60">
+          <div className="flex items-center justify-center py-12 gap-3 text-foreground">
             <LoadingSpinner />
             <span className="text-sm">{s.loading_data}</span>
           </div>
@@ -387,10 +387,10 @@ export function ExportSelectionModal({
                 indeterminate={someGlobalSelected && !allGlobalSelected}
                 onChange={toggleGlobalAll}
               />
-              <span className="text-sm font-medium text-foreground/80">
+              <span className="text-sm font-medium text-foreground">
                 {allGlobalSelected ? s.deselect_all : s.select_all}
               </span>
-              <span className="text-xs text-muted-foreground/50 ml-auto">
+              <span className="text-xs text-foreground ml-auto">
                 {tx(s.items_selected, { selected: totalSelected, total: totalItems })}
               </span>
             </div>
@@ -410,10 +410,10 @@ export function ExportSelectionModal({
 
             {/* Passphrase for credential encryption */}
             <div className="rounded-modal border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <KeyRound className="w-4 h-4 text-amber-400/70" />
                 {s.encrypt_passphrase}
-                <span className="text-xs font-normal text-muted-foreground/50 ml-1">{s.optional}</span>
+                <span className="text-xs font-normal text-foreground ml-1">{s.optional}</span>
               </label>
               <input
                 type="password"
@@ -421,7 +421,7 @@ export function ExportSelectionModal({
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
                 className={`px-3 py-2 rounded-card border bg-secondary/20 text-sm
-                  text-foreground/90 placeholder:text-muted-foreground/40 outline-none w-full
+                  text-foreground/90 placeholder:text-foreground outline-none w-full
                   ${!passphraseValid
                     ? 'border-red-500/30 focus-visible:border-red-500/50'
                     : 'border-primary/10 focus-visible:border-amber-500/30'
@@ -430,7 +430,7 @@ export function ExportSelectionModal({
               {!passphraseValid && (
                 <p className="text-xs text-red-400/80">{s.passphrase_too_short}</p>
               )}
-              <p className="text-xs text-muted-foreground/50">
+              <p className="text-xs text-foreground">
                 {s.passphrase_note}
               </p>
             </div>
@@ -438,7 +438,7 @@ export function ExportSelectionModal({
             {/* Auto-included note */}
             <div className="flex items-start gap-2.5 px-2 py-3 rounded-card bg-blue-500/5 border border-blue-500/10">
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-muted-foreground/60 leading-relaxed">
+              <p className="text-xs text-foreground leading-relaxed">
                 {s.auto_included_note}{!exportPassphrase ? s.no_passphrase_note : ''}
               </p>
             </div>
@@ -451,7 +451,7 @@ export function ExportSelectionModal({
         <button
           onClick={onClose}
           disabled={exporting}
-          className="px-4 py-2.5 rounded-modal text-sm font-medium text-muted-foreground/70
+          className="px-4 py-2.5 rounded-modal text-sm font-medium text-foreground
             hover:text-foreground/80 transition-colors disabled:opacity-50"
         >
           {s.cancel}

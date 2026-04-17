@@ -91,7 +91,7 @@ export function TimelineScrubber({
           style={{ left: `calc(${pct}% - 7px)` }}
         />
       </div>
-      <div className="flex justify-between typo-code text-muted-foreground/50 tabular-nums">
+      <div className="flex justify-between typo-code text-foreground tabular-nums">
         <span>{formatMs(currentMs)}</span>
         <span>{formatMs(totalMs)}</span>
       </div>
@@ -120,9 +120,9 @@ export function ReplayTerminalPanel({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Terminal className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">{e.output_panel}</span>
-        <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
+        <Terminal className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-heading text-foreground">{e.output_panel}</span>
+        <span className="ml-auto typo-body tabular-nums text-foreground">
           {tx(e.lines_count, { visible: visibleLines.length, total: totalLines })}
         </span>
       </div>
@@ -140,7 +140,7 @@ export function ReplayTerminalPanel({
           );
         })}
         {visibleLines.length === 0 && (
-          <div className="text-muted-foreground/60 italic">{e.scrub_forward}</div>
+          <div className="text-foreground italic">{e.scrub_forward}</div>
         )}
       </div>
     </div>

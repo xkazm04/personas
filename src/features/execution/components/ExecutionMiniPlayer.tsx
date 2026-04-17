@@ -59,11 +59,11 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
     return (
       <div className="px-3 py-3 space-y-2">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-sm text-foreground/80">
+          <span className="text-sm text-foreground">
             {error ? t.execution.something_went_wrong : stageProgress.label}
           </span>
           {!error && (
-            <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+            <span className="text-xs text-foreground font-mono tabular-nums">
               {Math.round(stageProgress.fraction * 100)}%
             </span>
           )}
@@ -91,7 +91,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
         <span className={`text-sm font-medium ${error ? 'text-red-400' : 'text-emerald-400'}`}>
           {error ? t.execution.failed : t.execution.complete}
         </span>
-        <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+        <span className="text-xs text-foreground font-mono tabular-nums">
           {formatElapsed(elapsed)}
         </span>
       </div>
@@ -101,7 +101,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
       )}
       {resultText && !executionSummary && (
         <div className="rounded-card bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
-          <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">
+          <p className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
             {resultText}
           </p>
         </div>
@@ -109,7 +109,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
       {executionOutput.length > 0 && (
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-foreground hover:text-foreground/80 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? t.common.copied : t.execution.copy_full_output}
@@ -248,14 +248,14 @@ export default function ExecutionMiniPlayer() {
           className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
         >
-          <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+          <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
           <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground/80 truncate">{personaName}</span>
+            <span className="text-sm font-medium text-foreground truncate">{personaName}</span>
           </div>
           {isExecuting && (
-            <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground/80">
+            <div className="flex items-center gap-1 text-sm font-mono text-foreground">
               <Timer className="w-3 h-3" />
               {formatElapsed(elapsed, 'clock')}
             </div>
@@ -297,7 +297,7 @@ export default function ExecutionMiniPlayer() {
         {/* Background executions bar */}
         {backgroundExecutions.length > 0 && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mr-1">{t.execution.background}</span>
+            <span className="text-[10px] uppercase tracking-wider text-foreground mr-1">{t.execution.background}</span>
             {backgroundExecutions.map((bg) => (
               <Tooltip key={bg.executionId} content={`${bg.personaName} — ${bg.status}`}>
                 <div className="relative w-5 h-5 rounded-input flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
@@ -328,10 +328,10 @@ export default function ExecutionMiniPlayer() {
         {/* Full mode: Pipeline stage dots */}
         {!isSimple && (
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">{t.execution.pipeline}</span>
+          <span className="text-sm text-foreground uppercase tracking-wider">{t.execution.pipeline}</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
-            <span className="ml-auto text-sm font-mono text-muted-foreground/80">
+            <span className="ml-auto text-sm font-mono text-foreground">
               {executionOutput.length} {t.execution.lines}
             </span>
           )}
@@ -341,7 +341,7 @@ export default function ExecutionMiniPlayer() {
         {/* Full mode: Collapsed single last line */}
         {!isSimple && !miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
-            <div className="font-mono text-sm text-muted-foreground/80 truncate flex items-center gap-1.5">
+            <div className="font-mono text-sm text-foreground truncate flex items-center gap-1.5">
               {isExecuting && (
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
               )}
@@ -359,7 +359,7 @@ export default function ExecutionMiniPlayer() {
             className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             {lastLines.length === 0 && (
-              <div className="text-muted-foreground/80 flex items-center gap-2 py-2">
+              <div className="text-foreground flex items-center gap-2 py-2">
                 <Terminal className="w-3.5 h-3.5" />
                 {isExecuting ? t.execution.waiting_for_output : t.execution.no_output}
               </div>

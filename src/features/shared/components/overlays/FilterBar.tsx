@@ -68,7 +68,7 @@ export function FilterBar<T extends string = string>({
             className={`relative px-3 py-1.5 rounded-xl typo-heading transition-all border flex items-center gap-1.5 ${
               isActive
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/80 border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-foreground border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {/* layoutId animated active indicator */}

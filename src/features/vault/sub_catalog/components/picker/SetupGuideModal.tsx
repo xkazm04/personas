@@ -97,14 +97,14 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
         <div className="flex-1">
           <h3 id="setup-guide-title" className="font-semibold text-foreground">How to get {connector.label} {authLabel}</h3>
           {summary && (
-            <p className="text-sm text-muted-foreground/70 mt-0.5">{summary}</p>
+            <p className="text-sm text-foreground mt-0.5">{summary}</p>
           )}
         </div>
         <button
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors"
         >
-          <X className="w-4 h-4 text-muted-foreground/60" />
+          <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
@@ -126,7 +126,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground/70">
+          <p className="text-sm text-foreground">
             No setup guide available for this connector. Visit the documentation link below for instructions.
           </p>
         )}
@@ -134,10 +134,10 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
         {/* Required fields hint */}
         {connector.fields.length > 0 && (
           <div className="pt-2 border-t border-primary/8">
-            <p className="text-sm text-muted-foreground/50 mb-2">{t.vault.picker_section.required_fields}</p>
+            <p className="text-sm text-foreground mb-2">{t.vault.picker_section.required_fields}</p>
             <div className="flex flex-wrap gap-1.5">
               {connector.fields.filter((f) => f.required).map((f) => (
-                <span key={f.key} className="text-sm px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
+                <span key={f.key} className="text-sm px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 text-foreground font-mono">
                   {f.label}
                 </span>
               ))}
@@ -169,7 +169,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
                 <p data-testid="cli-capture-error" className="text-xs text-destructive/90 max-w-xs">{cliError}</p>
               )}
               {!cliError && !cliBusy && (
-                <p data-testid="cli-capture-hint" className="text-xs text-muted-foreground/60 max-w-xs">
+                <p data-testid="cli-capture-hint" className="text-xs text-foreground max-w-xs">
                   {t.vault.cli_capture.hint}
                 </p>
               )}

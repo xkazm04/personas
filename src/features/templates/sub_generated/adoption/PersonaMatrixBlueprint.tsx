@@ -88,7 +88,7 @@ function phaseIcon(phase: BuildPhase | undefined) {
     case 'testing':
       return <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />;
     default:
-      return <Terminal className="w-4 h-4 text-foreground/50" />;
+      return <Terminal className="w-4 h-4 text-foreground" />;
   }
 }
 
@@ -140,10 +140,10 @@ function BlueprintCell({ dim, index, items, status }: {
 
         {/* Label — monospace, full contrast */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="font-mono text-[10px] text-foreground/40 tabular-nums">
+          <span className="font-mono text-[10px] text-foreground tabular-nums">
             {String(index + 1).padStart(2, '0')}
           </span>
-          <span className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-foreground/70">
+          <span className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-foreground">
             {CELL_LABELS[dim.key]}
           </span>
         </div>
@@ -158,7 +158,7 @@ function BlueprintCell({ dim, index, items, status }: {
           <div className="space-y-1">
             {items.map((item, i) => (
               <div key={i} className="flex items-start gap-2 font-mono text-md leading-snug">
-                <span className="text-foreground/30 mt-px flex-shrink-0">{'\u203A'}</span>
+                <span className="text-foreground mt-px flex-shrink-0">{'\u203A'}</span>
                 <span className="text-foreground/90">{item}</span>
               </div>
             ))}
@@ -168,7 +168,7 @@ function BlueprintCell({ dim, index, items, status }: {
         {/* Status circuit dot */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-          <span className="font-mono text-[9px] uppercase tracking-wider text-foreground/40">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-foreground">
             {statusLabel}
           </span>
         </div>
@@ -192,7 +192,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         {phaseIcon(buildPhase)}
-        <span className="font-mono text-xs text-foreground/50">
+        <span className="font-mono text-xs text-foreground">
           COMMAND CENTER // BUILD v1.0
         </span>
       </div>
@@ -210,12 +210,12 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       {/* Activity */}
       <div className="flex-1 flex flex-col justify-center">
         {buildActivity && (
-          <div className="font-mono text-[11px] text-foreground/80 mb-4 leading-relaxed">
+          <div className="font-mono text-[11px] text-foreground mb-4 leading-relaxed">
             <span className="text-cyan-400">&gt;</span> {buildActivity}
           </div>
         )}
         {isRunning && (
-          <div className="flex items-center gap-2 font-mono text-[11px] text-foreground/50 mb-4">
+          <div className="flex items-center gap-2 font-mono text-[11px] text-foreground mb-4">
             <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
             <span>Processing...</span>
           </div>
@@ -245,7 +245,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
           </button>
         )}
         {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
-          <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono text-xs text-foreground/70 cursor-pointer hover:bg-primary/10 transition-colors">
+          <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono text-xs text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
             <Eye className="w-3.5 h-3.5" /> VIEW AGENT
           </button>
         )}

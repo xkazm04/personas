@@ -47,7 +47,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           <h3 className="text-base font-semibold text-foreground">
             {isGuided ? 'Guided Setup' : 'Auto-Setup'}: {designResult.connector.label}
           </h3>
-          <p className="text-sm text-muted-foreground/80 mt-1">
+          <p className="text-sm text-foreground mt-1">
             {isGuided
               ? t.vault.auto_cred.guided_consent_body
               : t.vault.auto_cred.auto_consent_body
@@ -83,10 +83,10 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
         <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
-          <p className="text-sm font-medium text-muted-foreground/60 mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
+          <p className="text-sm font-medium text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
-            className="[&_p]:text-sm [&_p]:text-muted-foreground/80 [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-muted-foreground/80 [&_code]:text-sm"
+            className="[&_p]:text-sm [&_p]:text-foreground [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-foreground [&_code]:text-sm"
           />
         </div>
       )}
@@ -94,7 +94,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Pre-login tip */}
       <div className="flex items-start gap-2.5 p-3 rounded-card border border-blue-500/20 bg-blue-500/5">
         <LogIn className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-        <div className="text-sm text-muted-foreground/80">
+        <div className="text-sm text-foreground">
           <span className="font-medium text-blue-400/90">{t.vault.auto_cred.log_in_first}</span>{' '}
           Make sure you are already registered and logged in to {designResult.connector.label} in your browser before starting.
           This allows the automation to access your account settings directly.
@@ -104,7 +104,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Security notice */}
       <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
         <Shield className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-        <div className="text-sm text-muted-foreground/80">
+        <div className="text-sm text-foreground">
           <span className="font-medium text-amber-400/90">{t.vault.auto_cred.your_consent}</span>{' '}
           {isGuided
             ? t.vault.auto_cred.guided_consent_hint
@@ -128,7 +128,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>
@@ -161,7 +161,7 @@ function Step({ number, text, guided = false }: { number: number; text: string; 
       }`}>
         {number}
       </span>
-      <span className="text-sm text-foreground/80">{text}</span>
+      <span className="text-sm text-foreground">{text}</span>
     </div>
   );
 }

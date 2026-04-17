@@ -26,7 +26,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
       key: 'instruction',
       label: t.agents.lab.instruction_column,
       render: (run) => (
-        <span className="text-sm text-foreground/80 truncate block max-w-[350px]">{run.userInstruction}</span>
+        <span className="text-sm text-foreground truncate block max-w-[350px]">{run.userInstruction}</span>
       ),
     },
     {
@@ -36,7 +36,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
       render: (run) =>
         run.draftAccepted
           ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-xs font-medium bg-emerald-500/15 text-emerald-400"><Check className="w-2.5 h-2.5" />{t.agents.lab.accepted_label}</span>
-          : <span className="text-xs text-muted-foreground/50">{t.agents.lab.pending_label}</span>,
+          : <span className="text-xs text-foreground">{t.agents.lab.pending_label}</span>,
     },
   ], [t]);
 
@@ -61,7 +61,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
           run={activeRun}
           modeLabel={t.agents.lab.matrix_mode_label}
           headerChips={
-            <span className="text-xs text-muted-foreground/60 truncate max-w-[300px]">{activeRun.userInstruction}</span>
+            <span className="text-xs text-foreground truncate max-w-[300px]">{activeRun.userInstruction}</span>
           }
           footerActions={
             activeRun.status === 'completed' ? (

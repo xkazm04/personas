@@ -200,11 +200,11 @@ export function ModelSelector({
                     )}
                     {/* Name */}
                     <span className="text-sm font-medium text-foreground/90 flex-1 truncate">
-                      {model.value === 'custom' && <Settings2 className="w-3 h-3 inline mr-1 text-muted-foreground/80" />}
+                      {model.value === 'custom' && <Settings2 className="w-3 h-3 inline mr-1 text-foreground" />}
                       {model.name}
                     </span>
                     {/* Cost */}
-                    <span className={`text-sm font-mono flex-shrink-0 ${model.cost === 'Free' ? 'text-emerald-400/80' : 'text-muted-foreground/70'}`}>
+                    <span className={`text-sm font-mono flex-shrink-0 ${model.cost === 'Free' ? 'text-emerald-400/80' : 'text-foreground'}`}>
                       {model.cost}
                     </span>
                   </button>

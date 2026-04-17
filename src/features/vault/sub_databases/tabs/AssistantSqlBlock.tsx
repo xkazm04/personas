@@ -27,18 +27,18 @@ export function AssistantSqlBlock({
   return (
     <div className="space-y-3">
       {msg.explanation && (
-        <p className="text-sm text-foreground/70">{msg.explanation}</p>
+        <p className="text-sm text-foreground">{msg.explanation}</p>
       )}
 
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
-          <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wide">
+          <span className="text-xs font-medium text-foreground uppercase tracking-wide">
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onCopySql(msg.sql!, msg.id)}
-              className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+              className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70 transition-colors"
               title={db.copy_sql}
             >
               {copiedSql === msg.id ? (
@@ -70,7 +70,7 @@ export function AssistantSqlBlock({
       )}
 
       {msg.status === 'executing' && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+        <div className="flex items-center gap-2 text-sm text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <span>{db.executing}</span>
         </div>

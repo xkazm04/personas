@@ -72,22 +72,22 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     <div className="space-y-4">
       {/* Tab Switcher */}
       <div className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit">
-        <button onClick={() => setActiveTab('detail')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'detail' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('detail')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'detail' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-foreground hover:text-foreground/95 border border-transparent'}`}>
           <ListTree className="w-3.5 h-3.5" />{e.tab_detail}
         </button>
         {hasToolSteps && (
-          <button onClick={() => setActiveTab('inspector')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'inspector' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+          <button onClick={() => setActiveTab('inspector')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'inspector' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-foreground hover:text-foreground/95 border border-transparent'}`}>
             <Search className="w-3.5 h-3.5" />{e.tab_inspector}
           </button>
         )}
-        <button onClick={() => setActiveTab('trace')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'trace' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('trace')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'trace' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-foreground hover:text-foreground/95 border border-transparent'}`}>
           <Activity className="w-3.5 h-3.5" />{e.tab_trace}
         </button>
-        <button onClick={() => setActiveTab('pipeline')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'pipeline' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('pipeline')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'pipeline' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-foreground hover:text-foreground/95 border border-transparent'}`}>
           <Zap className="w-3.5 h-3.5" />{e.tab_pipeline}
         </button>
         {isTerminalState(execution.status) && (
-          <button onClick={() => setActiveTab('replay')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'replay' ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+          <button onClick={() => setActiveTab('replay')} className={`flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${activeTab === 'replay' ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25' : 'text-foreground hover:text-foreground/95 border border-transparent'}`}>
             <Play className="w-3.5 h-3.5" />{e.tab_replay}
           </button>
         )}
@@ -107,7 +107,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           {/* Status Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 3xl:gap-5 4xl:gap-6">
             <div className="space-y-1.5">
-              <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">{e.col_status}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider">{e.col_status}</div>
               <div className="flex items-center gap-2">
                 <span className={`inline-block px-2 py-0.5 rounded-card typo-heading ${badgeClass(getStatusEntry(execution.status))}`}>{getStatusEntry(execution.status).label}</span>
                 {execution.retry_count > 0 && (
@@ -118,15 +118,15 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1"><Clock className="w-3 h-3" />{e.col_duration}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1"><Clock className="w-3 h-3" />{e.col_duration}</div>
               <div className="typo-code text-foreground">{formatDuration(execution.duration_ms)}</div>
             </div>
             <div className="space-y-1.5">
-              <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" />{e.col_started}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" />{e.col_started}</div>
               <div className="typo-body text-foreground">{formatTimestamp(execution.started_at)}</div>
             </div>
             <div className="space-y-1.5">
-              <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" />{e.completed}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" />{e.completed}</div>
               <div className="typo-body text-foreground">{formatTimestamp(execution.completed_at)}</div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           {/* Masked / Raw toggle */}
           {(execution.error_message || hasInputData || hasOutputData) && (
             <div className="flex justify-end">
-              <button onClick={() => setShowRaw(!showRaw)} className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'}`} title={showRaw ? e.sensitive_visible : e.sensitive_masked}>
+              <button onClick={() => setShowRaw(!showRaw)} className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-secondary/30 text-foreground border-primary/10 hover:text-muted-foreground/80'}`} title={showRaw ? e.sensitive_visible : e.sensitive_masked}>
                 <Shield className="w-3 h-3" />{showRaw ? e.raw : e.masked}
               </button>
             </div>

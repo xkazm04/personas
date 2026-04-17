@@ -142,7 +142,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={() => onSeek(0)}
           aria-label={t.overview.realtime_page.reset_to_start}
-          className="flex items-center justify-center w-7 h-7 rounded-card bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
+          className="flex items-center justify-center w-7 h-7 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
           title={t.overview.realtime_page.reset_to_start}
         >
           <SkipBack className="w-3.5 h-3.5" />
@@ -162,9 +162,9 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <div className="w-px h-5 bg-primary/10" />
 
-        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/60">
-          <span className="text-foreground/70">{formatDate(cursorTime)}</span>
-          <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+        <div className="flex items-center gap-2 text-sm font-mono text-foreground">
+          <span className="text-foreground">{formatDate(cursorTime)}</span>
+          <ChevronRight className="w-3 h-3 text-foreground" />
           <span>{formatDate(rangeEnd)}</span>
         </div>
 
@@ -172,13 +172,13 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-primary/5 border border-primary/8">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" />
-          <span className="text-sm font-bold text-foreground/60">{emittedCount}</span>
-          <span className="text-sm text-muted-foreground/40">/</span>
-          <span className="text-sm text-muted-foreground/50">{totalEventCount}</span>
-          <span className="text-sm text-muted-foreground/60 ml-0.5">events</span>
+          <span className="text-sm font-bold text-foreground">{emittedCount}</span>
+          <span className="text-sm text-foreground">/</span>
+          <span className="text-sm text-foreground">{totalEventCount}</span>
+          <span className="text-sm text-foreground ml-0.5">events</span>
         </div>
 
-        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-foreground font-bold tracking-wider">
           <History className="w-3 h-3" />
           {range === '1d' ? '24H' : '7D'}
         </div>

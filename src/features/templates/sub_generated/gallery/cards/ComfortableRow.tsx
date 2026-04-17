@@ -75,16 +75,16 @@ export function ComfortableRow({
       >
         <div className="w-14 px-6 py-4 flex-shrink-0">
           {isExpanded ? (
-            <ChevronDown className="w-4.5 h-4.5 text-muted-foreground/80" />
+            <ChevronDown className="w-4.5 h-4.5 text-foreground" />
           ) : (
-            <ChevronRight className="w-4.5 h-4.5 text-muted-foreground/80" />
+            <ChevronRight className="w-4.5 h-4.5 text-foreground" />
           )}
         </div>
         <div className="flex-1 px-4 py-4 min-w-0">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/80">
+                <span className="text-base font-semibold text-foreground">
                   {highlightMatch(review.test_case_name, searchQuery)}
                 </span>
                 {isAiResult && (
@@ -113,7 +113,7 @@ export function ComfortableRow({
               </div>
               {/* Second line: instruction (no truncation) */}
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-sm text-muted-foreground/60 flex-1 min-w-0 line-clamp-3">
+                <span className="text-sm text-foreground flex-1 min-w-0 line-clamp-3">
                   {review.instruction}
                 </span>
               </div>
@@ -129,7 +129,7 @@ export function ComfortableRow({
                 {review.adoption_count}
               </span>
             ) : (
-              <span className="text-sm text-muted-foreground/60">--</span>
+              <span className="text-sm text-foreground">--</span>
             )}
           </div>
         </div>

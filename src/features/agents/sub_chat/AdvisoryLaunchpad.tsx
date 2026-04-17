@@ -105,10 +105,10 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
       {/* Card grid */}
       <div className="flex-1 flex flex-col justify-center px-4 py-4">
         <div className="text-center mb-5">
-          <p className="text-xl font-semibold text-foreground/80" data-testid="chat-launchpad-title">
+          <p className="text-xl font-semibold text-foreground" data-testid="chat-launchpad-title">
             <span className="text-primary">{personaName}</span>
           </p>
-          <p className="text-sm text-muted-foreground/40 mt-1">{t.agents.advisory.how_can_improve}</p>
+          <p className="text-sm text-foreground mt-1">{t.agents.advisory.how_can_improve}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
           {ADVISORY_PRESETS.map((preset) => {
@@ -124,8 +124,8 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
                 <div className={`w-10 h-10 rounded-modal flex items-center justify-center ${c.text} transition-transform duration-200 group-hover:scale-110`}>
                   {preset.icon}
                 </div>
-                <span className="text-sm font-semibold text-foreground/80 leading-tight">{preset.label}</span>
-                <span className="text-xs text-muted-foreground/45 leading-snug line-clamp-2">{preset.description}</span>
+                <span className="text-sm font-semibold text-foreground leading-tight">{preset.label}</span>
+                <span className="text-xs text-foreground leading-snug line-clamp-2">{preset.description}</span>
               </button>
             );
           })}
@@ -139,13 +139,13 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`${COLOR_MAP[selectedPreset.color]?.text ?? 'text-primary'}`}>{selectedPreset.icon}</span>
-                <span className="text-sm font-medium text-foreground/80">{selectedPreset.label}</span>
+                <span className="text-sm font-medium text-foreground">{selectedPreset.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setSelectedPreset(null)}
                   data-testid="chat-preset-cancel"
-                  className="px-2.5 py-1 text-sm text-muted-foreground/60 hover:text-muted-foreground/80 rounded-card hover:bg-secondary/50 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 text-sm text-foreground hover:text-muted-foreground/80 rounded-card hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
                   {t.common.cancel}
                 </button>
@@ -160,7 +160,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
             </div>
             {(selectedPreset.options ?? []).map((opt) => (
               <div key={opt.key} className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground/60">{opt.label}</label>
+                <label className="text-sm font-medium text-foreground">{opt.label}</label>
                 <input
                   type="text"
                   data-testid={`chat-preset-option-${opt.key}`}
@@ -168,7 +168,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
                   onChange={(e) => setOptionValues((p) => ({ ...p, [opt.key]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleOptionSend(); }}
                   placeholder={opt.placeholder}
-                  className="w-full px-3 py-2 text-sm rounded-card border border-primary/15 bg-muted/30 text-foreground placeholder:text-muted-foreground/40 focus-ring"
+                  className="w-full px-3 py-2 text-sm rounded-card border border-primary/15 bg-muted/30 text-foreground placeholder:text-foreground focus-ring"
                   autoFocus
                 />
               </div>

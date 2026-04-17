@@ -99,7 +99,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             </div>
             <div>
               <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 {negotiator.phase === 'idle' && (authDetectLoading ? t.vault.negotiator_extra.checking_auth : t.vault.negotiator_extra.auto_provisioning)}
                 {negotiator.phase === 'planning' && t.vault.negotiator_extra.generating_plan}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
@@ -110,7 +110,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors duration-snap"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />
           </button>

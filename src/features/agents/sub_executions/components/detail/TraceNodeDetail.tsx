@@ -24,7 +24,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 3xl:gap-4 4xl:gap-5">
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           {e.duration}
         </div>
@@ -34,7 +34,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
           {e.cost}
         </div>
@@ -44,7 +44,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
           {e.spans}
         </div>
@@ -54,7 +54,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
       </div>
 
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
           {e.errors}
         </div>
@@ -76,7 +76,7 @@ export function TraceErrors({ trace }: { trace: UnifiedTrace }) {
 
   return (
     <div className="space-y-2">
-      <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+      <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
         <AlertCircle className="w-2.5 h-2.5 text-red-400" />
         {e.errors}
       </div>
@@ -88,7 +88,7 @@ export function TraceErrors({ trace }: { trace: UnifiedTrace }) {
               <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border}`}>
                 {config.label}
               </span>
-              <span className="typo-code text-foreground/80">{span.name}</span>
+              <span className="typo-code text-foreground">{span.name}</span>
             </div>
             <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
               {span.error}

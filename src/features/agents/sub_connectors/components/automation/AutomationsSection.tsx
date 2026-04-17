@@ -115,7 +115,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 </span>
               )}
               {!expanded && preview && (
-                <span className="text-sm font-normal text-muted-foreground/50 truncate max-w-48">
+                <span className="text-sm font-normal text-foreground truncate max-w-48">
                   {preview}
                 </span>
               )}
@@ -124,7 +124,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           trailing={
             <button
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm font-medium rounded-card border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}
             >
               <Plus className="w-3 h-3" />
               {t.common.add}
@@ -162,7 +162,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               {automations.length === 0 && (
                 <button
                   onClick={onAdd}
-                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border text-sm text-muted-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border text-sm text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span>{t.agents.connectors.auto_add_from_platforms}</span>
@@ -187,7 +187,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               </div>
               <div>
                 <h3 id="delete-automation-dialog" className="text-sm font-semibold text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
-                <p className="text-sm text-muted-foreground/90 mt-1">
+                <p className="text-sm text-foreground mt-1">
                   {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
               </div>
@@ -198,7 +198,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
+                className="px-4 py-2 text-sm text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
               >
                 {t.common.cancel}
               </button>

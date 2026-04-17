@@ -27,7 +27,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
               {pipeline.status}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground/60">
+          <div className="flex items-center gap-2 mt-0.5 text-xs text-foreground">
             <span className="flex items-center gap-1">
               <GitBranch className="w-3 h-3" />
               {pipeline.ref}
@@ -45,7 +45,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
             )}
           </div>
         </div>
-        <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform ${isActive ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`w-4 h-4 text-foreground transition-transform ${isActive ? 'rotate-90' : ''}`} />
       </div>
     </button>
   );

@@ -38,7 +38,7 @@ function EventSourceNodeInner({ data, selected, id: _id }: NodeProps) {
 
       <div className="flex flex-col min-w-0">
         <span className="text-xs font-semibold text-foreground truncate">{d.label}</span>
-        <span className="text-[10px] text-muted-foreground truncate">{d.eventType}</span>
+        <span className="text-[10px] text-foreground truncate">{d.eventType}</span>
       </div>
 
       {count > 0 && (

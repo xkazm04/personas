@@ -38,10 +38,10 @@ export function DonePhase({
       </div>
       <div className="text-center">
         <h3 className="text-sm font-semibold text-foreground">{t.vault.design_phases.credential_created}</h3>
-        <p className="text-sm text-muted-foreground/90 mt-1">
+        <p className="text-sm text-foreground mt-1">
           {connectorLabel} credential has been securely saved.
           {refinementCount > 0 && (
-            <span className="text-muted-foreground/60"> (revision {refinementCount})</span>
+            <span className="text-foreground"> (revision {refinementCount})</span>
           )}
         </p>
       </div>
@@ -50,7 +50,7 @@ export function DonePhase({
           className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-violet-500/10 border border-violet-500/20 max-w-md"
         >
           <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
-          <p className="text-sm text-foreground/80">
+          <p className="text-sm text-foreground">
             <span className="text-violet-400 font-medium">{registeredConnectorName}</span>
             {' '}connector added to your catalog -- now available for other personas and template adoption.
           </p>
@@ -78,7 +78,7 @@ export function DonePhase({
       {/* Additive refinement input */}
       {onRefine && (
         <div className="w-full max-w-md mt-4 pt-4 border-t border-primary/10">
-          <p className="text-sm text-muted-foreground/70 text-center mb-2">
+          <p className="text-sm text-foreground text-center mb-2">
             Need to adjust scopes, add fields, or tweak the configuration?
           </p>
           <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function DonePhase({
                 }
               }}
               placeholder="e.g. add write scopes, add staging environment..."
-              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
             <button
               onClick={handleRefineSubmit}

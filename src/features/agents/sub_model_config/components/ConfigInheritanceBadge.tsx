@@ -13,7 +13,7 @@ const SOURCE_STYLES: Record<ConfigSource, { color: string; bg: string }> = {
   agent:     { color: 'text-violet-400',  bg: 'bg-violet-500/10' },
   workspace: { color: 'text-blue-400',    bg: 'bg-blue-500/10' },
   global:    { color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  default:   { color: 'text-muted-foreground/50', bg: 'bg-secondary/30' },
+  default:   { color: 'text-foreground', bg: 'bg-secondary/30' },
 };
 
 interface ConfigInheritanceBadgeProps {

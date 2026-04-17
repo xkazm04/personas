@@ -73,10 +73,10 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
     <div className="p-3 space-y-3" data-testid="ops-lab-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.lab}</h3>
+        <h3 className="typo-label text-foreground">{t.agents.ops.lab}</h3>
         <button
           onClick={fetchLabHistory}
-          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
+          className="p-1 rounded-input text-foreground hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
           title={t.common.refresh}
           aria-label={t.agents.ops_lab.refresh_lab}
         >
@@ -97,7 +97,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
               className={`flex flex-col items-center gap-1.5 p-2.5 rounded-card border border-primary/10 hover:border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] transition-all`}
             >
               <Icon className={`w-4 h-4 ${cfg.color}`} />
-              <span className="text-[11px] font-medium text-foreground/70">{cfg.label}</span>
+              <span className="text-[11px] font-medium text-foreground">{cfg.label}</span>
             </button>
           );
         })}
@@ -105,13 +105,13 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
 
       {/* Recent lab runs */}
       <div className="space-y-1.5">
-        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_lab.history}</h4>
+        <h4 className="text-[11px] text-foreground font-medium uppercase tracking-wider">{t.agents.ops_lab.history}</h4>
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : labRuns.length === 0 ? (
-          <p className="text-xs text-muted-foreground/40 text-center py-4">{t.agents.ops_lab.no_lab_runs}</p>
+          <p className="text-xs text-foreground text-center py-4">{t.agents.ops_lab.no_lab_runs}</p>
         ) : (
           labRuns.map((run, i) => {
             const modeCfg = MODE_CONFIG[run.mode] ?? MODE_CONFIG['matrix']!;
@@ -126,8 +126,8 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
               >
                 <ModeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${modeCfg.color}`} />
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-medium text-foreground/70">{modeCfg.label}</span>
-                  <span className="text-[11px] text-muted-foreground/40 ml-1.5">{time}</span>
+                  <span className="text-xs font-medium text-foreground">{modeCfg.label}</span>
+                  <span className="text-[11px] text-foreground ml-1.5">{time}</span>
                 </div>
                 <StatusIcon className={`w-3 h-3 flex-shrink-0 ${statusCfg.color} ${run.status === 'running' ? 'animate-spin' : ''}`} />
               </div>

@@ -26,7 +26,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           <div className="text-sm">
             <span className={`${INFO_STATUS.text} font-medium`}>{t.vault.design_phases.existing_connector}</span>
             <span className={INFO_STATUS.text}>{result.match_existing}</span>
-            <p className="text-foreground/70 text-sm mt-1">
+            <p className="text-foreground text-sm mt-1">
               Your credential will be linked to the existing connector definition.
             </p>
           </div>
@@ -39,10 +39,10 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.text}`} />
           <div className="text-sm">
             <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.new_connector}</span>
-            <span className="text-foreground/80">
+            <span className="text-foreground">
               -- no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
             </span>
-            <p className="text-foreground/70 text-sm mt-1">
+            <p className="text-foreground text-sm mt-1">
               When you save this credential, the AI-generated connector definition will be
               automatically registered in your connector catalog -- making it reusable for
               other personas and template adoption.
@@ -64,7 +64,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-foreground text-sm">{result.connector.label}</h4>
-          <p className="text-sm text-muted-foreground/80">{result.summary}</p>
+          <p className="text-sm text-foreground">{result.summary}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
@@ -89,7 +89,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
       {onRefine && (
         <button
           onClick={onRefine}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/90 hover:text-primary/70 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary/70 transition-colors"
         >
           <PenLine className="w-3 h-3" />
           Not quite right? Refine your request

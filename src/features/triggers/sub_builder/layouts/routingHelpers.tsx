@@ -45,7 +45,7 @@ export function PersonaChip({ persona, personaIdFallback, badge, onRemove }: Per
         display="framed"
         frameSize="md"
       />
-      <span className="text-sm text-foreground/80">
+      <span className="text-sm text-foreground">
         {persona?.name ?? personaIdFallback.slice(0, 8)}
       </span>
       {badge && (

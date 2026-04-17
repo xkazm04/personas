@@ -72,7 +72,7 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
       {showLog && (
           <div>
             {logLoading && (
-              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-muted-foreground/80">
+              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {t.agents.executions.loading_log}
               </div>

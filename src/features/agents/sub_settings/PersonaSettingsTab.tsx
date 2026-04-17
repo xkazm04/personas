@@ -44,7 +44,7 @@ export function PersonaSettingsTab({
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_name}</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t.agents.settings_status.label_name}</label>
             <input
               type="text"
               value={draft.name}
@@ -53,7 +53,7 @@ export function PersonaSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_description}</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
@@ -63,7 +63,7 @@ export function PersonaSettingsTab({
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-2">{t.agents.settings_status.label_icon}</label>
+              <label className="block text-sm font-medium text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
               <PopupIconSelector
                 value={draft.icon}
                 onChange={(icon) => patch({ icon })}
@@ -72,7 +72,7 @@ export function PersonaSettingsTab({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-2">{t.agents.settings_status.label_color}</label>
+              <label className="block text-sm font-medium text-foreground mb-2">{t.agents.settings_status.label_color}</label>
               <PopupColorPicker
                 value={draft.color}
                 onChange={(color) => patch({ color })}
@@ -92,7 +92,7 @@ export function PersonaSettingsTab({
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {t.agents.settings_status.max_concurrent}
                 <FieldHint
                   text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
@@ -110,7 +110,7 @@ export function PersonaSettingsTab({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground/80 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {t.agents.settings_status.timeout_sec}
                 <FieldHint
                   text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
@@ -134,7 +134,7 @@ export function PersonaSettingsTab({
           </div>
 
           <div className="flex items-center justify-between py-1">
-            <span className="text-sm font-medium text-foreground/80">{t.agents.settings_status.persona_enabled}</span>
+            <span className="text-sm font-medium text-foreground">{t.agents.settings_status.persona_enabled}</span>
             <AccessibleToggle
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
@@ -145,8 +145,8 @@ export function PersonaSettingsTab({
 
           <div className="flex items-center justify-between py-1">
             <div>
-              <span className="text-sm font-medium text-foreground/80">{t.agents.settings_status.sensitive_preview}</span>
-              <p className="text-sm text-muted-foreground/70">{t.agents.settings_status.sensitive_preview_desc}</p>
+              <span className="text-sm font-medium text-foreground">{t.agents.settings_status.sensitive_preview}</span>
+              <p className="text-sm text-foreground">{t.agents.settings_status.sensitive_preview_desc}</p>
             </div>
             <AccessibleToggle
               checked={draft.sensitive}
@@ -163,7 +163,7 @@ export function PersonaSettingsTab({
 
       {/* Save status + Danger */}
       <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+        <div className="flex items-center gap-2 text-sm text-foreground">
           {isSaving ? (
             <>
               <LoadingSpinner size="sm" className="text-primary/70" />
@@ -177,7 +177,7 @@ export function PersonaSettingsTab({
           ) : (
             <>
               <Check className="w-3.5 h-3.5 text-emerald-400/70" />
-              <span className="text-muted-foreground/60">{t.agents.settings_status.all_saved}</span>
+              <span className="text-foreground">{t.agents.settings_status.all_saved}</span>
             </>
           )}
         </div>
@@ -204,7 +204,7 @@ export function PersonaSettingsTab({
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-modal text-sm transition-colors hover:bg-secondary/70"
+              className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-modal text-sm transition-colors hover:bg-secondary/70"
             >
               {t.common.cancel}
             </button>

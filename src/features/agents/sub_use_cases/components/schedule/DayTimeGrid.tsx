@@ -30,7 +30,7 @@ export function DayTimeGrid({
       {/* Day selector */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{uc.days}</label>
+          <label className="text-sm font-medium text-foreground uppercase tracking-wider">{uc.days}</label>
           <div className="flex gap-1">
             <button
               type="button"
@@ -38,7 +38,7 @@ export function DayTimeGrid({
                 DAYS.forEach((d) => { if (!selectedDays.has(d.key)) onToggleDay(d.key); });
               }}
               className={`text-sm px-1.5 py-0.5 rounded transition-colors ${
-                allSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
+                allSelected ? 'text-amber-400 bg-amber-500/10' : 'text-foreground hover:text-foreground/70'
               }`}
             >
               {uc.all}
@@ -54,7 +54,7 @@ export function DayTimeGrid({
                 });
               }}
               className={`text-sm px-1.5 py-0.5 rounded transition-colors ${
-                weekdaysSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
+                weekdaysSelected ? 'text-amber-400 bg-amber-500/10' : 'text-foreground hover:text-foreground/70'
               }`}
             >
               {uc.weekdays}
@@ -72,7 +72,7 @@ export function DayTimeGrid({
                 className={`py-1.5 rounded-card text-sm font-medium transition-all border ${
                   active
                     ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                    : 'bg-secondary/20 text-muted-foreground/50 border-primary/10 hover:border-primary/20 hover:text-foreground/70'
+                    : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20 hover:text-foreground/70'
                 }`}
                 title={day.label}
               >
@@ -85,7 +85,7 @@ export function DayTimeGrid({
 
       {/* Time selector */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">{uc.time}</label>
+        <label className="text-sm font-medium text-foreground uppercase tracking-wider block mb-1.5">{uc.time}</label>
         <div className="flex items-center gap-2">
           {/* Hour picker */}
           <div className="relative flex-1">
@@ -100,10 +100,10 @@ export function DayTimeGrid({
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           </div>
 
-          <span className="text-muted-foreground/40 text-lg font-light">:</span>
+          <span className="text-foreground text-lg font-light">:</span>
 
           {/* Minute picker */}
           <div className="relative w-24">
@@ -118,14 +118,14 @@ export function DayTimeGrid({
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           </div>
         </div>
       </div>
 
       {/* Visual hour bar */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">
+        <label className="text-sm font-medium text-foreground uppercase tracking-wider block mb-1.5">
           {uc.hour_click}
         </label>
         <div className="flex gap-px">
@@ -145,7 +145,7 @@ export function DayTimeGrid({
             />
           ))}
         </div>
-        <div className="flex justify-between mt-0.5 text-sm text-muted-foreground/60 font-mono px-0.5">
+        <div className="flex justify-between mt-0.5 text-sm text-foreground font-mono px-0.5">
           <span>12a</span>
           <span>6a</span>
           <span>12p</span>

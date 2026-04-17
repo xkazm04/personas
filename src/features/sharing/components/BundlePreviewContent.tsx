@@ -40,7 +40,7 @@ export function BundlePreviewContent({
           )}
           <div>
             <div className="text-sm font-medium text-foreground">{preview.signer_display_name}</div>
-            <div className="text-[10px] text-muted-foreground font-mono">
+            <div className="text-[10px] text-foreground font-mono">
               {preview.signer_peer_id.slice(0, 8)}...{preview.signer_peer_id.slice(-8)}
             </div>
           </div>
@@ -120,7 +120,7 @@ export function BundlePreviewContent({
 
       {/* Resources list */}
       <div>
-        <div className="text-xs text-muted-foreground mb-1.5">
+        <div className="text-xs text-foreground mb-1.5">
           {preview.resources.length} {preview.resources.length !== 1 ? 'resources' : 'resource'} in bundle
         </div>
         <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
@@ -134,7 +134,7 @@ export function BundlePreviewContent({
       {hasConflicts && (
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
           <div className="text-xs text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={skipConflicts}
@@ -145,7 +145,7 @@ export function BundlePreviewContent({
           </label>
           {!skipConflicts && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{st.rename_prefix_label}</label>
+              <label className="text-xs text-foreground mb-1 block">{st.rename_prefix_label}</label>
               <input
                 value={renamePrefix}
                 onChange={(e) => setRenamePrefix(e.target.value)}
@@ -171,9 +171,9 @@ function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) 
     }`}>
       <div className="min-w-0 flex-1">
         <div className="text-sm text-foreground truncate">{resource.display_name}</div>
-        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+        <div className="text-[10px] text-foreground flex items-center gap-1.5">
           <span>{resource.resource_type}</span>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-foreground">·</span>
           <span>{resource.access_level}</span>
         </div>
       </div>

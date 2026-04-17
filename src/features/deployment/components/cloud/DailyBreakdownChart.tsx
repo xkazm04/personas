@@ -67,8 +67,8 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
       className="rounded-modal bg-secondary/20 border border-primary/10 px-3 pt-2 pb-1 relative"
     >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground/70">{dt.daily_executions}</span>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
+        <span className="text-[11px] font-medium text-foreground">{dt.daily_executions}</span>
+        <div className="flex items-center gap-3 text-[10px] text-foreground">
           <span className="flex items-center gap-1">
             <span className="inline-block w-2 h-2 rounded-interactive" style={{ background: 'var(--status-success)' }} />
             Runs
@@ -132,7 +132,7 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
                   y={CHART_H + LABEL_H - 2}
                   textAnchor="middle"
                   fill="currentColor"
-                  className="text-muted-foreground/40"
+                  className="text-foreground"
                   fontSize={sf(9)}
                 >
                   {formatShortDate(d.date)}
@@ -166,13 +166,13 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
           }}
         >
           <p className="text-foreground/90 font-medium">{data[hoverIdx]!.date}</p>
-          <p className="text-muted-foreground/70">
-            Runs: <span className="text-foreground/80">{data[hoverIdx]!.count}</span>
+          <p className="text-foreground">
+            Runs: <span className="text-foreground">{data[hoverIdx]!.count}</span>
           </p>
-          <p className="text-muted-foreground/70">
-            Cost: <span className="text-foreground/80">${data[hoverIdx]!.cost.toFixed(2)}</span>
+          <p className="text-foreground">
+            Cost: <span className="text-foreground">${data[hoverIdx]!.cost.toFixed(2)}</span>
           </p>
-          <p className="text-muted-foreground/70">
+          <p className="text-foreground">
             Success:{' '}
             <span style={{ color: successColor(data[hoverIdx]!.success_rate) }}>
               {data[hoverIdx]!.success_rate != null

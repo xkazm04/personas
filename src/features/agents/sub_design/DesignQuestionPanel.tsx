@@ -67,10 +67,10 @@ export function DesignQuestionPanel({
           <span className="text-sm font-semibold text-accent">{t.agents.design.clarification_needed}</span>
         </div>
 
-        <p className="text-sm text-foreground/80 leading-relaxed">{question.question}</p>
+        <p className="text-sm text-foreground leading-relaxed">{question.question}</p>
 
         {question.context && (
-          <p className="text-sm text-muted-foreground/90 italic border-l-2 border-accent/25 pl-3">
+          <p className="text-sm text-foreground italic border-l-2 border-accent/25 pl-3">
             {question.context}
           </p>
         )}
@@ -99,7 +99,7 @@ export function DesignQuestionPanel({
         {/* Divider */}
         <div className="flex items-center gap-3 pt-1">
           <div className="flex-1 h-px bg-primary/10" />
-          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">{t.agents.design.or_type_answer}</span>
+          <span className="text-sm text-foreground uppercase tracking-wider">{t.agents.design.or_type_answer}</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 
@@ -131,7 +131,7 @@ export function DesignQuestionPanel({
             disabled={!questionAnswer.trim()}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
               !questionAnswer.trim()
-                ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
+                ? 'bg-secondary/40 text-foreground cursor-not-allowed'
                 : 'bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25'
             }`}
           >
@@ -139,13 +139,13 @@ export function DesignQuestionPanel({
             Answer
           </button>
         </div>
-        <p className="text-sm text-muted-foreground">{t.agents.design.ctrl_enter_submit}</p>
+        <p className="text-sm text-foreground">{t.agents.design.ctrl_enter_submit}</p>
       </div>
 
       {/* Cancel */}
       <button
         onClick={onCancelAnalysis}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal text-sm font-medium text-foreground hover:text-foreground/95 transition-colors"
       >
         Cancel Design
       </button>

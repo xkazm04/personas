@@ -53,7 +53,7 @@ export function GitLabConnectionForm({
             </div>
             <div>
               <p className="text-sm font-medium text-foreground/90">{tx(t.gitlab.connected_as, { username })}</p>
-              <p className="text-sm text-muted-foreground/70">{baseUrl.replace(/^https?:\/\//, '')}</p>
+              <p className="text-sm text-foreground">{baseUrl.replace(/^https?:\/\//, '')}</p>
             </div>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function GitLabConnectionForm({
             </div>
 
             <div className="mt-3">
-              <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 mb-1.5">
+              <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-1.5">
                 <Globe className="w-3.5 h-3.5" />
                 {t.gitlab.instance_url}
               </label>
@@ -99,9 +99,9 @@ export function GitLabConnectionForm({
                 value={instanceUrl}
                 onChange={(e) => setInstanceUrl(e.target.value)}
                 placeholder={t.gitlab.instance_url_placeholder}
-                className="w-full px-3 py-2 text-sm rounded-card bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 transition-colors"
+                className="w-full px-3 py-2 text-sm rounded-card bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-orange-500/40 transition-colors"
               />
-              <p className="mt-1 text-xs text-muted-foreground/50">
+              <p className="mt-1 text-xs text-foreground">
                 {t.gitlab.instance_url_help}
               </p>
             </div>
@@ -124,7 +124,7 @@ export function GitLabConnectionForm({
           </>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground/70">
+            <p className="text-sm text-foreground">
               {t.gitlab.no_pat_found}
             </p>
             <button

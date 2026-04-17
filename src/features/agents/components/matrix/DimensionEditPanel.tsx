@@ -56,12 +56,12 @@ function SimpleListEditor({ items, onItemsChange, placeholder, readOnly }: Simpl
       {items.map((item, i) => (
         <div key={i} className="flex items-start gap-2 group min-h-[24px]">
           <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 mt-[7px] flex-shrink-0" />
-          <span className="text-[12px] text-foreground/70 leading-snug flex-1">{item}</span>
+          <span className="text-[12px] text-foreground leading-snug flex-1">{item}</span>
           {!readOnly && (
             <button
               type="button"
               onClick={() => handleRemove(i)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted-foreground/30 hover:text-red-400 transition-all flex-shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all flex-shrink-0"
             >
               <X className="w-3 h-3" />
             </button>
@@ -76,7 +76,7 @@ function SimpleListEditor({ items, onItemsChange, placeholder, readOnly }: Simpl
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
             placeholder={placeholder}
-            className="flex-1 px-2 py-1 rounded border border-primary/10 bg-transparent text-[11px] text-foreground/70 placeholder-muted-foreground/25 focus:outline-none focus:border-primary/30"
+            className="flex-1 px-2 py-1 rounded border border-primary/10 bg-transparent text-[11px] text-foreground placeholder-muted-foreground/25 focus:outline-none focus:border-primary/30"
           />
           <button
             type="button"
@@ -145,7 +145,7 @@ function CredentialPickerCard({
           </h4>
           <CompositeHealthDot healthResult={healthResult} rotationStatus={null} />
         </div>
-        <p className="text-[11px] text-muted-foreground/60 truncate mt-0.5">
+        <p className="text-[11px] text-foreground truncate mt-0.5">
           {connector?.label ?? credential.service_type}
         </p>
       </div>
@@ -196,12 +196,12 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
             <h2 id="dimension-swap-credential-title" className="text-sm font-semibold text-foreground/90 truncate">
               {tx(t.agents.dimension_edit.replace_connector, { name: connectorName })}
             </h2>
-            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
+            <p className="text-[11px] text-foreground mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95 flex-shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -211,9 +211,9 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {connectedCredentials.length === 0 ? (
             <div className="text-center py-10">
-              <Key className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+              <Key className="w-8 h-8 text-foreground mx-auto mb-2" />
               <p className="text-sm text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
+              <p className="text-[11px] text-foreground mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
               <button
                 type="button"
                 onClick={() => { setSidebarSection('credentials'); onClose(); }}
@@ -228,7 +228,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
               const connDef = getConnectorDef(serviceType);
               return (
                 <div key={serviceType}>
-                  <h3 className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider mb-2 px-1">
+                  <h3 className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-2 px-1">
                     {connDef?.label ?? serviceType}
                   </h3>
                   <div className="space-y-1.5">
@@ -290,9 +290,9 @@ function ConnectorCards({ connectors, onSwap }: {
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
               <div className="flex-1 min-w-0">
-                <span className="text-[12px] font-medium text-foreground/80">{c.name}</span>
+                <span className="text-[12px] font-medium text-foreground">{c.name}</span>
                 {c.purpose && (
-                  <p className="text-[10px] text-muted-foreground/50 truncate">{c.purpose}</p>
+                  <p className="text-[10px] text-foreground truncate">{c.purpose}</p>
                 )}
               </div>
 
@@ -386,7 +386,7 @@ function TriggerCards({ triggers, onConfigChange }: {
     <div className="space-y-1.5 w-full">
       {triggers.map((tr, i) => {
         const Icon = TRIGGER_ICONS[tr.trigger_type] ?? Activity;
-        const colorClass = TRIGGER_COLORS[tr.trigger_type] ?? "text-foreground/50 bg-secondary/20 border-secondary/30";
+        const colorClass = TRIGGER_COLORS[tr.trigger_type] ?? "text-foreground bg-secondary/20 border-secondary/30";
         const isEditing = editingIdx === i;
         const hasCron = tr.config?.cron;
         const hasInterval = tr.config?.interval;

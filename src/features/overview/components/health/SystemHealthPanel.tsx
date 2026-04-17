@@ -71,7 +71,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               size="icon-sm"
               onClick={runChecks}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
-              className="text-muted-foreground/80 hover:text-muted-foreground"
+              className="text-foreground hover:text-muted-foreground"
               title={t.overview.system_health.re_run_checks}
             />
           ) : undefined

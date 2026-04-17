@@ -95,12 +95,12 @@ export default function FrequencyEditor({
             </div>
             <div>
               <h3 className="typo-heading text-foreground/90">{t.schedules.change_frequency_title}</h3>
-              <p className="text-xs text-muted-foreground/70">{agent.persona_name}</p>
+              <p className="text-xs text-foreground">{agent.persona_name}</p>
             </div>
           </div>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/70 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -108,13 +108,13 @@ export default function FrequencyEditor({
 
         <div className="px-6 py-5 space-y-5">
           {/* Current schedule */}
-          <div className="text-xs text-muted-foreground/60">
-            Current: <span className="font-mono text-muted-foreground/90">{currentSchedule}</span>
+          <div className="text-xs text-foreground">
+            Current: <span className="font-mono text-foreground">{currentSchedule}</span>
           </div>
 
           {/* Quick presets */}
           <div>
-            <p className="typo-caption text-muted-foreground/80 mb-2">{t.schedules.quick_presets}</p>
+            <p className="typo-caption text-foreground mb-2">{t.schedules.quick_presets}</p>
             <div className="grid grid-cols-3 gap-1.5">
               {CRON_PRESETS.map((preset) => (
                 <button
@@ -123,7 +123,7 @@ export default function FrequencyEditor({
                   className={`px-2.5 py-2 text-xs rounded-card border transition-all text-center ${
                     cronInput === preset.cron
                       ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-elevation-1'
-                      : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground/80 hover:border-primary/20'
+                      : 'bg-secondary/40 border-primary/10 text-foreground hover:bg-secondary/60 hover:text-foreground/80 hover:border-primary/20'
                   }`}
                 >
                   {preset.label}
@@ -139,7 +139,7 @@ export default function FrequencyEditor({
               className={`flex-1 px-3 py-2 text-xs rounded-card border transition-colors ${
                 mode === 'custom'
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
-                  : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
+                  : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
             >
               Cron expression <span className="text-amber-400/60 font-medium">({tzLabel})</span>
@@ -149,7 +149,7 @@ export default function FrequencyEditor({
               className={`flex-1 px-3 py-2 text-xs rounded-card border transition-colors ${
                 mode === 'preset'
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
-                  : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
+                  : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
             >
               Interval (seconds)
@@ -164,11 +164,11 @@ export default function FrequencyEditor({
                 value={cronInput}
                 onChange={(e) => setCronInput(e.target.value)}
                 placeholder="*/15 * * * *"
-                className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
               {/* Preview */}
               {previewLoading && (
-                <p className="text-xs text-muted-foreground/50">{t.schedules.previewing}</p>
+                <p className="text-xs text-foreground">{t.schedules.previewing}</p>
               )}
               {preview && !previewLoading && (
                 <div className={`text-xs space-y-1 p-2.5 rounded-card border ${
@@ -181,9 +181,9 @@ export default function FrequencyEditor({
                       <p className="font-medium">{preview.description}</p>
                       {preview.next_runs.length > 0 && (
                         <div className="mt-1 space-y-0.5">
-                          <p className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Next runs ({tzLabel})</p>
+                          <p className="text-foreground text-[10px] uppercase tracking-wider">Next runs ({tzLabel})</p>
                           {preview.next_runs.slice(0, 3).map((run, i) => (
-                            <p key={i} className="font-mono text-[11px] text-muted-foreground/70">
+                            <p key={i} className="font-mono text-[11px] text-foreground">
                               {timezone === 'utc'
                                 ? new Date(run).toLocaleString(undefined, { timeZone: 'UTC' })
                                 : timezone !== 'local'
@@ -208,7 +208,7 @@ export default function FrequencyEditor({
               onChange={(e) => setIntervalInput(e.target.value)}
               placeholder="300"
               min={10}
-              className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
+              className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
             />
           )}
         </div>
@@ -228,7 +228,7 @@ export default function FrequencyEditor({
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-primary/10 bg-primary/[0.03]">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs rounded-card border border-primary/10 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
+            className="px-3 py-1.5 text-xs rounded-card border border-primary/10 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
           >
             Cancel
           </button>

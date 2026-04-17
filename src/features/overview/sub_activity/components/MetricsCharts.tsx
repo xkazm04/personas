@@ -32,7 +32,7 @@ export function MetricsCharts({
     <>
       {/* Cost per Day */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.cost_per_day}</h4>
+        <h4 className="typo-heading text-foreground">{t.overview.activity.cost_per_day}</h4>
         <div className="h-48 2xl:h-56 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -56,7 +56,7 @@ export function MetricsCharts({
 
       {/* Execution Count by Status */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.executions_by_status}</h4>
+        <h4 className="typo-heading text-foreground">{t.overview.activity.executions_by_status}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -78,7 +78,7 @@ export function MetricsCharts({
 
       {/* Success Rate Trend */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.success_rate_trend}</h4>
+        <h4 className="typo-heading text-foreground">{t.overview.activity.success_rate_trend}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -98,7 +98,7 @@ export function MetricsCharts({
 
       {/* Latency Distribution */}
       <div className="space-y-2">
-        <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.latency_distribution}</h4>
+        <h4 className="typo-heading text-foreground">{t.overview.activity.latency_distribution}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -122,28 +122,28 @@ export function MetricsCharts({
       {/* Top Personas by Cost */}
       {data.top_personas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.top_personas_by_cost}</h4>
+          <h4 className="typo-heading text-foreground">{t.overview.activity.top_personas_by_cost}</h4>
           <div className="space-y-1.5">
             {data.top_personas.map((p: { persona_id: string; persona_name: string; total_cost: number; total_executions: number; avg_cost_per_exec: number }, i: number) => {
               const maxCost = data.top_personas[0]?.total_cost || 1;
               const pct = (p.total_cost / maxCost) * 100;
               return (
                 <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-primary/10 bg-secondary/20">
-                  <span className="text-sm font-mono text-muted-foreground/60 w-4 text-right">#{i + 1}</span>
+                  <span className="text-sm font-mono text-foreground w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="typo-heading text-foreground/80 truncate">{p.persona_name}</span>
+                      <span className="typo-heading text-foreground truncate">{p.persona_name}</span>
                       <span className="text-sm font-mono text-violet-400">{fmtCost(p.total_cost)}</span>
                     </div>
                     <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground/60">
+                    <div className="flex items-center gap-3 mt-1 text-sm text-foreground">
                       <span>{tx(t.overview.activity.executions_label, { count: p.total_executions })}</span>
                       <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
                     </div>
                   </div>
-                  <ArrowUpRight className="w-3 h-3 text-muted-foreground/50" />
+                  <ArrowUpRight className="w-3 h-3 text-foreground" />
                 </div>
               );
             })}

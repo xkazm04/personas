@@ -91,7 +91,7 @@ export function N8nConfirmStep({
       {/* Persona preview card */}
       {!created && (
         <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
-          <p className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
+          <p className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
             Persona Preview
           </p>
 
@@ -110,7 +110,7 @@ export function N8nConfirmStep({
               <p className="text-base font-semibold text-foreground/90">
                 {draft.name ?? 'Unnamed Persona'}
               </p>
-              <p className="text-sm text-muted-foreground/70 mt-0.5">
+              <p className="text-sm text-foreground mt-0.5">
                 {draft.description ?? 'No description provided'}
               </p>
             </div>
@@ -183,7 +183,7 @@ export function N8nConfirmStep({
             <div className="mt-3 border-t border-primary/10 pt-3">
               <button
                 onClick={() => setShowPrompt(!showPrompt)}
-                className="flex items-center gap-2 text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors w-full"
+                className="flex items-center gap-2 text-sm text-foreground hover:text-muted-foreground transition-colors w-full"
               >
                 {showPrompt ? (
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -227,8 +227,8 @@ function EntityCard({ icon: Icon, count, label, color }: {
   return (
     <div className={`px-2 py-3 rounded-modal border text-center ${ENTITY_CARD_COLORS[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="text-base font-semibold text-foreground/80 tabular-nums">{count}</p>
-      <p className="text-sm text-muted-foreground/70 uppercase tracking-wider">{label}</p>
+      <p className="text-base font-semibold text-foreground tabular-nums">{count}</p>
+      <p className="text-sm text-foreground uppercase tracking-wider">{label}</p>
     </div>
   );
 }

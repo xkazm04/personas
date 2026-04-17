@@ -34,7 +34,7 @@ export function CompactRow({
       data-testid={`template-row-${review.id}`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground/80 truncate">
+        <span className="text-sm font-medium text-foreground truncate">
           {highlightMatch(review.test_case_name, searchQuery)}
         </span>
         {isAiResult && (
@@ -62,7 +62,7 @@ export function CompactRow({
           );
         })}
         {archCategories.length > 4 && (
-          <span className="text-[10px] text-muted-foreground/50 ml-0.5">+{archCategories.length - 4}</span>
+          <span className="text-[10px] text-foreground ml-0.5">+{archCategories.length - 4}</span>
         )}
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">

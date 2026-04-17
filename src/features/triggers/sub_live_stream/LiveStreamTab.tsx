@@ -222,7 +222,7 @@ export function LiveStreamTab() {
             </div>
           );
         }
-        return <span className="text-sm text-foreground/60 truncate">{t.triggers.broadcast_label}</span>;
+        return <span className="text-sm text-foreground truncate">{t.triggers.broadcast_label}</span>;
       },
     },
     {
@@ -253,7 +253,7 @@ export function LiveStreamTab() {
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <span className="text-sm text-foreground/70">{formatRelativeTime(event.created_at)}</span>
+        <span className="text-sm text-foreground">{formatRelativeTime(event.created_at)}</span>
       ),
     },
   ];
@@ -269,22 +269,22 @@ export function LiveStreamTab() {
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : attached ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
           </span>
-          <span className="typo-label text-foreground/80">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
+          <span className="typo-label text-foreground">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
         </div>
 
         <div className="h-4 w-px bg-primary/15" />
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{eventsPerMin}</span>
-          <span className="text-muted-foreground/50">{t.triggers.events_per_min}</span>
+        <div className="flex items-center gap-1.5 text-xs text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{eventsPerMin}</span>
+          <span className="text-foreground">{t.triggers.events_per_min}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{totalReceived}</span>
-          <span className="text-muted-foreground/50">{t.triggers.received_label}</span>
+        <div className="flex items-center gap-1.5 text-xs text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{totalReceived}</span>
+          <span className="text-foreground">{t.triggers.received_label}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{events.length}</span>
-          <span className="text-muted-foreground/50">{t.triggers.in_buffer}</span>
+        <div className="flex items-center gap-1.5 text-xs text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{events.length}</span>
+          <span className="text-foreground">{t.triggers.in_buffer}</span>
         </div>
         {pausedQueueCount > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-amber-300 tabular-nums">
@@ -299,7 +299,7 @@ export function LiveStreamTab() {
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium border transition-colors ${
               isPaused
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
-                : 'bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground'
+                : 'bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground'
             }`}
             title={isPaused ? 'Resume live updates' : 'Pause incoming events'}
           >
@@ -309,7 +309,7 @@ export function LiveStreamTab() {
           <button
             onClick={handleClear}
             disabled={events.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium border bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Clear stream buffer"
           >
             <Trash2 className="w-3 h-3" />

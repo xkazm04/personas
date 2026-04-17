@@ -71,7 +71,7 @@ function BulletItem({ item, color }: { item: string; color: string }) {
           {split.title}
         </button>
         {showDescription && (
-          <p className="text-sm text-muted-foreground/60 leading-snug mt-0.5 animate-fade-slide-in">
+          <p className="text-sm text-foreground leading-snug mt-0.5 animate-fade-slide-in">
             {split.description}
           </p>
         )}
@@ -80,7 +80,7 @@ function BulletItem({ item, color }: { item: string; color: string }) {
   );
 }
 
-export function CellBullets({ items, color = 'text-foreground/70' }: { items: string[]; color?: string }) {
+export function CellBullets({ items, color = 'text-foreground' }: { items: string[]; color?: string }) {
   const typewriter = useContext(TypewriterContext);
   // When typewriter is active, delegate to TypewriterBullets for line-by-line reveal
   if (typewriter) {
@@ -107,7 +107,7 @@ function ResolvedCellContent({ cellKey, fallbackRender, typewriterActive }: { ce
     >
       {items && items.length > 0 ? (
         <TypewriterContext.Provider value={typewriterActive}>
-          <CellBullets items={items} color="text-foreground/70" />
+          <CellBullets items={items} color="text-foreground" />
         </TypewriterContext.Provider>
       ) : (
         <TypewriterContext.Provider value={typewriterActive}>
@@ -231,7 +231,7 @@ export function MatrixCellRenderer({
       </div>
       {/* Header: label only (badge moved to bottom) */}
       <div className={`${compact ? 'mb-1' : 'mb-2.5'} flex items-center gap-2`}>
-        <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold uppercase tracking-[0.15em] text-foreground/60`}>{cell.label}</span>
+        <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold uppercase tracking-[0.15em] text-foreground`}>{cell.label}</span>
         {cell.filled !== undefined && (
           <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
         )}

@@ -41,7 +41,7 @@ function InlineDeleteButton({
         setConfirming(true);
       }}
       data-inline-delete={id}
-      className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
+      className="p-1 text-foreground hover:text-red-400 transition-colors"
     >
       {confirming ? (
           <ConfirmLabel />
@@ -86,11 +86,11 @@ export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTrigg
         >
           <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground/80 block truncate">
+            <span className="text-sm font-medium text-foreground block truncate">
               {trigger.trigger_type}
             </span>
             {trigger.config && (
-              <span className="text-sm text-muted-foreground/70 block truncate">
+              <span className="text-sm text-foreground block truncate">
                 {trigger.config}
               </span>
             )}
@@ -130,11 +130,11 @@ export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseA
         >
           <Radio className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground/80 block truncate">
+            <span className="text-sm font-medium text-foreground block truncate">
               {sub.event_type}
             </span>
             {sub.source_filter && (
-              <span className="text-sm text-muted-foreground/70 block truncate">
+              <span className="text-sm text-foreground block truncate">
                 filter: {sub.source_filter}
               </span>
             )}

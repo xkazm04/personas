@@ -57,7 +57,7 @@ export function ChatMessages({
             className={`max-w-[85%] rounded-2xl px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-violet-500/10 border border-violet-500/15 text-foreground/85'
-                : 'bg-secondary/30 border border-primary/10 text-foreground/80'
+                : 'bg-secondary/30 border border-primary/10 text-foreground'
             }`}
           >
             {msg.role === 'user' && (
@@ -65,12 +65,12 @@ export function ChatMessages({
             )}
 
             {msg.role === 'assistant' && msg.status === 'generating' && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+              <div className="flex items-center gap-2 text-sm text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <button
                   onClick={onCancel}
-                  className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                  className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
                   title="Cancel"
                 >
                   <X className="w-3 h-3" />
@@ -116,8 +116,8 @@ function EmptyState({
         <Sparkles className="w-6 h-6 text-violet-400" />
       </div>
       <div>
-        <p className="text-sm font-medium text-foreground/80">{db.ask_plain_english}</p>
-        <p className="text-sm text-muted-foreground/50 mt-1 max-w-md">
+        <p className="text-sm font-medium text-foreground">{db.ask_plain_english}</p>
+        <p className="text-sm text-foreground mt-1 max-w-md">
           {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
         </p>
       </div>
@@ -127,7 +127,7 @@ function EmptyState({
             <button
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-modal text-sm text-muted-foreground/60 bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
+              className="px-3 py-1.5 rounded-modal text-sm text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
             >
               {s}
             </button>

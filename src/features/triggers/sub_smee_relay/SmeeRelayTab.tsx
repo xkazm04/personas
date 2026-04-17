@@ -153,7 +153,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <div className={`w-2 h-2 rounded-full ${
               activeCount > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/30'
             }`} />
-            <span className="text-sm text-foreground/80">
+            <span className="text-sm text-foreground">
               {activeCount > 0
                 ? `${activeCount} relay${activeCount !== 1 ? 's' : ''} active`
                 : 'No active relays'}
@@ -167,7 +167,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title="Open smee.io/new to create a channel"
             >
               <ExternalLink className="w-3 h-3" />
@@ -186,7 +186,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
         {/* Header + Add button */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+          <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.smee_relays}
           </h3>
           <button
@@ -203,7 +203,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           <div className="rounded-modal border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   Label
                 </label>
                 <div className="relative">
@@ -213,7 +213,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     onChange={(e) => setAddLabel(e.target.value)}
                     onBlur={() => markTouched('label')}
                     placeholder="e.g. GitHub — my-repo"
-                    className={`w-full px-3 py-2 pr-8 text-sm rounded-card border bg-secondary/30 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 transition-colors ${
+                    className={`w-full px-3 py-2 pr-8 text-sm rounded-card border bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
                       labelError
                         ? 'border-red-500/40 focus:ring-red-500/40'
                         : labelValid && touchedFields.has('label')
@@ -233,7 +233,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   Channel URL
                 </label>
                 <div className="relative">
@@ -243,7 +243,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
                     onBlur={() => markTouched('url')}
                     placeholder="https://smee.io/your-channel-id"
-                    className={`w-full px-3 py-2 pr-8 text-sm rounded-card border bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 transition-colors ${
+                    className={`w-full px-3 py-2 pr-8 text-sm rounded-card border bg-secondary/30 text-foreground font-mono placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
                       urlError
                         ? 'border-red-500/40 focus:ring-red-500/40'
                         : urlValid && touchedFields.has('url')
@@ -263,8 +263,8 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
-                  Route to Agent <span className="text-muted-foreground/40">(optional)</span>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  Route to Agent <span className="text-foreground">(optional)</span>
                 </label>
                 <select
                   value={addPersonaId}
@@ -278,15 +278,15 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
-                  Event Filter <span className="text-muted-foreground/40">(optional, comma-separated)</span>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  Event Filter <span className="text-foreground">(optional, comma-separated)</span>
                 </label>
                 <input
                   type="text"
                   value={addFilter}
                   onChange={(e) => setAddFilter(e.target.value)}
                   placeholder="github_push, github_pull_request"
-                  className="w-full px-3 py-2 text-sm rounded-card border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-purple-500/40"
+                  className="w-full px-3 py-2 text-sm rounded-card border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/40"
                 />
               </div>
             </div>
@@ -307,7 +307,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
                 {t.triggers.create_relay}
               </button>
-              <p className="text-xs text-muted-foreground/50">
+              <p className="text-xs text-foreground">
                 Get a channel URL from <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
               </p>
             </div>
@@ -317,7 +317,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" className="text-muted-foreground/60" />
+            <LoadingSpinner size="lg" className="text-foreground" />
           </div>
         )}
 
@@ -327,8 +327,8 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
               <Unplug className="w-7 h-7 text-purple-400/50" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">{t.triggers.no_smee_relays}</p>
-            <p className="text-sm text-muted-foreground/50 mt-1 max-w-sm">
+            <p className="text-sm font-medium text-foreground">{t.triggers.no_smee_relays}</p>
+            <p className="text-sm text-foreground mt-1 max-w-sm">
               {t.triggers.smee_relay_desc}
             </p>
             <button
@@ -389,7 +389,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                           {relay.status}
                         </span>
                       </div>
-                      <p className="text-xs font-mono text-muted-foreground/50 truncate mb-2">
+                      <p className="text-xs font-mono text-foreground truncate mb-2">
                         {relay.channelUrl}
                       </p>
 
@@ -401,18 +401,18 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                           </span>
                         )}
                         {relay.lastEventAt && (
-                          <span className="text-xs text-muted-foreground/40">
+                          <span className="text-xs text-foreground">
                             Last: {formatRelativeTime(relay.lastEventAt)}
                           </span>
                         )}
                         {persona && (
-                          <span className="inline-flex items-center gap-1 text-xs text-foreground/50">
+                          <span className="inline-flex items-center gap-1 text-xs text-foreground">
                             <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
                             {persona.name}
                           </span>
                         )}
                         {filters.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/40">
+                          <span className="inline-flex items-center gap-1 text-xs text-foreground">
                             <Filter className="w-3 h-3" />
                             {filters.join(', ')}
                           </span>
@@ -452,7 +452,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 rounded-card text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
+                            className="px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground transition-colors"
                           >
                             Cancel
                           </button>
@@ -492,10 +492,10 @@ function SetupGuide() {
   const { t } = useTranslation();
   return (
     <div className="rounded-modal border border-border/20 bg-secondary/5 p-5 space-y-3">
-      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">
+      <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
         {t.triggers.how_it_works}
       </h4>
-      <div className="space-y-2 text-sm text-muted-foreground/60">
+      <div className="space-y-2 text-sm text-foreground">
         <div className="flex items-start gap-2.5">
           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">1</span>
           <p>Visit <span className="font-mono text-purple-400/60">smee.io/new</span> to create a free relay channel</p>

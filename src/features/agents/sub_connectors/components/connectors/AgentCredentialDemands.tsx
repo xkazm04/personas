@@ -127,7 +127,7 @@ function DemandCard({
             <span className="text-sm font-medium text-foreground/85">{demand.connectorLabel}</span>
             <AlertTriangle className="w-3 h-3 text-amber-400/60" />
           </div>
-          <p className="text-xs text-muted-foreground/50 truncate">
+          <p className="text-xs text-foreground truncate">
             {t.agents.connectors.dm_required_by}
           </p>
         </div>
@@ -141,7 +141,7 @@ function DemandCard({
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-card border transition-colors cursor-pointer ${
                 isLinking
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-                  : 'border-primary/20 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
+                  : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'
               }`}
             >
               <ArrowRight className="w-3 h-3" />
@@ -165,7 +165,7 @@ function DemandCard({
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
-              <p className="text-xs text-muted-foreground/50 mb-1.5">
+              <p className="text-xs text-foreground mb-1.5">
                 {t.agents.connectors.dm_link_existing}
               </p>
               {demand.matchingCredentials.map((cred) => (
@@ -176,7 +176,7 @@ function DemandCard({
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
                 >
                   <Key className="w-3 h-3 text-emerald-400/60" />
-                  <span className="text-xs text-foreground/80 flex-1 truncate">{cred.name}</span>
+                  <span className="text-xs text-foreground flex-1 truncate">{cred.name}</span>
                   {cred.healthcheck_last_success === true && (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400/60" />
                   )}

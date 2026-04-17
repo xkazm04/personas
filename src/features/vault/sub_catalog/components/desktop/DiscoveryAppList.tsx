@@ -34,7 +34,7 @@ export function DiscoveryAppList({
       className="animate-fade-slide-in space-y-3"
     >
       {scanning ? (
-        <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <div className="flex items-center justify-center py-8 text-foreground">
           <LoadingSpinner className="mr-2" />
           Scanning for desktop apps...
         </div>
@@ -42,7 +42,7 @@ export function DiscoveryAppList({
         <>
           {installedApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
+              <h4 className="text-xs font-medium text-foreground uppercase tracking-wide">
                 Detected on your system
               </h4>
               {installedApps.map((app) => (
@@ -58,7 +58,7 @@ export function DiscoveryAppList({
 
           {notInstalledApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">
+              <h4 className="text-xs font-medium text-foreground uppercase tracking-wide">
                 Not detected
               </h4>
               {notInstalledApps.map((app) => (
@@ -74,7 +74,7 @@ export function DiscoveryAppList({
           )}
 
           {allApps.length === 0 && !scanning && (
-            <div className="text-center py-8 text-muted-foreground/60 text-sm">
+            <div className="text-center py-8 text-foreground text-sm">
               No desktop apps detected. Try refreshing.
             </div>
           )}

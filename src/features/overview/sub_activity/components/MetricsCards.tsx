@@ -34,7 +34,7 @@ export function SummaryCard({ icon: Icon, label, value, color, numericValue, for
     <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${border} ${bg}`}>
       <Icon className={`w-4 h-4 ${textColor}`} />
       <div className="min-w-0">
-        <p className="text-sm text-muted-foreground/70 truncate">{label}</p>
+        <p className="text-sm text-foreground truncate">{label}</p>
         <p className={`typo-heading ${textColor}`}>
           {numericValue != null && formatFn
             ? <AnimatedCounter value={numericValue} formatFn={formatFn} />
@@ -66,7 +66,7 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
         </p>
         {anomaly.execution_ids.length > 0 && (
           <div className="flex items-center gap-1 mt-1 flex-wrap">
-            <span className="text-sm text-muted-foreground/60">{t.overview.metrics_cards.top_executions}</span>
+            <span className="text-sm text-foreground">{t.overview.metrics_cards.top_executions}</span>
             {anomaly.execution_ids.map((id) => (
               <button
                 key={id}
@@ -93,11 +93,11 @@ export function ChartTooltipContent({ active, payload, label }: {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
-      <p className="text-sm text-muted-foreground/80 mb-1">{label}</p>
+      <p className="text-sm text-foreground mb-1">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-muted-foreground/70">{entry.name}:</span>
+          <span className="text-foreground">{entry.name}:</span>
           <span className="font-mono text-foreground/90">{typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}</span>
         </div>
       ))}

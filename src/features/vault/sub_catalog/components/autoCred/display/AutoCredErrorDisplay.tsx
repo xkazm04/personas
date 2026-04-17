@@ -42,7 +42,7 @@ export function AutoCredErrorDisplay({
               {config!.label}
             </span>
           </div>
-          <p className="text-sm text-foreground/70 mt-1">
+          <p className="text-sm text-foreground mt-1">
             {error.guidance}
           </p>
         </div>
@@ -54,13 +54,13 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>{t.vault.auto_cred.what_happened}</span>
             {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {contextOpen && (
-            <div className="px-4 pb-3 space-y-2 text-sm text-muted-foreground/70">
+            <div className="px-4 pb-3 space-y-2 text-sm text-foreground">
               {ctx.duration_secs != null && (
                 <div className="flex items-center gap-2">
                   <Clock className="w-3 h-3 shrink-0" />
@@ -87,10 +87,10 @@ export function AutoCredErrorDisplay({
               )}
               {ctx.last_actions.length > 0 && (
                 <div className="mt-1 pt-1 border-t border-primary/8">
-                  <p className="text-muted-foreground/50 mb-1">{t.vault.auto_cred.last_actions}</p>
+                  <p className="text-foreground mb-1">{t.vault.auto_cred.last_actions}</p>
                   <ul className="space-y-0.5 pl-4">
                     {ctx.last_actions.map((action, i) => (
-                      <li key={i} className="list-disc text-muted-foreground/60">{action}</li>
+                      <li key={i} className="list-disc text-foreground">{action}</li>
                     ))}
                   </ul>
                 </div>
@@ -106,7 +106,7 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setLogOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground/70 hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>Session log ({logs.length} entries)</span>
             {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -119,9 +119,9 @@ export function AutoCredErrorDisplay({
                     entry.type === 'error' ? 'text-red-400' :
                     entry.type === 'warning' ? 'text-amber-400' :
                     entry.type === 'action' ? 'text-cyan-400' :
-                    'text-muted-foreground/70'
+                    'text-foreground'
                   }`}>
-                    <span className="text-muted-foreground/60 select-none shrink-0">
+                    <span className="text-foreground select-none shrink-0">
                       {new Date(entry.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                     <span>{entry.message}</span>
@@ -140,7 +140,7 @@ export function AutoCredErrorDisplay({
       <div className="flex gap-3 justify-center">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           {error.retryable ? 'Cancel' : 'Set Up Manually'}
         </button>

@@ -28,7 +28,7 @@ export function CredentialFilterBar({
       {/* Tag chips */}
       {allTags.length > 0 && (
         <div className="flex items-center gap-1">
-          <Tag className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <Tag className="w-3 h-3 text-foreground shrink-0" />
           {allTags.map((tag) => {
             const active = selectedTags.includes(tag);
             const style = getTagStyle(tag);
@@ -39,7 +39,7 @@ export function CredentialFilterBar({
                 className={`text-sm font-medium px-1.5 py-0.5 rounded border transition-colors ${
                   active
                     ? `${style.bg} ${style.text} ${style.border}`
-                    : 'bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50'
+                    : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
                 }`}
               >
                 {tag}
@@ -58,7 +58,7 @@ export function CredentialFilterBar({
           className={`flex items-center gap-1 text-sm font-medium px-2 py-1 rounded border transition-colors ${
             healthFilter !== 'all'
               ? 'bg-primary/10 text-primary border-primary/20'
-              : 'bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50'
+              : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
           }`}
         >
           {healthFilterLabel(healthFilter)}
@@ -75,7 +75,7 @@ export function CredentialFilterBar({
                   aria-selected={f === healthFilter}
                   onClick={() => { setHealthFilter(f); setOpenDropdown(null); }}
                   className={`w-full text-left px-3 py-1.5 text-sm hover:bg-secondary/50 transition-colors ${
-                    f === healthFilter ? 'text-primary font-medium' : 'text-foreground/80'
+                    f === healthFilter ? 'text-primary font-medium' : 'text-foreground'
                   }`}
                 >
                   {healthFilterLabel(f)}
@@ -92,7 +92,7 @@ export function CredentialFilterBar({
           onClick={() => setOpenDropdown(openDropdown === 'sort' ? null : 'sort')}
           aria-haspopup="listbox"
           aria-expanded={openDropdown === 'sort'}
-          className="flex items-center gap-1 text-sm font-medium px-2 py-1 rounded border bg-secondary/30 text-muted-foreground/50 border-primary/10 hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1 text-sm font-medium px-2 py-1 rounded border bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50 transition-colors"
         >
           Sort: {sortLabel(sortKey)}
           <ChevronDown className="w-2.5 h-2.5" />
@@ -108,7 +108,7 @@ export function CredentialFilterBar({
                   aria-selected={s === sortKey}
                   onClick={() => { setSortKey(s); setOpenDropdown(null); }}
                   className={`w-full text-left px-3 py-1.5 text-sm hover:bg-secondary/50 transition-colors ${
-                    s === sortKey ? 'text-primary font-medium' : 'text-foreground/80'
+                    s === sortKey ? 'text-primary font-medium' : 'text-foreground'
                   }`}
                 >
                   {sortLabel(s)}

@@ -76,20 +76,20 @@ export function FieldCaptureRow({
   );
 
   const valueClass = mode === 'confirming'
-    ? (value ? 'border-emerald-500/25 bg-emerald-500/5 text-foreground' : 'border-primary/15 bg-secondary/25 text-muted-foreground/60')
+    ? (value ? 'border-emerald-500/25 bg-emerald-500/5 text-foreground' : 'border-primary/15 bg-secondary/25 text-foreground')
     : 'border-border/50 bg-background/50 text-foreground';
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-sm font-medium text-foreground/80">
+        <label className="text-sm font-medium text-foreground">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
         {buttons}
       </div>
 
-      {hint && <p className="text-sm text-muted-foreground/80">{hint}</p>}
+      {hint && <p className="text-sm text-foreground">{hint}</p>}
 
       {inputType === 'select' && options ? (
         <ThemedSelect
@@ -124,7 +124,7 @@ export function FieldCaptureRow({
       {error ? (
         <p id={errorId} className="text-sm text-red-400">{error}</p>
       ) : (
-        (helpText ? <p className="text-sm text-muted-foreground/60">{helpText}</p> : null)
+        (helpText ? <p className="text-sm text-foreground">{helpText}</p> : null)
       )}
     </div>
   );

@@ -23,12 +23,12 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               {t.overview.review_results.title}
             </h3>
             {reviewResult && (
-              <p className="text-sm text-muted-foreground/80 mt-1">
+              <p className="text-sm text-foreground mt-1">
                 Reviewed {reviewResult.reviewed} memories
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -71,10 +71,10 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                         {d.score}/10
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className={`typo-heading truncate ${d.action === 'deleted' ? 'text-foreground/50 line-through' : 'text-foreground/80'}`}>
+                        <p className={`typo-heading truncate ${d.action === 'deleted' ? 'text-foreground line-through' : 'text-foreground'}`}>
                           {d.title}
                         </p>
-                        <p className="text-sm text-muted-foreground/70 mt-0.5">{d.reason}</p>
+                        <p className="text-sm text-foreground mt-0.5">{d.reason}</p>
                       </div>
                       <span className={`typo-heading flex-shrink-0 ${d.action === 'deleted' ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
                         {d.action}

@@ -70,7 +70,7 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
                   ) : (
                     <Icon
                       className={`w-2.5 h-2.5 ${
-                        isActive ? 'text-violet-300' : 'text-muted-foreground/40'
+                        isActive ? 'text-violet-300' : 'text-foreground'
                       }`}
                     />
                   )}
@@ -84,7 +84,7 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
                     ? 'text-emerald-400/70'
                     : isActive
                       ? 'text-violet-300'
-                      : 'text-muted-foreground/40'
+                      : 'text-foreground'
                 }`}
               >
                 {step.label}

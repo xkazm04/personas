@@ -36,7 +36,7 @@ export function TypewriterBullets({ items, speed = 150 }: { items: string[]; spe
       {items.slice(0, visibleCount).map((item, i) => (
         <motion.li key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex items-start gap-2 leading-tight">
           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className="text-sm text-foreground/70 leading-snug">{item}</span>
+          <span className="text-sm text-foreground leading-snug">{item}</span>
         </motion.li>
       ))}
     </ul>
@@ -80,7 +80,7 @@ function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Adjust anything..."
-        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onRefine(text.trim()); setText(''); } }}
       />
       <button
@@ -173,8 +173,8 @@ export function MatrixCommandCenter({
             <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
             <LoadingSpinner size="lg" className="text-primary relative z-10" />
           </div>
-          <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">Initializing...</span>
-          <span className="text-[10px] text-muted-foreground/40">Creating draft agent and starting CLI</span>
+          <span className="text-xs font-semibold text-foreground tracking-wide uppercase">Initializing...</span>
+          <span className="text-[10px] text-foreground">Creating draft agent and starting CLI</span>
         </div>
       );
     }
@@ -249,7 +249,7 @@ export function MatrixCommandCenter({
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'describe'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+                  : 'text-foreground hover:text-muted-foreground/70'
               }`}
             >
               <Sparkles className="w-3 h-3" />
@@ -261,7 +261,7 @@ export function MatrixCommandCenter({
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'import'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+                  : 'text-foreground hover:text-muted-foreground/70'
               }`}
             >
               <Upload className="w-3 h-3" />
@@ -275,7 +275,7 @@ export function MatrixCommandCenter({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
             placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
             rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
-            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
+            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}
         {/* Import mode: workflow upload zone */}
         {inputMode === 'import' && isCreation && (
@@ -307,11 +307,11 @@ export function MatrixCommandCenter({
           <button key={section.key} type="button" onClick={() => setOpenSection(section)}
             className="inline-flex items-center gap-1.5 rounded-card border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
             <Icon className={`w-3 h-3 ${section.color} flex-shrink-0`} />
-            <span className="text-[13px] text-foreground/70 truncate">{section.label}</span>
+            <span className="text-[13px] text-foreground truncate">{section.label}</span>
           </button>
         ); })}
       </div>
-      {sections.length > 0 && <p className="text-sm text-muted-foreground/50 leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
+      {sections.length > 0 && <p className="text-sm text-foreground leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
       {openSection && <PromptModal section={openSection} onClose={() => setOpenSection(null)} />}
     </div>
   );

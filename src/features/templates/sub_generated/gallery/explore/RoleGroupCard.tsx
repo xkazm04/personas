@@ -52,7 +52,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground/85">{group.label}</h3>
-            <p className="text-xs text-muted-foreground/50">{group.description}</p>
+            <p className="text-xs text-foreground">{group.description}</p>
           </div>
         </div>
 
@@ -70,11 +70,11 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-primary/5 transition-colors group/cat"
               >
                 <CatIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
-                <span className="text-sm text-foreground/70 flex-1 group-hover/cat:text-foreground/90 transition-colors">
+                <span className="text-sm text-foreground flex-1 group-hover/cat:text-foreground/90 transition-colors">
                   {meta.label}
                 </span>
                 {count > 0 && (
-                  <span className="text-sm text-muted-foreground/60 tabular-nums">{count}</span>
+                  <span className="text-sm text-foreground tabular-nums">{count}</span>
                 )}
               </button>
             );
@@ -89,7 +89,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
               <button
                 key={tmpl.id}
                 onClick={() => onSelectTemplate?.(tmpl)}
-                className="w-full flex items-center gap-2 px-1 py-1 text-sm text-muted-foreground/60 rounded-input hover:bg-primary/5 hover:text-foreground/80 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-1 py-1 text-sm text-foreground rounded-input hover:bg-primary/5 hover:text-foreground/80 transition-colors text-left"
               >
                 <span className="flex-1 truncate">{tmpl.test_case_name}</span>
                 {tmpl.adoption_count > 0 && (

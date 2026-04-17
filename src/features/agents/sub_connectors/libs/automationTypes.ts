@@ -39,7 +39,7 @@ export const PLATFORM_CONFIG: Record<
   },
   github_actions: {
     label: "GitHub Actions",
-    color: "text-muted-foreground",
+    color: "text-foreground",
     bg: "bg-secondary/40 border-border/60",
   },
   zapier: {

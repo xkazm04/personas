@@ -42,7 +42,7 @@ function SearchChipInputImpl({
       <div className="pl-3 flex-shrink-0">
         {aiSearchMode && aiSearchLoading
           ? <LoadingSpinner className="text-indigo-400" />
-          : <Search className="w-4 h-4 text-muted-foreground/50" />}
+          : <Search className="w-4 h-4 text-foreground" />}
       </div>
 
       {chips.map((chip, i) => {
@@ -103,14 +103,14 @@ function SearchChipInputImpl({
             : aiSearchMode ? t.templates.search.placeholder_ai
             : t.templates.search.placeholder_default
         }
-        className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none"
+        className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-foreground focus-visible:outline-none"
       />
 
       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
         {aiSearchMode ? (
           <>
             {inputValue && (
-              <button onClick={clearAll} aria-label="Clear search" className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+              <button onClick={clearAll} aria-label="Clear search" className="p-1 text-foreground hover:text-foreground/70">
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
@@ -123,7 +123,7 @@ function SearchChipInputImpl({
           </>
         ) : (
           (inputValue || chips.length > 0) && (
-            <button onClick={clearAll} aria-label="Clear search" className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+            <button onClick={clearAll} aria-label="Clear search" className="p-1 text-foreground hover:text-foreground/70">
               <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )

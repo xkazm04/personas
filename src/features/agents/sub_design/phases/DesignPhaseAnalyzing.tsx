@@ -19,7 +19,7 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
       className="animate-fade-slide-in space-y-3"
     >
       {savedDesignResult && (
-        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
+        <div className="flex items-center gap-2 px-1 text-sm text-foreground">
           <Pencil className="w-3 h-3 shrink-0" />
           <span>{t.agents.design.updating_design}</span>
         </div>

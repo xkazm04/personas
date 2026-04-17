@@ -22,7 +22,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
         </div>
         <button
           onClick={onClose}
-          className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="p-1 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -30,7 +30,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
 
       {/* Mock output */}
       <div className="p-3">
-        <pre className="typo-code text-foreground/70 bg-background/40 rounded-lg p-3 overflow-auto max-h-64 border border-amber-500/10">
+        <pre className="typo-code text-foreground bg-background/40 rounded-lg p-3 overflow-auto max-h-64 border border-amber-500/10">
           {useCase.sample_input
             ? JSON.stringify(useCase.sample_input, null, 2)
             : '// No sample data provided'}

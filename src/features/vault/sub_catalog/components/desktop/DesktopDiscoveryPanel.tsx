@@ -117,13 +117,13 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           data-testid="vault-desktop-back"
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             Connect local applications or import Claude Desktop MCP servers
           </p>
         </div>
@@ -131,7 +131,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
         </button>
@@ -144,7 +144,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
             tab === 'apps'
               ? 'bg-secondary/80 text-foreground'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-foreground hover:text-foreground'
           }`}
         >
           <Monitor className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
@@ -156,7 +156,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
             tab === 'mcp-import'
               ? 'bg-secondary/80 text-foreground'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-foreground hover:text-foreground'
           }`}
         >
           <Download className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />

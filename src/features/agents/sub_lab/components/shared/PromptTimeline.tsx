@@ -57,9 +57,9 @@ export function PromptTimeline() {
   if (sortedVersions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
-        <GitBranch className="w-8 h-8 text-muted-foreground/15" />
-        <p className="text-sm font-medium text-muted-foreground/50">{t.agents.lab.no_versions_yet}</p>
-        <p className="text-xs text-muted-foreground/35 max-w-xs text-center">
+        <GitBranch className="w-8 h-8 text-foreground" />
+        <p className="text-sm font-medium text-foreground">{t.agents.lab.no_versions_yet}</p>
+        <p className="text-xs text-foreground max-w-xs text-center">
           Versions are created automatically when the prompt is modified through the Lab or Matrix build.
         </p>
       </div>
@@ -72,15 +72,15 @@ export function PromptTimeline() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <GitBranch className="w-4 h-4 text-violet-400" />
-          <h3 className="text-sm font-semibold text-foreground/70">{t.agents.lab.prompt_timeline}</h3>
-          <span className="text-[10px] text-muted-foreground/40 px-1.5 py-0.5 rounded-input bg-secondary/30">
+          <h3 className="text-sm font-semibold text-foreground">{t.agents.lab.prompt_timeline}</h3>
+          <span className="text-[10px] text-foreground px-1.5 py-0.5 rounded-input bg-secondary/30">
             {sortedVersions.length} version{sortedVersions.length !== 1 ? 's' : ''}
           </span>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
+          className="p-1 rounded-input text-foreground hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
           title="Refresh versions"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

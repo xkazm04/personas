@@ -39,22 +39,22 @@ export function ColorRow({
         style={{ backgroundColor: displayValue }}
         title={`Pick ${label}`}
       />
-      <span className="text-xs font-medium text-muted-foreground/80 w-24 flex-shrink-0">{label}</span>
-      <span className={`text-xs font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+      <span className="text-xs font-medium text-foreground w-24 flex-shrink-0">{label}</span>
+      <span className={`text-xs font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
         {displayValue}
       </span>
       {isOverridden && (
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
+          className="p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
           title="Reset to auto"
         >
           <X className="w-3 h-3" />
         </button>
       )}
       {!isOverridden && (
-        <span className="text-[10px] text-muted-foreground/30 flex-shrink-0">auto</span>
+        <span className="text-[10px] text-foreground flex-shrink-0">auto</span>
       )}
 
       {open && (

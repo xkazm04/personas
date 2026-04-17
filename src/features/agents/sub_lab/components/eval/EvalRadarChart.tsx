@@ -72,7 +72,7 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {radarVersions.map((agg, idx) => (
-            <span key={agg.versionId} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card text-sm border border-primary/10 bg-secondary/20 text-foreground/80">
+            <span key={agg.versionId} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card text-sm border border-primary/10 bg-secondary/20 text-foreground">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: RADAR_PALETTE[idx % RADAR_PALETTE.length] }} />
               v{agg.versionNumber}
             </span>

@@ -76,7 +76,7 @@ export function WizardDetectConnectorRow({
         <span className="text-sm font-medium text-foreground/90 block truncate">
           {connector.label}
         </span>
-        <span className="text-sm text-muted-foreground/60 block truncate">
+        <span className="text-sm text-foreground block truncate">
           {isAdded
             ? 'Already added'
             : detection

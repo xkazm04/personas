@@ -76,12 +76,12 @@ export default function OnboardingOverlay() {
             <h2 id="onboarding-overlay-title" className="typo-heading text-foreground/90">
               {t.onboarding.title}
             </h2>
-            <p className="typo-body text-muted-foreground/70">{t.onboarding.subtitle}</p>
+            <p className="typo-body text-foreground">{t.onboarding.subtitle}</p>
           </div>
         </div>
         <button
           onClick={dismissOnboarding}
-          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
           title={t.onboarding.skip_tooltip}
         >
           <X className="w-4 h-4" />
@@ -128,7 +128,7 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'adopt' && !showAdoptionWizard && (
               <div className="flex flex-col items-center py-8 gap-4">
                 <LoadingSpinner size="xl" className="text-violet-400" />
-                <p className="typo-body text-muted-foreground/70">{t.onboarding.opening_wizard}</p>
+                <p className="typo-body text-foreground">{t.onboarding.opening_wizard}</p>
               </div>
             )}
 
@@ -146,7 +146,7 @@ export default function OnboardingOverlay() {
       <div className="flex items-center justify-between px-6 py-3.5 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
         <button
           onClick={dismissOnboarding}
-          className="px-4 py-2 typo-heading rounded-modal border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 typo-heading rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
         >
           {t.onboarding.skip_button}
         </button>

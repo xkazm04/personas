@@ -80,23 +80,23 @@ export function StatusPageView() {
             <span className={`typo-heading ${globalBadge.text}`}>{globalBadge.label}</span>
           </div>
           <div>
-            <span className="text-sm text-muted-foreground/70">
+            <span className="text-sm text-foreground">
               Score: <span className="text-foreground/90 font-semibold">{globalScore}</span>/100
             </span>
-            <span className="mx-3 text-muted-foreground/30">|</span>
-            <span className="text-sm text-muted-foreground/70">
+            <span className="mx-3 text-foreground">|</span>
+            <span className="text-sm text-foreground">
               30d uptime: <span className="text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {lastRefreshLabel && (
-            <span className="text-xs text-muted-foreground/50">Updated {lastRefreshLabel}</span>
+            <span className="text-xs text-foreground">Updated {lastRefreshLabel}</span>
           )}
           <button
             onClick={() => void refresh()}
             disabled={loading}
-            className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
             title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -106,11 +106,11 @@ export function StatusPageView() {
 
       {/* Persona rows */}
       {loading && entries.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">
+        <div className="flex items-center justify-center py-16 text-foreground text-sm">
           {t.overview.health_extra.loading_status}
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">
+        <div className="flex items-center justify-center py-16 text-foreground text-sm">
           {t.overview.health_extra.no_personas}
         </div>
       ) : (
@@ -122,8 +122,8 @@ export function StatusPageView() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground/50 pt-2">
-        <span className="font-medium text-muted-foreground/70">{t.overview.health_extra.legend}</span>
+      <div className="flex items-center gap-4 text-xs text-foreground pt-2">
+        <span className="font-medium text-foreground">{t.overview.health_extra.legend}</span>
         <LegendItem color="bg-emerald-400" label={t.overview.health_extra.operational} />
         <LegendItem color="bg-amber-400" label={t.overview.health_extra.degraded} />
         <LegendItem color="bg-red-400" label={t.overview.health_extra.outage} />
@@ -163,7 +163,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
         </div>
 
         {/* Uptime percent */}
-        <span className="text-xs text-muted-foreground/60 w-16 text-right flex-shrink-0">
+        <span className="text-xs text-foreground w-16 text-right flex-shrink-0">
           {(entry.uptimePercent * 100).toFixed(1)}%
         </span>
 
@@ -228,7 +228,7 @@ function ScoreBreakdown({ label, score, detail }: { label: string; score: number
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground/60">{label}</span>
+        <span className="text-xs text-foreground">{label}</span>
         <span className={`text-xs font-semibold ${color}`}>{score}</span>
       </div>
       <div className="h-1 rounded-full bg-secondary/30 overflow-hidden">
@@ -239,7 +239,7 @@ function ScoreBreakdown({ label, score, detail }: { label: string; score: number
           style={{ width: barWidth }}
         />
       </div>
-      <span className="text-[10px] text-muted-foreground/40">{detail}</span>
+      <span className="text-[10px] text-foreground">{detail}</span>
     </div>
   );
 }

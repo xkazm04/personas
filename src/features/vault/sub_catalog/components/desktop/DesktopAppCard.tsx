@@ -51,10 +51,10 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
             )}
           </div>
           {app.binary_path && (
-            <p className="text-xs text-muted-foreground/60 truncate">{app.binary_path}</p>
+            <p className="text-xs text-foreground truncate">{app.binary_path}</p>
           )}
         </div>
-        {!disabled && <ChevronRight className="w-4 h-4 text-muted-foreground/50" />}
+        {!disabled && <ChevronRight className="w-4 h-4 text-foreground" />}
       </div>
     </button>
   );

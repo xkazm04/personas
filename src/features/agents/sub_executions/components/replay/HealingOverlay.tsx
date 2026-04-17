@@ -93,7 +93,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-6 text-muted-foreground/60">
+            <div className="flex items-center justify-center py-6 text-foreground">
               <LoadingSpinner className="mr-2" />
               <span className="typo-body">{e.loading_healing_data}</span>
             </div>
@@ -117,7 +117,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {/* Healing issues */}
               {issues.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                     {tx(e.healing_issues_count, { count: issues.length })}
                   </div>
                   {issues.map((issue) => {
@@ -138,12 +138,12 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           className="w-full flex items-center gap-2 px-3 py-2 text-left"
                         >
                           {isExpanded ? (
-                            <ChevronDown className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
                           ) : (
-                            <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
                           )}
                           <SeverityBadge severity={issue.severity} />
-                          <span className="typo-body text-foreground/80 truncate">
+                          <span className="typo-body text-foreground truncate">
                             {issue.title}
                           </span>
                           {issue.auto_fixed && (
@@ -166,23 +166,23 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                               className="animate-fade-slide-in overflow-hidden"
                             >
                               <div className="px-3 pb-3 space-y-2 border-t border-primary/10 pt-2 mx-2">
-                                <p className="typo-body text-muted-foreground/70">
+                                <p className="typo-body text-foreground">
                                   {issue.description}
                                 </p>
                                 {issue.suggested_fix && (
                                   <div className="rounded-card bg-secondary/40 p-2.5">
                                     <div className="flex items-center gap-1 mb-1">
-                                      <Wrench className="w-2.5 h-2.5 text-muted-foreground/50" />
-                                      <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                                      <Wrench className="w-2.5 h-2.5 text-foreground" />
+                                      <span className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                                         {e.suggested_fix}
                                       </span>
                                     </div>
-                                    <p className="typo-code text-foreground/70">
+                                    <p className="typo-code text-foreground">
                                       {issue.suggested_fix}
                                     </p>
                                   </div>
                                 )}
-                                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground/40">
+                                <div className="flex items-center gap-3 text-[10px] font-mono text-foreground">
                                   <span>Category: {issue.category}</span>
                                   <span>Status: {issue.status}</span>
                                 </div>
@@ -199,7 +199,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {/* Retry chain */}
               {retryChain.length > 1 && (
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                     {e.retry_chain}
                   </div>
                   <div className="flex items-center gap-1">
@@ -218,7 +218,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           )}
                         </div>
                         {i < retryChain.length - 1 && (
-                          <span className="text-muted-foreground/30">→</span>
+                          <span className="text-foreground">→</span>
                         )}
                       </div>
                     ))}
@@ -228,7 +228,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
 
               {/* No issues found */}
               {issues.length === 0 && !loading && (
-                <p className="typo-body text-muted-foreground/50 italic">
+                <p className="typo-body text-foreground italic">
                   {e.no_healing_issues}
                 </p>
               )}
@@ -247,7 +247,7 @@ function SeverityBadge({ severity }: { severity: string }) {
       ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
       : severity === 'medium'
         ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-        : 'bg-primary/10 text-muted-foreground/60 border-primary/15';
+        : 'bg-primary/10 text-foreground border-primary/15';
 
   return (
     <span className={`px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border shrink-0 ${cls}`}>

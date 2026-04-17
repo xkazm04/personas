@@ -7,8 +7,8 @@ const KIND_COLORS: Record<ResultKind, { icon: string; border: string }> = {
   credential:     { icon: 'text-emerald-400',           border: 'border-l-emerald-400' },
   template:       { icon: 'text-cyan-400',              border: 'border-l-cyan-400' },
   automation:     { icon: 'text-amber-400',             border: 'border-l-amber-400' },
-  navigation:     { icon: 'text-muted-foreground/70',   border: 'border-l-muted-foreground/70' },
-  action:         { icon: 'text-muted-foreground/70',   border: 'border-l-muted-foreground/70' },
+  navigation:     { icon: 'text-foreground',   border: 'border-l-muted-foreground/70' },
+  action:         { icon: 'text-foreground',   border: 'border-l-muted-foreground/70' },
   'agent-action': { icon: 'text-violet-300',            border: 'border-l-violet-300' },
 };
 
@@ -61,7 +61,7 @@ export function CommandPaletteResults({
                 className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors border-l-2 ${
                   isSelected
                     ? `${colors.border} bg-secondary/30 text-foreground`
-                    : 'border-l-transparent text-foreground/80 hover:bg-secondary/40'
+                    : 'border-l-transparent text-foreground hover:bg-secondary/40'
                 }`}
               >
                 <span className={`shrink-0 ${colors.icon}`}>

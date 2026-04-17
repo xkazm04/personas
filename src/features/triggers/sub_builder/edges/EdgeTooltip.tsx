@@ -36,15 +36,15 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
-        <span className="text-[10px] text-muted-foreground truncate max-w-[160px]">{eventType}</span>
+        <span className="text-[10px] text-foreground truncate max-w-[160px]">{eventType}</span>
         <button onClick={onClose} className="p-0.5 rounded hover:bg-secondary/60">
-          <X className="w-3 h-3 text-muted-foreground" />
+          <X className="w-3 h-3 text-foreground" />
         </button>
       </div>
 
       {/* Type selector */}
       <div className="p-2 space-y-1">
-        <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider px-1">Routing</span>
+        <span className="text-[9px] text-foreground uppercase tracking-wider px-1">Routing</span>
         {Object.entries(EVENT_EDGE_TYPES).map(([key, style]) => (
           <button
             key={key}
@@ -64,7 +64,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
             </svg>
             <div className="flex flex-col min-w-0">
               <span className="text-[11px] font-medium text-foreground">{style.label}</span>
-              <span className="text-[9px] text-muted-foreground/60">{style.description}</span>
+              <span className="text-[9px] text-foreground">{style.description}</span>
             </div>
           </button>
         ))}

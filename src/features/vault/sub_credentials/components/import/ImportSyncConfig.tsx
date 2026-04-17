@@ -37,7 +37,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
       {showSync && syncConfig && (
         <div className="flex items-center gap-3 pl-6">
           <div className="flex-1">
-            <label className="text-[11px] text-muted-foreground/60">{t.vault.credential_import.source_ref}</label>
+            <label className="text-[11px] text-foreground">{t.vault.credential_import.source_ref}</label>
             <input
               type="text"
               value={syncConfig.sourceRef}
@@ -52,7 +52,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
             />
           </div>
           <div className="w-28">
-            <label className="text-[11px] text-muted-foreground/60">{t.vault.credential_import.poll_interval}</label>
+            <label className="text-[11px] text-foreground">{t.vault.credential_import.poll_interval}</label>
             <select
               value={syncConfig.intervalMinutes}
               onChange={(e) => onSyncConfigChange({ ...syncConfig, intervalMinutes: Number(e.target.value) })}
@@ -67,7 +67,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
           </div>
         </div>
       )}
-      <p className="text-[11px] text-muted-foreground/50 pl-6">
+      <p className="text-[11px] text-foreground pl-6">
         Watches the external vault for changes and auto-updates credentials using polling.
       </p>
     </div>

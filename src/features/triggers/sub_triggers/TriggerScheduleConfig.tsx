@@ -23,7 +23,7 @@ export function IntervalConfig({
   const { t } = useTranslation();
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      <label className="block text-sm font-medium text-foreground mb-1.5">
         {t.triggers.schedule.interval_label}
       </label>
       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -42,7 +42,7 @@ export function IntervalConfig({
             className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
               !customInterval && interval === preset.value
                 ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+                : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
             }`}
           >
             {preset.label}
@@ -54,7 +54,7 @@ export function IntervalConfig({
           className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
             customInterval
               ? 'bg-primary/15 text-primary border-primary/30'
-              : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+              : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
           }`}
         >
           Custom
@@ -97,11 +97,11 @@ export function IntervalConfig({
         const runsPerDay = Math.floor(86400 / secs);
         return (
           <>
-            <p className="text-sm text-muted-foreground/90 mt-1.5">
+            <p className="text-sm text-foreground mt-1.5">
               This persona will {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
-              <span className="text-foreground/80 font-medium">{formatInterval(secs)}</span>
+              <span className="text-foreground font-medium">{formatInterval(secs)}</span>
               , starting from when you enable it.{' '}
-              <span className="text-muted-foreground/80">
+              <span className="text-foreground">
                 Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} per day.
               </span>
             </p>
@@ -146,7 +146,7 @@ export function CronConfig({
     <div className="space-y-3">
       {/* Presets */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Quick Presets
         </label>
         <div className="flex flex-wrap gap-1.5">
@@ -158,7 +158,7 @@ export function CronConfig({
               className={`px-2.5 py-1 rounded-modal text-sm transition-all border ${
                 cronExpression === p.value
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
               {p.label}
@@ -169,7 +169,7 @@ export function CronConfig({
 
       {/* Expression input */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Cron Expression
         </label>
         <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function CronConfig({
         )}
 
         {/* Field legend */}
-        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/50 font-mono">
+        <div className="flex items-center gap-3 mt-2 text-sm text-foreground font-mono">
           <span>min</span>
           <span>hour</span>
           <span>day</span>

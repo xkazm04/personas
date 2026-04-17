@@ -49,20 +49,20 @@ export function SavedViewsDropdown({
       wide
     >
       {savedViews.length === 0 && !saveDialogOpen && (
-        <p className="text-xs text-muted-foreground/50 px-2 py-1.5">{t.overview.realtime_page.no_saved_views}</p>
+        <p className="text-xs text-foreground px-2 py-1.5">{t.overview.realtime_page.no_saved_views}</p>
       )}
       {savedViews.map((view) => (
         <div
           key={view.id}
           className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-input cursor-pointer transition-colors ${
-            activeViewId === view.id ? 'bg-primary/10 text-primary' : 'hover:bg-secondary/40 text-foreground/80'
+            activeViewId === view.id ? 'bg-primary/10 text-primary' : 'hover:bg-secondary/40 text-foreground'
           }`}
           onClick={() => { onApplyView(view); onClose(); }}
         >
           <span className="text-sm truncate">{view.name}</span>
           <button
             onClick={(e) => { e.stopPropagation(); onDeleteView(view.id); }}
-            className="p-0.5 rounded hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
+            className="p-0.5 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
             title={t.overview.realtime_page.delete_saved_view}
             aria-label={`Delete view ${view.name}`}
           >
@@ -90,7 +90,7 @@ export function SavedViewsDropdown({
           </button>
           <button
             onClick={() => { setSaveDialogOpen(false); setSaveName(''); }}
-            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/50"
+            className="p-1 rounded hover:bg-secondary/40 text-foreground"
             title={t.common.cancel}
             aria-label={t.common.cancel}
           >

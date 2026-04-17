@@ -43,14 +43,14 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
         <h2 className="text-lg font-bold text-foreground tracking-tight">
           Choose a service to set up
         </h2>
-        <p className="text-sm text-muted-foreground/80 mt-1">
+        <p className="text-sm text-foreground mt-1">
           The AI will walk you step-by-step through obtaining API credentials.
         </p>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         <input
           type="text"
           value={search}
@@ -65,7 +65,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
       <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
         {grouped.map(([category, connectors]) => (
           <div key={category}>
-            <h3 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
               {category}
             </h3>
             <motion.div
@@ -102,13 +102,13 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                         </span>
                       )}
                     </span>
-                    <span className="text-sm text-muted-foreground/60 block truncate">
+                    <span className="text-sm text-foreground block truncate">
                       {isDesktopBridge(connector)
                         ? t.vault.wizard_detect.desktop_bridge
                         : `${connector.fields.length} field${connector.fields.length !== 1 ? 's' : ''} required`}
                     </span>
                   </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-violet-400 transition-colors shrink-0" />
+                  <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-violet-400 transition-colors shrink-0" />
                 </motion.button>
               ))}
             </motion.div>
@@ -117,7 +117,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
 
         {grouped.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-sm text-muted-foreground/60">{tx(t.vault.wizard_detect.no_services, { search })}</p>
+            <p className="text-sm text-foreground">{tx(t.vault.wizard_detect.no_services, { search })}</p>
           </div>
         )}
       </div>

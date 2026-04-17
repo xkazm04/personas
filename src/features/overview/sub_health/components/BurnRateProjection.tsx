@@ -27,7 +27,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
         </div>
         <div>
           <h3 className="typo-heading text-foreground/90">{t.overview.burn_rate_extra.title}</h3>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-foreground">
             {projections.activeCount} active personas &middot; local month boundary
           </p>
         </div>
@@ -36,15 +36,15 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="px-3 py-2 rounded-card bg-secondary/40">
-          <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.daily_burn}</p>
+          <p className="text-[10px] text-foreground uppercase tracking-wider">{t.overview.burn_rate_extra.daily_burn}</p>
           <p className="typo-heading-lg text-emerald-400">${projections.totalDailyBurn.toFixed(2)}</p>
         </div>
         <div className="px-3 py-2 rounded-card bg-secondary/40">
-          <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.projected_monthly}</p>
+          <p className="text-[10px] text-foreground uppercase tracking-wider">{t.overview.burn_rate_extra.projected_monthly}</p>
           <p className="typo-heading-lg text-foreground/90">${projections.totalProjectedMonthly.toFixed(2)}</p>
         </div>
         <div className="px-3 py-2 rounded-card bg-secondary/40">
-          <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.at_risk}</p>
+          <p className="text-[10px] text-foreground uppercase tracking-wider">{t.overview.burn_rate_extra.at_risk}</p>
           <p className={`typo-heading-lg ${projections.atRisk.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
             {projections.atRisk.length}
           </p>
@@ -54,7 +54,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
       {/* Top burners */}
       {projections.topBurners.length > 0 && (
         <div className="space-y-1.5">
-          <p className="typo-caption text-muted-foreground/70 mb-2">{t.overview.burn_rate_extra.top_cost_drivers}</p>
+          <p className="typo-caption text-foreground mb-2">{t.overview.burn_rate_extra.top_cost_drivers}</p>
           {projections.topBurners.map((s) => (
             <BurnBar key={s.personaId} signal={s} maxBurn={projections.topBurners[0]!.dailyBurnRate} />
           ))}
@@ -71,7 +71,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
           <div className="space-y-1">
             {projections.atRisk.map((s) => (
               <div key={s.personaId} className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground truncate">
+                <span className="text-foreground truncate">
                   {s.personaIcon && <span className="mr-1">{s.personaIcon}</span>}
                   {s.personaName}
                 </span>
@@ -93,14 +93,14 @@ function BurnBar({ signal, maxBurn }: { signal: PersonaHealthSignal; maxBurn: nu
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 truncate text-xs text-muted-foreground/80">
+      <div className="w-24 truncate text-xs text-foreground">
         {signal.personaIcon && <span className="mr-1">{signal.personaIcon}</span>}
         {signal.personaName}
       </div>
       <div className="flex-1 h-2 rounded-full bg-secondary/40 overflow-hidden">
         <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-mono text-muted-foreground/70 w-16 text-right">${signal.dailyBurnRate.toFixed(2)}/d</span>
+      <span className="text-xs font-mono text-foreground w-16 text-right">${signal.dailyBurnRate.toFixed(2)}/d</span>
     </div>
   );
 }

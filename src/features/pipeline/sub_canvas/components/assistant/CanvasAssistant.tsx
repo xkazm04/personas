@@ -89,7 +89,7 @@ export default function CanvasAssistant({
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+                className="p-1 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/95 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

@@ -127,14 +127,14 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
 
       {/* No deployments notice */}
       {deployments.filter((d) => d.status === 'active').length === 0 && (
-        <p className="text-sm text-muted-foreground/80 py-6 text-center">
+        <p className="text-sm text-foreground py-6 text-center">
           Deploy a persona first to create cloud triggers.
         </p>
       )}
 
       {/* Trigger list */}
       {triggers.length === 0 && deployedPersonaIds.size > 0 ? (
-        <p className="text-sm text-muted-foreground/80 py-6 text-center">
+        <p className="text-sm text-foreground py-6 text-center">
           No cloud triggers yet. Create one to schedule automated runs.
         </p>
       ) : (

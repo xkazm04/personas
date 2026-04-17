@@ -23,7 +23,7 @@ export default function TeamMemoryBadge({ count, isOpen, isPulsing, onClick }: T
               />
             )}
           </div>
-          <span className="text-sm font-medium text-foreground/80">{count}</span>
+          <span className="text-sm font-medium text-foreground">{count}</span>
         </button>
       )}
     </>

@@ -21,7 +21,7 @@ export function EditFormFields({
 }: EditFormFieldsProps) {
   return (
     <div>
-      <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+      <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
         Credential Fields
       </h4>
       <div className="space-y-3">

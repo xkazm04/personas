@@ -53,7 +53,7 @@ export function SidebarScoreRing({ score }: { score: number }) {
   return (
     <div className="relative flex-shrink-0" title={`${score}% setup complete`}>
       <ProgressRing score={score} size={18} strokeWidth={2} />
-      <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-muted-foreground/60 rotate-90">
+      <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-foreground rotate-90">
         {score}
       </span>
     </div>
@@ -109,19 +109,19 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
               {tx(t.agents.onboarding.setup_complete, { score: checklist.score })}
             </span>
           </div>
-          <span className="text-sm text-muted-foreground/50">
+          <span className="text-sm text-foreground">
             {tx(t.agents.onboarding.steps_done, { completed: checklist.completed, total: checklist.total })}
           </span>
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/50 transition-colors"
+          className="p-1 rounded-card hover:bg-primary/10 text-foreground transition-colors"
         >
           {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
         <button
           onClick={handleDismiss}
-          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/40 transition-colors"
+          className="p-1 rounded-card hover:bg-primary/10 text-foreground transition-colors"
           title={t.agents.onboarding.dismiss_checklist}
         >
           <X className="w-3.5 h-3.5" />
@@ -137,14 +137,14 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
               onClick={() => handleItemClick(item.tab)}
               className={`w-full flex items-center gap-2 px-2 py-1 rounded-card text-left transition-colors ${
                 item.done
-                  ? 'text-muted-foreground/50'
-                  : 'text-foreground/80 hover:bg-violet-500/10'
+                  ? 'text-foreground'
+                  : 'text-foreground hover:bg-violet-500/10'
               }`}
             >
               {item.done ? (
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               ) : (
-                <Circle className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+                <Circle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
               )}
               <span className={`text-sm flex-1 ${item.done ? 'line-through' : ''}`}>
                 {item.label}

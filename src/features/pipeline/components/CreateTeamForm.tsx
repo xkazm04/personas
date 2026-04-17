@@ -68,7 +68,7 @@ export function CreateTeamForm({
           )}
         </FormField>
         <div>
-          <label className="text-sm font-medium text-foreground/80 mb-1.5 block">{t.pipeline.color}</label>
+          <label className="text-sm font-medium text-foreground mb-1.5 block">{t.pipeline.color}</label>
           <div className="flex gap-2 flex-wrap">
             {Object.entries(TEAM_COLORS).map(([hex, name]) => {
               const isSelected = newColor === hex;
@@ -86,7 +86,7 @@ export function CreateTeamForm({
                       <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
                     )}
                   </span>
-                  <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                  <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                     {name}
                   </span>
                 </button>
@@ -97,7 +97,7 @@ export function CreateTeamForm({
         <div className="flex justify-end gap-2 pt-2">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
+            className="px-3 py-1.5 text-sm text-foreground hover:text-foreground/95 transition-colors"
           >
             {t.common.cancel}
           </button>

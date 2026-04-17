@@ -89,7 +89,7 @@ export default function DebuggerControls({
       </div>
 
       {/* Step progress */}
-      <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/80">
+      <div className="flex items-center gap-2 text-sm font-mono text-foreground">
         <span>Step {Math.max(0, stepIndex + 1)} / {totalSteps}</span>
         {isFinished && <span className="text-emerald-400">{t.pipeline.complete_label}</span>}
         {paused && isStarted && !isFinished && <span className="text-amber-400">{t.pipeline.paused}</span>}
@@ -101,7 +101,7 @@ export default function DebuggerControls({
       {inspectedNode && panelCollapsed && (
         <button
           onClick={onExpandInspector}
-          className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors text-sm"
+          className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 transition-colors text-sm"
         >
           <ChevronUp className="w-3 h-3" />
           {t.pipeline.inspector}

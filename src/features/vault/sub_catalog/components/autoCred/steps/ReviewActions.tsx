@@ -27,7 +27,7 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
           }
         }}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 hover:bg-secondary/40 text-muted-foreground/70 hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
       >
         {isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
         {isHealthchecking ? 'Testing...' : 'Test Connection'}
@@ -92,7 +92,7 @@ export function ReviewActionButtons({
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Discard
         </button>
@@ -106,7 +106,7 @@ export function ReviewActionButtons({
       </div>
       <div className="flex items-center gap-2">
         {!healthResult?.success && (
-          <span className="text-sm text-muted-foreground/60">{t.vault.auto_cred_extra.test_to_save}</span>
+          <span className="text-sm text-foreground">{t.vault.auto_cred_extra.test_to_save}</span>
         )}
         {/* Dev-only: Save procedure for future re-use */}
         {isDev && healthResult?.success && extractedValues.__procedure_log && (

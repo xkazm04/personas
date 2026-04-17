@@ -50,13 +50,13 @@ export function CronScheduleConfig({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <CalendarClock className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.cron_schedule}</label>
+        <CalendarClock className="w-3.5 h-3.5 text-foreground" />
+        <label className="text-sm text-foreground">{t.vault.event_config.cron_schedule}</label>
       </div>
 
       {!editing && cronExpr ? (
         <div className="flex items-center gap-2">
-          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded text-sm font-mono text-foreground/80">
+          <code className="px-2 py-0.5 bg-background/50 border border-border/30 rounded text-sm font-mono text-foreground">
             {cronExpr}
           </code>
           <button
@@ -76,7 +76,7 @@ export function CronScheduleConfig({
                 className={`px-2 py-0.5 rounded-card text-sm transition-colors ${
                   draft === p.value
                     ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                    : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
+                    : 'bg-secondary/40 text-foreground border border-transparent hover:bg-secondary/60'
                 }`}
               >
                 {p.label}
@@ -101,7 +101,7 @@ export function CronScheduleConfig({
             {cronExpr && (
               <button
                 onClick={() => { setDraft(cronExpr); setEditing(false); }}
-                className="px-2 py-1 text-muted-foreground/80 hover:text-foreground/90 text-sm transition-colors"
+                className="px-2 py-1 text-foreground hover:text-foreground/90 text-sm transition-colors"
               >
                 {t.common.cancel}
               </button>
@@ -126,8 +126,8 @@ export function ExpirationThresholdConfig({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
-        <Timer className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.rotate_when_expiring}</label>
+        <Timer className="w-3.5 h-3.5 text-foreground" />
+        <label className="text-sm text-foreground">{t.vault.event_config.rotate_when_expiring}</label>
         <div className="flex items-center gap-1">
           {[3, 7, 14, 30].map((d) => (
             <button
@@ -136,7 +136,7 @@ export function ExpirationThresholdConfig({
               className={`px-2 py-0.5 rounded-card text-sm font-mono transition-colors ${
                 thresholdDays === d
                   ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                  : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
+                  : 'bg-secondary/40 text-foreground border border-transparent hover:bg-secondary/60'
               }`}
             >
               {d}d
@@ -144,7 +144,7 @@ export function ExpirationThresholdConfig({
           ))}
         </div>
       </div>
-      <p className="text-sm text-muted-foreground/60">
+      <p className="text-sm text-foreground">
         {t.vault.event_config.expiration_hint}
       </p>
     </div>
@@ -164,8 +164,8 @@ export function GenericPollingConfig({
   return (
     <>
       <div className="flex items-center gap-3">
-        <Clock className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <label className="text-sm text-muted-foreground/90">{t.vault.event_config.polling_interval}</label>
+        <Clock className="w-3.5 h-3.5 text-foreground" />
+        <label className="text-sm text-foreground">{t.vault.event_config.polling_interval}</label>
         <ThemedSelect
           value={String(pollingInterval)}
           onChange={(e) => onUpdate({ pollingIntervalSeconds: parseInt(e.target.value) })}
@@ -180,7 +180,7 @@ export function GenericPollingConfig({
           <option value={600}>{t.vault.event_config.minutes_10}</option>
         </ThemedSelect>
       </div>
-      <div className="text-sm text-muted-foreground/80">
+      <div className="text-sm text-foreground">
         {t.vault.event_config.checks_per_day.replace('{count}', Math.round(86400 / pollingInterval).toLocaleString())}
       </div>
     </>

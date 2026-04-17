@@ -68,12 +68,12 @@ export function BudgetRecoveryCard({
             </button>
             <button
               onClick={() => setEditorTab('settings')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-border/30 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-border/30 text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
               {e.raise_budget}
             </button>
-            <span className="flex items-center gap-1.5 typo-body text-muted-foreground/50">
+            <span className="flex items-center gap-1.5 typo-body text-foreground">
               <CalendarClock className="w-3.5 h-3.5" />
               {tx(e.resets_in, { days: getResetDate() })}
             </span>
@@ -104,7 +104,7 @@ export function BudgetRecoveryCard({
               <PlayCircle className="w-3.5 h-3.5" />
               {e.run_anyway}
             </button>
-            <span className="flex items-center gap-1.5 typo-body text-muted-foreground/50 animate-pulse">
+            <span className="flex items-center gap-1.5 typo-body text-foreground animate-pulse">
               <RefreshCw className="w-3.5 h-3.5" />
               {e.retrying_automatically}
             </span>

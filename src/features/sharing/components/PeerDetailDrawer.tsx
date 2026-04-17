@@ -155,13 +155,13 @@ export function PeerDetailDrawer({
                 <TrustUnknownIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
               )}
             </div>
-            <div className="text-xs font-mono text-muted-foreground mt-0.5">
+            <div className="text-xs font-mono text-foreground mt-0.5">
               {truncatedId}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -200,30 +200,30 @@ export function PeerDetailDrawer({
 
           {/* Peer info */}
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{st.peer_info}</h4>
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{st.peer_info}</h4>
             <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{st.trust_label}</span>
-                <span className={isTrusted ? 'text-emerald-400' : 'text-muted-foreground'}>
+                <span className="text-foreground">{st.trust_label}</span>
+                <span className={isTrusted ? 'text-emerald-400' : 'text-foreground'}>
                   {isTrusted ? st.trusted : st.unknown}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{st.first_seen}</span>
-                <span className="text-foreground/80">
+                <span className="text-foreground">{st.first_seen}</span>
+                <span className="text-foreground">
                   {new Date(peer.first_seen_at).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{st.last_seen}</span>
-                <span className="text-foreground/80">
+                <span className="text-foreground">{st.last_seen}</span>
+                <span className="text-foreground">
                   {new Date(peer.last_seen_at).toLocaleString()}
                 </span>
               </div>
               {addresses.length > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{st.address}</span>
-                  <span className="text-foreground/80 font-mono text-xs">
+                  <span className="text-foreground">{st.address}</span>
+                  <span className="text-foreground font-mono text-xs">
                     {addresses[0]}
                   </span>
                 </div>
@@ -244,11 +244,11 @@ export function PeerDetailDrawer({
               )}
 
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
-                    <span className="text-[10px] font-normal text-muted-foreground/60">
+                    <span className="text-[10px] font-normal text-foreground">
                       {syncProgress?.resourceCount ?? manifest.length} synced
                       {syncProgress?.syncedAt && (
                         <> · {formatRelativeTime(syncProgress.syncedAt)}</>
@@ -260,7 +260,7 @@ export function PeerDetailDrawer({
                   onClick={handleSync}
                   disabled={syncing}
                   title={st.sync_manifest}
-                  className="p-1 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  className="p-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {syncing ? (
                     <LoadingSpinner size="sm" />
@@ -271,7 +271,7 @@ export function PeerDetailDrawer({
               </div>
 
               {manifest.length === 0 ? (
-                <div className="rounded-card border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                <div className="rounded-card border border-dashed border-border p-4 text-center text-xs text-foreground">
                   {st.no_shared_resources}
                 </div>
               ) : (
@@ -294,16 +294,16 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
 
   return (
     <div className="rounded-card border border-border bg-secondary/10 p-2.5 flex items-center gap-2">
-      <Package className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      <Package className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground truncate">{entry.display_name}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-muted-foreground">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
             {entry.resource_type}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-muted-foreground/60">{entry.access_level}</span>
+          <span className="text-[10px] text-foreground">{entry.access_level}</span>
           {parsedTags.length > 0 && (
             <div className="flex gap-1">
               {parsedTags.slice(0, 3).map((tag) => (
@@ -315,7 +315,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50 flex-shrink-0">
+      <div className="flex items-center gap-1 text-[10px] text-foreground flex-shrink-0">
         <Clock className="w-3 h-3" />
         {new Date(entry.synced_at).toLocaleDateString()}
       </div>

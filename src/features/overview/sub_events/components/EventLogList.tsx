@@ -128,7 +128,7 @@ export default function EventLogList() {
       ),
       render: (event) => {
         const label = SOURCE_TYPE_LABELS[event.source_type] ?? event.source_type;
-        return <span className="text-sm text-foreground/70">{label}</span>;
+        return <span className="text-sm text-foreground">{label}</span>;
       },
     },
     {
@@ -151,8 +151,8 @@ export default function EventLogList() {
         const raw = event.source_type || '';
         const display = raw.startsWith('persona:') ? raw.slice(8) : '';
         return display
-          ? <span className="text-sm text-foreground/70 truncate">{display}</span>
-          : <span className="text-sm text-muted-foreground/40">—</span>;
+          ? <span className="text-sm text-foreground truncate">{display}</span>
+          : <span className="text-sm text-foreground">—</span>;
       },
     },
     {
@@ -163,7 +163,7 @@ export default function EventLogList() {
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
       render: (event) => {
-        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
         return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
       },
     },
@@ -218,7 +218,7 @@ export default function EventLogList() {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1.5 rounded-card text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -231,18 +231,18 @@ export default function EventLogList() {
       <div className="px-4 pb-2 flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
             <input
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder={t.overview.events.search_placeholder}
-              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
             />
             {searchText && (
               <button
                 onClick={() => setSearchText('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground/40 hover:text-foreground/70"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -260,7 +260,7 @@ export default function EventLogList() {
               </button>
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
                 title="Clear all filters"
               >
                 <X className="w-3 h-3" /> {t.common.clear}
@@ -272,21 +272,21 @@ export default function EventLogList() {
         {/* Saved views chips */}
         {savedViews.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-foreground/50">{t.overview.events.views_label}</span>
+            <span className="text-xs text-foreground">{t.overview.events.views_label}</span>
             {savedViews.map((view) => (
               <button
                 key={view.id}
                 onClick={() => applySavedView(view)}
                 className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-card border transition-colors ${activeViewId === view.id
                     ? 'bg-primary/15 text-primary border-primary/30'
-                    : 'bg-secondary/30 text-foreground/70 border-primary/10 hover:bg-secondary/50'
+                    : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
                   }`}
               >
                 <Bookmark className="w-2.5 h-2.5" />
                 {view.name}
                 <button
                   onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
-                  className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground/40 hover:text-status-error transition-opacity"
+                  className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground hover:text-status-error transition-opacity"
                   title={t.overview.events.delete_view}
                 >
                   <BookmarkX className="w-2.5 h-2.5" />
@@ -304,7 +304,7 @@ export default function EventLogList() {
               value={viewName}
               onChange={(e) => setViewName(e.target.value)}
               placeholder={t.overview.events.view_name_placeholder}
-              className="flex-1 px-2 py-1 text-sm rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30"
+              className="flex-1 px-2 py-1 text-sm rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30"
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
               autoFocus
             />
@@ -317,7 +317,7 @@ export default function EventLogList() {
             </button>
             <button
               onClick={() => { setShowSaveDialog(false); setViewName(''); }}
-              className="px-2 py-1 text-xs rounded-card text-foreground/60 hover:text-foreground transition-colors"
+              className="px-2 py-1 text-xs rounded-card text-foreground hover:text-foreground transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -353,13 +353,13 @@ export default function EventLogList() {
             {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
                 {isLoadingOlder ? (
-                  <span className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                  <span className="flex items-center gap-2 text-xs text-foreground">
                     <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
                   </span>
                 ) : (
                   <button
                     onClick={loadOlder}
-                    className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
+                    className="text-xs text-foreground hover:text-foreground transition-colors"
                   >
                     {t.overview.events.load_older}
                   </button>

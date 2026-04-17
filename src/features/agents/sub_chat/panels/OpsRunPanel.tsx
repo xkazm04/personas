@@ -14,7 +14,7 @@ const STATUS_STYLES: Record<string, { icon: typeof CheckCircle2; color: string; 
   pending: { icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
 };
 
-const DEFAULT_STYLE = { icon: Clock, color: 'text-muted-foreground/60', bg: 'bg-secondary/30' };
+const DEFAULT_STYLE = { icon: Clock, color: 'text-foreground', bg: 'bg-secondary/30' };
 
 export default function OpsRunPanel({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
@@ -59,10 +59,10 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
     <div className="p-3 space-y-3" data-testid="ops-run-panel">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.run}</h3>
+        <h3 className="typo-label text-foreground">{t.agents.ops.run}</h3>
         <button
           onClick={fetchRecent}
-          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
+          className="p-1 rounded-input text-foreground hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
           title={t.common.refresh}
           aria-label={t.agents.ops_run.refresh_executions}
         >
@@ -92,13 +92,13 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
 
       {/* Recent executions */}
       <div className="space-y-1.5">
-        <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_run.recent}</h4>
+        <h4 className="text-[11px] text-foreground font-medium uppercase tracking-wider">{t.agents.ops_run.recent}</h4>
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : executions.length === 0 ? (
-          <p className="text-xs text-muted-foreground/40 text-center py-4">{t.agents.ops_run.no_executions}</p>
+          <p className="text-xs text-foreground text-center py-4">{t.agents.ops_run.no_executions}</p>
         ) : (
           executions.map((exec) => {
             const style = STATUS_STYLES[exec.status] ?? DEFAULT_STYLE;
@@ -117,9 +117,9 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className={`text-xs font-medium capitalize ${style.color}`}>{exec.status}</span>
-                    <span className="text-[11px] text-muted-foreground/40">{duration}</span>
+                    <span className="text-[11px] text-foreground">{duration}</span>
                   </div>
-                  <span className="text-[11px] text-muted-foreground/40">{date} {time}</span>
+                  <span className="text-[11px] text-foreground">{date} {time}</span>
                 </div>
               </div>
             );

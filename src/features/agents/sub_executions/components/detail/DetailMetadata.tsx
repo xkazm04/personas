@@ -123,7 +123,7 @@ export function DetailMemories({ execution }: { execution: PersonaExecution }) {
                     <CategoryChip category={mem.category} />
                     <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
                   </div>
-                  <p className="typo-body text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>
+                  <p className="typo-body text-foreground line-clamp-2">{stripHtml(mem.content)}</p>
                 </div>
               );
             })}
@@ -169,7 +169,7 @@ export function DetailLogSection({ execution }: { execution: PersonaExecution })
       {showLog && (
           <div>
             {logLoading && (
-              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-muted-foreground/80">
+              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />{e.loading_log}
               </div>
             )}

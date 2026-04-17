@@ -119,7 +119,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
             AI Healing {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
           </span>
           {isDone && elapsed > 0 && (
-            <span className="typo-caption text-muted-foreground/50">{elapsed}s</span>
+            <span className="typo-caption text-foreground">{elapsed}s</span>
           )}
           {!isDone && (
             <div className="w-3.5 h-3.5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
@@ -128,7 +128,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+            className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
             title={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
@@ -136,7 +136,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {isDone && (
             <button
               onClick={onDismiss}
-              className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.common.dismiss}
             >
               <X className="w-3.5 h-3.5" />
@@ -167,8 +167,8 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                 dotClass = 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400';
                 labelClass = 'text-cyan-300';
               } else {
-                dotClass = 'bg-secondary/40 border-primary/15 text-muted-foreground/40';
-                labelClass = 'text-muted-foreground/40';
+                dotClass = 'bg-secondary/40 border-primary/15 text-foreground';
+                labelClass = 'text-foreground';
               }
 
               return (
@@ -186,7 +186,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                       </span>
                     </div>
                     {isCurrent && elapsed > 0 && (
-                      <span className="typo-caption text-muted-foreground/50 ml-[30px]">{elapsed}s</span>
+                      <span className="typo-caption text-foreground ml-[30px]">{elapsed}s</span>
                     )}
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-secondary/80 to-transparent backdrop-blur-sm z-10 rounded-t-lg pointer-events-none" />
               <div
                 ref={logRef}
-                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code leading-relaxed text-muted-foreground/80 scroll-smooth"
+                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code leading-relaxed text-foreground scroll-smooth"
               >
                 {healing.lines.map((line, i) => (
                   <div key={i} className="whitespace-pre-wrap break-all">

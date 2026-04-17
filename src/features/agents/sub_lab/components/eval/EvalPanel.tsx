@@ -60,14 +60,14 @@ export function EvalPanel() {
         runTestId="eval-start-btn"
       >
         <div className="space-y-1">
-          <label className="text-sm font-medium text-muted-foreground/80">{t.agents.lab.prompt_versions_label}</label>
+          <label className="text-sm font-medium text-foreground">{t.agents.lab.prompt_versions_label}</label>
           <div className="flex flex-wrap gap-2" data-testid="eval-version-selector">
             {promptVersions.map((v) => {
               const isSelected = selectedVersionIds.values.has(v.id);
               return (
                 <button key={v.id} onClick={() => toggleVersion(v.id)} data-testid={`eval-version-toggle-${v.version_number}`}
 
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'}`}>
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-foreground border-primary/10 hover:border-primary/20'}`}>
                   {isSelected && <Check className="w-3 h-3" />}
                   <span className="font-mono">v{v.version_number}</span>
                   <span className="text-sm opacity-60">{v.tag}</span>
@@ -82,13 +82,13 @@ export function EvalPanel() {
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} testIdPrefix="eval" />
 
         <div className="space-y-1">
-          <label className="text-sm text-muted-foreground/70">{t.agents.lab.test_input_label}</label>
+          <label className="text-sm text-foreground">{t.agents.lab.test_input_label}</label>
           <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' data-testid="eval-test-input"
             className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
         </div>
 
         {selectedVersionIds.values.size >= 2 && selectedModels.size > 0 && (
-          <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-modal px-3 py-2">
+          <div className="text-sm text-foreground bg-secondary/30 rounded-modal px-3 py-2">
             {selectedVersionIds.values.size} versions x {selectedModels.size} models = {selectedVersionIds.values.size * selectedModels.size} evaluation cells
           </div>
         )}

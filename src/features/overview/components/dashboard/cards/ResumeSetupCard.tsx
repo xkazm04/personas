@@ -44,7 +44,7 @@ export default function ResumeSetupCard() {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="typo-heading text-foreground/90">{t.overview.resume_setup_card.resume_tour}</h3>
-          <p className="typo-body text-muted-foreground/70">
+          <p className="typo-body text-foreground">
             You left off at <span className="text-violet-400 font-medium">{currentStepLabel}</span>
             {completedCount > 0 && (
               <> &mdash; {completedCount}/{TOUR_STEPS.length} steps completed</>
@@ -54,7 +54,7 @@ export default function ResumeSetupCard() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleDismiss}
-            className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/50 hover:text-foreground/70"
+            className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/70"
             title={t.overview.resume_setup_card.skip_tour}
           >
             <X className="w-4 h-4" />

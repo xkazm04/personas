@@ -75,7 +75,7 @@ export function FavoriteCell({
       >
         <Star
           className={`w-3.5 h-3.5 transition-colors ${
-            isFavorite ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/25 hover:text-amber-400/50'
+            isFavorite ? 'text-amber-400 fill-amber-400' : 'text-foreground hover:text-amber-400/50'
           }`}
         />
       </button>
@@ -114,7 +114,7 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
                 e.stopPropagation();
                 void copyDescriptionToClipboard(persona.description!, t.agents.persona_list);
               }}
-              className="text-md text-muted-foreground/50 truncate cursor-copy text-left block max-w-full hover:text-muted-foreground/80 transition-colors"
+              className="text-md text-foreground truncate cursor-copy text-left block max-w-full hover:text-muted-foreground/80 transition-colors"
             >
               {persona.description}
             </button>
@@ -142,7 +142,7 @@ export function ConnectorsCell({
   if (connectors.length === 0) {
     return (
       <Tooltip content={t.agents.persona_list.no_connectors_configured}>
-        <span className="text-muted-foreground/30">
+        <span className="text-foreground">
           <Plug className="w-3.5 h-3.5" />
         </span>
       </Tooltip>
@@ -163,7 +163,7 @@ export function ConnectorsCell({
       })}
       {connectors.length > MAX_VISIBLE_CONNECTORS && (
         <Tooltip content={connectors.slice(MAX_VISIBLE_CONNECTORS).join(', ')}>
-          <span className="text-md text-muted-foreground/50 ml-0.5 cursor-help">
+          <span className="text-md text-foreground ml-0.5 cursor-help">
             +{connectors.length - MAX_VISIBLE_CONNECTORS}
           </span>
         </Tooltip>

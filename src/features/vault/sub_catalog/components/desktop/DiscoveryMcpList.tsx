@@ -23,13 +23,13 @@ export function DiscoveryMcpList({
       className="animate-fade-slide-in space-y-2"
     >
       {importingMcp ? (
-        <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <div className="flex items-center justify-center py-8 text-foreground">
           <LoadingSpinner className="mr-2" />
           Reading Claude Desktop config...
         </div>
       ) : mcpServers.length > 0 ? (
         <>
-          <p className="text-xs text-muted-foreground/60 mb-3">
+          <p className="text-xs text-foreground mb-3">
             Found {mcpServers.length} MCP server{mcpServers.length !== 1 ? 's' : ''} in Claude Desktop configuration.
             Import them as credentials to use with your agents.
           </p>
@@ -45,10 +45,10 @@ export function DiscoveryMcpList({
         </>
       ) : (
         <div className="text-center py-8 space-y-2">
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             No Claude Desktop MCP configuration found.
           </p>
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             If you have Claude Desktop installed, ensure it has MCP servers configured in its settings.
           </p>
         </div>

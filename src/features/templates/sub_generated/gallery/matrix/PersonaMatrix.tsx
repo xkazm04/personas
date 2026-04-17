@@ -334,7 +334,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
-                    <span className="text-sm text-foreground/70 leading-snug">{meta.label}</span>
+                    <span className="text-sm text-foreground leading-snug">{meta.label}</span>
                   </div>
                 );
               })}
@@ -350,7 +350,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       };
 
       return [
-        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => seededItems('use-cases', 'text-foreground/70'), editRender: editPanel('use-cases') },
+        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => seededItems('use-cases', 'text-foreground'), editRender: editPanel('use-cases') },
         { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',
           render: () => {
             if (cellConnectors.length > 0) return <ConnectorsCellContent connectors={cellConnectors} />;
@@ -359,22 +359,22 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
                 {selectedConnectorMetas.map((c) => (
                   <div key={c.name} className="flex items-center gap-1.5">
                     <ConnectorIcon meta={c.meta} size="w-3.5 h-3.5" />
-                    <span className="text-xs text-foreground/60">{c.meta.label}</span>
+                    <span className="text-xs text-foreground">{c.meta.label}</span>
                   </div>
                 ))}
               </div>
             );
-            return seededItems('connectors', 'text-foreground/70');
+            return seededItems('connectors', 'text-foreground');
           },
           editRender: editPanel('connectors') },
         { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400',
           render: () => triggerLines.length > 0 ? <CellBullets items={triggerLines} color="text-amber-400/70" /> : seededItems('triggers', 'text-amber-400/70'),
           editRender: editPanel('triggers') },
-        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => seededOrBadge('human-review', 'text-foreground/70'), editRender: editPanel('human-review') },
-        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => seededOrBadge('messages', 'text-foreground/70'), editRender: editPanel('messages') },
-        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => seededOrBadge('memory', 'text-foreground/70'), editRender: editPanel('memory') },
-        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => seededItems('error-handling', 'text-foreground/70'), editRender: editPanel('error-handling') },
-        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => seededOrBadge('events', 'text-foreground/70'), editRender: editPanel('events') },
+        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => seededOrBadge('human-review', 'text-foreground'), editRender: editPanel('human-review') },
+        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => seededOrBadge('messages', 'text-foreground'), editRender: editPanel('messages') },
+        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => seededOrBadge('memory', 'text-foreground'), editRender: editPanel('memory') },
+        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => seededItems('error-handling', 'text-foreground'), editRender: editPanel('error-handling') },
+        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => seededOrBadge('events', 'text-foreground'), editRender: editPanel('events') },
       ];
     }
 
@@ -391,34 +391,34 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
     return [
       { key: 'use-cases', label: CELL_LABELS['use-cases']!, watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
-        render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" />,
+        render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-foreground" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground" />,
         editRender: editProps ? () => (<UseCaseEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'connectors', label: CELL_LABELS['connectors']!, watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: connectorNames.length > 0,
         render: () => {
-          if (connectorNames.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
-          return (<div className="space-y-1.5">{connectorNames.slice(0, 4).map((name: string) => { const meta = getConnectorMeta(name); return (<div key={name} className="flex items-center gap-2"><ConnectorIcon meta={meta} size="w-3.5 h-3.5" /><span className="text-sm text-foreground/70 leading-snug">{meta.label}</span></div>); })}{connectorNames.length > 4 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{connectorNames.length - 4} more</span>}</div>);
+          if (connectorNames.length === 0) return <CellBullets items={['No external services']} color="text-foreground" />;
+          return (<div className="space-y-1.5">{connectorNames.slice(0, 4).map((name: string) => { const meta = getConnectorMeta(name); return (<div key={name} className="flex items-center gap-2"><ConnectorIcon meta={meta} size="w-3.5 h-3.5" /><span className="text-sm text-foreground leading-snug">{meta.label}</span></div>); })}{connectorNames.length > 4 && <span className="text-sm text-foreground pl-[22px]">+{connectorNames.length - 4} more</span>}</div>);
         },
         editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} onNavigateCatalog={onNavigateCatalog} />) : undefined },
       { key: 'triggers', label: CELL_LABELS['triggers']!, watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
-        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
+        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-foreground" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'human-review', label: CELL_LABELS['human-review']!, watermark: HumanReviewIcon, filled: review.level !== 'none',
         watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
-        render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
+        render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground">{review.label}</span></div><p className="text-sm text-foreground leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'messages', label: CELL_LABELS['messages']!, watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
-        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description && ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
+        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-foreground" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description && ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'memory', label: CELL_LABELS['memory']!, watermark: MemoryIcon, filled: memory.active,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
-        render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{memory.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{memory.context}</p></div>),
+        render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground">{memory.label}</span></div><p className="text-sm text-foreground leading-snug pl-[16px]">{memory.context}</p></div>),
         editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'error-handling', label: CELL_LABELS['error-handling']!, watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
-        render: () => <CellBullets items={errorStrategies} color="text-foreground/70" />,
+        render: () => <CellBullets items={errorStrategies} color="text-foreground" />,
         editRender: editProps ? () => (<ErrorEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'events', label: CELL_LABELS['events']!, watermark: EventsIcon, filled: events.length > 0,
-        watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
-        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
+        watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-foreground',
+        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-foreground" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground" />; } },
     ];
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
     isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty, quickConfig, healthyConnectors, buildCellData,
@@ -430,7 +430,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={effectiveLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onApproveTestAnyway={onApproveTestAnyway} onRejectTest={onRejectTest} onDeleteDraft={onDeleteDraft} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
-  if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
+  if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-foreground">Matrix data unavailable.</div>);
 
   const firstFour = cells.slice(0, 4);
   const lastFour = cells.slice(4);
@@ -444,9 +444,9 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       {!hideHeader && (
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-elevation-1 shadow-primary/20">
-            <span className="text-[10px] font-bold text-foreground/60">M</span>
+            <span className="text-[10px] font-bold text-foreground">M</span>
           </div>
-          <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
+          <h4 className="text-base font-bold text-foreground uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
       <div

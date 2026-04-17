@@ -37,8 +37,8 @@ export function SessionSidebar({
       <div className="flex-1 overflow-y-auto py-1.5 scrollbar-thin" data-testid="chat-session-list">
         {sessions.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
-            <MessageSquare className="w-5 h-5 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground/40">{t.agents.chat.no_conversations}</p>
+            <MessageSquare className="w-5 h-5 text-foreground" />
+            <p className="text-sm text-foreground">{t.agents.chat.no_conversations}</p>
           </div>
         )}
         {sessions.map((s) => {
@@ -53,7 +53,7 @@ export function SessionSidebar({
               className={`group flex items-center gap-2 px-3 py-2 mx-1.5 rounded-card cursor-pointer text-sm transition-colors ${
                 isActive
                   ? 'bg-primary/12 text-primary'
-                  : 'text-muted-foreground/70 hover:bg-primary/5 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-primary/5 hover:text-foreground/80'
               }`}
               onClick={() => fetchMessages(personaId, s.sessionId)}
               title={title}
@@ -61,7 +61,7 @@ export function SessionSidebar({
               <MessageSquare className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
               <span className="flex-1 truncate">{title}</span>
               {s.messageCount > 0 && (
-                <span className="text-[11px] text-muted-foreground/40 flex-shrink-0">{s.messageCount}</span>
+                <span className="text-[11px] text-foreground flex-shrink-0">{s.messageCount}</span>
               )}
               {confirmDeleteId === s.sessionId ? (
                 <button

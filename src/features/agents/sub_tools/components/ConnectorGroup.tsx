@@ -49,7 +49,7 @@ export function ConnectorGroup({
           }`}
         >
           {(allAssigned || someAssigned) && (
-            <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground/80'}`} />
+            <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground'}`} />
           )}
         </button>
         {meta && (
@@ -60,7 +60,7 @@ export function ConnectorGroup({
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
           </div>
         )}
-        <span className="text-sm font-medium text-foreground/80 flex-1">{label}</span>
+        <span className="text-sm font-medium text-foreground flex-1">{label}</span>
         {!isGeneral && (
           hasCredential ? (
             <span title={`${label} credential connected`}>
@@ -77,7 +77,7 @@ export function ConnectorGroup({
             </button>
           )
         )}
-        <span className="text-sm font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
+        <span className="text-sm font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground">
           {assignedInGroup.length}/{tools.length}
         </span>
       </div>

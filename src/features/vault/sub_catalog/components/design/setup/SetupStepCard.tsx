@@ -42,13 +42,13 @@ export function SetupStepCard({
         {isCompleted ? (
           <CheckCircle className="w-4 h-4 text-emerald-400" />
         ) : (
-          <Circle className="w-4 h-4 text-muted-foreground/80 hover:text-primary/50 transition-colors" />
+          <Circle className="w-4 h-4 text-foreground hover:text-primary/50 transition-colors" />
         )}
       </button>
 
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
-        <span className="text-sm font-bold text-muted-foreground/80 uppercase tracking-wider">
+        <span className="text-sm font-bold text-foreground uppercase tracking-wider">
           Step {stepIndex + 1}
         </span>
         <div className="prose-none">

@@ -74,9 +74,9 @@ export const PeerCard = memo(function PeerCard({
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs font-mono text-muted-foreground">{truncatedId}</span>
+          <span className="text-xs font-mono text-foreground">{truncatedId}</span>
           {lastSeen && (
-            <span className="text-[10px] text-muted-foreground/60">{lastSeen}</span>
+            <span className="text-[10px] text-foreground">{lastSeen}</span>
           )}
         </div>
       </button>
@@ -85,13 +85,13 @@ export const PeerCard = memo(function PeerCard({
       <div className="flex items-center gap-1 flex-shrink-0">
         {connecting ? (
           <span className="p-1.5">
-            <LoadingSpinner size="sm" className="text-muted-foreground" />
+            <LoadingSpinner size="sm" className="text-foreground" />
           </span>
         ) : isConnected ? (
           <button
             onClick={() => onDisconnect(peer.peer_id)}
             title={st.disconnect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -99,7 +99,7 @@ export const PeerCard = memo(function PeerCard({
           <button
             onClick={() => onConnect(peer.peer_id)}
             title={st.connect}
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-emerald-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-emerald-500 transition-colors"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -107,7 +107,7 @@ export const PeerCard = memo(function PeerCard({
         <button
           onClick={() => onSelect(peer.peer_id)}
           title={st.view_details}
-          className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
         >
           <ChevronRight className="w-3.5 h-3.5" />
         </button>

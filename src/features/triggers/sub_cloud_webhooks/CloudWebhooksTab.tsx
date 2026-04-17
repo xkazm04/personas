@@ -138,11 +138,11 @@ export function CloudWebhooksTab() {
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center">
-            <CloudOff className="w-7 h-7 text-muted-foreground/50" />
+            <CloudOff className="w-7 h-7 text-foreground" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground/80">{t.triggers.cloud_not_connected}</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">
+            <p className="text-sm font-medium text-foreground">{t.triggers.cloud_not_connected}</p>
+            <p className="text-sm text-foreground mt-1">
               {t.triggers.cloud_not_connected_desc}
             </p>
           </div>
@@ -158,11 +158,11 @@ export function CloudWebhooksTab() {
         <div className="flex items-center justify-between px-4 py-3 rounded-modal bg-blue-500/5 border border-blue-500/15">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
-            <span className="text-sm text-foreground/80">
+            <span className="text-sm text-foreground">
               {relay.connected ? t.triggers.cloud_relay_active : t.common.connecting}
             </span>
             {relay.active_webhook_triggers > 0 && (
-              <span className="text-xs text-muted-foreground/60">
+              <span className="text-xs text-foreground">
                 {relay.active_webhook_triggers} webhook{relay.active_webhook_triggers !== 1 ? 's' : ''}
               </span>
             )}
@@ -174,13 +174,13 @@ export function CloudWebhooksTab() {
           </div>
           <div className="flex items-center gap-2">
             {relay.last_poll_at && (
-              <span className="text-xs text-muted-foreground/50">
+              <span className="text-xs text-foreground">
                 Last poll: {formatRelativeTime(relay.last_poll_at)}
               </span>
             )}
             <button
               onClick={() => { setIsLoading(true); fetchWebhookTriggers(); }}
-              className="p-1.5 rounded-card text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title="Refresh"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -190,7 +190,7 @@ export function CloudWebhooksTab() {
 
         {/* Header + Create button */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+          <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.cloud_webhook_triggers}
           </h3>
           <button
@@ -206,7 +206,7 @@ export function CloudWebhooksTab() {
         {showCreate && (
           <div className="rounded-modal border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
+              <label className="block text-xs font-medium text-foreground mb-1.5">
                 Deployed Persona
               </label>
               <select
@@ -233,7 +233,7 @@ export function CloudWebhooksTab() {
               </button>
               <button
                 onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}
-                className="px-3 py-2 text-sm text-muted-foreground/70 hover:text-foreground transition-colors"
+                className="px-3 py-2 text-sm text-foreground hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
@@ -244,16 +244,16 @@ export function CloudWebhooksTab() {
         {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" className="text-muted-foreground/60" />
+            <LoadingSpinner size="lg" className="text-foreground" />
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && webhookRows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Webhook className="w-8 h-8 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground/70">{t.triggers.no_webhook_triggers}</p>
-            <p className="text-sm text-muted-foreground/50 mt-1">
+            <Webhook className="w-8 h-8 text-foreground mb-3" />
+            <p className="text-sm text-foreground">{t.triggers.no_webhook_triggers}</p>
+            <p className="text-sm text-foreground mt-1">
               {t.triggers.no_webhook_triggers_desc}
             </p>
           </div>
@@ -280,23 +280,23 @@ export function CloudWebhooksTab() {
                       className="w-8 h-8 rounded-card flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
                       style={{ backgroundColor: colorWithAlpha(row.personaColor || '#6366f1', 0.08) }}
                     >
-                      {row.personaIcon || <Cloud className="w-4 h-4 text-foreground/50" />}
+                      {row.personaIcon || <Cloud className="w-4 h-4 text-foreground" />}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground/90 truncate">{row.personaName}</p>
-                      <p className="text-xs text-muted-foreground/60 font-mono truncate">{row.webhookUrl}</p>
+                      <p className="text-xs text-foreground font-mono truncate">{row.webhookUrl}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {row.trigger.last_triggered_at && (
-                      <span className="text-xs text-muted-foreground/50">
+                      <span className="text-xs text-foreground">
                         Last: {formatRelativeTime(row.trigger.last_triggered_at)}
                       </span>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCopy(row.webhookUrl, `url-${row.trigger.id}`); }}
-                      className="p-1.5 rounded-card text-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-colors"
+                      className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
                       title="Copy webhook URL"
                     >
                       {copiedId === `url-${row.trigger.id}` ? (
@@ -308,7 +308,7 @@ export function CloudWebhooksTab() {
                     {row.deployment.webhook_secret && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleCopy(row.deployment.webhook_secret!, `secret-${row.trigger.id}`); }}
-                        className="px-2 py-1 rounded-card text-xs text-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-colors border border-border/20"
+                        className="px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors border border-border/20"
                         title="Copy webhook secret"
                       >
                         {copiedId === `secret-${row.trigger.id}` ? (
@@ -335,18 +335,18 @@ export function CloudWebhooksTab() {
         {/* Firing history for selected trigger */}
         {selectedTriggerId && (
           <div className="space-y-3">
-            <h4 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+            <h4 className="text-sm font-mono text-foreground uppercase tracking-wider">
               {t.triggers.recent_firings}
             </h4>
             {firingsLoading ? (
               <div className="flex items-center justify-center py-6">
-                <LoadingSpinner className="text-muted-foreground/60" />
+                <LoadingSpinner className="text-foreground" />
               </div>
             ) : firings.length === 0 ? (
-              <p className="text-sm text-muted-foreground/50 py-4">{t.triggers.no_firings}</p>
+              <p className="text-sm text-foreground py-4">{t.triggers.no_firings}</p>
             ) : (
               <div className="border border-border/30 rounded-modal overflow-hidden">
-                <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-muted-foreground/70 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">
                   <span>Status</span>
                   <span>Fired At</span>
                   <span>Duration</span>
@@ -360,13 +360,13 @@ export function CloudWebhooksTab() {
                     }`}>
                       {f.status}
                     </span>
-                    <span className="text-foreground/70">
+                    <span className="text-foreground">
                       {f.fired_at ? formatRelativeTime(f.fired_at) : '—'}
                     </span>
-                    <span className="text-foreground/60">
+                    <span className="text-foreground">
                       {f.duration_ms != null ? `${f.duration_ms}ms` : '—'}
                     </span>
-                    <span className="text-right text-foreground/60">
+                    <span className="text-right text-foreground">
                       {f.cost_usd != null ? `$${f.cost_usd.toFixed(4)}` : '—'}
                     </span>
                   </div>

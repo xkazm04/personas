@@ -39,7 +39,7 @@ export function SubSpanBar({
         <span className="inline-flex px-1.5 py-0.5 typo-code uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
           {t.agents.executions.tool_type_badge}
         </span>
-        <span className="typo-code text-foreground/70 truncate">{step.tool_name}</span>
+        <span className="typo-code text-foreground truncate">{step.tool_name}</span>
       </div>
 
       {/* Center: bar */}
@@ -60,11 +60,11 @@ export function SubSpanBar({
           >
             <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>
             <div className="flex items-center gap-3 typo-body">
-              <span className="font-mono text-foreground/70">{formatDuration(stepDuration)}</span>
-              <span className="text-muted-foreground/50">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
+              <span className="font-mono text-foreground">{formatDuration(stepDuration)}</span>
+              <span className="text-foreground">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
             </div>
             {step.input_preview && (
-              <p className="typo-body text-muted-foreground/50 mt-1 max-w-[200px] truncate">
+              <p className="typo-body text-foreground mt-1 max-w-[200px] truncate">
                 {t.agents.executions.input_preview_prefix} {step.input_preview}
               </p>
             )}
@@ -73,7 +73,7 @@ export function SubSpanBar({
       </div>
 
       {/* Right: duration */}
-      <span className="typo-code text-muted-foreground/50 text-right">
+      <span className="typo-code text-foreground text-right">
         {formatDuration(stepDuration)}
       </span>
     </div>

@@ -69,7 +69,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                     <th
                       key={i}
                       onClick={() => handleColumnClick(col, i)}
-                      className="px-3 py-2 text-left font-semibold text-foreground/70 whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 transition-colors group relative"
+                      className="px-3 py-2 text-left font-semibold text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 transition-colors group relative"
                       title={tx(db.click_copy_column, { name: col })}
                     >
                       <span className="flex items-center gap-1.5">
@@ -81,7 +81,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                         ) : (
                           <>
                             {col}
-                            <Copy className="w-2.5 h-2.5 text-muted-foreground/0 group-hover:text-muted-foreground/40 transition-colors shrink-0" />
+                            <Copy className="w-2.5 h-2.5 text-foreground group-hover:text-muted-foreground/40 transition-colors shrink-0" />
                           </>
                         )}
                       </span>
@@ -132,8 +132,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                               isCellCopied
                                 ? 'bg-emerald-500/10 text-emerald-400'
                                 : isNull
-                                  ? 'text-muted-foreground/50 italic'
-                                  : 'text-foreground/75 hover:bg-primary/5'
+                                  ? 'text-foreground italic'
+                                  : 'text-foreground hover:bg-primary/5'
                             }`}
                             title={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell) })}
                           >
@@ -160,7 +160,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
       </div>
 
       {/* Status bar */}
-      <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
+      <div className="flex items-center gap-3 text-sm text-foreground">
         <span>{tx(result.row_count !== 1 ? db.row_count_other : db.row_count_one, { count: result.row_count })}</span>
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />

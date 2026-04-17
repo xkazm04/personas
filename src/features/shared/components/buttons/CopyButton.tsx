@@ -76,7 +76,7 @@ export function CopyButton({
           : 'p-1.5 rounded-lg',
         copied
           ? 'text-emerald-400'
-          : 'text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50',
+          : 'text-foreground hover:text-foreground/80 hover:bg-secondary/50',
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
         className,
       ].filter(Boolean).join(' ')}

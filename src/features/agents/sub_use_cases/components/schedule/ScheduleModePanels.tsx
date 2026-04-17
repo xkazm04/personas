@@ -25,11 +25,11 @@ export function PresetPanel({ cronExpression, onSelect }: PresetPanelProps) {
               className={`text-left px-2.5 py-2 rounded-modal text-sm transition-all border ${
                 active
                   ? 'bg-amber-500/12 text-amber-300 border-amber-500/25 font-medium'
-                  : 'bg-secondary/20 text-muted-foreground/70 border-primary/10 hover:border-primary/20 hover:text-foreground/80'
+                  : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20 hover:text-foreground/80'
               }`}
             >
               <span className="block">{preset.label}</span>
-              <span className={`text-sm font-mono mt-0.5 block ${active ? 'text-amber-400/60' : 'text-muted-foreground/40'}`}>
+              <span className={`text-sm font-mono mt-0.5 block ${active ? 'text-amber-400/60' : 'text-foreground'}`}>
                 {preset.cron}
               </span>
             </button>
@@ -89,7 +89,7 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
         />
         {cronLoading && <LoadingSpinner className="text-amber-400/60 flex-shrink-0" />}
       </div>
-      <div className="flex gap-3 text-sm text-muted-foreground/60 font-mono px-0.5">
+      <div className="flex gap-3 text-sm text-foreground font-mono px-0.5">
         <span>{t.agents.use_cases.cron_field_min}</span><span>{t.agents.use_cases.cron_field_hour}</span><span>{t.agents.use_cases.cron_field_day}</span><span>{t.agents.use_cases.cron_field_month}</span><span>{t.agents.use_cases.cron_field_weekday}</span>
       </div>
       {cronPreview && !cronPreview.valid && (

@@ -93,10 +93,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <span className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.pipeline.configure}</span>
+          <span className="text-sm font-mono text-foreground uppercase tracking-wider">{t.pipeline.configure}</span>
           <button
             onClick={onClose}
-            className="p-1 rounded-card hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+            className="p-1 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -109,13 +109,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-foreground/90 truncate">{personaName}</div>
-              <div className="text-sm text-muted-foreground/60 font-mono truncate">{member.id?.slice(0, 8)}...</div>
+              <div className="text-sm text-foreground font-mono truncate">{member.id?.slice(0, 8)}...</div>
             </div>
             {member.persona_id && (
               <button
                 onClick={handleViewPersona}
                 title={t.pipeline.view_persona}
-                className="p-1.5 rounded-card hover:bg-secondary/70 text-muted-foreground/50 hover:text-foreground/80 transition-colors shrink-0"
+                className="p-1.5 rounded-card hover:bg-secondary/70 text-foreground hover:text-foreground/80 transition-colors shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -131,9 +131,9 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               <StatPill icon={Link} label={t.pipeline.connectors_label} value={String(stats.connectorCount)} color="#10b981" />
               {stats.lastRun && (
                 <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal bg-secondary/30 border border-primary/8">
-                  <Clock className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                  <span className="text-sm text-muted-foreground/70">{t.pipeline.last_run}</span>
-                  <span className="text-sm text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
+                  <Clock className="w-3 h-3 text-foreground shrink-0" />
+                  <span className="text-sm text-foreground">{t.pipeline.last_run}</span>
+                  <span className="text-sm text-foreground font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
                 </div>
               )}
             </div>
@@ -141,7 +141,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
           {/* Role Selector */}
           <div>
-            <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2 block">
+            <label className="text-sm font-mono text-foreground uppercase tracking-wider mb-2 block">
               {t.pipeline.role}
             </label>
             <div className="space-y-1.5">
@@ -158,7 +158,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                   <div className={`text-sm font-medium ${member.role === role.value ? 'text-indigo-300' : 'text-foreground/90'}`}>
                     {role.label}
                   </div>
-                  <div className="text-sm text-muted-foreground/80 mt-0.5">{role.description}</div>
+                  <div className="text-sm text-foreground mt-0.5">{role.description}</div>
                 </button>
               ))}
             </div>
@@ -188,7 +188,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                   </button>
                   <button
                     onClick={() => setConfirmRemove(false)}
-                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-modal bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
+                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-modal bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -214,8 +214,8 @@ function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentTy
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal bg-secondary/30 border border-primary/8">
       <Icon className="w-3 h-3 shrink-0" style={{ color: colorWithAlpha(color, 0.67) }} />
-      <span className="text-sm text-muted-foreground/70 truncate">{label}</span>
-      <span className="text-sm text-foreground/80 font-semibold ml-auto">{value}</span>
+      <span className="text-sm text-foreground truncate">{label}</span>
+      <span className="text-sm text-foreground font-semibold ml-auto">{value}</span>
     </div>
   );
 }

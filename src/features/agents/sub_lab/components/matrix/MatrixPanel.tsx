@@ -66,12 +66,12 @@ export function MatrixPanel() {
         )}
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground/80">{t.agents.lab.describe_changes}</label>
+          <label className="text-sm font-medium text-foreground">{t.agents.lab.describe_changes}</label>
           <textarea data-testid="matrix-instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)}
             placeholder={t.agents.lab.describe_changes_placeholder}
 
             className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none disabled:opacity-50" />
-          <p className="text-sm text-muted-foreground/50">
+          <p className="text-sm text-foreground">
             {t.agents.lab.describe_changes_hint}
           </p>
         </div>

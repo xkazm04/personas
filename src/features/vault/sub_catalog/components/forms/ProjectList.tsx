@@ -30,14 +30,14 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
               : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
           }`}
         >
-          <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-muted-foreground/40'}`} />
+          <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-foreground'}`} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground/90 truncate">{project.name}</p>
-            <p className="text-[11px] text-muted-foreground/50 truncate">{project.root_path}</p>
+            <p className="text-[11px] text-foreground truncate">{project.root_path}</p>
             {project.tech_stack && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {project.tech_stack.split(',').map((t) => (
-                  <span key={t.trim()} className="text-[10px] px-1.5 py-0.5 rounded-input bg-secondary/50 text-muted-foreground/60 border border-primary/10">
+                  <span key={t.trim()} className="text-[10px] px-1.5 py-0.5 rounded-input bg-secondary/50 text-foreground border border-primary/10">
                     {t.trim()}
                   </span>
                 ))}

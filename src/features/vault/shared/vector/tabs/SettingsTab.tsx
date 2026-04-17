@@ -45,7 +45,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
           <Cpu className="w-4 h-4" />
           {sh.local_embedding}
         </h3>
-        <p className="text-xs text-muted-foreground/60 leading-relaxed">
+        <p className="text-xs text-foreground leading-relaxed">
           Embeddings are generated locally using {kb.embeddingModel} ({kb.embeddingDims}-dim).
           No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.
         </p>
@@ -57,11 +57,11 @@ export function SettingsTab({ kb }: SettingsTabProps) {
 function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label: string; value: string; mono?: boolean }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs text-muted-foreground/50 flex items-center gap-1">
+      <p className="text-xs text-foreground flex items-center gap-1">
         <Icon className="w-3 h-3" />
         {label}
       </p>
-      <p className={`text-sm text-foreground/80 truncate ${mono ? 'font-mono text-xs' : ''}`}>
+      <p className={`text-sm text-foreground truncate ${mono ? 'font-mono text-xs' : ''}`}>
         {value}
       </p>
     </div>
@@ -72,7 +72,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 text-center">
       <p className="text-2xl font-semibold text-foreground/90">{value.toLocaleString()}</p>
-      <p className="text-xs text-muted-foreground/50 mt-1">{label}</p>
+      <p className="text-xs text-foreground mt-1">{label}</p>
     </div>
   );
 }

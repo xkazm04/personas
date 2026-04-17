@@ -34,7 +34,7 @@ function useColumns(): TableColumn<ActivityItem>[] {
       render: (item) => (
         <div className="min-w-0">
           <span className="text-sm font-medium text-foreground/85 truncate block">{item.title}</span>
-          <p className="text-sm text-muted-foreground/60 truncate">{item.subtitle}</p>
+          <p className="text-sm text-foreground truncate">{item.subtitle}</p>
         </div>
       ),
     },
@@ -59,7 +59,7 @@ function useColumns(): TableColumn<ActivityItem>[] {
             }`}>{item.status}</span>
           );
         }
-        return <span className="text-sm text-muted-foreground/50">{item.status}</span>;
+        return <span className="text-sm text-foreground">{item.status}</span>;
       },
     },
     {
@@ -70,7 +70,7 @@ function useColumns(): TableColumn<ActivityItem>[] {
       sortFn: (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       align: 'right',
       render: (item) => (
-        <span className="text-sm text-muted-foreground/50 whitespace-nowrap">{formatRelativeTime(item.timestamp)}</span>
+        <span className="text-sm text-foreground whitespace-nowrap">{formatRelativeTime(item.timestamp)}</span>
       ),
     },
   ];

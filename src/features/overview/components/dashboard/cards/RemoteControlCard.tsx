@@ -29,9 +29,9 @@ export default function RemoteControlCard() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="typo-heading text-foreground">{t.overview.remote_control_card.connect_to_desktop}</h3>
-            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-cyan-400 transition-colors" />
+            <ExternalLink className="w-3.5 h-3.5 text-foreground group-hover:text-cyan-400 transition-colors" />
           </div>
-          <p className="typo-body text-muted-foreground/70 leading-relaxed">
+          <p className="typo-body text-foreground leading-relaxed">
             Run agents using your desktop CLI via Remote Control. Start <code className="px-1 py-0.5 rounded bg-primary/10 text-primary/80 typo-code">claude remote-control</code> on your computer, then connect here.
           </p>
           <div className="flex items-center gap-1.5 mt-2.5 typo-caption text-cyan-400/70">

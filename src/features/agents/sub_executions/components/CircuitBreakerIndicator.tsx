@@ -108,13 +108,13 @@ export function CircuitBreakerIndicator() {
         ) : hasIssue ? (
           <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
         ) : (
-          <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground/60" />
+          <ShieldCheck className="w-3.5 h-3.5 text-foreground" />
         )}
 
         <span className={
           status.globalPaused ? 'text-red-400 font-medium'
             : hasIssue ? 'text-amber-400 font-medium'
-              : 'text-muted-foreground/60 font-medium'
+              : 'text-foreground font-medium'
         }>
           {status.globalPaused
             ? e.cb_all_paused
@@ -123,7 +123,7 @@ export function CircuitBreakerIndicator() {
               : tx(totalTrips1h !== 1 ? e.cb_interruptions_other : e.cb_interruptions_one, { count: totalTrips1h })}
         </span>
 
-        <span className="ml-auto text-muted-foreground/50">
+        <span className="ml-auto text-foreground">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
       </button>
@@ -134,7 +134,7 @@ export function CircuitBreakerIndicator() {
           {status.providers.map((p) => {
             const label = PROVIDER_LABELS[p.provider] ?? p.provider;
             const tripBadge = p.tripCount1h > 0 ? (
-              <span className="text-muted-foreground/40 typo-caption ml-1">
+              <span className="text-foreground typo-caption ml-1">
                 ({p.tripCount1h} interruption{p.tripCount1h !== 1 ? 's' : ''}/1h)
               </span>
             ) : null;
@@ -144,7 +144,7 @@ export function CircuitBreakerIndicator() {
                 <div key={p.provider} className="flex items-center gap-2 typo-body">
                   <ShieldAlert className="w-3 h-3 text-red-400" />
                   <span className="text-red-400 font-mono">{label}</span>
-                  <span className="text-muted-foreground/60">
+                  <span className="text-foreground">
                     {tx(e.cb_errors_retrying, { count: p.consecutiveFailures, seconds: Math.ceil(p.cooldownRemainingSecs) })}
                   </span>
                   {tripBadge}
@@ -156,7 +156,7 @@ export function CircuitBreakerIndicator() {
                 <div key={p.provider} className="flex items-center gap-2 typo-body">
                   <ShieldCheck className="w-3 h-3 text-amber-400" />
                   <span className="text-amber-400 font-mono">{label}</span>
-                  <span className="text-muted-foreground/60">
+                  <span className="text-foreground">
                     {tx(e.cb_errors, { count: p.consecutiveFailures })}
                   </span>
                   {tripBadge}
@@ -167,7 +167,7 @@ export function CircuitBreakerIndicator() {
               <div key={p.provider} className="flex items-center gap-2 typo-body">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                 <span className="text-emerald-400 font-mono">{label}</span>
-                <span className="text-muted-foreground/60">{e.cb_healthy}</span>
+                <span className="text-foreground">{e.cb_healthy}</span>
                 {tripBadge}
               </div>
             );
@@ -186,7 +186,7 @@ export function CircuitBreakerIndicator() {
             <>
               <button
                 onClick={() => setShowHistory((v) => !v)}
-                className="flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/70 mt-1"
+                className="flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground/70 mt-1"
               >
                 <History className="w-3 h-3" />
                 {showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}
@@ -195,14 +195,14 @@ export function CircuitBreakerIndicator() {
               {showHistory && (
                 <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
                   {status.recentTransitions.slice(0, 20).map((t, i) => (
-                    <div key={i} className="flex items-center gap-2 typo-code text-muted-foreground/50">
+                    <div key={i} className="flex items-center gap-2 typo-code text-foreground">
                       <span className="w-12 text-right shrink-0">{formatTransitionTime(t.timestamp)}</span>
                       <span className="shrink-0">{PROVIDER_LABELS[t.provider] ?? t.provider}</span>
-                      <span className="text-muted-foreground/30">
+                      <span className="text-foreground">
                         {STATE_LABELS[t.fromState] ?? t.fromState} → {STATE_LABELS[t.toState] ?? t.toState}
                       </span>
                       {t.failureCount > 0 && (
-                        <span className="text-muted-foreground/30">({t.failureCount})</span>
+                        <span className="text-foreground">({t.failureCount})</span>
                       )}
                     </div>
                   ))}

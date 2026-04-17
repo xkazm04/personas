@@ -42,7 +42,7 @@ export function ActionZone({ active, onClick, icon, label, colorClasses, activeC
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder={t.overview.review_extra.add_note}
                 rows={2}
-                className="w-full rounded-input border border-primary/10 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+                className="w-full rounded-input border border-primary/10 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
                 autoFocus
               />
               <button

@@ -46,13 +46,13 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
           </div>
           <div>
             <h2 id="activity-diagram-title" className="text-base font-semibold text-foreground/90">{titleOverride || templateName}</h2>
-            <p className="text-sm text-muted-foreground/90">
+            <p className="text-sm text-foreground">
               {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
         <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
-          <X className="w-4 h-4 text-muted-foreground/80" />
+          <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
@@ -70,7 +70,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
               className={`flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium transition-all whitespace-nowrap ${
                 index === activeFlowIndex
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
-                  : 'bg-secondary/40 border border-transparent text-muted-foreground/80 hover:bg-secondary/60 hover:text-muted-foreground'
+                  : 'bg-secondary/40 border border-transparent text-foreground hover:bg-secondary/60 hover:text-muted-foreground'
               }`}
             >
               <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-violet-400' : 'bg-muted-foreground/30'}`} />
@@ -105,7 +105,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             }}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground/80">
+          <div className="flex items-center justify-center h-full text-foreground">
             {t.templates.diagrams.no_flow_data}
           </div>
         )}
@@ -124,8 +124,8 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       {/* Footer -- Flow Description */}
       {activeFlow && (
         <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
-          <p className="text-sm text-muted-foreground/90">{activeFlow.description}</p>
-          <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">{activeFlow.description}</p>
+          <div className="flex items-center gap-4 mt-1.5 text-sm text-foreground">
             <span>{activeFlow.nodes.length} nodes</span>
             <span>{activeFlow.edges.length} edges</span>
             <span>{activeFlow.nodes.filter(n => n.type === 'connector').length} connector(s)</span>

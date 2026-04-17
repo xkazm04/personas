@@ -44,7 +44,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
         <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
         <div className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-foreground">
             {d.executionStatus === 'running' ? 'Running' :
               d.lastExecutionAt ? `Last: ${new Date(d.lastExecutionAt).toLocaleTimeString()}` :
                 'No executions'}

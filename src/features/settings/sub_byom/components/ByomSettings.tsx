@@ -61,7 +61,7 @@ export default function ByomSettings() {
             )}
             <button
               onClick={bm.handleReset}
-              className="px-3 py-1.5 text-sm rounded-modal border border-primary/10 text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors"
             >
               {s.reset}
             </button>
@@ -110,7 +110,7 @@ export default function ByomSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-foreground">{s.policy_enforcement}</h3>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">
+                <p className="text-sm text-foreground mt-0.5">
                   {s.policy_enforcement_desc}
                 </p>
               </div>
@@ -131,7 +131,7 @@ export default function ByomSettings() {
                 className={`relative flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-modal transition-colors ${
                   bm.activeSection === tab.id
                     ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
+                    : 'text-foreground hover:text-foreground hover:bg-primary/5'
                 }`}
               >
                 {bm.activeSection === tab.id && (

@@ -66,9 +66,9 @@ export function StuckExecutionGuidance({
           />
         </Tooltip>
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
       </button>
 
@@ -76,7 +76,7 @@ export function StuckExecutionGuidance({
       {expanded && (
         <div className="animate-fade-slide-in px-4 pb-3 space-y-3 border-t border-primary/10 pt-3">
           {/* Explanation */}
-          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+          <p className="text-xs text-foreground leading-relaxed">
             {isStuck
               ? e.stuck_detail
               : e.silent_detail}
@@ -84,7 +84,7 @@ export function StuckExecutionGuidance({
 
           {/* Suggested actions */}
           <div className="space-y-2">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-foreground">
               {e.suggested_actions}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@ export function StuckExecutionGuidance({
                 </button>
               )}
               {!isStuck && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground/60">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-foreground">
                   <RotateCw className="w-3 h-3" />
                   {e.wait_hint}
                 </span>
@@ -121,7 +121,7 @@ export function StuckExecutionGuidance({
 
           {/* Connectivity hint */}
           {isStuck && (
-            <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
+            <p className="text-[11px] text-foreground leading-relaxed">
               {e.connectivity_tip}
             </p>
           )}

@@ -41,12 +41,12 @@ export function PersonaRow({ stats, expanded, onToggle }: {
       <button onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
         <div className="flex-1 min-w-0">
           <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
-          <span className="text-xs text-muted-foreground/60">{stats.total_executions} executions</span>
+          <span className="text-xs text-foreground">{stats.total_executions} executions</span>
         </div>
         <span className={`typo-heading px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
         {stats.consecutive_failures > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">{stats.consecutive_failures} failing</span>}
         {stats.auto_healed_count > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{stats.auto_healed_count} healed</span>}
-        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground/50" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/50" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-foreground" /> : <ChevronDown className="w-4 h-4 text-foreground" />}
       </button>
 
       {expanded && (
@@ -68,7 +68,7 @@ export function PersonaRow({ stats, expanded, onToggle }: {
 function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/10 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-muted-foreground/60 mb-0.5">
+      <div className="flex items-center gap-1.5 text-foreground mb-0.5">
         {icon}
         <span className="text-xs">{label}</span>
       </div>

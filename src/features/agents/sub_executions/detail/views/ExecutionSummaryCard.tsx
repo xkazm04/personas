@@ -20,12 +20,12 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
     <div className="mt-2">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 typo-caption text-muted-foreground/80 hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Wrench className="w-3 h-3" />
         <span>{toolCalls.length} tool call{toolCalls.length !== 1 ? 's' : ''}</span>
-        <span className="text-muted-foreground/50">
+        <span className="text-foreground">
           ({uniqueTools.length} unique)
         </span>
       </button>
@@ -35,7 +35,7 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
             <div key={i} className="flex items-start gap-2 typo-caption">
               <span className="text-green-400 shrink-0">{'\u25B6'}</span>
               <span className="font-medium shrink-0">{tc.name}</span>
-              <span className="text-muted-foreground/60 truncate">{tc.inputPreview}</span>
+              <span className="text-foreground truncate">{tc.inputPreview}</span>
             </div>
           ))}
         </div>
@@ -53,7 +53,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
     <div className="mt-2">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 typo-caption text-muted-foreground/80 hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <FileText className="w-3 h-3" />
@@ -70,8 +70,8 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
           {fileChanges.map((fc, i) => (
             <div key={i} className="flex items-center gap-2 typo-caption">
               <span className={fc.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}>{'\u25CF'}</span>
-              <span className="text-muted-foreground truncate">{fc.path.split('/').pop()}</span>
-              <span className="text-muted-foreground/40 capitalize typo-caption">{fc.changeType}</span>
+              <span className="text-foreground truncate">{fc.path.split('/').pop()}</span>
+              <span className="text-foreground capitalize typo-caption">{fc.changeType}</span>
             </div>
           ))}
         </div>
@@ -98,21 +98,21 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
         </div>
 
         {summary.durationMs != null && (
-          <div className="flex items-center gap-1 text-muted-foreground/80">
+          <div className="flex items-center gap-1 text-foreground">
             <Timer className="w-3 h-3" />
             <span className="typo-code">{(summary.durationMs / 1000).toFixed(1)}s</span>
           </div>
         )}
 
         {summary.costUsd != null && (
-          <div className="flex items-center gap-1 text-muted-foreground/80">
+          <div className="flex items-center gap-1 text-foreground">
             <DollarSign className="w-3 h-3" />
             <span className="typo-code">${summary.costUsd.toFixed(4)}</span>
           </div>
         )}
 
         {summary.totalTokens != null && (
-          <div className="flex items-center gap-1 text-muted-foreground/80">
+          <div className="flex items-center gap-1 text-foreground">
             <Coins className="w-3 h-3" />
             <span className="typo-code">{summary.totalTokens.toLocaleString()} tokens</span>
           </div>
@@ -122,7 +122,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
       {/* Model badge */}
       {summary.model && (
         <div className="mt-1.5">
-          <span className="inline-block px-2 py-0.5 rounded-input bg-secondary/40 typo-caption text-muted-foreground/70">
+          <span className="inline-block px-2 py-0.5 rounded-input bg-secondary/40 typo-caption text-foreground">
             {summary.model}
           </span>
         </div>
@@ -138,7 +138,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
       {summary.status === 'cancelled' && onResume && (
         <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
           {summary.toolCalls.length > 0 && (
-            <div className="flex items-center gap-2 typo-body text-muted-foreground/90">
+            <div className="flex items-center gap-2 typo-body text-foreground">
               <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
               <span>{t.agents.executions.stopped_while_running}</span>
               <code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">

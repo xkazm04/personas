@@ -78,7 +78,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
       {/* Description below */}
       <div className="mt-2 px-1 h-[64px] flex items-start">
-        <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
+        <p className="typo-body leading-relaxed dark:text-foreground text-foreground line-clamp-3">{cardT.description}</p>
       </div>
     </motion.button>
   );

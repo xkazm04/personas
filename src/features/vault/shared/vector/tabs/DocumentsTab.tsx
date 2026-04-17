@@ -131,7 +131,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground/90 truncate">{doc.title}</p>
-                    <p className="text-xs text-muted-foreground/50 mt-0.5">
+                    <p className="text-xs text-foreground mt-0.5">
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}
                       <span className="ml-1.5">{formatBytes(doc.byteSize)}</span>

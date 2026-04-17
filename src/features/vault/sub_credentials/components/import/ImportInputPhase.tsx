@@ -35,7 +35,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -47,7 +47,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         </div>
         <div>
           <h3 className="text-sm font-medium text-foreground">{tx(t.vault.credential_import.import_from, { source: source.label })}</h3>
-          <p className="text-sm text-muted-foreground/70">{cliHint}</p>
+          <p className="text-sm text-foreground">{cliHint}</p>
         </div>
       </div>
 

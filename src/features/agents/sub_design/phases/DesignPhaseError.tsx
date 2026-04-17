@@ -28,7 +28,7 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
       >
         <h3 className="text-base font-semibold text-red-400">{t.agents.design.design_failed}</h3>
         {error && (
-          <p className="text-sm text-muted-foreground/70 mt-1.5 max-w-xs mx-auto">
+          <p className="text-sm text-foreground mt-1.5 max-w-xs mx-auto">
             {error}
           </p>
         )}
@@ -46,7 +46,7 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
         </button>
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           {t.common.back}

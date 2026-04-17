@@ -78,7 +78,7 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
       >
         {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
       </div>
-      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
+      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
         {theme.label}
       </span>
     </Button>
@@ -114,7 +114,7 @@ export default function AppearanceSettings() {
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-violet-400" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.interface_mode}</h2>
+              <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{st.interface_mode}</h2>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Button
@@ -126,9 +126,9 @@ export default function AppearanceSettings() {
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <Sparkles className={`w-5 h-5 ${viewMode === VIEW_MODES.SIMPLE ? 'text-violet-400' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.SIMPLE ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.simple}</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">{se.simple_hint}</span>
+                <Sparkles className={`w-5 h-5 ${viewMode === VIEW_MODES.SIMPLE ? 'text-violet-400' : 'text-foreground'}`} />
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.SIMPLE ? 'text-foreground/90' : 'text-foreground'}`}>{se.simple}</span>
+                <span className="text-[11px] text-foreground text-center">{se.simple_hint}</span>
                 {viewMode === VIEW_MODES.SIMPLE && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-violet-400" /></div>
                 )}
@@ -142,9 +142,9 @@ export default function AppearanceSettings() {
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <LayoutGrid className={`w-5 h-5 ${viewMode === VIEW_MODES.FULL ? 'text-foreground/80' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.FULL ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.full}</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">{se.full_hint}</span>
+                <LayoutGrid className={`w-5 h-5 ${viewMode === VIEW_MODES.FULL ? 'text-foreground' : 'text-foreground'}`} />
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.FULL ? 'text-foreground/90' : 'text-foreground'}`}>{se.full}</span>
+                <span className="text-[11px] text-foreground text-center">{se.full_hint}</span>
                 {viewMode === VIEW_MODES.FULL && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-primary" /></div>
                 )}
@@ -158,9 +158,9 @@ export default function AppearanceSettings() {
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <Wrench className={`w-5 h-5 ${viewMode === VIEW_MODES.DEV ? 'text-amber-400' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.DEV ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{se.dev}</span>
-                <span className="text-[11px] text-muted-foreground/50 text-center">{se.dev_hint}</span>
+                <Wrench className={`w-5 h-5 ${viewMode === VIEW_MODES.DEV ? 'text-amber-400' : 'text-foreground'}`} />
+                <span className={`text-sm font-medium ${viewMode === VIEW_MODES.DEV ? 'text-foreground/90' : 'text-foreground'}`}>{se.dev}</span>
+                <span className="text-[11px] text-foreground text-center">{se.dev_hint}</span>
                 {viewMode === VIEW_MODES.DEV && (
                   <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-amber-400" /></div>
                 )}
@@ -169,7 +169,7 @@ export default function AppearanceSettings() {
           </div>
           {/* Dark themes */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.dark}</h2>
+            <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{st.dark}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {darkThemes.map((t) => (
                 <ThemeSwatch
@@ -184,7 +184,7 @@ export default function AppearanceSettings() {
 
           {/* Light themes */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.light}</h2>
+            <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{st.light}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {lightThemes.map((t) => (
                 <ThemeSwatch
@@ -200,8 +200,8 @@ export default function AppearanceSettings() {
           {/* Text sizing */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
-              <Type className="w-4 h-4 text-muted-foreground/70" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.text_size}</h2>
+              <Type className="w-4 h-4 text-foreground" />
+              <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{st.text_size}</h2>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
@@ -221,14 +221,14 @@ export default function AppearanceSettings() {
                       className={`font-semibold ${
                         scale.id === 'large' ? 'text-base' :
                         scale.id === 'larger' ? 'text-lg' : 'text-xl'
-                      } ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
+                      } ${isActive ? 'text-foreground/90' : 'text-foreground'}`}
                     >
                       Aa
                     </span>
-                    <span className={`text-xs ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>
+                    <span className={`text-xs ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                       {scale.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground/50">
+                    <span className="text-[11px] text-foreground">
                       {scale.description}
                     </span>
                     {isActive && (

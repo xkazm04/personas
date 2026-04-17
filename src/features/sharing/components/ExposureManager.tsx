@@ -51,7 +51,7 @@ function ResourceExposureCard({
           <span className="text-sm font-medium text-foreground truncate">
             {resource.display_name || resource.resource_id}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-muted-foreground">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
             {resource.resource_type}
           </span>
         </div>
@@ -61,7 +61,7 @@ function ResourceExposureCard({
             {resource.access_level}
           </span>
           {parsedFields.length > 0 && (
-            <span className="text-[10px] text-muted-foreground/60">
+            <span className="text-[10px] text-foreground">
               {parsedFields.length} field{parsedFields.length !== 1 ? 's' : ''} exposed
             </span>
           )}
@@ -84,7 +84,7 @@ function ResourceExposureCard({
           <button
             onClick={requestConfirm}
             title="Remove exposure"
-            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors flex-shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -131,7 +131,7 @@ function AddExposureForm({
     <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.resource_type_label}</label>
+          <label className="text-xs text-foreground mb-1 block">{st.resource_type_label}</label>
           <select
             value={resourceType}
             onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
@@ -143,7 +143,7 @@ function AddExposureForm({
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.access_level_label}</label>
+          <label className="text-xs text-foreground mb-1 block">{st.access_level_label}</label>
           <select
             value={accessLevel}
             onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
@@ -157,7 +157,7 @@ function AddExposureForm({
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">{st.resource_label}</label>
+        <label className="text-xs text-foreground mb-1 block">{st.resource_label}</label>
         {resourceType === 'persona' ? (
           <select
             value={resourceId}
@@ -180,7 +180,7 @@ function AddExposureForm({
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">{st.tags_label}</label>
+        <label className="text-xs text-foreground mb-1 block">{st.tags_label}</label>
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
@@ -292,12 +292,12 @@ export default function ExposureManager() {
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+              <div className="flex items-center gap-2 text-sm text-foreground py-4 justify-center">
                 <LoadingSpinner />
                 {st.loading_exposed}
               </div>
             ) : exposedResources.length === 0 ? (
-              <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-foreground">
                 {st.no_resources_hint}
               </div>
             ) : (

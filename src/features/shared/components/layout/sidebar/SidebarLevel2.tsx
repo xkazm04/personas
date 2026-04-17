@@ -94,9 +94,9 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
 
   const credentialBadges: Record<string, SubNavBadge> = {
-    credentials: { count: credentials.length, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
-    databases: { count: dbCredCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
-    'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
+    credentials: { count: credentials.length, className: 'bg-secondary/50 border border-primary/10 text-foreground font-normal' },
+    databases: { count: dbCredCount, className: 'bg-secondary/50 border border-primary/10 text-foreground font-normal' },
+    'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-foreground font-normal' },
   };
 
   const settingsItems = getSettingsItems(isDev, tier.current);
@@ -260,7 +260,7 @@ function SchedulesSidebarNav() {
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             selectedPersonaId === null
               ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
           }`}
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
@@ -282,7 +282,7 @@ function SchedulesSidebarNav() {
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               selectedPersonaId === p.id
                 ? 'bg-primary/10 text-foreground/90'
-                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
             <PersonaIcon icon={p.icon} color={p.color} />

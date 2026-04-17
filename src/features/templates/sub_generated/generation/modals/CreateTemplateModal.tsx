@@ -79,8 +79,8 @@ export function CreateTemplateModal({
               <Wand2 className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">Create Template</h2>
-              <p className="text-sm text-muted-foreground/80">Design a reusable persona template with AI</p>
+              <h2 id="create-template-title" className="text-base font-semibold text-foreground">Create Template</h2>
+              <p className="text-sm text-foreground">Design a reusable persona template with AI</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -89,7 +89,7 @@ export function CreateTemplateModal({
               onClick={handleClose}
               className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
             >
-              <X className="w-4 h-4 text-muted-foreground/90" />
+              <X className="w-4 h-4 text-foreground" />
             </button>
           </div>
         </div>
@@ -136,7 +136,7 @@ export function CreateTemplateModal({
           <button
             onClick={handleBack}
             disabled={!canGoBack}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back

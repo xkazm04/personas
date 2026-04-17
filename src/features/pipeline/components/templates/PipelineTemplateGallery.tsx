@@ -28,7 +28,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
     <div className="mt-2">
       <div className="flex items-center gap-2 mb-4">
         <LayoutTemplate className="w-4 h-4 text-indigo-400/60" />
-        <h2 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">{t.pipeline.starter_templates}</h2>
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t.pipeline.starter_templates}</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -71,10 +71,10 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                         <span className="text-base leading-none">{tpl.icon}</span>
                         <h3 className="text-sm font-semibold text-foreground/90 truncate">{tpl.name}</h3>
                       </div>
-                      <p className="text-sm text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                      <p className="text-sm text-foreground line-clamp-2 leading-relaxed">
                         {tpl.description}
                       </p>
-                      <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground/60 font-mono">
+                      <div className="flex items-center gap-2 mt-1.5 text-sm text-foreground font-mono">
                         <span>{tpl.nodes.length} {t.pipeline.nodes}</span>
                         <span className="opacity-40">·</span>
                         <span>{tpl.edges.length} {t.pipeline.edges}</span>
@@ -97,7 +97,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                                 className="w-2 h-2 rounded-full shrink-0"
                                 style={{ backgroundColor: NODE_ROLE_FILLS[node.role] || '#6366f1' }}
                               />
-                              <span className="text-sm text-foreground/80 truncate">{node.label}</span>
+                              <span className="text-sm text-foreground truncate">{node.label}</span>
                               <RoleBadge role={node.role} />
                             </div>
                           ))}
@@ -114,7 +114,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                                 className="w-3 h-[2px] rounded-full inline-block"
                                 style={{ backgroundColor: EDGE_COLORS[type] }}
                               />
-                              <span className="text-muted-foreground/70">{type}</span>
+                              <span className="text-foreground">{type}</span>
                             </span>
                           ))}
                         </div>

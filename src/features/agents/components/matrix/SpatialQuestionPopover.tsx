@@ -118,7 +118,7 @@ function QuestionModal({
               <h3 className={`text-base font-bold ${dimensionColor}`}>
                 {dimensionLabel}
               </h3>
-              <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">
+              <p className="text-[10px] text-foreground uppercase tracking-wider">
                 {t.agents.spatial_question.agent_configuration}
               </p>
             </div>
@@ -127,7 +127,7 @@ function QuestionModal({
             onClick={onClose}
             className="p-2 rounded-card hover:bg-foreground/[0.06] transition-colors"
           >
-            <X className="w-4 h-4 text-muted-foreground/50" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -153,10 +153,10 @@ function QuestionModal({
                   <span className="flex-shrink-0 w-6 h-6 rounded-input bg-primary/10 border border-primary/15 flex items-center justify-center text-[11px] font-bold text-primary/70 group-hover:bg-primary/20 group-hover:text-primary transition-colors mt-0.5">
                     {idx + 1}
                   </span>
-                  <span className="text-sm text-foreground/80 leading-relaxed">{option}</span>
+                  <span className="text-sm text-foreground leading-relaxed">{option}</span>
                 </button>
               ))}
-              <p className="text-[10px] text-muted-foreground/35 mt-1 flex items-center gap-1.5">
+              <p className="text-[10px] text-foreground mt-1 flex items-center gap-1.5">
                 <Hash className="w-3 h-3" />
                 {tx(t.agents.spatial_question.press_to_select, { count: options.length })}
               </p>
@@ -168,7 +168,7 @@ function QuestionModal({
             {hasOptions && (
               <div className="flex items-center gap-2 mb-1">
                 <div className="flex-1 h-px bg-primary/8" />
-                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider font-medium">
+                <span className="text-[10px] text-foreground uppercase tracking-wider font-medium">
                   {t.agents.spatial_question.or_custom_answer}
                 </span>
                 <div className="flex-1 h-px bg-primary/8" />
@@ -186,7 +186,7 @@ function QuestionModal({
               }}
               placeholder={t.agents.spatial_question.type_answer}
               rows={2}
-              className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground/25 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
+              className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
               data-testid="freetext-input"
             />
             <button

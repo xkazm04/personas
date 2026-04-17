@@ -41,12 +41,12 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           size="sm"
           icon={<ArrowLeft className="w-3.5 h-3.5" />}
           onClick={onBack}
-          className="text-muted-foreground/70 hover:text-foreground/90"
+          className="text-foreground hover:text-foreground/90"
         >
           Back
         </Button>
         {forage.phase === "results" && forage.scanResult && (
-          <span className="text-sm text-muted-foreground/50">
+          <span className="text-sm text-foreground">
             Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
             {forage.scanResult.scan_duration_ms}ms
           </span>

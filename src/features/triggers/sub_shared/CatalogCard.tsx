@@ -24,20 +24,20 @@ export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }:
             <span className="text-xs font-semibold text-foreground truncate">{entry.name}</span>
             {entry.isFeatured && <Star className="w-3 h-3 text-amber-400 flex-shrink-0" />}
           </div>
-          <span className="text-[10px] text-muted-foreground/60 capitalize">{entry.category}</span>
+          <span className="text-[10px] text-foreground capitalize">{entry.category}</span>
         </div>
       </div>
 
       {/* Description */}
       {entry.description && (
-        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+        <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">
           {entry.description}
         </p>
       )}
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-auto pt-1">
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-3 text-[10px] text-foreground">
           <span className="flex items-center gap-1">
             <Users className="w-3 h-3" />
             {entry.subscriberCount}

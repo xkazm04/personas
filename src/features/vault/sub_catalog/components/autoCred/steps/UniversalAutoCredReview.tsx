@@ -70,7 +70,7 @@ export function UniversalAutoCredReview({
           <h4 className="text-sm font-semibold text-foreground">
             Discovered: {connectorLabel}
           </h4>
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             {fields.length} field{fields.length !== 1 ? 's' : ''} discovered
             {discoveredConnector?.category ? ` \u00b7 ${discoveredConnector.category}` : ''}
           </p>
@@ -85,7 +85,7 @@ export function UniversalAutoCredReview({
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+        <label className="text-xs font-medium text-foreground uppercase tracking-wider">
           Credential Name
         </label>
         <input
@@ -98,7 +98,7 @@ export function UniversalAutoCredReview({
 
       {/* Extracted fields */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+        <label className="text-xs font-medium text-foreground uppercase tracking-wider">
           Extracted Values
         </label>
         <div className="space-y-2">
@@ -112,7 +112,7 @@ export function UniversalAutoCredReview({
           ))}
         </div>
         {fields.length === 0 && (
-          <div className="text-sm text-muted-foreground/50 text-center py-4">
+          <div className="text-sm text-foreground text-center py-4">
             No fields were discovered. Try again with a more specific description.
           </div>
         )}
@@ -138,14 +138,14 @@ export function UniversalAutoCredReview({
         <div className="flex items-center gap-2">
           <button
             onClick={onRetry}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground/70 hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-foreground hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
           </button>
           <button
             onClick={onCancel}
-            className="px-3 py-2 text-sm text-muted-foreground/50 hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
+            className="px-3 py-2 text-sm text-foreground hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
           >
             Cancel
           </button>

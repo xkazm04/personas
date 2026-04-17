@@ -49,7 +49,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
 export function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
     <div className="flex items-center gap-2.5 shrink-0 text-sm font-medium">
-      <span className="text-muted-foreground/60">
+      <span className="text-foreground">
         {progress.current}/{progress.total}
       </span>
       {progress.passed > 0 && (
@@ -65,7 +65,7 @@ export function TestRunCounters({ progress }: { progress: TestProgress }) {
         </span>
       )}
       {progress.skipped > 0 && (
-        <span className="flex items-center gap-0.5 text-muted-foreground/50">
+        <span className="flex items-center gap-0.5 text-foreground">
           <MinusCircle className="w-3 h-3" />
           {progress.skipped}
         </span>
@@ -109,7 +109,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-muted-foreground/60 hover:text-muted-foreground/80"
+              className="text-foreground hover:text-muted-foreground/80"
             >
               Close
             </Button>
@@ -150,12 +150,12 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
       <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground/80">{vt.paste_spec_title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{vt.paste_spec_title}</h3>
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={onClose}
-            className="text-muted-foreground/60"
+            className="text-foreground"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -164,14 +164,14 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder={vt.paste_placeholder}
-          className="w-full h-[300px] p-3 rounded-card text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-card text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-muted-foreground/60"
+            className="text-foreground"
           >
             Cancel
           </Button>

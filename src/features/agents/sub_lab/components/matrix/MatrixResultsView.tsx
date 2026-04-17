@@ -57,14 +57,14 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
           <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
             {t.agents.lab.scenario_breakdown}
-            <span className="text-xs font-normal text-muted-foreground/50 ml-1">{t.agents.lab.click_cell_details}</span>
+            <span className="text-xs font-normal text-foreground ml-1">{t.agents.lab.click_cell_details}</span>
           </h4>
           <div className="overflow-x-auto border border-primary/10 rounded-modal">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/80">Scenario</th>
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">{t.agents.lab.current_column}</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-foreground">Scenario</th>
+                  <th className="text-center px-3 py-2.5 font-medium text-foreground">{t.agents.lab.current_column}</th>
                   <th className="text-center px-3 py-2.5 font-medium text-violet-400">Draft</th>
                 </tr>
               </thead>
@@ -89,7 +89,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                   const isDraftSelected = selectedCell?.scenario === scenario && selectedCell?.variant === 'draft';
                   return (
                     <>
-                      <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">{scenario}</td>
+                      <td className="px-3 py-2.5 text-foreground font-medium max-w-[200px] truncate">{scenario}</td>
                       <td className="px-3 py-2.5">
                         {currentRows.length > 0 ? (
                           <button
@@ -166,7 +166,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
             className="flex items-center gap-2 px-4 py-2.5 rounded-modal font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
             <Check className="w-4 h-4" />{t.agents.lab.accept_draft}
           </button>
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             {t.agents.lab.accept_applies_desc}
           </p>
         </div>

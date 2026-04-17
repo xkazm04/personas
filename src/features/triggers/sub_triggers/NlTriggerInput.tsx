@@ -90,7 +90,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+      <label className="flex items-center gap-1.5 text-sm font-medium text-foreground">
         <Sparkles className="w-3.5 h-3.5 text-violet-400" />
         {t.triggers.describe_trigger}
       </label>
@@ -103,12 +103,12 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
+          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
         />
         {input && (
           <button
             onClick={handleReset}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground hover:text-muted-foreground transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -130,16 +130,16 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
                   {confidence!.label}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground/60 mt-0.5">
-                Type: <span className="text-foreground/70">{result.triggerType.replace(/_/g, ' ')}</span>
+              <p className="text-xs text-foreground mt-0.5">
+                Type: <span className="text-foreground">{result.triggerType.replace(/_/g, ' ')}</span>
                 {result.formOverrides.cronExpression && (
-                  <> &middot; Cron: <span className="font-mono text-foreground/70">{result.formOverrides.cronExpression}</span></>
+                  <> &middot; Cron: <span className="font-mono text-foreground">{result.formOverrides.cronExpression}</span></>
                 )}
                 {result.formOverrides.interval && result.formOverrides.scheduleMode === 'interval' && (
-                  <> &middot; Interval: <span className="text-foreground/70">{result.formOverrides.interval}s</span></>
+                  <> &middot; Interval: <span className="text-foreground">{result.formOverrides.interval}s</span></>
                 )}
                 {result.formOverrides.globFilter && (
-                  <> &middot; Filter: <span className="font-mono text-foreground/70">{result.formOverrides.globFilter}</span></>
+                  <> &middot; Filter: <span className="font-mono text-foreground">{result.formOverrides.globFilter}</span></>
                 )}
               </p>
             </div>
@@ -157,7 +157,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
         {noMatch && input.trim().length >= 3 && (
           <div
             key="no-match"
-            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 text-xs text-muted-foreground/60"
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 text-xs text-foreground"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>Could not parse a trigger from that description. Try something like &ldquo;{PLACEHOLDER_EXAMPLES[placeholderIdx]}&rdquo;</span>

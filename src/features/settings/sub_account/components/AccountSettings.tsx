@@ -36,13 +36,13 @@ export default function AccountSettings() {
         {/* Telemetry */}
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
           <SectionHeading title={s.telemetry_title} icon={<Activity className="text-rose-400" />} />
-          <p className="text-sm text-muted-foreground/60 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             {s.telemetry_description}
           </p>
           <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground/85">{s.telemetry_toggle}</p>
-              <p className="text-xs text-muted-foreground/50 mt-0.5">
+              <p className="text-xs text-foreground mt-0.5">
                 {telemetryOn
                   ? s.telemetry_on
                   : s.telemetry_off}
@@ -97,7 +97,7 @@ export default function AccountSettings() {
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
-                    <div className="text-sm text-muted-foreground/90 truncate">{user.email}</div>
+                    <div className="text-sm text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
                     <span className="inline-block mt-1.5 px-2 py-0.5 text-sm font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
@@ -118,7 +118,7 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80 mb-4">{s.sign_in_prompt}</p>
+              <p className="text-sm text-foreground mb-4">{s.sign_in_prompt}</p>
 
               {/* Error display */}
               {error && (
@@ -140,7 +140,7 @@ export default function AccountSettings() {
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     {s.waiting_sign_in}
                   </div>
-                  <p className="text-[11px] text-muted-foreground/50">{s.complete_sign_in}</p>
+                  <p className="text-[11px] text-foreground">{s.complete_sign_in}</p>
                   <Button variant="link" size="xs" onClick={() => useAuthStore.setState({ isLoading: false, error: null })}>
                     {s.cancel}
                   </Button>

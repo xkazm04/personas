@@ -23,7 +23,7 @@ export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: F
               <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
               <h3 className="text-base font-semibold text-foreground mb-2">{decision.label}</h3>
               {decision.description && (
-                <p className="text-sm text-foreground/80 leading-relaxed">{decision.description}</p>
+                <p className="text-sm text-foreground leading-relaxed">{decision.description}</p>
               )}
             </div>
             <VerdictButtons verdict={verdict} onToggle={onToggle} layout="full" />
@@ -37,7 +37,7 @@ export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: F
               <DecisionMeta category={decision.category} />
               <h3 className="text-base font-semibold text-foreground mb-1">{decision.label}</h3>
               {decision.description && (
-                <p className="text-sm text-foreground/80 leading-relaxed">{decision.description}</p>
+                <p className="text-sm text-foreground leading-relaxed">{decision.description}</p>
               )}
             </div>
             <VerdictButtons verdict={verdict} onToggle={onToggle} layout="compact" />
@@ -58,9 +58,9 @@ function DecisionMeta({ category, mediaType }: { category?: string; mediaType?: 
         <span className="text-xs font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
       )}
       {mediaType === 'video' ? (
-        <Video className="w-3 h-3 text-foreground/30" />
+        <Video className="w-3 h-3 text-foreground" />
       ) : mediaType === 'image' ? (
-        <ImageIcon className="w-3 h-3 text-foreground/30" />
+        <ImageIcon className="w-3 h-3 text-foreground" />
       ) : null}
     </div>
   );
@@ -71,7 +71,7 @@ function MediaPanel({ url, alt }: { url: string; alt: string }) {
   const handleMediaError = (e: React.SyntheticEvent<HTMLElement>) => {
     const el = e.target as HTMLElement;
     el.style.display = 'none';
-    const fallback = `<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><span class="text-sm">${t.overview.focused_decision.media_unavailable}</span></div>`;
+    const fallback = `<div class="flex flex-col items-center gap-2 py-12 text-foreground"><span class="text-sm">${t.overview.focused_decision.media_unavailable}</span></div>`;
     if (el.parentElement) el.parentElement.innerHTML = fallback;
   };
 
@@ -104,7 +104,7 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
         onClick={() => onToggle('accept')}
         className={`${btnBase} ${verdict === 'accept'
           ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground/60' : 'text-foreground/50'} hover:bg-emerald-500/10 hover:text-emerald-400`
+          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground' : 'text-foreground'} hover:bg-emerald-500/10 hover:text-emerald-400`
         }`}
       >
         <CheckCircle2 className="w-4 h-4" />
@@ -114,7 +114,7 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
         onClick={() => onToggle('reject')}
         className={`${btnBase} ${verdict === 'reject'
           ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground/60' : 'text-foreground/50'} hover:bg-red-500/10 hover:text-red-400`
+          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground' : 'text-foreground'} hover:bg-red-500/10 hover:text-red-400`
         }`}
       >
         <XCircle className="w-4 h-4" />

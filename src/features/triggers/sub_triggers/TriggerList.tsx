@@ -103,12 +103,12 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
+            <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground/80">{persona.name}</h4>
+                  <h4 className="text-sm font-semibold text-foreground">{persona.name}</h4>
                   {onNavigateToPersona && (
                     <button
                       onClick={() => onNavigateToPersona(persona.id)}
@@ -153,7 +153,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               <span className={`text-sm px-1.5 py-0.5 rounded-card font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                                  : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'
+                                  : 'bg-secondary/60 text-foreground border border-border/20'
                               }`}>
                                 {trigger.enabled ? t.triggers.on_label : t.triggers.off_label}
                               </span>
@@ -171,10 +171,10 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               )}
                             </div>
 
-                            <div className="mt-1.5 text-sm text-muted-foreground/80 space-y-0.5">
+                            <div className="mt-1.5 text-sm text-foreground space-y-0.5">
                               <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                               {trigger.trigger_type === 'webhook' && (
-                                <div className="font-mono text-sm text-muted-foreground/80 truncate mt-0.5">
+                                <div className="font-mono text-sm text-foreground truncate mt-0.5">
                                   {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/webhook/{trigger.id.slice(0, 8)}...
                                 </div>
                               )}

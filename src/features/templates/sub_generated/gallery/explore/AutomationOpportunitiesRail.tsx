@@ -33,7 +33,7 @@ export function AutomationOpportunitiesRail({
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-4 h-4 text-amber-400/70" />
         <SectionLabel as="span" className="mb-0">{t.templates.opportunities.title}</SectionLabel>
-        <span className="text-sm text-muted-foreground/50">{t.templates.opportunities.subtitle}</span>
+        <span className="text-sm text-foreground">{t.templates.opportunities.subtitle}</span>
       </div>
 
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
@@ -87,7 +87,7 @@ function OpportunityCard({
       </div>
 
       {/* Business value */}
-      <p className="text-sm text-muted-foreground/50 mb-3 leading-relaxed">
+      <p className="text-sm text-foreground mb-3 leading-relaxed">
         {businessValue}
       </p>
 
@@ -99,7 +99,7 @@ function OpportunityCard({
             <span className="text-sm font-medium text-emerald-400/70">
               {t.templates.opportunities.ready_now}
             </span>
-            <span className="text-sm text-muted-foreground/40">
+            <span className="text-sm text-foreground">
               ({readyNow.length})
             </span>
           </div>
@@ -123,7 +123,7 @@ function OpportunityCard({
               <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
               {connectorMeta.label}
             </span>
-            <span className="text-sm text-muted-foreground/40">
+            <span className="text-sm text-foreground">
               {t.templates.opportunities.unlock_more.replace('{count}', String(oneConnectorAway.length))}
             </span>
           </div>
@@ -154,7 +154,7 @@ function TemplateRow({
         dimmed ? 'opacity-60' : ''
       }`}
     >
-      <span className="text-sm text-foreground/70 flex-1 truncate">
+      <span className="text-sm text-foreground flex-1 truncate">
         {template.test_case_name}
       </span>
       {template.adoption_count > 0 && (

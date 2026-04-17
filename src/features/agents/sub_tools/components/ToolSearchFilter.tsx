@@ -37,7 +37,7 @@ export function ToolSearchFilter({
       {/* Search Input + View Toggle */}
       <div className="flex items-center gap-2">
         <div className="relative max-w-[280px] flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             type="text"
             value={searchQuery}
@@ -51,8 +51,8 @@ export function ToolSearchFilter({
             onClick={() => onViewModeChange('grid')}
             className={`p-1.5 rounded-card transition-all ${
               viewMode === 'grid'
-                ? 'bg-primary/15 text-foreground/80'
-                : 'text-muted-foreground/80 hover:text-foreground/95'
+                ? 'bg-primary/15 text-foreground'
+                : 'text-foreground hover:text-foreground/95'
             }`}
             title={t.agents.tools.category_view}
           >
@@ -62,8 +62,8 @@ export function ToolSearchFilter({
             onClick={() => onViewModeChange('grouped')}
             className={`p-1.5 rounded-card transition-all ${
               viewMode === 'grouped'
-                ? 'bg-primary/15 text-foreground/80'
-                : 'text-muted-foreground/80 hover:text-foreground/95'
+                ? 'bg-primary/15 text-foreground'
+                : 'text-foreground hover:text-foreground/95'
             }`}
             title={t.agents.tools.connector_view}
           >
@@ -81,7 +81,7 @@ export function ToolSearchFilter({
             className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal text-sm font-medium transition-all ${
               selectedCategory === category
                 ? 'text-foreground shadow-elevation-3 shadow-primary/20'
-                : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/20'
+                : 'bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground/95 border border-primary/20'
             }`}
           >
             {selectedCategory === category && (
@@ -95,7 +95,7 @@ export function ToolSearchFilter({
             <span className={`text-sm px-1.5 py-0.5 rounded-full font-bold ${
               selectedCategory === category
                 ? 'relative z-10 bg-foreground/15 text-foreground/90'
-                : 'bg-muted/30 text-muted-foreground/80'
+                : 'bg-muted/30 text-foreground'
             }`}>
               {categoryCounts.get(category) ?? 0}
             </span>
@@ -106,7 +106,7 @@ export function ToolSearchFilter({
       {/* Assigned tools summary bar */}
       {assignedTools.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-modal px-4 py-2">
-          <span className="text-sm text-muted-foreground/80 flex-shrink-0">
+          <span className="text-sm text-foreground flex-shrink-0">
             {tx(t.agents.tools.assigned_summary, { assigned: assignedTools.length, total: totalToolCount })}
           </span>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden ml-2">
@@ -119,14 +119,14 @@ export function ToolSearchFilter({
               </span>
             ))}
             {assignedTools.length > 5 && (
-              <span className="text-sm text-muted-foreground/80 flex-shrink-0">
+              <span className="text-sm text-foreground flex-shrink-0">
                 {tx(t.agents.tools.more, { count: assignedTools.length - 5 })}
               </span>
             )}
           </div>
           <button
             onClick={onClearAll}
-            className="flex-shrink-0 text-sm text-muted-foreground/90 hover:text-red-400 transition-colors flex items-center gap-1"
+            className="flex-shrink-0 text-sm text-foreground hover:text-red-400 transition-colors flex items-center gap-1"
           >
             <X className="w-3 h-3" />
             {t.agents.tools.clear_all}

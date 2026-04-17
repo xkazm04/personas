@@ -100,7 +100,7 @@ export function FieldActionButtons({
           <button
             type="button"
             onClick={() => setIsVisible((v) => !v)}
-            className="p-0.5 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
             data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
           >
             {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -112,7 +112,7 @@ export function FieldActionButtons({
               type="button"
               onClick={handleCopy}
               disabled={!value}
-              className="p-0.5 text-muted-foreground/60 hover:text-foreground/80 disabled:opacity-30 transition-colors"
+              className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
               title={t.vault.credential_forms.copy_value}
               data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
             >
@@ -125,7 +125,7 @@ export function FieldActionButtons({
               )}
             </button>
             {isSecret && copied && (
-              <span className="absolute top-full mt-0.5 text-sm text-muted-foreground/70 whitespace-nowrap">
+              <span className="absolute top-full mt-0.5 text-sm text-foreground whitespace-nowrap">
                 Copied to clipboard
               </span>
             )}
@@ -135,7 +135,7 @@ export function FieldActionButtons({
           <button
             type="button"
             onClick={handlePaste}
-            className="p-0.5 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
             title={t.vault.credential_forms.paste_from_clipboard}
             data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
           >

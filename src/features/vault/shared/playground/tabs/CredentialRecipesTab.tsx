@@ -117,7 +117,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+      <div className="flex items-center justify-center py-12 text-foreground">
         <LoadingSpinner size="lg" label="Loading recipes" />
       </div>
     );
@@ -129,7 +129,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
       <div className="flex items-center justify-between px-6 pt-5 pb-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground/90">{vt.recipes_title}</h3>
-          <p className="text-sm text-muted-foreground/60 mt-0.5">
+          <p className="text-sm text-foreground mt-0.5">
             Reusable automation templates for this credential
           </p>
         </div>

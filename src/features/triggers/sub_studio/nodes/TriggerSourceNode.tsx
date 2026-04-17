@@ -36,7 +36,7 @@ function TriggerSourceNodeInner({ data, selected }: NodeProps) {
       <div className="flex flex-col min-w-0">
         <span className="text-[10px] uppercase tracking-wider text-amber-400/70 font-medium">Trigger</span>
         <span className="text-xs font-semibold text-foreground truncate">{d.label}</span>
-        <span className="text-[10px] text-muted-foreground truncate">{getTriggerTypeLabel(d.triggerType)}</span>
+        <span className="text-[10px] text-foreground truncate">{getTriggerTypeLabel(d.triggerType)}</span>
       </div>
 
       <Handle

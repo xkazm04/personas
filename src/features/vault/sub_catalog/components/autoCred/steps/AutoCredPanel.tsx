@@ -146,7 +146,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-emerald-400" />
-            <p className="text-sm text-muted-foreground/90">{t.vault.design_phases.saving}</p>
+            <p className="text-sm text-foreground">{t.vault.design_phases.saving}</p>
           </motion.div>
         )}
 
@@ -161,7 +161,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">
+              <p className="text-sm text-foreground mt-1">
                 {designResult.connector.label} credential has been securely stored.
               </p>
             </div>

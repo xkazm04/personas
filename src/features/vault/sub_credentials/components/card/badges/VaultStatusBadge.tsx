@@ -115,7 +115,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Stats row */}
           <div className="flex gap-3 px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
-            <span className="text-sm text-muted-foreground/80">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-foreground">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
             <span className="text-sm text-emerald-400/70">{vault.encrypted} encrypted</span>
             {hasPlaintext && (
               <span className="text-sm text-amber-400/70">{vault.plaintext} unencrypted</span>
@@ -183,8 +183,8 @@ function ExplainerRow({ icon, title, detail }: { icon: React.ReactNode; title: s
     <div className="flex gap-2.5">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div>
-        <p className="text-sm font-medium text-foreground/80">{title}</p>
-        <p className="text-sm text-muted-foreground/90 leading-relaxed">{detail}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-sm text-foreground leading-relaxed">{detail}</p>
       </div>
     </div>
   );

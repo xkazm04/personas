@@ -79,7 +79,7 @@ function PersonaDigestRow({
 
       {/* Name + issue counts */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground/80 truncate">{check.personaName}</p>
+        <p className="text-sm font-medium text-foreground truncate">{check.personaName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {totalIssues === 0 ? (
             <span className="text-xs text-emerald-400/70 flex items-center gap-1">
@@ -113,7 +113,7 @@ function PersonaDigestRow({
         check.result.status === 'blocked' ? 'bg-red-400' : 'bg-amber-400'
       }`} />
 
-      <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors" />
+      <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground/60 transition-colors" />
     </button>
   );
 }
@@ -154,9 +154,9 @@ export function HealthDigestPanel() {
       <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <div className="flex items-center gap-3 mb-4">
           <Activity className="w-5 h-5 text-primary/60" />
-          <h3 className="text-sm font-semibold text-foreground/80">{t.agents.health_digest.title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
-        <p className="text-sm text-muted-foreground/60 mb-4">
+        <p className="text-sm text-foreground mb-4">
           {t.agents.health_digest.description}
         </p>
         <button
@@ -189,12 +189,12 @@ export function HealthDigestPanel() {
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-primary/60" />
-          <h3 className="text-sm font-semibold text-foreground/80">{t.agents.health_digest.title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
         <button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card bg-secondary/60 text-muted-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card bg-secondary/60 text-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
         >
           <RefreshCw className="w-3 h-3" />
           {t.agents.health_check.rerun}
@@ -222,19 +222,19 @@ export function HealthDigestPanel() {
       <div className="px-4 py-3 flex items-center gap-4 border-b border-primary/10 bg-primary/[0.02]">
         <CompactScoreRing score={totalScore} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground/80">
+          <p className="text-sm font-medium text-foreground">
             {totalScore.grade === 'healthy' ? t.agents.health_digest.all_healthy :
              totalScore.grade === 'degraded' ? t.agents.health_digest.some_attention :
              t.agents.health_digest.critical_issues}
           </p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-muted-foreground/60">
+            <span className="text-xs text-foreground">
               {tx(personas.length === 1 ? t.agents.health_digest.agents_checked_one : t.agents.health_digest.agents_checked_other, { count: personas.length })}
             </span>
             {totalIssues > 0 && (
               <>
-                <span className="text-xs text-muted-foreground/30">\u00b7</span>
-                <span className="text-xs text-muted-foreground/60">
+                <span className="text-xs text-foreground">\u00b7</span>
+                <span className="text-xs text-foreground">
                   {tx(totalIssues === 1 ? t.agents.health_digest.issues_one : t.agents.health_digest.issues_other, { count: totalIssues })}
                 </span>
               </>
@@ -273,7 +273,7 @@ export function HealthDigestPanel() {
 
       {/* Timestamp */}
       <div className="px-4 py-2 border-t border-primary/10 bg-primary/[0.02]">
-        <p className="text-xs text-muted-foreground/60">
+        <p className="text-xs text-foreground">
           {tx(t.agents.health_digest.last_run, { time: new Date(digest.generatedAt).toLocaleString() })}
         </p>
       </div>

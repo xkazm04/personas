@@ -42,7 +42,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/95 transition-all"
+          className="p-1.5 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/95 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -65,7 +65,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             <div className="absolute right-0 top-full mt-1 w-56 rounded-modal bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 z-50 overflow-hidden">
               <div className="p-1.5 max-h-60 overflow-y-auto">
                 {availablePersonas.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-sm text-muted-foreground/90">
+                  <div className="px-3 py-4 text-center text-sm text-foreground">
                     {t.pipeline.all_agents_added}
                   </div>
                 ) : (
@@ -79,7 +79,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
                       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-modal hover:bg-secondary/60 transition-colors"
                     >
                       <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-                      <span className="text-sm font-medium text-foreground/80 truncate">{p.name}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{p.name}</span>
                     </button>
                   ))
                 )}
@@ -102,7 +102,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Auto Layout */}
         <button
           onClick={onAutoLayout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80 text-sm font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-secondary/60 border border-primary/15 text-foreground hover:text-foreground/95 hover:bg-secondary/80 text-sm font-medium transition-all"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
           {t.pipeline.layout}

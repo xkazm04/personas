@@ -143,7 +143,7 @@ export function ByomApiKeyManager() {
   if (loading) {
     return (
       <div className="rounded-modal border border-primary/10 bg-card-bg p-8 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-muted-foreground/50 animate-spin" />
+        <Loader2 className="w-5 h-5 text-foreground animate-spin" />
       </div>
     );
   }
@@ -152,7 +152,7 @@ export function ByomApiKeyManager() {
     <div className="space-y-4">
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.api_key_title} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="text-sm text-foreground">
           {s.api_key_hint}
         </p>
 
@@ -217,7 +217,7 @@ function KeyEntryRow({
             <button
               onClick={onTest}
               disabled={entry.connectionState === 'testing'}
-              className="text-xs px-2.5 py-1 rounded-input border border-primary/15 text-muted-foreground
+              className="text-xs px-2.5 py-1 rounded-input border border-primary/15 text-foreground
                 hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
             >
               {entry.connectionState === 'testing' ? (
@@ -242,7 +242,7 @@ function KeyEntryRow({
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground/50">{entry.def.description}</p>
+      <p className="text-xs text-foreground">{entry.def.description}</p>
 
       {/* Value display / editor */}
       {entry.editing ? (
@@ -253,7 +253,7 @@ function KeyEntryRow({
             onChange={(e) => onChange(e.target.value)}
             placeholder={entry.def.placeholder}
             className="flex-1 px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/40
+              text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/40
               font-mono"
             autoFocus
             onKeyDown={(e) => {
@@ -271,7 +271,7 @@ function KeyEntryRow({
           </button>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-input text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
             title="Cancel"
           >
             <X className="w-4 h-4" />
@@ -285,11 +285,11 @@ function KeyEntryRow({
           <div className="flex-1 px-3 py-1.5 text-sm rounded-card border border-primary/10 bg-secondary/30
             group-hover:border-primary/20 transition-all font-mono min-h-[32px] flex items-center">
             {hasValue ? (
-              <span className="text-foreground/80">
+              <span className="text-foreground">
                 {entry.revealed ? entry.value : maskValue(entry.savedValue, entry.def.isUrl)}
               </span>
             ) : (
-              <span className="text-muted-foreground/30">{entry.def.placeholder}</span>
+              <span className="text-foreground">{entry.def.placeholder}</span>
             )}
           </div>
           {hasValue && !entry.def.isUrl && (
@@ -298,7 +298,7 @@ function KeyEntryRow({
                 e.stopPropagation();
                 onToggleReveal();
               }}
-              className="p-1.5 rounded-input text-muted-foreground/50 hover:text-foreground transition-all"
+              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
               title={entry.revealed ? 'Hide' : 'Reveal'}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

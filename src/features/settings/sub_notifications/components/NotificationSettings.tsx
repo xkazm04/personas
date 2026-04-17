@@ -62,12 +62,12 @@ function WeeklyDigestToggle() {
     <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary/60" />
-        <span className="text-sm font-medium text-foreground/80">{s.weekly_digest}</span>
+        <span className="text-sm font-medium text-foreground">{s.weekly_digest}</span>
       </div>
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-medium text-foreground/80">{s.digest_title}</span>
-          <p className="text-sm text-muted-foreground/80">
+          <span className="text-sm font-medium text-foreground">{s.digest_title}</span>
+          <p className="text-sm text-foreground">
             {s.digest_description}
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function NotificationSettings() {
           <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
             <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary/60" />
-              <span className="text-sm font-medium text-foreground/80">{s.healing_severity}</span>
+              <span className="text-sm font-medium text-foreground">{s.healing_severity}</span>
             </div>
 
             <div className="divide-y divide-primary/10">
@@ -148,7 +148,7 @@ export default function NotificationSettings() {
                 <div key={key} className="flex items-center justify-between px-4 py-3">
                   <div className="space-y-0.5">
                     <span className={`text-sm font-medium ${color}`}>{s[labelKey]}</span>
-                    <p className="text-sm text-muted-foreground/80">{s[descKey]}</p>
+                    <p className="text-sm text-foreground">{s[descKey]}</p>
                   </div>
                   <AccessibleToggle
                     checked={prefs[key]}
@@ -163,7 +163,7 @@ export default function NotificationSettings() {
           {/* Weekly Health Digest */}
           <WeeklyDigestToggle />
 
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             {s.notification_hint}
           </p>
         </div>

@@ -60,7 +60,7 @@ export function ChannelList({
       {/* In-App (always present, read-only) */}
       <div className={`flex items-center gap-3 p-2.5 bg-secondary/30 border ${TOOLS_BORDER} rounded-modal`}>
         <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/80 flex-1">{t.agents.connectors.ch_in_app}</span>
+        <span className="text-sm font-medium text-foreground flex-1">{t.agents.connectors.ch_in_app}</span>
         <span className="flex items-center gap-1 text-sm text-emerald-400/80">
           <Check className="w-3 h-3" /> {t.agents.connectors.ch_always_active}
         </span>

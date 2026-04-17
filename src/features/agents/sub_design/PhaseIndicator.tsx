@@ -100,10 +100,10 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                       ? 'text-red-300'
                       : phase === 'awaiting-input'
                         ? 'text-purple-300'
-                        : 'text-foreground/80'
+                        : 'text-foreground'
                     : isCompleted
                       ? 'text-emerald-400/70'
-                      : 'text-muted-foreground/80'
+                      : 'text-foreground'
                 }`}
               >
                 {STAGE_LABEL_MAP[stageKey]}

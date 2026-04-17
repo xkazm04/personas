@@ -58,8 +58,8 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
               onClick={() => setSubtab(tab.id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 typo-heading rounded-xl transition-colors text-left ${
                 active
-                  ? 'bg-primary/10 text-foreground/80 border border-primary/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+                  ? 'bg-primary/10 text-foreground border border-primary/20'
+                  : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -90,7 +90,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
           <div className="flex flex-col h-full min-h-0 gap-2">
             {/* Custom section toolbar */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="typo-heading text-foreground/80">{t.shared.draft_editor.custom_sections}</span>
+              <span className="typo-heading text-foreground">{t.shared.draft_editor.custom_sections}</span>
               <button
                 onClick={() => {
                   const next = {
@@ -104,7 +104,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                   setSelectedCustomIndex(next.customSections.length - 1);
                 }}
                 disabled={disabled}
-                className="px-2 py-1 typo-body rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-50 flex items-center gap-1 ml-auto"
+                className="px-2 py-1 typo-body rounded-lg border border-primary/15 text-foreground hover:bg-secondary/50 disabled:opacity-50 flex items-center gap-1 ml-auto"
               >
                 <Plus className="w-3 h-3" />
                 Add
@@ -113,7 +113,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
 
             {editable.customSections.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="typo-body text-muted-foreground/80">No custom sections yet</p>
+                <p className="typo-body text-foreground">No custom sections yet</p>
               </div>
             ) : (
               <div className="flex flex-1 min-h-0 gap-2">
@@ -124,8 +124,8 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                       key={`${index}-${section.key}`}
                       className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-lg cursor-pointer transition-colors ${
                         selectedCustomIndex === index
-                          ? 'bg-violet-500/10 text-foreground/80 border border-violet-500/20'
-                          : 'text-muted-foreground/90 hover:bg-secondary/30 border border-transparent'
+                          ? 'bg-violet-500/10 text-foreground border border-violet-500/20'
+                          : 'text-foreground hover:bg-secondary/30 border border-transparent'
                       }`}
                       onClick={() => setSelectedCustomIndex(index)}
                     >
@@ -144,7 +144,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           }
                         }}
                         disabled={disabled}
-                        className="p-0.5 text-muted-foreground/80 hover:text-red-400 flex-shrink-0"
+                        className="p-0.5 text-foreground hover:text-red-400 flex-shrink-0"
                         title={t.shared.draft_editor.remove_section}
                       >
                         <X className="w-3 h-3" />

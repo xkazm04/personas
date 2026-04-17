@@ -28,7 +28,7 @@ export function ClipboardConfig({
               className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border capitalize ${
                 clipboardContentType === ct
                   ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
               }`}
             >
               {ct}
@@ -37,7 +37,7 @@ export function ClipboardConfig({
         </div>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>Text Pattern <span className="text-muted-foreground/50">(optional regex)</span></>}
+        label={<>Text Pattern <span className="text-foreground">(optional regex)</span></>}
         helpText={t.triggers.text_pattern_help}
       >
         <input

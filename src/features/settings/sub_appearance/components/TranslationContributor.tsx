@@ -130,7 +130,7 @@ export default function TranslationContributor() {
         <span className="text-lg">{currentLang?.flag}</span>
         <div>
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
-          <p className="typo-caption text-muted-foreground/60">
+          <p className="typo-caption text-foreground">
             {currentPct === 100
               ? interpolate(s.translation_keys, { count: TOTAL_KEYS })
               : interpolate(s.translation_coverage, { covered: currentCoverage, total: TOTAL_KEYS, pct: currentPct })
@@ -146,7 +146,7 @@ export default function TranslationContributor() {
 
       {/* Language coverage grid — click a language to export its file */}
       <div>
-        <p className="typo-caption text-muted-foreground/60 mb-2">{s.coverage_hint}</p>
+        <p className="typo-caption text-foreground mb-2">{s.coverage_hint}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {ALL_LANGUAGES.map((lang) => {
             const keys = coverage[lang.code] ?? 0;
@@ -169,7 +169,7 @@ export default function TranslationContributor() {
               >
                 <span className="text-sm">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-muted-foreground/70'}`}>
+                  <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-foreground'}`}>
                     {lang.label}
                   </span>
                   {/* Coverage bar */}
@@ -180,13 +180,13 @@ export default function TranslationContributor() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="typo-label text-muted-foreground/50 tabular-nums w-7 text-right">{pct}%</span>
+                    <span className="typo-label text-foreground tabular-nums w-7 text-right">{pct}%</span>
                   </div>
                 </div>
                 {isFull ? (
                   <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                 ) : (
-                  <Download className="w-3 h-3 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Download className="w-3 h-3 text-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
             );
@@ -196,8 +196,8 @@ export default function TranslationContributor() {
 
       {/* Contribution link */}
       <div className="border-t border-primary/10 pt-4 space-y-3">
-        <p className="typo-heading text-foreground/80">{s.contribute_title}</p>
-        <p className="typo-caption text-muted-foreground/60">
+        <p className="typo-heading text-foreground">{s.contribute_title}</p>
+        <p className="typo-caption text-foreground">
           {s.contribute_hint}
         </p>
         <Button

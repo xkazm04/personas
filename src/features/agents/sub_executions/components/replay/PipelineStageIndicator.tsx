@@ -150,13 +150,13 @@ export function PipelineStageIndicator({
               ) : state === 'completed' ? (
                 <CheckCircle2 className={`w-3 h-3 ${colors.text} shrink-0`} />
               ) : (
-                <Circle className="w-3 h-3 text-muted-foreground/30 shrink-0" />
+                <Circle className="w-3 h-3 text-foreground shrink-0" />
               )}
 
               {/* Stage label (hidden on narrow bars) */}
               <span className={`text-[10px] font-mono uppercase tracking-wider truncate hidden xl:inline ${
                 state === 'error' ? 'text-red-400' :
-                state === 'pending' ? 'text-muted-foreground/30' : colors.text
+                state === 'pending' ? 'text-foreground' : colors.text
               }`}>
                 {meta.label}
               </span>
@@ -175,9 +175,9 @@ export function PipelineStageIndicator({
                 <p className={`typo-heading${state === 'error' ? 'text-red-400' : colors.text}`}>
                   {meta.label}
                 </p>
-                <p className="typo-body text-muted-foreground/60">{meta.boundary}</p>
+                <p className="typo-body text-foreground">{meta.boundary}</p>
                 {isActive && boundary && (
-                  <p className="typo-code text-muted-foreground/50 mt-0.5">
+                  <p className="typo-code text-foreground mt-0.5">
                     {tx(t.agents.executions.ms_into_stage, { ms: Math.round(currentMs - boundary.startMs) })}
                   </p>
                 )}

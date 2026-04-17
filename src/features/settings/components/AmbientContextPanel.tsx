@@ -172,13 +172,13 @@ export function AmbientContextPanel() {
         />
       </div>
 
-      <p className="text-xs text-muted-foreground/60">
+      <p className="text-xs text-foreground">
         {s.description}
       </p>
 
       {/* Context Stream Stats */}
       {ambientEnabled && contextStreamStats && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
+        <div className="flex items-center gap-3 text-xs text-foreground">
           <div className="flex items-center gap-1">
             <Activity className="w-3 h-3" />
             <span>{tx(s.events_broadcast, { count: contextStreamStats.totalEventsBroadcast })}</span>
@@ -194,8 +194,8 @@ export function AmbientContextPanel() {
       {ambientEnabled && ambientSnapshot && (
         <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground/80">{s.live_context}</span>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+            <span className="text-xs font-medium text-foreground">{s.live_context}</span>
+            <div className="flex items-center gap-2 text-xs text-foreground">
               <span>{tx(s.total_signals, { count: ambientSnapshot.totalSignalsCaptured })}</span>
               <button
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
@@ -209,17 +209,17 @@ export function AmbientContextPanel() {
           {ambientSnapshot.activeApp && (
             <div className="flex items-center gap-1.5 text-xs">
               <AppWindow className="w-3 h-3 text-purple-400" />
-              <span className="text-foreground/80">
+              <span className="text-foreground">
                 {ambientSnapshot.activeApp}
                 {ambientSnapshot.activeWindowTitle && (
-                  <span className="text-muted-foreground/60"> &mdash; {ambientSnapshot.activeWindowTitle}</span>
+                  <span className="text-foreground"> &mdash; {ambientSnapshot.activeWindowTitle}</span>
                 )}
               </span>
             </div>
           )}
 
           {ambientSnapshot.signals.length === 0 ? (
-            <p className="text-xs text-muted-foreground/40 italic">{s.no_signals}</p>
+            <p className="text-xs text-foreground italic">{s.no_signals}</p>
           ) : (
             <div className="max-h-40 overflow-y-auto space-y-1">
               {ambientSnapshot.signals.map((signal, i) => {
@@ -233,9 +233,9 @@ export function AmbientContextPanel() {
 
                 return (
                   <div key={i} className="flex items-start gap-1.5 text-xs">
-                    <Icon className="w-3 h-3 text-muted-foreground/60 mt-0.5 shrink-0" />
-                    <span className="text-muted-foreground/70 truncate flex-1">{signal.summary}</span>
-                    <span className="text-muted-foreground/40 shrink-0">{age}</span>
+                    <Icon className="w-3 h-3 text-foreground mt-0.5 shrink-0" />
+                    <span className="text-foreground truncate flex-1">{signal.summary}</span>
+                    <span className="text-foreground shrink-0">{age}</span>
                   </div>
                 );
               })}
@@ -248,10 +248,10 @@ export function AmbientContextPanel() {
       {ambientEnabled && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-foreground/80">{s.sensory_policy}</span>
+            <span className="text-xs font-medium text-foreground">{s.sensory_policy}</span>
             <button
               onClick={handleReset}
-              className="text-xs text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              className="text-xs text-foreground hover:text-foreground/80 transition-colors"
             >
               {s.reset_defaults}
             </button>
@@ -269,7 +269,7 @@ export function AmbientContextPanel() {
                 className={`flex flex-col items-center gap-1 p-2 rounded-card border text-xs transition-colors ${
                   localPolicy[key]
                     ? 'border-blue-500/30 bg-blue-500/5 text-blue-400'
-                    : 'border-primary/10 bg-secondary/20 text-muted-foreground/60'
+                    : 'border-primary/10 bg-secondary/20 text-foreground'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -280,8 +280,8 @@ export function AmbientContextPanel() {
 
           {/* Focus App Filter */}
           <div className="space-y-1.5">
-            <span className="text-xs text-muted-foreground/70">{s.focus_filter}</span>
-            <p className="text-[10px] text-muted-foreground/40">
+            <span className="text-xs text-foreground">{s.focus_filter}</span>
+            <p className="text-[10px] text-foreground">
               {s.focus_filter_hint}
             </p>
             <div className="flex gap-1.5">
@@ -290,12 +290,12 @@ export function AmbientContextPanel() {
                 onChange={(e) => setFilterInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFilter()}
                 placeholder={s.focus_filter_placeholder}
-                className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
+                className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground placeholder:text-foreground"
               />
               <button
                 onClick={handleAddFilter}
                 disabled={!filterInput.trim()}
-                className="px-2 py-1 bg-secondary/40 hover:bg-secondary/60 text-xs rounded text-foreground/80 disabled:opacity-50"
+                className="px-2 py-1 bg-secondary/40 hover:bg-secondary/60 text-xs rounded text-foreground disabled:opacity-50"
               >
                 {s.add}
               </button>
@@ -305,12 +305,12 @@ export function AmbientContextPanel() {
                 {localPolicy.focusAppFilter.map((app, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-secondary/30 rounded text-xs text-muted-foreground/70"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-secondary/30 rounded text-xs text-foreground"
                   >
                     {app}
                     <button
                       onClick={() => handleRemoveFilter(i)}
-                      className="text-muted-foreground/40 hover:text-foreground/80"
+                      className="text-foreground hover:text-foreground/80"
                     >
                       &times;
                     </button>
@@ -328,7 +328,7 @@ export function AmbientContextPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-xs font-medium text-foreground/80">{s.context_rules}</span>
+              <span className="text-xs font-medium text-foreground">{s.context_rules}</span>
             </div>
             <button
               onClick={() => setShowRuleForm(!showRuleForm)}
@@ -339,7 +339,7 @@ export function AmbientContextPanel() {
             </button>
           </div>
 
-          <p className="text-[10px] text-muted-foreground/40">
+          <p className="text-[10px] text-foreground">
             {s.context_rules_hint}
           </p>
 
@@ -350,11 +350,11 @@ export function AmbientContextPanel() {
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
                 placeholder="Rule name (e.g. &quot;Crash debug helper&quot;)"
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
+                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground placeholder:text-foreground"
               />
 
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground/60">{s.match_sources}</span>
+                <span className="text-[10px] text-foreground">{s.match_sources}</span>
                 <div className="flex gap-1.5">
                   {(['clipboard', 'file_watcher', 'app_focus'] as const).map((src) => (
                     <button
@@ -363,7 +363,7 @@ export function AmbientContextPanel() {
                       className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
                         ruleSources.includes(src)
                           ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                          : 'border-primary/15 bg-secondary/30 text-muted-foreground/60'
+                          : 'border-primary/15 bg-secondary/30 text-foreground'
                       }`}
                     >
                       {src}
@@ -376,7 +376,7 @@ export function AmbientContextPanel() {
                 value={ruleSummaryContains}
                 onChange={(e) => setRuleSummaryContains(e.target.value)}
                 placeholder="Summary contains (e.g. &quot;error&quot;, &quot;Code.exe&quot;)"
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
+                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground placeholder:text-foreground"
               />
 
               <div className="grid grid-cols-2 gap-2">
@@ -384,23 +384,23 @@ export function AmbientContextPanel() {
                   value={rulePathGlob}
                   onChange={(e) => setRulePathGlob(e.target.value)}
                   placeholder="File glob (e.g. *.rs)"
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
+                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground placeholder:text-foreground"
                 />
                 <input
                   value={ruleAppFilter}
                   onChange={(e) => setRuleAppFilter(e.target.value)}
                   placeholder="App filter (e.g. Code.exe)"
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80 placeholder:text-muted-foreground/40"
+                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground placeholder:text-foreground"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground/60">{s.action}</span>
+                  <span className="text-[10px] text-foreground">{s.action}</span>
                   <select
                     value={ruleAction}
                     onChange={(e) => setRuleAction(e.target.value as ContextAction)}
-                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80"
+                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground"
                   >
                     <option value="TriggerExecution">{s.action_trigger}</option>
                     <option value="EmitEvent">{s.action_emit}</option>
@@ -408,13 +408,13 @@ export function AmbientContextPanel() {
                   </select>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground/60">{s.cooldown}</span>
+                  <span className="text-[10px] text-foreground">{s.cooldown}</span>
                   <input
                     type="number"
                     min={0}
                     value={ruleCooldown}
                     onChange={(e) => setRuleCooldown(Number(e.target.value))}
-                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground/80"
+                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded text-xs text-foreground"
                   />
                 </div>
               </div>
@@ -422,7 +422,7 @@ export function AmbientContextPanel() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowRuleForm(false)}
-                  className="px-2.5 py-1 text-xs text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+                  className="px-2.5 py-1 text-xs text-foreground hover:text-foreground/80 transition-colors"
                 >
                   {s.cancel}
                 </button>
@@ -439,7 +439,7 @@ export function AmbientContextPanel() {
 
           {/* Existing rules list */}
           {contextRules.length === 0 ? (
-            <p className="text-xs text-muted-foreground/40 italic">{s.no_rules}</p>
+            <p className="text-xs text-foreground italic">{s.no_rules}</p>
           ) : (
             <div className="space-y-1.5">
               {contextRules.map((rule) => (
@@ -448,10 +448,10 @@ export function AmbientContextPanel() {
                   className="flex items-center justify-between px-2.5 py-1.5 border border-primary/10 rounded-card bg-secondary/10"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-muted-foreground/40'}`} />
+                    <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-foreground'}`} />
                     <div className="min-w-0">
-                      <span className="text-xs text-foreground/80 block truncate">{rule.name}</span>
-                      <span className="text-[10px] text-muted-foreground/40 block truncate">
+                      <span className="text-xs text-foreground block truncate">{rule.name}</span>
+                      <span className="text-[10px] text-foreground block truncate">
                         {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : s.all_sources}
                         {rule.pattern.summaryContains && ` / "${rule.pattern.summaryContains}"`}
                         {' '}&rarr; {s[ACTION_LABEL_KEYS[rule.action]]}
@@ -460,7 +460,7 @@ export function AmbientContextPanel() {
                   </div>
                   <button
                     onClick={() => removeContextRule(rule.id)}
-                    className="text-muted-foreground/40 hover:text-red-400 transition-colors shrink-0 ml-2"
+                    className="text-foreground hover:text-red-400 transition-colors shrink-0 ml-2"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

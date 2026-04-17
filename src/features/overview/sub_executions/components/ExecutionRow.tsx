@@ -27,13 +27,13 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
         className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer"
       >
-        <div className="text-muted-foreground/80">
+        <div className="text-foreground">
           {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
 
         <div className="flex items-center gap-2 w-[140px] sm:w-auto sm:min-w-[140px] flex-shrink-0">
           <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} display="framed" frameSize={"lg"} />
-          <span className="typo-heading text-foreground/80 truncate max-w-[100px]">
+          <span className="typo-heading text-foreground truncate max-w-[100px]">
             {execution.persona_name || 'Unknown'}
           </span>
         </div>
@@ -55,11 +55,11 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
           </span>
         )}
 
-        <span className="text-sm text-muted-foreground/90 min-w-[60px] text-right font-mono">
+        <span className="text-sm text-foreground min-w-[60px] text-right font-mono">
           {formatDuration(execution.duration_ms)}
         </span>
 
-        <RelativeTime timestamp={execution.started_at || execution.created_at} className="text-sm text-muted-foreground/80 min-w-[70px] text-right" />
+        <RelativeTime timestamp={execution.started_at || execution.created_at} className="text-sm text-foreground min-w-[70px] text-right" />
 
         {execution.error_message && (
           <span className="flex-1 text-sm text-red-400/70 truncate ml-2">

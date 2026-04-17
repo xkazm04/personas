@@ -73,7 +73,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
             className={`px-3 py-1 rounded-modal text-sm font-medium transition-all ${
               !isCustomActive && value === opt.value
                 ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                : 'text-muted-foreground/80 hover:text-muted-foreground'
+                : 'text-foreground hover:text-muted-foreground'
             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
           >
             {opt.label}
@@ -86,7 +86,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
           className={`px-3 py-1 rounded-modal text-sm font-medium transition-all flex items-center gap-1.5 ${
             isCustomActive
               ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-              : 'text-muted-foreground/80 hover:text-muted-foreground'
+              : 'text-foreground hover:text-muted-foreground'
           } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
         >
           <Calendar className="w-3 h-3" />
@@ -146,7 +146,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.start_date}</label>
+            <label className="block text-sm text-foreground mb-1">{t.overview.filters.start_date}</label>
             <input
               type="date"
               value={startDate}
@@ -156,7 +156,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             />
           </div>
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.end_date}</label>
+            <label className="block text-sm text-foreground mb-1">{t.overview.filters.end_date}</label>
             <input
               type="date"
               value={endDate}
@@ -167,7 +167,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             />
           </div>
           {isValid && (
-            <p className="text-sm text-muted-foreground/60">
+            <p className="text-sm text-foreground">
               {dayCount} day{dayCount !== 1 ? 's' : ''} selected
             </p>
           )}
@@ -182,7 +182,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             {value && (
               <button
                 onClick={() => onChange(null)}
-                className="px-3 py-1.5 text-sm font-medium rounded-card text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               >
                 Clear
               </button>
@@ -210,7 +210,7 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
         enabled
           ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
-          : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'
+          : 'bg-secondary/40 text-foreground border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'
       }`}
       title={enabled ? 'Comparing to previous period' : 'Compare to previous period'}
     >

@@ -24,14 +24,14 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
           <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
+                <p className="px-3 py-1.5 text-sm font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
                     <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate" title={cred.name}>{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="text-sm text-foreground truncate" title={cred.name}>{cred.name}</p>
+                      <p className="text-sm text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
@@ -40,15 +40,15 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
+                  <p className="px-3 py-1.5 text-sm font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate" title={cred.name}>{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="text-sm text-foreground truncate" title={cred.name}>{cred.name}</p>
+                      <p className="text-sm text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
@@ -82,7 +82,7 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
               <button key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-sky-500/10 transition-colors border-b border-sky-500/5 last:border-0">
                 <ArrowLeftRight className="w-3 h-3 text-sky-400/50 flex-shrink-0" />
-                <span className="text-sm text-foreground/80">{alt}</span>
+                <span className="text-sm text-foreground">{alt}</span>
               </button>
             ))}
           </div>

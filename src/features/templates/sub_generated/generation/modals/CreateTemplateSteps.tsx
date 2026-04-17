@@ -20,7 +20,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
       className="animate-fade-in p-6 space-y-6"
     >
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
+        <label className="text-sm font-semibold text-foreground uppercase tracking-wider">
           Template Name
         </label>
         <input
@@ -28,22 +28,22 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
           value={templateName}
           onChange={(e) => reducer.setTemplateName(e.target.value)}
           placeholder="Template name..."
-          className="w-full px-4 py-3 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground/75 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+          className="w-full px-4 py-3 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
           autoFocus
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
+        <label className="text-sm font-semibold text-foreground uppercase tracking-wider">
           Description
         </label>
         <textarea
           value={description}
           onChange={(e) => reducer.setDescription(e.target.value)}
           placeholder={'Describe what this persona should do, what services it connects to, and how it should behave. Be specific about tools, triggers, and integrations needed.\n\nExample: A persona that monitors a Gmail inbox for important emails, classifies them by priority, sends Slack notifications for urgent ones, and creates a daily digest summary.'}
-          className="w-full h-48 px-4 py-3 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground/75 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+          className="w-full h-48 px-4 py-3 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
         />
-        <p className="text-sm text-muted-foreground/80">
+        <p className="text-sm text-foreground">
           The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables.
         </p>
       </div>

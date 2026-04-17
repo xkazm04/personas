@@ -93,7 +93,7 @@ export function ConnectorsSection({
         )}
         trailing={testableCount > 0 ? (
           <button onClick={onTestAll} disabled={testingAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
             {testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />} {t.agents.connectors.st_test_all}
           </button>
         ) : undefined}
@@ -102,7 +102,7 @@ export function ConnectorsSection({
         {roleGroups.map((group) => (
           <div key={group.items.map((s) => s.name).join(',')} className="space-y-2">
             {group.roleLabel && group.items.length > 1 && (
-              <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
+              <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
             )}
             {group.items.map((status) => (
               <ConnectorStatusCard

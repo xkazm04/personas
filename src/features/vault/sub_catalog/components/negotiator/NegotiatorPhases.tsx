@@ -46,7 +46,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
           {authDetectLoading ? t.vault.negotiator_extra.detecting_auth : t.vault.negotiator_extra.start_auto}
         </button>
         {!authDetectLoading && (
-          <span className="text-sm text-muted-foreground/80">
+          <span className="text-sm text-foreground">
             Takes ~{Math.ceil(60 / 60)}-2 minutes
           </span>
         )}
@@ -76,7 +76,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
         <Zap className="w-5 h-5 text-emerald-400" />
       </div>
       <p className="text-sm text-foreground font-medium">{t.vault.negotiator.captured}</p>
-      <p className="text-sm text-muted-foreground/90">
+      <p className="text-sm text-foreground">
         {capturedValuesCount} field(s) auto-filled from the provisioning flow.
       </p>
       <button
@@ -120,7 +120,7 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
         </button>
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-modal text-muted-foreground/90 text-sm hover:text-foreground/95 transition-colors"
+          className="px-4 py-2 rounded-modal text-foreground text-sm hover:text-foreground/95 transition-colors"
         >
           Close
         </button>

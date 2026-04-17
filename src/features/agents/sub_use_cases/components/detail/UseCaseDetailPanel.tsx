@@ -47,7 +47,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
   if (!useCase) {
     return (
-      <div className="flex items-center justify-center py-2 text-sm text-muted-foreground/60">
+      <div className="flex items-center justify-center py-2 text-sm text-foreground">
         {uc.use_case_not_found}
       </div>
     );
@@ -114,7 +114,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           )}
           <button
             onClick={() => setEditorTab('lab')}
-            className="flex items-center gap-1 text-sm text-muted-foreground/40 hover:text-primary/70 transition-colors"
+            className="flex items-center gap-1 text-sm text-foreground hover:text-primary/70 transition-colors"
             title={uc.view_full_test_history_title}
           >
             {uc.tests} <ArrowRight className="w-3 h-3" />
@@ -124,11 +124,11 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
       {/* Pipeline stage labels */}
       <div className="flex items-center gap-0.5 px-1">
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_input}</span>
+        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_transform}</span>
+        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-muted-foreground/35 uppercase tracking-wider font-medium">{uc.stage_output}</span>
+        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
         <div className="flex-shrink-0 ml-1.5" style={{ width: 130 }} />
       </div>
 
@@ -136,7 +136,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
       {(isTestRunning && testRunProgress || saveError) && (
         <div className="flex items-center gap-2.5">
           {isTestRunning && testRunProgress && (
-            <span className="flex items-center gap-1.5 text-muted-foreground/60">
+            <span className="flex items-center gap-1.5 text-foreground">
               <LoadingSpinner size="sm" className="text-primary" />
               <span className="capitalize text-sm">
                 {testRunProgress.phase === 'generating'

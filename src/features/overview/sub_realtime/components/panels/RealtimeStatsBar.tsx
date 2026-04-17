@@ -34,7 +34,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             {isConnected && !isPaused && (<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>)}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
-          <span className="typo-heading text-foreground/80 uppercase tracking-widest hidden sm:inline">{isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}</span>
+          <span className="typo-heading text-foreground uppercase tracking-widest hidden sm:inline">{isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}</span>
           <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
         </div>
 
@@ -44,7 +44,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-sm text-muted-foreground/70 font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
+            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           {testFlowLoading ? <LoadingSpinner /> : <Radio className="w-4 h-4" />}
           <span className="hidden sm:inline">Test Flow</span>
         </button>
-        <button onClick={onPause} aria-label={isPaused ? 'Resume realtime stream' : 'Pause realtime stream'} className={`p-2 rounded-modal border transition-all shadow-elevation-1 active:scale-[0.95] ${isPaused ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-transparent text-emerald-400 hover:from-emerald-500/30' : 'border-primary/20 bg-background/50 text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`} title={isPaused ? 'Resume' : 'Pause'}>
+        <button onClick={onPause} aria-label={isPaused ? 'Resume realtime stream' : 'Pause realtime stream'} className={`p-2 rounded-modal border transition-all shadow-elevation-1 active:scale-[0.95] ${isPaused ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-transparent text-emerald-400 hover:from-emerald-500/30' : 'border-primary/20 bg-background/50 text-foreground hover:text-foreground hover:bg-secondary/60'}`} title={isPaused ? 'Resume' : 'Pause'}>
           {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
         </button>
       </div>

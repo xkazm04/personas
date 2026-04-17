@@ -45,12 +45,12 @@ export default function OptimizerPanel({
         whileTap={{ scale: 0.99 }}
       >
         <div className="relative">
-          <Sparkles className={`w-4 h-4 ${hasSuggestions ? 'text-indigo-400' : 'text-muted-foreground'}`} />
+          <Sparkles className={`w-4 h-4 ${hasSuggestions ? 'text-indigo-400' : 'text-foreground'}`} />
           {hasSuggestions && (
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
           )}
         </div>
-        <span className={`text-sm font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-muted-foreground'}`}>
+        <span className={`text-sm font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-foreground'}`}>
           {pt.topology_optimizer}
           {hasSuggestions && (
             <span className="ml-1.5 text-sm text-indigo-400">
@@ -59,9 +59,9 @@ export default function OptimizerPanel({
           )}
         </span>
         {expanded ? (
-          <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronUp className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         )}
       </motion.button>
 
@@ -80,14 +80,14 @@ export default function OptimizerPanel({
               {hasData && (
                 <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <BarChart3 className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground font-mono">
+                    <BarChart3 className="w-3 h-3 text-foreground" />
+                    <span className="text-sm text-foreground font-mono">
                       {analytics.total_runs} run{analytics.total_runs !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <TrendingUp className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground font-mono">
+                    <TrendingUp className="w-3 h-3 text-foreground" />
+                    <span className="text-sm text-foreground font-mono">
                       {Math.round(analytics.success_rate * 100)}% success
                     </span>
                   </div>
@@ -97,7 +97,7 @@ export default function OptimizerPanel({
                     className="p-1 rounded-card hover:bg-primary/10 transition-colors"
                     title={pt.refresh_analytics}
                   >
-                    <RotateCcw className={`w-3 h-3 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+                    <RotateCcw className={`w-3 h-3 text-foreground ${loading ? 'animate-spin' : ''}`} />
                   </button>
                 </div>
               )}

@@ -38,7 +38,7 @@ export function AutoCredBrowserError({
               {config!.label}
             </span>
           </div>
-          <p className="text-sm text-foreground/70 mt-1">{error.guidance}</p>
+          <p className="text-sm text-foreground mt-1">{error.guidance}</p>
         </div>
       </div>
 
@@ -52,16 +52,16 @@ export function AutoCredBrowserError({
             entry.type === 'error' ? 'text-red-400' :
             entry.type === 'warning' ? 'text-amber-400' :
             entry.type === 'action' ? 'text-cyan-400' :
-            'text-muted-foreground/70'
+            'text-foreground'
           }`}>
-            <span className="text-muted-foreground/60 select-none shrink-0">
+            <span className="text-foreground select-none shrink-0">
               {new Date(entry.ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
             <span>{entry.message}</span>
           </div>
         ))}
         {logs.length === 0 && (
-          <div className="text-muted-foreground/60 text-center py-8">{t.vault.auto_cred_extra.no_log_output}</div>
+          <div className="text-foreground text-center py-8">{t.vault.auto_cred_extra.no_log_output}</div>
         )}
       </div>
 
@@ -71,7 +71,7 @@ export function AutoCredBrowserError({
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+            className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
           >
             Set Up Manually
           </button>

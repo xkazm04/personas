@@ -67,7 +67,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : isCurrent
                     ? 'bg-emerald-500/5 text-emerald-300 font-medium border border-emerald-500/20'
-                    : 'bg-secondary/20 text-muted-foreground/40'
+                    : 'bg-secondary/20 text-foreground'
               }`}
             >
               {isComplete ? <Check className="w-2.5 h-2.5 flex-shrink-0" /> : <step.icon className="w-2.5 h-2.5 flex-shrink-0" />}
@@ -85,27 +85,27 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           buildPhase === 'failed' ? 'bg-red-400' :
           'bg-amber-400 animate-pulse'
         }`} />
-        <span className="text-[11px] text-muted-foreground/70 capitalize">{buildPhase.replace(/_/g, ' ')}</span>
+        <span className="text-[11px] text-foreground capitalize">{buildPhase.replace(/_/g, ' ')}</span>
         {buildProgress > 0 && buildProgress < 100 && (
-          <span className="text-[11px] text-muted-foreground/50 ml-auto">{Math.round(buildProgress)}%</span>
+          <span className="text-[11px] text-foreground ml-auto">{Math.round(buildProgress)}%</span>
         )}
       </div>
 
       {/* Dynamic content per sub-step */}
       {effectiveSubStep === 0 && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground/70">
+          <p className="text-sm text-foreground">
             {t.onboarding.describe_intent}
           </p>
           <div className="space-y-1.5">
-            <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.example_intents_label}</span>
+            <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.example_intents_label}</span>
             {EXAMPLE_INTENTS.map((intent, i) => (
               <div key={i} className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/10 text-sm text-emerald-300/70">
                 "{intent}"
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground/50 italic">
+          <p className="text-[11px] text-foreground italic">
             {t.onboarding.intent_field_hint}
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
 
       {effectiveSubStep === 1 && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground/70">
+          <p className="text-sm text-foreground">
             {t.onboarding.analyzing_hint}
           </p>
           {pendingQuestions.length > 0 && (
@@ -121,12 +121,12 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
               <p className="text-sm text-amber-300/80 font-medium">
                 {tx(pendingQuestions.length === 1 ? t.onboarding.questions_waiting_one : t.onboarding.questions_waiting_other, { count: pendingQuestions.length })}
               </p>
-              <p className="text-[11px] text-muted-foreground/50 mt-1">
+              <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.answer_questions_hint}
               </p>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground/50 italic">
+          <p className="text-[11px] text-foreground italic">
             {t.onboarding.answers_help_hint}
           </p>
         </div>
@@ -135,7 +135,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       {effectiveSubStep === 2 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground/70">{t.onboarding.matrix_heading}</p>
+            <p className="text-sm text-foreground">{t.onboarding.matrix_heading}</p>
             <span className="text-[11px] text-emerald-400 font-medium" data-testid="tour-coach-completeness">
               {tx(t.onboarding.matrix_completeness, { pct: completeness })}
             </span>
@@ -153,10 +153,10 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                   }`}
                 >
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dim.color }} />
-                  <span className={isResolved ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}>
+                  <span className={isResolved ? 'text-foreground font-medium' : 'text-foreground'}>
                     {t.onboarding[dim.labelKey]}
                   </span>
-                  <span className="text-muted-foreground/40 ml-auto truncate max-w-[120px]">{t.onboarding[dim.descKey]}</span>
+                  <span className="text-foreground ml-auto truncate max-w-[120px]">{t.onboarding[dim.descKey]}</span>
                   {isResolved && <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />}
                 </div>
               );
@@ -170,20 +170,20 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           {buildTestPassed === true ? (
             <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
               <p className="text-sm text-emerald-300 font-medium">{t.onboarding.all_tests_passed}</p>
-              <p className="text-[11px] text-muted-foreground/50 mt-1">
+              <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.promote_hint}
               </p>
             </div>
           ) : buildTestPassed === false ? (
             <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20">
               <p className="text-sm text-red-300 font-medium">{t.onboarding.some_tests_failed}</p>
-              <p className="text-[11px] text-muted-foreground/50 mt-1">
+              <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.refine_hint}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground/70">
+              <p className="text-sm text-foreground">
                 {t.onboarding.testing_description}
               </p>
               <div className="p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/15">
@@ -191,13 +191,13 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                   <FlaskConical className="w-4 h-4 text-emerald-400" />
                   <p className="text-sm text-emerald-300/80 font-medium">{t.onboarding.what_testing_checks}</p>
                 </div>
-                <ul className="mt-2 space-y-1 text-[11px] text-muted-foreground/60">
+                <ul className="mt-2 space-y-1 text-[11px] text-foreground">
                   <li>• {t.onboarding.test_check_api}</li>
                   <li>• {t.onboarding.test_check_creds}</li>
                   <li>• {t.onboarding.test_check_format}</li>
                 </ul>
               </div>
-              <p className="text-[11px] text-muted-foreground/50 italic">
+              <p className="text-[11px] text-foreground italic">
                 {t.onboarding.run_test_hint}
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                 <Rocket className="w-4 h-4 text-emerald-400" />
                 <p className="text-sm text-emerald-300 font-medium">{t.onboarding.agent_promoted}</p>
               </div>
-              <p className="text-[11px] text-muted-foreground/50 mt-1">
+              <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.agent_promoted_hint}
               </p>
             </div>
@@ -223,7 +223,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           onClick={() => {
             useSystemStore.getState().emitTourEvent('tour:persona-promoted');
           }}
-          className="w-full text-center text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors py-1"
+          className="w-full text-center text-[11px] text-foreground hover:text-muted-foreground/60 transition-colors py-1"
           data-testid="tour-coach-skip"
         >
           {t.onboarding.skip_build}

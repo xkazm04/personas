@@ -49,7 +49,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
             <button
               type="button"
               onClick={() => setShowHmacSecret(!showHmacSecret)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-foreground hover:text-foreground/95 transition-colors"
               title={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}
             >
               {showHmacSecret ? (
@@ -62,7 +62,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
           <button
             type="button"
             onClick={generateSecret}
-            className="flex-shrink-0 p-2 rounded-modal border transition-all bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30"
+            className="flex-shrink-0 p-2 rounded-modal border transition-all bg-background/50 border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/30"
             title={t.triggers.generate_secret}
           >
             <RefreshCw className="w-4 h-4" />
@@ -74,7 +74,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               className={`flex-shrink-0 p-2 rounded-modal border transition-all ${
                 copiedHmac
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-                  : 'bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30'
+                  : 'bg-background/50 border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/30'
               }`}
               title={copiedHmac ? t.common.copied : t.common.copy}
             >
@@ -88,7 +88,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
         </div>
       </TriggerFieldGroup>
       <div className="p-3 bg-background/30 rounded-modal border border-primary/10">
-        <p className="text-sm text-muted-foreground/90">{t.triggers.webhook_url_note}</p>
+        <p className="text-sm text-foreground">{t.triggers.webhook_url_note}</p>
       </div>
     </div>
   );

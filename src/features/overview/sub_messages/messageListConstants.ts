@@ -5,11 +5,11 @@
 
 export const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
   high: { color: 'text-status-error', bgColor: 'bg-status-error/10', borderColor: 'border-status-error/30', label: 'High' },
-  normal: { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
-  low: { color: 'text-muted-foreground/90', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
+  normal: { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
+  low: { color: 'text-foreground', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
 };
 
-export const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+export const defaultPriority = { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
 export type FilterType = 'all' | 'unread' | 'high';
 

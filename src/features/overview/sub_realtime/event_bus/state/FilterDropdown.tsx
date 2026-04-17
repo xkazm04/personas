@@ -27,7 +27,7 @@ export function FilterDropdown({
         className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-card border transition-colors ${
           activeCount > 0
             ? 'border-primary/25 bg-primary/8 text-primary'
-            : 'border-primary/10 text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            : 'border-primary/10 text-foreground hover:bg-secondary/40 hover:text-foreground/80'
         }`}
       >
         {icon ?? <Filter className="w-3 h-3" />}
@@ -71,7 +71,7 @@ export function FilterOption({ label, selected, color, onToggle }: FilterOptionP
       {color && (
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
       )}
-      <span className="text-sm text-foreground/80 truncate">{label}</span>
+      <span className="text-sm text-foreground truncate">{label}</span>
     </label>
   );
 }

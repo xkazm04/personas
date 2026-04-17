@@ -21,7 +21,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
   if (state.loading) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/60">
+      <div className="flex items-center justify-center py-12 text-foreground">
         <LoadingSpinner size="lg" label="Loading API explorer" />
       </div>
     );
@@ -31,21 +31,21 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
     <div className="flex flex-col h-full">
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-        <Globe className="w-4 h-4 text-muted-foreground/60" />
-        <span className="text-sm font-medium text-foreground/80">
+        <Globe className="w-4 h-4 text-foreground" />
+        <span className="text-sm font-medium text-foreground">
           {state.endpoints.length} example endpoint{state.endpoints.length !== 1 ? 's' : ''}
         </span>
         <div className="flex-1" />
 
         {state.endpoints.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground" />
             <input
               type="text"
               value={state.search}
               onChange={(e) => state.setSearch(e.target.value)}
               placeholder="Filter..."
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
             />
           </div>
         )}
@@ -118,7 +118,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                     <div className="flex items-center gap-2">
                       <span className="text-sm uppercase tracking-wider text-blue-400/70 font-semibold">Request Builder</span>
                       <div className="flex-1" />
-                      <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-muted-foreground/60 hover:text-muted-foreground/80">Close</Button>
+                      <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">Close</Button>
                     </div>
                     <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} />
                   </div>

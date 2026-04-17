@@ -46,7 +46,7 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
             }`}
           >
             <div className="flex items-start gap-2">
-              <span className="text-sm font-semibold text-muted-foreground/50 mt-0.5 w-4 text-right flex-shrink-0">
+              <span className="text-sm font-semibold text-foreground mt-0.5 w-4 text-right flex-shrink-0">
                 {i + 1}.
               </span>
               <div className="flex-1 min-w-0">

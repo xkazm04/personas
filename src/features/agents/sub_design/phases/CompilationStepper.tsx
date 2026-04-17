@@ -96,10 +96,10 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
                 <span
                   className={`text-xs font-medium truncate transition-colors duration-300 ${
                     isActive
-                      ? 'text-foreground/80'
+                      ? 'text-foreground'
                       : isCompleted
                         ? 'text-emerald-400/70'
-                        : 'text-muted-foreground/60'
+                        : 'text-foreground'
                   }`}
                 >
                   {stage.label}
@@ -125,10 +125,10 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
           key={activeIndex}
           className="animate-fade-slide-in flex items-center justify-between px-0.5"
         >
-          <span className="text-xs text-muted-foreground/50">
+          <span className="text-xs text-foreground">
             {COMPILATION_STAGES[activeIndex]!.description}
           </span>
-          <span className="text-xs tabular-nums font-mono text-muted-foreground/60 shrink-0 ml-2">
+          <span className="text-xs tabular-nums font-mono text-foreground shrink-0 ml-2">
             {formatElapsed(elapsed)}
           </span>
         </div>

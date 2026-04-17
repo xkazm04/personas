@@ -83,7 +83,7 @@ export function TerminalStrip({
         )}
 
         {/* Last log line */}
-        <span className="flex-1 typo-code text-muted-foreground/50 truncate">
+        <span className="flex-1 typo-code text-foreground truncate">
           {lastLine}
         </span>
 
@@ -97,7 +97,7 @@ export function TerminalStrip({
           <button
             title={isExpanded ? 'Collapse log' : 'Expand log'}
             onClick={onToggle}
-            className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
+            className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"
           >
             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
@@ -109,7 +109,7 @@ export function TerminalStrip({
             <button
               title={t.shared.terminal_extra.dismiss}
               onClick={onClear}
-              className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
+              className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"
             >
               <X className="w-3 h-3" />
             </button>

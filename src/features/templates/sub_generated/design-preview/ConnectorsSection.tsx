@@ -81,14 +81,14 @@ export function ConnectorsSection({
                   <ThemedConnectorIcon url={item.connDef.icon_url} label={item.connDef.label} color={item.connDef.color} size="w-6 h-6 flex-shrink-0 rounded" />
                 ) : isGeneral ? (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
+                    <Wrench className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Plug className="w-3.5 h-3.5 text-muted-foreground/90" />
+                    <Plug className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
-                <span className="text-sm font-medium text-foreground/80 flex-1 truncate">
+                <span className="text-sm font-medium text-foreground flex-1 truncate">
                   {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
                 </span>
                 {!isGeneral && (

@@ -87,7 +87,7 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
 
             {/* Quick test loading */}
             {quickTestLoading[recipe.id] && (
-              <div className="mt-2 flex items-center gap-2 rounded-modal border border-border/40 bg-card/30 px-3 py-2 text-sm text-muted-foreground">
+              <div className="mt-2 flex items-center gap-2 rounded-modal border border-border/40 bg-card/30 px-3 py-2 text-sm text-foreground">
                 <RecipePageFlipLoader className="text-primary" /> {t.recipes.running_quick_test}
               </div>
             )}
@@ -96,10 +96,10 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
             {quickTestResults[recipe.id] && (
               <div className="mt-2 rounded-card border border-border/40 bg-card/30 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
+                  <p className="text-sm font-medium text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
                     onClick={() => dismissResult(recipe.id)}
-                    className="p-0.5 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
+                    className="p-0.5 rounded text-foreground hover:text-foreground transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>

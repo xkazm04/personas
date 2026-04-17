@@ -58,14 +58,14 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       key: 'models',
       label: t.agents.lab.models_column,
       render: (run) => (
-        <span className="text-sm text-foreground/80 font-medium">{parseModels(run).join(', ') || '--'}</span>
+        <span className="text-sm text-foreground font-medium">{parseModels(run).join(', ') || '--'}</span>
       ),
     },
     {
       key: 'scenarios',
       label: t.agents.lab.scenarios_column,
       className: 'w-[70px]',
-      render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
+      render: (run) => <span className="text-sm text-foreground">{run.scenariosCount || '--'}</span>,
     },
     {
       key: 'best',
@@ -75,7 +75,7 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
         const s = parseSummary(run);
         return s?.best_quality_model
           ? <span className="flex items-center gap-1 text-sm text-primary/70"><Trophy className="w-3 h-3" />{s.best_quality_model}</span>
-          : <span className="text-sm text-muted-foreground/50">--</span>;
+          : <span className="text-sm text-foreground">--</span>;
       },
     },
     {
@@ -84,14 +84,14 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       className: 'w-[200px]',
       render: (run) => {
         const scores = computeWinnerScore(resultsMap[run.id]);
-        if (!scores) return <span className="text-sm text-muted-foreground/30">--</span>;
+        if (!scores) return <span className="text-sm text-foreground">--</span>;
         return (
           <div className="flex items-center gap-2.5 text-xs">
             <span className={`font-bold ${scoreColor(scores.comp)}`}>{scores.comp}</span>
-            <span className="text-muted-foreground/30">|</span>
-            <span className="flex items-center gap-0.5" title="Tool Accuracy"><Target className="w-2.5 h-2.5 text-muted-foreground/50" /><span className={scoreColor(scores.ta)}>{scores.ta}</span></span>
-            <span className="flex items-center gap-0.5" title="Output Quality"><FileText className="w-2.5 h-2.5 text-muted-foreground/50" /><span className={scoreColor(scores.oq)}>{scores.oq}</span></span>
-            <span className="flex items-center gap-0.5" title="Protocol"><Shield className="w-2.5 h-2.5 text-muted-foreground/50" /><span className={scoreColor(scores.pc)}>{scores.pc}</span></span>
+            <span className="text-foreground">|</span>
+            <span className="flex items-center gap-0.5" title="Tool Accuracy"><Target className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.ta)}>{scores.ta}</span></span>
+            <span className="flex items-center gap-0.5" title="Output Quality"><FileText className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.oq)}>{scores.oq}</span></span>
+            <span className="flex items-center gap-0.5" title="Protocol"><Shield className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.pc)}>{scores.pc}</span></span>
           </div>
         );
       },
@@ -126,8 +126,8 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
           modeLabel={t.agents.lab.arena_mode_label}
           headerChips={
             <>
-              <span className="text-xs text-muted-foreground/60">{parseModels(activeRun).join(', ')}</span>
-              {activeRun.scenariosCount > 0 && <span className="text-xs text-muted-foreground/50">{activeRun.scenariosCount} scenarios</span>}
+              <span className="text-xs text-foreground">{parseModels(activeRun).join(', ')}</span>
+              {activeRun.scenariosCount > 0 && <span className="text-xs text-foreground">{activeRun.scenariosCount} scenarios</span>}
             </>
           }
           footerActions={

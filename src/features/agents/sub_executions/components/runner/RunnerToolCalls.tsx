@@ -43,10 +43,10 @@ export function HealingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`typo-heading ${styles.accent}`}>{notification.title}</span>
-              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">{notification.severity}</span>
+              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">{notification.severity}</span>
             </div>
           </div>
-          <button onClick={onDismiss} className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
+          <button onClick={onDismiss} className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
             <span className="typo-body">{e.dismiss}</span>
           </button>
         </div>
@@ -54,7 +54,7 @@ export function HealingCard({
         {notification.strategy && (
           <div className="flex items-center gap-2 typo-body">
             <RotateCw className={`w-3.5 h-3.5 flex-shrink-0 ${styles.icon} opacity-60`} />
-            <span className="text-foreground/80">{notification.strategy}</span>
+            <span className="text-foreground">{notification.strategy}</span>
           </div>
         )}
 
@@ -72,7 +72,7 @@ export function HealingCard({
                 <span className="typo-code text-blue-300/90">{e.retrying_now}</span>
               </div>
             )}
-            <span className="ml-auto typo-code text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
+            <span className="ml-auto typo-code text-foreground px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
               {tx(e.attempt_of, { current: notification.retry_number, max: notification.max_retries })}
             </span>
           </div>
@@ -91,7 +91,7 @@ export function HealingCard({
         )}
 
         {notification.suggested_fix && (
-          <p className="typo-body text-muted-foreground/60 leading-relaxed pl-6.5">{notification.suggested_fix}</p>
+          <p className="typo-body text-foreground leading-relaxed pl-6.5">{notification.suggested_fix}</p>
         )}
       </div>
     </div>
@@ -127,7 +127,7 @@ export function AiHealingCounters({
   const dotClr = phase === 'completed' ? 'bg-emerald-400' : phase === 'failed' ? 'bg-red-400' : 'bg-violet-400 animate-pulse';
 
   return (
-    <span className="flex items-center gap-1.5 typo-heading text-muted-foreground">
+    <span className="flex items-center gap-1.5 typo-heading text-foreground">
       <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotClr}`} />
       {label}
     </span>

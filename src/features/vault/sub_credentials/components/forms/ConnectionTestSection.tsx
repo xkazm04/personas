@@ -22,7 +22,7 @@ export function ConnectionTestSection({
     <>
       <div className="border-t border-primary/8" />
       <div>
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+        <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
           Connection Test
         </h4>
         <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function ConnectionTestSection({
             >
               <button
                 type="button"
-                className="p-1.5 rounded-full border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+                className="p-1.5 rounded-full border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
               >
                 <Info className="w-3.5 h-3.5" />
               </button>

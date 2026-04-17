@@ -103,8 +103,8 @@ export default function IdentitySettings() {
             <>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs text-muted-foreground">{st.peer_id_label}</div>
-                  <div className="text-sm font-mono text-foreground/80">
+                  <div className="text-xs text-foreground">{st.peer_id_label}</div>
+                  <div className="text-sm font-mono text-foreground">
                     {truncatePeerId(localIdentity.peer_id)}
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export default function IdentitySettings() {
               </div>
 
               <div>
-                <div className="text-xs text-muted-foreground mb-1">{st.display_name_label}</div>
+                <div className="text-xs text-foreground mb-1">{st.display_name_label}</div>
                 {editingName ? (
                   <div className="flex gap-2">
                     <input
@@ -137,7 +137,7 @@ export default function IdentitySettings() {
                     <span className="text-sm text-foreground">{localIdentity.display_name}</span>
                     <button
                       onClick={() => { setNameInput(localIdentity.display_name); setEditingName(true); }}
-                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                      className="text-xs text-foreground hover:text-foreground underline"
                     >
                       {st.edit}
                     </button>
@@ -145,12 +145,12 @@ export default function IdentitySettings() {
                 )}
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-foreground">
                 Created {new Date(localIdentity.created_at).toLocaleDateString()}
               </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">{st.loading_identity}</div>
+            <div className="text-sm text-foreground">{st.loading_identity}</div>
           )}
         </div>
       </section>
@@ -170,7 +170,7 @@ export default function IdentitySettings() {
 
         {showImportForm && (
           <div className="rounded-modal border border-border bg-secondary/20 p-4 mb-3 space-y-2">
-            <label className="text-xs text-muted-foreground">{st.paste_identity_card}</label>
+            <label className="text-xs text-foreground">{st.paste_identity_card}</label>
             <textarea
               value={importInput}
               onChange={(e) => setImportInput(e.target.value)}
@@ -203,7 +203,7 @@ export default function IdentitySettings() {
         )}
 
         {trustedPeers.length === 0 ? (
-          <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-foreground">
             {st.no_trusted_peers}
           </div>
         ) : (
@@ -224,9 +224,9 @@ export default function IdentitySettings() {
                     )}
                     <span className="truncate">{peer.display_name}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground font-mono">{truncatePeerId(peer.peer_id)}</div>
+                  <div className="text-xs text-foreground font-mono">{truncatePeerId(peer.peer_id)}</div>
                   {peer.notes && (
-                    <div className="text-xs text-muted-foreground/70 mt-0.5">{peer.notes}</div>
+                    <div className="text-xs text-foreground mt-0.5">{peer.notes}</div>
                   )}
                 </div>
                 <div className="flex items-center gap-1 ml-2 flex-shrink-0">
@@ -246,7 +246,7 @@ export default function IdentitySettings() {
                         <button
                           onClick={requestConfirm}
                           title="Revoke trust"
-                          className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+                          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
                         </button>
@@ -261,7 +261,7 @@ export default function IdentitySettings() {
                       <button
                         onClick={requestConfirm}
                         title="Remove peer"
-                        className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors"
+                        className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

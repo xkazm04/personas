@@ -138,7 +138,7 @@ export function TerminalBody({
           <div className="p-6 font-mono text-center">
             {emptyState === 'idle' && (
               <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-1.5 text-muted-foreground/60">
+                <div className="flex items-center gap-1.5 text-foreground">
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-400/60" />
                   <span className="typo-body">{t.shared.terminal_extra.press_enter}</span>
                   <span className="inline-block w-[2px] h-4 bg-emerald-400/70 animate-[blink-caret_1s_step-end_infinite]" />
@@ -148,7 +148,7 @@ export function TerminalBody({
             {emptyState === 'connecting' && (
               <div className="flex flex-col items-center gap-2">
                 <Wifi className="w-4 h-4 text-blue-400/60 animate-pulse" />
-                <span className="typo-body text-muted-foreground/60">
+                <span className="typo-body text-foreground">
                   Connecting to provider
                   <span className="inline-flex w-6 text-left animate-[ellipsis_1.5s_steps(3,end)_infinite] overflow-hidden">...</span>
                 </span>
@@ -187,7 +187,7 @@ export function TerminalBody({
                     className="absolute left-0 right-0 px-4"
                     style={{ transform: `translateY(${virtualRow.start}px)` }}
                   >
-                    <div className="text-muted-foreground/80 animate-pulse leading-5 py-[1px]">{'>'} _</div>
+                    <div className="text-foreground animate-pulse leading-5 py-[1px]">{'>'} _</div>
                   </div>
                 );
               }
@@ -240,13 +240,13 @@ export function TerminalBody({
                             </span>
                           </div>
                           {summary.duration_ms != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
+                            <div className="flex items-center gap-1.5 text-foreground">
                               <Timer className="w-3 h-3" />
                               <span>{(summary.duration_ms / 1000).toFixed(1)}s</span>
                             </div>
                           )}
                           {summary.cost_usd != null && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/80">
+                            <div className="flex items-center gap-1.5 text-foreground">
                               <DollarSign className="w-3 h-3" />
                               <span>${summary.cost_usd.toFixed(4)}</span>
                             </div>

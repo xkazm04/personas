@@ -27,7 +27,7 @@ export function ModeTabBar({ mode, onModeChange, batchCount }: ModeTabBarProps) 
           className={`px-4 py-2 text-sm rounded-modal border transition-all flex items-center gap-2 ${
             mode === id
               ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-              : 'bg-secondary/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'
+              : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
           }`}
         >
           <Icon className="w-3.5 h-3.5" />

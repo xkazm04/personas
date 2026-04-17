@@ -87,7 +87,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
     return (
       <div className="text-center py-12 space-y-2">
         <AlertTriangle className="w-8 h-8 text-amber-400/40 mx-auto" />
-        <p className="typo-body text-muted-foreground/60">{t.agents.lab.no_comparable_scenarios}</p>
+        <p className="typo-body text-foreground">{t.agents.lab.no_comparable_scenarios}</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
         <VerdictIcon className={`w-5 h-5 ${vc.color}`} />
         <div className="flex-1">
           <p className={`typo-heading ${vc.color}`}>{vc.text}</p>
-          <p className="typo-caption text-muted-foreground/50">
+          <p className="typo-caption text-foreground">
             v{baselineVersionNum} (baseline) → v{currentVersionNum} | Overall Δ: {overallDelta >= 0 ? '+' : ''}{overallDelta} pts | Threshold: -{threshold} pts
           </p>
         </div>
@@ -113,16 +113,16 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
           { label: t.agents.lab.protocol_compliance, delta: summaryScores.avgProtocol },
         ].map(({ label, delta }) => (
           <div key={label} className="rounded-modal border border-primary/10 bg-secondary/20 p-3 space-y-1">
-            <p className="typo-caption text-muted-foreground/50">{label}</p>
+            <p className="typo-caption text-foreground">{label}</p>
             <div className="flex items-center gap-2">
               {delta > 0 ? (
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
               ) : delta < 0 ? (
                 <TrendingDown className="w-4 h-4 text-red-400" />
               ) : (
-                <Minus className="w-4 h-4 text-muted-foreground/40" />
+                <Minus className="w-4 h-4 text-foreground" />
               )}
-              <span className={`typo-heading ${delta > 0 ? 'text-emerald-400' : delta < 0 ? 'text-red-400' : 'text-muted-foreground/60'}`}>
+              <span className={`typo-heading ${delta > 0 ? 'text-emerald-400' : delta < 0 ? 'text-red-400' : 'text-foreground'}`}>
                 {delta >= 0 ? '+' : ''}{delta}
               </span>
             </div>
@@ -132,7 +132,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
 
       {/* Per-scenario breakdown */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.per_scenario_results}</p>
+        <p className="typo-caption text-foreground">{t.agents.lab.per_scenario_results}</p>
         <div className="space-y-1">
           {deltas.map((d, i) => (
             <div
@@ -150,18 +150,18 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
               ) : d.verdict === 'improved' ? (
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               ) : (
-                <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <span className="typo-caption text-foreground/70">{d.scenario}</span>
-                <span className="typo-caption text-muted-foreground/40 ml-2">{d.model}</span>
+                <span className="typo-caption text-foreground">{d.scenario}</span>
+                <span className="typo-caption text-foreground ml-2">{d.model}</span>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="typo-caption text-muted-foreground/40">{d.baselineComposite}</span>
-                <span className="typo-caption text-muted-foreground/30">→</span>
-                <span className="typo-caption text-foreground/70">{d.currentComposite}</span>
+                <span className="typo-caption text-foreground">{d.baselineComposite}</span>
+                <span className="typo-caption text-foreground">→</span>
+                <span className="typo-caption text-foreground">{d.currentComposite}</span>
                 <span className={`typo-caption font-mono min-w-[3rem] text-right ${
-                  d.delta > 0 ? 'text-emerald-400' : d.delta < -threshold ? 'text-red-400' : 'text-muted-foreground/50'
+                  d.delta > 0 ? 'text-emerald-400' : d.delta < -threshold ? 'text-red-400' : 'text-foreground'
                 }`}>
                   {d.delta >= 0 ? '+' : ''}{d.delta}
                 </span>

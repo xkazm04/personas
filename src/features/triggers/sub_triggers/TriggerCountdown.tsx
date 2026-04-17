@@ -86,11 +86,11 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
     return () => clearInterval(id);
   }, [remaining === null, computeRemaining]);
 
-  if (!trigger.enabled) return <span className="text-sm text-muted-foreground/70">{t.triggers.disabled_label}</span>;
-  if (trigger.trigger_type === 'manual') return <span className="text-sm text-muted-foreground/70">{t.triggers.manual_label}</span>;
-  if (trigger.trigger_type === 'webhook') return <span className="text-sm text-muted-foreground/70">{t.triggers.webhook_label}</span>;
-  if (trigger.trigger_type === 'chain') return <span className="text-sm text-muted-foreground/70">{t.triggers.chain_label}</span>;
-  if (remaining === null) return <span className="text-sm text-muted-foreground/70">{t.triggers.pending_label}</span>;
+  if (!trigger.enabled) return <span className="text-sm text-foreground">{t.triggers.disabled_label}</span>;
+  if (trigger.trigger_type === 'manual') return <span className="text-sm text-foreground">{t.triggers.manual_label}</span>;
+  if (trigger.trigger_type === 'webhook') return <span className="text-sm text-foreground">{t.triggers.webhook_label}</span>;
+  if (trigger.trigger_type === 'chain') return <span className="text-sm text-foreground">{t.triggers.chain_label}</span>;
+  if (remaining === null) return <span className="text-sm text-foreground">{t.triggers.pending_label}</span>;
 
   const total = getTotalIntervalSeconds(trigger);
   const accentColor = TRIGGER_RING_COLORS[accentColorClass] ?? '#c084fc';
@@ -112,7 +112,7 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
 
   return (
     <RadialCountdownRing remaining={remaining} total={total} firing={false} accentColor={accentColor}>
-      <span className="text-sm font-mono font-semibold text-foreground/70 leading-none" title={`in ${formatCountdown(remaining)}`}>
+      <span className="text-sm font-mono font-semibold text-foreground leading-none" title={`in ${formatCountdown(remaining)}`}>
         {compactLabel}
       </span>
     </RadialCountdownRing>

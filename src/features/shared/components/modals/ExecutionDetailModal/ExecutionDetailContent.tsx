@@ -42,7 +42,7 @@ const SECTION_DEFS: Record<string, { icon: LucideIcon; color: string }> = {
   events: { icon: Zap, color: 'text-amber-400' },
   knowledge: { icon: BookOpen, color: 'text-emerald-400' },
   outcome: { icon: Target, color: 'text-primary/60' },
-  json: { icon: Code, color: 'text-muted-foreground/50' },
+  json: { icon: Code, color: 'text-foreground' },
 };
 
 export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: Props) {
@@ -96,7 +96,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
         <span className="flex items-center gap-1 text-sm text-foreground"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
         <span className="flex items-center gap-1 text-sm text-foreground"><Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}</span>
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
+          <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-foreground hover:text-muted-foreground/70'}`}>
             <Shield className="w-3 h-3" /> {showRaw ? 'Raw' : 'Masked'}
           </button>
           {isTerminalState(execution.status) && (
@@ -121,7 +121,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
                 const Icon = def?.icon ?? Code;
                 const isActive = effectiveSection === sec.id;
                 return (
-                  <button key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-muted-foreground/60 hover:bg-secondary/30'}`}>
+                  <button key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-foreground hover:bg-secondary/30'}`}>
                     <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? def?.color ?? '' : ''}`} />
                     <span className="text-sm font-medium truncate">{sec.label}</span>
                     {sec.count != null && <span className="ml-auto text-sm text-foreground">{sec.count}</span>}

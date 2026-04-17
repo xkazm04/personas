@@ -46,7 +46,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
         <p className={`text-sm font-semibold ${confirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
           {confirmed ? t.vault.auto_cred.step_confirmed : t.vault.auto_cred.action_required}
         </p>
-        <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{message}</p>
+        <p className="text-sm text-foreground mt-1 leading-relaxed">{message}</p>
         {!confirmed && (
           <div className="flex items-center gap-2 mt-2.5">
             {url && (
@@ -84,7 +84,7 @@ export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-violet-400">{t.vault.auto_cred.input_requested}</p>
-        <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{entry.message}</p>
+        <p className="text-sm text-foreground mt-1 leading-relaxed">{entry.message}</p>
       </div>
     </div>
   );

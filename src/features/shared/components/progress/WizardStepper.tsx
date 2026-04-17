@@ -49,7 +49,7 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
                       ? 'bg-emerald-500/40 text-emerald-200'
                       : isActive
                         ? 'bg-violet-500/50 text-violet-200 shadow-[0_0_8px_rgba(139,92,246,0.3)]'
-                        : 'bg-primary/10 text-muted-foreground/40'
+                        : 'bg-primary/10 text-foreground'
                   }`}
                   data-testid={`wizard-step-node-${i}`}
                 >

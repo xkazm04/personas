@@ -18,7 +18,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="opacity-0 group-hover/bubble:opacity-100 absolute top-2 right-2 p-1 rounded-input bg-background/80 backdrop-blur-sm border border-primary/10 text-muted-foreground/50 hover:text-foreground/80 transition-all"
+      className="opacity-0 group-hover/bubble:opacity-100 absolute top-2 right-2 p-1 rounded-input bg-background/80 backdrop-blur-sm border border-primary/10 text-foreground hover:text-foreground/80 transition-all"
       title={t.agents.chat.copy_message}
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -55,10 +55,10 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
       <div className={`relative group/bubble min-w-0 ${isUser ? 'max-w-[70%]' : 'max-w-[85%]'}`}>
         {/* Name + timestamp row */}
         <div className={`flex items-baseline gap-2 mb-0.5 ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span className={`text-[13px] font-semibold ${isUser ? 'text-foreground/70' : 'text-violet-400/90'}`}>
+          <span className={`text-[13px] font-semibold ${isUser ? 'text-foreground' : 'text-violet-400/90'}`}>
             {isUser ? t.agents.chat.you : t.agents.chat.assistant}
           </span>
-          <Timestamp date={message.createdAt} className={isUser ? 'text-foreground/30' : 'text-muted-foreground/40'} />
+          <Timestamp date={message.createdAt} className={isUser ? 'text-foreground' : 'text-foreground'} />
         </div>
 
         {/* Message body */}
@@ -98,7 +98,7 @@ function AssistantContent({ content }: { content: string }) {
   const cleaned = stripOperationLines(content);
 
   const { t } = useTranslation();
-  if (!cleaned) return <p className="text-muted-foreground/50 italic">{t.agents.chat.processing}</p>;
+  if (!cleaned) return <p className="text-foreground italic">{t.agents.chat.processing}</p>;
 
   return (
     <div className="chat-markdown">
@@ -127,7 +127,7 @@ export function StreamingBubble({ textLines }: { textLines: string[] }) {
       <div className="min-w-0 max-w-[85%]">
         <div className="flex items-baseline gap-2 mb-0.5">
           <span className="text-[13px] font-semibold text-violet-400/90">{t.agents.chat.assistant}</span>
-          {!hasContent && <span className="text-[11px] text-muted-foreground/30">{t.agents.chat.thinking}</span>}
+          {!hasContent && <span className="text-[11px] text-foreground">{t.agents.chat.thinking}</span>}
         </div>
         <div className="rounded-2xl rounded-tl-md bg-secondary/40 border border-primary/[0.07] px-4 py-3">
           {hasContent ? (

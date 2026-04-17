@@ -42,7 +42,7 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
         className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2.5 rounded-modal ${SEVERITY_STYLES.success.border} ${SEVERITY_STYLES.success.bg}`}
       >
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-        <span className="text-sm text-muted-foreground/50 line-through leading-relaxed">
+        <span className="text-sm text-foreground line-through leading-relaxed">
           {issue.description}
         </span>
       </div>
@@ -56,7 +56,7 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
       <div className="flex items-start gap-2.5">
         <Icon className={`w-3.5 h-3.5 ${style.text} mt-0.5 shrink-0`} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground/80 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             {issue.description}
           </p>
           {issue.proposal ? (
@@ -69,7 +69,7 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
               {tx(t.agents.health_issue.apply_fix, { label: issue.proposal.label })}
             </button>
           ) : (
-            <p className="mt-1.5 text-sm text-muted-foreground/50 italic">
+            <p className="mt-1.5 text-sm text-foreground italic">
               {t.agents.health_issue.manual_action}
             </p>
           )}

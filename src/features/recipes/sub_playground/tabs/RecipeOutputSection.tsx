@@ -56,7 +56,7 @@ export function RecipeOutputSection({
 
       {/* Execution metadata */}
       {result && (
-        <div className="mx-4 mt-3 flex items-center gap-3 text-sm text-muted-foreground/60">
+        <div className="mx-4 mt-3 flex items-center gap-3 text-sm text-foreground">
           <span>Recipe: {result.recipe_name}</span>
           <span>Executed: {new Date(result.executed_at).toLocaleTimeString()}</span>
         </div>
@@ -67,13 +67,13 @@ export function RecipeOutputSection({
         {/* Left: Rendered Prompt */}
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
               Rendered Prompt
             </h3>
             {result && (
               <button
                 onClick={handleCopyPrompt}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-sm text-foreground hover:text-foreground transition-colors"
               >
                 {copiedPrompt ? (
                   <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
@@ -86,7 +86,7 @@ export function RecipeOutputSection({
           {result ? (
             <PromptTemplateRenderer content={result.rendered_prompt} maxHeight="max-h-[400px]" className="flex-1" />
           ) : (
-            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
+            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-foreground flex-1">
               {running ? t.recipes.rendering_prompt : t.recipes.run_to_see_prompt}
             </div>
           )}
@@ -95,13 +95,13 @@ export function RecipeOutputSection({
         {/* Right: Execution Result */}
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
               Execution Result
             </h3>
             {llmOutput && (
               <button
                 onClick={handleCopyOutput}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-sm text-foreground hover:text-foreground transition-colors"
               >
                 {copiedOutput ? (
                   <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
@@ -130,7 +130,7 @@ export function RecipeOutputSection({
               <MarkdownRenderer content={formatOutputForMarkdown(llmOutput)} />
             </div>
           ) : (
-            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
+            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-foreground flex-1">
               {running ? t.recipes.waiting_for_render : t.recipes.execute_to_see_output}
             </div>
           )}

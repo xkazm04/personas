@@ -45,7 +45,7 @@ function ConfidenceBar({ value }: { value: number }) {
           }}
         />
       </div>
-      <span className="text-sm text-muted-foreground font-mono">{Math.round(value * 100)}%</span>
+      <span className="text-sm text-foreground font-mono">{Math.round(value * 100)}%</span>
     </div>
   );
 }
@@ -89,23 +89,23 @@ export default function OptimizerResults({
       {loading && !hasData && (
         <div className="px-3 py-6 text-center">
           <div className="w-5 h-5 mx-auto mb-2 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">{pt.analyzing_pipeline}</p>
+          <p className="text-sm text-foreground">{pt.analyzing_pipeline}</p>
         </div>
       )}
 
       {!loading && !hasData && (
         <div className="px-3 py-6 text-center">
-          <Sparkles className="w-5 h-5 mx-auto mb-2 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">{pt.run_pipeline_twice}</p>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">{pt.run_pipeline_twice_hint}</p>
+          <Sparkles className="w-5 h-5 mx-auto mb-2 text-foreground" />
+          <p className="text-sm text-foreground">{pt.run_pipeline_twice}</p>
+          <p className="text-sm text-foreground mt-0.5">{pt.run_pipeline_twice_hint}</p>
         </div>
       )}
 
       {hasData && suggestions.length === 0 && (
         <div className="px-3 py-6 text-center">
           <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400/60" />
-          <p className="text-sm text-foreground/80">{pt.topology_looks_good}</p>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">{pt.no_improvements}</p>
+          <p className="text-sm text-foreground">{pt.topology_looks_good}</p>
+          <p className="text-sm text-foreground mt-0.5">{pt.no_improvements}</p>
         </div>
       )}
 
@@ -134,7 +134,7 @@ export default function OptimizerResults({
                   </span>
                   <ImpactBadge impact={s.impact} />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                <p className="text-sm text-foreground leading-relaxed line-clamp-2">
                   {s.description}
                 </p>
                 <div className="flex items-center justify-between mt-1.5">
@@ -149,7 +149,7 @@ export default function OptimizerResults({
                     </button>
                     <button
                       onClick={() => onDismissSuggestion(s.id)}
-                      className="p-1 rounded-card bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
+                      className="p-1 rounded-card bg-primary/5 text-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
                       title={t.common.dismiss}
                     >
                       <X className="w-3 h-3" />

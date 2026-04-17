@@ -12,7 +12,7 @@ export function StatCard({ icon, label, value }: StatCardProps) {
       {icon}
       <div>
         <div className="text-xs font-semibold text-foreground/90 tabular-nums">{value}</div>
-        <div className="text-xs text-muted-foreground/80">{label}</div>
+        <div className="text-xs text-foreground">{label}</div>
       </div>
     </div>
   );

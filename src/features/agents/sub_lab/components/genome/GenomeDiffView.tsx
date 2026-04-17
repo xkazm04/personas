@@ -136,7 +136,7 @@ const kindColors: Record<DiffKind, string> = {
   added: 'text-emerald-400',
   removed: 'text-red-400',
   changed: 'text-amber-400',
-  unchanged: 'text-muted-foreground/50',
+  unchanged: 'text-foreground',
 };
 
 const kindIcons: Record<DiffKind, React.ReactNode> = {
@@ -164,7 +164,7 @@ function DiffSection({
     <div className="border border-primary/8 rounded-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-primary/5 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-primary/5 transition-colors"
         aria-expanded={open}
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -190,7 +190,7 @@ function DiffSection({
                     {entry.kind === 'changed' && entry.parentValue && entry.offspringValue && (
                       <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
                         <span className="text-red-400/70 line-through">{entry.parentValue}</span>
-                        <span className="text-muted-foreground/30">&rarr;</span>
+                        <span className="text-foreground">&rarr;</span>
                         <span className="text-emerald-400/70">{entry.offspringValue}</span>
                       </div>
                     )}
@@ -222,10 +222,10 @@ export function GenomeDiffView({
 
   return (
     <div className="space-y-2" role="region" aria-label="Genome comparison">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 text-xs text-foreground">
         <GitCompare className="w-3.5 h-3.5 text-violet-400" />
         <span className="font-medium">{t.agents.lab.genome_diff}</span>
-        <span className="text-muted-foreground/50">
+        <span className="text-foreground">
           {totalChanges} mutation{totalChanges !== 1 ? 's' : ''}
         </span>
       </div>

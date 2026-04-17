@@ -111,7 +111,7 @@ export function ChatTab() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
+      <div className="flex items-center justify-center py-12 text-foreground typo-body">
         {t.agents.chat.select_persona}
       </div>
     );
@@ -147,7 +147,7 @@ export function ChatTab() {
           <div className="relative">
             <button
               onClick={scrollToBottom}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border border-primary/15 shadow-elevation-2 flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:border-primary/25 transition-all z-10"
+              className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border border-primary/15 shadow-elevation-2 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/25 transition-all z-10"
               title={t.agents.chat.scroll_to_bottom}
             >
               <ArrowDown className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function ChatTab() {
                 placeholder={chatStreaming ? t.agents.chat.waiting : t.agents.chat.ask_anything}
                 disabled={chatStreaming || isExecuting}
                 rows={1}
-                className="flex-1 resize-none rounded-modal border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
+                className="flex-1 resize-none rounded-modal border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-foreground focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                 style={{ height: 'auto', overflow: 'auto' }}
                 onInput={(e) => {
                   const el = e.currentTarget;
@@ -195,7 +195,7 @@ export function ChatTab() {
                 {chatStreaming ? <LoadingSpinner /> : <Send className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-muted-foreground/30 mt-1.5 text-center select-none">
+            <p className="text-[11px] text-foreground mt-1.5 text-center select-none">
               {t.agents.chat.enter_to_send}
             </p>
           </div>

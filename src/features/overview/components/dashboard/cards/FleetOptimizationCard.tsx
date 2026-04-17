@@ -111,11 +111,11 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {SEVERITY_LABEL[rec.severity] ?? rec.severity}
             </span>
           </div>
-          <p className="typo-body text-muted-foreground/80 mt-0.5 truncate">
+          <p className="typo-body text-foreground mt-0.5 truncate">
             {rec.description}
           </p>
         </div>
-        <div className="flex-shrink-0 text-muted-foreground/50">
+        <div className="flex-shrink-0 text-foreground">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -127,27 +127,27 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <div className="px-4 pb-3 pt-1 border-t border-primary/5 space-y-2.5">
               {/* Impact */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
                   Impact
                 </span>
-                <span className="typo-body text-foreground/80">{rec.impact}</span>
+                <span className="typo-body text-foreground">{rec.impact}</span>
               </div>
 
               {/* Action */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
                   Action
                 </span>
-                <span className="typo-body text-foreground/80">{rec.suggestedAction}</span>
+                <span className="typo-body text-foreground">{rec.suggestedAction}</span>
               </div>
 
               {/* Affected agents */}
               {rec.personaNames.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="typo-label text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
+                  <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
                     Agent
                   </span>
-                  <span className="typo-body text-foreground/80">
+                  <span className="typo-body text-foreground">
                     {rec.personaNames.join(', ')}
                   </span>
                 </div>
@@ -180,7 +180,7 @@ export default function FleetOptimizationCard() {
 
   return (
     <div className="space-y-1.5">
-      <h3 className="typo-label text-muted-foreground/60 px-1 flex items-center gap-1.5">
+      <h3 className="typo-label text-foreground px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
         Fleet Optimization
       </h3>

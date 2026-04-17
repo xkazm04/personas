@@ -26,7 +26,7 @@ export default function TeamDragPanel() {
 
   return (
     <div>
-      <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest px-1 mb-2">
+      <div className="text-sm font-mono text-foreground uppercase tracking-widest px-1 mb-2">
         {t.pipeline.drag_to_canvas}
       </div>
       <div className="space-y-0.5">
@@ -38,9 +38,9 @@ export default function TeamDragPanel() {
             onDragEnd={handleDragEnd}
             className="flex items-center gap-2 px-2 py-1.5 rounded-card cursor-grab active:cursor-grabbing hover:bg-primary/5 transition-colors group"
           >
-            <GripVertical className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground/50 shrink-0" />
+            <GripVertical className="w-3 h-3 text-foreground group-hover:text-muted-foreground/50 shrink-0" />
             <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-            <span className="text-sm font-medium text-muted-foreground/90 truncate flex-1">
+            <span className="text-sm font-medium text-foreground truncate flex-1">
               {p.name}
             </span>
             {memberPersonaIds.has(p.id) && (
@@ -52,7 +52,7 @@ export default function TeamDragPanel() {
         ))}
       </div>
       {personas.length === 0 && (
-        <div className="text-center py-6 text-sm text-muted-foreground/60">
+        <div className="text-center py-6 text-sm text-foreground">
           {t.pipeline.no_agents_created}
         </div>
       )}

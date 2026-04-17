@@ -22,7 +22,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
   return (
     <div className={`${DASHBOARD_GRID_SPAN_MAJOR} space-y-4`}>
       <div className="flex items-center justify-between px-1">
-        <h3 className="typo-label text-muted-foreground/80 flex items-center gap-2">
+        <h3 className="typo-label text-foreground flex items-center gap-2">
           <Clock className="w-4 h-4" />
           {t.overview.widgets.recent_activity}
         </h3>
@@ -60,7 +60,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
                   {exec.status}
                 </span>
                 <span className="flex-1" />
-                <span className="typo-body text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
+                <span className="typo-body text-foreground flex-shrink-0 hidden sm:inline">
                   {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

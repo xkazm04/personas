@@ -103,8 +103,8 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <Code2 className="w-7 h-7 text-indigo-400/60" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground/80">{t.common.no_results}</p>
-          <p className="text-xs text-muted-foreground/60 max-w-xs">
+          <p className="text-sm font-medium text-foreground">{t.common.no_results}</p>
+          <p className="text-xs text-foreground max-w-xs">
             Add a project in Dev Tools first to connect a codebase to your agents.
           </p>
         </div>
@@ -119,7 +119,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+          className="text-xs text-foreground hover:text-foreground/70 transition-colors"
         >
           Cancel
         </button>
@@ -135,7 +135,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
       {/* Credential name input */}
       {onCredentialNameChange && (
         <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Credential Name
           </label>
           <input
@@ -148,7 +148,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground/60">
+      <p className="text-xs text-foreground">
         {multiSelect
           ? 'Select projects to include in cross-project analysis.'
           : 'Select a project to connect as a codebase source for your agents.'}
@@ -173,7 +173,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-card text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors"
+          className="px-4 py-2 rounded-card text-sm text-foreground hover:text-foreground/70 transition-colors"
         >
           Cancel
         </button>

@@ -35,8 +35,8 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
               onClick={() => setSubtab(tab.id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 typo-heading rounded-xl transition-colors text-left ${
                 active
-                  ? 'bg-primary/10 text-foreground/80 border border-primary/20'
-                  : 'text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+                  ? 'bg-primary/10 text-foreground border border-primary/20'
+                  : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <tab.Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -51,7 +51,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         {subtab === 'overview' && (
           <div className="space-y-4 h-full overflow-y-auto pr-1">
             <div>
-              <label className="block typo-heading text-foreground/80 mb-1.5">{t.shared.draft_editor.name_label}</label>
+              <label className="block typo-heading text-foreground mb-1.5">{t.shared.draft_editor.name_label}</label>
               <input
                 type="text"
                 value={draft.name ?? ''}
@@ -69,7 +69,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             </div>
 
             <div>
-              <label className="block typo-heading text-foreground/80 mb-1.5">{t.shared.draft_editor.description_label}</label>
+              <label className="block typo-heading text-foreground mb-1.5">{t.shared.draft_editor.description_label}</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) =>

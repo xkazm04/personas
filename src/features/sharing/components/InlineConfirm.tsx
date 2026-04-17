@@ -42,7 +42,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
           <div className="flex gap-1.5 justify-end">
             <button
               onClick={() => setOpen(false)}
-              className="px-2 py-1 text-[11px] rounded-input border border-border hover:bg-secondary/50 text-muted-foreground"
+              className="px-2 py-1 text-[11px] rounded-input border border-border hover:bg-secondary/50 text-foreground"
             >
               {st.cancel}
             </button>

@@ -172,7 +172,7 @@ export default function MessageList() {
   const remaining = messagesTotal - messages.length;
   const { parentRef, virtualizer } = useVirtualList(filteredMessages, 40);
 
-  const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+  const defaultPriority = { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
   const handleToggleThread = useCallback((threadId: string) => {
     if (expandedThreadId === threadId) {
@@ -204,20 +204,20 @@ export default function MessageList() {
             <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
               <button
                 onClick={() => setViewMode('flat')}
-                className={`p-1.5 transition-colors ${viewMode === 'flat' ? 'bg-primary/10 text-primary' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+                className={`p-1.5 transition-colors ${viewMode === 'flat' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-muted-foreground'}`}
                 title={t.overview.messages_view.flat_view}
               >
                 <List className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode('threaded')}
-                className={`p-1.5 transition-colors ${viewMode === 'threaded' ? 'bg-primary/10 text-primary' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+                className={`p-1.5 transition-colors ${viewMode === 'threaded' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-muted-foreground'}`}
                 title={t.overview.messages_view.threaded_view}
               >
                 <GitBranch className="w-3.5 h-3.5" />
               </button>
             </div>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
+            <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
@@ -229,7 +229,7 @@ export default function MessageList() {
 
       {viewMode === 'threaded' && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
-          <span className="text-sm text-muted-foreground/80">
+          <span className="text-sm text-foreground">
             {tx(t.overview.messages_view.threads_of, { count: threadSummaries.length, total: threadCount })}
           </span>
           <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
@@ -271,12 +271,12 @@ export default function MessageList() {
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleThread(thread.threadId); } }}
                     >
-                      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground/60">
+                      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-foreground">
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </div>
                       <PersonaIcon icon={(parent as PersonaMessage).persona_icon ?? null} color={(parent as PersonaMessage).persona_color ?? null} display="framed" frameSize={"lg"} />
                       <div className="flex-1 min-w-0">
-                        <span className={`text-sm truncate block ${parent.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
+                        <span className={`text-sm truncate block ${parent.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>
                           {parent.title || (parent.content ?? '').slice(0, 80)}
                         </span>
                       </div>
@@ -289,7 +289,7 @@ export default function MessageList() {
                           {thread.replyCount}
                         </span>
                       )}
-                      <span className="text-sm text-muted-foreground/60 flex-shrink-0 w-24 text-right">
+                      <span className="text-sm text-foreground flex-shrink-0 w-24 text-right">
                         {formatRelativeTime(thread.latestReplyAt ?? parent.created_at)}
                       </span>
                     </div>
@@ -318,7 +318,7 @@ export default function MessageList() {
                                 >
                                   <PersonaIcon icon={msg.persona_icon ?? null} color={msg.persona_color ?? null} display="framed" />
                                   <div className="flex-1 min-w-0">
-                                    <span className={`text-sm truncate block ${msg.is_read ? 'text-foreground/70' : 'text-foreground/85 font-medium'}`}>
+                                    <span className={`text-sm truncate block ${msg.is_read ? 'text-foreground' : 'text-foreground/85 font-medium'}`}>
                                       {msg.title || (msg.content ?? '').slice(0, 80)}
                                     </span>
                                   </div>
@@ -331,13 +331,13 @@ export default function MessageList() {
                                       <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">{t.overview.messages_view.new_badge}</span>
                                     </span>
                                   )}
-                                  <span className="text-xs text-muted-foreground/60 flex-shrink-0 w-20 text-right">
+                                  <span className="text-xs text-foreground flex-shrink-0 w-20 text-right">
                                     {formatRelativeTime(msg.created_at)}
                                   </span>
                                 </div>
                               );
                             }) : (
-                              <div className="px-4 py-3 pl-12 text-sm text-muted-foreground/60">{t.overview.messages_view.loading_replies}</div>
+                              <div className="px-4 py-3 pl-12 text-sm text-foreground">{t.overview.messages_view.loading_replies}</div>
                             )}
                           </div>
                         </motion.div>
@@ -348,7 +348,7 @@ export default function MessageList() {
               })}
               {threadedRemaining > 0 && (
                 <div className="p-4">
-                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">
+                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 text-sm text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">
                     {tx(t.overview.messages_view.load_more, { count: threadedRemaining })}
                   </button>
                 </div>
@@ -378,7 +378,7 @@ export default function MessageList() {
                       personas={personas}
                     />
                   </div>
-                  <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">{t.overview.messages_view.col_title}</div>
+                  <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_title}</div>
                   <div role="columnheader" className="px-2 py-1.5 flex items-center">
                     <ColumnDropdownFilter
                       label="Priority"
@@ -387,7 +387,7 @@ export default function MessageList() {
                       onChange={(v) => setPriorityFilter(v as PriorityFilter)}
                     />
                   </div>
-                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground/80">{t.overview.messages_view.col_delivery}</div>
+                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_delivery}</div>
                   <div role="columnheader" className="px-4 py-1.5 flex items-center justify-center">
                     <ColumnDropdownFilter
                       label="Status"
@@ -396,11 +396,11 @@ export default function MessageList() {
                       onChange={(v) => setReadFilter(v as ReadFilter)}
                     />
                   </div>
-                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.messages_view.col_created}</div>
+                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_created}</div>
                 </div>
                 {filteredMessages.length === 0 ? (
                   <div className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground/40">{t.overview.messages_view.no_filter_match}</p>
+                    <p className="text-sm text-foreground">{t.overview.messages_view.no_filter_match}</p>
                   </div>
                 ) : (
                   <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
@@ -415,29 +415,29 @@ export default function MessageList() {
                         >
                           <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                             <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" frameSize="lg" />
-                            <span className="text-sm text-foreground/80 truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
+                            <span className="text-sm text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
                           </div>
-                          <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
+                          <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                           <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-card typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
                           <div role="gridcell" className="px-4 flex justify-center">
                             {(() => {
                               const ds = deliverySummaries.get(message.id);
-                              if (!ds) return <span className="text-xs text-muted-foreground/40">—</span>;
+                              if (!ds) return <span className="text-xs text-foreground">—</span>;
                               if (ds.failed > 0) { const c = deliveryStatusConfig['failed']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.failed} failed</span>; }
                               if (ds.pending > 0) { const c = deliveryStatusConfig['pending']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.pending} pending</span>; }
                               if (ds.delivered > 0) { const c = deliveryStatusConfig['delivered']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.delivered} sent</span>; }
-                              return <span className="text-xs text-muted-foreground/40">—</span>;
+                              return <span className="text-xs text-foreground">—</span>;
                             })()}
                           </div>
                           <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
-                          <div role="gridcell" className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(message.created_at)}</span></div>
+                          <div role="gridcell" className="px-4 text-right"><span className="text-sm text-foreground">{formatRelativeTime(message.created_at)}</span></div>
                         </div>
                       );
                     })}
                   </div>
                 )}
               </div>
-              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
+              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
             </div>
           )
         )}

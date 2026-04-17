@@ -57,14 +57,14 @@ export function WeekView({
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Day headers */}
       <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-primary/10 bg-primary/[0.02]">
-        <div className="px-2 py-2 text-[10px] text-muted-foreground/40" />
+        <div className="px-2 py-2 text-[10px] text-foreground" />
         {days.map((day) => {
           const isToday = isSameDay(day, today);
           return (
             <div
               key={day.toISOString()}
               className={`px-2 py-2 text-center typo-caption border-l border-primary/10 ${
-                isToday ? 'text-blue-400' : 'text-muted-foreground/70'
+                isToday ? 'text-blue-400' : 'text-foreground'
               }`}
             >
               {formatDayHeader(day, 'week')}
@@ -79,7 +79,7 @@ export function WeekView({
         {activeHours.map((hour) => (
           <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-primary/5 min-h-[44px]">
             {/* Hour label */}
-            <div className="px-2 py-1 text-[10px] text-muted-foreground/40 text-right pr-3 pt-1.5">
+            <div className="px-2 py-1 text-[10px] text-foreground text-right pr-3 pt-1.5">
               {formatHour(hour)}
             </div>
 
@@ -122,7 +122,7 @@ export function WeekView({
                       />
                     ))}
                     {(slot?.events.length ?? 0) > 3 && (
-                      <span className="text-[9px] text-muted-foreground/50 pl-1">+{slot!.events.length - 3} more</span>
+                      <span className="text-[9px] text-foreground pl-1">+{slot!.events.length - 3} more</span>
                     )}
                   </div>
                 </div>

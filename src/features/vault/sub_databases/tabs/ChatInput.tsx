@@ -41,7 +41,7 @@ export function ChatInput({
             }
             disabled={generating}
             rows={1}
-            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 text-sm text-foreground/85 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
+            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 text-sm text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
             style={{ minHeight: '42px', maxHeight: '120px' }}
             onInput={(e) => {
               const ta = e.currentTarget;
@@ -49,7 +49,7 @@ export function ChatInput({
               ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
             }}
           />
-          <div className="absolute right-2 bottom-2 flex items-center gap-1 text-muted-foreground/30">
+          <div className="absolute right-2 bottom-2 flex items-center gap-1 text-foreground">
             <CornerDownLeft className="w-3 h-3" />
           </div>
         </div>

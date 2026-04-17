@@ -130,8 +130,8 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
             <div className="w-14 h-14 rounded-modal bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <RotateCw className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_rotation_policies}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t.overview.analytics_dashboard.no_rotation_hint}</p>
+            <p className="text-sm font-medium text-foreground">{t.overview.analytics_dashboard.no_rotation_policies}</p>
+            <p className="text-sm text-foreground mt-1">{t.overview.analytics_dashboard.no_rotation_hint}</p>
           </div>
         </div>
       ) : (
@@ -156,12 +156,12 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                 {/* Credential info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground/90 truncate">{item.credentialName}</p>
-                  <p className="text-sm text-muted-foreground/70 truncate">{item.serviceType}</p>
+                  <p className="text-sm text-foreground truncate">{item.serviceType}</p>
                 </div>
 
                 {/* Interval */}
                 {item.status.rotation_interval_days && (
-                  <span className="text-sm text-muted-foreground/80 font-mono min-w-[50px] text-right">
+                  <span className="text-sm text-foreground font-mono min-w-[50px] text-right">
                     {item.status.rotation_interval_days}d
                   </span>
                 )}
@@ -169,14 +169,14 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                 {/* Countdown */}
                 {countdown && (
                   <span className={`text-sm font-mono min-w-[60px] text-right ${
-                    countdown === 'due now' ? 'text-amber-400 font-medium' : 'text-muted-foreground/80'
+                    countdown === 'due now' ? 'text-amber-400 font-medium' : 'text-foreground'
                   }`}>
                     {countdown}
                   </span>
                 )}
 
                 {/* Last rotated */}
-                <span className="text-sm text-muted-foreground/60 w-16 text-right">
+                <span className="text-sm text-foreground w-16 text-right">
                   {lastRotated ?? t.overview.analytics_dashboard.never}
                 </span>
 

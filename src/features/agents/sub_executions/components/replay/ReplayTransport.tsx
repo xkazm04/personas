@@ -75,7 +75,7 @@ export function ReplayTransport({
             className={`px-2 py-0.5 typo-code rounded-card transition-colors ${
               speed === s
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
-                : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
+                : 'text-foreground hover:text-muted-foreground/80 border border-transparent'
             }`}
           >
             {s}x

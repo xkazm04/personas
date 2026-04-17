@@ -17,7 +17,7 @@ export function BlueprintPreview({ blueprint }: { blueprint: TopologyBlueprint }
   return (
     <div className="space-y-3">
       {cleanDescription && (
-        <p className="text-xs text-muted-foreground/70 leading-relaxed">{cleanDescription}</p>
+        <p className="text-xs text-foreground leading-relaxed">{cleanDescription}</p>
       )}
 
       {pattern && (
@@ -41,14 +41,14 @@ export function BlueprintPreview({ blueprint }: { blueprint: TopologyBlueprint }
                 {member.persona_name}
               </span>
             </div>
-            <span className="text-xs text-muted-foreground/50 bg-secondary/50 px-1.5 py-0.5 rounded font-mono flex-shrink-0">
+            <span className="text-xs text-foreground bg-secondary/50 px-1.5 py-0.5 rounded font-mono flex-shrink-0">
               {member.role}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground/50 pt-1">
+      <div className="flex items-center gap-3 text-xs text-foreground pt-1">
         <span className="flex items-center gap-1">
           <Users className="w-3 h-3" />
           {blueprint.members.length} agent{blueprint.members.length !== 1 ? 's' : ''}

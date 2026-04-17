@@ -13,7 +13,7 @@ const MEDAL_STYLES: Record<NonNullable<Medal>, { bg: string; border: string; tex
 
 const TREND_ICON = {
   improving: { Icon: TrendingUp, color: 'text-emerald-400' },
-  stable:    { Icon: Minus, color: 'text-muted-foreground/40' },
+  stable:    { Icon: Minus, color: 'text-foreground' },
   degrading: { Icon: TrendingDown, color: 'text-red-400' },
 };
 
@@ -34,7 +34,7 @@ export function TopPerformersWidget() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground/70">{t.overview.widgets.top_performers}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t.overview.widgets.top_performers}</h3>
         </div>
         <button
           onClick={() => setOverviewTab('leaderboard')}
@@ -70,13 +70,13 @@ function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
             {medal.label}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground/40">#{entry.rank}</span>
+          <span className="text-xs text-foreground">#{entry.rank}</span>
         )}
       </div>
 
       {/* Avatar + name */}
       <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
-      <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">{entry.personaName}</span>
+      <span className="text-sm text-foreground truncate flex-1 min-w-0">{entry.personaName}</span>
 
       {/* Trend */}
       <TrendIcon className={`w-3 h-3 flex-shrink-0 ${trend.color}`} />

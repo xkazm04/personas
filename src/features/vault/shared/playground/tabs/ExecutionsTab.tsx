@@ -34,19 +34,19 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+      <div className="flex items-center gap-2 text-sm text-foreground">
         <Calendar className="w-3.5 h-3.5" />
         <span>Created {formatTimestamp(createdAt, 'Unknown')}</span>
       </div>
 
       <div className="space-y-1.5">
-        <h3 className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <History className="w-3.5 h-3.5" />
           Recent Activity
         </h3>
 
         {!loading && entries.length === 0 && (
-          <div className="text-sm text-muted-foreground/60 py-4 text-center border border-dashed border-primary/15 rounded-card">
+          <div className="text-sm text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
             No recorded activity yet
           </div>
         )}
@@ -54,7 +54,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
         {!loading && entries.length > 0 && (
           <div className="space-y-1">
             {entries.map((entry) => {
-              const opStyle = OP_STYLES[entry.operation] ?? 'bg-secondary/40 border-primary/15 text-muted-foreground/70';
+              const opStyle = OP_STYLES[entry.operation] ?? 'bg-secondary/40 border-primary/15 text-foreground';
               return (
                 <div
                   key={entry.id}
@@ -63,18 +63,18 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                   <span className={`text-sm font-mono px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
                     {entry.operation}
                   </span>
-                  <div className="flex-1 min-w-0 text-sm text-foreground/70 truncate">
+                  <div className="flex-1 min-w-0 text-sm text-foreground truncate">
                     {entry.persona_name && (
-                      <span className="text-foreground/80">{entry.persona_name}</span>
+                      <span className="text-foreground">{entry.persona_name}</span>
                     )}
                     {entry.detail && (
-                      <span className="text-muted-foreground/60">{entry.persona_name ? ' · ' : ''}{entry.detail}</span>
+                      <span className="text-foreground">{entry.persona_name ? ' · ' : ''}{entry.detail}</span>
                     )}
                     {!entry.persona_name && !entry.detail && (
-                      <span className="text-muted-foreground/50 italic">--</span>
+                      <span className="text-foreground italic">--</span>
                     )}
                   </div>
-                  <span className="text-sm text-muted-foreground/50 shrink-0">
+                  <span className="text-sm text-foreground shrink-0">
                     {formatTimestamp(entry.created_at, '')}
                   </span>
                 </div>

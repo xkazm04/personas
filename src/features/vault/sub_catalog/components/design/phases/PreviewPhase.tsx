@@ -120,7 +120,7 @@ export function PreviewPhase() {
 
       {/* Credential name */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Credential Name
         </label>
         <input
@@ -135,7 +135,7 @@ export function PreviewPhase() {
       {/* Security notice */}
       <div className={`flex items-start gap-2.5 px-3 py-2 rounded-modal border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
         <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.text}`} />
-        <p className="text-sm text-foreground/80">
+        <p className="text-sm text-foreground">
           Credentials are stored securely in the app vault and are available for agent tool execution.
         </p>
       </div>

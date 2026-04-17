@@ -22,7 +22,7 @@ const GRADE_COLOR: Record<string, string> = {
   healthy: 'text-emerald-400',
   degraded: 'text-amber-400',
   critical: 'text-red-400',
-  unknown: 'text-muted-foreground/50',
+  unknown: 'text-foreground',
 };
 
 interface AffectedPersonasProps {
@@ -36,7 +36,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Bot className="w-3 h-3" />
         {tx(dep.personas_would_stop, { count: personas.length })}
       </div>
@@ -50,11 +50,11 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
               className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/30 border border-primary/8"
             >
               <GradeIcon className={`w-3 h-3 flex-shrink-0 ${gradeColor}`} />
-              <span className="text-xs text-foreground/80 flex-1 truncate">{persona.name}</span>
+              <span className="text-xs text-foreground flex-1 truncate">{persona.name}</span>
               {persona.via && (
-                <span className="text-[10px] text-muted-foreground/50 font-mono">{persona.via}</span>
+                <span className="text-[10px] text-foreground font-mono">{persona.via}</span>
               )}
-              <span className="text-[10px] text-muted-foreground/50">
+              <span className="text-[10px] text-foreground">
                 {Math.round(persona.recentExecutions / 7)}/day
               </span>
             </div>
@@ -76,7 +76,7 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Workflow className="w-3 h-3" />
         {tx(dep.workflows_would_break, { count: workflows.length })}
       </div>
@@ -88,8 +88,8 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
           >
             <TrendingDown className="w-3 h-3 text-red-400/60 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-xs text-foreground/80 block truncate">{wf.workflowName}</span>
-              <span className="text-[10px] text-muted-foreground/50">
+              <span className="text-xs text-foreground block truncate">{wf.workflowName}</span>
+              <span className="text-[10px] text-foreground">
                 {tx(dep.nodes_broken, { broken: wf.brokenNodeLabels.length, total: wf.totalNodes })}
               </span>
             </div>
@@ -111,7 +111,7 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <ArrowRightLeft className="w-3 h-3" />
         {tx(dep.failover_credentials, { count: suggestions.length })}
       </div>
@@ -126,10 +126,10 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
             ) : fo.healthOk === false ? (
               <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
             ) : (
-              <HelpCircle className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+              <HelpCircle className="w-3 h-3 text-foreground flex-shrink-0" />
             )}
-            <span className="text-xs text-foreground/80 flex-1 truncate">{fo.credentialName}</span>
-            <span className="text-[10px] text-muted-foreground/50 font-mono">{fo.serviceType}</span>
+            <span className="text-xs text-foreground flex-1 truncate">{fo.credentialName}</span>
+            <span className="text-[10px] text-foreground font-mono">{fo.serviceType}</span>
           </div>
         ))}
       </div>
@@ -148,8 +148,8 @@ export function MitigationSummary({ simulation }: MitigationSummaryProps) {
 
   return (
     <div className="rounded-card bg-primary/5 border border-primary/10 p-2">
-      <div className="text-[10px] font-medium text-muted-foreground/60 mb-1">{dep.suggested_mitigations}</div>
-      <ul className="text-xs text-muted-foreground/70 space-y-0.5 list-disc list-inside">
+      <div className="text-[10px] font-medium text-foreground mb-1">{dep.suggested_mitigations}</div>
+      <ul className="text-xs text-foreground space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
           <li>{dep.mitigation_failover}</li>
         )}

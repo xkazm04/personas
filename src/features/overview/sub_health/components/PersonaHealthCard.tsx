@@ -58,12 +58,12 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
             <span className={`text-xs ${TREND_COLOR[signal.failureTrend]}`}>
               {signal.failureTrend === 'improving' ? t.overview.health_extra.improving : signal.failureTrend === 'degrading' ? t.overview.health_extra.degrading : t.overview.health_extra.stable}
             </span>
-            <span className="text-xs text-foreground/40 ml-1">{signal.successRate.toFixed(0)}% success</span>
+            <span className="text-xs text-foreground ml-1">{signal.successRate.toFixed(0)}% success</span>
           </div>
         </div>
         {expanded
-          ? <ChevronDown className="w-4 h-4 text-foreground/40 flex-shrink-0" />
-          : <ChevronRight className="w-4 h-4 text-foreground/40 flex-shrink-0" />
+          ? <ChevronDown className="w-4 h-4 text-foreground flex-shrink-0" />
+          : <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0" />
         }
       </div>
 
@@ -107,9 +107,9 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                   {signal.projectedExhaustionDays !== null && (
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-amber-400" />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-foreground">
                         Budget exhaustion in{' '}
-                        <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground/80'}>
+                        <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground'}>
                           {signal.projectedExhaustionDays === 0 ? 'exhausted' : `${signal.projectedExhaustionDays}d`}
                         </span>
                       </span>
@@ -118,7 +118,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                   {signal.predictedFailureInDays !== null && (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="w-3 h-3 text-red-400" />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-foreground">
                         Predicted failure spike in{' '}
                         <span className="text-red-400 font-semibold">{signal.predictedFailureInDays}d</span>
                       </span>
@@ -138,7 +138,7 @@ function MetricCell({ icon: Icon, label, value, color }: { icon: typeof Heart; l
     <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-card bg-secondary/30">
       <Icon className={`w-3 h-3 ${color} flex-shrink-0`} />
       <div className="min-w-0">
-        <p className="text-[10px] text-muted-foreground/60 leading-none">{label}</p>
+        <p className="text-[10px] text-foreground leading-none">{label}</p>
         <p className={`typo-caption ${color} leading-tight`}>{value}</p>
       </div>
     </div>

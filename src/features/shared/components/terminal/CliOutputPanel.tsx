@@ -60,12 +60,12 @@ export default function CliOutputPanel({
       {lines.length === 0 ? (
         <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code leading-5`}>
           {phase === 'idle' ? (
-            <div className="text-muted-foreground/80 text-center py-4">{idleText}</div>
+            <div className="text-foreground text-center py-4">{idleText}</div>
           ) : (
-            <div className="text-muted-foreground/80 text-center py-4">{waitingText}</div>
+            <div className="text-foreground text-center py-4">{waitingText}</div>
           )}
           {isRunning && (
-            <div className="text-muted-foreground/80 animate-pulse">{'>'} _</div>
+            <div className="text-foreground animate-pulse">{'>'} _</div>
           )}
         </div>
       ) : (

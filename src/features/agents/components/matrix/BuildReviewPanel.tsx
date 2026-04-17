@@ -63,7 +63,7 @@ export function BuildReviewPanel({
       <div className="text-center">
         <h3 className="text-sm font-semibold text-foreground/90 truncate">{agentName}</h3>
         {description && (
-          <p className="text-[11px] text-muted-foreground/60 line-clamp-2 mt-0.5">{description}</p>
+          <p className="text-[11px] text-foreground line-clamp-2 mt-0.5">{description}</p>
         )}
       </div>
 
@@ -83,7 +83,7 @@ export function BuildReviewPanel({
             ) : (
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             )}
-            <span className={check.ok ? "text-foreground/60" : "text-amber-400/80"}>{check.label}</span>
+            <span className={check.ok ? "text-foreground" : "text-amber-400/80"}>{check.label}</span>
           </div>
         ))}
       </div>
@@ -141,8 +141,8 @@ function DimensionChip({ icon: Icon, label, data }: {
   const short = preview.length > 30 ? `${preview.slice(0, 30)}...` : preview;
   return (
     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary/20 min-w-0" title={preview}>
-      <Icon className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
-      <span className="text-[10px] text-foreground/50 truncate">{label}: {short || "—"}</span>
+      <Icon className="w-3 h-3 text-foreground flex-shrink-0" />
+      <span className="text-[10px] text-foreground truncate">{label}: {short || "—"}</span>
     </div>
   );
 }

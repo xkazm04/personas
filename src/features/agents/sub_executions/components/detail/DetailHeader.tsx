@@ -36,7 +36,7 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
               <SeverityIcon className={`w-4 h-4 ${sevIcon.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
               <div className="flex-1 min-w-0">
                 <p className="typo-heading text-foreground/90">{explanation.summary}</p>
-                <p className="typo-body text-muted-foreground/70 mt-1">{explanation.guidance}</p>
+                <p className="typo-body text-foreground mt-1">{explanation.guidance}</p>
                 {explanation.action && (() => {
                   const ActionIcon = explanation.action.icon;
                   return (

@@ -30,8 +30,8 @@ export function BlastRadiusPanel({
       {onToggleSimulation && (
         <div className="flex items-center justify-between px-3 py-1.5 rounded-card border border-primary/10 bg-secondary/20">
           <div className="flex items-center gap-2">
-            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-muted-foreground/50'}`} />
-            <span className="text-xs text-muted-foreground/70">{dep.simulate_revocation}</span>
+            <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-foreground'}`} />
+            <span className="text-xs text-foreground">{dep.simulate_revocation}</span>
           </div>
           <button
             type="button"
@@ -66,11 +66,11 @@ export function BlastRadiusPanel({
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-muted-foreground/60" />
+                <Shield className="w-4 h-4 text-foreground" />
                 <span className="text-sm font-medium text-foreground/85">{dep.blast_radius}</span>
               </div>
               <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
-                <X className="w-3.5 h-3.5 text-muted-foreground/50" />
+                <X className="w-3.5 h-3.5 text-foreground" />
               </button>
             </div>
 
@@ -78,8 +78,8 @@ export function BlastRadiusPanel({
               {/* Credential name + severity */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Key className="w-3.5 h-3.5 text-muted-foreground/60" />
-                  <span className="text-sm font-medium text-foreground/80">{blast.credentialName}</span>
+                  <Key className="w-3.5 h-3.5 text-foreground" />
+                  <span className="text-sm font-medium text-foreground">{blast.credentialName}</span>
                 </div>
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
                   {sev.label}
@@ -87,7 +87,7 @@ export function BlastRadiusPanel({
               </div>
 
               {/* Impact summary */}
-              <div className="text-xs text-muted-foreground/70 leading-relaxed">
+              <div className="text-xs text-foreground leading-relaxed">
                 {blast.severity === 'high' ? (
                   <span>{tx(dep.impact_high, { count: blast.affectedAgents.length })}</span>
                 ) : blast.severity === 'medium' ? (
@@ -100,14 +100,14 @@ export function BlastRadiusPanel({
               {/* Affected agents */}
               {blast.affectedAgents.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{dep.affected_agents}</div>
+                  <div className="text-xs font-medium text-foreground mb-1.5">{dep.affected_agents}</div>
                   <div className="space-y-1">
                     {blast.affectedAgents.map((agent) => (
                       <div key={agent.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                         <Bot className="w-3 h-3 text-blue-400/60" />
-                        <span className="text-xs text-foreground/80 flex-1 truncate">{agent.name}</span>
+                        <span className="text-xs text-foreground flex-1 truncate">{agent.name}</span>
                         {agent.via && (
-                          <span className="text-xs text-muted-foreground/60 font-mono">{agent.via}</span>
+                          <span className="text-xs text-foreground font-mono">{agent.via}</span>
                         )}
                       </div>
                     ))}
@@ -118,12 +118,12 @@ export function BlastRadiusPanel({
               {/* Affected events */}
               {blast.affectedEvents.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{dep.affected_events}</div>
+                  <div className="text-xs font-medium text-foreground mb-1.5">{dep.affected_events}</div>
                   <div className="space-y-1">
                     {blast.affectedEvents.map((evt) => (
                       <div key={evt.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                         <Zap className="w-3 h-3 text-amber-400/60" />
-                        <span className="text-xs text-foreground/80 truncate">{evt.name}</span>
+                        <span className="text-xs text-foreground truncate">{evt.name}</span>
                       </div>
                     ))}
                   </div>

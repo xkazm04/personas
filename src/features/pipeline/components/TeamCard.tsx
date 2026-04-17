@@ -58,7 +58,7 @@ export const TeamCard = memo(function TeamCard({
               {team.name}
             </h3>
             {team.description && (
-              <p className="text-sm text-muted-foreground/90 mt-0.5 line-clamp-1">{team.description}</p>
+              <p className="text-sm text-foreground mt-0.5 line-clamp-1">{team.description}</p>
             )}
           </div>
         </div>
@@ -67,7 +67,7 @@ export const TeamCard = memo(function TeamCard({
           <button
             onClick={() => onClone(team.id)}
             title={t.pipeline.fork_team}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-indigo-500/15 text-foreground hover:text-indigo-400 transition-all"
           >
             <GitFork className="w-3.5 h-3.5" />
           </button>
@@ -87,7 +87,7 @@ export const TeamCard = memo(function TeamCard({
                 </button>
                 <button
                   onClick={() => onConfirmDelete(null)}
-                  className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-card transition-colors"
+                  className="px-2 py-1 text-sm font-medium text-foreground hover:text-foreground/95 rounded-card transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -96,7 +96,7 @@ export const TeamCard = memo(function TeamCard({
               <button
                 key="trash"
                 onClick={() => onConfirmDelete(team.id)}
-                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
+                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-red-500/15 text-foreground hover:text-red-400 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -113,23 +113,23 @@ export const TeamCard = memo(function TeamCard({
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
+          <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-foreground border border-zinc-500/20'}`}>
             {team.enabled ? t.pipeline.active : t.pipeline.draft}
           </span>
           {counts && (
               <>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
+                <span className="flex items-center gap-1 text-sm text-foreground">
                   <Users className="w-3 h-3" />
                   {counts.members}
                 </span>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
+                <span className="flex items-center gap-1 text-sm text-foreground">
                   <GitBranch className="w-3 h-3" />
                   {counts.connections}
                 </span>
               </>
           )}
         </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
+        <ChevronRight className="w-4 h-4 text-foreground group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
               <span className="text-sm font-semibold uppercase tracking-wider text-violet-400/70">
                 {question.header}
               </span>
-              <p className="text-sm font-medium text-foreground/80 mt-0.5">
+              <p className="text-sm font-medium text-foreground mt-0.5">
                 {question.question}
               </p>
             </div>
@@ -79,7 +79,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                       >
                         {option.label}
                       </span>
-                      <span className="text-sm text-muted-foreground/90 block mt-0.5 leading-relaxed">
+                      <span className="text-sm text-foreground block mt-0.5 leading-relaxed">
                         {option.description}
                       </span>
                     </div>

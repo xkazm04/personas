@@ -28,7 +28,7 @@ export function TemplateFormHeader({
           className="p-2 -ml-2 rounded-card hover:bg-secondary/50 transition-colors"
           title={t.vault.credential_forms.back_to_catalog}
         >
-          <ArrowLeft className="w-4 h-4 text-muted-foreground/70" />
+          <ArrowLeft className="w-4 h-4 text-foreground" />
         </button>
       )}
       <div
@@ -46,7 +46,7 @@ export function TemplateFormHeader({
       </div>
       <div className="flex-1">
         <h4 className="font-medium text-foreground">{tx(t.vault.credential_forms.new_credential, { label: selectedConnector.label })}</h4>
-        <p className="text-sm text-muted-foreground/80">
+        <p className="text-sm text-foreground">
           {activeMethod?.type === 'mcp'
             ? 'Configure MCP server connection'
             : selectedConnector.healthcheck_config?.description || t.vault.credential_forms.configure_fields}

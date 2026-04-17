@@ -33,7 +33,7 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
             Success
           </span>
         )}
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/60">
+        <span className="flex items-center gap-1 text-sm text-foreground">
           <Clock className="w-3 h-3" />
           {result.duration_ms}ms
         </span>
@@ -43,11 +43,11 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {result.content.map((block, i) => (
         <div key={i} className="rounded-card border border-primary/8 overflow-hidden">
           {block.content_type !== 'text' && (
-            <div className="px-3 py-1 text-sm text-muted-foreground/60 bg-secondary/20 border-b border-primary/5">
+            <div className="px-3 py-1 text-sm text-foreground bg-secondary/20 border-b border-primary/5">
               {block.content_type}
             </div>
           )}
-          <pre className="p-3 text-sm font-mono text-foreground/75 whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
+          <pre className="p-3 text-sm font-mono text-foreground whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
             {formatContent(block.text)}
           </pre>
         </div>
@@ -61,10 +61,10 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
 export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Server className="w-10 h-10 text-muted-foreground/15" />
+      <Server className="w-10 h-10 text-foreground" />
       <div className="text-center space-y-1">
-        <p className="text-sm text-muted-foreground/50">Discover MCP server tools</p>
-        <p className="text-sm text-muted-foreground/60">
+        <p className="text-sm text-foreground">Discover MCP server tools</p>
+        <p className="text-sm text-foreground">
           Connect to the MCP server to discover available tools and test them.
         </p>
       </div>

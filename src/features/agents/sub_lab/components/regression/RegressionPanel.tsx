@@ -135,7 +135,7 @@ export function RegressionPanel() {
         <Star className="w-5 h-5 text-amber-400 flex-shrink-0" />
         <div className="flex-1">
           <p className="typo-heading text-amber-400">Baseline: v{baselinePin.versionNumber}</p>
-          <p className="typo-caption text-muted-foreground/50">
+          <p className="typo-caption text-foreground">
             Pinned {new Date(baselinePin.pinnedAt).toLocaleDateString()}
             {baselinePin.runId ? ` · Eval run: ${baselinePin.runId.slice(0, 8)}...` : ' · No eval run linked'}
           </p>
@@ -144,7 +144,7 @@ export function RegressionPanel() {
 
       {/* Version selector */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.compare_against}</p>
+        <p className="typo-caption text-foreground">{t.agents.lab.compare_against}</p>
         <div className="flex flex-wrap gap-2">
           {promptVersions
             .filter((v) => v.id !== baselinePin.versionId && v.tag !== 'archived')
@@ -155,7 +155,7 @@ export function RegressionPanel() {
                 className={`px-3 py-1.5 rounded-card typo-caption transition-colors border focus-ring ${
                   selectedVersionId === v.id
                     ? 'bg-primary/15 text-primary border-primary/30'
-                    : 'bg-secondary/20 text-muted-foreground/50 border-primary/10 hover:border-primary/20'
+                    : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20'
                 }`}
               >
                 v{v.version_number}
@@ -167,22 +167,22 @@ export function RegressionPanel() {
 
       {/* Model selector */}
       <div className="space-y-2">
-        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.models_to_test}</p>
+        <p className="typo-caption text-foreground">{t.agents.lab.models_to_test}</p>
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
       </div>
 
       {/* Threshold */}
       <div className="flex items-center gap-3">
-        <p className="typo-caption text-muted-foreground/60">{t.agents.lab.regression_threshold}</p>
+        <p className="typo-caption text-foreground">{t.agents.lab.regression_threshold}</p>
         <input
           type="number"
           value={threshold}
           onChange={(e) => setThreshold(Math.max(1, Math.min(50, Number(e.target.value) || DEFAULT_THRESHOLD)))}
-          className="w-16 px-2 py-1 rounded-card bg-background/50 border border-primary/12 text-foreground/80 typo-caption text-center focus-ring"
+          className="w-16 px-2 py-1 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption text-center focus-ring"
           min={1}
           max={50}
         />
-        <p className="typo-caption text-muted-foreground/40">{t.agents.lab.threshold_hint}</p>
+        <p className="typo-caption text-foreground">{t.agents.lab.threshold_hint}</p>
       </div>
 
       {/* Run button */}

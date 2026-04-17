@@ -78,13 +78,13 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
           <h3 className="text-sm font-semibold text-foreground">{t.vault.autopilot.api_playground}</h3>
-          <p className="text-sm text-muted-foreground/60">{t.vault.autopilot.api_playground_hint}</p>
+          <p className="text-sm text-foreground">{t.vault.autopilot.api_playground_hint}</p>
         </div>
       </div>
 
@@ -98,14 +98,14 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
               className={`w-full text-left px-2 py-1.5 rounded-input text-xs transition-colors ${
                 selectedTool?.toolName === tool.toolName
                   ? 'bg-blue-500/15 border border-blue-500/20 text-foreground'
-                  : 'hover:bg-secondary/30 text-muted-foreground/70'
+                  : 'hover:bg-secondary/30 text-foreground'
               }`}
             >
               <div className="flex items-center gap-1.5">
                 <MethodBadge method={tool.method} />
                 <span className="font-mono truncate">{tool.path}</span>
               </div>
-              <p className="text-muted-foreground/50 truncate mt-0.5">{tool.label}</p>
+              <p className="text-foreground truncate mt-0.5">{tool.label}</p>
             </button>
           ))}
         </div>

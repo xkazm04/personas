@@ -17,11 +17,11 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
       >
         {open ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
-        <span className="text-sm font-medium text-muted-foreground/70">
+        <span className="text-sm font-medium text-foreground">
           How to get {connectorLabel} credentials
         </span>
       </button>
@@ -37,7 +37,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center text-sm font-bold text-primary/70">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-foreground/75 pt-0.5 leading-relaxed">{stripped}</p>
+                    <p className="text-sm text-foreground pt-0.5 leading-relaxed">{stripped}</p>
                   </div>
                 );
               })}

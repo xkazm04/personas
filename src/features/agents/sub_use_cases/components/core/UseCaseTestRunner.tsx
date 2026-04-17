@@ -110,8 +110,8 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
       <div className="bg-secondary/30 border border-primary/10 rounded-modal p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground/70 min-w-0">
-            {uc.run_with} <span className="text-foreground/80 font-medium">{resolved.label}</span>
+          <p className="text-sm text-foreground min-w-0">
+            {uc.run_with} <span className="text-foreground font-medium">{resolved.label}</span>
           </p>
           <UseCaseFixtureDropdown
             fixtures={fixtures}
@@ -128,7 +128,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
         {selectedFixture && Object.keys(selectedFixture.inputs).length > 0 && (
           <div className="px-2.5 py-2 rounded-card bg-amber-500/5 border border-amber-500/15 text-xs">
             <span className="text-amber-400/70 font-medium">{uc.fixture_inputs}</span>
-            <pre className="mt-1 text-muted-foreground/70 whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+            <pre className="mt-1 text-foreground whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
               {JSON.stringify(selectedFixture.inputs, null, 2)}
             </pre>
           </div>
@@ -150,7 +150,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
                 <div
                   className="animate-fade-slide-in overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 text-sm text-foreground/70">
+                  <div className="flex items-center gap-2 text-sm text-foreground">
                     <LoadingSpinner size="sm" className="text-primary" />
                     <span className="capitalize">
                       {testRunProgress.phase === 'generating'
@@ -182,7 +182,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
         <button
           onClick={() => setEditorTab('lab')}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/60 hover:text-primary/80 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary/80 transition-colors"
         >
           {uc.view_full_test_history} <ArrowRight className="w-3 h-3" />
         </button>

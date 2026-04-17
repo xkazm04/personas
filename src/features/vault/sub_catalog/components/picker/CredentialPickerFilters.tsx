@@ -97,7 +97,7 @@ export function CredentialPickerFilters({
             className={`p-1.5 rounded-card border transition-colors ${
               activeRole === role
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
-                : 'bg-secondary/30 border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:border-primary/20'
+                : 'bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/80 hover:border-primary/20'
             }`}
           >
             <Icon className="w-4 h-4" />

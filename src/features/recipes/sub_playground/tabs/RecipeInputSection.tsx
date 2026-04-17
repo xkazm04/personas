@@ -64,7 +64,7 @@ export function RecipeInputSection({
   return (
     <div className="p-4 border-b border-border/40 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
           Input
         </h3>
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function RecipeInputSection({
           {fields.length > 0 && (
             <button
               onClick={handleSaveMockValues}
-              className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-foreground hover:bg-muted/50 transition-colors"
             >
               {mockSaved ? (
                 <><Check className="w-3 h-3 text-emerald-400" /> {t.recipes.saved}</>
@@ -108,14 +108,14 @@ export function RecipeInputSection({
       <div className="grid grid-cols-2 gap-4">
         {/* Left: Test Input */}
         <div>
-          <p className="text-sm font-medium text-muted-foreground/70 mb-2">{t.recipes.test_input}</p>
+          <p className="text-sm font-medium text-foreground mb-2">{t.recipes.test_input}</p>
           {fields.length > 0 ? (
             <div className="space-y-2.5">
               {fields.map((field) => (
                 <div key={field.key}>
-                  <label className="block text-sm text-muted-foreground mb-1">
+                  <label className="block text-sm text-foreground mb-1">
                     {field.label || field.key}
-                    <span className="ml-1 text-sm text-muted-foreground/50">({field.type})</span>
+                    <span className="ml-1 text-sm text-foreground">({field.type})</span>
                   </label>
                   {field.type === 'select' && field.options ? (
                     <select
@@ -136,7 +136,7 @@ export function RecipeInputSection({
                           className={`rounded-modal px-3 py-1 text-sm border transition-colors ${
                             fieldValues[field.key] === v
                               ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                              : 'border-border/60 text-muted-foreground hover:border-border'
+                              : 'border-border/60 text-foreground hover:border-border'
                           }`}
                         >
                           {v === 'true' ? 'Yes' : 'No'}
@@ -148,7 +148,7 @@ export function RecipeInputSection({
                       type={field.type === 'number' ? 'number' : 'text'}
                       value={fieldValues[field.key] ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value)}
-                      className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50"
+                      className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50"
                     />
                   )}
                 </div>
@@ -160,28 +160,28 @@ export function RecipeInputSection({
               onChange={(e) => onFreeInputChange(e.target.value)}
               placeholder={t.recipes.free_input_placeholder}
               rows={3}
-              className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
+              className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
             />
           )}
         </div>
 
         {/* Right: Saved Mock Values */}
         <div>
-          <p className="text-sm font-medium text-muted-foreground/70 mb-2">{t.recipes.saved_mock_values}</p>
+          <p className="text-sm font-medium text-foreground mb-2">{t.recipes.saved_mock_values}</p>
           <div className="rounded-card border border-border/40 bg-card/30 p-3 max-h-60 overflow-y-auto">
             {mockValues ? (
               <div className="space-y-1.5">
                 {Object.entries(mockValues).map(([key, value]) => (
                   <div key={key} className="flex items-baseline gap-2 text-sm">
-                    <span className="text-muted-foreground/70 font-mono shrink-0">{key}:</span>
-                    <span className="text-foreground/70 font-mono break-all">
+                    <span className="text-foreground font-mono shrink-0">{key}:</span>
+                    <span className="text-foreground font-mono break-all">
                       {typeof value === 'string' ? `"${value}"` : JSON.stringify(value)}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground/50">
+              <div className="flex items-center gap-2 text-sm text-foreground">
                 <Database className="w-3.5 h-3.5" />
                 {t.recipes.no_mock_values}
               </div>

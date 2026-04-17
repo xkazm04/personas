@@ -74,7 +74,7 @@ export default function OnboardingProgressBar() {
                       ? 'text-emerald-400/70 line-through'
                       : isCurrent
                         ? 'text-violet-300'
-                        : 'text-muted-foreground/50'
+                        : 'text-foreground'
                   }`}
                 >
                   {STEP_LABELS[step]}

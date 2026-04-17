@@ -33,7 +33,7 @@ export function OutputPreviews({
 
   return (
     <div className="space-y-2">
-      <h5 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">{t.agents.model_config.output_previews}</h5>
+      <h5 className="text-xs font-medium text-foreground uppercase tracking-wider">{t.agents.model_config.output_previews}</h5>
       {scenarios.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {scenarios.map((s) => (
@@ -43,7 +43,7 @@ export function OutputPreviews({
               className={`px-2 py-1 text-xs rounded-card border transition-colors cursor-pointer ${
                 expandedScenario === s
                   ? 'bg-primary/15 border-primary/30 text-primary'
-                  : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
+                  : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
             >
               {s}
@@ -71,7 +71,7 @@ export function OutputPreviews({
 
 function NoOutputText() {
   const { t } = useTranslation();
-  return <span className="text-muted-foreground/60 italic">{t.agents.model_config.no_output}</span>;
+  return <span className="text-foreground italic">{t.agents.model_config.no_output}</span>;
 }
 
 function OutputBox({ label, text, accent }: { label: string; text: string; accent: 'blue' | 'amber' }) {
@@ -82,7 +82,7 @@ function OutputBox({ label, text, accent }: { label: string; text: string; accen
       <div className={`px-2.5 py-1.5 text-xs font-medium ${headerCls} bg-secondary/30 border-b ${borderCls}`}>
         {label}
       </div>
-      <div className="px-2.5 py-2 text-xs text-foreground/70 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+      <div className="px-2.5 py-2 text-xs text-foreground max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
         {text || <NoOutputText />}
       </div>
     </div>

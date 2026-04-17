@@ -51,7 +51,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
               transition={{ duration: 0.2 }}
               className="flex items-center gap-2"
             >
-              <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+              <div className="cursor-grab active:cursor-grabbing text-foreground hover:text-muted-foreground transition-colors">
                 <GripVertical className="w-4 h-4" />
               </div>
 
@@ -61,7 +61,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   value={field.key}
                   onChange={(e) => updateField(index, { key: e.target.value })}
                   placeholder="key"
-                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50 font-mono"
+                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 font-mono"
                 />
 
                 <select
@@ -79,14 +79,14 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   value={field.label}
                   onChange={(e) => updateField(index, { label: e.target.value })}
                   placeholder="Label"
-                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
+                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
                 />
               </div>
 
               <button
                 type="button"
                 onClick={() => removeField(index)}
-                className="p-1 rounded-card text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                className="p-1 rounded-card text-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -99,7 +99,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
         type="button"
         onClick={addField}
         whileTap={{ scale: 0.97 }}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-1"
+        className="flex items-center gap-1.5 text-sm text-foreground hover:text-foreground transition-colors px-1 py-1"
       >
         <Plus className="w-3.5 h-3.5" />
         {rt.add_field}

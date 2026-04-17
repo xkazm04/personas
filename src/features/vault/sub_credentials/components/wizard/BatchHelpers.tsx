@@ -19,7 +19,7 @@ export function StatusIcon({ status, size = 'w-4 h-4' }: { status: ItemStatus; s
     case 'failed':
       return <XCircle className={`${size} text-red-400`} />;
     case 'skipped':
-      return <SkipForward className={`${size} text-muted-foreground/70`} />;
+      return <SkipForward className={`${size} text-foreground`} />;
     case 'running':
       return <Loader2 className={`${size} text-violet-400 animate-spin`} />;
     default:
@@ -43,7 +43,7 @@ export function ConnectorLabel({ connector }: { connector: ConnectorDefinition }
           <Plug className="w-2.5 h-2.5" style={{ color: connector.color }} />
         )}
       </div>
-      <span className="text-sm text-foreground/80 truncate">{connector.label}</span>
+      <span className="text-sm text-foreground truncate">{connector.label}</span>
     </div>
   );
 }
@@ -65,7 +65,7 @@ export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDo
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
         <h3 className="text-sm font-bold text-foreground">{t.vault.wizard_detect.batch_complete}</h3>
-        <p className="text-sm text-muted-foreground/80 mt-1">
+        <p className="text-sm text-foreground mt-1">
           {doneCount} added
           {failedCount > 0 ? `, ${failedCount} failed` : ''}
           {skippedCount > 0 ? `, ${skippedCount} skipped` : ''}
@@ -86,7 +86,7 @@ export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDo
                 ? 'text-emerald-400/70'
                 : item.status === 'failed'
                   ? 'text-red-400/70'
-                  : 'text-muted-foreground/80'
+                  : 'text-foreground'
             }`}>
               {item.status === 'done' ? 'Added' : item.status === 'failed' ? 'Failed' : 'Skipped'}
             </span>

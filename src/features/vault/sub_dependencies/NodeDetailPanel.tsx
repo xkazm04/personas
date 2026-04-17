@@ -33,12 +33,12 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
           <span className="text-sm font-medium text-foreground/85">{node.label}</span>
         </div>
         <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
-          <X className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <X className="w-3.5 h-3.5 text-foreground" />
         </button>
       </div>
 
       <div className="p-3 space-y-2">
-        <div className="text-xs text-muted-foreground/60">
+        <div className="text-xs text-foreground">
           {tx(connections.length !== 1 ? dep.connection_count_other : dep.connection_count_one, { count: connections.length })}
         </div>
 
@@ -54,9 +54,9 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
               >
                 <ConnIcon className="w-3 h-3 flex-shrink-0" style={{ color: connNode.color }} />
-                <span className="text-xs text-foreground/80 truncate flex-1">{connNode.label}</span>
+                <span className="text-xs text-foreground truncate flex-1">{connNode.label}</span>
                 {edge.label && (
-                  <span className="text-xs text-muted-foreground/60">{edge.label}</span>
+                  <span className="text-xs text-foreground">{edge.label}</span>
                 )}
               </button>
             );

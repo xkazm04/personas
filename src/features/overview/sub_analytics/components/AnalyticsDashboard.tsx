@@ -48,7 +48,7 @@ export default function AnalyticsDashboard() {
             />
             <button
               onClick={() => { void metrics.refreshAllSafe(); }}
-              className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -56,7 +56,7 @@ export default function AnalyticsDashboard() {
             <button
               onClick={() => metrics.setAutoRefresh(!metrics.autoRefresh)}
               className={`p-1.5 rounded-card border transition-colors ${
-                metrics.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
+                metrics.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-foreground'
               }`}
               title={metrics.autoRefresh ? t.overview.analytics_dashboard.auto_refresh_on : t.overview.analytics_dashboard.auto_refresh_off}
             >

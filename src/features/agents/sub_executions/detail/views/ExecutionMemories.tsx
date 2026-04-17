@@ -32,7 +32,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
 
   if (!memoriesLoaded) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground/50 typo-body py-1">
+      <div className="flex items-center gap-2 text-foreground typo-body py-1">
         <LoadingSpinner size="sm" label={t.agents.executions.loading_memories} />
       </div>
     );
@@ -59,7 +59,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
                     <CategoryChip category={mem.category} />
                     <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
                   </div>
-                  <p className="typo-body text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>
+                  <p className="typo-body text-foreground line-clamp-2">{stripHtml(mem.content)}</p>
                 </div>
               );
             })}

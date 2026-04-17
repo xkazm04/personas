@@ -50,10 +50,10 @@ export default function IconShowcase() {
                 hoveredIcon === icon.id
                   ? 'border-primary/40 bg-primary/10 shadow-elevation-3 shadow-primary/10 scale-110'
                   : 'border-primary/10 bg-secondary/20'
-              } ${mode === 'custom' ? 'text-primary' : 'text-muted-foreground'}`}>
+              } ${mode === 'custom' ? 'text-primary' : 'text-foreground'}`}>
                 {mode === 'lucide' ? icon.lucide : icon.custom}
               </div>
-              <span className="text-[9px] text-muted-foreground/60 font-medium leading-none">
+              <span className="text-[9px] text-foreground font-medium leading-none">
                 {icon.label}
               </span>
             </div>
@@ -72,7 +72,7 @@ export default function IconShowcase() {
           )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground/40 font-mono text-center">
+      <p className="text-[11px] text-foreground font-mono text-center">
         {mode === 'lucide'
           ? ic.lucide_footer
           : ic.personas_footer}

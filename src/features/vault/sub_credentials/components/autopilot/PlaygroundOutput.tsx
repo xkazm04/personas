@@ -29,10 +29,10 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
               {testResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
               <span className="text-sm font-medium">{testResult.statusCode}</span>
             </div>
-            <span className="text-xs text-muted-foreground/50">{testResult.durationMs}ms</span>
+            <span className="text-xs text-foreground">{testResult.durationMs}ms</span>
             <button
               onClick={() => navigator.clipboard.writeText(testResult.body)}
-              className="text-xs text-muted-foreground/50 hover:text-foreground flex items-center gap-1 ml-auto"
+              className="text-xs text-foreground hover:text-foreground flex items-center gap-1 ml-auto"
             >
               <Copy className="w-3 h-3" /> Copy
             </button>
@@ -40,13 +40,13 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
 
           {/* Response Headers (collapsed by default) */}
           <details className="text-xs">
-            <summary className="text-muted-foreground/50 cursor-pointer hover:text-muted-foreground">
+            <summary className="text-foreground cursor-pointer hover:text-muted-foreground">
               Response Headers ({Object.keys(testResult.headers).length})
             </summary>
             <div className="mt-1 p-2 bg-secondary/20 rounded-card font-mono space-y-0.5 max-h-32 overflow-y-auto">
               {Object.entries(testResult.headers).map(([k, v]) => (
                 <div key={k}>
-                  <span className="text-blue-400">{k}</span>: <span className="text-muted-foreground/70">{v}</span>
+                  <span className="text-blue-400">{k}</span>: <span className="text-foreground">{v}</span>
                 </div>
               ))}
             </div>
@@ -54,7 +54,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
 
           {/* Response Body */}
           <div className="relative">
-            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-card text-xs font-mono text-foreground/80 overflow-auto max-h-80 whitespace-pre-wrap">
+            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-card text-xs font-mono text-foreground overflow-auto max-h-80 whitespace-pre-wrap">
               {formatJson(testResult.body)}
             </pre>
           </div>

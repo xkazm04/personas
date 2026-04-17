@@ -75,7 +75,7 @@ export default function SkippedRecoveryPanel({
           <p className="typo-heading text-amber-400/90">
             {visibleSkipped.length} agent{visibleSkipped.length !== 1 ? 's' : ''} missed executions
           </p>
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             ~{totalMissed} total runs skipped while app was offline
           </p>
         </div>
@@ -100,15 +100,15 @@ export default function SkippedRecoveryPanel({
                     }} />
 
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground/80 truncate block">
+                    <span className="text-sm text-foreground truncate block">
                       {agent.persona_name}
                     </span>
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 mt-0.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-foreground mt-0.5">
                       <Clock className="w-3 h-3" />
                       <span>{missedCount} missed since {formatRelative(missedAt.toISOString())}</span>
                       {agent.interval_seconds && (
                         <>
-                          <span className="text-muted-foreground/30">·</span>
+                          <span className="text-foreground">·</span>
                           <span className="font-mono">every {formatInterval(agent.interval_seconds)}</span>
                         </>
                       )}
@@ -128,7 +128,7 @@ export default function SkippedRecoveryPanel({
                       disabled={isRecovering}
                       className={`flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border transition-colors ${policy === 'recover'
                           ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
-                          : 'bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-emerald-400 hover:bg-emerald-500/10'
+                          : 'bg-secondary/30 border-primary/10 text-foreground hover:text-emerald-400 hover:bg-emerald-500/10'
                         }`}
                       title="Mark for recovery"
                     >
@@ -145,7 +145,7 @@ export default function SkippedRecoveryPanel({
                     <button
                       onClick={() => onManualExecute(agent)}
                       disabled={isRecovering}
-                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
                       title="Run once now"
                     >
                       <Play className="w-3 h-3" />
@@ -154,7 +154,7 @@ export default function SkippedRecoveryPanel({
 
                     <button
                       onClick={() => handleDismiss(agent.trigger_id)}
-                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/90 transition-colors"
                       title="Skip -- don't recover"
                     >
                       <SkipForward className="w-3 h-3" />
@@ -170,7 +170,7 @@ export default function SkippedRecoveryPanel({
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber-500/15 bg-amber-500/[0.03]">
             <button
               onClick={handleDismissAll}
-              className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+              className="text-[11px] text-foreground hover:text-muted-foreground/80 transition-colors"
             >
               {t.schedules.dismiss_all}
             </button>

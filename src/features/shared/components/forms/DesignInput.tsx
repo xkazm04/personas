@@ -224,7 +224,7 @@ export function DesignInput({
                 {(designContext.files.length === 1 ? t.common.files_attached_one : t.common.files_attached_other).replace('{count}', String(designContext.files.length))}
               </span>
             )}
-            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-muted-foreground/50'}`}>
+            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-foreground'}`}>
               {instruction.length.toLocaleString()}
             </span>
           </span>

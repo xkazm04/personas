@@ -50,7 +50,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
           className="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border border-background bg-background/95 flex items-center justify-center"
           aria-hidden="true"
         >
-          <HealthShape className="w-2.5 h-2.5 text-foreground/80" />
+          <HealthShape className="w-2.5 h-2.5 text-foreground" />
         </div>
       )}
       {statuses && statuses.length > 0 && (
@@ -64,7 +64,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
               aria-label={`Run ${si + 1}: ${s}`}
             />
           ))}
-          <span className="text-sm text-muted-foreground/90 ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
+          <span className="text-sm text-foreground ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
         </div>
       )}
     </div>

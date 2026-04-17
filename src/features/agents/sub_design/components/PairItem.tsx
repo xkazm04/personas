@@ -27,9 +27,9 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onToggleCollapse(pair.id)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
           <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">{tx(t.agents.design.example_n, { index: index + 1 })}</span>
-          {isCollapsed && preview && <span className="text-xs text-muted-foreground/50 truncate ml-1">{preview}</span>}
+          {isCollapsed && preview && <span className="text-xs text-foreground truncate ml-1">{preview}</span>}
         </button>
-        <button onClick={() => onRemove(pair.id)} disabled={disabled} className="p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" title={t.agents.design.remove_example}>
+        <button onClick={() => onRemove(pair.id)} disabled={disabled} className="p-0.5 text-foreground hover:text-red-400 transition-colors" title={t.agents.design.remove_example}>
           <Trash2 className="w-3 h-3" />
         </button>
       </div>
@@ -37,7 +37,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
       {!isCollapsed && (
         <div className="px-3 pb-3 space-y-2">
           <div className="space-y-1">
-            <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
+            <label className="flex items-center gap-1 text-xs font-medium text-foreground">
               <FileInput className="w-3 h-3" />
               {t.agents.design.input_label}
             </label>
@@ -54,7 +54,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
             <ArrowRight className="w-4 h-4 text-emerald-500/40 rotate-90" />
           </div>
           <div className="space-y-1">
-            <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
+            <label className="flex items-center gap-1 text-xs font-medium text-foreground">
               <FileOutput className="w-3 h-3" />
               {t.agents.design.output_label}
             </label>

@@ -40,7 +40,7 @@ export function ExecutionExpandedDetail({
           <div className="p-4 space-y-3">
             <div className="grid grid-cols-2 gap-4 typo-body">
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.execution_id}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.execution_id}</span>
                 <Tooltip content={execution.id} placement="bottom">
                   <button
                     onClick={(e) => {
@@ -60,30 +60,30 @@ export function ExecutionExpandedDetail({
                 </Tooltip>
               </div>
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.model}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.model}</span>
                 <p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || t.agents.executions.model_default}</p>
               </div>
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.input_tokens}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.input_tokens}</span>
                 <p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p>
               </div>
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.output_tokens}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.output_tokens}</span>
                 <p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p>
               </div>
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.cost}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.cost}</span>
                 <p className="text-foreground/90 typo-code mt-0.5">${execution.cost_usd.toFixed(4)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.completed}</span>
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.completed}</span>
                 <p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p>
               </div>
             </div>
             {execution.input_data && (
               <div>
-                <span className="text-muted-foreground/90 typo-code uppercase">{t.agents.executions.input_data}</span>
-                <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-card typo-code text-foreground/80 overflow-x-auto">
+                <span className="text-foreground typo-code uppercase">{t.agents.executions.input_data}</span>
+                <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-card typo-code text-foreground overflow-x-auto">
                   {showRaw ? execution.input_data : maskSensitiveJson(execution.input_data)}
                 </pre>
               </div>

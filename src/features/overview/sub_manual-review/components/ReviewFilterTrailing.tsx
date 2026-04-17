@@ -39,7 +39,7 @@ export function ReviewFilterTrailing({
               className={`flex items-center gap-1 px-2.5 py-1.5 transition-colors ${
                 sourceFilter === src
                   ? 'bg-primary/10 text-foreground/90 font-medium'
-                  : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-white/[0.03]'
+                  : 'text-foreground hover:text-muted-foreground hover:bg-white/[0.03]'
               }`}
             >
               {src === 'local' && <Monitor className="w-3 h-3" />}
@@ -53,7 +53,7 @@ export function ReviewFilterTrailing({
       {selectablePendingCount > 0 && (
         <button
           onClick={onToggleSelectAll}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
         >
           {activeSelectionCount === selectablePendingCount ? (
             <CheckSquare className="w-3.5 h-3.5" />

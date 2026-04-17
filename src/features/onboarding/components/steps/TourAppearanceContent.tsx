@@ -22,8 +22,8 @@ export default function TourAppearanceContent() {
       {/* Text size */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Type className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">{t.onboarding.text_size_label}</span>
+          <Type className="w-3.5 h-3.5 text-foreground" />
+          <span className="text-sm font-medium text-foreground">{t.onboarding.text_size_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {TEXT_SCALES.map((scale) => {
@@ -40,8 +40,8 @@ export default function TourAppearanceContent() {
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Aa</span>
-                <span className={`text-[11px] ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>{scale.label}</span>
+                <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>Aa</span>
+                <span className={`text-[11px] ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>{scale.label}</span>
                 {isActive && <div className="absolute top-1 right-1"><Check className="w-2.5 h-2.5 text-primary" /></div>}
               </button>
             );
@@ -52,8 +52,8 @@ export default function TourAppearanceContent() {
       {/* Brightness */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Sun className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="text-sm font-medium text-foreground/80">{t.onboarding.brightness_label}</span>
+          <Sun className="w-3.5 h-3.5 text-foreground" />
+          <span className="text-sm font-medium text-foreground">{t.onboarding.brightness_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {brightnessLevels.map((level, i) => {
@@ -70,8 +70,8 @@ export default function TourAppearanceContent() {
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
-                <Sun className={`w-3.5 h-3.5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
-                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
+                <Sun className={`w-3.5 h-3.5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
+                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {level.label}
                 </span>
                 {isActive && <div className="absolute top-1 right-1"><Check className="w-2.5 h-2.5 text-primary" /></div>}
@@ -83,7 +83,7 @@ export default function TourAppearanceContent() {
 
       {/* Dark themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.dark_themes}</span>
+        <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.dark_themes}</span>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))' }}>
           {darkThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -104,7 +104,7 @@ export default function TourAppearanceContent() {
                 >
                   {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-elevation-1" />}
                 </div>
-                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {t.label}
                 </span>
               </button>
@@ -115,7 +115,7 @@ export default function TourAppearanceContent() {
 
       {/* Light themes */}
       <div className="space-y-1.5">
-        <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.light_themes}</span>
+        <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.light_themes}</span>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))' }}>
           {lightThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -136,7 +136,7 @@ export default function TourAppearanceContent() {
                 >
                   {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-elevation-1" />}
                 </div>
-                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {t.label}
                 </span>
               </button>

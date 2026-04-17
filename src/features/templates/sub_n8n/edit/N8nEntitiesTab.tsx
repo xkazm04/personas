@@ -80,11 +80,11 @@ export function N8nEntitiesTab({
   if (isEmpty) {
     return (
       <div className="text-center py-12 space-y-2">
-        <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm font-medium text-muted-foreground/60">
+        <ListChecks className="w-10 h-10 text-foreground mx-auto" />
+        <p className="text-sm font-medium text-foreground">
           No entities selected.
         </p>
-        <p className="text-sm text-muted-foreground/60">
+        <p className="text-sm text-foreground">
           {t.templates.n8n.go_back_to_analyze}
         </p>
       </div>
@@ -96,7 +96,7 @@ export function N8nEntitiesTab({
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             {resolved.hasDraftTools
               ? t.templates.n8n.entities_generated
               : t.templates.n8n.entities_from_workflow}
@@ -118,7 +118,7 @@ export function N8nEntitiesTab({
           {onGoToAnalyze && (
             <button
               onClick={onGoToAnalyze}
-              className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
             >
               {t.templates.n8n.edit_selection}
             </button>
@@ -127,7 +127,7 @@ export function N8nEntitiesTab({
             <button
               onClick={() => void cs.handleTestAll()}
               disabled={cs.testingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {cs.testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
               {t.templates.n8n.test_all}
@@ -139,7 +139,7 @@ export function N8nEntitiesTab({
       {/* -- Connectors section -- */}
       {hasConnectors && (
         <div className="space-y-2">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
+          <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground uppercase tracking-wider">
             <Link className="w-3 h-3" />
             {tx(t.templates.n8n.connectors_count, { count: connectorItems.length })}
           </h5>
@@ -163,7 +163,7 @@ export function N8nEntitiesTab({
       {/* -- General Tools (no connector required) -- */}
       {hasGeneralTools && (
         <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
+          <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground uppercase tracking-wider mb-2.5">
             <Wrench className="w-3 h-3" />
             {tx(t.templates.n8n.general_tools_count, { count: generalTools.length })}
           </h5>
@@ -184,7 +184,7 @@ export function N8nEntitiesTab({
       {/* -- Triggers -- */}
       {hasTriggers && (
         <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
+          <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground uppercase tracking-wider mb-2.5">
             <Zap className="w-3 h-3" />
             {tx(t.templates.n8n.triggers_count, { count: triggerItems.length })}
           </h5>

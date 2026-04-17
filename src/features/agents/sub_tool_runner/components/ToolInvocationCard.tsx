@@ -44,13 +44,13 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
       >
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
-        <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <span className="text-sm font-medium text-foreground/80 truncate">{tool.name}</span>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-primary/10 bg-secondary/30 text-muted-foreground/60">
+        <Wrench className="w-3.5 h-3.5 text-foreground" />
+        <span className="text-sm font-medium text-foreground truncate">{tool.name}</span>
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-primary/10 bg-secondary/30 text-foreground">
           <TypeIcon className="w-2.5 h-2.5" />
           {toolType}
         </span>
@@ -69,19 +69,19 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
               {tool.description && (
-                <p className="text-sm text-muted-foreground/60">{tool.description}</p>
+                <p className="text-sm text-foreground">{tool.description}</p>
               )}
 
               {/* Input */}
               <div>
-                <label className="text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider mb-1 block">
+                <label className="text-sm font-semibold text-foreground uppercase tracking-wider mb-1 block">
                   {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-modal border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
+                  className="w-full rounded-modal border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
                   placeholder='{ "key": "value" }'
                 />
               </div>
@@ -136,14 +136,14 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
         <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
           {result.success ? t.agents.tool_runner.success : t.agents.tool_runner.failed}
         </span>
-        <span className="ml-auto flex items-center gap-1 text-muted-foreground/50 text-sm">
+        <span className="ml-auto flex items-center gap-1 text-foreground text-sm">
           <Clock className="w-2.5 h-2.5" />
           {result.duration_ms}ms
         </span>
       </div>
 
       {result.output && (
-        <pre className="text-sm font-mono text-foreground/70 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+        <pre className="text-sm font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formatOutput(result.output)}
         </pre>
       )}

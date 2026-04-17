@@ -16,7 +16,7 @@ export function ToolSelector() {
 
   if (!persona.selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
+      <div className="flex items-center justify-center py-8 text-foreground">
         {t.agents.tools.no_persona}
       </div>
     );
@@ -62,7 +62,7 @@ export function ToolSelector() {
           <div
             className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-modal shadow-elevation-3"
           >
-            <span className="text-sm text-foreground/80">
+            <span className="text-sm text-foreground">
               {t.agents.tools.removed.split('{name}')[0]}<span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
             </span>
             <button

@@ -17,9 +17,9 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{server.label}</p>
-        <p className="text-xs text-muted-foreground/60 truncate font-mono">{server.command}</p>
+        <p className="text-xs text-foreground truncate font-mono">{server.command}</p>
         {Object.keys(server.env).length > 0 && (
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             {Object.keys(server.env).length} env var{Object.keys(server.env).length !== 1 ? 's' : ''}
           </p>
         )}

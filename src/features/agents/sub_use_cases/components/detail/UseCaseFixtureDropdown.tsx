@@ -49,7 +49,7 @@ export function UseCaseFixtureDropdown({
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-colors ${
           selectedFixture
             ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
-            : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:border-primary/30'
+            : 'bg-secondary/40 border-primary/10 text-foreground hover:border-primary/30'
         }`}
         title={selectedFixture ? `Fixture: ${selectedFixture.name}` : uc.select_test_fixture}
       >
@@ -70,10 +70,10 @@ export function UseCaseFixtureDropdown({
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
                 !selectedFixtureId
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/80 hover:bg-secondary/50'
+                  : 'text-foreground hover:bg-secondary/50'
               }`}
             >
-              <span className="text-muted-foreground/50">--</span>
+              <span className="text-foreground">--</span>
               {uc.no_fixture_auto}
             </button>
 

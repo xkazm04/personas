@@ -31,7 +31,7 @@ export function AutomationReviewStep({
           <p className="text-sm font-medium text-foreground/90">
             {t.agents.connectors.auto_deploying_to.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-foreground mt-1">
             {platform === 'n8n' && t.agents.connectors.auto_deploy_n8n}
             {platform === 'github_actions' && t.agents.connectors.auto_deploy_github}
             {platform === 'zapier' && t.agents.connectors.auto_deploy_zapier}
@@ -55,7 +55,7 @@ export function AutomationReviewStep({
           <p className="text-sm font-medium text-foreground/90">
             {hasWarning ? t.agents.connectors.auto_deployed_warning : t.agents.connectors.auto_deployed_ok}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">{deployResult.deploymentMessage}</p>
+          <p className="text-sm text-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
         {hasWarning && (
           <div className="flex items-start gap-2 p-3 rounded-modal bg-brand-amber/5 border border-brand-amber/15 max-w-md">
@@ -68,7 +68,7 @@ export function AutomationReviewStep({
             href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground hover:bg-accent/25 transition-colors"
           >
             {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
             <ExternalLink className="w-3 h-3" />
@@ -95,7 +95,7 @@ export function AutomationReviewStep({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
           {t.common.close}
         </button>
         <button onClick={onReset} className="px-4 py-2 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">

@@ -74,7 +74,7 @@ export function ExecutionList() {
   };
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">{e.no_persona_selected}</div>;
+    return <div className="flex items-center justify-center py-8 text-foreground">{e.no_persona_selected}</div>;
   }
 
   if (loading) {
@@ -108,15 +108,15 @@ export function ExecutionList() {
           <div className="w-12 h-12 rounded-modal bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
           </div>
-          <p className="typo-heading text-foreground/80">{e.agent_ready}</p>
-          <p className="typo-body text-muted-foreground/80 mt-1 max-w-[260px]">{e.agent_ready_subtitle}</p>
+          <p className="typo-heading text-foreground">{e.agent_ready}</p>
+          <p className="typo-body text-foreground mt-1 max-w-[260px]">{e.agent_ready_subtitle}</p>
           <button onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             <Play className="w-3.5 h-3.5" />{e.try_it_now}
           </button>
         </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-muted-foreground/80 uppercase tracking-wider">
+          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-foreground uppercase tracking-wider">
             {compareMode && <div className="col-span-1" />}
             <div className={compareMode ? 'col-span-2' : 'col-span-2'}>{e.col_status}</div>
             <div className="col-span-2">{e.col_duration}</div>

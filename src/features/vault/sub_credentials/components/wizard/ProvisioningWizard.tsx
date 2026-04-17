@@ -92,7 +92,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
           <button
             onClick={phase === 'batch' ? handleBack : handleClose}
             data-testid={phase === 'batch' ? 'vault-wizard-next' : 'vault-wizard-cancel'}
-            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -103,7 +103,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
             <h2 className="text-sm font-bold tracking-tight text-foreground">
               Credential Setup Wizard
             </h2>
-            <p className="text-xs text-muted-foreground/80">{subtitle}</p>
+            <p className="text-xs text-foreground">{subtitle}</p>
           </div>
         </div>
       </div>

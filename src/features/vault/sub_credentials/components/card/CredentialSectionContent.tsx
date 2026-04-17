@@ -38,10 +38,10 @@ export function CredentialSectionContent({
               className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-modal border-l-2"
               style={{ borderLeftColor: connector.color || 'transparent' }}
             >
-              <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
+              <Wrench className="w-3.5 h-3.5 text-foreground" />
               <div>
-                <span className="text-sm text-foreground/80">{service.label}</span>
-                <span className="ml-2 text-sm font-mono text-muted-foreground/60">{service.toolName}</span>
+                <span className="text-sm text-foreground">{service.label}</span>
+                <span className="ml-2 text-sm font-mono text-foreground">{service.toolName}</span>
               </div>
             </div>
           ))}

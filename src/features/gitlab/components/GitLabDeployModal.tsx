@@ -92,7 +92,7 @@ export function GitLabDeployModal({
     <div className="space-y-4">
       {/* Project picker */}
       <div>
-        <label htmlFor="target-project" className="block text-sm font-medium text-foreground/80 mb-1.5">{t.gitlab.target_project}</label>
+        <label htmlFor="target-project" className="block text-sm font-medium text-foreground mb-1.5">{t.gitlab.target_project}</label>
         <ThemedSelect
           id="target-project"
           value={String(selectedProjectId ?? '')}
@@ -109,7 +109,7 @@ export function GitLabDeployModal({
 
       {/* Persona picker */}
       <div>
-        <label htmlFor="deploy-persona" className="block text-sm font-medium text-foreground/80 mb-1.5">{t.gitlab.persona_to_deploy}</label>
+        <label htmlFor="deploy-persona" className="block text-sm font-medium text-foreground mb-1.5">{t.gitlab.persona_to_deploy}</label>
         <ThemedSelect
           id="deploy-persona"
           value={selectedPersonaId}
@@ -131,7 +131,7 @@ export function GitLabDeployModal({
           onSelectTemplate={handleSelectTemplate}
         />
         {isCreatingFromTemplate && (
-          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground/60">
+          <div className="mt-2 flex items-center gap-2 text-sm text-foreground">
             <LoadingSpinner size="sm" />
             {t.gitlab.creating_from_template}
           </div>
@@ -154,7 +154,7 @@ export function GitLabDeployModal({
                 {t.gitlab.provision_api_credentials}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground/70 mt-1">
+            <p className="text-sm text-foreground mt-1">
               {t.gitlab.provision_description}
             </p>
             {provisionCredentials && (
@@ -185,12 +185,12 @@ export function GitLabDeployModal({
                 {t.gitlab.version_controlled_deploy}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground/70 mt-1">
+            <p className="text-sm text-foreground mt-1">
               {t.gitlab.version_description}
             </p>
             {enableVersioning && (
               <div className="mt-2">
-                <label htmlFor="deploy-env" className="block text-xs text-muted-foreground/60 mb-1">
+                <label htmlFor="deploy-env" className="block text-xs text-foreground mb-1">
                   {t.gitlab.target_environment}
                 </label>
                 <select
@@ -237,10 +237,10 @@ export function GitLabDeployModal({
                 {tx(t.gitlab.deployed_successfully, { method: result.method === 'api' ? t.gitlab.duo_agent_api : t.gitlab.agents_md })}
               </p>
               {result.agentId && (
-                <p className="text-sm text-muted-foreground/70 mt-1">{tx(t.gitlab.agent_id, { id: result.agentId })}</p>
+                <p className="text-sm text-foreground mt-1">{tx(t.gitlab.agent_id, { id: result.agentId })}</p>
               )}
               {result.credentialsProvisioned > 0 && (
-                <p className="text-sm text-muted-foreground/70 mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-foreground mt-1 flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-orange-400" />
                   {result.credentialsProvisioned} credential{result.credentialsProvisioned !== 1 ? 's' : ''} provisioned
                 </p>

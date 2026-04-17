@@ -21,7 +21,7 @@ export function ConnectorPipeline({ steps, className = '' }: ConnectorPipelinePr
         return (
           <div key={`${step.connector_name}-${step.order}`} className="flex items-center gap-1">
             {idx > 0 && (
-              <ChevronRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
+              <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
             )}
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
               <div
@@ -30,7 +30,7 @@ export function ConnectorPipeline({ steps, className = '' }: ConnectorPipelinePr
               >
                 <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
               </div>
-              <span className="text-sm text-foreground/70 whitespace-nowrap">
+              <span className="text-sm text-foreground whitespace-nowrap">
                 {step.action_label}
               </span>
             </div>

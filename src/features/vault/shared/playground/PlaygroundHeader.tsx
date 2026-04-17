@@ -131,7 +131,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
               </h2>
               <button
                 onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
-                className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
                 title={t.vault.ingest.rename_credential}
               >
                 <Pencil className="w-3 h-3" />
@@ -141,7 +141,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {fieldKeys.map((key) => (
-            <span key={key} className="text-xs px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
+            <span key={key} className="text-xs px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground font-mono">
               {key}
             </span>
           ))}
@@ -177,7 +177,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
                 autoFocus
                 placeholder={vt.add_tag}
-                className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+                className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
                 <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
@@ -185,7 +185,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                     <button
                       key={s}
                       onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                      className="w-full text-left px-2.5 py-1 text-xs hover:bg-secondary/50 transition-colors text-foreground/80"
+                      className="w-full text-left px-2.5 py-1 text-xs hover:bg-secondary/50 transition-colors text-foreground"
                     >
                       {s}
                     </button>
@@ -196,7 +196,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
           ) : (
             <button
               onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
-              className="inline-flex items-center gap-0.5 text-xs text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+              className="inline-flex items-center gap-0.5 text-xs text-foreground hover:text-muted-foreground/70 transition-colors"
               title="Add tag"
             >
               <Plus className="w-2.5 h-2.5" /> tag
@@ -206,7 +206,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       </div>
       <button
         onClick={onClose}
-        className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80 shrink-0"
+        className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80 shrink-0"
       >
         <X className="w-4 h-4" />
       </button>

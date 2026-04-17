@@ -65,7 +65,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
           <button
             onClick={detail.copyCurlCommand}
             className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
-              detail.copiedCurl ? 'text-emerald-400' : 'text-muted-foreground/80 hover:text-muted-foreground'
+              detail.copiedCurl ? 'text-emerald-400' : 'text-foreground hover:text-muted-foreground'
             }`}
           >
             <Terminal className="w-3 h-3" />

@@ -46,20 +46,20 @@ function TriggerPopup({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-amber-500/70" />
-          <span className="text-sm font-medium text-foreground/80 capitalize">{trigger.trigger_type}</span>
+          <span className="text-sm font-medium text-foreground capitalize">{trigger.trigger_type}</span>
         </div>
         <button type="button" onClick={onClose} className="p-0.5 rounded hover:bg-primary/10 transition-colors">
-          <X className="w-3.5 h-3.5 text-muted-foreground/60" />
+          <X className="w-3.5 h-3.5 text-foreground" />
         </button>
       </div>
 
       {trigger.description && (
-        <p className="text-sm text-muted-foreground/50 leading-relaxed">{trigger.description}</p>
+        <p className="text-sm text-foreground leading-relaxed">{trigger.description}</p>
       )}
 
       {isSchedule && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.schedule}</label>
+          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.schedule}</label>
           <input
             type="text"
             autoFocus
@@ -69,13 +69,13 @@ function TriggerPopup({
             placeholder={t.templates.trigger_edit.schedule_placeholder}
             className={inputClass}
           />
-          <p className="text-sm text-muted-foreground/40">Natural language or cron (e.g. "0 9 * * 1-5")</p>
+          <p className="text-sm text-foreground">Natural language or cron (e.g. "0 9 * * 1-5")</p>
         </div>
       )}
 
       {isWebhook && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.webhook_url}</label>
+          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.webhook_url}</label>
           <input
             type="text"
             autoFocus
@@ -90,7 +90,7 @@ function TriggerPopup({
 
       {isPolling && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground/70">{t.templates.trigger_edit.check_interval}</label>
+          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.check_interval}</label>
           <input
             type="text"
             autoFocus
@@ -104,7 +104,7 @@ function TriggerPopup({
       )}
 
       {(trigger.trigger_type === 'manual' || trigger.trigger_type === 'event') && (
-        <p className="text-sm text-muted-foreground/40 italic">{t.templates.trigger_edit.no_config_needed}</p>
+        <p className="text-sm text-foreground italic">{t.templates.trigger_edit.no_config_needed}</p>
       )}
     </div>
   );
@@ -135,7 +135,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
   }, [triggers]);
 
   if (uniqueTriggers.length === 0) {
-    return <span className="text-sm text-muted-foreground/50">Manual execution only</span>;
+    return <span className="text-sm text-foreground">Manual execution only</span>;
   }
 
   return (
@@ -174,14 +174,14 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
                     'hover:border-amber-500/60 hover:text-foreground/90',
                     'transition-colors cursor-pointer',
                     'inline-flex items-center gap-1.5',
-                    isOpen ? 'text-foreground/90 border-amber-500/60' : 'text-foreground/70',
+                    isOpen ? 'text-foreground/90 border-amber-500/60' : 'text-foreground',
                   ].join(' ')}
                 >
                   <span className="truncate">{displayValue}</span>
                   <Pencil className="w-3 h-3 text-amber-500/40 flex-shrink-0" />
                 </button>
               ) : (
-                <span className="text-sm text-foreground/70 truncate">{displayValue}</span>
+                <span className="text-sm text-foreground truncate">{displayValue}</span>
               )}
             </div>
 

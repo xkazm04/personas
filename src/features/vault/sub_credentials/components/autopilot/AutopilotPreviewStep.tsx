@@ -45,16 +45,16 @@ export function AutopilotPreviewStep({
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-medium text-foreground">{parseResult.title}</h4>
-            <p className="text-xs text-muted-foreground/60">v{parseResult.version} &middot; {parseResult.specFormat === 'openapi3' ? 'OpenAPI 3.x' : 'Swagger 2.x'}</p>
+            <p className="text-xs text-foreground">v{parseResult.version} &middot; {parseResult.specFormat === 'openapi3' ? 'OpenAPI 3.x' : 'Swagger 2.x'}</p>
           </div>
           {parseResult.baseUrl && (
-            <span className="text-xs text-muted-foreground/50 font-mono">{parseResult.baseUrl}</span>
+            <span className="text-xs text-foreground font-mono">{parseResult.baseUrl}</span>
           )}
         </div>
         {parseResult.description && (
-          <p className="text-sm text-muted-foreground/70 leading-relaxed">{parseResult.description}</p>
+          <p className="text-sm text-foreground leading-relaxed">{parseResult.description}</p>
         )}
-        <div className="flex gap-4 text-xs text-muted-foreground/50">
+        <div className="flex gap-4 text-xs text-foreground">
           <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> {parseResult.endpoints.length} endpoints</span>
           <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {parseResult.authSchemes.length} auth schemes</span>
           <span className="flex items-center gap-1"><Database className="w-3 h-3" /> {parseResult.models.length} models</span>
@@ -64,7 +64,7 @@ export function AutopilotPreviewStep({
       {/* Auth Schemes */}
       {parseResult.authSchemes.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{t.vault.autopilot.authentication}</h4>
+          <h4 className="text-xs font-medium text-foreground uppercase tracking-wider">{t.vault.autopilot.authentication}</h4>
           <div className="flex flex-wrap gap-2">
             {parseResult.authSchemes.map((auth) => (
               <div key={auth.name} className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-card text-xs text-emerald-400">
@@ -76,7 +76,7 @@ export function AutopilotPreviewStep({
       {/* Connector Name & Color */}
       <div className="grid grid-cols-[1fr_auto] gap-3">
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.connector_name}</label>
+          <label className="text-xs text-foreground">{t.vault.autopilot.connector_name}</label>
           <input
             type="text"
             value={customName}
@@ -85,7 +85,7 @@ export function AutopilotPreviewStep({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground/60">{t.vault.autopilot.color}</label>
+          <label className="text-xs text-foreground">{t.vault.autopilot.color}</label>
           <input
             type="color"
             value={customColor}
@@ -98,12 +98,12 @@ export function AutopilotPreviewStep({
       {/* Endpoint Selection */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+          <h4 className="text-xs font-medium text-foreground uppercase tracking-wider">
             Endpoints ({selectedEndpoints.size}/{parseResult.endpoints.length} selected)
           </h4>
           <div className="flex gap-2 text-xs">
             <button onClick={onSelectAll} className="text-blue-400 hover:text-blue-300">{t.vault.import.select_all}</button>
-            <button onClick={onDeselectAll} className="text-muted-foreground/50 hover:text-muted-foreground">{t.vault.import.deselect_all}</button>
+            <button onClick={onDeselectAll} className="text-foreground hover:text-muted-foreground">{t.vault.import.deselect_all}</button>
           </div>
         </div>
 
@@ -122,7 +122,7 @@ export function AutopilotPreviewStep({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="px-4 py-2.5 border border-primary/15 text-muted-foreground hover:text-foreground rounded-card text-sm transition-colors"
+          className="px-4 py-2.5 border border-primary/15 text-foreground hover:text-foreground rounded-card text-sm transition-colors"
         >
           Back
         </button>
@@ -170,11 +170,11 @@ function EndpointList({
           <div key={tag}>
             <button
               onClick={() => onToggleTag(tag)}
-              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-muted-foreground/70 hover:text-foreground rounded-input hover:bg-secondary/30"
+              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-foreground hover:text-foreground rounded-input hover:bg-secondary/30"
             >
               {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               <span className="font-medium">{tag}</span>
-              <span className="text-muted-foreground/40 ml-auto">{selectedCount}/{items.length}</span>
+              <span className="text-foreground ml-auto">{selectedCount}/{items.length}</span>
             </button>
             {isExpanded && items.map(({ endpoint, index }) => (
               <label
@@ -188,9 +188,9 @@ function EndpointList({
                   className="rounded border-primary/20"
                 />
                 <MethodBadge method={endpoint.method} />
-                <span className="text-xs font-mono text-muted-foreground/60 truncate">{endpoint.path}</span>
+                <span className="text-xs font-mono text-foreground truncate">{endpoint.path}</span>
                 {endpoint.summary && (
-                  <span className="text-xs text-muted-foreground/40 truncate ml-auto max-w-[180px]">{endpoint.summary}</span>
+                  <span className="text-xs text-foreground truncate ml-auto max-w-[180px]">{endpoint.summary}</span>
                 )}
               </label>
             ))}

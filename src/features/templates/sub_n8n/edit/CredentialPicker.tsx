@@ -35,7 +35,7 @@ export function CredentialPicker({
           <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
+                <p className="px-3 py-1.5 text-sm font-semibold text-foreground uppercase tracking-wider border-b border-primary/5">
                   {t.templates.n8n.best_match}
                 </p>
                 {matchingCreds.map((cred) => (
@@ -46,8 +46,8 @@ export function CredentialPicker({
                   >
                     <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate">{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="text-sm text-foreground truncate">{cred.name}</p>
+                      <p className="text-sm text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
@@ -56,7 +56,7 @@ export function CredentialPicker({
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">
+                  <p className="px-3 py-1.5 text-sm font-semibold text-foreground uppercase tracking-wider border-b border-primary/5">
                     {t.templates.n8n.other_credentials}
                   </p>
                 )}
@@ -68,15 +68,15 @@ export function CredentialPicker({
                   >
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate">{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="text-sm text-foreground truncate">{cred.name}</p>
+                      <p className="text-sm text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
               </>
             )}
             {totalCredentials === 0 && (
-              <p className="px-3 py-4 text-sm text-muted-foreground/60 text-center">
+              <p className="px-3 py-4 text-sm text-foreground text-center">
                 {t.templates.n8n.no_stored_credentials}
               </p>
             )}

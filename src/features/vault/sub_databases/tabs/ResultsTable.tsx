@@ -29,7 +29,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       )}
       {!result && !error && !executing && (
         <div key="hint" className="animate-fade-slide-in flex items-center justify-center pt-8">
-          <p className="text-sm text-muted-foreground/25">
+          <p className="text-sm text-foreground">
             {language === 'redis' ? db.redis_run_hint : db.sql_run_hint}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
             <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
             <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
-          <span className="text-sm text-muted-foreground/60">{db.executing_query}</span>
+          <span className="text-sm text-foreground">{db.executing_query}</span>
         </div>
       )}
     </div>

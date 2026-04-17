@@ -19,7 +19,7 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
     >
       {result && (
         <div className="bg-secondary/30 rounded-modal px-4 py-3 border border-primary/20">
-          <p className="text-sm text-muted-foreground/90 mb-1">{t.agents.design.current_design}</p>
+          <p className="text-sm text-foreground mb-1">{t.agents.design.current_design}</p>
           <p className="text-sm text-foreground/90">{result.summary}</p>
         </div>
       )}

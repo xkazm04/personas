@@ -26,12 +26,12 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
       {/* Summary bar */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-foreground/80">
+          <span className="text-sm font-medium text-foreground">
             {forage.scanResult.credentials.length} credential
             {forage.scanResult.credentials.length !== 1 ? 's' : ''} found
           </span>
           {importableCount > 0 && (
-            <span className="text-sm text-muted-foreground/50">
+            <span className="text-sm text-foreground">
               {forage.selected.size} selected
             </span>
           )}
@@ -46,12 +46,12 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
             >
               All
             </Button>
-            <span className="text-muted-foreground/20">|</span>
+            <span className="text-foreground">|</span>
             <Button
               variant="link"
               size="sm"
               onClick={forage.selectNone}
-              className="text-muted-foreground/50 hover:text-foreground/70"
+              className="text-foreground hover:text-foreground/70"
             >
               None
             </Button>

@@ -16,7 +16,7 @@ export interface CredRow {
 export function HealthBadge({ success }: { success: boolean | null }) {
   if (success === null) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium bg-secondary/60 text-foreground/60 border border-primary/15">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium bg-secondary/60 text-foreground border border-primary/15">
         <HelpCircle className="w-3 h-3" />
         untested
       </span>
@@ -117,7 +117,7 @@ export function useCredentialColumns({
         width: '0.8fr',
         sortable: true,
         render: (row: CredRow) => (
-          <span className="text-sm text-foreground/70 truncate">{row.connector?.label || row.credential.service_type}</span>
+          <span className="text-sm text-foreground truncate">{row.connector?.label || row.credential.service_type}</span>
         ),
       },
       {
@@ -128,7 +128,7 @@ export function useCredentialColumns({
         filterValue: categoryFilter,
         onFilterChange: setCategoryFilter,
         render: (row: CredRow) => (
-          <span className="text-sm text-muted-foreground/60">{capitalize(row.connector?.category || 'other')}</span>
+          <span className="text-sm text-foreground">{capitalize(row.connector?.category || 'other')}</span>
         ),
       },
       {
@@ -147,7 +147,7 @@ export function useCredentialColumns({
         sortable: true,
         align: 'right' as const,
         render: (row: CredRow) => (
-          <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
+          <span className="text-sm text-foreground">{formatRelativeTime(row.credential.created_at)}</span>
         ),
       },
       {

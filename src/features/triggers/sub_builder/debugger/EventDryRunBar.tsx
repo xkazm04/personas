@@ -29,7 +29,7 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
             <option key={et} value={et}>{et}</option>
           ))}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50 pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
       </div>
 
       {/* Controls */}
@@ -67,7 +67,7 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
       {/* Step counter */}
       {isActive && (
         <div className="flex items-center gap-2 pl-2 border-l border-primary/10">
-          <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
+          <span className="text-[10px] text-foreground font-mono tabular-nums">
             {Math.max(0, dryRunState.currentStep + 1)} / {dryRunState.totalSteps}
           </span>
           {isDone && (

@@ -88,14 +88,14 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             )}
             <button
               onClick={() => onSelectIssue(issue)}
-              className={`flex-1 text-left typo-body transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
+              className={`flex-1 text-left typo-body transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground hover:text-foreground'}`}
             >
               {issue.title}
             </button>
-            <span className={`typo-code min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-muted-foreground/80'}`}>
+            <span className={`typo-code min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-foreground'}`}>
               {issue.category}
             </span>
-            <span className="typo-body text-muted-foreground/80 w-16 text-right">{ageLabel}</span>
+            <span className="typo-body text-foreground w-16 text-right">{ageLabel}</span>
             {!isAutoFixed && !isAutoFixPending && (
               <button
                 onClick={() => onResolve(issue.id)}

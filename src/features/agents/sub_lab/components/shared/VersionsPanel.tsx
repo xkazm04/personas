@@ -91,7 +91,7 @@ export function VersionsPanel() {
   };
 
   if (!personaId) {
-    return <div className="text-sm text-muted-foreground/60 text-center py-8">{t.agents.lab.no_persona_selected}</div>;
+    return <div className="text-sm text-foreground text-center py-8">{t.agents.lab.no_persona_selected}</div>;
   }
 
   const handleViewChange = (v: VersionView) => {
@@ -118,20 +118,20 @@ export function VersionsPanel() {
         <div className="flex items-center gap-2 mb-3 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
           <div>
-            <h3 className="text-sm font-medium text-foreground/80">{t.agents.lab.persona_versions}</h3>
-            <p className="text-[10px] text-muted-foreground/40">{t.agents.lab.persona_versions_subtitle}</p>
+            <h3 className="text-sm font-medium text-foreground">{t.agents.lab.persona_versions}</h3>
+            <p className="text-[10px] text-foreground">{t.agents.lab.persona_versions_subtitle}</p>
           </div>
           <ViewToggle view={view} onChange={handleViewChange} />
-          <span className="ml-auto text-sm text-muted-foreground/60">{promptVersions.length}</span>
+          <span className="ml-auto text-sm text-foreground">{promptVersions.length}</span>
         </div>
 
         {loading ? (
           <ContentLoader variant="panel" hint="versions" />
         ) : promptVersions.length === 0 ? (
           <div className="text-center py-8 space-y-2">
-            <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-sm text-muted-foreground/60">{t.agents.lab.no_versions}</p>
-            <p className="text-sm text-muted-foreground/60">{t.agents.lab.versions_auto_edit}</p>
+            <GitBranch className="w-8 h-8 text-foreground mx-auto" />
+            <p className="text-sm text-foreground">{t.agents.lab.no_versions}</p>
+            <p className="text-sm text-foreground">{t.agents.lab.versions_auto_edit}</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
@@ -166,9 +166,9 @@ export function VersionsPanel() {
           <DiffViewer versionA={compareA} versionB={compareB} />
         ) : (
           <div className="text-center py-12 space-y-2">
-            <ArrowLeftRight className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-sm text-muted-foreground/60">{t.agents.lab.select_two_compare}</p>
-            <p className="text-sm text-muted-foreground/60">
+            <ArrowLeftRight className="w-8 h-8 text-foreground mx-auto" />
+            <p className="text-sm text-foreground">{t.agents.lab.select_two_compare}</p>
+            <p className="text-sm text-foreground">
               Click the <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> buttons on any version
             </p>
           </div>
@@ -190,7 +190,7 @@ export function VersionsPanel() {
             <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="typo-heading text-blue-400">Newer versions since baseline v{baselinePin.versionNumber}</p>
-              <p className="typo-caption text-muted-foreground/50">
+              <p className="typo-caption text-foreground">
                 Run a regression check to verify the new prompt doesn&apos;t degrade performance.
               </p>
             </div>
@@ -211,11 +211,11 @@ export function VersionsPanel() {
         <div className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-emerald-400" />
-            <h4 className="text-sm font-medium text-foreground/80">{t.agents.lab.error_rate_monitor}</h4>
+            <h4 className="text-sm font-medium text-foreground">{t.agents.lab.error_rate_monitor}</h4>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <div className="flex items-center justify-between text-sm text-muted-foreground/70 mb-1">
+              <div className="flex items-center justify-between text-sm text-foreground mb-1">
                 <span>{t.agents.lab.last_10_execs}</span>
                 <span>{healthLoading ? '...' : healthErrorRate != null ? `${(healthErrorRate * 100).toFixed(0)}%` : '--'}</span>
               </div>
@@ -235,13 +235,13 @@ export function VersionsPanel() {
             <button
               onClick={() => void handleRefreshHealth()}
               disabled={healthLoading}
-              className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
               title="Refresh error rate"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
-          <p className="text-sm text-muted-foreground/50">
+          <p className="text-sm text-foreground">
             If error rate exceeds 50% after a prompt change, rollback to the production version using the version list.
           </p>
         </div>
@@ -258,7 +258,7 @@ function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: Versi
       <button
         onClick={() => onChange('timeline')}
         className={`p-1.5 rounded-input transition-colors ${
-          view === 'timeline' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+          view === 'timeline' ? 'bg-primary/12 text-primary' : 'text-foreground hover:text-muted-foreground/60'
         }`}
         title="Timeline view"
         aria-label="Timeline view"
@@ -268,7 +268,7 @@ function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: Versi
       <button
         onClick={() => onChange('list')}
         className={`p-1.5 rounded-input transition-colors ${
-          view === 'list' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+          view === 'list' ? 'bg-primary/12 text-primary' : 'text-foreground hover:text-muted-foreground/60'
         }`}
         title="List view"
         aria-label="List view"

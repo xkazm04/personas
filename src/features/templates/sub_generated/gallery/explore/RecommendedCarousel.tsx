@@ -24,7 +24,7 @@ export function RecommendedCarousel({
         <SectionLabel as="span" className="mb-0">
           {t.templates.recommended.title}
         </SectionLabel>
-        <span className="text-sm text-muted-foreground/60">
+        <span className="text-sm text-foreground">
           {t.templates.recommended.subtitle}
         </span>
       </div>
@@ -37,10 +37,10 @@ export function RecommendedCarousel({
               onClick={() => onSelectTemplate(tmpl)}
               className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/25 hover:bg-amber-500/10 transition-all text-left group/rec"
             >
-              <div className="text-sm font-medium text-foreground/80 group-hover/rec:text-amber-300 truncate">
+              <div className="text-sm font-medium text-foreground group-hover/rec:text-amber-300 truncate">
                 {tmpl.test_case_name}
               </div>
-              <div className="text-sm text-muted-foreground/50 truncate mt-0.5">
+              <div className="text-sm text-foreground truncate mt-0.5">
                 {tmpl.instruction.length > 55 ? tmpl.instruction.slice(0, 55) + '...' : tmpl.instruction}
               </div>
               <div className="flex items-center gap-2 mt-2">
@@ -49,7 +49,7 @@ export function RecommendedCarousel({
                   return (
                     <span
                       key={c}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-secondary/40 text-muted-foreground/60"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-secondary/40 text-foreground"
                       title={meta.label}
                     >
                       <ConnectorIcon meta={meta} size="w-3 h-3" />
@@ -58,7 +58,7 @@ export function RecommendedCarousel({
                   );
                 })}
                 {connectors.length > 3 && (
-                  <span className="text-sm text-muted-foreground/60">+{connectors.length - 3}</span>
+                  <span className="text-sm text-foreground">+{connectors.length - 3}</span>
                 )}
                 {tmpl.adoption_count > 0 && (
                   <span className="ml-auto inline-flex items-center gap-1 text-sm font-mono text-emerald-400/60">

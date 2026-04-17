@@ -50,7 +50,7 @@ export default function MemoryPanelList({
             className={`text-sm px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
               activeCategory === cat
                 ? 'bg-violet-500/20 text-violet-400 font-medium'
-                : 'bg-primary/5 text-muted-foreground/60 hover:bg-primary/10'
+                : 'bg-primary/5 text-foreground hover:bg-primary/10'
             }`}
             onClick={() => onCategoryChange(cat)}
           >
@@ -62,9 +62,9 @@ export default function MemoryPanelList({
       {/* Search */}
       <div className="px-3 pb-2 space-y-1.5">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground" />
           <input
-            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-modal pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/20"
+            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-modal pl-6 pr-2 py-1.5 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/20"
             placeholder={t.pipeline.search_memories}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -91,11 +91,11 @@ export default function MemoryPanelList({
       <div className="max-h-80 overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10">
         {memories.length === 0 ? (
           <div className="text-center py-6">
-            <Brain className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground/50">
+            <Brain className="w-8 h-8 mx-auto mb-2 text-foreground" />
+            <p className="text-sm text-foreground">
               {activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
             </p>
-            <p className="text-sm text-muted-foreground/60 mt-0.5">
+            <p className="text-sm text-foreground mt-0.5">
               {activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
             </p>
           </div>
@@ -120,7 +120,7 @@ export default function MemoryPanelList({
               </button>
             )}
             {!activeRunFilter && total > memories.length && (
-              <div className="text-center text-sm text-muted-foreground/60 py-1">
+              <div className="text-center text-sm text-foreground py-1">
                 {tx(t.pipeline.showing_count, { shown: memories.length, total })}
               </div>
             )}

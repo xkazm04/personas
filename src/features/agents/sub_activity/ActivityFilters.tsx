@@ -25,12 +25,12 @@ export function ActivityFilters({
             className={`px-3 py-1.5 text-sm font-medium rounded-t-lg transition-colors ${
               filter === tab.id
                 ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                : 'text-muted-foreground/70 hover:text-foreground'
+                : 'text-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
             {counts[tab.id] > 0 && (
-              <span className="ml-1.5 text-muted-foreground/50">({counts[tab.id]})</span>
+              <span className="ml-1.5 text-foreground">({counts[tab.id]})</span>
             )}
           </button>
         ))}
@@ -39,7 +39,7 @@ export function ActivityFilters({
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/70 outline-none"
+          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground outline-none"
         >
           <option value="all">{t.agents.activity.all_statuses}</option>
           {availableStatuses.map((s) => (

@@ -33,7 +33,7 @@ export function GitLabAgentList({
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_to_view_agents}</p>
+        <p className="text-sm text-foreground">{t.gitlab.select_project_to_view_agents}</p>
       </div>
     );
   }
@@ -44,11 +44,11 @@ export function GitLabAgentList({
         <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
           <Bot className="w-6 h-6 text-orange-400/60" />
         </div>
-        <p className="text-sm text-muted-foreground/80">{t.gitlab.no_duo_agents}</p>
-        <p className="text-sm text-muted-foreground/60 mt-1">{t.gitlab.deploy_persona_hint}</p>
+        <p className="text-sm text-foreground">{t.gitlab.no_duo_agents}</p>
+        <p className="text-sm text-foreground mt-1">{t.gitlab.deploy_persona_hint}</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
@@ -60,10 +60,10 @@ export function GitLabAgentList({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground/70">{agents.length} agent(s)</p>
+        <p className="text-sm text-foreground">{agents.length} agent(s)</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-foreground hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
@@ -81,7 +81,7 @@ export function GitLabAgentList({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground/90 truncate">{agent.name}</p>
             {agent.description && (
-              <p className="text-sm text-muted-foreground/60 truncate">{agent.description}</p>
+              <p className="text-sm text-foreground truncate">{agent.description}</p>
             )}
           </div>
           <div className="flex items-center gap-1.5">
@@ -89,7 +89,7 @@ export function GitLabAgentList({
             <button
               onClick={() => onRedeploy(agent.name)}
               disabled={redeployingAgentId === agent.name}
-              className="p-1.5 rounded-card hover:bg-orange-500/10 text-muted-foreground/60 hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1.5 rounded-card hover:bg-orange-500/10 text-foreground hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={t.gitlab.redeploy_agent}
             >
               {redeployingAgentId === agent.name ? (
@@ -103,7 +103,7 @@ export function GitLabAgentList({
                 href={sanitizeExternalUrl(agent.webUrl)!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/80 transition-colors"
                 title={t.gitlab.open_in_gitlab}
               >
                 <ExternalLink className="w-4 h-4" />
@@ -111,7 +111,7 @@ export function GitLabAgentList({
             )}
             <button
               onClick={() => onUndeploy(projectId, agent.id)}
-              className="p-1.5 rounded-card hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
               title={t.gitlab.undeploy_agent}
             >
               <Trash2 className="w-4 h-4" />
@@ -166,7 +166,7 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
   const c = cfg[latest.status] ?? {
     icon: <Clock className="w-3 h-3" />,
     bg: 'bg-secondary/30 border-primary/10',
-    text: 'text-muted-foreground/60',
+    text: 'text-foreground',
   };
 
   return (

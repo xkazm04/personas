@@ -95,7 +95,7 @@ export function CredentialCardDetails({
             className={`relative min-h-[38px] ${
               expandedSection === tab.key
                 ? 'text-foreground'
-                : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/25'
+                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/25'
             }`}
           >
             {tab.label}
@@ -129,7 +129,7 @@ export function CredentialCardDetails({
       {connector.fields.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {connector.fields.map((f) => (
-            <span key={f.key} className="text-sm px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
+            <span key={f.key} className="text-sm px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground font-mono">
               {f.key}
             </span>
           ))}

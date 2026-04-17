@@ -199,7 +199,7 @@ export default function ScheduleTimeline() {
                 {tx(t.schedules.active_count, { count: activeCount })}
               </span>
               {pausedCount > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-muted-foreground/50 border border-primary/10">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-foreground border border-primary/10">
                   <Pause className="w-3 h-3" />
                   {tx(t.schedules.paused_count, { count: pausedCount })}
                 </span>
@@ -213,7 +213,7 @@ export default function ScheduleTimeline() {
             <button
               onClick={() => fetchCronAgents()}
               disabled={loading}
-              className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-muted-foreground/70 transition-all disabled:opacity-40"
+              className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-foreground transition-all disabled:opacity-40"
               title="Refresh schedules"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -247,18 +247,18 @@ export default function ScheduleTimeline() {
         })()}
 
         {loading && cronAgents.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground/70">
+          <div className="flex items-center justify-center py-20 text-foreground">
             <LoadingSpinner size="lg" className="mr-2" />
             {t.schedules.loading_schedules}
           </div>
         ) : cronAgents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground/60">
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground">
             <div className="w-20 h-20 rounded-2xl bg-blue-500/[0.07] border border-blue-500/15 flex items-center justify-center">
               <CalendarClock className="w-10 h-10 text-blue-400/50" />
             </div>
             <div className="text-center space-y-1.5">
-              <p className="typo-heading text-foreground/70">{t.schedules.no_scheduled_agents}</p>
-              <p className="text-xs text-muted-foreground/50 max-w-[280px] mx-auto leading-relaxed">
+              <p className="typo-heading text-foreground">{t.schedules.no_scheduled_agents}</p>
+              <p className="text-xs text-foreground max-w-[280px] mx-auto leading-relaxed">
                 {t.schedules.no_scheduled_hint}
               </p>
             </div>
@@ -277,7 +277,7 @@ export default function ScheduleTimeline() {
 
             {/* Main schedule view */}
             {viewMode === 'calendar' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : viewMode === 'grouped' ? (
@@ -343,7 +343,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
             className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all ${
               selected
                 ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/5'
+                : 'text-foreground hover:text-foreground/70 hover:bg-primary/5'
             }`}
           >
             {opt.icon && <Calendar className="w-3.5 h-3.5" />}
@@ -370,15 +370,15 @@ function GroupedView({
     'Next hour': 'text-blue-400 border-blue-500/20',
     'Next 6 hours': 'text-violet-400 border-violet-500/20',
     'Next 24 hours': 'text-amber-400 border-amber-500/20',
-    'Later': 'text-foreground/60 border-primary/10',
-    'Paused / Unscheduled': 'text-foreground/40 border-primary/10',
+    'Later': 'text-foreground border-primary/10',
+    'Paused / Unscheduled': 'text-foreground border-primary/10',
   };
 
   return (
     <div className="space-y-5">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground/60 border-primary/10'}`}>
+          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground border-primary/10'}`}>
             <span className="typo-caption uppercase tracking-wider">
               {group.label}
             </span>

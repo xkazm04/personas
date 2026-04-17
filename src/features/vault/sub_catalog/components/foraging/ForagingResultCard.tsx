@@ -71,7 +71,7 @@ export function ForagingResultCard({
           ) : isImported ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           ) : credential.already_imported ? (
-            <CheckCircle2 className="w-4 h-4 text-muted-foreground/40" />
+            <CheckCircle2 className="w-4 h-4 text-foreground" />
           ) : (
             <div
               className={`w-4 h-4 rounded border-2 transition-colors ${
@@ -97,7 +97,7 @@ export function ForagingResultCard({
               {credential.label}
             </span>
             {credential.already_imported && (
-              <span className="text-sm px-1.5 py-0.5 rounded bg-muted-foreground/10 text-muted-foreground/50 font-medium">
+              <span className="text-sm px-1.5 py-0.5 rounded bg-muted-foreground/10 text-foreground font-medium">
                 Already in vault
               </span>
             )}
@@ -113,9 +113,9 @@ export function ForagingResultCard({
             {Object.entries(credential.fields).map(([key, val]) => (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 text-sm px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/70 font-mono"
+                className="inline-flex items-center gap-1 text-sm px-1.5 py-0.5 rounded bg-secondary/50 text-foreground font-mono"
               >
-                <span className="text-foreground/50">{key}:</span>
+                <span className="text-foreground">{key}:</span>
                 <span className="truncate max-w-[120px]">{val}</span>
               </span>
             ))}
@@ -123,7 +123,7 @@ export function ForagingResultCard({
 
           {/* Source + confidence */}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sm text-muted-foreground/50">{meta.label}</span>
+            <span className="text-sm text-foreground">{meta.label}</span>
             <span
               className={`text-sm px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
             >

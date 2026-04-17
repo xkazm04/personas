@@ -27,12 +27,12 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-foreground mb-1">Disconnect persona?</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <span className="font-medium text-foreground/80">{personaName}</span> will no longer react to{' '}
-              <span className="font-medium text-foreground/80">{eventLabel}</span> events. You can reconnect later.
+            <p className="text-xs text-foreground leading-relaxed">
+              <span className="font-medium text-foreground">{personaName}</span> will no longer react to{' '}
+              <span className="font-medium text-foreground">{eventLabel}</span> events. You can reconnect later.
             </p>
           </div>
-          <button onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-muted-foreground flex-shrink-0">
+          <button onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-foreground flex-shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -40,7 +40,7 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-card text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="px-3 py-1.5 rounded-card text-xs font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>

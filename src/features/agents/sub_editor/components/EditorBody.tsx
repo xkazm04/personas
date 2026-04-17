@@ -112,9 +112,9 @@ export function EditorBody() {
     return (
       <ContentBox>
         <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-fade-slide-in">
-          <Bot className="w-12 h-12 text-muted-foreground/20" />
-          <p className="typo-heading text-muted-foreground/80">{t.agents.editor_ui.select_agent}</p>
-          <p className="typo-body text-muted-foreground/50">{t.agents.editor_ui.choose_from_sidebar}</p>
+          <Bot className="w-12 h-12 text-foreground" />
+          <p className="typo-heading text-foreground">{t.agents.editor_ui.select_agent}</p>
+          <p className="typo-body text-foreground">{t.agents.editor_ui.choose_from_sidebar}</p>
         </div>
       </ContentBox>
     );

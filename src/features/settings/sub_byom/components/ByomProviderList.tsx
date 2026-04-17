@@ -75,7 +75,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       {/* Allowed providers */}
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.allowed_providers} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="text-sm text-foreground">
           {s.allowed_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
@@ -89,7 +89,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                   className={`p-3 rounded-card border text-left text-sm transition-all ${
                     isAllowed
                       ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
-                      : 'border-primary/10 text-muted-foreground hover:border-primary/20'
+                      : 'border-primary/10 text-foreground hover:border-primary/20'
                   }`}
                 >
                   {prov.label}
@@ -109,7 +109,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       {/* Blocked providers */}
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.blocked_providers} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="text-sm text-foreground">
           {s.blocked_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
@@ -122,7 +122,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                 className={`p-3 rounded-card border text-left text-sm transition-all ${
                   isBlocked
                     ? 'border-red-500/30 bg-red-500/10 text-foreground'
-                    : 'border-primary/10 text-muted-foreground hover:border-primary/20'
+                    : 'border-primary/10 text-foreground hover:border-primary/20'
                 }`}
               >
                 {prov.label}
@@ -138,7 +138,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
         <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
           <div className="flex items-baseline gap-2">
             <SectionHeading title={s.provider_usage} />
-            <span className="text-xs text-muted-foreground/40">{s.usage_trends}</span>
+            <span className="text-xs text-foreground">{s.usage_trends}</span>
           </div>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {usageStats.map((stat) => {
@@ -150,7 +150,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.executions}</div>
+                      <div className="text-xs text-foreground">{s.executions}</div>
                       <div className="text-sm font-medium text-foreground">{stat.execution_count}</div>
                       <ProviderSparkline
                         data={trends?.executions ?? []}
@@ -159,7 +159,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.cost}</div>
+                      <div className="text-xs text-foreground">{s.cost}</div>
                       <div className="text-sm font-medium text-foreground">${stat.total_cost_usd.toFixed(4)}</div>
                       <ProviderSparkline
                         data={trends?.cost ?? []}
@@ -168,7 +168,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.avg_duration}</div>
+                      <div className="text-xs text-foreground">{s.avg_duration}</div>
                       <div className="text-sm font-medium text-foreground">{Math.round(stat.avg_duration_ms / 1000)}s</div>
                       <ProviderSparkline
                         data={trends?.duration ?? []}
@@ -214,7 +214,7 @@ function TestConnectionButton({
           e.stopPropagation();
           onTest(providerId);
         }}
-        className="text-xs px-2.5 py-1 rounded-input border border-primary/15 text-muted-foreground
+        className="text-xs px-2.5 py-1 rounded-input border border-primary/15 text-foreground
           hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
       >
         {state === 'testing' ? (
@@ -234,7 +234,7 @@ function TestConnectionButton({
           </svg>
           {result?.version ?? 'Reachable'}
           {result?.latency_ms != null && (
-            <span className="text-muted-foreground/50 ml-1">{result.latency_ms}ms</span>
+            <span className="text-foreground ml-1">{result.latency_ms}ms</span>
           )}
         </span>
       )}

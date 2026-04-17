@@ -35,7 +35,7 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
     sublabel: 'Setting up Claude CLI session',
     guidedSublabel: 'Preparing guided setup instructions',
     icon: Loader2,
-    color: 'text-muted-foreground/70',
+    color: 'text-foreground',
     bgColor: 'bg-secondary/20',
     borderColor: 'border-primary/10',
     pulse: false,

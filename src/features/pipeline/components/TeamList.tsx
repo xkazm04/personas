@@ -93,7 +93,7 @@ export default function TeamList() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground/90">{t.pipeline.agent_teams}</h1>
-            <p className="text-sm text-muted-foreground/80 mt-1">
+            <p className="text-sm text-foreground mt-1">
               {t.pipeline.agent_teams_subtitle}
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function TeamList() {
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
             <h2 className="text-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
-            <p className="text-sm text-muted-foreground/90 mb-6 max-w-sm mx-auto">
+            <p className="text-sm text-foreground mb-6 max-w-sm mx-auto">
               {t.pipeline.no_teams_hint}
             </p>
             <div className="flex items-center justify-center gap-3">

@@ -134,7 +134,7 @@ export function SavedViewsDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border bg-secondary/40 text-foreground hover:bg-secondary/60 transition-all"
       >
         <Bookmark className="w-4 h-4" />
         <span className="hidden sm:inline">{t.overview.analytics_dashboard.saved_views}</span>
@@ -174,7 +174,7 @@ export function SavedViewsDropdown({
           )}
 
           <div className="max-h-64 overflow-y-auto py-1">
-            <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
+            <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-foreground font-semibold">
               {t.overview.analytics_dashboard.smart_presets}
             </div>
             {SMART_PRESETS.map((preset) => (
@@ -189,7 +189,7 @@ export function SavedViewsDropdown({
 
             {views.length > 0 && (
               <>
-                <div className="px-3 py-1 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold border-t border-primary/10 pt-2">
+                <div className="px-3 py-1 mt-2 text-[10px] uppercase tracking-wider text-foreground font-semibold border-t border-primary/10 pt-2">
                   {t.overview.analytics_dashboard.your_saved_views}
                 </div>
                 {views.map((view) => (

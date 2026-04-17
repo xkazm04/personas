@@ -81,7 +81,7 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
       >
         {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
       </div>
-      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
+      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
         {theme.label}
       </span>
     </Button>
@@ -115,7 +115,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
           <button
             onClick={() => setThemeTab('default')}
             className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
             {labels.default_tab}
@@ -123,7 +123,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
           <button
             onClick={() => setThemeTab('custom')}
             className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-primary/15 ${
-              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
             {labels.custom_tab}
@@ -133,7 +133,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
       {themeTab === 'default' ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">{labels.dark}</span>
+            <span className="text-sm text-foreground">{labels.dark}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -141,7 +141,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">{labels.light}</span>
+            <span className="text-sm text-foreground">{labels.light}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -206,7 +206,7 @@ export default function AppearanceSettings() {
           {/* Interface mode */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-foreground">
               {s.interface_mode_hint}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -226,9 +226,9 @@ export default function AppearanceSettings() {
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-muted-foreground/50'}`} />
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{meta?.label ?? mode}</span>
-                    <span className="text-[11px] text-muted-foreground/50 text-center">{meta?.desc ?? ''}</span>
+                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-foreground'}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>{meta?.label ?? mode}</span>
+                    <span className="text-[11px] text-foreground text-center">{meta?.desc ?? ''}</span>
                     {isActive && (
                       <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
                     )}
@@ -259,14 +259,14 @@ export default function AppearanceSettings() {
                     }`}
                   >
                     <span
-                      className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
+                      className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}
                     >
                       Aa
                     </span>
-                    <span className={`text-xs ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>
+                    <span className={`text-xs ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                       {scale.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground/50">
+                    <span className="text-[11px] text-foreground">
                       {scale.description}
                     </span>
                     {isActive && (
@@ -283,7 +283,7 @@ export default function AppearanceSettings() {
           {/* Timezone */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.timezone} icon={<Globe />} />
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-foreground">
               {s.timezone_hint}
             </p>
             <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
@@ -300,10 +300,10 @@ export default function AppearanceSettings() {
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                       {tz.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground/50">
+                    <span className="text-[11px] text-foreground">
                       {tz.description}
                     </span>
                     {isActive && (
@@ -327,7 +327,7 @@ export default function AppearanceSettings() {
           {/* Brightness */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.brightness} icon={<Sun />} />
-            <p className="text-sm text-muted-foreground/60">
+            <p className="text-sm text-foreground">
               {s.brightness_hint}
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -345,11 +345,11 @@ export default function AppearanceSettings() {
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
-                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
+                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
+                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                       {level.label}
                     </span>
-                    <span className="text-sm text-muted-foreground/50">
+                    <span className="text-sm text-foreground">
                       {level.description}
                     </span>
                     {isActive && (

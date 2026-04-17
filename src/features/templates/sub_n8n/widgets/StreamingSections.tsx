@@ -168,12 +168,12 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">
+          <span className="text-sm font-semibold uppercase tracking-wider text-foreground">
             Streaming Sections
           </span>
         </div>
         {sections.length > 0 && (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
+          <div className="flex items-center gap-3 text-sm text-foreground">
             {validCount > 0 && (
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400/70" />
@@ -209,7 +209,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
         {/* Loading indicator */}
         {isStreaming && (
           <div
-            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 text-sm text-foreground"
           >
             <LoadingSpinner size="xs" />
             {t.templates.n8n.awaiting_next_section}

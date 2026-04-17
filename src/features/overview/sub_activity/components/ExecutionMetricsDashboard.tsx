@@ -41,8 +41,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <TrendingUp className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground/70">{t.overview.activity.no_data}</p>
+          <TrendingUp className="w-6 h-6 text-foreground mx-auto mb-2" />
+          <p className="text-sm text-foreground">{t.overview.activity.no_data}</p>
         </div>
       </div>
     );
@@ -63,7 +63,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           </span>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4" />
           </button>
         )}

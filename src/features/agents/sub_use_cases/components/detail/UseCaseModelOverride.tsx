@@ -122,7 +122,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
           className={`px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all ${
             !hasOverride
               ? 'bg-primary/10 border-primary/30 text-primary'
-              : 'bg-background/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+              : 'bg-background/30 border-primary/10 text-foreground hover:border-primary/20'
           }`}
         >
           {uc.default_label} ({defaultProfileLabel(defaultModelProfile, uc.not_set)})
@@ -142,7 +142,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
               className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all ${
                 hasOverride
                   ? 'bg-primary/10 border-primary/30 text-primary'
-                  : 'bg-background/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+                  : 'bg-background/30 border-primary/10 text-foreground hover:border-primary/20'
               }`}
             >
               <span className="flex-1 text-left truncate">
@@ -167,7 +167,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
                   return (
                     <div key={opt.id}>
                       {showGroup && (
-                        <div className="px-3 pt-2 pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground/60">
+                        <div className="px-3 pt-2 pb-1 text-sm font-semibold uppercase tracking-wider text-foreground">
                           {opt.group}
                         </div>
                       )}
@@ -177,9 +177,9 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
                         onClick={() => { handleSelectModel(opt); close(); }}
                         className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors ${
                           focusIndex === i ? 'bg-secondary/60' : 'hover:bg-secondary/40'
-                        } ${isActive ? 'text-primary' : 'text-foreground/80'}`}
+                        } ${isActive ? 'text-primary' : 'text-foreground'}`}
                       >
-                        {opt.id === 'custom' && <Settings2 className="w-3 h-3 text-muted-foreground/70" />}
+                        {opt.id === 'custom' && <Settings2 className="w-3 h-3 text-foreground" />}
                         <span className="flex-1 text-left">{opt.label}</span>
                         {isActive && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
                       </button>

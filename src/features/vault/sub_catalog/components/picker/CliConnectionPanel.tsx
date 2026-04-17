@@ -103,7 +103,7 @@ export function CliConnectionPanel({
     <div className="space-y-4">
       {/* Credential name input */}
       <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1">
+        <label className="block text-xs font-medium text-foreground mb-1">
           {l.credential_name}
         </label>
         <input
@@ -120,7 +120,7 @@ export function CliConnectionPanel({
         <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-foreground">{spec.display_label}</div>
-          <div className="text-xs text-muted-foreground">{l.binary_label}: <code className="font-mono">{spec.binary}</code></div>
+          <div className="text-xs text-foreground">{l.binary_label}: <code className="font-mono">{spec.binary}</code></div>
         </div>
         <a
           href={spec.docs_url}
@@ -134,7 +134,7 @@ export function CliConnectionPanel({
 
       {/* State-specific body */}
       {state.kind === 'checking' && (
-        <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+        <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-foreground" />}
           title={l.checking_install} />
       )}
 
@@ -153,10 +153,10 @@ export function CliConnectionPanel({
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">{l.not_installed_title}</div>
-              <div className="text-xs text-muted-foreground">{tx(l.not_installed_desc, { label: spec.display_label })}</div>
+              <div className="text-xs text-foreground">{tx(l.not_installed_desc, { label: spec.display_label })}</div>
             </div>
           </div>
-          <pre className="text-[11px] font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-primary/10 text-foreground/80">
+          <pre className="text-[11px] font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-primary/10 text-foreground">
             {spec.install_hint.replace(/\*\*/g, '')}
           </pre>
           <div className="flex gap-2">
@@ -182,12 +182,12 @@ export function CliConnectionPanel({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">{l.installed_title}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-foreground">
                 {state.status.version ?? state.status.binary_path}
               </div>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-foreground">
             {spec.auth_instruction}
           </div>
           <button
@@ -200,7 +200,7 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'verifying' && (
-        <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+        <StateBlock icon={<Loader2 className="w-4 h-4 animate-spin text-foreground" />}
           title={l.verifying_auth} />
       )}
 
@@ -210,7 +210,7 @@ export function CliConnectionPanel({
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">{l.not_authenticated_title}</div>
-              <div className="text-xs text-muted-foreground">{state.verify.message}</div>
+              <div className="text-xs text-foreground">{state.verify.message}</div>
             </div>
           </div>
           <button
@@ -228,7 +228,7 @@ export function CliConnectionPanel({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">{l.authenticated_title}</div>
-              <div className="text-xs text-muted-foreground break-all">{state.verify.message}</div>
+              <div className="text-xs text-foreground break-all">{state.verify.message}</div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -279,7 +279,7 @@ function StateBlock({
       <div className="shrink-0 mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground">{title}</div>
-        {description && <div className="text-xs text-muted-foreground break-words">{description}</div>}
+        {description && <div className="text-xs text-foreground break-words">{description}</div>}
       </div>
       {action}
     </div>

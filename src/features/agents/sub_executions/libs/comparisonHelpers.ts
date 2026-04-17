@@ -29,7 +29,7 @@ export function fmtCost(v: number): string {
 }
 
 export function deltaColor(pct: number, lowerIsBetter = true): string {
-  if (Math.abs(pct) < 5) return 'text-muted-foreground/70';
+  if (Math.abs(pct) < 5) return 'text-foreground';
   const good = lowerIsBetter ? pct < 0 : pct > 0;
   return good ? 'text-emerald-400' : 'text-amber-400';
 }

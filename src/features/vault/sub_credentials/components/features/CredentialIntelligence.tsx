@@ -64,7 +64,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+      <div className="flex items-center justify-center py-8 text-foreground">
         <LoadingSpinner size="lg" label={t.vault.intelligence_tab.loading} />
       </div>
     );
@@ -87,7 +87,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             onClick={() => setTab(t)}
             className={tab === t
               ? `${AI_STATUS.bg} ${AI_STATUS.text} border ${AI_STATUS.border}`
-              : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
+              : 'text-foreground hover:text-foreground/95 hover:bg-secondary/40'
             }
           >
             -- placeholder
@@ -137,7 +137,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           )}
 
           {stats.first_accessed_at && (
-            <div className="text-sm text-muted-foreground/80 space-y-0.5">
+            <div className="text-sm text-foreground space-y-0.5">
               <div>First accessed: {formatTimestamp(stats.first_accessed_at, 'Never')}</div>
               <div>Last accessed: {formatTimestamp(stats.last_accessed_at, 'Never')}</div>
             </div>
@@ -157,7 +157,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             />
           ) : (
             <>
-              <div className="text-sm text-muted-foreground/80 pb-1">
+              <div className="text-sm text-foreground pb-1">
                 Changing or deleting this credential will affect {dependents.length} persona{dependents.length !== 1 ? 's' : ''}:
               </div>
               {dependents.map((dep) => (
@@ -167,7 +167,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                    <span className="text-sm text-foreground/80 truncate">{dep.persona_name}</span>
+                    <span className="text-sm text-foreground truncate">{dep.persona_name}</span>
                     <span className={`text-sm px-1.5 py-0.5 rounded-card border ${
                       dep.link_type === 'tool_connector'
                         ? `${INFO_STATUS.bg} ${INFO_STATUS.border} ${INFO_STATUS.text}`
@@ -176,7 +176,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
                       {dep.link_type === 'tool_connector' ? 'structural' : 'observed'}
                     </span>
                   </div>
-                  <div className="text-sm text-muted-foreground/80 shrink-0">
+                  <div className="text-sm text-foreground shrink-0">
                     {dep.via_connector && <span>via {dep.via_connector}</span>}
                     {dep.last_used_at && <span> · {formatTimestamp(dep.last_used_at, '')}</span>}
                   </div>

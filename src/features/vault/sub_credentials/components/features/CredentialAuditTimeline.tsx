@@ -55,7 +55,7 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
 
   if (loading) return (
     <div className="flex items-center justify-center py-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+      <div className="flex items-center gap-2 text-sm text-foreground">
         <div className="w-3.5 h-3.5 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
         Loading audit timeline...
       </div>
@@ -68,15 +68,15 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       <div className="flex items-center gap-3 flex-wrap">
         {stats && (
           <>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
               <Activity className="w-3 h-3" />
               {stats.total_accesses} total
             </span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
               <Users className="w-3 h-3" />
               {stats.distinct_personas} persona{stats.distinct_personas !== 1 ? 's' : ''}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
               <Clock className="w-3 h-3" />
               {stats.accesses_last_24h} in 24h
             </span>
@@ -111,7 +111,7 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       {!showAll && timeline.length > 30 && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full text-center text-xs text-muted-foreground/70 hover:text-foreground/80 py-1.5 rounded-card hover:bg-secondary/20 transition-colors"
+          className="w-full text-center text-xs text-foreground hover:text-foreground/80 py-1.5 rounded-card hover:bg-secondary/20 transition-colors"
         >
           Show all {timeline.length} entries
         </button>

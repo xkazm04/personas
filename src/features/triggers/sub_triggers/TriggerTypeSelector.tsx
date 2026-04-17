@@ -27,7 +27,7 @@ export function TriggerTypeSelector({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      <label className="block text-sm font-medium text-foreground mb-1.5">
         {t.triggers.type_selector.trigger_type}
       </label>
       <div
@@ -76,7 +76,7 @@ export function TriggerTypeSelector({
                   {option.label}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground/70">
+              <span className="text-xs text-foreground">
                 {option.description}
               </span>
             </button>

@@ -69,7 +69,7 @@ export function TableSelector({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.shared.table_filter}
-            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 typo-body text-foreground placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
+            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
         </div>
         {onRefresh && (

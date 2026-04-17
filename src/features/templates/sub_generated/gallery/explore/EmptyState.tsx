@@ -32,10 +32,10 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-12 gap-3 animate-fade-in" role="status">
       <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/15 flex items-center justify-center">
-        <Icon className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
+        <Icon className="w-6 h-6 text-foreground" aria-hidden="true" />
       </div>
-      <p className="text-base font-medium text-foreground/80">{displayTitle}</p>
-      <p className="text-sm text-muted-foreground/60 text-center max-w-xs leading-relaxed">
+      <p className="text-base font-medium text-foreground">{displayTitle}</p>
+      <p className="text-sm text-foreground text-center max-w-xs leading-relaxed">
         {displayDescription}
       </p>
       {action && (

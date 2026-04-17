@@ -48,7 +48,7 @@ export function ExportSection({
   return (
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.export_import_title} />
-      <p className="text-sm text-muted-foreground/70">
+      <p className="text-sm text-foreground">
         {s.export_import_hint}
       </p>
 
@@ -94,7 +94,7 @@ export function ExportSection({
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
               className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm
-                text-foreground/90 placeholder:text-muted-foreground/40 outline-none
+                text-foreground/90 placeholder:text-foreground outline-none
                 focus-visible:border-blue-500/30 w-56"
               autoFocus
             />
@@ -110,7 +110,7 @@ export function ExportSection({
             </button>
             <button
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
-              className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+              className="text-xs text-foreground hover:text-muted-foreground/80 transition-colors"
             >
               {s.cancel}
             </button>
@@ -125,7 +125,7 @@ export function ExportSection({
             <PackageCheck className="w-4 h-4" />
             {s.import_complete}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 text-sm text-muted-foreground/80">
+          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 text-sm text-foreground">
             {importResult.personas_created > 0 && (
               <span>{importResult.personas_created} persona(s)</span>
             )}
@@ -146,7 +146,7 @@ export function ExportSection({
             <div className="mt-2 space-y-1">
               <p className="text-sm font-medium text-amber-400">{s.warnings}</p>
               {importResult.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-muted-foreground/70 pl-2">
+                <p key={i} className="text-sm text-foreground pl-2">
                   - {w}
                 </p>
               ))}

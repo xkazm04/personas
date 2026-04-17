@@ -293,7 +293,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl typo-heading transition-all ${
               acknowledged
                 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-elevation-3 shadow-blue-600/20 cursor-pointer'
-                : 'bg-secondary/40 text-muted-foreground/40 cursor-not-allowed'
+                : 'bg-secondary/40 text-foreground cursor-not-allowed'
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />

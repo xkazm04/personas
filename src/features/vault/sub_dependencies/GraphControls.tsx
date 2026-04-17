@@ -25,7 +25,7 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
             className={`flex items-center gap-2 px-3 py-2 rounded-modal border text-left transition-colors cursor-pointer ${
               active
                 ? 'bg-primary/10 border-primary/25 text-foreground/90'
-                : 'bg-secondary/25 border-primary/10 text-muted-foreground/70 hover:border-primary/20 hover:bg-secondary/40'
+                : 'bg-secondary/25 border-primary/10 text-foreground hover:border-primary/20 hover:bg-secondary/40'
             }`}
           >
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />

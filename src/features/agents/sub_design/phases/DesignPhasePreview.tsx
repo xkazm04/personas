@@ -115,7 +115,7 @@ export function DesignPhasePreview({
         <div className="px-3 py-2.5 rounded-modal bg-primary/5 border border-primary/10">
           <div className="flex items-start gap-2">
             <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground/90">
+            <p className="text-sm text-foreground">
               <span className="font-medium text-foreground/90">Will apply: </span>
               {changeSummary.join(', ').toLowerCase()}
             </p>
@@ -151,7 +151,7 @@ export function DesignPhasePreview({
           className={`flex items-center gap-2 px-3 py-2 rounded-modal font-medium text-sm transition-colors ${
             confirmDiscard
               ? 'text-red-400 hover:text-red-300'
-              : 'text-muted-foreground hover:text-foreground/95'
+              : 'text-foreground hover:text-foreground/95'
           }`}
         >
           {confirmDiscard ? 'Confirm discard?' : 'Discard'}
@@ -177,7 +177,7 @@ export function DesignPhasePreview({
           disabled={!refinement.message.trim()}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
             !refinement.message.trim()
-              ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
+              ? 'bg-secondary/40 text-foreground cursor-not-allowed'
               : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
           }`}
         >
@@ -185,7 +185,7 @@ export function DesignPhasePreview({
           Send
         </button>
       </div>
-      <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="text-sm text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
     </div>
   );
 }

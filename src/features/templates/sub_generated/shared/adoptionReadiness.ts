@@ -74,5 +74,5 @@ export function computeAdoptionReadiness(
 export function readinessTier(score: number): { label: string; color: string; bgClass: string } {
   if (score === 100) return { label: 'Ready', color: 'emerald', bgClass: 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20' };
   if (score > 0) return { label: 'Partial', color: 'amber', bgClass: 'bg-amber-500/10 text-amber-400/70 border-amber-500/15' };
-  return { label: 'Setup needed', color: 'zinc', bgClass: 'bg-zinc-500/10 text-muted-foreground/50 border-zinc-500/15' };
+  return { label: 'Setup needed', color: 'zinc', bgClass: 'bg-zinc-500/10 text-foreground border-zinc-500/15' };
 }

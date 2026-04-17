@@ -22,7 +22,7 @@ const VARIANT_CLASSES: Record<StatusVariant, string> = {
   warning:    'bg-amber-500/10 text-amber-400 border-amber-500/20',
   error:      'bg-red-500/10 text-red-400 border-red-500/20',
   info:       'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  neutral:    'bg-secondary/40 text-muted-foreground border-border/50',
+  neutral:    'bg-secondary/40 text-foreground border-border/50',
   processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
 };
 
@@ -41,7 +41,7 @@ const ACCENT_CLASSES: Record<BadgeAccent, string> = {
   pink:    'bg-pink-500/10 text-pink-400 border-pink-500/20',
   lime:    'bg-lime-500/10 text-lime-400 border-lime-500/20',
   red:     'bg-red-500/10 text-red-400 border-red-500/20',
-  slate:   'bg-secondary/40 text-muted-foreground/80 border-border/50',
+  slate:   'bg-secondary/40 text-foreground border-border/50',
 };
 
 const SIZE_CLASSES: Record<BadgeSize, string> = {

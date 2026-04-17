@@ -33,7 +33,7 @@ export function TriggerConfig() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
+      <div className="flex items-center justify-center py-8 text-foreground">
         No persona selected
       </div>
     );
@@ -59,7 +59,7 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.triggers.config.title}</h3>
+        <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"
@@ -102,7 +102,7 @@ export function TriggerConfig() {
         ))}
 
         {triggers.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground/80 text-sm">
+          <div className="text-center py-10 text-foreground text-sm">
             {t.triggers.config.empty}
           </div>
         )}

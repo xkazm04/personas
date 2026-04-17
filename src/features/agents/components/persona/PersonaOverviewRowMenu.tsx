@@ -54,7 +54,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
           setOpen(!open);
         }}
         title={t.agents.persona_list.more_actions}
-        className="p-1 rounded-input hover:bg-secondary/40 text-muted-foreground/40 hover:text-muted-foreground/80 transition-colors"
+        className="p-1 rounded-input hover:bg-secondary/40 text-foreground hover:text-muted-foreground/80 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -72,7 +72,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
                 setOpen(false);
                 onEdit(persona.id);
               }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-foreground/70 hover:bg-secondary/40 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/40 transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
               {t.agents.persona_list.settings}

@@ -53,7 +53,7 @@ export function AiSearchStatusBar({
         {aiCliLog && aiCliLog.length > 0 && (
           <button
             onClick={() => setShowCliLog(!showCliLog)}
-            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 text-muted-foreground/60 hover:text-foreground/70 transition-colors flex-shrink-0"
+            className="text-sm px-1.5 py-0.5 rounded bg-primary/10 text-foreground hover:text-foreground/70 transition-colors flex-shrink-0"
           >
             {showCliLog ? t.templates.search.hide_log : t.templates.search.show_log}
           </button>
@@ -62,10 +62,10 @@ export function AiSearchStatusBar({
       {/* Collapsible CLI log panel */}
       {showCliLog && aiCliLog && aiCliLog.length > 0 && (
         <div className="mt-1.5 max-w-2xl mx-auto rounded-card bg-black/40 border border-primary/10 overflow-hidden">
-          <div className="max-h-48 overflow-y-auto p-2 font-mono text-sm leading-relaxed text-muted-foreground/60 space-y-0.5">
+          <div className="max-h-48 overflow-y-auto p-2 font-mono text-sm leading-relaxed text-foreground space-y-0.5">
             {aiCliLog.map((line, i) => (
               <div key={i} className="whitespace-pre-wrap break-all">
-                <span className="text-muted-foreground/30 select-none">{String(i + 1).padStart(3, ' ')} </span>
+                <span className="text-foreground select-none">{String(i + 1).padStart(3, ' ')} </span>
                 {line}
               </div>
             ))}

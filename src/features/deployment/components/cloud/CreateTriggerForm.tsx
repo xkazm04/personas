@@ -49,11 +49,11 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Persona selector */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/70">{dt.persona_must_be_deployed}</label>
+        <label className="text-xs text-foreground">{dt.persona_must_be_deployed}</label>
         <select
           value={createPersonaId}
           onChange={(e) => setCreatePersonaId(e.target.value)}
-          className="w-full px-3 py-1.5 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-1.5 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">{dt.select_persona}</option>
           {deployedPersonas.map((p) => (
@@ -64,14 +64,14 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Trigger type */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground/70">{dt.trigger_type}</label>
+        <label className="text-xs text-foreground">{dt.trigger_type}</label>
         <div className="flex gap-2">
           <button
             onClick={() => setCreateType('schedule')}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border transition-colors ${
               createType === 'schedule'
                 ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                : 'bg-secondary/40 text-muted-foreground/70 border-primary/15 hover:border-primary/25'
+                : 'bg-secondary/40 text-foreground border-primary/15 hover:border-primary/25'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -82,7 +82,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border transition-colors ${
               createType === 'webhook'
                 ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                : 'bg-secondary/40 text-muted-foreground/70 border-primary/15 hover:border-primary/25'
+                : 'bg-secondary/40 text-foreground border-primary/15 hover:border-primary/25'
             }`}
           >
             <Webhook className="w-3.5 h-3.5" />
@@ -94,13 +94,13 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Cron config */}
       {createType === 'schedule' && (
         <div className="space-y-2">
-          <label className="text-xs text-muted-foreground/70">Cron Expression <span className="text-amber-400/60 font-medium">(UTC)</span></label>
+          <label className="text-xs text-foreground">Cron Expression <span className="text-amber-400/60 font-medium">(UTC)</span></label>
           <input
             type="text"
             value={createCron}
             onChange={(e) => setCreateCron(e.target.value)}
             placeholder="0 * * * *"
-            className="w-full px-3 py-1.5 text-sm font-mono rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-1.5 text-sm font-mono rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
           <div className="flex flex-wrap gap-1.5">
             {CRON_PRESETS.map((preset) => (
@@ -110,7 +110,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
                 className={`px-2 py-1 text-xs rounded-card border transition-colors ${
                   createCron === preset.cron
                     ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25'
-                    : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:border-primary/20'
+                    : 'bg-secondary/30 text-foreground border-primary/10 hover:border-primary/20'
                 }`}
               >
                 {preset.label}
@@ -122,7 +122,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Webhook info */}
       {createType === 'webhook' && (
-        <p className="text-xs text-muted-foreground/60">
+        <p className="text-xs text-foreground">
           A webhook endpoint will be created for this trigger. You can configure payload filtering after creation.
         </p>
       )}
@@ -139,7 +139,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/70 hover:bg-secondary/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>

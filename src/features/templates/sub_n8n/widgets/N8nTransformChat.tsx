@@ -96,7 +96,7 @@ export function N8nTransformChat({
                     <p className="text-sm font-medium text-foreground/85">
                       A few questions to customize your persona
                     </p>
-                    <p className="text-sm text-muted-foreground/80 mt-0.5">
+                    <p className="text-sm text-foreground mt-0.5">
                       Answer below, then click Generate
                     </p>
                   </div>
@@ -110,7 +110,7 @@ export function N8nTransformChat({
                     className={`px-2 py-1 text-sm rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-muted-foreground/50 hover:text-foreground/70'
+                        : 'text-foreground hover:text-foreground/70'
                     }`}
                   >
                     <LayoutList className="w-3 h-3" />
@@ -124,7 +124,7 @@ export function N8nTransformChat({
                     className={`px-2 py-1 text-sm rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-muted-foreground/50 hover:text-foreground/70'
+                        : 'text-foreground hover:text-foreground/70'
                     }`}
                   >
                     <Layers className="w-3 h-3" />
@@ -166,7 +166,7 @@ export function N8nTransformChat({
                   <p className="text-sm text-foreground/90">
                     No configuration needed
                   </p>
-                  <p className="text-sm text-muted-foreground/80 mt-0.5">
+                  <p className="text-sm text-foreground mt-0.5">
                     {t.templates.n8n.click_generate_defaults}
                   </p>
                 </div>
@@ -184,7 +184,7 @@ export function N8nTransformChat({
             <div
               className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
-              <p className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
+              <p className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
                 Your answers
               </p>
               <div className="flex flex-wrap gap-1.5">

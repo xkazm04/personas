@@ -91,7 +91,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                   ) : (
                     <Icon
                       className={`w-3 h-3 ${
-                        isActive ? 'text-violet-300' : 'text-muted-foreground/80'
+                        isActive ? 'text-violet-300' : 'text-foreground'
                       }`}
                     />
                   )}
@@ -109,19 +109,19 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                       ? 'text-violet-300'
                       : isCompleted
                         ? 'text-emerald-400/70'
-                        : 'text-muted-foreground/80'
+                        : 'text-foreground'
                   }`}
                 >
                   {label}
                 </span>
                 {isActive && showTimer && (
-                  <span className="text-sm font-mono text-muted-foreground/90 tabular-nums leading-none">
+                  <span className="text-sm font-mono text-foreground tabular-nums leading-none">
                     {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
-                    <span className="ml-1 text-muted-foreground/60">{hint}</span>
+                    <span className="ml-1 text-foreground">{hint}</span>
                   </span>
                 )}
                 {isActive && !showTimer && hint && (
-                  <span className="text-sm text-muted-foreground/90 leading-none">{hint}</span>
+                  <span className="text-sm text-foreground leading-none">{hint}</span>
                 )}
               </div>
             </div>

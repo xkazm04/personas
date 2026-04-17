@@ -125,7 +125,7 @@ export function BulkActionsToolbar({
               type="button"
               onClick={() => setConfirmingDelete(false)}
               disabled={isBusy}
-              className="px-2.5 py-1.5 bg-secondary/50 text-foreground/80 rounded-modal text-xs transition-colors hover:bg-secondary/70 disabled:opacity-40 cursor-pointer"
+              className="px-2.5 py-1.5 bg-secondary/50 text-foreground rounded-modal text-xs transition-colors hover:bg-secondary/70 disabled:opacity-40 cursor-pointer"
             >
               {t.common.cancel}
             </button>
@@ -149,7 +149,7 @@ export function BulkActionsToolbar({
         type="button"
         onClick={onClearSelection}
         disabled={isBusy}
-        className="p-1.5 rounded-card text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 disabled:opacity-40 transition-colors cursor-pointer"
+        className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-secondary/50 disabled:opacity-40 transition-colors cursor-pointer"
         title={dt.clear_selection}
       >
         <X className="w-4 h-4" />

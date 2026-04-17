@@ -102,7 +102,7 @@ export const OverviewStatCard = memo(function OverviewStatCard({
             <div className={`w-8 h-8 rounded-card border shadow-inner flex items-center justify-center ${iconCls}`}>
               <Icon className="w-4 h-4" />
             </div>
-            <span className="typo-heading text-foreground/75 truncate">{label}</span>
+            <span className="typo-heading text-foreground truncate">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
             <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
@@ -117,10 +117,10 @@ export const OverviewStatCard = memo(function OverviewStatCard({
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>
-            ) : <span className="text-sm text-muted-foreground/50">--</span>}
+            ) : <span className="text-sm text-foreground">--</span>}
 
             {subtitle && (
-              <p className={`text-sm truncate ${subtitleColor || 'text-muted-foreground/70'}`}>
+              <p className={`text-sm truncate ${subtitleColor || 'text-foreground'}`}>
                 {subtitle}
               </p>
             )}

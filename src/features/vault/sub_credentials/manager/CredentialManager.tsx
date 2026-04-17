@@ -38,7 +38,7 @@ export function CredentialManager() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground/60">
+      <div className="flex items-center justify-center py-16 text-foreground">
         <LoadingSpinner size="lg" label={t.vault.manager.loading_credentials} />
       </div>
     );

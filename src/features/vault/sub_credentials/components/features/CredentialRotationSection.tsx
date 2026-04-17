@@ -81,7 +81,7 @@ export function CredentialRotationSection({
 
       {/* Last Rotation Info */}
       {rotationStatus?.last_rotated_at && (
-        <div className="text-sm text-muted-foreground/80">
+        <div className="text-sm text-foreground">
           Last rotated {formatRelativeTime(rotationStatus.last_rotated_at)}
           {rotationStatus.last_status && (
             <span className={`ml-1.5 ${
@@ -98,7 +98,7 @@ export function CredentialRotationSection({
         <>
           <div className="border-t border-primary/10" />
           <div className="space-y-1.5">
-            <p className="text-sm text-muted-foreground/60 uppercase tracking-wider font-semibold">{t.vault.rotation_section.history}</p>
+            <p className="text-sm text-foreground uppercase tracking-wider font-semibold">{t.vault.rotation_section.history}</p>
             <div className="space-y-1 max-h-[160px] overflow-y-auto">
               {rotationStatus.recent_history.map((entry) => (
                 <div key={entry.id} className="flex items-start gap-2 text-sm" data-testid={`rotation-history-${entry.id}`}>
@@ -108,12 +108,12 @@ export function CredentialRotationSection({
                     'bg-amber-400/60'
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <span className="text-muted-foreground/90 font-mono">{entry.rotation_type}</span>
+                    <span className="text-foreground font-mono">{entry.rotation_type}</span>
                     {entry.detail && (
-                      <span className="text-muted-foreground/80 ml-1.5 truncate">{entry.detail}</span>
+                      <span className="text-foreground ml-1.5 truncate">{entry.detail}</span>
                     )}
                   </div>
-                  <span className="text-muted-foreground/80 shrink-0">
+                  <span className="text-foreground shrink-0">
                     {formatRelativeTime(entry.created_at)}
                   </span>
                 </div>

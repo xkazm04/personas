@@ -53,8 +53,8 @@ function JsonBlock({ label, data }: { label: string; data: string | null }) {
   }
   return (
     <div className="space-y-1">
-      <div className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 text-xs font-mono text-foreground/80 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+      <div className="text-xs font-medium text-foreground uppercase tracking-wide">{label}</div>
+      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 text-xs font-mono text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
         {formatted}
       </pre>
     </div>
@@ -82,12 +82,12 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
         className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm hover:bg-secondary/20 transition-colors"
       >
         {isExpanded
-          ? <ChevronDown className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-          : <ChevronRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />}
+          ? <ChevronDown className="w-3 h-3 text-foreground flex-shrink-0" />
+          : <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />}
         <span className={`px-1.5 py-0.5 rounded text-xs font-semibold border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
           {entry.statusCode}
         </span>
-        <span className="text-xs font-mono text-muted-foreground/70">{entry.method}</span>
+        <span className="text-xs font-mono text-foreground">{entry.method}</span>
         {entry.eventId && (
           <span className="text-xs text-emerald-400/70 font-mono truncate max-w-[120px]" title={entry.eventId}>
             {entry.eventId.slice(0, 8)}...
@@ -98,7 +98,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
             {entry.errorMessage}
           </span>
         )}
-        <span className="text-muted-foreground/50 ml-auto text-xs flex items-center gap-1">
+        <span className="text-foreground ml-auto text-xs flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {formatTime(entry.receivedAt)}
         </span>
@@ -109,7 +109,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/60">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground">
                 <span className="font-mono">{entry.id.slice(0, 12)}</span>
                 <span>{new Date(entry.receivedAt).toLocaleString()}</span>
               </div>
@@ -143,7 +143,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   copiedLabel="Copied!"
                   iconSize="w-3 h-3"
                   icon={<Terminal className="w-3 h-3" />}
-                  className="px-2.5 py-1 text-xs rounded-card border border-primary/10 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/20"
+                  className="px-2.5 py-1 text-xs rounded-card border border-primary/10 text-foreground hover:text-foreground hover:bg-secondary/20"
                 />
                 {replayResult && (
                   <span className={`flex items-center gap-1 text-xs ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -239,13 +239,13 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     <>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
+        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-foreground hover:text-muted-foreground transition-colors w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Radio className="w-3 h-3" />
         {t.triggers.request_inspector}
         {logs.length > 0 && (
-          <span className="text-muted-foreground/50 ml-1">({logs.length})</span>
+          <span className="text-foreground ml-1">({logs.length})</span>
         )}
         {errorCount > 0 && (
           <span className="text-red-400/70 text-xs ml-1">{errorCount} errors</span>
@@ -258,7 +258,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
           >
             <div className="space-y-1.5 pt-1">
               {loading ? (
-                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
+                <div className="flex items-center gap-2 py-2 text-sm text-foreground">
                   <LoadingSpinner size="xs" />
                   Loading...
                 </div>
@@ -268,13 +268,13 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                   {t.triggers.could_not_load_log}
                   <button
                     onClick={() => void fetch()}
-                    className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
+                    className="ml-auto flex items-center gap-1 text-sm text-foreground hover:text-foreground transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />Retry
                   </button>
                 </div>
               ) : logs.length === 0 ? (
-                <div className="py-2 text-sm text-muted-foreground/80">
+                <div className="py-2 text-sm text-foreground">
                   {t.triggers.no_webhook_requests}
                 </div>
               ) : (
@@ -296,7 +296,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                     <button
                       onClick={() => void fetch()}
                       disabled={loading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-foreground hover:text-muted-foreground/90 transition-colors"
                     >
                       <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                       Refresh

@@ -31,7 +31,7 @@ export function MonthView({
       {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b border-primary/10 bg-primary/[0.02]">
         {Array.from({ length: 7 }, (_, i) => (
-          <div key={i} className="px-2 py-1.5 text-center text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+          <div key={i} className="px-2 py-1.5 text-center text-[10px] font-medium text-foreground uppercase tracking-wider">
             {weekdayShort(i)}
           </div>
         ))}
@@ -65,8 +65,8 @@ export function MonthView({
                   day.isToday
                     ? 'text-blue-400 font-bold'
                     : day.isCurrentMonth
-                      ? 'text-muted-foreground/60'
-                      : 'text-muted-foreground/30'
+                      ? 'text-foreground'
+                      : 'text-foreground'
                 }`}>
                   <span>
                     {day.isToday ? (
@@ -101,7 +101,7 @@ export function MonthView({
                     />
                   ))}
                   {overflow > 0 && (
-                    <span className="text-[9px] text-muted-foreground/40 pl-1">
+                    <span className="text-[9px] text-foreground pl-1">
                       +{overflow} more
                     </span>
                   )}

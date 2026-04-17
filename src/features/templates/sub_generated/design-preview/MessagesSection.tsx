@@ -24,7 +24,7 @@ export function MessagesSection({
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         Messages & Notifications
-        <span className="text-sm font-normal text-muted-foreground/80 ml-1">{t.templates.design.how_communicates}</span>
+        <span className="text-sm font-normal text-foreground ml-1">{t.templates.design.how_communicates}</span>
       </div>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
@@ -46,10 +46,10 @@ export function MessagesSection({
                   {(() => { const { Icon, color } = channelIconMeta(channel.type); return <Icon className={`w-4 h-4 ${color}`} />; })()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-foreground/80 capitalize block">{channel.type}</span>
-                  <span className="text-sm text-muted-foreground/80 leading-snug block mt-0.5">{channel.description}</span>
+                  <span className="text-sm font-medium text-foreground capitalize block">{channel.type}</span>
+                  <span className="text-sm text-foreground leading-snug block mt-0.5">{channel.description}</span>
                   {channel.required_connector && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-sm rounded-full bg-primary/8 text-muted-foreground/90 border border-primary/10">
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 text-sm rounded-full bg-primary/8 text-foreground border border-primary/10">
                       <Plug className="w-2.5 h-2.5" />
                       Requires {channel.required_connector}
                     </span>

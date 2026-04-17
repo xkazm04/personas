@@ -158,21 +158,21 @@ export default function KnowledgeGraphDashboard() {
             <button
               type="button"
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedType ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedType ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedType ? (KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES]?.label ?? selectedType) : 'Type'}
               {selectedType && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70">
+                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
                   <X className="w-3 h-3" />
                 </button>
               )}
             </button>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Types</button>
+                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}>All Types</button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
-                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}
               </div>
@@ -181,21 +181,21 @@ export default function KnowledgeGraphDashboard() {
             <button
               type="button"
               onClick={() => setShowScopeDropdown(!showScopeDropdown)}
-              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedScope ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedScope ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
             >
               {selectedScope ? (SCOPE_TYPES[selectedScope as keyof typeof SCOPE_TYPES]?.label ?? selectedScope) : 'Scope'}
               {selectedScope && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedScope(null); setShowScopeDropdown(false); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70">
+                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedScope(null); setShowScopeDropdown(false); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70">
                   <X className="w-3 h-3" />
                 </button>
               )}
             </button>
             {showScopeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[140px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Scopes</button>
+                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}>All Scopes</button>
                 {Object.entries(SCOPE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
-                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedScope === key ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedScope === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}
               </div>
@@ -250,8 +250,8 @@ export default function KnowledgeGraphDashboard() {
           ) : loading ? (
             <div className="flex-1 flex items-center justify-center py-12">
               <div className="flex flex-col items-center gap-3">
-                <RefreshCw className="w-5 h-5 text-muted-foreground/40 animate-spin" />
-                <p className="text-sm text-muted-foreground/60">Loading knowledge patterns...</p>
+                <RefreshCw className="w-5 h-5 text-foreground animate-spin" />
+                <p className="text-sm text-foreground">Loading knowledge patterns...</p>
               </div>
             </div>
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
@@ -268,13 +268,13 @@ export default function KnowledgeGraphDashboard() {
               {/* Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article). */}
               {/* This dashboard surfaces auto-extracted execution knowledge. For curated docs,
                   personas also offers an Obsidian vault — cheaper and better for <1000 notes. */}
-              <div className="max-w-md text-xs text-muted-foreground/60 text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
-                <span className="font-medium text-muted-foreground/80">Curating documents manually?</span> For fewer than ~1000 notes, an Obsidian vault is usually cheaper and better than a vector store — cross-links beat chunk similarity and the content stays human-editable.
+              <div className="max-w-md text-xs text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
+                <span className="font-medium text-foreground">Curating documents manually?</span> For fewer than ~1000 notes, an Obsidian vault is usually cheaper and better than a vector store — cross-links beat chunk similarity and the content stays human-editable.
               </div>
             </div>
           ) : allEntries.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground/40">No patterns match current filters</p>
+              <p className="text-sm text-foreground">No patterns match current filters</p>
             </div>
           ) : (
             <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-modal">
@@ -299,7 +299,7 @@ export default function KnowledgeGraphDashboard() {
 
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (
             <div className="space-y-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> Recent Learnings
               </h3>
               <div ref={recentListRef} className="overflow-y-auto max-h-[400px] rounded-modal">

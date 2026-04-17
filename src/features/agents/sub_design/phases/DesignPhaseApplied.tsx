@@ -64,7 +64,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           {hasWarnings ? tx(warnings.length === 1 ? t.agents.design.applied_with_warnings_one : t.agents.design.applied_with_warnings_other, { count: warnings.length }) : t.agents.design.agent_configured}
         </h3>
         {result?.summary && (
-          <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs mx-auto line-clamp-2">
+          <p className="text-sm text-foreground mt-1 max-w-xs mx-auto line-clamp-2">
             {result.summary}
           </p>
         )}
@@ -127,7 +127,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
       {/* Subtle close link */}
       <button
         onClick={onReset}
-        className="animate-fade-slide-in mt-1 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+        className="animate-fade-slide-in mt-1 text-sm text-foreground hover:text-muted-foreground/80 transition-colors"
       >
         {t.common.close}
       </button>

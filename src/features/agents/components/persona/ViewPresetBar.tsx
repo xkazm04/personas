@@ -189,7 +189,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md font-medium border border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md font-medium border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-muted-foreground transition-all"
         >
           <Bookmark className="w-3.5 h-3.5" />
           {t.agents.view_presets.views}
@@ -233,7 +233,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
 
             <div className="max-h-64 overflow-y-auto py-1">
               {/* Smart presets */}
-              <div className="px-3 py-1 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold flex items-center gap-1">
+              <div className="px-3 py-1 text-md uppercase tracking-wider text-foreground font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 {t.agents.view_presets.smart_presets}
               </div>
@@ -245,7 +245,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                   className={`w-full px-3 py-1.5 text-md text-left transition-colors flex items-center gap-2 ${
                     activeViewId === preset.id
                       ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-foreground/80 hover:bg-secondary/50'
+                      : 'text-foreground hover:bg-secondary/50'
                   }`}
                 >
                   {preset.name}
@@ -256,7 +256,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
               {/* User saved views */}
               {views.length > 0 && (
                 <>
-                  <div className="px-3 py-1 mt-1.5 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold border-t border-primary/10 pt-2">
+                  <div className="px-3 py-1 mt-1.5 text-md uppercase tracking-wider text-foreground font-semibold border-t border-primary/10 pt-2">
                     {t.agents.view_presets.your_views}
                   </div>
                   {views.map((view) => (
@@ -270,7 +270,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                       onClick={() => applySavedView(view)}
                     >
                       <span className={`text-md truncate flex-1 pr-2 ${
-                        activeViewId === view.id ? 'text-primary font-medium' : 'text-foreground/80'
+                        activeViewId === view.id ? 'text-primary font-medium' : 'text-foreground'
                       }`}>
                         {view.name}
                       </span>

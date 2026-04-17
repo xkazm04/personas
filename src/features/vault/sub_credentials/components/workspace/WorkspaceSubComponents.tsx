@@ -45,7 +45,7 @@ export function ServiceCheckbox({
       </div>
       <div className="min-w-0">
         <div className="text-sm font-medium text-foreground">{service.label}</div>
-        <div className="text-xs text-muted-foreground/60 truncate">{service.description}</div>
+        <div className="text-xs text-foreground truncate">{service.description}</div>
       </div>
     </Button>
   );
@@ -79,7 +79,7 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
               <div className="text-xs text-red-400 truncate">{s.error}</div>
             )}
           </div>
-          <div className="text-xs text-muted-foreground/50 flex-shrink-0">
+          <div className="text-xs text-foreground flex-shrink-0">
             {s.status === 'pending' && 'Creating...'}
             {s.status === 'created' && 'Connected'}
             {s.status === 'failed' && 'Failed'}

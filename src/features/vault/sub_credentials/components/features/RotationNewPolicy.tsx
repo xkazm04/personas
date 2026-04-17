@@ -31,10 +31,10 @@ export function RotationNewPolicy({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground/80">{t.vault.rotation_section.no_policy}</p>
+      <p className="text-sm text-foreground">{t.vault.rotation_section.no_policy}</p>
       {/* Period selection */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.rotate_every}</span>
+        <span className="text-sm text-foreground">{t.vault.rotation_section.rotate_every}</span>
         <PillGroup
           options={(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => ({ value: d, label: `${d}d` }))}
           value={rotationDays}
@@ -58,7 +58,7 @@ export function RotationNewPolicy({
           customInputActive={customFocused}
           data-testid="rotation-presets"
         />
-        <span className="text-sm text-muted-foreground/60">{t.vault.rotation_section.days}</span>
+        <span className="text-sm text-foreground">{t.vault.rotation_section.days}</span>
       </div>
       <Button
         variant="accent"

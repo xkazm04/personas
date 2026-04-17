@@ -52,7 +52,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         <h2 id="ingest-text-title" className="text-sm font-semibold text-foreground/90 flex-1">{sh.paste_text}</h2>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
         </button>
@@ -61,22 +61,22 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       {/* Body */}
       <div className="p-5 space-y-4">
         <div>
-          <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">{sh.title_label}</label>
+          <label className="text-xs font-medium text-foreground mb-1.5 block">{sh.title_label}</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={sh.title_placeholder}
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
             autoFocus
           />
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">
+          <label className="text-xs font-medium text-foreground mb-1.5 block">
             {sh.content_label}
             {text.length > 0 && (
-              <span className="ml-2 text-muted-foreground/40">{text.length.toLocaleString()} chars</span>
+              <span className="ml-2 text-foreground">{text.length.toLocaleString()} chars</span>
             )}
           </label>
           <textarea
@@ -84,7 +84,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             onChange={(e) => setText(e.target.value)}
             placeholder={sh.content_placeholder}
             rows={12}
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
           />
         </div>
 
@@ -99,7 +99,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm rounded-card hover:bg-secondary/50 text-foreground/70 transition-colors"
+          className="px-4 py-2 text-sm rounded-card hover:bg-secondary/50 text-foreground transition-colors"
         >
           {t.common.cancel}
         </button>

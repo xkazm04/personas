@@ -26,9 +26,9 @@ export function MessageBubble({ message }: { message: DesignConversationMessage 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className={`text-sm font-medium uppercase tracking-wide ${isUser ? 'text-blue-400/80' : 'text-purple-400/80'}`}>{typeLabel}</span>
-          <span className="text-sm text-muted-foreground/50">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
+          <span className="text-sm text-foreground">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
         </div>
-        <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
+        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
       </div>
     </div>
   );
@@ -49,19 +49,19 @@ export function ConversationCard({
     <div className={`rounded-card border transition-colors ${isActive ? 'border-blue-500/40 bg-blue-500/5' : 'border-border/50 bg-card/50 hover:border-border'}`} data-testid={`conversation-card-${conversation.id}`}>
       <div className="flex items-center gap-2 px-3 py-2" role="group" aria-label="Design conversation controls">
         <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
-          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
-          <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
+          <MessageSquare className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
           <span className="text-sm font-medium truncate">{conversation.title}</span>
           {isCompleted && <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />}
         </button>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-sm text-muted-foreground/60 tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
-          <span className="text-sm text-muted-foreground/40">·</span>
-          <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
+          <span className="text-sm text-foreground tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
+          <span className="text-sm text-foreground">·</span>
+          <span className="text-sm text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
           {!isActive && conversation.status === 'active' && (
             <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-foreground hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
         </div>
       </div>
       {expanded && messages.length > 0 && (
@@ -80,7 +80,7 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
   const meta = DRIFT_KIND_META[event.kind];
   return (
     <div className={`animate-fade-slide-in group relative rounded-card border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
-      <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
+      <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-foreground hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
         <div className="min-w-0 flex-1 space-y-0.5">
@@ -88,10 +88,10 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
             <span className={`text-sm font-semibold ${meta.textClass}`}>{event.title}</span>
             <span className={`text-[10px] px-1 py-0.5 rounded ${meta.bgClass} ${meta.textClass} font-medium uppercase tracking-wider`}>{meta.label}</span>
           </div>
-          <p className="text-sm text-foreground/70 line-clamp-2">{event.description}</p>
+          <p className="text-sm text-foreground line-clamp-2">{event.description}</p>
           <div className="flex items-center gap-1 pt-0.5">
-            <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground/70 italic">{event.suggestion}</p>
+            <ArrowRight className="w-2.5 h-2.5 text-foreground" />
+            <p className="text-sm text-foreground italic">{event.suggestion}</p>
           </div>
         </div>
       </div>

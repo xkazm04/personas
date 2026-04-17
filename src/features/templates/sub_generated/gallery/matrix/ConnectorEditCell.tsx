@@ -70,14 +70,14 @@ function ConnectorPopup({
           >
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
           </div>
-          <span className="text-sm font-medium text-foreground/80">{meta.label}</span>
+          <span className="text-sm font-medium text-foreground">{meta.label}</span>
         </div>
-        <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={onClose} className="text-muted-foreground/60" />
+        <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={onClose} className="text-foreground" />
       </div>
 
       {availableCreds.length > 0 && (
         <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground/70">{t.templates.connector_edit.credential}</label>
+          <label className="text-sm font-medium text-foreground">{t.templates.connector_edit.credential}</label>
           <ThemedSelect
             filterable
             value={credId || ''}
@@ -91,7 +91,7 @@ function ConnectorPopup({
 
       {filteredMembers && (
         <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground/70">{t.templates.connector_edit.connector_type}</label>
+          <label className="text-sm font-medium text-foreground">{t.templates.connector_edit.connector_type}</label>
           <ThemedSelect
             filterable
             value={activeName}
@@ -104,7 +104,7 @@ function ConnectorPopup({
       )}
 
       {availableCreds.length === 0 && (
-        <p className="text-sm text-muted-foreground/40 italic">{t.templates.connector_edit.no_credentials}</p>
+        <p className="text-sm text-foreground italic">{t.templates.connector_edit.no_credentials}</p>
       )}
 
       {availableCreds.length === 0 && onNavigateCatalog && (
@@ -146,14 +146,14 @@ function DatabaseRow({
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 py-1">
         <Database className="w-4 h-4 text-primary/60 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/80 truncate flex-1">Database</span>
+        <span className="text-sm font-medium text-foreground truncate flex-1">Database</span>
         <div className="flex items-center gap-0.5 rounded-input border border-primary/10 overflow-hidden">
           <Button variant="ghost" size="xs" onClick={() => { callbacks.onPreferenceChange('databaseMode', 'create'); }}
-            className={`px-2 py-0.5 text-sm font-medium ${dbMode === 'create' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}>
+            className={`px-2 py-0.5 text-sm font-medium ${dbMode === 'create' ? 'bg-primary/15 text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}>
             <Plus className="w-3 h-3 inline -mt-px mr-0.5" /> New
           </Button>
           <Button variant="ghost" size="xs" onClick={() => { callbacks.onPreferenceChange('databaseMode', 'existing'); }}
-            className={`px-2 py-0.5 text-sm font-medium ${dbMode === 'existing' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}>
+            className={`px-2 py-0.5 text-sm font-medium ${dbMode === 'existing' ? 'bg-primary/15 text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}>
             <Table2 className="w-3 h-3 inline -mt-px mr-0.5" /> Existing
           </Button>
         </div>
@@ -167,7 +167,7 @@ function DatabaseRow({
             className="w-full flex items-center gap-2 py-1 rounded-card hover:bg-primary/5 text-left"
           >
             <Table2 className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
-            <span className="text-sm text-foreground/70 truncate flex-1">
+            <span className="text-sm text-foreground truncate flex-1">
               {tableName || 'Configure table...'}
             </span>
             {tableName && <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
@@ -180,27 +180,27 @@ function DatabaseRow({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground/80">Existing Table</span>
-                <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={() => setShowTablePicker(false)} className="text-muted-foreground/60" />
+                <span className="text-sm font-medium text-foreground">Existing Table</span>
+                <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={() => setShowTablePicker(false)} className="text-foreground" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground/70">Schema</label>
+                <label className="text-sm font-medium text-foreground">Schema</label>
                 <input
                   type="text"
                   value={schemaName || ''}
                   onChange={(e) => handleSetSchema(e.target.value)}
                   placeholder="public"
-                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
+                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground placeholder:text-foreground focus-ring"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground/70">Table name</label>
+                <label className="text-sm font-medium text-foreground">Table name</label>
                 <input
                   type="text"
                   value={tableName || ''}
                   onChange={(e) => handleSetTable(e.target.value)}
                   placeholder="e.g. persona_data"
-                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
+                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground placeholder:text-foreground focus-ring"
                 />
               </div>
             </div>
@@ -243,7 +243,7 @@ export function ConnectorEditCell({
   if (allConnectors.length === 0) {
     return (
       <div className="space-y-2 w-full">
-        <span className="text-sm text-muted-foreground/40">{t.templates.connector_edit.no_connectors}</span>
+        <span className="text-sm text-foreground">{t.templates.connector_edit.no_connectors}</span>
       </div>
     );
   }
@@ -275,7 +275,7 @@ export function ConnectorEditCell({
           return (
             <div key={rc.name} className="flex items-center gap-2 py-1">
               <MessageSquare className="w-4 h-4 text-primary/60 flex-shrink-0" />
-              <span className="text-sm font-medium text-foreground/80 truncate flex-1">In-App Messages</span>
+              <span className="text-sm font-medium text-foreground truncate flex-1">In-App Messages</span>
               <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
             </div>
           );
@@ -337,13 +337,13 @@ export function ConnectorEditCell({
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
               </div>
-              <span className="text-sm font-medium text-foreground/80 truncate flex-1 text-left">{meta.label}</span>
+              <span className="text-sm font-medium text-foreground truncate flex-1 text-left">{meta.label}</span>
               {isMatched ? (
                 <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
               ) : (
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-amber-400/60 flex-shrink-0" />
               )}
-              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-muted-foreground/40' : 'text-orange-600 dark:text-amber-400/80 font-semibold'}`}>
+              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-foreground' : 'text-orange-600 dark:text-amber-400/80 font-semibold'}`}>
                 {matchedCred?.name ?? (isMatched ? 'Linked' : 'Set up')}
               </span>
             </Button>
@@ -365,7 +365,7 @@ export function ConnectorEditCell({
         );
       })}
       {allConnectors.length > 5 && (
-        <span className="text-sm text-muted-foreground/40">+{allConnectors.length - 5} more</span>
+        <span className="text-sm text-foreground">+{allConnectors.length - 5} more</span>
       )}
     </div>
   );

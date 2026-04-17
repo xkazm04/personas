@@ -54,7 +54,7 @@ export function DesignPhasePanelSaved({
 
       {/* Chat input for modifications */}
       <div className="pt-2 border-t border-primary/10 space-y-2">
-        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
+        <div className="flex items-center gap-2 px-1 text-sm text-foreground">
           <Pencil className="w-3 h-3 shrink-0" />
           <span>{t.agents.design.current_config_preserved}</span>
         </div>
@@ -76,7 +76,7 @@ export function DesignPhasePanelSaved({
             disabled={!instruction.trim()}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
               !instruction.trim()
-                ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
+                ? 'bg-secondary/40 text-foreground cursor-not-allowed'
                 : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
             }`}
           >
@@ -84,7 +84,7 @@ export function DesignPhasePanelSaved({
             {t.agents.design.update_design}
           </button>
         </div>
-        <p className="text-sm text-muted-foreground/60 px-1">{t.agents.design.enter_submit_hint}</p>
+        <p className="text-sm text-foreground px-1">{t.agents.design.enter_submit_hint}</p>
       </div>
     </>
   );

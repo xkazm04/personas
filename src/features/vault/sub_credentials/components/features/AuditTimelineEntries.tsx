@@ -20,7 +20,7 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
       {entries.map((entry) => {
         const op = OP_LABELS[entry.operation] ?? {
           label: entry.operation,
-          color: 'text-muted-foreground',
+          color: 'text-foreground',
           dot: 'bg-muted-foreground',
         };
         const hasAnomaly = entry.anomalies.length > 0;
@@ -40,12 +40,12 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-xs font-medium ${op.color}`}>{op.label}</span>
                 {entry.persona_name && (
-                  <span className="text-xs text-foreground/70">by {entry.persona_name}</span>
+                  <span className="text-xs text-foreground">by {entry.persona_name}</span>
                 )}
                 {entry.detail && !entry.persona_name && (
-                  <span className="text-xs text-foreground/60 truncate max-w-[200px]">{entry.detail}</span>
+                  <span className="text-xs text-foreground truncate max-w-[200px]">{entry.detail}</span>
                 )}
-                <span className="text-xs text-muted-foreground/60 tabular-nums ml-auto shrink-0">
+                <span className="text-xs text-foreground tabular-nums ml-auto shrink-0">
                   {formatRelativeTime(entry.created_at, '')}
                 </span>
               </div>
@@ -71,7 +71,7 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
               )}
               {/* Detail line for persona entries */}
               {entry.detail && entry.persona_name && (
-                <div className="text-xs text-muted-foreground/50 truncate">{entry.detail}</div>
+                <div className="text-xs text-foreground truncate">{entry.detail}</div>
               )}
             </div>
           </div>

@@ -79,7 +79,7 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                   : active
                     ? 'bg-primary/10 text-foreground border border-primary/20'
-                    : 'bg-primary/5 text-muted-foreground/40 border border-primary/8'
+                    : 'bg-primary/5 text-foreground border border-primary/8'
               }`}
             >
               {done ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
@@ -106,7 +106,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
     <div className="space-y-6">
       <div>
         <h3 className="typo-heading-lg text-foreground">{isSimple ? ss.your_profile : ss.choose_role}</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">{isSimple ? ss.simple_hint : ss.tailor_hint}</p>
+        <p className="typo-body text-foreground mt-1">{isSimple ? ss.simple_hint : ss.tailor_hint}</p>
       </div>
       <div className={`grid gap-4 ${isSimple ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-3'}`}>
         {visibleRoles.map((role) => {
@@ -138,7 +138,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
 
               {/* Label */}
               <span className="typo-body-lg font-bold text-foreground">{role.label}</span>
-              <span className="typo-body text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
+              <span className="typo-body text-foreground mt-0.5">{role.subtitle}</span>
 
               {/* Selection indicator */}
               {isSelected && (
@@ -181,7 +181,7 @@ function ToolStep({
     <div className="space-y-6">
       <div>
         <h3 className="typo-heading-lg text-foreground">{ss.pick_tool}</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">
+        <p className="typo-body text-foreground mt-1">
           {ss.tool_hint}
         </p>
       </div>
@@ -246,7 +246,7 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
     <div className="space-y-6">
       <div>
         <h3 className="typo-heading-lg text-foreground">{ss.automate_title}</h3>
-        <p className="typo-body text-muted-foreground/60 mt-1">
+        <p className="typo-body text-foreground mt-1">
           {ss.automate_hint}
         </p>
       </div>
@@ -255,10 +255,10 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         onChange={(e) => onChange(e.target.value)}
         placeholder={ss.automate_placeholder}
         rows={5}
-        className="w-full rounded-modal border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
+        className="w-full rounded-modal border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-foreground focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
-        <span className="typo-body text-muted-foreground/50">
+        <span className="typo-body text-foreground">
           {value.trim().length < 10 ? tx(ss.min_chars, { current: value.trim().length }) : ss.ready_to_save}
         </span>
       </div>
@@ -324,7 +324,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
         <div className="flex items-center justify-between mb-6">
           <StepIndicator current={step} completed={completed} />
           <button onClick={onClose} className="p-1.5 rounded-card hover:bg-primary/10 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -353,7 +353,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
           <button
             onClick={goBack}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
             {ss.back}
@@ -486,7 +486,7 @@ function SetupCardItem({
         {/* Lock overlay */}
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
-            <Lock className="w-6 h-6 text-muted-foreground/40" />
+            <Lock className="w-6 h-6 text-foreground" />
           </div>
         )}
 
@@ -515,7 +515,7 @@ function SetupCardItem({
 
       {/* Description below */}
       <div className="mt-2 px-1 h-[64px] flex items-start">
-        <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">
+        <p className="typo-body leading-relaxed dark:text-foreground text-foreground line-clamp-3">
           {locked
             ? card.id === 'tool'
               ? setup.select_role_first

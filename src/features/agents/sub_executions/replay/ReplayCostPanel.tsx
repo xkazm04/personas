@@ -39,7 +39,7 @@ export function ReplayCostPanel({
         <span className="typo-code tabular-nums text-emerald-400 truncate">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="typo-body text-muted-foreground/60 truncate">
+        <span className="typo-body text-foreground truncate">
           / {formatCost(totalCost)}
         </span>
         <div className="w-16 sm:w-[120px] h-1.5 bg-secondary/50 rounded-full overflow-hidden flex-shrink-0">
@@ -56,15 +56,15 @@ export function ReplayCostPanel({
         <span className="typo-code tabular-nums text-blue-400 truncate">
           {formatMs(currentMs)}
         </span>
-        <span className="typo-body text-muted-foreground/60">
+        <span className="typo-body text-foreground">
           ({timePct.toFixed(0)}%)
         </span>
       </div>
 
       {/* Steps */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <Hash className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-        <span className="typo-code tabular-nums text-muted-foreground/60">
+        <Hash className="w-3 h-3 text-foreground flex-shrink-0" />
+        <span className="typo-code tabular-nums text-foreground">
           {tx(e.steps_count, { completed: completedSteps, total: totalSteps })}
         </span>
       </div>

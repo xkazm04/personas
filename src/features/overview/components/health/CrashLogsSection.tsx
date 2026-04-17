@@ -69,7 +69,7 @@ export function CrashLogsSection() {
         <div className="w-6 h-6 rounded-card flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
-        <span className="typo-label text-foreground/80">
+        <span className="typo-label text-foreground">
           Crash Logs
         </span>
         {totalCount > 0 && (
@@ -91,7 +91,7 @@ export function CrashLogsSection() {
               Clear
             </button>
           )}
-          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />}
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function CrashLogsSection() {
           >
             <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
               {totalCount === 0 && (
-                <p className="typo-body text-muted-foreground/80 py-2">No crash logs recorded.</p>
+                <p className="typo-body text-foreground py-2">No crash logs recorded.</p>
               )}
 
               {/* Rust backend crash logs (panics, auto-cred) */}
@@ -122,7 +122,7 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-primary/5 px-3 py-2">
-                      <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                      <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                         {log.content}
                       </pre>
                     </div>
@@ -144,16 +144,16 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.id && (
                     <div className="border-t border-primary/5 px-3 py-2 space-y-1">
-                      <p className="typo-body text-muted-foreground/80">
+                      <p className="typo-body text-foreground">
                         {log.createdAt}{log.appVersion ? ` (v${log.appVersion})` : ''}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                           {log.stack}
                         </pre>
                       )}
                       {log.componentStack && (
-                        <pre className="typo-code text-muted-foreground/70 whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
                           --- Component Stack ---{'\n'}{log.componentStack}
                         </pre>
                       )}
@@ -175,11 +175,11 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === `fe-${i}` && (
                     <div className="border-t border-primary/5 px-3 py-2 space-y-1">
-                      <p className="typo-body text-muted-foreground/80">
+                      <p className="typo-body text-foreground">
                         {log.timestamp}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                           {log.stack}
                         </pre>
                       )}

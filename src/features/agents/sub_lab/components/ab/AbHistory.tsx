@@ -28,7 +28,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
       render: (run) => (
         <div className="flex items-center gap-1.5">
           <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{run.versionANum}</span>
-          <span className="text-muted-foreground/40 text-xs">vs</span>
+          <span className="text-foreground text-xs">vs</span>
           <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{run.versionBNum}</span>
         </div>
       ),
@@ -37,7 +37,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
       key: 'scenarios',
       label: t.agents.lab.ab_scenarios,
       className: 'w-[90px]',
-      render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
+      render: (run) => <span className="text-sm text-foreground">{run.scenariosCount || '--'}</span>,
     },
   ], [t]);
 
@@ -64,7 +64,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
           headerChips={
             <div className="flex items-center gap-1.5">
               <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-blue-500/15 text-blue-400">v{activeRun.versionANum}</span>
-              <span className="text-muted-foreground/40 text-xs">vs</span>
+              <span className="text-foreground text-xs">vs</span>
               <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{activeRun.versionBNum}</span>
             </div>
           }

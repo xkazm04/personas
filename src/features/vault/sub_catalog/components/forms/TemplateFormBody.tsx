@@ -61,7 +61,7 @@ export function TemplateFormBody({
   return (
     <>
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+        <label className="block text-sm font-medium text-foreground mb-1.5">
           Credential Name
         </label>
         <input
@@ -83,7 +83,7 @@ export function TemplateFormBody({
               onClick={() => onVariantChange(v.id)}
               className={activeVariantId === v.id
                 ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'}
+                : 'text-foreground hover:bg-secondary/40 border border-transparent'}
             >
               {v.label}
             </Button>

@@ -110,7 +110,7 @@ export function ProgressRingBadge({
           ? 'bg-emerald-500/15 text-emerald-400'
           : completedCount > 0
             ? 'bg-primary/10 text-primary/70'
-            : 'bg-secondary/50 text-muted-foreground/80'
+            : 'bg-secondary/50 text-foreground'
       }`}>
         {completedCount}/{totalSteps}
       </span>

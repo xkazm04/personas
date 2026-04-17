@@ -45,7 +45,7 @@ export function IdlePhase({
       key="input"
       className="animate-fade-slide-in space-y-4"
     >
-      <div className="text-sm text-muted-foreground/80">
+      <div className="text-sm text-foreground">
         {t.vault.design_phases.idle_description}
       </div>
 

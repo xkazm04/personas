@@ -34,7 +34,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
               ) : (
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               )}
-              <span className={`text-sm ${isLast ? 'text-foreground' : 'text-muted-foreground/90'}`}>
+              <span className={`text-sm ${isLast ? 'text-foreground' : 'text-foreground'}`}>
                 {line}
               </span>
             </div>
@@ -43,7 +43,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
         {progressLines.length === 0 && (
           <div className="flex items-center gap-3 py-1.5">
             <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
-            <span className="text-sm text-muted-foreground/90">{t.vault.negotiator.initializing}</span>
+            <span className="text-sm text-foreground">{t.vault.negotiator.initializing}</span>
           </div>
         )}
       </div>

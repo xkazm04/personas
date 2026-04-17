@@ -51,7 +51,7 @@ export function PersonaRunner() {
   const { t, tx } = useTranslation();
 
   if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">{t.agents.executions.no_persona_selected}</div>;
+    return <div className="flex items-center justify-center py-8 text-foreground">{t.agents.executions.no_persona_selected}</div>;
   }
 
   const summaryPresentation = getStatusEntry(state.executionSummary?.status ?? 'failed');
@@ -98,7 +98,7 @@ export function PersonaRunner() {
         ) : (
           <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
-            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
+            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-foreground cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
             {isExecuting ? (<><Square className="w-5 h-5" />{t.agents.executions.stop_execution}</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? t.agents.executions.execute_on_cloud : t.agents.executions.execute_persona}</>)}
           </button>
         )}
@@ -129,14 +129,14 @@ export function PersonaRunner() {
             {state.typicalDurationMs ? (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between typo-body">
-                  <span className="text-muted-foreground/80">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>
-                  <span className="text-muted-foreground/80">{state.elapsedMs < state.typicalDurationMs ? tx(t.agents.executions.typically_completes, { elapsed: formatElapsed(state.typicalDurationMs) }) : t.agents.executions.taking_longer}</span>
+                  <span className="text-foreground">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>
+                  <span className="text-foreground">{state.elapsedMs < state.typicalDurationMs ? tx(t.agents.executions.typically_completes, { elapsed: formatElapsed(state.typicalDurationMs) }) : t.agents.executions.taking_longer}</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
                   <div className="animate-fade-in h-full rounded-full bg-primary/40" style={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} />
                 </div>
               </div>
-            ) : <span className="typo-body text-muted-foreground/90">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>}
+            ) : <span className="typo-body text-foreground">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>}
           </div>
         </div>
       )}
@@ -155,12 +155,12 @@ export function PersonaRunner() {
         <div className={`animate-fade-slide-in rounded-modal border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2"><StatusIcon status={state.executionSummary.status} className="w-5 h-5" /><span className={`typo-heading capitalize ${summaryPresentation.text}`}>{state.executionSummary.status}</span></div>
-            {state.executionSummary.duration_ms != null && <div className="flex items-center gap-1.5 text-muted-foreground/80"><Timer className="w-3.5 h-3.5" /><span className="typo-code">{(state.executionSummary.duration_ms / 1000).toFixed(1)}s</span></div>}
-            {state.executionSummary.cost_usd != null && <div className="flex items-center gap-1.5 text-muted-foreground/80"><DollarSign className="w-3.5 h-3.5" /><span className="typo-code">${state.executionSummary.cost_usd.toFixed(4)}</span></div>}
+            {state.executionSummary.duration_ms != null && <div className="flex items-center gap-1.5 text-foreground"><Timer className="w-3.5 h-3.5" /><span className="typo-code">{(state.executionSummary.duration_ms / 1000).toFixed(1)}s</span></div>}
+            {state.executionSummary.cost_usd != null && <div className="flex items-center gap-1.5 text-foreground"><DollarSign className="w-3.5 h-3.5" /><span className="typo-code">${state.executionSummary.cost_usd.toFixed(4)}</span></div>}
           </div>
           {state.executionSummary.status === 'cancelled' && (
             <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
-              {state.executionSummary.last_tool && <div className="flex items-center gap-2 typo-body text-muted-foreground/90"><Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" /><span>{t.agents.executions.stopped_while_running}</span><code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">{state.executionSummary.last_tool}</code></div>}
+              {state.executionSummary.last_tool && <div className="flex items-center gap-2 typo-body text-foreground"><Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" /><span>{t.agents.executions.stopped_while_running}</span><code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">{state.executionSummary.last_tool}</code></div>}
               <button onClick={exec.handleResume} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"><RotateCw className="w-3.5 h-3.5" />{t.agents.executions.resume_from_here}</button>
             </div>
           )}
@@ -184,7 +184,7 @@ export function PersonaRunner() {
               <div className="w-12 h-12 rounded-modal flex items-center justify-center typo-heading-lg opacity-50" style={{ backgroundColor: `${selectedPersona.color || '#6B7280'}20`, border: `1px solid ${selectedPersona.color || '#6B7280'}40`, color: selectedPersona.color || '#6B7280' }}>{selectedPersona.name.charAt(0).toUpperCase()}</div>
             )}
             <div className="text-center space-y-1.5">
-              <p className="typo-heading text-foreground/70">{selectedPersona.name}</p>
+              <p className="typo-heading text-foreground">{selectedPersona.name}</p>
               <p className="typo-body text-zinc-500">Ready to execute &mdash; click Run or press{' '}<kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 typo-code">Enter</kbd></p>
             </div>
           </div>

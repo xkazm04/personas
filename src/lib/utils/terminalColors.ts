@@ -15,12 +15,12 @@ export function classifyLine(line: string): TerminalLineStyle {
 }
 
 export const TERMINAL_STYLE_MAP: Record<TerminalLineStyle, string> = {
-  meta: 'text-muted-foreground/50 italic',
+  meta: 'text-foreground italic',
   tool: 'text-cyan-400/70',
   error: 'text-red-400/80 font-medium',
   status: 'text-emerald-400/70 font-semibold',
   summary: '',
-  text: 'text-foreground/80',
+  text: 'text-foreground',
   code: 'text-violet-300/80 font-mono',
   info: 'text-blue-400/70 font-medium',
 };

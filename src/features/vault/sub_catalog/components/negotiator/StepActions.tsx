@@ -48,7 +48,7 @@ export function StepExpandedContent({
       {/* Description */}
       <motion.p
         variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
-        className="text-sm text-foreground/80"
+        className="text-sm text-foreground"
         data-testid={`negotiator-step-${stepIndex}-description`}
       >
         {step.description}
@@ -76,7 +76,7 @@ export function StepExpandedContent({
             <ExternalLink className="w-3.5 h-3.5" />
             Open in browser
           </button>
-          <p className="text-sm text-muted-foreground/60 font-mono truncate pl-0.5">{step.url}</p>
+          <p className="text-sm text-foreground font-mono truncate pl-0.5">{step.url}</p>
         </motion.div>
       )}
 

@@ -109,13 +109,13 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-              className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              className="text-foreground hover:text-foreground transition-colors flex-shrink-0"
               aria-label={t.overview.metric_help_popover.dismiss_help}
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-2">{info.description}</p>
+          <p className="text-xs text-foreground leading-relaxed mb-2">{info.description}</p>
           <div className="text-xs space-y-1.5">
             <p className="text-emerald-400">
               <span className="font-medium">{t.overview.metric_help_popover.healthy}</span> {info.healthyRange}
@@ -127,7 +127,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="mt-2.5 w-full text-xs text-center py-1 rounded-card bg-primary/5 hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-2.5 w-full text-xs text-center py-1 rounded-card bg-primary/5 hover:bg-primary/10 text-foreground hover:text-foreground transition-colors"
           >
             {t.overview.metric_help_popover.got_it}
           </button>

@@ -70,7 +70,7 @@ export function CredentialPortability({
   return (
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.credential_vault} />
-      <div className="flex items-start gap-2 text-sm text-muted-foreground/70">
+      <div className="flex items-start gap-2 text-sm text-foreground">
         <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400/70" />
         <p>
           {s.credential_vault_hint}
@@ -99,7 +99,7 @@ export function CredentialPortability({
                 value={credExportPassphrase}
                 onChange={(e) => setCredExportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredExport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/40 outline-none focus-visible:border-amber-500/30 w-56"
+                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/90 placeholder:text-foreground outline-none focus-visible:border-amber-500/30 w-56"
                 autoFocus
               />
               <button onClick={onCredExport} disabled={credExportStatus === 'loading'}
@@ -108,7 +108,7 @@ export function CredentialPortability({
                 Export
               </button>
               <button onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
-                className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors">
+                className="text-xs text-foreground hover:text-muted-foreground/80 transition-colors">
                 Cancel
               </button>
             </div>
@@ -134,7 +134,7 @@ export function CredentialPortability({
                 type="password" placeholder="Passphrase" value={credImportPassphrase}
                 onChange={(e) => setCredImportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredImport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/40 outline-none focus-visible:border-blue-500/30 w-56"
+                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/90 placeholder:text-foreground outline-none focus-visible:border-blue-500/30 w-56"
                 autoFocus
               />
               <button onClick={onCredImport} disabled={credImportStatus === 'loading'}
@@ -143,7 +143,7 @@ export function CredentialPortability({
                 Import
               </button>
               <button onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
-                className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors">
+                className="text-xs text-foreground hover:text-muted-foreground/80 transition-colors">
                 Cancel
               </button>
             </div>
@@ -158,24 +158,24 @@ export function CredentialPortability({
             <AlertTriangle className="w-4 h-4" />
             {conflicts.length} credential{conflicts.length > 1 ? 's' : ''} already exist
           </div>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-foreground">
             Choose how to handle each conflict:
           </p>
           <div className="space-y-2">
             {conflicts.map((c) => (
               <div key={c.name} className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10">
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-foreground/80 truncate block">{c.name}</span>
-                  <span className="text-xs text-muted-foreground/50">{c.service_type}</span>
+                  <span className="text-sm font-medium text-foreground truncate block">{c.name}</span>
+                  <span className="text-xs text-foreground">{c.service_type}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {(['skip', 'keep_both', 'replace'] as const).map((action) => {
                     const isActive = resolutions[c.name] === action;
                     const labels: Record<ConflictAction, string> = { skip: 'Skip', keep_both: 'Keep Both', replace: 'Replace' };
                     const colors: Record<ConflictAction, string> = {
-                      skip: isActive ? 'bg-muted-foreground/20 text-foreground/80 border-muted-foreground/30' : 'text-muted-foreground/50',
-                      keep_both: isActive ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' : 'text-muted-foreground/50',
-                      replace: isActive ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' : 'text-muted-foreground/50',
+                      skip: isActive ? 'bg-muted-foreground/20 text-foreground border-muted-foreground/30' : 'text-foreground',
+                      keep_both: isActive ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' : 'text-foreground',
+                      replace: isActive ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' : 'text-foreground',
                     };
                     return (
                       <button
@@ -211,7 +211,7 @@ export function CredentialPortability({
             <PackageCheck className="w-4 h-4" />
             {s.cred_import_complete}
           </div>
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             {credImportResult.created} imported
             {credImportResult.skipped > 0 && `, ${credImportResult.skipped} skipped`}
             {credImportResult.replaced > 0 && `, ${credImportResult.replaced} replaced`}
@@ -220,7 +220,7 @@ export function CredentialPortability({
             <div className="mt-2 space-y-1">
               <p className="text-sm font-medium text-amber-400">Warnings:</p>
               {credImportResult.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-muted-foreground/70 pl-2">- {w}</p>
+                <p key={i} className="text-sm text-foreground pl-2">- {w}</p>
               ))}
             </div>
           )}

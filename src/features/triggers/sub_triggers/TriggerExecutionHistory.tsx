@@ -24,8 +24,8 @@ function PayloadBlock({ label, data }: { label: string; data: string | null }) {
 
   return (
     <div className="space-y-1">
-      <div className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 text-sm font-mono text-foreground/80 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+      <div className="text-sm font-medium text-foreground uppercase tracking-wide">{label}</div>
+      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 text-sm font-mono text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
         {formatted}
       </pre>
     </div>
@@ -58,8 +58,8 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
       >
         {hasPayload ? (
           isExpanded
-            ? <ChevronDown className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-            : <ChevronRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+            ? <ChevronDown className="w-3 h-3 text-foreground flex-shrink-0" />
+            : <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
         ) : (
           <div className="w-3 h-3 flex-shrink-0" />
         )}
@@ -67,13 +67,13 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
         <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(statusEntry)}`}>
           {statusEntry.label}
         </span>
-        <span className="text-muted-foreground/90 font-mono">
+        <span className="text-foreground font-mono">
           {formatDuration(exec.duration_ms)}
         </span>
         {exec.retry_count > 0 && (
           <span className="text-amber-400/70 text-sm">retry #{exec.retry_count}</span>
         )}
-        <span className="text-muted-foreground/60 ml-auto text-sm">
+        <span className="text-foreground ml-auto text-sm">
           {formatRelativeTime(exec.started_at)}
         </span>
       </button>
@@ -85,7 +85,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
           >
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
               {/* Metadata line */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground/60">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-foreground">
                 <span className="font-mono">{exec.id.slice(0, 12)}</span>
                 {exec.model_used && <span>model: {exec.model_used}</span>}
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
@@ -160,13 +160,13 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
     <>
       <button
         onClick={toggle}
-        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
+        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-foreground hover:text-muted-foreground transition-colors w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <History className="w-3 h-3" />
         {t.triggers.execution_history}
         {history.stats.totalRuns > 0 && (
-          <span className="text-muted-foreground/50 ml-1">({history.stats.totalRuns})</span>
+          <span className="text-foreground ml-1">({history.stats.totalRuns})</span>
         )}
       </button>
 
@@ -176,7 +176,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
           >
             <div className="space-y-1.5 pt-1">
               {history.loading ? (
-                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
+                <div className="flex items-center gap-2 py-2 text-sm text-foreground">
                   <LoadingSpinner size="xs" />
                   Loading...
                 </div>
@@ -186,14 +186,14 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                   {t.triggers.could_not_load_history}
                   <button
                     onClick={() => void history.fetch()}
-                    className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
+                    className="ml-auto flex items-center gap-1 text-sm text-foreground hover:text-foreground transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />
                     Retry
                   </button>
                 </div>
               ) : history.executions.length === 0 ? (
-                <div className="py-2 text-sm text-muted-foreground/80">
+                <div className="py-2 text-sm text-foreground">
                   {t.triggers.no_executions_recorded}
                 </div>
               ) : (
@@ -214,7 +214,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                   <button
                     onClick={() => void history.fetch()}
                     disabled={history.loading}
-                    className="flex items-center gap-1.5 w-full justify-center py-1.5 text-sm text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
+                    className="flex items-center gap-1.5 w-full justify-center py-1.5 text-sm text-foreground hover:text-muted-foreground/90 transition-colors"
                   >
                     <RefreshCw className={`w-3 h-3 ${history.loading ? 'animate-spin' : ''}`} />
                     Refresh

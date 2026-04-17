@@ -61,7 +61,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
         className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono text-sm bg-background transition-all`}
       >
         {!hasStarted ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground/80 text-sm">
+          <div className="flex items-center justify-center h-full text-foreground text-sm">
             Output will appear here when the review starts
           </div>
         ) : (
@@ -71,7 +71,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 
               return (
                 <div key={index} className={`flex gap-2 py-px${shouldAnimate ? ' animate-fade-in' : ''}`}>
-                  <span className="text-muted-foreground/20 select-none flex-shrink-0 w-8 text-right">
+                  <span className="text-foreground select-none flex-shrink-0 w-8 text-right">
                     {(index + 1).toString().padStart(3, ' ')}
                   </span>
                   <span className={`break-all ${
@@ -117,7 +117,7 @@ export function ResultSummary({ result }: { result: TestRunResult }) {
           <AlertTriangle className="w-4 h-4" />
           {result.errored} errors
         </span>
-        <span className="ml-auto text-muted-foreground/90 text-sm">
+        <span className="ml-auto text-foreground text-sm">
           {result.totalTests} total tests
         </span>
       </div>

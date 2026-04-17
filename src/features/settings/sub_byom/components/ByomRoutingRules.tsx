@@ -36,12 +36,12 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
             </button>
           }
         />
-        <p className="text-sm text-muted-foreground/60 mt-1">
+        <p className="text-sm text-foreground mt-1">
           {s.routing_hint}
         </p>
 
         {rules.length === 0 ? (
-          <p className="text-sm text-muted-foreground/50 text-center py-6">
+          <p className="text-sm text-foreground text-center py-6">
             {s.routing_empty}
           </p>
         ) : (
@@ -76,12 +76,12 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <button onClick={() => onUpdate(idx, { enabled: !rule.enabled })} className="text-sm">
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
-                          : <ToggleLeft className="w-5 h-5 text-muted-foreground/50" />
+                          : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
                       </button>
                       <button
                         onClick={() => onRemove(idx)}
-                        className="text-muted-foreground/50 hover:text-red-400 transition-colors"
+                        className="text-foreground hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -90,7 +90,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
 
                   <div className="grid grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.complexity}</label>
+                      <label className="text-xs text-foreground mb-1 block">{s.complexity}</label>
                       <select
                         value={rule.task_complexity}
                         onChange={(e) => onUpdate(idx, { task_complexity: e.target.value as TaskComplexity })}
@@ -102,7 +102,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.provider}</label>
+                      <label className="text-xs text-foreground mb-1 block">{s.provider}</label>
                       <select
                         value={rule.provider}
                         onChange={(e) => onUpdate(idx, { provider: e.target.value })}
@@ -116,12 +116,12 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground/60 mb-1 block">{s.model_optional}</label>
+                      <label className="text-xs text-foreground mb-1 block">{s.model_optional}</label>
                       <input
                         value={rule.model || ''}
                         onChange={(e) => onUpdate(idx, { model: e.target.value || null })}
                         placeholder="e.g. claude-haiku-4-5-20251001"
-                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-muted-foreground/30"
+                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground"
                       />
                     </div>
                   </div>

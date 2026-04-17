@@ -30,7 +30,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
         <span className="ml-auto flex items-center gap-2">
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground/80" title={t.triggers.list.budget_unavailable}>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>
               <ShieldAlert className="w-3 h-3" />
               {t.triggers.unknown_budget_label}
             </span>
@@ -53,11 +53,11 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             {trigger.enabled ? (
               <ToggleRight className="w-5 h-5 text-emerald-400" />
             ) : (
-              <ToggleLeft className="w-5 h-5 text-muted-foreground/80" />
+              <ToggleLeft className="w-5 h-5 text-foreground" />
             )}
           </span>
 
-          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
       </button>
     </div>

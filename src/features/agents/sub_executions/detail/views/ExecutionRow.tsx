@@ -51,9 +51,9 @@ export function ExecutionRow({
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
 
   const chevron = compareMode ? null : isExpanded ? (
-    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
+    <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
   ) : (
-    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
+    <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
   );
 
   const statusEntry = getStatusEntry(execution.status);
@@ -154,7 +154,7 @@ export function ExecutionRow({
           {statusBadge}
           {retryBadge}
           {duration}
-          <span className="typo-body text-muted-foreground/80 ml-auto">
+          <span className="typo-body text-foreground ml-auto">
             {formatRelativeTime(execution.started_at)}
           </span>
         </div>

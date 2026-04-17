@@ -66,16 +66,16 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
     <div className="flex flex-col gap-4 h-full min-h-0">
       <div className="grid grid-cols-2 gap-3 flex-shrink-0">
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.event_id}</span>
+          <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.event_log_item.event_id}</span>
           <span className="text-sm"><UuidLabel value={event.id} /></span>
         </div>
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.project}</span>
+          <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.event_log_item.project}</span>
           <span className="text-sm"><UuidLabel value={event.project_id} /></span>
         </div>
         {event.source_id && (
           <div>
-            <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.source}</span>
+            <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.event_log_item.source}</span>
             <span className="text-sm">
               <UuidLabel value={event.source_id} label={event.source_type || undefined} />
             </span>
@@ -83,7 +83,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
         )}
         {event.processed_at && (
           <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
-            <span className="text-sm font-mono text-foreground/70 font-medium">{t.overview.event_log_item.processed}</span>
+            <span className="text-sm font-mono text-foreground font-medium">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 text-sm text-foreground">
               {new Date(event.processed_at).toLocaleString()}
             </span>
@@ -94,7 +94,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.payload && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center justify-between mb-1 flex-shrink-0">
-            <span className="text-sm text-foreground/70 font-medium">{t.overview.event_log_item.event_data}</span>
+            <span className="text-sm text-foreground font-medium">{t.overview.event_log_item.event_data}</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
@@ -104,7 +104,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                   setTimeout(() => setCopiedPayload(false), 2000);
                 }).catch(() => { /* intentional */ });
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-sm text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.event_log_item.copy_event_data}
             >
               {copiedPayload ? (
@@ -147,7 +147,7 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function EventRow({ event, index, start, size, getPersona, onClick }: EventRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
@@ -181,8 +181,8 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
-            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground" /></div>
+            <span className="text-sm text-foreground truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </td>
@@ -216,7 +216,7 @@ interface EventGridRowProps {
 
 export function EventGridRow({ event, index, gridCols, getPersona, onClick }: EventGridRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
@@ -244,8 +244,8 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
-            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
-            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground" /></div>
+            <span className="text-sm text-foreground truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </div>

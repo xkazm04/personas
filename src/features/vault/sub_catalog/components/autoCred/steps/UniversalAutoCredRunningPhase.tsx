@@ -90,7 +90,7 @@ export function UniversalAutoCredRunningPhase({
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-indigo-400" />
-            <p className="text-sm text-muted-foreground/90">{t.vault.auto_cred_extra.saving_connector}</p>
+            <p className="text-sm text-foreground">{t.vault.auto_cred_extra.saving_connector}</p>
           </motion.div>
         )}
 
@@ -105,7 +105,7 @@ export function UniversalAutoCredRunningPhase({
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">
+              <p className="text-sm text-foreground mt-1">
                 {session.discoveredConnector?.label ?? 'Service'} credential has been securely stored.
               </p>
             </div>

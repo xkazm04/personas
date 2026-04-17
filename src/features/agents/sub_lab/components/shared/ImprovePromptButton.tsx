@@ -170,8 +170,8 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         )}
       </button>
       {weakest && state === 'idle' && (
-        <span className="typo-body text-muted-foreground/50">
-          Will focus on <strong className="text-muted-foreground/70">{weakest.name}</strong> (avg {weakest.score}/100)
+        <span className="typo-body text-foreground">
+          Will focus on <strong className="text-foreground">{weakest.name}</strong> (avg {weakest.score}/100)
         </span>
       )}
     </div>

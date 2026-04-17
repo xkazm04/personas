@@ -155,7 +155,7 @@ export function OAuthProgressRing({
           className={`text-sm text-center max-w-[220px] leading-snug ${
             phase === 'success'
               ? 'text-emerald-300'
-              : 'text-muted-foreground/70'
+              : 'text-foreground'
           }`}
         >
           {message}

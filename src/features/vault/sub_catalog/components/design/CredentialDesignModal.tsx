@@ -40,7 +40,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           </div>
           <div>
             <h2 id="credential-design-title" className="text-base font-semibold text-foreground">{t.vault.design_modal.title}</h2>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="text-sm text-foreground">{subtitle}</p>
           </div>
         </div>
         <Button
@@ -49,7 +49,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           icon={<X className="w-4 h-4" />}
           onClick={modal.handleClose}
           data-testid="vault-design-cancel"
-          className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
+          className="text-foreground hover:text-foreground hover:bg-secondary/60"
         />
       </div>
 

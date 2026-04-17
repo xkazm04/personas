@@ -77,8 +77,8 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
           disabled={!canPrev}
           className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
             canPrev
-              ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
+              : 'border-primary/5 text-foreground cursor-default'
           }`}
           aria-label="Previous question"
         >
@@ -109,7 +109,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-muted-foreground/60 tabular-nums">
+                <span className="text-sm text-foreground tabular-nums">
                   {activeIndex + 1} / {questions.length}
                 </span>
               </div>
@@ -120,7 +120,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
               </p>
 
               {q.context && (
-                <p className="text-sm text-foreground/50 mb-4 leading-relaxed">
+                <p className="text-sm text-foreground mb-4 leading-relaxed">
                   {q.context}
                 </p>
               )}
@@ -158,7 +158,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                           className={`px-4 py-2 text-sm rounded-modal border transition-all ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
-                              : 'text-muted-foreground border-primary/10 hover:bg-secondary/40'
+                              : 'text-foreground border-primary/10 hover:bg-secondary/40'
                           }`}
                         >
                           {opt}
@@ -178,8 +178,8 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
           disabled={!canNext}
           className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
             canNext
-              ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
+              : 'border-primary/5 text-foreground cursor-default'
           }`}
           aria-label="Next question"
         >
@@ -212,7 +212,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
       </div>
 
       {/* Keyboard hint */}
-      <p className="text-sm text-muted-foreground/60 mt-2">
+      <p className="text-sm text-foreground mt-2">
         Use{' '}
         <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&larr;</kbd>
         {' '}

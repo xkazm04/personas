@@ -109,7 +109,7 @@ export function PeerList() {
             {st.refresh}
           </button>
           {lastScannedLabel && (
-            <span className="text-[10px] text-muted-foreground/50">
+            <span className="text-[10px] text-foreground">
               scanned {lastScannedLabel}
             </span>
           )}
@@ -236,11 +236,11 @@ function RadarEmptyState() {
         className="w-[120px] h-[120px] opacity-80"
         style={{ imageRendering: 'auto' }}
       />
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+      <div className="flex items-center gap-1.5 text-xs text-foreground">
         <Wifi className="w-3.5 h-3.5 text-emerald-400/50" />
         {st.scanning_network}
       </div>
-      <span className="text-[11px] text-muted-foreground/40 text-center max-w-[260px]">
+      <span className="text-[11px] text-foreground text-center max-w-[260px]">
         {st.lan_hint}
       </span>
     </div>
@@ -258,7 +258,7 @@ function PeerScanSkeleton() {
         <Wifi className="w-6 h-6 text-emerald-400/60" />
         <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
       </div>
-      <span className="text-xs text-muted-foreground/70 mb-2">{_st.scanning_network}</span>
+      <span className="text-xs text-foreground mb-2">{_st.scanning_network}</span>
 
       {/* Skeleton PeerCard placeholders */}
       <div className="w-full space-y-2">

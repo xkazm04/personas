@@ -123,7 +123,7 @@ export function ConfigurationPopup({
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground/90 mt-1">{subtitle}</p>
+          <p className="text-sm text-foreground mt-1">{subtitle}</p>
         </div>
 
         <div className="px-4 py-4 space-y-3">
@@ -134,7 +134,7 @@ export function ConfigurationPopup({
           )}
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+              <label className="block text-sm font-medium text-foreground mb-1.5">
                 {field.label}
               </label>
               <input
@@ -151,7 +151,7 @@ export function ConfigurationPopup({
             </div>
           ))}
           {footerText && (
-            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+            <p className="text-sm text-foreground leading-relaxed">
               {footerText}
             </p>
           )}
@@ -161,7 +161,7 @@ export function ConfigurationPopup({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm font-medium rounded-modal text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
+              className="px-3 py-1.5 text-sm font-medium rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -175,7 +175,7 @@ export function ConfigurationPopup({
           </div>
           {!hasAnyValue && !saving && loaded && (
             <p
-              className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5 text-right"
+              className="animate-fade-slide-in text-foreground text-xs mt-1.5 text-right"
             >
               {t.agents.config_popup.fill_hint}
             </p>

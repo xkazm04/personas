@@ -35,10 +35,10 @@ export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: 
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
       >
         <Zap className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-[11px] font-medium text-muted-foreground">{t.triggers.builder.events}</span>
+        <span className="text-[11px] font-medium text-foreground">{t.triggers.builder.events}</span>
         {expanded
-          ? <ChevronUp className="w-3 h-3 text-muted-foreground/50" />
-          : <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
+          ? <ChevronUp className="w-3 h-3 text-foreground" />
+          : <ChevronDown className="w-3 h-3 text-foreground" />
         }
       </button>
 
@@ -94,7 +94,7 @@ function SourceChip({ template: t, isOnCanvas, onStartPointerDrag }: {
       title={t.description}
     >
       <t.icon className={`w-3 h-3 flex-shrink-0 ${t.color}`} />
-      <span className="text-[10px] font-medium text-foreground/80 whitespace-nowrap">{t.label}</span>
+      <span className="text-[10px] font-medium text-foreground whitespace-nowrap">{t.label}</span>
     </div>
   );
 }
@@ -110,7 +110,7 @@ function CustomEventChip() {
         value={value}
         onChange={e => setValue(e.target.value)}
         placeholder={t.triggers.builder.custom_event_placeholder}
-        className="w-24 px-2 py-1.5 text-[10px] rounded-card bg-transparent text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:w-32 transition-all"
+        className="w-24 px-2 py-1.5 text-[10px] rounded-card bg-transparent text-foreground placeholder:text-foreground focus:outline-none focus:w-32 transition-all"
       />
       {value.trim() && (
         <button

@@ -46,9 +46,9 @@ export function EventTemplateCard({
             ) : (
               <Icon className="w-3.5 h-3.5 text-amber-400/60" />
             )}
-            <span className="text-sm font-medium text-foreground/80">{template.name}</span>
+            <span className="text-sm font-medium text-foreground">{template.name}</span>
           </div>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">{template.description}</p>
+          <p className="text-sm text-foreground mt-0.5">{template.description}</p>
         </div>
 
         {/* Toggle */}
@@ -87,7 +87,7 @@ export function EventTemplateCard({
             />
           )}
           {template.id === 'healthcheck_failure' && (
-            <div className="text-sm text-muted-foreground/80">
+            <div className="text-sm text-foreground">
               {t.vault.event_config.healthcheck_auto_rotate}
             </div>
           )}
@@ -100,7 +100,7 @@ export function EventTemplateCard({
           )}
 
           {existing.last_polled_at && (
-            <div className="text-sm text-muted-foreground/60 mt-1">
+            <div className="text-sm text-foreground mt-1">
               {t.vault.event_config.last_evaluated.replace('{time}', new Date(existing.last_polled_at).toLocaleString())}
             </div>
           )}

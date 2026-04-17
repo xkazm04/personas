@@ -52,7 +52,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
         {getTriggerTypeLabel(trigger.trigger_type)}
       </span>
       {parts.length > 0 && (
-        <span className="text-sm text-muted-foreground/35 truncate">
+        <span className="text-sm text-foreground truncate">
           {parts.join(' · ')}
         </span>
       )}

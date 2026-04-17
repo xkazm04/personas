@@ -18,7 +18,7 @@ import { BrowserStatusBanner } from './BrowserDetail';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
-  connecting: { text: 'text-muted-foreground/30', line: 'bg-primary/8' },
+  connecting: { text: 'text-foreground', line: 'bg-primary/8' },
   working: { text: 'text-cyan-400/30', line: 'bg-cyan-500/10' },
   action_required: { text: 'text-amber-400/30', line: 'bg-amber-500/10' },
   opening_url: { text: 'text-blue-400/30', line: 'bg-blue-500/10' },
@@ -140,8 +140,8 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         })}
 
         {visibleLogs.length === 0 && (
-          <div className="text-muted-foreground/60 text-center py-10 space-y-2">
-            <LoadingSpinner size="xl" className="mx-auto text-muted-foreground/50" />
+          <div className="text-foreground text-center py-10 space-y-2">
+            <LoadingSpinner size="xl" className="mx-auto text-foreground" />
             <p className="text-sm">
               {isGuided ? t.vault.auto_cred_extra.preparing_guided : t.vault.auto_cred_extra.starting_browser}
             </p>

@@ -50,7 +50,7 @@ export function useDbGridColumns(
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
       render: (row) => (
-        <span className="text-sm text-foreground/70 truncate">{row.connector?.label || row.credential.service_type}</span>
+        <span className="text-sm text-foreground truncate">{row.connector?.label || row.credential.service_type}</span>
       ),
     },
     {
@@ -64,7 +64,7 @@ export function useDbGridColumns(
           {row.tableCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">--</span>
+        <span className="text-xs text-foreground">--</span>
       ),
     },
     {
@@ -78,7 +78,7 @@ export function useDbGridColumns(
           {row.queryCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">--</span>
+        <span className="text-xs text-foreground">--</span>
       ),
     },
     {
@@ -88,7 +88,7 @@ export function useDbGridColumns(
       sortable: true,
       align: 'right' as const,
       render: (row) => (
-        <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
+        <span className="text-sm text-foreground">{formatRelativeTime(row.credential.created_at)}</span>
       ),
     },
   ], [typeOptions, typeFilter, setTypeFilter, db]);

@@ -100,7 +100,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
       <div className="rounded-modal border border-primary/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5">
           <Zap className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
-          <span className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.title}</span>
+          <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider">{t.agents.quick_config.title}</span>
 
           {!collapsed && (
             <div className="flex items-center gap-2 ml-2">
@@ -110,7 +110,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
                   openPanel === 'conditions'
                     ? 'bg-primary/15 text-primary border border-primary/25'
-                    : 'bg-secondary/20 text-muted-foreground/60 border border-transparent hover:border-primary/15'
+                    : 'bg-secondary/20 text-foreground border border-transparent hover:border-primary/15'
                 }`}
               >
                 <Clock className="w-3 h-3" />
@@ -128,7 +128,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
                   openPanel === 'services'
                     ? 'bg-primary/15 text-primary border border-primary/25'
-                    : 'bg-secondary/20 text-muted-foreground/60 border border-transparent hover:border-primary/15'
+                    : 'bg-secondary/20 text-foreground border border-transparent hover:border-primary/15'
                 }`}
               >
                 <Plug className="w-3 h-3" />
@@ -140,7 +140,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
           <button
             type="button"
             onClick={() => { setCollapsed(!collapsed); setOpenPanel(null); }}
-            className="ml-auto text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors p-1"
+            className="ml-auto text-foreground hover:text-muted-foreground/60 transition-colors p-1"
           >
             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
@@ -157,7 +157,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
           <div ref={conditionsRef} className="border-t border-primary/8 px-4 py-4">
             <div className="flex gap-6">
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">{t.agents.quick_config.time_schedule}</span>
+                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-2 block">{t.agents.quick_config.time_schedule}</span>
                 <SchedulePanel
                   frequency={frequency} setFrequency={setFrequency}
                   days={days} setDays={setDays}
@@ -167,7 +167,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               </div>
               <div className="w-px bg-primary/8 self-stretch" />
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">{t.agents.quick_config.event_triggers}</span>
+                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-2 block">{t.agents.quick_config.event_triggers}</span>
                 <EventsPanel
                   selectedEvents={selectedEvents}
                   onToggleEvent={toggleEvent}

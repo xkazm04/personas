@@ -22,9 +22,9 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
         </div>
         <div className="flex items-center gap-2">
           {score.data_stale && (
-            <span className="text-sm text-muted-foreground/60 bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
+            <span className="text-sm text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
           )}
-          <span className="text-sm text-muted-foreground/60 tabular-nums">{score.sample_count} samples</span>
+          <span className="text-sm text-foreground tabular-nums">{score.sample_count} samples</span>
         </div>
       </div>
 
@@ -37,7 +37,7 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
 
       {/* Error classification breakdown */}
       {(score.permanent_failure_rate_1h > 0 || score.transient_failure_rate_1h > 0) && (
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/80">
+        <div className="flex items-center gap-3 text-sm text-foreground">
           {score.permanent_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
@@ -68,8 +68,8 @@ function RateBar({ label, rate, threshold }: { label: string; rate: number; thre
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground/70 font-mono">{label}</span>
-        <span className={`text-sm font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-muted-foreground/80'}`}>
+        <span className="text-sm text-foreground font-mono">{label}</span>
+        <span className={`text-sm font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
           {pct.toFixed(0)}%
         </span>
       </div>

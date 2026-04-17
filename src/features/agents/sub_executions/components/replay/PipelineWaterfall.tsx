@@ -45,10 +45,10 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
     return (
       <div className="text-center py-10">
         <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-muted-foreground/60" />
+          <Activity className="w-6 h-6 text-foreground" />
         </div>
-        <p className="typo-body text-muted-foreground/80">{e.no_pipeline_trace}</p>
-        <p className="typo-body text-muted-foreground/60 mt-1">{e.pipeline_traces_captured}</p>
+        <p className="typo-body text-foreground">{e.no_pipeline_trace}</p>
+        <p className="typo-body text-foreground mt-1">{e.pipeline_traces_captured}</p>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex items-center gap-4 typo-body text-muted-foreground/60">
+      <div className="flex items-center gap-4 typo-body text-foreground">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> {e.legend_frontend}
         </div>
@@ -93,14 +93,14 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
         {/* Time axis header */}
         <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
+          <div className="typo-code text-foreground uppercase tracking-wider">
             {e.stage}
           </div>
-          <div className="flex justify-between typo-code text-muted-foreground/60 uppercase tracking-wider">
+          <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
-          <div className="typo-code text-muted-foreground/60 uppercase tracking-wider text-right">
+          <div className="typo-code text-foreground uppercase tracking-wider text-right">
             {e.duration}
           </div>
         </div>

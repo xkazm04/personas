@@ -43,7 +43,7 @@ export function InlineDiffPreview({ older, newer }: InlineDiffPreviewProps) {
   }, [older.structured_prompt, newer.structured_prompt]);
 
   if (changes.length === 0) {
-    return <p className="text-[11px] text-muted-foreground/40 italic">{t.agents.lab.no_prompt_changes}</p>;
+    return <p className="text-[11px] text-foreground italic">{t.agents.lab.no_prompt_changes}</p>;
   }
 
   return (
@@ -54,8 +54,8 @@ export function InlineDiffPreview({ older, newer }: InlineDiffPreviewProps) {
             change.type === 'added' ? 'bg-emerald-400' :
             change.type === 'removed' ? 'bg-red-400' : 'bg-amber-400'
           }`} />
-          <span className="text-foreground/60 font-medium capitalize">{change.key}</span>
-          <span className="text-muted-foreground/40">
+          <span className="text-foreground font-medium capitalize">{change.key}</span>
+          <span className="text-foreground">
             {change.type === 'added' && `+${change.addedWords} words`}
             {change.type === 'removed' && `−${change.removedWords} words`}
             {change.type === 'modified' && (

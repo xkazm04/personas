@@ -57,7 +57,7 @@ export function EventsPanel({
     <div className="flex gap-6 px-1">
       {/* Persona selector (left) */}
       <div className="flex flex-col gap-2 min-w-[160px]">
-        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.events_panel.source_agent}</span>
+        <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{t.agents.events_panel.source_agent}</span>
         <div className="flex flex-col gap-1 overflow-y-auto">
           {personas.filter((p) => p.enabled).map((p) => (
             <button
@@ -71,26 +71,26 @@ export function EventsPanel({
               }`}
             >
               <PersonaIcon icon={p.icon} color={p.color} />
-              <span className={`text-xs truncate ${selectedPersonaId === p.id ? 'text-primary font-medium' : 'text-muted-foreground/60'}`}>
+              <span className={`text-xs truncate ${selectedPersonaId === p.id ? 'text-primary font-medium' : 'text-foreground'}`}>
                 {p.name}
               </span>
             </button>
           ))}
           {personas.filter((p) => p.enabled).length === 0 && (
-            <p className="text-xs text-muted-foreground/40 py-2">{t.agents.events_panel.no_agents}</p>
+            <p className="text-xs text-foreground py-2">{t.agents.events_panel.no_agents}</p>
           )}
         </div>
       </div>
 
       {/* Event triggers (right) */}
       <div className="flex-1 flex flex-col gap-2">
-        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
           {selectedPersona ? tx(t.agents.events_panel.events_from, { name: selectedPersona.name }) : t.agents.events_panel.select_agent}
         </span>
         {loading ? (
-          <p className="text-xs text-muted-foreground/40 py-2 animate-pulse">{t.agents.events_panel.loading_events}</p>
+          <p className="text-xs text-foreground py-2 animate-pulse">{t.agents.events_panel.loading_events}</p>
         ) : designEvents.length === 0 && triggers.length === 0 ? (
-          <p className="text-xs text-muted-foreground/40 py-2">
+          <p className="text-xs text-foreground py-2">
             {selectedPersonaId ? t.agents.events_panel.no_subscriptions : t.agents.events_panel.choose_agent}
           </p>
         ) : (
@@ -115,13 +115,13 @@ export function EventsPanel({
                       : 'bg-secondary/10 border border-transparent hover:border-primary/15'
                   }`}
                 >
-                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-muted-foreground/40'}`} />
+                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-foreground'}`} />
                   <div className="min-w-0 flex-1">
-                    <span className={`text-xs font-mono block truncate ${isSelected ? 'text-teal-300 font-medium' : 'text-muted-foreground/70'}`}>
+                    <span className={`text-xs font-mono block truncate ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
                       {de.event_type}
                     </span>
                     {de.description && (
-                      <span className="text-[10px] text-muted-foreground/40 block truncate">{de.description}</span>
+                      <span className="text-[10px] text-foreground block truncate">{de.description}</span>
                     )}
                   </div>
                   {isSelected && (
@@ -157,8 +157,8 @@ export function EventsPanel({
                       : 'bg-secondary/10 border border-transparent hover:border-primary/15'
                   }`}
                 >
-                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-muted-foreground/40'}`} />
-                  <span className={`text-xs font-mono ${isSelected ? 'text-teal-300 font-medium' : 'text-muted-foreground/60'}`}>
+                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-foreground'}`} />
+                  <span className={`text-xs font-mono ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
                     {eventLabel}
                   </span>
                   {isSelected && (

@@ -73,7 +73,7 @@ export default function AssistantMessages({
               onClick={onTogglePreview}
               className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
             >
-              <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground flex items-center gap-2">
                 {tx(t.pipeline.blueprint_agents, { count: blueprint.members.length })}
                 {suggestedPattern && (
                   <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
@@ -82,15 +82,15 @@ export default function AssistantMessages({
                 )}
               </span>
               {previewExpanded ? (
-                <ChevronUp className="w-3 h-3 text-muted-foreground/90" />
+                <ChevronUp className="w-3 h-3 text-foreground" />
               ) : (
-                <ChevronDown className="w-3 h-3 text-muted-foreground/90" />
+                <ChevronDown className="w-3 h-3 text-foreground" />
               )}
             </button>
 
             {previewExpanded && (
               <div className="px-3 pb-3 space-y-2">
-                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                <p className="text-sm text-foreground leading-relaxed">
                   {blueprint.description}
                 </p>
 
@@ -104,7 +104,7 @@ export default function AssistantMessages({
                       >
                         <PersonaAvatar size="sm" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground/80 truncate">
+                          <div className="text-sm font-medium text-foreground truncate">
                             {m.persona_name}
                           </div>
                         </div>
@@ -119,7 +119,7 @@ export default function AssistantMessages({
                 </div>
 
                 {blueprint.connections.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
+                  <div className="flex items-center gap-1.5 text-sm text-foreground">
                     <ArrowRight className="w-3 h-3" />
                     {connectionSummary} connection{blueprint.connections.length !== 1 ? 's' : ''}
                   </div>

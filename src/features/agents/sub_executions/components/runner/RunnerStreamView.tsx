@@ -27,7 +27,7 @@ export function RunnerPhaseTimeline({
     <div className="border-b border-border/20">
       <button
         onClick={() => setShowPhases(!showPhases)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-muted-foreground/80 hover:text-muted-foreground transition-colors uppercase tracking-wider"
+        className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-foreground hover:text-muted-foreground transition-colors uppercase tracking-wider"
       >
         {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {e.phases}
@@ -61,7 +61,7 @@ export function RunnerPhaseTimeline({
                                 ? 'bg-primary/20 text-primary/90'
                                 : phase.id === 'error'
                                   ? 'bg-red-500/15 text-red-400/80'
-                                  : 'bg-secondary/40 text-muted-foreground/80'
+                                  : 'bg-secondary/40 text-foreground'
                             }`}
                             style={{ flexGrow: Math.max(duration, minGrow) }}
                           >

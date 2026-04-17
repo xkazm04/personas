@@ -49,7 +49,7 @@ export function ReplayTransportControls({
         icon={<ChevronsLeft className="w-3.5 h-3.5" />}
         onClick={onJumpToStart}
         title={e.jump_to_start}
-        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+        className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
       />
       <Button
         variant="ghost"
@@ -57,7 +57,7 @@ export function ReplayTransportControls({
         icon={<SkipBack className="w-3.5 h-3.5" />}
         onClick={onStepBackward}
         title={e.previous_step}
-        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+        className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
       />
       <Button
         variant={isPlaying ? 'accent' : 'secondary'}
@@ -67,7 +67,7 @@ export function ReplayTransportControls({
         title={e.play_pause}
         className={isPlaying
           ? 'bg-blue-500/15 border-blue-500/25 text-blue-400'
-          : 'bg-primary/10 border-primary/20 text-foreground/80 hover:bg-primary/15'
+          : 'bg-primary/10 border-primary/20 text-foreground hover:bg-primary/15'
         }
       />
       <Button
@@ -76,7 +76,7 @@ export function ReplayTransportControls({
         icon={<SkipForward className="w-3.5 h-3.5" />}
         onClick={onStepForward}
         title={e.next_step}
-        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+        className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
       />
       <Button
         variant="ghost"
@@ -84,7 +84,7 @@ export function ReplayTransportControls({
         icon={<ChevronsRight className="w-3.5 h-3.5" />}
         onClick={onJumpToEnd}
         title={e.jump_to_end}
-        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+        className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
       />
 
       {/* Speed selector */}
@@ -98,7 +98,7 @@ export function ReplayTransportControls({
             className={`font-mono ${
               speed === s
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
-                : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
+                : 'text-foreground hover:text-muted-foreground/80 border border-transparent'
             }`}
           >
             {s}x
@@ -117,7 +117,7 @@ export function ReplayTransportControls({
               icon={<X className="w-3 h-3" />}
               onClick={onClearFork}
               title={e.clear_fork_point}
-              className="text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50"
+              className="text-foreground hover:text-muted-foreground hover:bg-secondary/50"
             />
             <Button
               variant="accent"

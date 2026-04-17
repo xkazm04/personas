@@ -48,7 +48,7 @@ export function ProviderSparkline({
 
   if (data.length < 2) {
     return (
-      <span className="text-[10px] text-muted-foreground/40 italic">
+      <span className="text-[10px] text-foreground italic">
         No trend data
       </span>
     );
@@ -57,7 +57,7 @@ export function ProviderSparkline({
   return (
     <div className="inline-flex flex-col items-start gap-0.5">
       {label && (
-        <span className="text-[10px] text-muted-foreground/50 leading-none">{label}</span>
+        <span className="text-[10px] text-foreground leading-none">{label}</span>
       )}
       <svg
         width={width}

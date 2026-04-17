@@ -12,7 +12,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">{e.cost_breakdown}</div>
+        <div className="typo-code text-foreground uppercase tracking-wider">{e.cost_breakdown}</div>
         {estimated && (
           <span className="typo-heading px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
             {e.unknown_model_pricing}
@@ -21,9 +21,9 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
       </div>
       <div className="flex items-center gap-3 typo-code">
         <span className="text-blue-400">{tx(e.input_label, { cost: formatCost(inputCost) })}</span>
-        <span className="text-muted-foreground/80">|</span>
+        <span className="text-foreground">|</span>
         <span className="text-amber-400">{tx(e.output_label, { cost: formatCost(outputCost) })}</span>
-        <span className="text-muted-foreground/80">|</span>
+        <span className="text-foreground">|</span>
         <span className="text-foreground/90">{tx(e.total_label, { cost: formatCost(totalCost) })}</span>
       </div>
       <div className="h-2.5 rounded-full overflow-hidden bg-secondary/60 border border-primary/10 flex">
@@ -36,7 +36,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
           style={{ width: `${outputPct}%` }}
         />
       </div>
-      <div className="flex justify-between typo-code text-muted-foreground/80">
+      <div className="flex justify-between typo-code text-foreground">
         <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
         <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
       </div>

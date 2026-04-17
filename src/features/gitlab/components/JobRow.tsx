@@ -23,7 +23,7 @@ function JobLogViewer({ log }: { log: string | null }) {
 
   if (log == null) {
     return (
-      <div className="flex items-center justify-center py-6 text-muted-foreground/50 text-sm">
+      <div className="flex items-center justify-center py-6 text-foreground text-sm">
         <LoadingSpinner className="mr-2" />
         {t.gitlab.loading_log}
       </div>
@@ -32,14 +32,14 @@ function JobLogViewer({ log }: { log: string | null }) {
 
   if (log.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-muted-foreground/50">{t.gitlab.no_log_output}</div>
+      <div className="text-center py-4 text-sm text-foreground">{t.gitlab.no_log_output}</div>
     );
   }
 
   return (
     <pre
       ref={scrollRef}
-      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 text-xs font-mono text-foreground/80 whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
+      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 text-xs font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
     >
       {log}
     </pre>
@@ -76,17 +76,17 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
         className="w-full text-left p-2.5 flex items-center gap-2.5"
       >
         {isExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
         <StatusIcon status={job.status} />
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-foreground/85">{job.name}</span>
-          <span className="text-xs text-muted-foreground/50 ml-2">{job.stage}</span>
+          <span className="text-xs text-foreground ml-2">{job.stage}</span>
         </div>
         {job.duration != null && (
-          <span className="text-xs text-muted-foreground/50">{formatDuration(job.duration)}</span>
+          <span className="text-xs text-foreground">{formatDuration(job.duration)}</span>
         )}
         {sanitizeExternalUrl(job.webUrl) && (
           <a
@@ -94,7 +94,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-foreground/70 transition-colors"
+            className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
             title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3.5 h-3.5" />

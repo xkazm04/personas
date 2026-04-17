@@ -119,7 +119,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
     <div className="space-y-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors"
+        className="flex items-center gap-1.5 w-full text-sm text-foreground hover:text-muted-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Clock className="w-3 h-3" />
@@ -144,7 +144,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   onChange={(e) => update({ enabled: e.target.checked })}
                   className="accent-sky-500"
                 />
-                <span className="text-sm text-muted-foreground/80">
+                <span className="text-sm text-foreground">
                   {t.triggers.only_fire_during_active}
                 </span>
               </label>
@@ -162,7 +162,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           className={`w-7 h-7 rounded-card text-xs font-medium transition-colors ${
                             aw.days.includes(d.key)
                               ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                              : 'bg-secondary/30 text-muted-foreground/50 border border-primary/5 hover:border-primary/15'
+                              : 'bg-secondary/30 text-foreground border border-primary/5 hover:border-primary/15'
                           }`}
                         >
                           {d.short}
@@ -175,7 +175,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         className={`px-2 py-0.5 text-xs rounded-input transition-colors ${
                           isWeekdays
                             ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-muted-foreground/50 hover:text-muted-foreground/70 bg-secondary/20'
+                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
                         }`}
                       >
                         Weekdays
@@ -185,7 +185,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         className={`px-2 py-0.5 text-xs rounded-input transition-colors ${
                           isEveryday
                             ? 'bg-sky-500/15 text-sky-400'
-                            : 'text-muted-foreground/50 hover:text-muted-foreground/70 bg-secondary/20'
+                            : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
                         }`}
                       >
                         Every day
@@ -202,9 +202,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const [h, m] = e.target.value.split(':').map(Number);
                         update({ start_hour: h, start_minute: m });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                     />
-                    <span className="text-muted-foreground/50 text-xs">to</span>
+                    <span className="text-foreground text-xs">to</span>
                     <input
                       type="time"
                       value={timeToInput(aw.end_hour, aw.end_minute)}
@@ -212,13 +212,13 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const [h, m] = e.target.value.split(':').map(Number);
                         update({ end_hour: h, end_minute: m });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                     />
                   </div>
 
                   {/* Timezone */}
                   <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-muted-foreground/50" />
+                    <Globe className="w-3 h-3 text-foreground" />
                     <input
                       type="text"
                       value={aw.timezone ?? ''}
@@ -227,9 +227,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const val = e.target.value.trim();
                         update({ timezone: val || undefined });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring w-48"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring w-48"
                     />
-                    <span className="text-muted-foreground/40 text-xs">
+                    <span className="text-foreground text-xs">
                       {aw.timezone ? aw.timezone : `System: ${resolvedTimezoneLabel()}`}
                     </span>
                   </div>

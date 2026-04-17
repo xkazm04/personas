@@ -107,7 +107,7 @@ export default function PersonaHealthDashboard() {
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
                   healthView === 'heartbeats'
                     ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                    : 'text-foreground hover:bg-secondary/40'
                 }`}
                 title="Heartbeats view"
               >
@@ -118,7 +118,7 @@ export default function PersonaHealthDashboard() {
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
                   healthView === 'status-page'
                     ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                    : 'text-foreground hover:bg-secondary/40'
                 }`}
                 title="Status page view"
               >
@@ -129,7 +129,7 @@ export default function PersonaHealthDashboard() {
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
                   healthView === 'reliability'
                     ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                    : 'text-foreground hover:bg-secondary/40'
                 }`}
                 title="SLA reliability view"
               >
@@ -138,12 +138,12 @@ export default function PersonaHealthDashboard() {
             </div>
 
             {lastRefreshLabel && (
-              <span className="text-xs text-muted-foreground/50 mr-2">Updated {lastRefreshLabel}</span>
+              <span className="text-xs text-foreground mr-2">Updated {lastRefreshLabel}</span>
             )}
             <button
               onClick={handleRefresh}
               disabled={healthLoading}
-              className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
               title="Refresh health data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
@@ -154,11 +154,11 @@ export default function PersonaHealthDashboard() {
 
       <ContentBody>
         {healthView === 'status-page' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">Loading status page...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground text-sm">Loading status page...</div>}>
             <StatusPageView />
           </Suspense>
         ) : healthView === 'reliability' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">Loading reliability data...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground text-sm">Loading reliability data...</div>}>
             <SLADashboard />
           </Suspense>
         ) : (
@@ -190,7 +190,7 @@ export default function PersonaHealthDashboard() {
                   globalGrade === 'critical' ? 'text-red-400' : 'text-zinc-400'
                 }>{globalGrade.charAt(0).toUpperCase() + globalGrade.slice(1)}</span>
               </h2>
-              <p className="text-sm text-muted-foreground/70 mt-0.5">
+              <p className="text-sm text-foreground mt-0.5">
                 {healthSignals.length} persona{healthSignals.length !== 1 ? 's' : ''} monitored
               </p>
             </div>
@@ -210,12 +210,12 @@ export default function PersonaHealthDashboard() {
             <div className="xl:col-span-2 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Heart className="w-4 h-4 text-rose-400" />
-                <h3 className="typo-heading text-foreground/80">Persona Heartbeats</h3>
-                <span className="text-xs text-muted-foreground/50">{filteredSignals.length} persona{filteredSignals.length !== 1 ? 's' : ''}</span>
+                <h3 className="typo-heading text-foreground">Persona Heartbeats</h3>
+                <span className="text-xs text-foreground">{filteredSignals.length} persona{filteredSignals.length !== 1 ? 's' : ''}</span>
               </div>
 
               {filteredSignals.length === 0 ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground/50 text-sm">
+                <div className="flex items-center justify-center py-12 text-foreground text-sm">
                   {healthLoading ? 'Computing health signals...' : 'No personas match the selected filter.'}
                 </div>
               ) : (
@@ -246,11 +246,11 @@ export default function PersonaHealthDashboard() {
 // ---------------------------------------------------------------------------
 
 const GRADE_PILL_COLORS: Record<FilterGrade, { active: string; inactive: string; dot: string }> = {
-  all: { active: 'bg-primary/15 border-primary/25 text-primary', inactive: 'border-primary/10 text-muted-foreground/60', dot: 'bg-primary' },
-  healthy: { active: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400', inactive: 'border-primary/10 text-muted-foreground/60', dot: 'bg-emerald-400' },
-  degraded: { active: 'bg-amber-500/15 border-amber-500/25 text-amber-400', inactive: 'border-primary/10 text-muted-foreground/60', dot: 'bg-amber-400' },
-  critical: { active: 'bg-red-500/15 border-red-500/25 text-red-400', inactive: 'border-primary/10 text-muted-foreground/60', dot: 'bg-red-400' },
-  unknown: { active: 'bg-zinc-500/15 border-zinc-500/25 text-zinc-400', inactive: 'border-primary/10 text-muted-foreground/60', dot: 'bg-zinc-500' },
+  all: { active: 'bg-primary/15 border-primary/25 text-primary', inactive: 'border-primary/10 text-foreground', dot: 'bg-primary' },
+  healthy: { active: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400', inactive: 'border-primary/10 text-foreground', dot: 'bg-emerald-400' },
+  degraded: { active: 'bg-amber-500/15 border-amber-500/25 text-amber-400', inactive: 'border-primary/10 text-foreground', dot: 'bg-amber-400' },
+  critical: { active: 'bg-red-500/15 border-red-500/25 text-red-400', inactive: 'border-primary/10 text-foreground', dot: 'bg-red-400' },
+  unknown: { active: 'bg-zinc-500/15 border-zinc-500/25 text-zinc-400', inactive: 'border-primary/10 text-foreground', dot: 'bg-zinc-500' },
 };
 
 const GRADE_ICONS: Record<FilterGrade, typeof Shield> = {

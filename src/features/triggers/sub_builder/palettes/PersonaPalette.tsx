@@ -67,14 +67,14 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
       <div className="flex items-center border-b border-primary/5 px-1.5 pt-2 pb-1.5 gap-1 flex-shrink-0">
         <button
           onClick={() => setView('personas')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
           <Bot className="w-3 h-3" />{t.triggers.builder.personas}
         </button>
         <button
           onClick={() => setView('marketplace')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
           <Store className="w-3 h-3" />{t.triggers.builder.marketplace}
@@ -87,13 +87,13 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
         <>
           <div className="px-2.5 pt-2.5 pb-1 flex-shrink-0">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={t.triggers.builder.filter_personas_placeholder}
-                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
           </div>
@@ -133,7 +133,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleExpanded(p.id); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                          className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] text-foreground/40 hover:text-foreground/70 hover:bg-secondary/50 transition-colors cursor-pointer"
+                          className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] text-foreground hover:text-foreground/70 hover:bg-secondary/50 transition-colors cursor-pointer"
                         >
                           <span>{personaEvents.length}</span>
                           {isExpanded ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronRight className="w-2.5 h-2.5" />}
@@ -171,7 +171,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                             title={`Drag or click to place "${ev.eventType}" on canvas`}
                           >
                             <span className="w-1 h-1 rounded-full bg-cyan-400 flex-shrink-0" />
-                            <span className="text-foreground/60 truncate">{ev.eventType}</span>
+                            <span className="text-foreground truncate">{ev.eventType}</span>
                           </div>
                         ))}
                       </div>
@@ -182,7 +182,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
             })}
 
             {filtered.length === 0 && (
-              <p className="px-2 py-4 text-[10px] text-muted-foreground/50 italic text-center">
+              <p className="px-2 py-4 text-[10px] text-foreground italic text-center">
                 {personas.length === 0 ? t.triggers.builder.no_personas_created : t.triggers.builder.no_matches}
               </p>
             )}

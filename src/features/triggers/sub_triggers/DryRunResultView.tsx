@@ -44,17 +44,17 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Simulated Event */}
           {dryRunResult.simulated_event && (
             <div className="space-y-1.5">
-              <div className="text-sm text-muted-foreground/90 font-medium">{t.triggers.simulated_event}</div>
+              <div className="text-sm text-foreground font-medium">{t.triggers.simulated_event}</div>
               <div className="rounded-card bg-background/40 border border-primary/8 p-2 space-y-1 text-sm font-mono">
                 <div className="flex items-center gap-1.5">
                   <Radio className="w-3 h-3 text-amber-400/60" />
                   <span className="text-amber-400">{dryRunResult.simulated_event.event_type}</span>
                 </div>
-                <div className="text-muted-foreground/70 pl-[18px]">
+                <div className="text-foreground pl-[18px]">
                   source: {dryRunResult.simulated_event.source_type} / {dryRunResult.simulated_event.source_id.slice(0, 8)}
                 </div>
                 {dryRunResult.simulated_event.target_persona_name && (
-                  <div className="text-muted-foreground/70 pl-[18px]">
+                  <div className="text-foreground pl-[18px]">
                     target: {dryRunResult.simulated_event.target_persona_name}
                   </div>
                 )}
@@ -65,7 +65,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Matched Subscriptions */}
           {dryRunResult.matched_subscriptions.length > 0 && (
             <div className="space-y-1.5">
-              <div className="text-sm text-muted-foreground/90 font-medium">
+              <div className="text-sm text-foreground font-medium">
                 Matched Subscriptions ({dryRunResult.matched_subscriptions.length})
               </div>
               <div className="space-y-1">
@@ -73,8 +73,8 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
                   <div key={sub.subscription_id} className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-background/30 border border-primary/5 text-sm">
                     <Zap className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <span className="text-foreground/90 truncate">{sub.persona_name}</span>
-                    <ArrowRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
-                    <span className="text-muted-foreground/70 font-mono truncate">{sub.event_type}</span>
+                    <ArrowRight className="w-3 h-3 text-foreground flex-shrink-0" />
+                    <span className="text-foreground font-mono truncate">{sub.event_type}</span>
                   </div>
                 ))}
               </div>
@@ -83,7 +83,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
 
           {/* Empty state */}
           {dryRunResult.valid && dryRunResult.matched_subscriptions.length === 0 && (
-            <div className="text-sm text-muted-foreground/60 italic">
+            <div className="text-sm text-foreground italic">
               {t.triggers.no_subscriptions_activated}
             </div>
           )}

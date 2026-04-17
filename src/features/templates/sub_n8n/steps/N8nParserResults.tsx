@@ -76,13 +76,13 @@ export function N8nParserResults({
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground/80">
+                <p className="text-sm font-medium text-foreground">
                   Analyzing workflow and preparing transformation...
                 </p>
-                <p className="text-sm text-muted-foreground/90 mt-1.5">
+                <p className="text-sm text-foreground mt-1.5">
                   Usually takes about 1 minute
                 </p>
-                <p className="text-sm font-mono text-muted-foreground/80 mt-1">
+                <p className="text-sm font-mono text-foreground mt-1">
                   {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
                 </p>
               </div>
@@ -108,14 +108,14 @@ export function N8nParserResults({
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground/90">{parsedResult.summary}</p>
+            <p className="text-sm text-foreground">{parsedResult.summary}</p>
           </div>
         </div>
         <Button
           variant="secondary"
           size="sm"
           onClick={onReset}
-          className="rounded-modal border-primary/15 text-muted-foreground/80"
+          className="rounded-modal border-primary/15 text-foreground"
         >
           Import Another
         </Button>
@@ -143,7 +143,7 @@ export function N8nParserResults({
               variant="ghost"
               size="sm"
               onClick={onReset}
-              className="rounded-card border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50"
+              className="rounded-card border border-primary/15 text-foreground hover:bg-secondary/50"
             >
               No, re-upload
             </Button>
@@ -153,7 +153,7 @@ export function N8nParserResults({
 
       {/* Selection summary */}
       {hasSelection && (
-        <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
+        <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-foreground">
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
             {toolCount} tools
           </span>
@@ -163,7 +163,7 @@ export function N8nParserResults({
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.emerald}`}>
             {connectorCount} connectors
           </span>
-          <span className="text-muted-foreground/80 ml-1">{t.templates.n8n.selected_for_import}</span>
+          <span className="text-foreground ml-1">{t.templates.n8n.selected_for_import}</span>
         </div>
       )}
 

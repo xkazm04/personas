@@ -66,14 +66,14 @@ export function SearchTab({ kb }: SearchTabProps) {
       <div className="px-6 py-4 border-b border-primary/10 shrink-0 space-y-3">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={sh.search_placeholder}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-modal text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
               autoFocus
             />
           </div>
@@ -91,13 +91,13 @@ export function SearchTab({ kb }: SearchTabProps) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/50">
+        <div className="flex items-center gap-3 text-xs text-foreground">
           <label className="flex items-center gap-1.5">
             {sh.results_label}
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
-              className="bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground/70 text-xs"
+              className="bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground text-xs"
             >
               {[5, 10, 20, 50].map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -137,7 +137,7 @@ export function SearchTab({ kb }: SearchTabProps) {
         {results !== null && results.length > 0 && (
           <div className="p-6 space-y-3">
             {/* Stats bar */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground/50 mb-2">
+            <div className="flex items-center gap-3 text-xs text-foreground mb-2">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {durationMs}ms

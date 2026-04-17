@@ -26,10 +26,10 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="space-y-1.5">
-              <p className="text-sm text-foreground/80">
+              <p className="text-sm text-foreground">
                 {t.agents.chat_thread.welcome}
               </p>
-              <p className="text-sm text-muted-foreground/80">
+              <p className="text-sm text-foreground">
                 {t.agents.chat_thread.welcome_example}
               </p>
             </div>
@@ -44,14 +44,14 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
           >
             {msg.role === 'user' ? (
               <div className="w-7 h-7 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5 text-muted-foreground/60" />
+                <User className="w-3.5 h-3.5 text-foreground" />
               </div>
             ) : (
               <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
-            <p className="text-sm text-foreground/80 whitespace-pre-wrap pt-1 min-w-0">
+            <p className="text-sm text-foreground whitespace-pre-wrap pt-1 min-w-0">
               {msg.content}
             </p>
           </div>
@@ -65,7 +65,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             </div>
             <div className="flex items-center gap-2 pt-1.5">
               <LoadingSpinner size="sm" className="text-primary/50" />
-              <span className="text-sm text-muted-foreground/60">{thinkingLabel}</span>
+              <span className="text-sm text-foreground">{thinkingLabel}</span>
             </div>
           </div>
         )}

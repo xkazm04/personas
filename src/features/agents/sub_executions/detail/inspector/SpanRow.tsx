@@ -30,9 +30,9 @@ export function SpanRow({
         {hasChildren ? (
           <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
             {expanded ? (
-              <ChevronDown className="w-3 h-3 text-muted-foreground/70" />
+              <ChevronDown className="w-3 h-3 text-foreground" />
             ) : (
-              <ChevronRight className="w-3 h-3 text-muted-foreground/70" />
+              <ChevronRight className="w-3 h-3 text-foreground" />
             )}
           </button>
         ) : (

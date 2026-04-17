@@ -97,31 +97,31 @@ export function DeadLetterTab() {
           <div className="flex items-center gap-2">
             <Archive className="w-5 h-5 text-red-400" />
             <h3 className="text-sm font-semibold">{t.triggers.tab_dead_letter}</h3>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-foreground">
               ({events.length} event{events.length !== 1 ? 's' : ''})
             </span>
           </div>
           <button
             onClick={() => void loadEvents()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-foreground">
           {t.triggers.dead_letter_help}
         </p>
 
         {loading && events.length === 0 && (
-          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
+          <div className="flex items-center justify-center py-12 text-foreground text-sm">
             Loading...
           </div>
         )}
 
         {!loading && events.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+          <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
             <Archive className="w-8 h-8 opacity-30" />
             <p className="text-sm">{t.triggers.no_dead_letters}</p>
             <p className="text-xs opacity-70">{t.triggers.all_events_processed}</p>
@@ -155,7 +155,7 @@ export function DeadLetterTab() {
                         {evt.retry_count >= MAX_MANUAL_RETRIES && ' — exhausted'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs text-foreground">
                       <span>Source: {evt.source_type}</span>
                       {evt.source_id && <span>ID: {evt.source_id}</span>}
                       <span>{formatDate(evt.created_at)}</span>
@@ -184,7 +184,7 @@ export function DeadLetterTab() {
                     <button
                       onClick={() => handleDiscard(evt)}
                       disabled={actionsInProgress.has(evt.id)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-input bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-input bg-secondary/50 text-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
                       title="Discard this event permanently"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -201,10 +201,10 @@ export function DeadLetterTab() {
 
                 {evt.payload && (
                   <details className="text-xs">
-                    <summary className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                    <summary className="text-foreground cursor-pointer hover:text-foreground transition-colors">
                       Payload
                     </summary>
-                    <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground/80 overflow-x-auto text-[11px] max-h-32">
+                    <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground overflow-x-auto text-[11px] max-h-32">
                       {(() => {
                         try { return JSON.stringify(JSON.parse(evt.payload), null, 2); }
                         catch { return evt.payload; }

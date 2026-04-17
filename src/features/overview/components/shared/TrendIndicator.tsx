@@ -14,7 +14,7 @@ export function TrendIndicator({ trend, invertPolarity }: TrendIndicatorProps) {
   if (trend.direction === 'stable') {
     return (
       <span
-        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/70"
+        className="inline-flex items-center gap-0.5 text-[11px] text-foreground"
         title={t.trend.stable}
       >
         <Minus className="w-3 h-3" />

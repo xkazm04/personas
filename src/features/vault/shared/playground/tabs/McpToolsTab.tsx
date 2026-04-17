@@ -78,7 +78,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-        <span className="text-sm font-medium text-foreground/70">
+        <span className="text-sm font-medium text-foreground">
           {hasLoaded ? `${tools.length} tool${tools.length !== 1 ? 's' : ''}` : 'MCP Tools'}
         </span>
         <div className="flex-1" />

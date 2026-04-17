@@ -89,7 +89,7 @@ export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps)
               className={`relative w-8 h-8 rounded-card flex items-center justify-center transition-all duration-150 focus-ring ${
                 isActive
                   ? `bg-primary/12 ${panel.color}`
-                  : 'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5'
+                  : 'text-foreground hover:text-muted-foreground/70 hover:bg-primary/5'
               }`}
             >
               <Icon className="w-4 h-4" />

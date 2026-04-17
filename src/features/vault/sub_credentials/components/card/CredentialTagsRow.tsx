@@ -32,7 +32,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
-      <Tag className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+      <Tag className="w-3 h-3 text-foreground shrink-0" />
       {currentTags.map((tag) => {
         const style = getTagStyle(tag);
         return (
@@ -63,7 +63,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
             onBlur={onTagInputBlur}
             autoFocus
             placeholder={t.vault.credential_card.add_tag_placeholder}
-            className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
           />
           {showSuggestions && filteredSuggestions.length > 0 && (
             <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
@@ -73,7 +73,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
                   variant="ghost"
                   size="sm"
                   onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                  className="w-full justify-start text-left px-2.5 py-1 hover:bg-secondary/50 text-foreground/80"
+                  className="w-full justify-start text-left px-2.5 py-1 hover:bg-secondary/50 text-foreground"
                 >
                   {s}
                 </Button>
@@ -88,7 +88,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
           icon={<Plus className="w-2.5 h-2.5" />}
           onClick={startTagInput}
           title={t.vault.credential_card.add_tag_button}
-          className="text-muted-foreground/40 hover:text-muted-foreground/70 p-0"
+          className="text-foreground hover:text-muted-foreground/70 p-0"
         />
       )}
       <CopyButton
@@ -96,7 +96,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
         onCopy={copyCredentialId}
         label="id"
         tooltip={t.vault.credential_card.copy_credential_id}
-        className="border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80 px-2 py-0.5 text-xs font-mono"
+        className="border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80 px-2 py-0.5 text-xs font-mono"
       />
     </div>
   );

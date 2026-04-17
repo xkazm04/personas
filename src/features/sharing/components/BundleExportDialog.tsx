@@ -192,7 +192,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             )}
             {mode === 'enclave' ? st.seal_enclave_title : st.export_title}
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-foreground mt-1">
             {mode === 'enclave'
               ? st.seal_enclave_subtitle
               : st.export_subtitle}
@@ -206,7 +206,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             className={`flex-1 px-3 py-1.5 text-xs rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'bundle'
                 ? 'bg-background text-foreground shadow-elevation-1'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-foreground hover:text-foreground'
             }`}
           >
             <Package className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             className={`flex-1 px-3 py-1.5 text-xs rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'enclave'
                 ? 'bg-background text-foreground shadow-elevation-1'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-foreground hover:text-foreground'
             }`}
           >
             <Lock className="w-3.5 h-3.5" />
@@ -226,14 +226,14 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
+          <div className="flex items-center gap-2 text-sm text-foreground py-6 justify-center">
             <LoadingSpinner />
             {t.common.loading}
           </div>
         ) : mode === 'bundle' ? (
           /* Bundle mode */
           exposedResources.length === 0 ? (
-            <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-foreground">
               <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
               {st.no_resources_exposed}
             </div>
@@ -246,7 +246,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 >
                   {selected.size === exposedResources.length ? st.deselect_all : st.select_all}
                 </button>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-foreground">
                   {tx(st.selected_of_total, { selected: selected.size, total: exposedResources.length })}
                 </span>
               </div>
@@ -365,7 +365,7 @@ function EnclaveConfigPanel({
 
       {/* Persona selector */}
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">{st.label_persona}</label>
+        <label className="text-xs text-foreground mb-1 block">{st.label_persona}</label>
         <select
           value={selectedPersonaId}
           onChange={(e) => onSelectPersona(e.target.value)}
@@ -383,7 +383,7 @@ function EnclaveConfigPanel({
       {/* Policy configuration */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.label_max_cost}</label>
+          <label className="text-xs text-foreground mb-1 block">{st.label_max_cost}</label>
           <input
             type="number"
             min="0.01"
@@ -394,7 +394,7 @@ function EnclaveConfigPanel({
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.label_max_turns}</label>
+          <label className="text-xs text-foreground mb-1 block">{st.label_max_turns}</label>
           <input
             type="number"
             min="1"
@@ -406,7 +406,7 @@ function EnclaveConfigPanel({
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
         <input
           type="checkbox"
           checked={allowPersistence}
@@ -446,9 +446,9 @@ function ResourceCheckItem({
         <div className="text-sm text-foreground truncate">
           {resource.display_name || resource.resource_id}
         </div>
-        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+        <div className="text-[10px] text-foreground flex items-center gap-1.5">
           <span>{resource.resource_type}</span>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-foreground">·</span>
           <span>{resource.access_level}</span>
         </div>
       </div>

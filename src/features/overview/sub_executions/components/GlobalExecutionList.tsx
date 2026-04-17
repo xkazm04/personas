@@ -145,7 +145,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             {headerActions}
             <button
               onClick={() => setShowDashboard(!showDashboard)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
               title={showDashboard ? t.overview.execution_list.show_list : t.overview.execution_list.show_metrics}
             >
               <BarChart3 className="w-5 h-5" />
@@ -154,7 +154,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -226,9 +226,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         className="!px-2 !py-0 !rounded-card !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                       />
                     </div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.execution_list.col_duration}</div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">{t.overview.execution_list.col_started}</div>
-                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">{t.common.id}</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.execution_list.col_duration}</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.execution_list.col_started}</div>
+                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground">{t.common.id}</div>
                   </div>
                 )}
 
@@ -251,14 +251,14 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
-                            <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
+                            <span className="typo-heading text-foreground truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption flex-shrink-0 ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/70">
+                        <div className="flex items-center gap-3 mt-1 text-xs text-foreground">
                           <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
                           <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
                         </div>
@@ -273,7 +273,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
-                          <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
+                          <span className="text-sm text-foreground truncate">{exec.persona_name || t.overview.execution_list.unknown_persona}</span>
                         </div>
                         <div className="px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-heading ${badgeClass(status)}`}>
@@ -281,9 +281,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             {status.label}
                           </span>
                         </div>
-                        <div className="px-4 text-right"><span className="text-sm text-muted-foreground/90 font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
-                        <div className="px-4 min-w-0"><span className="text-sm text-muted-foreground/60 font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
+                        <div className="px-4 text-right"><span className="text-sm text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
+                        <div className="px-4 text-right"><span className="text-sm text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 min-w-0"><span className="text-sm text-foreground font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
                       </div>
                     );
                   })}
@@ -291,7 +291,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
                 {hasMore && (
                   <div className="pt-3 pb-2 text-center">
-                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
+                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
                       {t.overview.execution_list.load_more}
                     </button>
                   </div>

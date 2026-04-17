@@ -24,7 +24,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
     <div className="rounded-modal border border-primary/10 bg-secondary/15 hover:bg-secondary/25 transition-colors">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="text-xs font-mono text-muted-foreground/40 w-5 text-right shrink-0">
+        <span className="text-xs font-mono text-foreground w-5 text-right shrink-0">
           {rank}
         </span>
         <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
@@ -33,7 +33,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground/90 truncate">{result.documentTitle}</p>
           {result.sourcePath && (
-            <p className="text-xs text-muted-foreground/40 truncate mt-0.5 font-mono">{result.sourcePath}</p>
+            <p className="text-xs text-foreground truncate mt-0.5 font-mono">{result.sourcePath}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -44,7 +44,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
       {/* Content */}
       <div className="px-4 pb-3 pl-[52px]">
-        <p className="text-xs text-foreground/70 whitespace-pre-wrap leading-relaxed font-mono">
+        <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed font-mono">
           {preview}
         </p>
 
@@ -59,7 +59,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
         )}
 
         {/* Metadata */}
-        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/40">
+        <div className="flex items-center gap-3 mt-2 text-xs text-foreground">
           <span>distance: {result.distance.toFixed(4)}</span>
           <span>chunk: {result.chunkId.slice(0, 8)}</span>
         </div>

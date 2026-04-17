@@ -47,7 +47,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
     return (
       <button
         onClick={loadPreview}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-card bg-secondary/40 text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
         title="Preview execution cost and prompt"
       >
         <Eye className="w-3 h-3" />
@@ -58,7 +58,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground/60">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-foreground">
         <div className="w-3 h-3 border border-primary/30 border-t-primary rounded-full animate-spin" />
         {e.estimating}
       </div>
@@ -89,23 +89,23 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-secondary/30 transition-colors"
       >
-        <div className="flex items-center gap-1.5 text-foreground/80">
+        <div className="flex items-center gap-1.5 text-foreground">
           <DollarSign className="w-3 h-3 text-emerald-400" />
           <span className="font-mono font-medium">{fmtCost(preview.estimated_total_cost)}</span>
-          <span className="text-muted-foreground/50">{e.est}</span>
+          <span className="text-foreground">{e.est}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 text-foreground">
           <Zap className="w-3 h-3" />
           <span className="font-mono">{fmtTokens(preview.estimated_input_tokens)}</span>
           <span>in</span>
           <span className="font-mono">{fmtTokens(preview.estimated_output_tokens)}</span>
           <span>out</span>
         </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 text-foreground">
           <Brain className="w-3 h-3" />
           <span>{preview.memory_count}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 text-foreground">
           <Wrench className="w-3 h-3" />
           <span>{preview.tool_count}</span>
         </div>
@@ -115,7 +115,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
             <span>{tx(e.of_budget, { percent: Math.round(budgetPct) })}</span>
           </div>
         )}
-        <div className="ml-auto text-muted-foreground/40">
+        <div className="ml-auto text-foreground">
           {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </div>
       </button>
@@ -125,27 +125,27 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         <div className="px-3 py-2 border-t border-primary/5 space-y-2">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.model}</span>
-              <div className="text-foreground/80 font-mono truncate">{preview.model}</div>
+              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.model}</span>
+              <div className="text-foreground font-mono truncate">{preview.model}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.monthly_spend}</span>
-              <div className="text-foreground/80 font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : e.unlimited}</div>
+              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.monthly_spend}</span>
+              <div className="text-foreground font-mono">{fmtCost(preview.monthly_spend)} / {preview.budget_limit > 0 ? fmtCost(preview.budget_limit) : e.unlimited}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.input_cost}</span>
-              <div className="text-foreground/80 font-mono">{fmtCost(preview.estimated_input_cost)}</div>
+              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.input_cost}</span>
+              <div className="text-foreground font-mono">{fmtCost(preview.estimated_input_cost)}</div>
             </div>
             <div>
-              <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.output_cost_est}</span>
-              <div className="text-foreground/80 font-mono">{fmtCost(preview.estimated_output_cost)}</div>
+              <span className="text-foreground uppercase tracking-wider text-[10px]">{e.output_cost_est}</span>
+              <div className="text-foreground font-mono">{fmtCost(preview.estimated_output_cost)}</div>
             </div>
           </div>
 
           {/* Prompt preview (first 500 chars) */}
           <div>
-            <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.prompt_preview}</span>
-            <pre className="mt-1 text-[11px] font-mono text-muted-foreground/60 leading-relaxed bg-black/10 rounded-input p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
+            <span className="text-foreground uppercase tracking-wider text-[10px]">{e.prompt_preview}</span>
+            <pre className="mt-1 text-[11px] font-mono text-foreground leading-relaxed bg-black/10 rounded-input p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
               {preview.prompt_preview.slice(0, 500)}{preview.prompt_preview.length > 500 ? '...' : ''}
             </pre>
           </div>

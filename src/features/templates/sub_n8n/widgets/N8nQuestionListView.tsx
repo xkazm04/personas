@@ -44,8 +44,8 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
           <div key={q.id}>
             {showSeparator && dim && (
               <div className="flex items-center gap-2.5 pt-4 pb-1.5">
-                <dim.Icon className="w-4 h-4 text-foreground/60 flex-shrink-0" />
-                <span className="text-sm uppercase tracking-wider text-foreground/60 font-semibold whitespace-nowrap">
+                <dim.Icon className="w-4 h-4 text-foreground flex-shrink-0" />
+                <span className="text-sm uppercase tracking-wider text-foreground font-semibold whitespace-nowrap">
                   {dim.label}
                 </span>
                 <hr className="flex-1 border-primary/10" />
@@ -60,7 +60,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
               </label>
 
               {q.context && (
-                <p className="text-sm text-foreground/50 mb-2 leading-relaxed">
+                <p className="text-sm text-foreground mb-2 leading-relaxed">
                   {q.context}
                 </p>
               )}
@@ -96,7 +96,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                         className={`px-4 py-1.5 text-sm rounded-modal border transition-all ${
                           isSelected
                             ? tone.selectBg
-                            : 'text-muted-foreground border-primary/10 hover:bg-secondary/30'
+                            : 'text-foreground border-primary/10 hover:bg-secondary/30'
                         }`}
                       >
                         {opt}

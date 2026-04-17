@@ -32,7 +32,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       className="fixed z-50 w-48 rounded-modal bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 py-1 overflow-hidden"
       style={{ left: x, top: y }}
     >
-      <div className="px-3 py-1.5 text-sm font-mono uppercase text-muted-foreground/80 border-b border-primary/10">
+      <div className="px-3 py-1.5 text-sm font-mono uppercase text-foreground border-b border-primary/10">
         {memberName}
       </div>
 

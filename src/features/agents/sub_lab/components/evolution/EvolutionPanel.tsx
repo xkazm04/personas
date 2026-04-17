@@ -69,7 +69,7 @@ function ObjectiveEditor({
         aria-label={`${label} weight`}
         className="flex-1 h-1 accent-violet-500"
       />
-      <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(objective[key] * 100)}%</span>
+      <span className="text-xs text-foreground w-8 text-right">{Math.round(objective[key] * 100)}%</span>
     </div>
   );
 
@@ -100,7 +100,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
         <CycleStatusBadge status={cycle.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">
+            <span className="text-foreground">
               {cycle.variantsTested} variants tested
             </span>
             {cycle.promoted && (
@@ -121,7 +121,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
             )}
           </div>
           {cycle.incumbentFitness != null && (
-            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground/60">
+            <div className="flex items-center gap-3 mt-0.5 text-[10px] text-foreground">
               <span>Incumbent: {Math.round(cycle.incumbentFitness * 100)}%</span>
               {cycle.winnerFitness != null && (
                 <span>Winner: {Math.round(cycle.winnerFitness * 100)}%</span>
@@ -129,7 +129,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
             </div>
           )}
         </div>
-        <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
+        <span className="text-[10px] text-foreground whitespace-nowrap">
           {new Date(cycle.startedAt).toLocaleDateString()}
         </span>
       </div>
@@ -298,7 +298,7 @@ export function EvolutionPanel() {
 
   if (!personaId) {
     return (
-      <div className="text-center py-10 text-muted-foreground/60 text-sm">
+      <div className="text-center py-10 text-foreground text-sm">
         {t.agents.lab.select_persona_evolution}
       </div>
     );
@@ -307,7 +307,7 @@ export function EvolutionPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10" role="status">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
+        <Loader2 className="w-5 h-5 animate-spin text-foreground" />
       </div>
     );
   }
@@ -339,7 +339,7 @@ export function EvolutionPanel() {
               {isEnabled ? (
                 <ToggleRight className="w-8 h-8 text-emerald-400" />
               ) : (
-                <ToggleLeft className="w-8 h-8 text-muted-foreground/40" />
+                <ToggleLeft className="w-8 h-8 text-foreground" />
               )}
             </button>
           </div>
@@ -349,21 +349,21 @@ export function EvolutionPanel() {
             <div className="grid grid-cols-3 gap-2">
               <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">{policy.totalCycles}</div>
-                <div className="text-[10px] text-muted-foreground">{t.agents.lab.cycles_label}</div>
+                <div className="text-[10px] text-foreground">{t.agents.lab.cycles_label}</div>
               </div>
               <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-emerald-400">{policy.totalPromotions}</div>
-                <div className="text-[10px] text-muted-foreground">{t.agents.lab.promotions_label}</div>
+                <div className="text-[10px] text-foreground">{t.agents.lab.promotions_label}</div>
               </div>
               <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">
                   {eligible ? (
                     <span className="text-amber-400">{t.agents.lab.ready_label}</span>
                   ) : (
-                    <span className="text-muted-foreground/60">{t.agents.lab.waiting_label}</span>
+                    <span className="text-foreground">{t.agents.lab.waiting_label}</span>
                   )}
                 </div>
-                <div className="text-[10px] text-muted-foreground">{t.agents.lab.next_cycle}</div>
+                <div className="text-[10px] text-foreground">{t.agents.lab.next_cycle}</div>
               </div>
             </div>
           )}
@@ -386,7 +386,7 @@ export function EvolutionPanel() {
               className={`p-2 rounded-card border transition-colors ${
                 showSettings
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
-                  : 'border-primary/10 text-muted-foreground hover:bg-primary/5'
+                  : 'border-primary/10 text-foreground hover:bg-primary/5'
               }`}
               aria-label="Toggle evolution settings"
             >
@@ -394,7 +394,7 @@ export function EvolutionPanel() {
             </button>
             <button
               onClick={loadData}
-              className="p-2 rounded-card border border-primary/10 text-muted-foreground hover:bg-primary/5 transition-colors"
+              className="p-2 rounded-card border border-primary/10 text-foreground hover:bg-primary/5 transition-colors"
               aria-label="Refresh evolution data"
             >
               <RefreshCw className="w-4 h-4" />
@@ -411,7 +411,7 @@ export function EvolutionPanel() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground" htmlFor="evo-mutation">
+                      <label className="text-xs text-foreground" htmlFor="evo-mutation">
                         Mutation Rate
                       </label>
                       <div className="flex items-center gap-2 mt-1">
@@ -422,13 +422,13 @@ export function EvolutionPanel() {
                           onChange={(e) => setMutationRate(Number(e.target.value) / 100)}
                           className="flex-1 h-1 accent-violet-500"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">
+                        <span className="text-xs text-foreground w-8 text-right">
                           {Math.round(mutationRate * 100)}%
                         </span>
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground" htmlFor="evo-variants">
+                      <label className="text-xs text-foreground" htmlFor="evo-variants">
                         Variants per Cycle
                       </label>
                       <select
@@ -446,7 +446,7 @@ export function EvolutionPanel() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground" htmlFor="evo-threshold">
+                      <label className="text-xs text-foreground" htmlFor="evo-threshold">
                         Improvement Threshold
                       </label>
                       <div className="flex items-center gap-2 mt-1">
@@ -457,13 +457,13 @@ export function EvolutionPanel() {
                           onChange={(e) => setThreshold(Number(e.target.value) / 100)}
                           className="flex-1 h-1 accent-violet-500"
                         />
-                        <span className="text-xs text-muted-foreground w-8 text-right">
+                        <span className="text-xs text-foreground w-8 text-right">
                           {Math.round(threshold * 100)}%
                         </span>
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground" htmlFor="evo-min-execs">
+                      <label className="text-xs text-foreground" htmlFor="evo-min-execs">
                         Min Executions Between
                       </label>
                       <select
@@ -514,10 +514,10 @@ export function EvolutionPanel() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-violet-500/10 mb-3">
             <Sparkles className="w-7 h-7 text-violet-400/60" />
           </div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-1">
+          <h3 className="text-sm font-medium text-foreground mb-1">
             Self-improving personas
           </h3>
-          <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-foreground max-w-xs mx-auto leading-relaxed">
             Enable auto-evolution to continuously optimize this persona. After each batch of
             executions, variants are automatically generated, evaluated, and promoted if they
             outperform the current configuration.

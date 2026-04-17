@@ -60,7 +60,7 @@ export function TemplateCardHeader({
               {readinessScore}%
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border bg-zinc-500/10 text-muted-foreground/40 border-zinc-500/15">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border bg-zinc-500/10 text-foreground border-zinc-500/15">
               --%
             </span>
           )}
@@ -81,7 +81,7 @@ export function TemplateCardHeader({
             </span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2 leading-relaxed">
+        <p className="text-sm text-foreground mt-1 line-clamp-2 leading-relaxed">
           {instruction.length > 120
             ? instruction.slice(0, 120) + '...'
             : instruction}
@@ -96,7 +96,7 @@ export function TemplateCardHeader({
           }}
           className={`p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all ${motionCss}`}
         >
-          <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/80" />
+          <MoreVertical className="w-4.5 h-4.5 text-foreground" />
         </button>
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
@@ -106,7 +106,7 @@ export function TemplateCardHeader({
                 setMenuOpen(false);
                 onViewDetails();
               }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/80 hover:bg-primary/5 transition-colors text-left"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
             >
               <Eye className="w-4 h-4" />
               View Details

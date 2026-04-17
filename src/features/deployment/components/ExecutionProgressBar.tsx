@@ -98,12 +98,12 @@ export function ExecutionProgressBar({ executionId }: Props) {
           <span className={`text-sm font-medium ${stageColor}`}>
             {stageLabel}
             {progress.activeTool && (
-              <span className="text-muted-foreground/70 font-normal">: {progress.activeTool}</span>
+              <span className="text-foreground font-normal">: {progress.activeTool}</span>
             )}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
+        <div className="flex items-center gap-3 text-xs text-foreground">
           {progress.toolCallsCompleted > 0 && (
             <span>{tx(dt.tool_calls, { count: progress.toolCallsCompleted })}</span>
           )}
@@ -114,7 +114,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
       </div>
 
       {progress.message && (
-        <p className="text-xs text-muted-foreground/60 truncate">{progress.message}</p>
+        <p className="text-xs text-foreground truncate">{progress.message}</p>
       )}
     </div>
   );

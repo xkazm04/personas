@@ -37,7 +37,7 @@ export function CloudOAuthPanel({
     return (
       <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
         <div className="p-4 rounded-card bg-indigo-500/5 border border-indigo-500/15">
-          <p className="text-sm text-foreground/80 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             {dt.open_auth_instruction}
           </p>
           {sanitizeExternalUrl(oauthStartUrl) && (
@@ -54,14 +54,14 @@ export function CloudOAuthPanel({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="oauth-code" className="text-sm font-medium text-muted-foreground/80">{t.deployment.auth_code}</label>
+          <label htmlFor="oauth-code" className="text-sm font-medium text-foreground">{t.deployment.auth_code}</label>
           <input
             id="oauth-code"
             type="text"
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder={dt.paste_code}
-            className="w-full px-3 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
         </div>
 
@@ -139,7 +139,7 @@ export function CloudOAuthPanel({
               {oauthStatus.scopes.map((scope) => (
                 <span
                   key={scope}
-                  className="text-sm px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/15 text-muted-foreground/80"
+                  className="text-sm px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/15 text-foreground"
                 >
                   {scope}
                 </span>
@@ -183,8 +183,8 @@ export function CloudOAuthPanel({
   return (
     <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
       <div className="flex flex-col items-center text-center py-8">
-        <Shield className="w-10 h-10 text-muted-foreground/80 mb-4" />
-        <p className="text-sm text-muted-foreground/80 leading-relaxed">
+        <Shield className="w-10 h-10 text-foreground mb-4" />
+        <p className="text-sm text-foreground leading-relaxed">
           Connect your Anthropic account to enable OAuth-based authentication
           for cloud executions.
         </p>

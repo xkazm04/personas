@@ -103,7 +103,7 @@ export function PersonaSelector({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t.common.search_ellipsis}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 outline-none"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground outline-none"
                 />
                 {search && (
                   <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
@@ -121,7 +121,7 @@ export function PersonaSelector({
               <button
                 type="button"
                 onClick={() => { onChange(''); setOpen(false); setSearch(''); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-foreground/90' : 'text-muted-foreground/60 hover:bg-secondary/30'
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${!value ? 'bg-primary/8 text-foreground/90' : 'text-foreground hover:bg-secondary/30'
                   }`}
               >
                 <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
@@ -138,7 +138,7 @@ export function PersonaSelector({
                   key={p.id}
                   type="button"
                   onClick={() => { onChange(p.id); setOpen(false); setSearch(''); }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 text-foreground/90' : 'text-foreground/70 hover:bg-secondary/30'
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 text-foreground/90' : 'text-foreground hover:bg-secondary/30'
                     }`}
                 >
                   <PersonaIcon icon={p.icon} color={p.color} />

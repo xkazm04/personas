@@ -97,7 +97,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           <h3 className="text-sm font-bold text-foreground">
             Setting up {activeIndex + 1} of {items.length}
           </h3>
-          <p className="text-sm text-muted-foreground/70">
+          <p className="text-sm text-foreground">
             {activeItem?.connector.label}
           </p>
         </div>
@@ -106,7 +106,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           size="sm"
           icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
-          className="text-muted-foreground/80 hover:text-foreground/90"
+          className="text-foreground hover:text-foreground/90"
           title={t.vault.wizard_detect.skip_service}
         >
           Skip
@@ -126,8 +126,8 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
                   : item.status === 'failed'
                     ? 'border-red-500/20 bg-red-500/5 text-red-400/70'
                     : item.status === 'skipped'
-                      ? 'border-primary/10 bg-secondary/10 text-muted-foreground/70'
-                      : 'border-primary/10 bg-secondary/20 text-muted-foreground/80'
+                      ? 'border-primary/10 bg-secondary/10 text-foreground'
+                      : 'border-primary/10 bg-secondary/20 text-foreground'
             }`}
           >
             <StatusIcon status={item.status} size="w-3 h-3" />

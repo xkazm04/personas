@@ -82,7 +82,7 @@ export function DesignPhasePanel({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
                   inputMode === 'design'
                     ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -93,7 +93,7 @@ export function DesignPhasePanel({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
                   inputMode === 'intent'
                     ? 'bg-violet-500/10 text-violet-400 border-violet-500/25'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <Wand2 className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export function DesignPhasePanel({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
                   inputMode === 'example'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <FlaskConical className="w-3.5 h-3.5" />
@@ -135,7 +135,7 @@ export function DesignPhasePanel({
                 disabled={!hasExamples}
                 className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium text-sm transition-all w-full ${
                   !hasExamples
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
@@ -160,8 +160,8 @@ export function DesignPhasePanel({
                     }
                   }}
                 />
-                <p className="text-sm text-muted-foreground/60 px-1">{t.agents.design.intent_submit_hint}</p>
-                <p className="text-sm text-muted-foreground/50 px-1">
+                <p className="text-sm text-foreground px-1">{t.agents.design.intent_submit_hint}</p>
+                <p className="text-sm text-foreground px-1">
                   {t.agents.design.intent_detail}
                 </p>
               </div>
@@ -170,7 +170,7 @@ export function DesignPhasePanel({
                 disabled={!instruction.trim()}
                 className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium text-sm transition-all w-full ${
                   !instruction.trim()
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-500/90 hover:to-fuchsia-500/90 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
@@ -194,7 +194,7 @@ export function DesignPhasePanel({
                 disabled={!instruction.trim()}
                 className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium text-sm transition-all w-full ${
                   !instruction.trim()
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >

@@ -42,7 +42,7 @@ function ConditionGateNodeInner({ data, selected }: NodeProps) {
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: branch.color }}
             />
-            <span className="text-[10px] text-muted-foreground">{branch.label}</span>
+            <span className="text-[10px] text-foreground">{branch.label}</span>
             <Handle
               type="source"
               position={Position.Right}

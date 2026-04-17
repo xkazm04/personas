@@ -5,7 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 export function PipelineArrow() {
   return (
     <div className="flex items-center justify-center px-0.5 flex-shrink-0">
-      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+      <ChevronRight className="w-3.5 h-3.5 text-foreground" />
     </div>
   );
 }
@@ -23,13 +23,13 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
       className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all min-w-0 ${
         hasAny
           ? 'bg-cyan-500/8 border-cyan-500/20 text-foreground/90'
-          : 'bg-secondary/40 border-primary/10 text-muted-foreground/60'
+          : 'bg-secondary/40 border-primary/10 text-foreground'
       }`}
     >
       {hasTrigger ? (
         <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
       ) : (
-        <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${hasSubscriptions ? 'text-cyan-400' : 'text-muted-foreground/40'}`} />
+        <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${hasSubscriptions ? 'text-cyan-400' : 'text-foreground'}`} />
       )}
       <span className="truncate flex-1 text-left">
         {!hasAny && t.agents.use_cases.no_inputs}
@@ -37,7 +37,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
           <>
             <Clock className="w-3 h-3 text-amber-400/70 inline mr-0.5" />
             {trigger.type}
-            {trigger.cron && <span className="text-muted-foreground/50 text-sm ml-1">{trigger.cron}</span>}
+            {trigger.cron && <span className="text-foreground text-sm ml-1">{trigger.cron}</span>}
           </>
         )}
         {!hasTrigger && hasSubscriptions && (

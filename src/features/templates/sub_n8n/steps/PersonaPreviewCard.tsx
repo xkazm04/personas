@@ -65,7 +65,7 @@ export function PersonaPreviewCard({
 
   return (
     <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
-      <p className="text-sm font-semibold text-muted-foreground/55 uppercase tracking-wider mb-3">
+      <p className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
         Persona Preview
       </p>
 
@@ -84,7 +84,7 @@ export function PersonaPreviewCard({
           <p className="text-base font-semibold text-foreground/90">
             {name ?? 'Unnamed Persona'}
           </p>
-          <p className="text-sm text-muted-foreground/65 mt-0.5">
+          <p className="text-sm text-foreground mt-0.5">
             {description ?? 'No description provided'}
           </p>
         </div>
@@ -156,7 +156,7 @@ export function PersonaPreviewCard({
             size="sm"
             icon={showPrompt ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             onClick={() => setShowPrompt(!showPrompt)}
-            className="text-muted-foreground/65 hover:text-muted-foreground w-full justify-start"
+            className="text-foreground hover:text-muted-foreground w-full justify-start"
           >
             System Prompt Preview
           </Button>
@@ -197,8 +197,8 @@ function EntityCard({ icon: Icon, count, label, color }: {
   return (
     <div className={`px-2 py-3 rounded-modal border text-center ${colorMap[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="text-base font-semibold text-foreground/80 tabular-nums">{count}</p>
-      <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">{label}</p>
+      <p className="text-base font-semibold text-foreground tabular-nums">{count}</p>
+      <p className="text-sm text-foreground uppercase tracking-wider">{label}</p>
     </div>
   );
 }

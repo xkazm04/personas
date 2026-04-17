@@ -72,7 +72,7 @@ function TemplateMiniCard({ template, onClick }: { template: PersonaDesignReview
       <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
         {template.test_case_name}
       </div>
-      <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{template.instruction}</p>
+      <p className="text-sm text-foreground line-clamp-2 mt-1.5 leading-relaxed">{template.instruction}</p>
       {template.adoption_count > 0 && (
         <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/60">
           <Download className="w-3 h-3" /> {template.adoption_count}
@@ -116,12 +116,12 @@ export function ExploreVariantB({
       {/* Hero prompt */}
       <div className="px-6 pt-8 pb-6 text-center">
         <h2 className="text-2xl font-bold text-foreground mb-2">{t.templates.explore.hero_title}</h2>
-        <p className="text-sm text-muted-foreground/60 mb-5 max-w-md mx-auto">
+        <p className="text-sm text-foreground mb-5 max-w-md mx-auto">
           {t.templates.explore.hero_subtitle}
         </p>
         <button
           onClick={onSearchFocus}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-primary/15 bg-secondary/20 text-muted-foreground/50 hover:bg-secondary/30 hover:border-primary/25 transition-all max-w-md w-full justify-center"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30 hover:border-primary/25 transition-all max-w-md w-full justify-center"
         >
           <Search className="w-4 h-4" />
           <span className="text-sm">{t.templates.explore.hero_search_placeholder}</span>
@@ -160,7 +160,7 @@ export function ExploreVariantB({
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground/90">{lane.title}</h3>
-                    <span className="text-xs text-muted-foreground/40">
+                    <span className="text-xs text-foreground">
                       {(lane.templates.length === 1
                         ? t.templates.explore.templates_count_one
                         : t.templates.explore.templates_count_other
@@ -193,7 +193,7 @@ export function ExploreVariantB({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-              <h3 className="text-sm font-semibold text-foreground/80">{t.templates.explore.most_adopted}</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t.templates.explore.most_adopted}</h3>
               <Zap className="w-3 h-3 text-amber-400/50" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -206,7 +206,7 @@ export function ExploreVariantB({
                   <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
                     {tmpl.test_case_name}
                   </div>
-                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{tmpl.instruction}</p>
+                  <p className="text-sm text-foreground line-clamp-2 mt-1.5 leading-relaxed">{tmpl.instruction}</p>
                   <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/70 font-medium">
                     <Download className="w-3 h-3" />
                     {(tmpl.adoption_count === 1

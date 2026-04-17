@@ -137,7 +137,7 @@ export default function ObservabilityDashboard() {
             <button
               onClick={() => setShowAlerts(!showAlerts)}
               className={`relative p-1.5 rounded-card border transition-colors ${
-                showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-muted-foreground/90 hover:bg-secondary/50'
+                showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-foreground hover:bg-secondary/50'
               }`}
               title={t.overview.observability.alert_rules}
             >
@@ -150,7 +150,7 @@ export default function ObservabilityDashboard() {
             </button>
             <button
               onClick={d.refreshAll}
-              className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.observability.refresh_metrics}
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export default function ObservabilityDashboard() {
             <button
               onClick={() => d.setAutoRefresh(!d.autoRefresh)}
               className={`p-1.5 rounded-card border transition-colors ${
-                d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
+                d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-foreground'
               }`}
               title={d.autoRefresh ? t.overview.observability_extra.auto_refresh_on : t.overview.observability_extra.auto_refresh_off}
             >

@@ -84,7 +84,7 @@ export function N8nWizardFooter({
       <button
         onClick={onBack}
         disabled={!canGoBack}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-modal text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-modal text-foreground hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back

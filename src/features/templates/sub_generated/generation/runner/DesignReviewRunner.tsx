@@ -59,14 +59,14 @@ export default function DesignReviewRunner({
               </div>
               <div>
                 <h3 id="design-runner-title" className="text-sm font-semibold text-foreground/90">{t.templates.generation.runner_title}</h3>
-                <p className="text-sm text-muted-foreground/90">
+                <p className="text-sm text-foreground">
                   {isRunning ? t.templates.generation.runner_running : result ? t.templates.generation.runner_complete : t.templates.generation.runner_configure}
                 </p>
               </div>
             </div>
             {!isRunning && (
               <button onClick={onClose} className="w-8 h-8 rounded-card hover:bg-secondary/50 flex items-center justify-center transition-colors">
-                <X className="w-4 h-4 text-muted-foreground/90" />
+                <X className="w-4 h-4 text-foreground" />
               </button>
             )}
           </div>
@@ -83,7 +83,7 @@ export default function DesignReviewRunner({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/90 truncate">{personaName}</p>
-                    {personaDescription && <p className="text-sm text-muted-foreground/80 truncate">{personaDescription}</p>}
+                    {personaDescription && <p className="text-sm text-foreground truncate">{personaDescription}</p>}
                   </div>
                 </>
               ) : (
@@ -130,11 +130,11 @@ export default function DesignReviewRunner({
           {isRunning && state.progressInfo && (
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-foreground/80">
+                <span className="text-sm font-medium text-foreground">
                   {t.templates.generation.template_progress.replace('{current}', String(state.progressInfo.current)).replace('{total}', String(state.progressInfo.total))}
-                  <span className="text-muted-foreground/90 ml-1.5">-- {state.progressInfo.pct}%</span>
+                  <span className="text-foreground ml-1.5">-- {state.progressInfo.pct}%</span>
                 </span>
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
+                <span className="flex items-center gap-1.5 text-sm text-foreground">
                   <Clock className="w-3 h-3" />{state.progressInfo.eta}
                 </span>
               </div>
@@ -181,12 +181,12 @@ export default function DesignReviewRunner({
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
-                  <button onClick={state.handleCopyLog} className="px-4 py-2 text-sm rounded-modal bg-secondary/50 text-muted-foreground/90 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
+                  <button onClick={state.handleCopyLog} className="px-4 py-2 text-sm rounded-modal bg-secondary/50 text-foreground border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
                     {state.copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     {state.copied ? t.templates.generation.copied_log : t.templates.generation.copy_log}
                   </button>
                 )}
-                <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal bg-primary/10 text-foreground/80 border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
+                <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal bg-primary/10 text-foreground border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
               </div>
             )}
           </div>

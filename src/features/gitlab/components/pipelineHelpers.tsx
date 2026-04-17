@@ -14,9 +14,9 @@ export function statusColor(status: string): string {
       return 'text-amber-400';
     case 'canceled':
     case 'skipped':
-      return 'text-muted-foreground/50';
+      return 'text-foreground';
     default:
-      return 'text-muted-foreground/70';
+      return 'text-foreground';
   }
 }
 
@@ -49,7 +49,7 @@ export function StatusIcon({ status }: { status: string }) {
     case 'pending':
       return <Clock className="w-4 h-4 text-amber-400" />;
     default:
-      return <Clock className="w-4 h-4 text-muted-foreground/50" />;
+      return <Clock className="w-4 h-4 text-foreground" />;
   }
 }
 

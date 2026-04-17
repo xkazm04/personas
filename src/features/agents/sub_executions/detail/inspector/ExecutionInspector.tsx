@@ -37,7 +37,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
       {/* Metrics Summary Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {e.input_tokens}
           </div>
@@ -47,7 +47,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
         </div>
 
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {e.output_tokens}
           </div>
@@ -57,7 +57,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
         </div>
 
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             {e.cost}
           </div>
@@ -67,7 +67,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
         </div>
 
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {e.duration}
           </div>
@@ -85,7 +85,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
       {/* Tool Call Timeline */}
       {steps.length > 0 && (
         <div className="space-y-3">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Wrench className="w-3 h-3" />
             {tx(e.tool_call_timeline_steps, { count: steps.length })}
           </div>
@@ -121,7 +121,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                   {i > 0 && (
                     <div className="relative h-6 flex items-center">
                       {gapMs != null && gapMs >= 10 && (
-                        <span className="absolute left-[-16px] typo-code text-muted-foreground/35 leading-none bg-background z-10 px-0.5">
+                        <span className="absolute left-[-16px] typo-code text-foreground leading-none bg-background z-10 px-0.5">
                           {formatTimeGap(gapMs)}
                         </span>
                       )}
@@ -154,10 +154,10 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
       {steps.length === 0 && (
         <div className="text-center py-8">
           <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
-            <Wrench className="w-6 h-6 text-muted-foreground/80" />
+            <Wrench className="w-6 h-6 text-foreground" />
           </div>
-          <p className="typo-body text-muted-foreground/90">{e.no_tool_calls}</p>
-          <p className="typo-body text-muted-foreground/80 mt-1">{e.tool_steps_appear}</p>
+          <p className="typo-body text-foreground">{e.no_tool_calls}</p>
+          <p className="typo-body text-foreground mt-1">{e.tool_steps_appear}</p>
         </div>
       )}
     </div>

@@ -161,7 +161,7 @@ export function getTierStyle(tier: HealthTier): TierStyle {
     case 'healthy':
       return { dotColor: 'bg-emerald-400', badgeBg: 'bg-emerald-500/10', badgeBorder: 'border-emerald-500/20', badgeText: 'text-emerald-400', label: 'Healthy' };
     case 'unknown':
-      return { dotColor: 'bg-muted-foreground/40', badgeBg: 'bg-secondary/40', badgeBorder: 'border-primary/10', badgeText: 'text-muted-foreground/60', label: 'Untested' };
+      return { dotColor: 'bg-muted-foreground/40', badgeBg: 'bg-secondary/40', badgeBorder: 'border-primary/10', badgeText: 'text-foreground', label: 'Untested' };
   }
 }
 

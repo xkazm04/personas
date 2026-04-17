@@ -71,7 +71,7 @@ export function AbPanel() {
           <button onClick={toggle} data-testid={testId}
 
             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-modal text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
-            <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? t.agents.lab.select_version}</span>
+            <span className="text-foreground">{versionOptions.find((o) => o.value === value)?.label ?? t.agents.lab.select_version}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}>
@@ -79,7 +79,7 @@ export function AbPanel() {
           <div className="py-1 bg-background border border-primary/20 rounded-card shadow-elevation-3 mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
               <button key={opt.value} data-testid={`ab-version-opt-${opt.label.replace(/\s+/g, '-').toLowerCase()}`} onClick={() => { onChange(opt.value); close(); }}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
+                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-foreground hover:bg-secondary/30'}`}>
                 {opt.label}
               </button>
             ))}
@@ -117,7 +117,7 @@ export function AbPanel() {
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
 
         <div className="space-y-1">
-          <label className="text-sm text-muted-foreground/70">{t.agents.lab.test_input_label}</label>
+          <label className="text-sm text-foreground">{t.agents.lab.test_input_label}</label>
           <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}'
             className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
         </div>

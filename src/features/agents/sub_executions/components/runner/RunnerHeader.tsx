@@ -18,7 +18,7 @@ export function MiniPlayerPinButton() {
         className={`p-1.5 rounded-card typo-body transition-colors flex items-center gap-1.5 ${
           pinned
             ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
-            : 'hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80'
+            : 'hover:bg-secondary/50 text-foreground hover:text-foreground/80'
         }`}
       >
         {pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}

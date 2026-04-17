@@ -73,7 +73,7 @@ export function UseCaseSubscriptions({
           icon={<Radio className="w-3.5 h-3.5" />}
           label={uc.event_subscriptions}
           trailing={(
-            <span className="text-sm text-muted-foreground/70">
+            <span className="text-sm text-foreground">
               {suggestedSubscriptions.filter((i) => i.stage === 'suggested').length} {uc.configured}
             </span>
           )}
@@ -92,11 +92,11 @@ export function UseCaseSubscriptions({
             >
               <Radio className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-foreground/80 block truncate">
+                <span className="text-sm font-medium text-foreground block truncate">
                   {item.eventType}
                 </span>
                 {item.sourceFilter && (
-                  <span className="text-sm text-muted-foreground/70 block truncate">
+                  <span className="text-sm text-foreground block truncate">
                     filter: {item.sourceFilter}
                   </span>
                 )}
@@ -120,7 +120,7 @@ export function UseCaseSubscriptions({
                   />
                   <button
                     onClick={() => onRemoveSuggested(item.suggestedIndex!)}
-                    className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
+                    className="p-1 text-foreground hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -137,7 +137,7 @@ export function UseCaseSubscriptions({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-dashed border-primary/20 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-dashed border-primary/20 hover:border-primary/30 text-sm text-foreground hover:text-primary/80 transition-all w-full"
             >
               <Plus className="w-3.5 h-3.5" /> {uc.add_subscription}
             </button>

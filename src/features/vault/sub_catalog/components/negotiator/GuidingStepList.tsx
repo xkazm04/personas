@@ -17,19 +17,19 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
     <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border border-primary/10 rounded-modal">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-muted-foreground/90" />
-          <span className="text-sm text-muted-foreground/90">
+          <Clock className="w-3.5 h-3.5 text-foreground" />
+          <span className="text-sm text-foreground">
             ~{Math.ceil(plan.estimated_time_seconds / 60)} min
           </span>
         </div>
         <div className="h-3 w-px bg-primary/10" />
-        <span className="text-sm text-foreground/80 font-medium">
+        <span className="text-sm text-foreground font-medium">
           {completedCount}/{totalSteps} steps
         </span>
         {skippedSteps.length > 0 && (
           <>
             <div className="h-3 w-px bg-primary/10" />
-            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground/60">
+            <span className="inline-flex items-center gap-1 text-sm text-foreground">
               <SkipForward className="w-3 h-3" />
               {skippedSteps.length} skipped
             </span>
@@ -56,16 +56,16 @@ export function GuidingSkippedSummary({ skippedSteps }: GuidingSkippedSummaryPro
 
   return (
     <details className="group rounded-modal border border-primary/10 bg-secondary/15 px-4 py-2">
-      <summary className="cursor-pointer text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors flex items-center gap-1.5">
+      <summary className="cursor-pointer text-sm text-foreground hover:text-muted-foreground transition-colors flex items-center gap-1.5">
         <SkipForward className="w-3 h-3" />
         {skippedSteps.length} step{skippedSteps.length !== 1 ? 's' : ''} auto-skipped
       </summary>
       <ul className="mt-2 space-y-1 pl-5">
         {skippedSteps.map((node) => (
-          <li key={node.originalIndex} className="text-sm text-muted-foreground/60">
+          <li key={node.originalIndex} className="text-sm text-foreground">
             <span className="line-through">{node.step.title}</span>
             {node.skipReason && (
-              <span className="ml-1.5 text-muted-foreground/40">-- {node.skipReason}</span>
+              <span className="ml-1.5 text-foreground">-- {node.skipReason}</span>
             )}
           </li>
         ))}
@@ -158,13 +158,13 @@ export function GuidingTips({ tips }: GuidingTipsProps) {
 
   return (
     <details className="group rounded-modal border border-primary/10 bg-secondary/20 px-4 py-2.5">
-      <summary className="cursor-pointer text-sm text-foreground/80 hover:text-foreground transition-colors flex items-center gap-1.5">
+      <summary className="cursor-pointer text-sm text-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
         <Lightbulb className="w-3 h-3" />
         Tips & best practices
       </summary>
       <ul className="mt-2 space-y-1 pl-5">
         {tips.map((tip, i) => (
-          <li key={i} className="text-sm text-muted-foreground/90">
+          <li key={i} className="text-sm text-foreground">
             {tip}
           </li>
         ))}

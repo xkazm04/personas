@@ -45,15 +45,15 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
       >
         {showGeneralHistory ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
-        <Clock className="w-3.5 h-3.5 text-muted-foreground/50" />
-        <span className="text-sm text-muted-foreground/70">
+        <Clock className="w-3.5 h-3.5 text-foreground" />
+        <span className="text-sm text-foreground">
           {uc.general_history}
           {!showGeneralHistory && generalHistory.length > 0 && (
-            <span className="ml-1 text-muted-foreground/60">
+            <span className="ml-1 text-foreground">
               {generalHistory.length === 1
                 ? uc.unlinked_executions.replace('{count}', String(generalHistory.length))
                 : uc.unlinked_executions_other.replace('{count}', String(generalHistory.length))}
@@ -65,9 +65,9 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
       {showGeneralHistory && (
         <div className="border-t border-primary/10">
           {generalHistoryLoading ? (
-            <div className="px-4 py-3 text-sm text-muted-foreground/50">{t.common.loading}</div>
+            <div className="px-4 py-3 text-sm text-foreground">{t.common.loading}</div>
           ) : generalHistory.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-muted-foreground/60">
+            <div className="px-4 py-3 text-sm text-foreground">
               {uc.no_unlinked_executions}
             </div>
           ) : (
@@ -79,14 +79,14 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
                     <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
                       {statusEntry.label}
                     </span>
-                    <span className="text-sm text-muted-foreground/60 font-mono w-14 flex-shrink-0">
+                    <span className="text-sm text-foreground font-mono w-14 flex-shrink-0">
                       {formatDuration(exec.duration_ms)}
                     </span>
-                    <span className="text-sm text-muted-foreground/50 flex-1 truncate">
+                    <span className="text-sm text-foreground flex-1 truncate">
                       {formatRelativeTime(exec.created_at)}
                     </span>
                     {exec.cost_usd > 0 && (
-                      <span className="text-sm text-muted-foreground/50 font-mono flex-shrink-0">
+                      <span className="text-sm text-foreground font-mono flex-shrink-0">
                         ${exec.cost_usd.toFixed(4)}
                       </span>
                     )}

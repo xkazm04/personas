@@ -34,7 +34,7 @@ export function FlowSteps({ flow }: { flow: NonNullable<ParsedOutput['executionF
       {steps.map((step, i) => {
         const s = step as Record<string, unknown>;
         const status = String(s.status ?? '');
-        const statusColor = status === 'completed' ? 'text-emerald-400' : status === 'failed' ? 'text-red-400' : 'text-muted-foreground/50';
+        const statusColor = status === 'completed' ? 'text-emerald-400' : status === 'failed' ? 'text-red-400' : 'text-foreground';
         return (
           <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-secondary/10">
             <span className="text-sm font-mono text-foreground w-5 text-right">{String(s.step ?? i + 1)}</span>

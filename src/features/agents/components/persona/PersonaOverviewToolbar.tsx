@@ -96,26 +96,26 @@ export function PersonaOverviewToolbar({
     <div className="flex items-center gap-2 flex-wrap">
       {/* Search input */}
       <div className="relative">
-        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t.agents.persona_list.search_personas}
-          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
+          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
         />
         {search ? (
           <button
             type="button"
             onClick={() => onSearchChange('')}
             title={t.agents.persona_list.clear_search}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground/50 hover:text-foreground hover:bg-secondary/50 transition-colors"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <X className="w-3 h-3" />
           </button>
         ) : (
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded border border-primary/15 bg-background/60 typo-code text-[9px] text-muted-foreground/50 pointer-events-none">
+          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded border border-primary/15 bg-background/60 typo-code text-[9px] text-foreground pointer-events-none">
             /
           </kbd>
         )}
@@ -129,7 +129,7 @@ export function PersonaOverviewToolbar({
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md font-medium border transition-all ${
           view.favoriteOnly
             ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-            : 'border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground'
+            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-muted-foreground'
         }`}
       >
         <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />

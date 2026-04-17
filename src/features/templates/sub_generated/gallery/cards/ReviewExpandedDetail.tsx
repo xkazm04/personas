@@ -39,7 +39,7 @@ export function ReviewExpandedDetail({
 
   if (!designResult) {
     return (
-      <div className="flex items-center justify-center py-8 text-sm text-muted-foreground/80">
+      <div className="flex items-center justify-center py-8 text-sm text-foreground">
         {t.templates.review_detail.design_unavailable}
       </div>
     );
@@ -73,11 +73,11 @@ export function ReviewExpandedDetail({
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground/95 truncate">
+                  <span className="text-sm font-medium text-foreground group-hover:text-foreground/95 truncate">
                     {flow.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground/80">
+                <div className="flex items-center gap-3 text-sm text-foreground">
                   <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
                   <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
@@ -99,7 +99,7 @@ export function ReviewExpandedDetail({
               <h4 className="text-sm font-medium text-amber-400/80 uppercase">
                 {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
-                  <span className="ml-1.5 text-muted-foreground/80 normal-case">
+                  <span className="ml-1.5 text-foreground normal-case">
                     (attempt {review.adjustment_generation}/3)
                   </span>
                 )}
@@ -114,7 +114,7 @@ export function ReviewExpandedDetail({
               {t.templates.review_detail.apply_rerun}
             </button>
           </div>
-          <p className="text-sm text-muted-foreground/90">{adjustment.reason}</p>
+          <p className="text-sm text-foreground">{adjustment.reason}</p>
           <div className="bg-background/50 rounded-modal px-3 py-2 text-sm text-foreground/90 border border-primary/10">
             {adjustment.suggestion}
           </div>
@@ -162,7 +162,7 @@ export function ReviewExpandedDetail({
       </div>
 
       {showJson && (
-        <pre className="p-3 bg-background/70 rounded-card border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto">
+        <pre className="p-3 bg-background/70 rounded-card border border-primary/10 text-sm text-foreground overflow-x-auto max-h-[300px] overflow-y-auto">
           {JSON.stringify(designResult, null, 2)}
         </pre>
       )}

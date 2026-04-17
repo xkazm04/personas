@@ -35,8 +35,8 @@ export function ExecutionListRow({
   const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
   const chevron = compareMode ? null : isExpanded
-    ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
-    : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />;
+    ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+    : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />;
   const statusEntry = getStatusEntry(execution.status);
   const statusBadge = <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
   const retryBadge = execution.retry_count > 0 ? (
@@ -93,7 +93,7 @@ export function ExecutionListRow({
             }`}>{compareLabel}</span>
           )}
           {chevron}{statusBadge}{retryBadge}{duration}
-          <span className="typo-body text-muted-foreground/80 ml-auto">{formatRelativeTime(execution.started_at)}</span>
+          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(execution.started_at)}</span>
         </div>
         {execution.error_message && (
           <p className="typo-body text-red-400/70 truncate pl-5.5">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-list')}</p>
@@ -106,7 +106,7 @@ export function ExecutionListRow({
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 2xl:grid-cols-3 gap-4 3xl:gap-5 typo-body">
                 <div>
-                  <span className="text-muted-foreground/90 typo-code uppercase">{e.execution_id}</span>
+                  <span className="text-foreground typo-code uppercase">{e.execution_id}</span>
                   <Tooltip content={execution.id} placement="bottom">
                     <button onClick={(e) => { e.stopPropagation(); onCopyId(execution.id); }} className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group">
                       <span className="typo-code">#{execution.id.slice(0, 8)}</span>
@@ -114,16 +114,16 @@ export function ExecutionListRow({
                     </button>
                   </Tooltip>
                 </div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">${execution.cost_usd.toFixed(4)}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">${execution.cost_usd.toFixed(4)}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
               </div>
               {execution.input_data && (
                 <div>
-                  <span className="text-muted-foreground/90 typo-code uppercase">{e.input_data}</span>
-                  <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-card typo-code text-foreground/80 overflow-x-auto">
+                  <span className="text-foreground typo-code uppercase">{e.input_data}</span>
+                  <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-card typo-code text-foreground overflow-x-auto">
                     {showRaw ? execution.input_data : maskSensitiveJson(execution.input_data)}
                   </pre>
                 </div>

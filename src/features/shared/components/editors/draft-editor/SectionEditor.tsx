@@ -19,8 +19,8 @@ function lineClass(raw: string): string {
   if (t.startsWith('# '))    return 'text-primary font-bold';
   if (t.startsWith('> '))    return 'text-violet-400/80 italic';
   if (t.startsWith('```'))   return 'text-emerald-400/70';
-  if (t.startsWith('- ') || t.startsWith('* ')) return 'text-foreground/60';
-  return 'text-foreground/70';
+  if (t.startsWith('- ') || t.startsWith('* ')) return 'text-foreground';
+  return 'text-foreground';
 }
 
 /**
@@ -56,14 +56,14 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
     <div className="flex flex-col h-full min-h-0">
       {/* Header with label and toggle */}
       <div className="flex items-center justify-between px-1 pb-2 flex-shrink-0">
-        <span className="typo-heading text-foreground/80">{label}</span>
+        <span className="typo-heading text-foreground">{label}</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
             onClick={() => setMode('edit')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'edit'
-                ? 'bg-primary/15 text-foreground/80 font-medium'
-                : 'text-muted-foreground/90 hover:text-muted-foreground'
+                ? 'bg-primary/15 text-foreground font-medium'
+                : 'text-foreground hover:text-muted-foreground'
             }`}
           >
             <Pencil className="w-3 h-3" />
@@ -73,8 +73,8 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
             onClick={() => setMode('preview')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'preview'
-                ? 'bg-primary/15 text-foreground/80 font-medium'
-                : 'text-muted-foreground/90 hover:text-muted-foreground'
+                ? 'bg-primary/15 text-foreground font-medium'
+                : 'text-foreground hover:text-muted-foreground'
             }`}
           >
             <Eye className="w-3 h-3" />
@@ -97,7 +97,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
               {value ? (
                 <HighlightedSource value={value} />
               ) : (
-                <span className="text-muted-foreground/30">{placeholder}</span>
+                <span className="text-foreground">{placeholder}</span>
               )}
             </div>
             {/* Transparent textarea on top for actual editing */}
@@ -123,7 +123,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
             {value.trim() ? (
               <MarkdownRenderer content={value} />
             ) : (
-              <p className="typo-body text-muted-foreground/80 italic">No content to preview</p>
+              <p className="typo-body text-foreground italic">No content to preview</p>
             )}
           </div>
         )}

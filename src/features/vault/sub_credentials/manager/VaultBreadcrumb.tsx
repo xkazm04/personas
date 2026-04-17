@@ -18,13 +18,13 @@ export function VaultBreadcrumb({ segments, dispatch }: VaultBreadcrumbProps) {
   return (
     <nav
       aria-label={t.vault.breadcrumb.aria_label}
-      className="flex items-center gap-1 px-4 md:px-6 xl:px-8 py-1.5 text-xs text-muted-foreground/70 border-b border-primary/5 bg-secondary/10"
+      className="flex items-center gap-1 px-4 md:px-6 xl:px-8 py-1.5 text-xs text-foreground border-b border-primary/5 bg-secondary/10"
     >
       {segments.map((seg, i) => {
         const isLast = i === segments.length - 1;
         return (
           <span key={i} className="flex items-center gap-1 min-w-0">
-            {i > 0 && <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
+            {i > 0 && <ChevronRight className="w-3 h-3 shrink-0 text-foreground" />}
             {seg.action && !isLast ? (
               <button
                 onClick={() => dispatch(seg.action!)}
@@ -33,7 +33,7 @@ export function VaultBreadcrumb({ segments, dispatch }: VaultBreadcrumbProps) {
                 {seg.label}
               </button>
             ) : (
-              <span className="text-foreground/80 font-medium truncate">{seg.label}</span>
+              <span className="text-foreground font-medium truncate">{seg.label}</span>
             )}
           </span>
         );

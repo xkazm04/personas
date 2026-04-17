@@ -44,7 +44,7 @@ export function OAuthSection({
     <>
       <div className="border-t border-primary/8" />
       <div>
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+        <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
           Authentication
         </h4>
 
@@ -73,7 +73,7 @@ export function OAuthSection({
               </button>
             </Tooltip>
             {consentHint && (
-              <p className="mt-1.5 text-sm text-muted-foreground/60">{consentHint}</p>
+              <p className="mt-1.5 text-sm text-foreground">{consentHint}</p>
             )}
           </>
         )}

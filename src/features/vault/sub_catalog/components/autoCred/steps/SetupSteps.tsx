@@ -20,7 +20,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
         </div>
         <div className="flex-1">
           <h4 className="font-medium text-foreground">{connector.label} is a desktop app</h4>
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-foreground">
             This connector uses a local desktop bridge, not an online API. Use the Desktop Apps panel to detect and connect it.
           </p>
         </div>
@@ -28,7 +28,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-muted-foreground/80 bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
         >
           Back
         </button>
@@ -52,7 +52,7 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
         onClick={onCancel}
         className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4 text-muted-foreground/60" />
+        <ArrowLeft className="w-4 h-4 text-foreground" />
       </button>
       <div
         className="w-10 h-10 rounded-modal flex items-center justify-center border"
@@ -69,7 +69,7 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
       </div>
       <div className="flex-1">
         <h4 className="font-medium text-foreground">Auto-Setup {connector.label}</h4>
-        <p className="text-sm text-muted-foreground/80">
+        <p className="text-sm text-foreground">
           {phase === 'analyzing' ? t.vault.auto_cred_extra.analyzing_setup : t.vault.auto_cred_extra.browser_hint}
         </p>
       </div>

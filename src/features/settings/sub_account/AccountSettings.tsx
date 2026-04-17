@@ -43,7 +43,7 @@ export default function AccountSettings() {
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
-                    <div className="text-sm text-muted-foreground/90 truncate">{user.email}</div>
+                    <div className="text-sm text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
                     <span className="inline-block mt-1.5 px-2 py-0.5 text-sm font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
@@ -69,7 +69,7 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80 mb-4">{st.sign_in_prompt}</p>
+              <p className="text-sm text-foreground mb-4">{st.sign_in_prompt}</p>
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}

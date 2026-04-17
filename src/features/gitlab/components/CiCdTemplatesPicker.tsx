@@ -27,10 +27,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         className="flex items-center gap-2 w-full text-left"
       >
         <Cpu className="w-4 h-4 text-orange-400" />
-        <span className="text-sm font-medium text-foreground/80">{t.gitlab.cicd_agent_templates}</span>
+        <span className="text-sm font-medium text-foreground">{t.gitlab.cicd_agent_templates}</span>
         {expanded
-          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
-          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
+          ? <ChevronUp className="w-3.5 h-3.5 text-foreground ml-auto" />
+          : <ChevronDown className="w-3.5 h-3.5 text-foreground ml-auto" />
         }
       </button>
 
@@ -83,10 +83,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground/60 mt-0.5 line-clamp-2">
+                      <p className="text-xs text-foreground mt-0.5 line-clamp-2">
                         {template.description}
                       </p>
-                      <span className="inline-block mt-1 text-[10px] text-muted-foreground/60 font-mono">
+                      <span className="inline-block mt-1 text-[10px] text-foreground font-mono">
                         on: {template.trigger}
                       </span>
                     </div>

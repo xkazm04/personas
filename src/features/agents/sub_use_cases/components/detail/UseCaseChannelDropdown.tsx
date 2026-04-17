@@ -23,7 +23,7 @@ export function UseCaseChannelDropdown({ channels, onToggle }: UseCaseChannelDro
           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all w-full ${
             channels.length > 0
               ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-              : 'bg-secondary/40 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+              : 'bg-secondary/40 border-primary/10 text-foreground hover:border-primary/20'
           }`}
         >
           <Bell className="w-3.5 h-3.5 flex-shrink-0" />
@@ -43,7 +43,7 @@ export function UseCaseChannelDropdown({ channels, onToggle }: UseCaseChannelDro
                 aria-selected={isEnabled}
                 onClick={() => onToggle(ct.type)}
                 className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-secondary/40 ${
-                  isEnabled ? 'text-primary' : 'text-foreground/80'
+                  isEnabled ? 'text-primary' : 'text-foreground'
                 }`}
               >
                 <ct.Icon className="w-3.5 h-3.5" />

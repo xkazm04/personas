@@ -41,11 +41,11 @@ export function PreviewCard({
                 </span>
               )}
               <span className="text-sm font-medium text-foreground/90 truncate">{preview.workflowName}</span>
-              <span className="text-sm text-muted-foreground/60 flex-shrink-0">
+              <span className="text-sm text-foreground flex-shrink-0">
                 {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} &middot; </>}
                 {preview.fileSize}
               </span>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 ml-auto" />
+              <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0 ml-auto" />
             </>
           ) : (
             <>

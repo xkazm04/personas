@@ -138,7 +138,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                 </h2>
                 <button
                   onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
-                  className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                  className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
                   title={sh.rename_credential}
                 >
                   <Pencil className="w-3 h-3" />
@@ -146,7 +146,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               </>
             )}
           </div>
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             {sh.vector_kb}
             {kb && (
               <span className="ml-2 text-xs">
@@ -157,7 +157,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
         </button>
@@ -175,7 +175,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'text-foreground/90'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+                  : 'text-foreground hover:text-muted-foreground/70'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
               <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground/60">{sh.kb_not_found}</p>
+              <p className="text-sm text-foreground">{sh.kb_not_found}</p>
             </div>
           </div>
         )}

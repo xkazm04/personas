@@ -40,7 +40,7 @@ export function StepProgress({
             {isCompleted ? (
               <Check className="w-3 h-3 text-emerald-400" />
             ) : (
-              <Icon className={`w-3 h-3 ${isCurrent ? colors.text : 'text-muted-foreground/40'}`} />
+              <Icon className={`w-3 h-3 ${isCurrent ? colors.text : 'text-foreground'}`} />
             )}
           </button>
         );

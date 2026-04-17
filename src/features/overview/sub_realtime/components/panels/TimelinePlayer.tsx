@@ -34,11 +34,11 @@ function formatDate(ms: number): string {
 const ReplayEntryBar = memo(function ReplayEntryBar({ loading, onEnterReplay }: { loading: boolean; onEnterReplay: (range: TimeRange) => Promise<void> }) {
   return (
     <div className="flex items-center justify-center gap-3 px-4 py-2.5 bg-gradient-to-r from-background/90 via-secondary/30 to-background/90 border-t border-primary/10">
-      <History className="w-3.5 h-3.5 text-muted-foreground/50" />
-      <span className="text-sm text-muted-foreground/60 font-medium tracking-wide">REPLAY</span>
+      <History className="w-3.5 h-3.5 text-foreground" />
+      <span className="text-sm text-foreground font-medium tracking-wide">REPLAY</span>
       <div className="w-px h-4 bg-primary/10" />
       {RANGE_OPTIONS.map((opt) => (
-        <button key={opt.value} disabled={loading} onClick={() => onEnterReplay(opt.value)} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40">
+        <button key={opt.value} disabled={loading} onClick={() => onEnterReplay(opt.value)} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40">
           {loading ? <LoadingSpinner size="xs" /> : <Calendar className="w-3 h-3" />}
           Last {opt.label}
         </button>
@@ -114,14 +114,14 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar(props: Props) {
         <button onClick={onTogglePlay} aria-label={playing ? 'Pause replay' : 'Play replay'} className="flex items-center justify-center w-7 h-7 rounded-card bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all active:scale-[0.93]">
           {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
         </button>
-        <button onClick={() => onSeek(0)} aria-label={t.overview.realtime_page.reset_to_start} className="flex items-center justify-center w-7 h-7 rounded-card bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]" title={t.overview.realtime_page.reset_to_start}><SkipBack className="w-3.5 h-3.5" /></button>
+        <button onClick={() => onSeek(0)} aria-label={t.overview.realtime_page.reset_to_start} className="flex items-center justify-center w-7 h-7 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]" title={t.overview.realtime_page.reset_to_start}><SkipBack className="w-3.5 h-3.5" /></button>
         <div className="w-px h-5 bg-primary/10" />
         <button onClick={cycleSpeed} aria-label={t.overview.realtime_page.cycle_speed} className="flex items-center gap-1 px-2 py-1 rounded-card bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all typo-heading tracking-wide active:scale-[0.97]" title={t.overview.realtime_page.cycle_speed}><Gauge className="w-3 h-3" /><span aria-live="polite">{speed}x</span></button>
         <div className="w-px h-5 bg-primary/10" />
-        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/60"><span className="text-foreground/70">{formatDate(cursorTime)}</span><ChevronRight className="w-3 h-3 text-muted-foreground/30" /><span>{formatDate(rangeEnd)}</span></div>
+        <div className="flex items-center gap-2 text-sm font-mono text-foreground"><span className="text-foreground">{formatDate(cursorTime)}</span><ChevronRight className="w-3 h-3 text-foreground" /><span>{formatDate(rangeEnd)}</span></div>
         <div className="flex-1" />
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-primary/5 border border-primary/8"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" /><span className="typo-heading text-foreground/60">{emittedCount}</span><span className="text-sm text-muted-foreground/40">/</span><span className="text-sm text-muted-foreground/50">{totalEventCount}</span><span className="text-sm text-muted-foreground/60 ml-0.5">events</span></div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider"><History className="w-3 h-3" />{range === '1d' ? '24H' : '7D'}</div>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-primary/5 border border-primary/8"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" /><span className="typo-heading text-foreground">{emittedCount}</span><span className="text-sm text-foreground">/</span><span className="text-sm text-foreground">{totalEventCount}</span><span className="text-sm text-foreground ml-0.5">events</span></div>
+        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-foreground font-bold tracking-wider"><History className="w-3 h-3" />{range === '1d' ? '24H' : '7D'}</div>
         <button onClick={onExitReplay} aria-label={t.overview.realtime_page.exit_replay} className="flex items-center justify-center w-7 h-7 rounded-card bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]" title={t.overview.realtime_page.exit_replay}><X className="w-3.5 h-3.5" /></button>
       </div>
     </div>

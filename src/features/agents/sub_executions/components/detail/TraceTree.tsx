@@ -28,7 +28,7 @@ function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: number })
       />
       {span.duration_ms != null && (
         <span
-          className="absolute top-0 typo-code text-muted-foreground/60 leading-5 whitespace-nowrap"
+          className="absolute top-0 typo-code text-foreground leading-5 whitespace-nowrap"
           style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}
         >
           {formatDuration(span.duration_ms)}
@@ -68,9 +68,9 @@ export function SpanRow({
         {hasChildren ? (
           <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
             {expanded ? (
-              <ChevronDown className="w-3 h-3 text-muted-foreground/70" />
+              <ChevronDown className="w-3 h-3 text-foreground" />
             ) : (
-              <ChevronRight className="w-3 h-3 text-muted-foreground/70" />
+              <ChevronRight className="w-3 h-3 text-foreground" />
             )}
           </button>
         ) : (

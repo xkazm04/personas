@@ -40,7 +40,7 @@ export default function MemoryPanelHeader({
               className={`p-1 transition-colors ${
                 viewMode === 'list'
                   ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                  : 'text-foreground hover:text-muted-foreground/60'
               }`}
               title={t.pipeline.list_view}
             >
@@ -51,7 +51,7 @@ export default function MemoryPanelHeader({
               className={`p-1 transition-colors ${
                 viewMode === 'timeline'
                   ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                  : 'text-foreground hover:text-muted-foreground/60'
               }`}
               title={t.pipeline.timeline_view}
             >
@@ -63,7 +63,7 @@ export default function MemoryPanelHeader({
                 className={`p-1 transition-colors ${
                   viewMode === 'diff'
                     ? 'bg-violet-500/20 text-violet-400'
-                    : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                    : 'text-foreground hover:text-muted-foreground/60'
                 }`}
                 title={t.pipeline.compare_runs}
               >
@@ -73,7 +73,7 @@ export default function MemoryPanelHeader({
           </div>
         )}
         <button
-          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/60"
+          className="p-1 rounded-card hover:bg-primary/10 text-foreground"
           onClick={onClose}
         >
           <ChevronDown className="w-4 h-4" />

@@ -42,7 +42,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-card border border-border bg-secondary/10 p-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-foreground mb-1">
         {label}
       </div>
       <div className="text-lg font-semibold text-foreground">{children}</div>
@@ -61,7 +61,7 @@ function formatBytes(bytes: number): string {
 function MetricRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[11px] text-foreground">{label}</span>
       <span className="text-[11px] font-mono text-foreground">{value}</span>
     </div>
   );
@@ -86,10 +86,10 @@ function MetricsSection({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/20 transition-colors rounded-card"
       >
-        <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         <span className="text-[11px] font-medium text-foreground flex-1">{title}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-foreground transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open && (
@@ -112,7 +112,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
           <span className="flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3 text-emerald-400" />
             {m.messagesSent.toLocaleString()}
-            <span className="text-muted-foreground ml-1">({formatBytes(m.bytesSent)})</span>
+            <span className="text-foreground ml-1">({formatBytes(m.bytesSent)})</span>
           </span>
         }
       />
@@ -122,7 +122,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
           <span className="flex items-center gap-1">
             <ArrowDownLeft className="w-3 h-3 text-blue-400" />
             {m.messagesReceived.toLocaleString()}
-            <span className="text-muted-foreground ml-1">({formatBytes(m.bytesReceived)})</span>
+            <span className="text-foreground ml-1">({formatBytes(m.bytesReceived)})</span>
           </span>
         }
       />
@@ -169,7 +169,7 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
         <MetricRow
           label="Disconnects"
           value={
-            <span className="text-muted-foreground">
+            <span className="text-foreground">
               {totalDropped}
               <span className="ml-1 text-[10px]">
                 (H:{m.connectionsDroppedHealth} U:{m.connectionsDroppedUser} S:{m.connectionsDroppedShutdown} P:{m.connectionsDroppedProtocol})
@@ -205,7 +205,7 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
             {' / '}
             <span className={m.syncFailures > 0 ? 'text-red-400' : ''}>{m.syncFailures}</span>
             {successRate != null && (
-              <span className="text-muted-foreground ml-1 text-[10px]">({successRate}%)</span>
+              <span className="text-foreground ml-1 text-[10px]">({successRate}%)</span>
             )}
           </span>
         }
@@ -259,7 +259,7 @@ export function NetworkDashboard() {
       )}
 
       {!networkStatus ? (
-        <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 text-sm text-foreground">
           <div className="relative">
             <Wifi className="w-4 h-4 text-emerald-400/50" />
             <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
@@ -279,9 +279,9 @@ export function NetworkDashboard() {
                     <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/25" />
                   </div>
                 ) : (
-                  <WifiOff className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <WifiOff className="w-4 h-4 text-foreground flex-shrink-0" />
                 )}
-                <span className={isRunning ? 'text-emerald-400' : 'text-muted-foreground'}>
+                <span className={isRunning ? 'text-emerald-400' : 'text-foreground'}>
                   {isRunning ? st.status_online : st.status_offline}
                 </span>
               </div>
@@ -290,7 +290,7 @@ export function NetworkDashboard() {
             {/* Port card */}
             <StatCard label={st.stat_port}>
               <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <Hash className="w-4 h-4 text-foreground flex-shrink-0" />
                 <span className="font-mono">
                   {isRunning && networkStatus.listening_port
                     ? networkStatus.listening_port
@@ -302,7 +302,7 @@ export function NetworkDashboard() {
             {/* Discovered peers card */}
             <StatCard label={st.stat_discovered}>
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <Users className="w-4 h-4 text-foreground flex-shrink-0" />
                 <span>{isRunning ? networkStatus.discovered_peer_count : 0}</span>
               </div>
             </StatCard>
@@ -336,8 +336,8 @@ export function NetworkDashboard() {
           {/* Peer ID footer */}
           {isRunning && networkStatus.local_peer_id && (
             <div className="flex items-center gap-1.5 px-1 pt-1">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Peer ID</span>
-              <span className="text-[11px] font-mono text-foreground/50">
+              <span className="text-[10px] uppercase tracking-wider text-foreground">Peer ID</span>
+              <span className="text-[11px] font-mono text-foreground">
                 {networkStatus.local_peer_id.slice(0, 8)}...{networkStatus.local_peer_id.slice(-8)}
               </span>
             </div>

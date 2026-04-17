@@ -24,11 +24,11 @@ function FieldRow({ label, field, workspaceName, mask }: {
 
   return (
     <div className="flex items-center justify-between gap-2 py-1">
-      <span className="text-xs text-muted-foreground/70 flex-shrink-0">{label}</span>
+      <span className="text-xs text-foreground flex-shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 min-w-0">
         <span
           className={`text-xs font-mono truncate max-w-[140px] ${
-            field.source === 'default' ? 'text-muted-foreground/40 italic' : 'text-foreground/80'
+            field.source === 'default' ? 'text-foreground italic' : 'text-foreground'
           }`}
           title={field.value != null && !mask ? String(field.value) : undefined}
         >
@@ -73,11 +73,11 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 hover:bg-secondary/30 transition-colors"
       >
-        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/70">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
           <Layers className="w-3 h-3 text-primary/60" />
           {mc.effective_config}
           {hasInheritance && (
-            <span className="text-[10px] text-muted-foreground/50">
+            <span className="text-[10px] text-foreground">
               {inheritedCount > 0 && `${inheritedCount} ${mc.inherited}`}
               {inheritedCount > 0 && overriddenCount > 0 && ' \u00B7 '}
               {overriddenCount > 0 && `${overriddenCount} ${mc.overridden}`}
@@ -85,9 +85,9 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
           )}
         </span>
         {expanded ? (
-          <ChevronUp className="w-3 h-3 text-muted-foreground/50" />
+          <ChevronUp className="w-3 h-3 text-foreground" />
         ) : (
-          <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
+          <ChevronDown className="w-3 h-3 text-foreground" />
         )}
       </button>
 

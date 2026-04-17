@@ -47,12 +47,12 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
         <div className="min-w-0 flex-1">
           <h2 id="recipe-playground-title" className="text-sm font-semibold text-foreground truncate">{currentRecipe.name}</h2>
           {currentRecipe.description && (
-            <p className="text-sm text-muted-foreground truncate">{currentRecipe.description}</p>
+            <p className="text-sm text-foreground truncate">{currentRecipe.description}</p>
           )}
         </div>
         <button
           onClick={onClose}
-          className="flex items-center justify-center w-7 h-7 rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -68,7 +68,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/80'
+                isActive ? 'text-foreground' : 'text-foreground hover:text-foreground/80'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />

@@ -76,7 +76,7 @@ export function AdoptionPrerequisitesPanel({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Plug className="w-4 h-4 text-muted-foreground/70" />
+        <Plug className="w-4 h-4 text-foreground" />
         <SectionLabel className="mb-0">{t.templates.matrix_grid.prerequisites}</SectionLabel>
         <OverallBadge overall={overall} total={items.length} ready={items.filter((i) => i.status.health === 'ready').length} />
       </div>
@@ -110,7 +110,7 @@ export function AdoptionPrerequisitesPanel({
           <>
             <ArrowRight className="w-4 h-4" />
             {t.templates.matrix_grid.continue_to_adoption}
-            <span className="text-muted-foreground/50 text-sm ml-1">
+            <span className="text-foreground text-sm ml-1">
               {t.templates.matrix_grid.setup_in_wizard}
             </span>
           </>
@@ -159,7 +159,7 @@ function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; o
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-medium text-foreground/80 block truncate">{meta.label}</span>
+        <span className="text-sm font-medium text-foreground block truncate">{meta.label}</span>
         <span className={`text-sm ${isReady ? 'text-emerald-400/70' : 'text-amber-400/70'}`}>
           {isReady
             ? 'Credential configured'

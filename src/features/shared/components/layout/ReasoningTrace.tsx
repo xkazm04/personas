@@ -96,9 +96,9 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <span className={`shrink-0 ${entry.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}`}>{entry.changeType === 'read' ? '\u25CB' : '\u25CF'}</span>
           <div className="min-w-0 flex-1 typo-caption">
             <span className="font-medium capitalize">{entry.changeType}</span>
-            <span className="text-muted-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
+            <span className="text-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 

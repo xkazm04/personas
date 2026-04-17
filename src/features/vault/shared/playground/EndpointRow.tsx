@@ -13,7 +13,7 @@ const METHOD_STYLES: Record<string, string> = {
   DELETE: 'bg-red-500/15 text-red-400 border-red-500/25',
 };
 
-const DEFAULT_METHOD_STYLE = 'bg-secondary/30 text-muted-foreground/70 border-primary/10';
+const DEFAULT_METHOD_STYLE = 'bg-secondary/30 text-foreground border-primary/10';
 
 // -- Component ----------------------------------------------------
 
@@ -37,9 +37,9 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
         onClick={onToggle}
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+          <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+          <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
         )}
 
         <span
@@ -48,12 +48,12 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           {endpoint.method.toUpperCase()}
         </span>
 
-        <span className="font-mono text-sm text-foreground/80 truncate flex-1">
+        <span className="font-mono text-sm text-foreground truncate flex-1">
           {endpoint.path}
         </span>
 
         {endpoint.summary && (
-          <span className="text-sm text-muted-foreground/60 truncate max-w-[240px] hidden sm:inline">
+          <span className="text-sm text-foreground truncate max-w-[240px] hidden sm:inline">
             {endpoint.summary}
           </span>
         )}
@@ -74,7 +74,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
           {endpoint.description && (
-            <p className="text-sm text-muted-foreground/60 leading-relaxed">
+            <p className="text-sm text-foreground leading-relaxed">
               {endpoint.description}
             </p>
           )}
@@ -84,7 +84,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               {endpoint.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-1.5 py-0.5 rounded text-sm text-muted-foreground/70 bg-secondary/40 border border-primary/8"
+                  className="px-1.5 py-0.5 rounded text-sm text-foreground bg-secondary/40 border border-primary/8"
                 >
                   {tag}
                 </span>
@@ -100,15 +100,15 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               <div className="space-y-0.5">
                 {endpoint.parameters.map((p) => (
                   <div key={`${p.location}-${p.name}`} className="flex items-center gap-2 text-sm">
-                    <span className="font-mono text-foreground/70">{p.name}</span>
-                    <span className="text-sm text-muted-foreground/70">
+                    <span className="font-mono text-foreground">{p.name}</span>
+                    <span className="text-sm text-foreground">
                       {p.location}{p.required ? ' · required' : ''}
                     </span>
                     {p.schema_type && (
                       <span className="text-sm text-violet-400/60">{p.schema_type}</span>
                     )}
                     {p.description && (
-                      <span className="text-sm text-muted-foreground/60 truncate">
+                      <span className="text-sm text-foreground truncate">
                         -- {p.description}
                       </span>
                     )}
@@ -123,12 +123,12 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               <span className="text-sm uppercase tracking-wider text-cyan-400/70 font-semibold">
                 Request Body
               </span>
-              <div className="text-sm text-muted-foreground/70">
+              <div className="text-sm text-foreground">
                 {endpoint.request_body.content_type}
                 {endpoint.request_body.required && ' · required'}
               </div>
               {endpoint.request_body.schema_json && (
-                <pre className="text-sm text-muted-foreground/60 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
+                <pre className="text-sm text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
                   {formatSchema(endpoint.request_body.schema_json)}
                 </pre>
               )}
@@ -187,7 +187,7 @@ function TestBadge({ result }: { result: EndpointTestResult }) {
       );
     case 'skipped':
       return (
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-sm text-muted-foreground/70 shrink-0">
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-sm text-foreground shrink-0">
           <MinusCircle className="w-3 h-3" />
           skip
         </span>

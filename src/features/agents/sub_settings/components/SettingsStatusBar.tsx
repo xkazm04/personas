@@ -22,7 +22,7 @@ export function SettingsStatusBar({
   const { t, tx } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+      <div className="flex items-center gap-2 text-sm text-foreground">
         {isSaving ? (
           <>
             <LoadingSpinner size="sm" className="text-primary/70" />
@@ -36,7 +36,7 @@ export function SettingsStatusBar({
         ) : (
           <>
             <Check className="w-3.5 h-3.5 text-emerald-400/70" aria-hidden="true" />
-            <span className="text-muted-foreground/70">{t.agents.settings_status.all_saved}</span>
+            <span className="text-foreground">{t.agents.settings_status.all_saved}</span>
           </>
         )}
       </div>
@@ -65,7 +65,7 @@ export function SettingsStatusBar({
           </button>
           <button
             onClick={() => setShowDeleteConfirm(false)}
-            className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-modal text-sm transition-colors hover:bg-secondary/70"
+            className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-modal text-sm transition-colors hover:bg-secondary/70"
           >
             {t.common.cancel}
           </button>

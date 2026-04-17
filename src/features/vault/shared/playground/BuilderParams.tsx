@@ -53,18 +53,18 @@ export function KeyValueEditor({
             value={entry.key}
             onChange={(e) => update(i, 'key', e.target.value)}
             placeholder="key"
-            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
           <input
             type="text"
             value={entry.value}
             onChange={(e) => update(i, 'value', e.target.value)}
             placeholder="value"
-            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
           <button
             onClick={() => remove(i)}
-            className="p-1 rounded text-muted-foreground/50 hover:text-red-400/60 transition-colors"
+            className="p-1 rounded text-foreground hover:text-red-400/60 transition-colors"
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -80,7 +80,7 @@ function AddButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
+      className="flex items-center gap-1 px-2 py-1 rounded text-sm text-foreground hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
     >
       <Plus className="w-3 h-3" />
       {t.vault.shared.add}

@@ -17,7 +17,7 @@ export function TriggerCategorySelector({
   const { t } = useTranslation();
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      <label className="block text-sm font-medium text-foreground mb-1.5">
         Trigger Category
       </label>
       <div className="grid grid-cols-2 gap-2">
@@ -42,9 +42,9 @@ export function TriggerCategorySelector({
               <div className="flex items-center gap-2">
                 <CatIcon className={`w-4 h-4 ${cat.color}`} />
                 <span className="text-sm font-semibold text-foreground/90">{cat.label}</span>
-                <span className="ml-auto text-xs text-muted-foreground/50">{cat.types.length}</span>
+                <span className="ml-auto text-xs text-foreground">{cat.types.length}</span>
               </div>
-              <span className="text-xs text-muted-foreground/70">{cat.description}</span>
+              <span className="text-xs text-foreground">{cat.description}</span>
             </button>
           );
         })}
@@ -65,7 +65,7 @@ export function TriggerCategorySelector({
             {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
             <span className="text-sm font-semibold text-foreground/90">{t.triggers.category_manual}</span>
           </div>
-          <span className="text-xs text-muted-foreground/70">{t.triggers.category_manual_hint}</span>
+          <span className="text-xs text-foreground">{t.triggers.category_manual_hint}</span>
         </button>
       </div>
     </div>

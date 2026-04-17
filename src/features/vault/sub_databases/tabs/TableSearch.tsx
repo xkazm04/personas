@@ -26,19 +26,19 @@ export function TableSearch({
     <div className="p-3 border-b border-primary/5 space-y-2">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             type="text"
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
             placeholder={isRedis ? db.filter_keys : isApi ? db.filter_databases : db.filter_tables}
-            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
           />
         </div>
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-1.5 rounded-card text-muted-foreground/40 hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
+          className="p-1.5 rounded-card text-foreground hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
           title={db.refresh}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

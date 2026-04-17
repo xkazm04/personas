@@ -77,7 +77,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
           value={description}
           onChange={e => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-violet-400/50 resize-none transition-colors"
+          className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-foreground outline-none focus:border-violet-400/50 resize-none transition-colors"
           placeholder={t.common.agent_description_placeholder}
         />
       </div>
@@ -90,7 +90,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
         <input
           value={model}
           onChange={e => setModel(e.target.value)}
-          className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-violet-400/50 transition-colors"
+          className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-foreground outline-none focus:border-violet-400/50 transition-colors"
           placeholder="e.g. claude-sonnet-4-20250514"
         />
       </div>

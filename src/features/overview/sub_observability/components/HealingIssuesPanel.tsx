@@ -108,14 +108,14 @@ export function HealingIssuesPanel({
           <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+              className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
               title={"list_view"}
             >
               <List className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setViewMode('timeline')}
-              className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+              className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
               title={"timeline_view"}
             >
               <GitBranch className="w-3.5 h-3.5" />
@@ -190,14 +190,14 @@ export function HealingIssuesPanel({
               className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground'
+                  : 'text-foreground hover:text-muted-foreground'
               }`}
             >
               {chip.label}
               <span className={`px-1.5 py-0.5 typo-heading rounded-full ${
                 issueFilter === chip.key
                   ? 'bg-primary/15 text-foreground/90'
-                  : 'bg-secondary/60 text-muted-foreground/80'
+                  : 'bg-secondary/60 text-foreground'
               }`}>
                 {chip.count}
               </span>
@@ -219,8 +219,8 @@ export function HealingIssuesPanel({
             <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="typo-heading text-foreground/80">{t.overview.healing_issues_panel.no_open_issues}</p>
-            <p className="typo-body text-muted-foreground mt-1">{t.overview.healing_issues_panel.run_analysis_hint}</p>
+            <p className="typo-heading text-foreground">{t.overview.healing_issues_panel.no_open_issues}</p>
+            <p className="typo-body text-foreground mt-1">{t.overview.healing_issues_panel.run_analysis_hint}</p>
           </div>
         </div>
       ) : (
@@ -237,9 +237,9 @@ export function HealingIssuesPanel({
           onClick={() => setAuditExpanded(!auditExpanded)}
           className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-secondary/30 transition-colors"
         >
-          {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />}
+          {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
           <FileWarning className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="typo-body typo-heading text-muted-foreground/90">{t.overview.healing_issues_panel.healing_audit_log}</span>
+          <span className="typo-body typo-heading text-foreground">{t.overview.healing_issues_panel.healing_audit_log}</span>
           {auditEntries.length > 0 && auditExpanded && (
             <span className="px-1.5 py-0.5 typo-caption rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
               {auditEntries.length}
@@ -266,7 +266,7 @@ export function HealingIssuesPanel({
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
               </div>
             ) : auditEntries.length === 0 ? (
-              <p className="typo-body text-muted-foreground/70 py-3 text-center">{t.overview.healing_issues_panel.no_silent_failures}</p>
+              <p className="typo-body text-foreground py-3 text-center">{t.overview.healing_issues_panel.no_silent_failures}</p>
             ) : (
               <div className="space-y-1">
                 {auditEntries.map((entry) => (
@@ -278,15 +278,15 @@ export function HealingIssuesPanel({
                       {AUDIT_EVENT_LABELS[entry.eventType] ?? entry.eventType}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-foreground/80 truncate">{entry.message}</p>
+                      <p className="text-foreground truncate">{entry.message}</p>
                       {entry.detail && (
-                        <p className="text-muted-foreground/70 typo-caption truncate mt-0.5">{entry.detail}</p>
+                        <p className="text-foreground typo-caption truncate mt-0.5">{entry.detail}</p>
                       )}
                     </div>
-                    <span className="shrink-0 typo-caption text-muted-foreground/50 mt-0.5">
+                    <span className="shrink-0 typo-caption text-foreground mt-0.5">
                       {entry.subsystem}
                     </span>
-                    <span className="shrink-0 typo-caption text-muted-foreground/40 mt-0.5">
+                    <span className="shrink-0 typo-caption text-foreground mt-0.5">
                       {new Date(entry.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

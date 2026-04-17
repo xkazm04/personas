@@ -124,10 +124,10 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
     return (
       <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/50" />
-          <span className="text-xs font-medium text-muted-foreground/60">{t.agents.lab.score_trend}</span>
+          <TrendingUp className="w-3.5 h-3.5 text-foreground" />
+          <span className="text-xs font-medium text-foreground">{t.agents.lab.score_trend}</span>
         </div>
-        <p className="text-xs text-muted-foreground/40">{t.agents.lab.run_tests_hint}</p>
+        <p className="text-xs text-foreground">{t.agents.lab.run_tests_hint}</p>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
     <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <TrendingUp className="w-3.5 h-3.5 text-primary/70" />
-        <span className="text-xs font-medium text-foreground/70">{t.agents.lab.score_trend}</span>
+        <span className="text-xs font-medium text-foreground">{t.agents.lab.score_trend}</span>
         {bestScore != null && (
           <span className="ml-auto text-xs text-emerald-400 font-medium">Best: {bestScore}</span>
         )}
@@ -211,8 +211,8 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
 
         {/* Min/max labels below chart */}
         <div className="flex justify-between">
-          <span className="text-xs text-foreground/50 tabular-nums">{first.dp.score}</span>
-          <span className="text-xs text-foreground/50 tabular-nums">{last.dp.score}</span>
+          <span className="text-xs text-foreground tabular-nums">{first.dp.score}</span>
+          <span className="text-xs text-foreground tabular-nums">{last.dp.score}</span>
         </div>
 
         {/* Visually-hidden table fallback for screen readers */}

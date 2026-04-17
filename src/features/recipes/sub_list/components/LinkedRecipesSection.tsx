@@ -67,7 +67,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground/60">
+      <div className="flex items-center gap-2 py-3 text-sm text-foreground">
         <LoadingSpinner size="xs" /> {t.recipes.loading_linked}
       </div>
     );
@@ -91,7 +91,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       {linkedRecipes.length === 0 ? (
         <div className="rounded-modal border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
           <PuzzlePieceIllustration />
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-foreground">
             No recipes linked yet. Click &quot;Add&quot; to link recipes from the library.
           </p>
         </div>
@@ -108,11 +108,11 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
                 {recipe.description && (
-                  <p className="text-sm text-muted-foreground/60 truncate">{recipe.description}</p>
+                  <p className="text-sm text-foreground truncate">{recipe.description}</p>
                 )}
               </div>
               {recipe.category && (
-                <span className="rounded-card border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
+                <span className="rounded-card border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-foreground">
                   {recipe.category}
                 </span>
               )}

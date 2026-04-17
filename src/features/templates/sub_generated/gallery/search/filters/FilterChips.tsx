@@ -158,7 +158,7 @@ export function FilterChips({
                         : opt.color === 'emerald'
                           ? 'bg-emerald-500/20 text-emerald-300'
                           : 'bg-amber-500/20 text-amber-300'
-                      : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                      : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
                   }`}
                 >
                   {Icon && <Icon className="w-3 h-3" />}

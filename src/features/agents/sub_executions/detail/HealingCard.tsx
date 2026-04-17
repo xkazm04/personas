@@ -55,14 +55,14 @@ export function HealingCard({
               <span className={`typo-heading ${styles.accent}`}>
                 {notification.title}
               </span>
-              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">
+              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">
                 {notification.severity}
               </span>
             </div>
           </div>
           <button
             onClick={onDismiss}
-            className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5"
+            className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5"
           >
             <span className="typo-body">{t.agents.executions.dismiss}</span>
           </button>
@@ -72,7 +72,7 @@ export function HealingCard({
         {notification.strategy && (
           <div className="flex items-center gap-2 typo-body">
             <RotateCw className={`w-3.5 h-3.5 flex-shrink-0 ${styles.icon} opacity-60`} />
-            <span className="text-foreground/80">{notification.strategy}</span>
+            <span className="text-foreground">{notification.strategy}</span>
           </div>
         )}
 
@@ -97,7 +97,7 @@ export function HealingCard({
               </div>
             )}
             {/* Attempt badge */}
-            <span className="ml-auto typo-code text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
+            <span className="ml-auto typo-code text-foreground px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
               {tx(t.agents.executions.attempt_of, { current: notification.retry_number!, max: notification.max_retries! })}
             </span>
           </div>
@@ -125,7 +125,7 @@ export function HealingCard({
 
         {/* Suggested fix */}
         {notification.suggested_fix && (
-          <p className="typo-body text-muted-foreground/60 leading-relaxed pl-6.5">
+          <p className="typo-body text-foreground leading-relaxed pl-6.5">
             {notification.suggested_fix}
           </p>
         )}

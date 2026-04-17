@@ -137,7 +137,7 @@ export default function LanguageSwitcher() {
                       <div className="px-2 py-1.5 bg-card/80">
                         <div className="flex items-center gap-1.5">
                           <span className="typo-caption">{lang.flag}</span>
-                          <span className={`typo-caption truncate ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                          <span className={`typo-caption truncate ${isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'}`}>
                             {lang.label}
                           </span>
                         </div>

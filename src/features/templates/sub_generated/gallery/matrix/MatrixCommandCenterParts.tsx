@@ -36,9 +36,9 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
       <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="text-base font-semibold text-foreground/90">{section.label}</h3></div>
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-muted-foreground/60" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-foreground" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap text-sm text-foreground/80 font-sans leading-relaxed">{section.content}</pre></div>
+        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{section.content}</pre></div>
       </div>
     </div>,
     document.body,
@@ -51,7 +51,7 @@ export function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon
       'inline-flex items-center gap-1.5 rounded-card border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
       active
         ? 'border-primary/30 bg-primary/15 text-primary'
-        : 'border-primary/10 bg-transparent text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/20',
+        : 'border-primary/10 bg-transparent text-foreground hover:text-muted-foreground/60 hover:border-primary/20',
     ].join(' ')}>
       <Icon className="w-3 h-3 flex-shrink-0" />
       {label}
@@ -90,7 +90,7 @@ export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhas
             }`} />}
       </button>
       <span className={`text-[11px] font-medium tracking-wide uppercase ${
-        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-muted-foreground/50'
+        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-foreground'
       }`}>
         {isRunning ? 'Generating...' : label}
       </span>
@@ -107,8 +107,8 @@ export function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string;
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <LoadingSpinner size="lg" className="text-primary relative z-10" />
       </div>
-      <span className="text-sm text-foreground/60 font-medium">{phaseLabel}</span>
-      {hint && <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">{hint}</p>}
+      <span className="text-sm text-foreground font-medium">{phaseLabel}</span>
+      {hint && <p className="text-xs text-foreground text-center leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -217,7 +217,7 @@ export function ActiveBuildProgress({
           {pendingAnswerCount} answer{pendingAnswerCount > 1 ? 's' : ''} ready — click Continue
         </span>
       ) : (
-        <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
           {buildActivity || phaseLabel}
         </span>
       )}
@@ -252,7 +252,7 @@ export function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: {
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <HelpCircle className="w-5 h-5 text-primary relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Your input needed</span>
+      <span className="text-sm text-foreground font-medium">Your input needed</span>
       <button type="button" onClick={onOpenQuestions}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
         <HelpCircle className="w-3.5 h-3.5" />
@@ -271,7 +271,7 @@ export function BuildCompletedIndicator() {
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/8 to-emerald-400/10" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Build Complete</span>
+      <span className="text-sm text-foreground font-medium">Build Complete</span>
     </div>
   );
 }
@@ -290,7 +290,7 @@ export function CompletenessRing({ value, size = 56 }: { value: number; size?: n
           className={`${color} transition-all duration-700 ease-out`}
           strokeDasharray={circumference} strokeDashoffset={offset} />
       </svg>
-      <span className="absolute text-xs font-bold text-foreground/70">{value}%</span>
+      <span className="absolute text-xs font-bold text-foreground">{value}%</span>
     </div>
   );
 }
@@ -322,7 +322,7 @@ export function CreationPostGeneration({
 
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
-      <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+      <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
         {editingCellKey ? `Editing: ${CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey}` : 'Draft Ready'}
       </span>
 
@@ -341,7 +341,7 @@ export function CreationPostGeneration({
             <button
               type="button"
               onClick={onDiscardEdits}
-              className="px-2.5 py-1.5 rounded-card text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+              className="px-2.5 py-1.5 rounded-card text-[11px] text-foreground hover:text-foreground/70 transition-colors"
             >
               Discard
             </button>
@@ -382,7 +382,7 @@ export function CreationPostGeneration({
             placeholder="Adjust anything..."
             data-testid="agent-refine-input"
             rows={3}
-            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && refineText.trim()) { e.preventDefault(); onRefine(refineText.trim()); setRefineText(''); } }}
           />
           <button
@@ -409,7 +409,7 @@ export function CliOutputStream({ lines }: { lines: string[] }) {
   }, [lines.length]);
   if (lines.length === 0) return null;
   return (
-    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-card bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-card bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-foreground leading-relaxed">
       {lines.slice(-30).map((line, i) => (
         <div key={i} className="truncate">{line}</div>
       ))}
@@ -427,12 +427,12 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <HelpCircle className="w-5 h-5 text-primary relative z-10" />
       </div>
-      <p className="text-sm text-foreground/80 text-center leading-snug">{question.question}</p>
+      <p className="text-sm text-foreground text-center leading-snug">{question.question}</p>
       {question.options && question.options.length > 0 ? (
         <div className="w-full space-y-1.5">
           {question.options.map((opt, i) => (
             <button key={i} type="button" onClick={() => onAnswer(opt)}
-              className="w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
+              className="w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
               {opt}
             </button>
           ))}
@@ -440,7 +440,7 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
       ) : (
         <div className="w-full flex gap-1.5">
           <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer..."
-            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }} />
           <button type="button" onClick={() => { if (answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }}
             disabled={!answer.trim()} className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
@@ -457,7 +457,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <BuildStatusIndicator phaseLabel="Testing agent..." />
-      <p className="text-xs text-muted-foreground/50 text-center leading-relaxed max-w-xs">
+      <p className="text-xs text-foreground text-center leading-relaxed max-w-xs">
         This may take a few minutes. You can leave this page and come back later — testing continues in the background.
       </p>
       {testOutputLines.length > 0 && (
@@ -467,7 +467,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
         <button
           type="button"
           onClick={onCancelTest}
-          className="text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+          className="text-xs text-foreground hover:text-muted-foreground/70 transition-colors"
         >
           Cancel Test
         </button>
@@ -523,10 +523,10 @@ export function TestResultsPanel({
           {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
-          <span className="text-sm text-muted-foreground/40">
+          <span className="text-sm text-foreground">
             {passedCount > 0 && <span className="text-emerald-400/70">{passedCount}</span>}
             {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-red-400/70">{failedCount}</span></>}
-            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-muted-foreground/40">{skippedCount}</span></>}
+            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
           </span>
         )}
       </div>
@@ -572,7 +572,7 @@ export function TestResultsPanel({
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground hover:bg-primary/5 hover:text-foreground/80 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             Report
@@ -583,7 +583,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onReject}
             data-testid="agent-reject-btn"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Retry
@@ -625,12 +625,12 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Agent Promoted</span>
+      <span className="text-sm text-foreground font-medium">Agent Promoted</span>
       {onViewAgent && (
         <button
           type="button"
           onClick={onViewAgent}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 text-sm text-foreground/70 hover:bg-primary/5 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 text-sm text-foreground hover:bg-primary/5 transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
           View Agent

@@ -185,7 +185,7 @@ export function CredentialSchemaForm({
       />
 
       {!hasHealthcheck && activeSubType.noHealthcheckHint && (
-        <p className="text-sm text-muted-foreground/50 italic">{activeSubType.noHealthcheckHint}</p>
+        <p className="text-sm text-foreground italic">{activeSubType.noHealthcheckHint}</p>
       )}
 
       {config.extraFields?.map((ef) => (

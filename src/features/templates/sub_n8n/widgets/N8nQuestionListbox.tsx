@@ -25,15 +25,15 @@ export function N8nQuestionListbox({ options, value, onChange, selectedClassName
             'w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-modal border transition-all',
             value && selectedClassName
               ? selectedClassName
-              : 'border-primary/15 bg-background/50 text-foreground/80',
+              : 'border-primary/15 bg-background/50 text-foreground',
             isOpen ? 'ring-2 ring-primary/30 border-primary/30' : '',
           ].join(' ')}
         >
-          <span className={value ? '' : 'text-muted-foreground/50'}>
+          <span className={value ? '' : 'text-foreground'}>
             {value || 'Select\u2026'}
           </span>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-muted-foreground/50 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 text-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           />
         </button>
       )}
@@ -51,7 +51,7 @@ export function N8nQuestionListbox({ options, value, onChange, selectedClassName
                 className={[
                   'w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors',
                   isFocused ? 'bg-primary/10' : isSelected ? 'bg-primary/5' : 'hover:bg-secondary/40',
-                  isSelected ? 'text-foreground font-medium' : 'text-foreground/80',
+                  isSelected ? 'text-foreground font-medium' : 'text-foreground',
                 ].join(' ')}
               >
                 {isSelected

@@ -21,8 +21,8 @@ export function CreateTemplateModalHeader({
           <Wand2 className="w-4 h-4 text-violet-400" />
         </div>
         <div>
-          <h2 id="create-template-title" className="text-base font-semibold text-foreground/80">{t.templates.generation.create_template}</h2>
-          <p className="text-sm text-muted-foreground/80">{t.templates.generation.create_template_subtitle}</p>
+          <h2 id="create-template-title" className="text-base font-semibold text-foreground">{t.templates.generation.create_template}</h2>
+          <p className="text-sm text-foreground">{t.templates.generation.create_template_subtitle}</p>
         </div>
       </div>
       <div className="flex items-center gap-4">
@@ -31,7 +31,7 @@ export function CreateTemplateModalHeader({
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
         >
-          <X className="w-4 h-4 text-muted-foreground/90" />
+          <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
     </div>

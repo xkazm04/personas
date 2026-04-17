@@ -36,7 +36,7 @@ export function AutopilotInputStep({
           className={`flex items-center gap-2 px-3 py-2 rounded-card border text-sm transition-all ${
             inputMode === 'url'
               ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-              : 'bg-secondary/25 border-primary/15 text-muted-foreground hover:bg-secondary/40'
+              : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function AutopilotInputStep({
           className={`flex items-center gap-2 px-3 py-2 rounded-card border text-sm transition-all ${
             inputMode === 'paste'
               ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
-              : 'bg-secondary/25 border-primary/15 text-muted-foreground hover:bg-secondary/40'
+              : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -57,10 +57,10 @@ export function AutopilotInputStep({
 
       {inputMode === 'url' ? (
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground/80">
+          <label className="text-sm text-foreground">
             OpenAPI Spec URL
             {urlValidation.validationState === 'validating' && (
-              <Loader2 aria-hidden="true" className="ml-1.5 inline-block w-3.5 h-3.5 animate-spin text-muted-foreground/60 align-text-bottom" />
+              <Loader2 aria-hidden="true" className="ml-1.5 inline-block w-3.5 h-3.5 animate-spin text-foreground align-text-bottom" />
             )}
             {urlValidation.validationState === 'valid' && (
               <span className="ml-1.5"><SuccessCheck visible /></span>
@@ -75,7 +75,7 @@ export function AutopilotInputStep({
             }}
             placeholder="https://api.example.com/openapi.json"
             data-testid="vault-autopilot-url-input"
-            className={`w-full px-3 py-2.5 bg-secondary/30 border rounded-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 ${
+            className={`w-full px-3 py-2.5 bg-secondary/30 border rounded-card text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-blue-500/40 ${
               urlValidation.validationState === 'error' ? 'border-red-500/40' :
               urlValidation.validationState === 'valid' ? 'border-emerald-500/30' :
               'border-primary/15'
@@ -84,20 +84,20 @@ export function AutopilotInputStep({
           {urlValidation.error ? (
             <p className="animate-fade-slide-in text-xs text-red-400" role="alert">{urlValidation.error}</p>
           ) : (
-            <p className="text-xs text-muted-foreground/40">
+            <p className="text-xs text-foreground">
               Supports OpenAPI 3.x and Swagger 2.x specs in JSON or YAML format
             </p>
           )}
         </div>
       ) : (
         <div className="space-y-2">
-          <label className="text-sm text-muted-foreground/80">{t.vault.autopilot.paste_spec}</label>
+          <label className="text-sm text-foreground">{t.vault.autopilot.paste_spec}</label>
           <textarea
             value={specContent}
             onChange={(e) => setSpecContent(e.target.value)}
             placeholder={'{\n  "openapi": "3.0.0",\n  "info": { "title": "My API", ... },\n  "paths": { ... }\n}'}
             rows={12}
-            className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/15 rounded-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 font-mono resize-y"
+            className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/15 rounded-card text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-blue-500/40 font-mono resize-y"
           />
         </div>
       )}

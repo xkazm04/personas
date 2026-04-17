@@ -67,7 +67,7 @@ export function TimelineEntry({
         >
           <div className="flex items-start gap-2">
             {/* Version number */}
-            <span className="text-sm font-mono font-semibold text-foreground/70 flex-shrink-0">
+            <span className="text-sm font-mono font-semibold text-foreground flex-shrink-0">
               v{version.version_number}
             </span>
 
@@ -87,17 +87,17 @@ export function TimelineEntry({
 
             {/* Spacer + expand icon */}
             <span className="flex-1" />
-            <span className="text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors">
+            <span className="text-foreground group-hover:text-muted-foreground/50 transition-colors">
               {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </span>
           </div>
 
           {/* Change summary + date */}
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-xs text-foreground/50 truncate flex-1">
+            <p className="text-xs text-foreground truncate flex-1">
               {version.change_summary || t.agents.lab.no_change_summary}
             </p>
-            <span className="text-[10px] text-muted-foreground/40 flex-shrink-0">
+            <span className="text-[10px] text-foreground flex-shrink-0">
               {formatRelative(version.created_at)}
             </span>
           </div>
@@ -118,7 +118,7 @@ export function TimelineEntry({
                 {previousVersion ? (
                   <InlineDiffPreview older={previousVersion} newer={version} />
                 ) : (
-                  <p className="text-[11px] text-muted-foreground/40 italic">Initial version — no previous version to compare</p>
+                  <p className="text-[11px] text-foreground italic">Initial version — no previous version to compare</p>
                 )}
 
                 {/* Actions */}

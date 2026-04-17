@@ -45,14 +45,14 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
       )}
 
       {!hasChanges ? (
-        <p className="text-sm text-muted-foreground/60 text-center py-4">{t.agents.lab.no_structural_diff}</p>
+        <p className="text-sm text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
       ) : (
         diffs.map((d) => (
           <div key={d.key} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">{d.label}</h4>
+              <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">{d.label}</h4>
               {!d.changed && (
-                <span className="text-sm text-muted-foreground/60">{t.agents.lab.no_changes_diff}</span>
+                <span className="text-sm text-foreground">{t.agents.lab.no_changes_diff}</span>
               )}
             </div>
             {d.changed && (
@@ -65,7 +65,7 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
                         ? 'bg-emerald-500/20 text-emerald-300'
                         : seg.type === 'removed'
                           ? 'bg-red-500/20 text-red-300 line-through'
-                          : 'text-foreground/70'
+                          : 'text-foreground'
                     }
                   >
                     {seg.text}

@@ -59,7 +59,7 @@ export function ConnectorRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground/80 truncate">{status.name}</p>
+            <p className="text-sm font-medium text-foreground truncate">{status.name}</p>
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${config.bg} ${config.color}`}>
               {statusKey === 'testing' && <LoadingSpinner size="xs" className="!w-2.5 !h-2.5" />}
               {statusKey === 'ready' && <CheckCircle2 className="w-2.5 h-2.5" />}
@@ -68,7 +68,7 @@ export function ConnectorRow({
               {config.label}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground/80 mt-0.5">
+          <p className="text-sm text-foreground mt-0.5">
             {status.credentialName
               ? tx(t.templates.n8n.credential_label, { name: status.credentialName })
               : tx(t.templates.n8n.n8n_type_label, { type: status.n8nType })}
@@ -81,7 +81,7 @@ export function ConnectorRow({
             <button
               onClick={onTest}
               disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />}
               {t.templates.n8n.test}
@@ -94,7 +94,7 @@ export function ConnectorRow({
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border transition-colors ${
                     isLinking
                       ? 'border-violet-500/30 text-violet-300 bg-violet-500/15'
-                      : 'border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'
+                      : 'border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95'
                   }`}
                 >
                   <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} />
@@ -116,7 +116,7 @@ export function ConnectorRow({
       {/* Tools belonging to this connector */}
       {tools.length > 0 && (
         <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-          <Wrench className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+          <Wrench className="w-3 h-3 text-foreground flex-shrink-0" />
           {tools.map((tool) => (
             <span
               key={tool.name}

@@ -114,7 +114,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
         <h2 className="text-lg font-bold text-foreground tracking-tight">
           Set up credentials
         </h2>
-        <p className="text-sm text-muted-foreground/80 mt-1">
+        <p className="text-sm text-foreground mt-1">
           {hasDetected && detected.length > 0
             ? `Found ${detected.length} service${detected.length !== 1 ? 's' : ''} you're signed into. Select which to add.`
             : t.vault.wizard_detect.select_services}
@@ -140,14 +140,14 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
       {/* Detection results banner */}
       {hasDetected && detected.length === 0 && (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
-          <Radar className="w-4 h-4 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">{t.vault.list.no_credentials}</p>
+          <Radar className="w-4 h-4 text-foreground" />
+          <p className="text-sm text-foreground">{t.vault.list.no_credentials}</p>
         </div>
       )}
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         <input
           type="text"
           value={search}
@@ -176,7 +176,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             variant="ghost"
             size="sm"
             onClick={() => setSelected(new Set())}
-            className="text-muted-foreground/80 hover:text-foreground/90"
+            className="text-foreground hover:text-foreground/90"
           >
             Clear selection
           </Button>

@@ -55,7 +55,7 @@ function RuleForm({
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         placeholder={"rule_name_placeholder"}
-        className="w-full px-3 py-2 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+        className="w-full px-3 py-2 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
       />
 
       {/* Metric + Operator + Threshold */}
@@ -90,7 +90,7 @@ function RuleForm({
             step="any"
           />
           {metricInfo?.unit && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 typo-caption text-muted-foreground/50">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 typo-caption text-foreground">
               {metricInfo.unit}
             </span>
           )}
@@ -135,7 +135,7 @@ function RuleForm({
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-primary/15 text-muted-foreground hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
         >
           <X className="w-3.5 h-3.5" /> Cancel
         </button>
@@ -165,7 +165,7 @@ function RuleRow({
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2.5 rounded-modal border transition-colors ${rule.enabled ? 'border-primary/10 bg-secondary/20' : 'border-primary/10 bg-secondary/10 opacity-60'}`}>
-      <button onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
+      <button onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
         {rule.enabled
           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
           : <ToggleLeft className="w-5 h-5" />
@@ -181,14 +181,14 @@ function RuleRow({
             {sevInfo?.label ?? rule.severity}
           </span>
         </div>
-        <p className="typo-caption text-muted-foreground/60 mt-0.5">
+        <p className="typo-caption text-foreground mt-0.5">
           {metricInfo?.label ?? rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
         </p>
       </div>
-      <button onClick={onEdit} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title={"edit"}>
+      <button onClick={onEdit} className="p-1 text-foreground hover:text-muted-foreground transition-colors" title={"edit"}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onDelete} className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors" title="Delete">
+      <button onClick={onDelete} className="p-1 text-foreground hover:text-red-400 transition-colors" title="Delete">
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -211,7 +211,7 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
   const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';
 
   return (
-    <div className="flex items-center gap-1.5 typo-caption text-muted-foreground/60" title={
+    <div className="flex items-center gap-1.5 typo-caption text-foreground" title={
       health.lastError
         ? `Last error: ${health.lastError} (${health.totalFailures} total failures)`
         : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
@@ -292,7 +292,7 @@ export function AlertRulesPanel() {
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
         >
           <Plus className="w-3 h-3" /> Add Rule
         </button>
@@ -305,7 +305,7 @@ export function AlertRulesPanel() {
         )}
 
       {alertRules.length === 0 && !showForm && (
-        <p className="typo-body text-muted-foreground/50 text-center py-6">
+        <p className="typo-body text-foreground text-center py-6">
           No alert rules configured. Add a rule to get notified when metrics cross a threshold.
         </p>
       )}

@@ -46,7 +46,7 @@ function HealthProgressRing({ done, total, failed }: { done: number; total: numb
       </svg>
       {/* Centered count */}
       <span
-        className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none text-foreground/70"
+        className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none text-foreground"
         aria-label={`${done} of ${total}`}
       >
         {done}
@@ -92,21 +92,21 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
           <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-3 h-3" />
             <span className="font-medium">{counts.healthy}</span>
-            <span className="text-foreground/50">{t.vault.health_bar.healthy}</span>
+            <span className="text-foreground">{t.vault.health_bar.healthy}</span>
           </span>
         )}
         {counts.failing > 0 && (
           <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
             <AlertCircle className="w-3 h-3" />
             <span className="font-medium">{counts.failing}</span>
-            <span className="text-foreground/50">{t.vault.health_bar.needs_attention}</span>
+            <span className="text-foreground">{t.vault.health_bar.needs_attention}</span>
           </span>
         )}
         {counts.untested > 0 && (
-          <span className="flex items-center gap-1.5 text-foreground/60">
+          <span className="flex items-center gap-1.5 text-foreground">
             <HelpCircle className="w-3 h-3" />
             <span className="font-medium">{counts.untested}</span>
-            <span className="text-foreground/50">{t.vault.health_bar.untested}</span>
+            <span className="text-foreground">{t.vault.health_bar.untested}</span>
           </span>
         )}
       </div>

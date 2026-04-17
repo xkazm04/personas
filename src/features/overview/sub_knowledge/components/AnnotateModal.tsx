@@ -45,14 +45,14 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
 
       <div className="space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.persona_label}</label>
+          <label className="text-xs text-foreground mb-1 block">{t.overview.annotate_modal.persona_label}</label>
           <ThemedSelect value={personaId} onChange={(e) => setPersonaId(e.target.value)} className="w-full py-1.5">
             {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </ThemedSelect>
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.scope_label}</label>
+          <label className="text-xs text-foreground mb-1 block">{t.overview.annotate_modal.scope_label}</label>
           <ThemedSelect value={scopeType} onChange={(e) => setScopeType(e.target.value)} className="w-full py-1.5">
             {Object.entries(SCOPE_TYPES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
           </ThemedSelect>
@@ -60,7 +60,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
 
         {(scopeType === 'tool' || scopeType === 'connector') && (
           <div>
-            <label className="text-xs text-muted-foreground/70 mb-1 block">
+            <label className="text-xs text-foreground mb-1 block">
               {scopeType === 'tool' ? t.overview.annotate_modal.tool_name : t.overview.annotate_modal.connector_type}
             </label>
             <input
@@ -68,25 +68,25 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               placeholder={scopeType === 'tool' ? 'e.g. http_request' : 'e.g. google_workspace'}
-              className="w-full px-3 py-1.5 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+              className="w-full px-3 py-1.5 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
             />
           </div>
         )}
 
         <div>
-          <label className="text-xs text-muted-foreground/70 mb-1 block">{t.overview.annotate_modal.annotation_label}</label>
+          <label className="text-xs text-foreground mb-1 block">{t.overview.annotate_modal.annotation_label}</label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="e.g. Stripe webhook verification requires the raw request body, not the parsed JSON"
             rows={3}
-            className="w-full px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
+            className="w-full px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-1.5 rounded-modal text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors">
+        <button onClick={onClose} className="px-4 py-1.5 rounded-modal text-sm text-foreground hover:text-foreground/90 transition-colors">
           {t.overview.annotate_modal.cancel}
         </button>
         <button

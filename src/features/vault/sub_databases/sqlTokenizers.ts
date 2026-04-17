@@ -250,9 +250,9 @@ export const TOKEN_CLASSES: Record<TokenType, string> = {
   keyword: 'text-blue-400',
   string: 'text-emerald-400',
   number: 'text-amber-400',
-  comment: 'text-muted-foreground/40 italic',
-  operator: 'text-muted-foreground/70',
+  comment: 'text-foreground italic',
+  operator: 'text-foreground',
   function: 'text-violet-400',
-  identifier: 'text-foreground/80',
+  identifier: 'text-foreground',
   text: '',
 };

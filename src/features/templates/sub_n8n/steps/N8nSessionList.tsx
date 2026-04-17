@@ -56,7 +56,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
           <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card ${style.bg} ${style.text}`}>
             {style.label}
           </span>
-          <span className="text-sm text-muted-foreground/80 flex items-center gap-1">
+          <span className="text-sm text-foreground flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(session.updated_at)}
           </span>
@@ -67,7 +67,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
         <button
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
-          className="p-1.5 rounded-card text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
+          className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
           title={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
@@ -79,7 +79,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
             Retry
           </span>
         ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground" />
         )}
       </div>
     </div>
@@ -245,7 +245,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <RefreshCw className="w-4 h-4 text-muted-foreground/80 animate-spin" />
+        <RefreshCw className="w-4 h-4 text-foreground animate-spin" />
       </div>
     );
   }
@@ -262,7 +262,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         <h3 className="text-sm font-medium text-foreground/90 uppercase tracking-wider">
           Previous Imports
         </h3>
-        <span className="text-sm text-muted-foreground/80">
+        <span className="text-sm text-foreground">
           {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''}
         </span>
       </div>
