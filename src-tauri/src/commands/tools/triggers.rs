@@ -313,9 +313,15 @@ pub async fn validate_trigger(
                                 // Use HEAD only -- never GET, which can trigger
                                 // side effects on OAuth callbacks, webhook confirmations, etc.
                                 // Redirects disabled to prevent SSRF via redirect to internal IPs.
+                                // DNS resolver rejects private/internal IPs at connect time,
+                                // closing the DNS-rebinding gap left by the string-only
+                                // validate_url_safety check above.
                                 let client = reqwest::Client::builder()
                                     .timeout(std::time::Duration::from_secs(5))
                                     .redirect(reqwest::redirect::Policy::none())
+                                    .dns_resolver(std::sync::Arc::new(
+                                        crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+                                    ))
                                     .build()
                                     .unwrap_or_default();
                                 match client.head(endpoint).send().await {

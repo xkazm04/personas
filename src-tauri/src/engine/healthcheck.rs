@@ -631,8 +631,18 @@ async fn execute_healthcheck_request_with_strategy(
     // /organizations/{slug}/ endpoint which routinely takes 3-6 seconds on
     // cold cache, especially when multiple credentials are probed in
     // parallel during the daily bulk sweep.
+    //
+    // SSRF defense-in-depth: `validate_healthcheck_url` above only inspects
+    // the URL string — it cannot catch DNS rebinding, where a hostname
+    // resolves to a public IP at validate time but to a private IP at
+    // connection time. `SsrfSafeDnsResolver` wraps reqwest's own DNS lookup
+    // and rejects private/loopback/link-local/metadata addresses at the
+    // moment that actually matters.
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
+        .dns_resolver(std::sync::Arc::new(
+            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+        ))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
