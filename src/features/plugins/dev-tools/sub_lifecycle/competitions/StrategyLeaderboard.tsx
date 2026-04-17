@@ -30,7 +30,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
     <div className="rounded-card border border-primary/15 bg-card/40 p-4">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="w-4 h-4 text-amber-400" />
-        <h4 className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+        <h4 className="typo-section-title">
           Strategy Leaderboard
         </h4>
         <button
@@ -44,7 +44,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
       <div className="space-y-2">
         {stats.map((s) => (
           <div key={s.label} className="flex items-center gap-3">
-            <span className="typo-heading text-primary w-32 shrink-0 truncate [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+            <span className="typo-card-label w-32 shrink-0 truncate">
               {s.label}
             </span>
             <div className="flex-1 h-2 bg-background/60 rounded-full overflow-hidden">

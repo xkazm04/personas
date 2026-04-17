@@ -79,7 +79,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
       <div className="w-[560px] max-h-[85vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-xl">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <ShieldCheck className="w-4 h-4 text-sky-400" />
-          <div className="typo-heading-sm text-foreground flex-1 truncate">
+          <div className="typo-heading-sm typo-section-title flex-1 truncate">
             {t.plugins.doc_signing.verify_heading}
           </div>
           <button
@@ -95,7 +95,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {/* File info */}
           <div className="mb-3 rounded-lg border border-primary/10 bg-secondary/30 px-3 py-2">
-            <div className="typo-body text-foreground/90 uppercase tracking-wide">
+            <div className="typo-label text-foreground/90">
               {t.plugins.drive.details_path}
             </div>
             <div className="typo-body font-mono text-foreground break-all">
@@ -122,7 +122,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           {/* Sidecar input */}
           {phase !== "done" && (
             <div>
-              <label className="typo-body text-foreground/90 uppercase tracking-wide block mb-1">
+              <label className="typo-label text-foreground/90 block mb-1">
                 {t.plugins.doc_signing.signature_label}
               </label>
               <textarea

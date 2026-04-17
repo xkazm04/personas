@@ -65,12 +65,12 @@ export default function ReportsPanel() {
         title={t.research_lab.reports}
         actionLabel={t.research_lab.create_report}
         onAction={() => setShowForm(true)}
-        extra={<span className="typo-caption text-foreground/40">{projectReports.length}</span>}
+        extra={<span className="typo-caption text-foreground">{projectReports.length}</span>}
       />
 
       {loading && projectReports.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground/50">{t.common.loading}</p>
+          <p className="typo-body text-foreground">{t.common.loading}</p>
         </div>
       ) : projectReports.length === 0 ? (
         <EmptyState
@@ -91,7 +91,7 @@ export default function ReportsPanel() {
               <div className="flex items-start gap-3">
                 <FileText className="w-4 h-4 text-pink-400/80 mt-1 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="typo-body text-foreground font-semibold truncate">{r.title}</h3>
+                  <h3 className="typo-card-label truncate">{r.title}</h3>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {r.reportType && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] bg-pink-500/15 text-pink-300">
@@ -99,11 +99,11 @@ export default function ReportsPanel() {
                       </span>
                     )}
                     {r.format && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-foreground/10 text-foreground/50 uppercase">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-foreground/10 text-foreground uppercase">
                         {r.format}
                       </span>
                     )}
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">
                       {r.status.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -111,7 +111,7 @@ export default function ReportsPanel() {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); setPreviewing(r); }}
-                    className="p-1 rounded hover:bg-primary/10 text-primary/60 hover:text-primary transition-colors"
+                    className="p-1 rounded hover:bg-primary/10 text-primary hover:text-primary transition-colors"
                     title="Preview"
                     aria-label="Preview"
                   >

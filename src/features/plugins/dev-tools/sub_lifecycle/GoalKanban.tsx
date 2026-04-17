@@ -59,9 +59,9 @@ function GoalCard({ goal }: { goal: DevGoal }) {
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-foreground truncate">{goal.title}</h4>
+          <h4 className="typo-card-label truncate">{goal.title}</h4>
           {goal.description && (
-            <p className="text-[11px] text-foreground/50 mt-0.5 line-clamp-2">{goal.description}</p>
+            <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{goal.description}</p>
           )}
         </div>
       </div>
@@ -75,7 +75,7 @@ function GoalCard({ goal }: { goal: DevGoal }) {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <span className="text-[9px] text-muted-foreground/50 w-7 text-right">{progressPct}%</span>
+          <span className="text-[9px] text-foreground w-7 text-right">{progressPct}%</span>
         </div>
       )}
 
@@ -83,7 +83,7 @@ function GoalCard({ goal }: { goal: DevGoal }) {
       <div className="flex items-center gap-2 mt-2">
         <StatusChip status={goal.status} />
         {goal.target_date && (
-          <span className="text-[9px] text-muted-foreground/40 flex items-center gap-0.5">
+          <span className="text-[9px] text-foreground flex items-center gap-0.5">
             <Clock className="w-2.5 h-2.5" />
             {goal.target_date}
           </span>
@@ -95,7 +95,7 @@ function GoalCard({ goal }: { goal: DevGoal }) {
 
 function StatusChip({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    pending: { label: 'Pending', className: 'text-foreground/50 border-primary/15 bg-primary/5' },
+    pending: { label: 'Pending', className: 'text-foreground border-primary/15 bg-primary/5' },
     review: { label: 'Review', className: 'text-amber-400 border-amber-500/25 bg-amber-500/10' },
     blocked: { label: 'Blocked', className: 'text-red-400 border-red-500/25 bg-red-500/10' },
     in_progress: { label: 'In Progress', className: 'text-blue-400 border-blue-500/25 bg-blue-500/10' },
@@ -103,7 +103,7 @@ function StatusChip({ status }: { status: string }) {
     completed: { label: 'Done', className: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' },
     done: { label: 'Done', className: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' },
   };
-  const c = config[status] ?? { label: status, className: 'text-foreground/50 border-primary/15 bg-primary/5' };
+  const c = config[status] ?? { label: status, className: 'text-foreground border-primary/15 bg-primary/5' };
 
   return (
     <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${c.className}`}>
@@ -139,8 +139,8 @@ export default function GoalKanban() {
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <AlertCircle className="w-8 h-8 text-foreground/30 mb-3" />
-        <p className="typo-body text-foreground/50">No goals yet. Create goals to see them here.</p>
+        <AlertCircle className="w-8 h-8 text-foreground mb-3" />
+        <p className="typo-body text-foreground">No goals yet. Create goals to see them here.</p>
       </div>
     );
   }
@@ -155,10 +155,10 @@ export default function GoalKanban() {
             {/* Lane header */}
             <div className="flex items-center gap-2 mb-3">
               <Icon className={`w-4 h-4 ${lane.iconColor}`} />
-              <span className="typo-heading text-primary text-[13px] [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+              <span className="typo-section-title">
                 {lane.label}
               </span>
-              <span className="ml-auto text-[10px] text-muted-foreground/50 bg-primary/10 rounded-full px-1.5 py-0.5 font-medium">
+              <span className="ml-auto text-[10px] text-foreground bg-primary/10 rounded-full px-1.5 py-0.5 font-medium">
                 {items.length}
               </span>
             </div>
@@ -166,7 +166,7 @@ export default function GoalKanban() {
             {/* Goal cards */}
             <div className="space-y-2 min-h-[80px]">
               {items.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground/30 text-center py-6">
+                <p className="text-[11px] text-foreground text-center py-6">
                   No goals here
                 </p>
               ) : (

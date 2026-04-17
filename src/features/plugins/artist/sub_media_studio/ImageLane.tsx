@@ -63,11 +63,11 @@ function ImageLaneImpl({
       {!hideHeader && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border-b border-emerald-500/20">
           <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="typo-heading text-emerald-400 text-xs uppercase tracking-wide">
+          <span className="typo-label text-emerald-400">
             {t.media_studio.layer_image}
           </span>
           {items.length > 0 && (
-            <span className="ml-auto text-[9px] text-emerald-400/60 bg-emerald-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+            <span className="ml-auto text-md text-emerald-400/60 bg-emerald-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
               {items.length}
             </span>
           )}
@@ -78,7 +78,7 @@ function ImageLaneImpl({
       <div className="relative h-12 bg-emerald-500/[0.02] border-b border-primary/10">
         {items.length === 0 && (
           <div className="absolute inset-0.5 rounded-lg border border-dashed border-emerald-500/15 flex items-center justify-center">
-            <span className="text-[10px] text-emerald-400/30">{t.media_studio.empty_lane}</span>
+            <span className="text-md text-emerald-400/30">{t.media_studio.empty_lane}</span>
           </div>
         )}
         {items.map((item) => (
@@ -109,7 +109,7 @@ function ImageLaneImpl({
               />
               <ImageIcon className="absolute w-4 h-4 text-emerald-400/40" />
               {item.duration * zoom > 50 && (
-                <span className="absolute bottom-0 inset-x-0 text-[8px] text-emerald-200 bg-black/50 px-1 truncate">
+                <span className="absolute bottom-0 inset-x-0 text-md text-emerald-200 bg-black/50 px-1 truncate">
                   {item.label}
                 </span>
               )}

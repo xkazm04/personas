@@ -12,9 +12,9 @@ interface Props {
 export function EmptyState({ icon: Icon, title, hint, actionLabel, onAction }: Props) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <Icon className="w-12 h-12 text-foreground/20" />
-      <p className="typo-body text-foreground/50">{title}</p>
-      {hint && <p className="typo-caption text-foreground/30 max-w-sm text-center">{hint}</p>}
+      <Icon className="w-12 h-12 text-foreground" />
+      <p className="typo-body-lg text-foreground">{title}</p>
+      {hint && <p className="typo-body text-foreground max-w-sm text-center">{hint}</p>}
       {actionLabel && onAction && (
         <button
           onClick={onAction}
@@ -38,8 +38,8 @@ interface NoActiveProjectProps {
 export function NoActiveProject({ icon: Icon, message, onGoToProjects, goToProjectsLabel }: NoActiveProjectProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3">
-      <Icon className="w-10 h-10 text-foreground/20" />
-      <p className="typo-body text-foreground/50">{message}</p>
+      <Icon className="w-10 h-10 text-foreground" />
+      <p className="typo-body text-foreground">{message}</p>
       {onGoToProjects && goToProjectsLabel && (
         <button
           onClick={onGoToProjects}

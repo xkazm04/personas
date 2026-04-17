@@ -1,9 +1,9 @@
 # Codebase Context Snapshot — personas
 
-> Generated: 2026-04-07T21:44:39.938Z
-> Source: dev_contexts table for project_id=07fe9de7-ef68-4ce6-a78e-551c09acbdce
-> Total groups: 8, Total contexts: 34
-> Git HEAD at generation: 52182a0 (Credentials - Updated toolbar)
+> Generated: 2026-04-17T09:41:45.173Z
+> Source: dev_contexts table for project_id=b0c1541f-af08-4912-818e-19ca94f7b6e9
+> Total groups: 8, Total contexts: 32
+> Git HEAD at generation: dd844d6e (research-lab: arxiv literature search, hypothesis generation, report preview)
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for relevance scoring.
@@ -26,959 +26,791 @@ matches, the idea is dropped as out-of-scope.
 
 ---
 
-## Agent Identity & Configuration
+## AI Agent Configuration
 
 > **Group type:** —
-> **Color:** amber
+> **Color:** blue
 
-### creation-wizard
+### agent-chat-interface
 
-A multi-step wizard that guides users through creating a new AI agent persona — selecting use cases, configuring tools and triggers, previewing the agent identity, and running a dry-run validation. It orchestrates a builder state machine with actions, helpers, and reducers to manage complex wizard state. The wizard produces a complete persona definition submitted to the backend.
+Provides the real-time chat UI for interacting with AI agents, including chat bubbles, session sidebar, and specialized launchpad panels for advisory and ops workflows. Dispatches advisory and ops commands through dedicated dispatch modules. New AdvisoryLaunchpad enables structured AI guidance within the chat context.
 
 **Files:**
-- `src/features/agents/components/creation/CreationWizard.tsx`
-- `src/features/agents/components/creation/CreationStepSwitcher.tsx`
-- `src/features/agents/components/creation/designUtils.ts`
-- `src/features/agents/components/creation/steps/builder/useBuilderOrchestration.ts`
-- `src/features/agents/components/creation/steps/builder/builderReducer.ts`
-- `src/features/agents/components/creation/steps/builder/builderActions.ts`
-- `src/features/agents/components/creation/steps/builder/builderHelpers.ts`
-- `src/features/agents/components/creation/steps/builder/designResultMapper.ts`
-- `src/features/agents/components/creation/steps/builder/useDryRun.ts`
-- `src/features/agents/components/creation/steps/builder/types.ts`
-- `src/features/agents/components/creation/steps/BuilderActionComponents.tsx`
-- `src/features/agents/components/creation/steps/BuilderPreview.tsx`
-- `src/features/agents/components/creation/steps/DryRunPanel.tsx`
-- `src/features/agents/components/creation/steps/IdentityPreviewCard.tsx`
-- `src/features/agents/components/creation/pickers/use_cases/UseCaseBuilder.tsx`
-- `src/features/agents/components/creation/pickers/use_cases/UseCaseCard.tsx`
-- `src/features/agents/components/creation/pickers/triggers/TriggerPopover.tsx`
-- `src/features/agents/components/creation/pickers/triggers/TriggerPresetPicker.tsx`
+- `src/features/agents/sub_chat/ChatBubbles.tsx`
+- `src/features/agents/sub_chat/ChatTab.tsx`
+- `src/features/agents/sub_chat/AdvisoryLaunchpad.tsx`
+- `src/features/agents/sub_chat/OpsLaunchpad.tsx`
+- `src/features/agents/sub_chat/SessionSidebar.tsx`
+- `src/features/agents/sub_chat/libs/chatAdvisoryDispatch.ts`
+- `src/features/agents/sub_chat/libs/chatOpsDispatch.ts`
+- `src/features/agents/sub_chat/hooks/useExperimentBridge.ts`
 
-**Entry points:** src/features/agents/components/creation/CreationWizard.tsx, src/features/agents/components/creation/steps/builder/useBuilderOrchestration.ts
+**Entry points:** src/features/agents/sub_chat/ChatTab.tsx, src/features/agents/sub_chat/AdvisoryLaunchpad.tsx
 
-**Keywords:** wizard, creation, dry-run, use-case, picker, builder, preview, onboarding
+**Keywords:** chat, messages, advisory, ops, session, launchpad, bubbles
 
-**Tech stack:** React, TypeScript, Zustand
+**Tech stack:** React, TypeScript
 
 ---
 
-### persona-editor
+### agent-design-wizard
 
-Provides rich in-place editing of an existing persona's properties including system prompt, model parameters, connectors, and settings panels. Organized into tabbed sections (editor, settings, connectors) with banner notifications for unsaved changes or validation errors. Settings include per-persona overrides for rate limits, model selection, and execution behavior.
+Drives the AI-assisted design tab within the persona editor, where the system proposes configuration improvements through a wizard flow. Manages design phase transitions and renders phase-specific content panels. Coordinates with the backend credential design engine for AI-generated suggestions.
 
 **Files:**
-- `src/features/agents/sub_editor/index.ts`
-- `src/features/agents/sub_settings/SettingsTab.tsx`
-- `src/features/agents/sub_settings/SettingsTabContent.tsx`
-- `src/features/agents/sub_settings/PersonaSettingsPanel.tsx`
-- `src/features/agents/sub_settings/SettingsTabHelpers.ts`
-- `src/features/agents/components/persona/PersonaOverviewActions.tsx`
-- `src/features/agents/components/persona/PersonaOverviewBadges.tsx`
-- `src/features/agents/components/persona/PersonaOverviewCells.tsx`
-- `src/features/agents/components/persona/PersonaOverviewResponsive.tsx`
-- `src/features/agents/components/persona/CompletenessRing.tsx`
-- `src/features/agents/components/persona/PersonaHealthIndicator.tsx`
-- `src/features/agents/components/preview/PreviewPanel.tsx`
-- `src/features/agents/components/preview/PreviewSection.tsx`
-- `src/features/agents/components/onboarding/OnboardingChecklist.tsx`
-- `src/features/agents/components/onboarding/OnboardingTemplateStep.tsx`
-- `src/features/agents/components/onboarding/ConfigurationPopup.tsx`
-- `src/features/agents/components/onboarding/useOnboardingChecklist.ts`
-- `src/lib/personas/personaHelpers.ts`
-- `src/lib/personas/deploymentHelpers.ts`
+- `src/features/agents/sub_design/components/DesignTabPhaseContent.tsx`
+- `src/features/agents/sub_design/components/PhaseContentRenderers.tsx`
+- `src/features/agents/sub_design/DesignTabHelpers.ts`
+- `src/features/agents/sub_design/libs/designStateHelpers.ts`
+- `src/features/agents/sub_design/libs/useDesignTabState.ts`
+- `src/features/agents/sub_design/wizard/wizardCompiler.ts`
+- `src/features/agents/sub_design/wizard/wizardSteps.ts`
+- `src/features/agents/sub_design/index.ts`
 
-**Entry points:** src/features/agents/sub_settings/SettingsTab.tsx, src/features/agents/components/preview/PreviewPanel.tsx
+**Entry points:** src/features/agents/sub_design/libs/useDesignTabState.ts, src/features/agents/sub_design/components/DesignTabPhaseContent.tsx
 
-**Keywords:** editor, settings, system-prompt, model-parameters, completeness, onboarding, configuration
+**Keywords:** design, wizard, AI suggestions, phase, configuration, proposal
 
-**Tech stack:** React, TypeScript, Zustand
+**Tech stack:** React, TypeScript
 
 ---
 
-### persona-management
+### agent-matrix-build
 
-Manages the full lifecycle of AI agent personas — creation, storage, retrieval, update, and deletion. Personas are the core entity of the application, each with a unique identity, model configuration, and capability set. The backend persists personas in SQLite via the repository pattern; the frontend exposes a paginated, filterable overview with batch actions.
-
-**Files:**
-- `src-tauri/src/commands/core/personas.rs`
-- `src-tauri/src/db/repos/core/personas.rs`
-- `src-tauri/src/db/models/persona.rs`
-- `src-tauri/src/validation/persona.rs`
-- `src/api/agents/personas.ts`
-- `src/stores/personaStore.ts`
-- `src/features/agents/components/persona/PersonaOverviewPage.tsx`
-- `src/features/agents/components/persona/PersonaOverviewCardList.tsx`
-- `src/features/agents/components/persona/PersonaOverviewColumns.tsx`
-- `src/features/agents/components/persona/PersonaOverviewFilters.tsx`
-- `src/features/agents/components/persona/PersonaOverviewFilterHeader.tsx`
-- `src/features/agents/components/persona/PersonaOverviewToolbar.tsx`
-- `src/features/agents/components/persona/PersonaOverviewBatchBar.tsx`
-- `src/features/agents/components/persona/PersonaOverviewRowMenu.tsx`
-- `src/features/agents/components/persona/ViewPresetBar.tsx`
-
-**Entry points:** src-tauri/src/commands/core/personas.rs, src/features/agents/components/persona/PersonaOverviewPage.tsx
-
-**Keywords:** persona, agent, identity, crud, overview, filter, batch, model-config
-
-**Tech stack:** React, TypeScript, Rust, SQLite, Zustand
-
----
-
-### persona-matrix
-
-The team matrix canvas allows configuring multiple agent personas across dimensions (connectors, workflows, credentials) in a spreadsheet-like grid. It supports drag-and-drop cell editing, credential gap analysis, health indicators per cell, and workflow import. The matrix is the primary visual interface for team-level persona orchestration.
+Manages the persona matrix UI where agents are arranged in a grid with build states, credential gap indicators, and workflow import capabilities. Implements a cell state machine with visual glow effects and vocabulary per cell state. Drives the matrix build orchestration from the frontend through Tauri commands.
 
 **Files:**
-- `src/features/agents/components/matrix/UnifiedMatrixEntry.tsx`
-- `src/features/agents/components/matrix/DimensionEditPanel.tsx`
-- `src/features/agents/components/matrix/DimensionQuickConfig.tsx`
-- `src/features/agents/components/matrix/BuildReviewPanel.tsx`
-- `src/features/agents/components/matrix/ConnectorsCellContent.tsx`
-- `src/features/agents/components/matrix/GhostedCellRenderer.tsx`
-- `src/features/agents/components/matrix/MatrixCredentialPicker.tsx`
-- `src/features/agents/components/matrix/SpatialQuestionPopover.tsx`
-- `src/features/agents/components/matrix/WorkflowUploadZone.tsx`
-- `src/features/agents/components/matrix/useMatrixLifecycle.ts`
 - `src/features/agents/components/matrix/useMatrixBuild.ts`
-- `src/features/agents/components/matrix/useMatrixCredentialGap.ts`
 - `src/features/agents/components/matrix/useMatrixEditCallbacks.ts`
+- `src/features/agents/components/matrix/useMatrixCredentialGap.ts`
 - `src/features/agents/components/matrix/useMatrixWorkflowImport.ts`
 - `src/features/agents/components/matrix/useHealthyConnectors.ts`
 - `src/features/agents/components/matrix/cellGlowColors.ts`
 - `src/features/agents/components/matrix/cellStateClasses.ts`
 - `src/features/agents/components/matrix/cellVocabulary.ts`
-- `src/features/agents/sub_activity/MatrixTab.tsx`
+- `src/features/agents/components/creation/steps/builder/useBuilderOrchestration.ts`
+- `src/features/agents/components/creation/steps/builder/builderActions.ts`
+- `src/features/agents/components/creation/steps/builder/builderReducer.ts`
+- `src/features/agents/components/creation/steps/builder/builderHelpers.ts`
+- `src/features/agents/components/creation/steps/builder/designResultMapper.ts`
+- `src/features/agents/components/creation/steps/builder/types.ts`
+- `src/features/agents/components/creation/steps/identityHelpers.ts`
 
-**Entry points:** src/features/agents/components/matrix/UnifiedMatrixEntry.tsx, src/features/agents/components/matrix/useMatrixLifecycle.ts
+**Entry points:** src/features/agents/components/matrix/useMatrixBuild.ts, src/features/agents/components/creation/steps/builder/useBuilderOrchestration.ts
 
-**Keywords:** matrix, team, canvas, dimension, cell, credential-gap, workflow-import, spatial
+**Keywords:** matrix, build, cell, state machine, credential gap, workflow import, persona grid
 
-**Tech stack:** React, TypeScript, Zustand, Framer Motion
+**Tech stack:** React, TypeScript, Tauri
 
 ---
 
-## Credential & Security Vault
+### agent-persona-editor
+
+Provides the rich text editor interface for configuring AI agent personas, including prompt editing, tabbed sections, and draft/save lifecycle. Uses a reducer-based draft system with debounced auto-save and guards against unsaved changes during navigation. Depends on agent store and credential connector data.
+
+**Files:**
+- `src/features/agents/sub_editor/components/PersonaEditor.tsx`
+- `src/features/agents/sub_editor/components/EditorBanners.tsx`
+- `src/features/agents/sub_editor/components/EditorLazyTabs.tsx`
+- `src/features/agents/sub_editor/components/EditorTabBar.tsx`
+- `src/features/agents/sub_editor/components/EditorTabContent.tsx`
+- `src/features/agents/sub_editor/hooks/useEditorDraft.ts`
+- `src/features/agents/sub_editor/hooks/useEditorKeyboard.ts`
+- `src/features/agents/sub_editor/hooks/usePersonaSwitchGuard.ts`
+- `src/features/agents/sub_editor/libs/EditorDocument.tsx`
+- `src/features/agents/sub_editor/libs/PersonaDraft.ts`
+- `src/features/agents/sub_editor/libs/useEditorSave.ts`
+- `src/features/agents/sub_editor/libs/useEffectivePersona.ts`
+- `src/features/agents/sub_editor/libs/useTabSection.ts`
+- `src/features/agents/sub_editor/libs/editorTabConstants.ts`
+- `src/features/agents/sub_editor/index.ts`
+
+**Entry points:** src/features/agents/sub_editor/components/PersonaEditor.tsx, src/features/agents/sub_editor/hooks/useEditorDraft.ts
+
+**Keywords:** persona, editor, prompt, draft, save, tabs, agent configuration
+
+**Tech stack:** React, TypeScript
+
+---
+
+### agent-store-state
+
+Central Redux store slices and selectors managing global agent state including the agent list, active persona, and chat session state. The agentStore and chatSlice coordinate cross-feature state sharing. The authStore holds user authentication and tier information.
+
+**Files:**
+- `src/stores/agentStore.ts`
+- `src/stores/authStore.ts`
+- `src/stores/slices/agents/chatSlice.ts`
+- `src/stores/notificationCenterStore.ts`
+- `src/stores/slices/system/uiSlice.ts`
+
+**Entry points:** src/stores/agentStore.ts
+
+**Keywords:** Redux, store, state management, agent store, auth, slices
+
+**Tech stack:** React, TypeScript, Redux
+
+---
+
+## Credential & Integration Vault
 
 > **Group type:** —
-> **Color:** red
+> **Color:** amber
 
-### credential-discovery
+### agent-connector-subscriptions
 
-Automatically detects and imports credentials from the OS environment, desktop keyring, browser cookies, and config files. The foraging module scans known locations (env vars, .env files, keychain) while auth-detect infers authentication schemes from API endpoints. Desktop bridges provide OS-level access to system credential stores (macOS Keychain, Windows Credential Manager).
+Manages the binding of credentials and automation connectors to agent personas, including dependency graph resolution and subscription lifecycle management. Tracks unfulfilled credential requirements and drives the setup flow. Serves as the bridge between the credential vault and agent configuration.
 
 **Files:**
-- `src-tauri/src/commands/credentials/foraging.rs`
-- `src-tauri/src/commands/credentials/auth_detect.rs`
-- `src-tauri/src/commands/credentials/desktop.rs`
-- `src-tauri/src/commands/credentials/desktop_bridges.rs`
-- `src-tauri/src/commands/credentials/auto_cred_browser.rs`
-- `src-tauri/src/commands/credentials/intelligence.rs`
-- `src-tauri/src/commands/credentials/nl_query.rs`
-- `src-tauri/src/commands/credentials/openapi_autopilot.rs`
-- `src-tauri/src/engine/desktop_security.rs`
-- `src-tauri/src/engine/desktop_bridges.rs`
+- `src/features/agents/sub_connectors/libs/automationSetupConstants.ts`
+- `src/features/agents/sub_connectors/libs/automationTypes.ts`
+- `src/features/agents/sub_connectors/libs/connectorTypes.ts`
+- `src/features/agents/sub_connectors/libs/dependencyGraph.ts`
+- `src/features/agents/sub_connectors/libs/subscriptionHelpers.ts`
+- `src/features/agents/sub_connectors/libs/subscriptionLifecycle.ts`
+- `src/features/agents/sub_connectors/libs/usePlatformData.ts`
+- `src/features/agents/sub_connectors/libs/useUnfulfilledCredentials.ts`
+- `src/features/agents/sub_connectors/index.ts`
 
-**Entry points:** src-tauri/src/commands/credentials/foraging.rs, src-tauri/src/commands/credentials/auth_detect.rs
+**Entry points:** src/features/agents/sub_connectors/libs/subscriptionLifecycle.ts, src/features/agents/sub_connectors/libs/useUnfulfilledCredentials.ts
 
-**Keywords:** foraging, discovery, keychain, env-var, auto-detect, browser-cookies, openapi, nl-query
+**Keywords:** connector, subscription, automation, dependency graph, credentials binding, platform
 
-**Tech stack:** Rust, Tauri, Playwright
+**Tech stack:** React, TypeScript
 
 ---
 
-### credential-rotation
+### credential-auto-setup
 
-Manages scheduled and on-demand rotation of credentials to minimize exposure of long-lived secrets. Rotation policies are stored per credential; the engine tracks rotation history, validates new secrets before swapping, and triggers downstream reconnects on success. Passphrase and API key rotation are supported with audit logging.
+Automates credential acquisition through browser-driven flows using a Playwright adapter to interact with third-party login pages. Supports both vendor-specific and universal auto-cred flows with multi-step progress tracking, consent screens, and review/approval stages. The TauriPlaywrightAdapter bridges the Rust browser automation engine to the frontend.
 
 **Files:**
-- `src-tauri/src/commands/credentials/rotation.rs`
-- `src-tauri/src/engine/rotation.rs`
-- `src-tauri/src/db/repos/resources/rotation.rs`
-- `src-tauri/src/db/models/rotation.rs`
-- `src-tauri/src/commands/credentials/api_proxy.rs`
-- `src-tauri/src/commands/credentials/query_debug.rs`
-- `src-tauri/src/commands/credentials/schema_proposal.rs`
-- `src-tauri/src/commands/credentials/credential_design.rs`
-- `src-tauri/src/commands/credentials/credential_recipes.rs`
-- `src-tauri/src/db/models/credential_recipe.rs`
-- `src-tauri/src/db/repos/resources/credential_recipes.rs`
+- `src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowserError.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/ReviewTable.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/SetupSteps.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/UniversalAutoCredInputPhase.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/UniversalAutoCredPanel.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/UniversalAutoCredRunningPhase.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/steps/UniversalAutoCredReview.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/helpers/autoCredHelpers.ts`
+- `src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts`
+- `src/features/vault/sub_catalog/components/autoCred/helpers/useAutoCredSession.ts`
+- `src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts`
+- `src/features/vault/sub_catalog/components/autoCred/display/AutoCredCards.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/display/AutoCredErrorDisplay.tsx`
+- `src/features/vault/sub_catalog/components/autoCred/display/AutoCredLogEntries.tsx`
 
-**Entry points:** src-tauri/src/commands/credentials/rotation.rs, src-tauri/src/engine/rotation.rs
+**Entry points:** src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx, src/features/vault/sub_catalog/components/autoCred/helpers/TauriPlaywrightAdapter.ts
 
-**Keywords:** rotation, passphrase, api-key, expiry, audit, schedule, secret-lifecycle
+**Keywords:** auto credential, browser automation, playwright, consent, credential acquisition, universal setup
 
-**Tech stack:** Rust, SQLite, Tokio
+**Tech stack:** React, TypeScript, Playwright
 
 ---
 
-### credential-storage
+### credential-design-ai
 
-Core credential CRUD backed by AES-256-GCM encryption with PBKDF2-HMAC-SHA256 key derivation and optional OS keyring integration. Each credential stores connection parameters, secrets, and metadata for external services. The frontend provides a full credential management UI with search, tagging, and vault unlocking.
+Orchestrates AI-driven credential schema design where the system analyzes an integration's API and proposes a credential schema through a multi-phase modal flow (idle, analyzing, preview, done). The RecipeConfidenceBanner surfaces confidence scores for generated recipes. State is managed by a dedicated orchestrator context with derived state helpers.
 
 **Files:**
-- `src-tauri/src/commands/credentials/crud.rs`
-- `src-tauri/src/db/repos/resources/credentials.rs`
-- `src-tauri/src/db/models/credential.rs`
-- `src-tauri/src/db/models/credential_ledger.rs`
-- `src-tauri/src/engine/crypto.rs`
-- `src-tauri/src/engine/credential_negotiator.rs`
-- `src-tauri/src/commands/credentials/shared.rs`
-- `src-tauri/src/commands/credentials/connectors.rs`
-- `src-tauri/src/db/models/connector.rs`
-- `src/api/auth/connectors.ts`
-- `src/api/vault/database/`
-- `src/stores/credentialStore.ts`
-- `src/features/credentials/`
+- `src/features/vault/sub_catalog/components/design/CredentialDesignModal.tsx`
+- `src/features/vault/sub_catalog/components/design/CredentialDesignModalBody.tsx`
+- `src/features/vault/sub_catalog/components/design/CredentialDesignContext.tsx`
+- `src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts`
+- `src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts`
+- `src/features/vault/sub_catalog/components/design/useCredentialDesignModal.ts`
+- `src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts`
+- `src/features/vault/sub_catalog/components/design/orchestratorContext.ts`
+- `src/features/vault/sub_catalog/components/design/orchestratorDerived.ts`
+- `src/features/vault/sub_catalog/components/design/orchestratorTypes.ts`
+- `src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/DonePhase.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/ErrorPhase.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/IdlePhase.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/IdleSuggestions.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/PreviewBanners.tsx`
+- `src/features/vault/sub_catalog/components/design/phases/RecipeConfidenceBanner.tsx`
+- `src/features/vault/sub_catalog/components/design/setup/InteractiveSetupInstructions.tsx`
+- `src/features/vault/sub_catalog/components/design/setup/SetupStepCard.tsx`
+- `src/features/vault/sub_catalog/components/design/setup/setupInstructionHelpers.tsx`
 
-**Entry points:** src-tauri/src/commands/credentials/crud.rs, src-tauri/src/engine/crypto.rs
+**Entry points:** src/features/vault/sub_catalog/components/design/CredentialDesignModal.tsx, src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts
 
-**Keywords:** credential, vault, encryption, aes-256-gcm, pbkdf2, keyring, connector, secret
+**Keywords:** credential design, AI schema, recipe confidence, orchestrator, analyzing phase, preview
 
-**Tech stack:** Rust, AES-256-GCM, SQLite, React, TypeScript
+**Tech stack:** React, TypeScript
 
 ---
 
-### oauth-flow
+### credential-foraging
 
-Handles the full OAuth 2.0 authorization code flow — launching the browser for user consent, capturing the redirect callback, exchanging codes for tokens, and storing encrypted tokens. A dedicated refresh lock prevents concurrent token refreshes from causing race conditions. Supports multiple OAuth providers via configurable connector definitions.
+Implements intelligent credential discovery by scanning the user's environment for existing credentials and API keys. Renders a foraging panel with status panels, result cards, and a step indicator while the backend scans config files, environment variables, and keychains. Surfaces discovered credentials to reduce manual entry.
 
 **Files:**
-- `src-tauri/src/commands/credentials/oauth.rs`
-- `src-tauri/src/engine/oauth_refresh.rs`
-- `src-tauri/src/engine/oauth_refresh_lock.rs`
-- `src-tauri/src/db/models/oauth_token_metric.rs`
-- `src-tauri/src/db/repos/resources/oauth_token_metrics.rs`
-- `src/api/auth/auth.ts`
-- `src/api/auth/authDetect.ts`
+- `src/features/vault/sub_catalog/components/foraging/ForagingPanel.tsx`
+- `src/features/vault/sub_catalog/components/foraging/ForagingResults.tsx`
+- `src/features/vault/sub_catalog/components/foraging/ForagingResultCard.tsx`
+- `src/features/vault/sub_catalog/components/foraging/ForagingStatusPanels.tsx`
+- `src/features/vault/sub_catalog/components/foraging/ForagingStepIndicator.tsx`
+- `src/api/vault/foraging.ts`
 
-**Entry points:** src-tauri/src/commands/credentials/oauth.rs, src-tauri/src/engine/oauth_refresh.rs
+**Entry points:** src/features/vault/sub_catalog/components/foraging/ForagingPanel.tsx
 
-**Keywords:** oauth, token, refresh, authorization-code, redirect, bearer, callback, concurrency
+**Keywords:** foraging, credential discovery, environment scan, keychain, auto-detect
 
-**Tech stack:** Rust, Tokio, OAuth2
+**Tech stack:** React, TypeScript
 
 ---
 
-## Execution Engine
+### credential-negotiator
 
-> **Group type:** —
-> **Color:** blue
-
-### execution-runner
-
-The central agent execution orchestrator — receives execution requests, resolves credentials and context, dispatches to the appropriate LLM provider, manages the execution lifecycle (queued → running → completed/failed), and emits real-time events. Includes rate limiting, cost tracking, and IPC authentication for secure cross-process invocation.
+Implements an AI-guided negotiation flow for setting up complex credentials that require multi-step interactive guidance. Renders a planner phase followed by step-by-step guiding panels with action buttons. Acts as a higher-level orchestration layer on top of raw credential configuration for credentials that cannot be auto-provisioned.
 
 **Files:**
-- `src-tauri/src/engine/runner.rs`
-- `src-tauri/src/engine/dispatch.rs`
-- `src-tauri/src/engine/queue.rs`
-- `src-tauri/src/engine/lifecycle.rs`
-- `src-tauri/src/engine/process_session.rs`
-- `src-tauri/src/engine/process_activity.rs`
-- `src-tauri/src/engine/rate_limiter.rs`
-- `src-tauri/src/engine/cost.rs`
-- `src-tauri/src/engine/background.rs`
-- `src-tauri/src/commands/execution/executions.rs`
-- `src-tauri/src/db/repos/execution/executions.rs`
-- `src-tauri/src/db/models/execution.rs`
-- `src-tauri/src/ipc_auth.rs`
-- `src/api/agents/executions.ts`
-- `src/stores/execStore.ts`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorPanel.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorPhases.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorPlanningPhase.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorGuidingPhase.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorStepCard.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/GuidingStepList.tsx`
+- `src/features/vault/sub_catalog/components/negotiator/StepActions.tsx`
 
-**Entry points:** src-tauri/src/engine/runner.rs, src-tauri/src/engine/dispatch.rs
+**Entry points:** src/features/vault/sub_catalog/components/negotiator/NegotiatorPanel.tsx, src/features/vault/sub_catalog/components/negotiator/NegotiatorPhases.tsx
 
-**Keywords:** execution, runner, queue, lifecycle, dispatch, rate-limit, cost, ipc, tokio
+**Keywords:** negotiator, guided setup, planning, step-by-step, credential wizard
 
-**Tech stack:** Rust, Tokio, SQLite
+**Tech stack:** React, TypeScript
 
 ---
 
-### execution-ui
+### credential-picker
 
-Frontend for tracking, inspecting, and comparing agent executions. Displays a filterable execution list with status, duration, and cost; clicking into an execution shows a detailed inspector with traces, tool calls, and output diffs. Supports side-by-side comparison of two execution runs.
+Provides the connector/credential browsing and selection interface with search, filtering by role presets, and recipe confidence indicators. Renders connector cards in a grid with per-connector setup guide modals. The useRecipeIndicators hook surfaces recipe adoption confidence scores per connector.
 
 **Files:**
-- `src/features/agents/sub_executions/executionStore.ts`
-- `src/features/agents/sub_executions/types.ts`
-- `src/features/agents/sub_activity/ActivityTab.tsx`
-- `src/features/agents/sub_activity/ActivityFilters.tsx`
-- `src/features/agents/sub_activity/ActivityHeader.tsx`
-- `src/features/agents/sub_activity/ActivityList.tsx`
-- `src/features/agents/sub_activity/ActivityModals.tsx`
-- `src/features/agents/sub_activity/activityTypes.ts`
-- `src/features/agents/sub_chat/ChatTab.tsx`
-- `src/features/agents/sub_chat/ChatBubbles.tsx`
-- `src/features/agents/sub_chat/OpsLaunchpad.tsx`
-- `src/features/agents/sub_chat/SessionSidebar.tsx`
-- `src/features/agents/sub_chat/libs/chatOpsDispatch.ts`
-- `src/api/agents/chat.ts`
-- `src/stores/chatStore.ts`
+- `src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx`
+- `src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx`
+- `src/features/vault/sub_catalog/components/picker/PickerGrid.tsx`
+- `src/features/vault/sub_catalog/components/picker/CredentialPickerFilters.tsx`
+- `src/features/vault/sub_catalog/components/picker/usePickerFilters.ts`
+- `src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts`
+- `src/features/vault/sub_catalog/components/picker/catalogRolePresets.ts`
+- `src/features/vault/sub_catalog/components/picker/connectorCardConstants.ts`
+- `src/features/vault/sub_catalog/components/picker/SetupGuideModal.tsx`
+- `src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx`
+- `src/features/vault/sub_catalog/components/schemas/SchemaFormFields.tsx`
+- `src/features/vault/sub_catalog/components/schemas/ExtraFieldRenderers.tsx`
+- `src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx`
+- `src/features/vault/sub_catalog/components/forms/CredentialTypePicker.tsx`
 
-**Entry points:** src/features/agents/sub_activity/ActivityTab.tsx, src/features/agents/sub_chat/ChatTab.tsx
+**Entry points:** src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx, src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts
 
-**Keywords:** execution, trace, activity, chat, inspector, comparison, ops-launchpad
+**Keywords:** credential, connector, picker, catalog, recipe, filter, role preset
 
-**Tech stack:** React, TypeScript, Zustand
+**Tech stack:** React, TypeScript
 
 ---
 
-### pipeline-orchestration
+### desktop-app-discovery
 
-Enables chaining multiple persona executions into pipelines with dependency graphs. The topology engine analyzes execution graphs for cycles and parallelization opportunities; composite executors handle fan-out/fan-in patterns. Pipeline state is persisted so interrupted runs can resume.
+Discovers locally-installed desktop applications and MCP servers that can be integrated as agent tools. Renders a discovery panel with separate lists for apps and MCP servers, plus capability approval cards for gating access. Provides the first step in enabling desktop-tool integrations without manual configuration.
 
 **Files:**
-- `src-tauri/src/engine/pipeline.rs`
-- `src-tauri/src/engine/pipeline_executor.rs`
-- `src-tauri/src/engine/chain.rs`
-- `src-tauri/src/engine/composite.rs`
-- `src-tauri/src/engine/topology_graph.rs`
-- `src-tauri/src/engine/topology_heuristic.rs`
-- `src-tauri/src/engine/topology_types.rs`
-- `src-tauri/src/engine/automation_runner.rs`
-- `src-tauri/src/engine/connector_strategy.rs`
-- `src-tauri/src/engine/config_merge.rs`
-- `src-tauri/src/engine/compilation_pipeline.rs`
-- `src/api/pipeline/groups.ts`
-- `src/api/pipeline/workflows.ts`
-- `src/stores/pipelineStore.ts`
+- `src/features/vault/sub_catalog/components/desktop/DesktopDiscoveryPanel.tsx`
+- `src/features/vault/sub_catalog/components/desktop/DesktopAppCard.tsx`
+- `src/features/vault/sub_catalog/components/desktop/DiscoveryAppList.tsx`
+- `src/features/vault/sub_catalog/components/desktop/DiscoveryMcpList.tsx`
+- `src/features/vault/sub_catalog/components/desktop/McpServerCard.tsx`
+- `src/features/vault/sub_catalog/components/desktop/CapabilityApprovalCard.tsx`
 
-**Entry points:** src-tauri/src/engine/pipeline.rs, src-tauri/src/engine/topology_graph.rs
+**Entry points:** src/features/vault/sub_catalog/components/desktop/DesktopDiscoveryPanel.tsx
 
-**Keywords:** pipeline, chain, topology, graph, fan-out, composite, dag, workflow
+**Keywords:** desktop, MCP, app discovery, local tools, capability approval, MCP server
 
-**Tech stack:** Rust, Tokio, Petgraph
+**Tech stack:** React, TypeScript, Tauri
 
 ---
 
-### prompt-compilation
-
-Compiles structured persona definitions, context rules, and tool descriptions into LLM-ready prompts. The intent compiler translates high-level user intent into executable prompt trees; the chunker handles large contexts; and the parser extracts structured data from LLM responses. Provider-specific prompt formatting is handled per-model.
-
-**Files:**
-- `src-tauri/src/engine/compiler.rs`
-- `src-tauri/src/engine/prompt.rs`
-- `src-tauri/src/engine/intent_compiler.rs`
-- `src-tauri/src/engine/parser.rs`
-- `src-tauri/src/engine/chunker.rs`
-- `src-tauri/src/engine/context_rules.rs`
-- `src-tauri/src/engine/platform_rules.rs`
-- `src-tauri/src/engine/capability.rs`
-- `src-tauri/src/engine/capability_contract.rs`
-- `src-tauri/src/engine/workflow_compiler.rs`
-- `src-tauri/src/engine/safe_json.rs`
-- `src/lib/personas/promptHelpers.ts`
-- `src/lib/personas/llmHelpers.ts`
-
-**Entry points:** src-tauri/src/engine/compiler.rs, src-tauri/src/engine/prompt.rs
-
-**Keywords:** prompt, compilation, intent, chunker, parser, context-rules, capability, llm
-
-**Tech stack:** Rust, Tokio
-
----
-
-### trigger-system
-
-Manages all execution trigger types: webhooks (HTTP callbacks), cron schedules, file-system watchers, clipboard monitoring, polling loops, shared events, and cloud webhook relays via Smee.io. Each trigger type has its own engine module; triggers are stored in the database and evaluated by the runner to decide when to fire an agent. Includes SSRF protection and URL safety checks.
-
-**Files:**
-- `src-tauri/src/engine/webhook.rs`
-- `src-tauri/src/engine/cron.rs`
-- `src-tauri/src/engine/file_watcher.rs`
-- `src-tauri/src/engine/polling.rs`
-- `src-tauri/src/engine/clipboard_monitor.rs`
-- `src-tauri/src/engine/cloud_webhook_relay.rs`
-- `src-tauri/src/engine/smee_relay.rs`
-- `src-tauri/src/engine/shared_event_relay.rs`
-- `src-tauri/src/engine/subscription.rs`
-- `src-tauri/src/engine/url_safety.rs`
-- `src-tauri/src/engine/ssrf_safe_dns.rs`
-- `src-tauri/src/commands/tools/triggers.rs`
-- `src-tauri/src/db/repos/resources/triggers.rs`
-- `src-tauri/src/db/models/trigger.rs`
-- `src-tauri/src/validation/trigger.rs`
-- `src/api/pipeline/triggers.ts`
-
-**Entry points:** src-tauri/src/commands/tools/triggers.rs, src-tauri/src/engine/webhook.rs
-
-**Keywords:** webhook, cron, trigger, file-watcher, polling, clipboard, smee, cloud-relay, ssrf
-
-**Tech stack:** Rust, Tokio, SQLite
-
----
-
-## AI Design & Build
+## Pipeline & Team Orchestration
 
 > **Group type:** —
 > **Color:** violet
 
-### design-reviews
+### n8n-workflow-import
 
-Automates peer-style design reviews of agent configurations — an AI reviewer evaluates the persona design for completeness, coherence, and potential issues. Reviews can be accepted or rejected by the human user; decisions are persisted as memory items for agent learning. Manual review queues handle cases requiring human escalation.
+Handles importing and transforming n8n workflow definitions into the personas format, supporting file upload, URL import, and paste methods. A multi-step wizard manages session state through transform, navigation, session, and test reducers. Performs connector matching and credential gap analysis against the local vault.
 
 **Files:**
-- `src-tauri/src/commands/design/reviews.rs`
-- `src-tauri/src/db/repos/communication/reviews.rs`
-- `src-tauri/src/db/repos/communication/manual_reviews.rs`
-- `src-tauri/src/db/models/review.rs`
-- `src/api/overview/reviews.ts`
-- `src/api/agents/outputAssertions.ts`
-- `src/api/agents/tools.ts`
-- `src/stores/agentStore.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nSession.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nWizard.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nWizardHandlers.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nWizardLifecycleHandlers.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nDesignData.ts`
+- `src/features/templates/sub_n8n/hooks/useN8nTest.ts`
+- `src/features/templates/sub_n8n/hooks/n8nTypes.ts`
+- `src/features/templates/sub_n8n/hooks/n8nWizardTypes.ts`
+- `src/features/templates/sub_n8n/reducers/transformReducer.ts`
+- `src/features/templates/sub_n8n/reducers/sessionReducer.ts`
+- `src/features/templates/sub_n8n/reducers/navigationReducer.ts`
+- `src/features/templates/sub_n8n/reducers/testReducer.ts`
+- `src/features/templates/sub_n8n/edit/connectorHealth.ts`
+- `src/features/templates/sub_n8n/edit/connectorMatching.ts`
+- `src/features/templates/sub_n8n/edit/credentialGapAnalysis.ts`
+- `src/features/templates/sub_n8n/steps/upload/useFileUpload.ts`
+- `src/features/templates/sub_n8n/steps/upload/usePasteImport.ts`
+- `src/features/templates/sub_n8n/steps/upload/useUrlImport.ts`
 
-**Entry points:** src-tauri/src/commands/design/reviews.rs
+**Entry points:** src/features/templates/sub_n8n/hooks/useN8nWizard.ts, src/features/templates/sub_n8n/hooks/useN8nSession.ts
 
-**Keywords:** review, design-review, accept, reject, manual-review, ai-feedback, quality
+**Keywords:** n8n, workflow import, transform, connector matching, credential gap, wizard
 
-**Tech stack:** Rust, React, TypeScript
+**Tech stack:** React, TypeScript
 
 ---
 
-### design-sessions
+### team-management
 
-AI-powered iterative design workflow where the user converses with the system to define and refine an agent's purpose, capabilities, and configuration. Design sessions go through phases (analysis, proposal, applying) and produce a structured build result that can be committed to create or update a persona. The frontend wizard guides users step by step with live AI feedback.
+Manages agent teams including group creation, team composition, shared memory pools, and scheduling of team-level tasks. Backend repos handle team and group CRUD with relational linking to individual agent personas. Frontend pipeline feature surfaces team configuration and task assignment workflows.
 
 **Files:**
-- `src-tauri/src/commands/design/build_sessions.rs`
-- `src-tauri/src/commands/design/conversations.rs`
-- `src-tauri/src/commands/design/analysis.rs`
-- `src-tauri/src/commands/design/skills.rs`
-- `src-tauri/src/commands/design/platform_definitions.rs`
-- `src-tauri/src/commands/design/smart_search.rs`
-- `src-tauri/src/db/repos/core/build_sessions.rs`
-- `src-tauri/src/db/repos/core/design_conversations.rs`
-- `src-tauri/src/db/models/build_session.rs`
-- `src-tauri/src/db/models/design_conversation.rs`
-- `src-tauri/src/engine/design.rs`
-- `src-tauri/src/engine/build_session.rs`
-- `src/features/agents/sub_design/DesignTab.tsx`
-- `src/features/agents/sub_design/DesignTabHelpers.ts`
-- `src/api/agents/buildSession.ts`
-- `src/stores/designStore.ts`
+- `src/api/pipeline/teams.ts`
+- `src/api/pipeline/groups.ts`
+- `src/api/pipeline/scheduler.ts`
+- `src/api/pipeline/teamMemories.ts`
+- `src-tauri/src/commands/teams/mod.rs`
+- `src-tauri/src/db/repos/core/teams.rs`
+- `src-tauri/src/db/repos/core/groups.rs`
 
-**Entry points:** src-tauri/src/commands/design/build_sessions.rs, src/features/agents/sub_design/DesignTab.tsx
+**Entry points:** src/api/pipeline/teams.ts, src-tauri/src/commands/teams/mod.rs
 
-**Keywords:** design, build-session, conversation, ai-design, analysis, proposal, wizard, persona-build
+**Keywords:** team, group, shared memory, scheduling, multi-agent, orchestration
 
-**Tech stack:** React, TypeScript, Rust, SQLite
+**Tech stack:** React, TypeScript, Rust, Tauri
 
 ---
 
-### n8n-transform
+### workflow-composition
 
-Transforms n8n workflow JSON definitions into PersonaMatrix-compatible agent configurations. Parses n8n node graphs, maps nodes to persona capabilities and connectors, generates prompt templates from workflow logic, and produces a structured design output. Also supports round-tripping back to n8n format for users migrating workflows.
+Provides the visual workflow canvas for composing multi-agent pipelines by connecting nodes representing agent actions, triggers, and data transformations. Acts as the graphical entry point for pipeline design. Depends on team and agent data for node population.
 
 **Files:**
-- `src-tauri/src/commands/design/n8n_transform/prompts.rs`
-- `src-tauri/src/commands/design/n8n_sessions.rs`
-- `src-tauri/src/commands/design/team_synthesis.rs`
-- `src-tauri/src/engine/workflow_compiler.rs`
-- `src-tauri/src/commands/tools/n8n_platform.rs`
-- `src-tauri/src/db/models/n8n_session.rs`
-- `src-tauri/src/db/repos/resources/n8n_sessions.rs`
-- `src/api/agents/mcpTools.ts`
+- `src/features/composition/components/WorkflowCanvas.tsx`
 
-**Entry points:** src-tauri/src/commands/design/n8n_sessions.rs, src-tauri/src/commands/design/n8n_transform/prompts.rs
+**Entry points:** src/features/composition/components/WorkflowCanvas.tsx
 
-**Keywords:** n8n, workflow, transform, node-graph, migration, automation, team-synthesis
+**Keywords:** workflow, canvas, composition, pipeline, nodes, graph
 
-**Tech stack:** Rust, React, TypeScript
+**Tech stack:** React, TypeScript
 
 ---
 
-### template-management
-
-Manages a library of reusable persona templates that users can adopt as a starting point. Template adoption applies a template's configuration to a new or existing persona, with integrity verified via checksums. User feedback on templates is collected to improve the template library over time.
-
-**Files:**
-- `src-tauri/src/commands/design/template_adopt.rs`
-- `src-tauri/src/commands/design/template_feedback.rs`
-- `src-tauri/src/db/models/template_feedback.rs`
-- `src-tauri/src/db/repos/communication/template_feedback.rs`
-- `src-tauri/src/engine/template_checksums.rs`
-- `src/api/templates/`
-- `src/lib/personas/templateHelpers.ts`
-
-**Entry points:** src-tauri/src/commands/design/template_adopt.rs
-
-**Keywords:** template, adopt, checksum, library, feedback, preset, starter
-
-**Tech stack:** Rust, React, TypeScript
-
----
-
-## Observability & Health
-
-> **Group type:** —
-> **Color:** emerald
-
-### dashboard-analytics
-
-The application's main home dashboard aggregating cross-persona metrics, execution trends, traffic/error charts, and recent activity into an at-a-glance view. Supports saved views for custom filter/sort configurations. Notification center surfaces GitLab pipeline events and system alerts.
-
-**Files:**
-- `src/features/overview/components/dashboard/DashboardHome.tsx`
-- `src/features/overview/components/dashboard/widgets/TrafficErrorsChart.tsx`
-- `src/features/overview/sub_activity/components/GlobalExecutionList.tsx`
-- `src/features/gitlab/components/NotificationCenter.tsx`
-- `src/api/overview/events.ts`
-- `src/api/overview/savedViews.ts`
-- `src/api/system/dataPortability.ts`
-- `src-tauri/src/commands/core/saved_views.rs`
-- `src-tauri/src/commands/core/data_portability.rs`
-- `src-tauri/src/db/repos/core/saved_views.rs`
-- `src-tauri/src/db/models/saved_views.rs`
-- `src/stores/homStore.ts`
-- `src/stores/globalStore.ts`
-
-**Entry points:** src/features/overview/components/dashboard/DashboardHome.tsx
-
-**Keywords:** dashboard, analytics, traffic, error-chart, saved-views, notification, gitlab, data-portability
-
-**Tech stack:** React, TypeScript, Recharts, Zustand
-
----
-
-### execution-observability
-
-Captures structured traces, metrics, and SLA compliance data for every agent execution. The trace engine records each LLM call, tool invocation, and latency milestone; metrics are aggregated by time bucket for charting. SLA definitions set expected completion windows and error thresholds, with violation reporting.
-
-**Files:**
-- `src-tauri/src/engine/trace.rs`
-- `src-tauri/src/engine/logger.rs`
-- `src-tauri/src/engine/bus.rs`
-- `src-tauri/src/engine/event_registry.rs`
-- `src-tauri/src/engine/digest.rs`
-- `src-tauri/src/commands/communication/observability/metrics.rs`
-- `src-tauri/src/commands/communication/sla.rs`
-- `src-tauri/src/db/repos/execution/traces.rs`
-- `src-tauri/src/db/repos/execution/metrics.rs`
-- `src-tauri/src/db/models/observability.rs`
-- `src-tauri/src/db/models/sla.rs`
-- `src/features/observability/`
-- `src/api/overview/observability.ts`
-- `src/api/overview/sla.ts`
-- `src/stores/observabilityStore.ts`
-
-**Entry points:** src-tauri/src/engine/trace.rs, src-tauri/src/commands/communication/observability/metrics.rs
-
-**Keywords:** trace, metrics, sla, latency, observability, event-bus, aggregation, violation
-
-**Tech stack:** Rust, SQLite, React, TypeScript
-
----
-
-### healing-recovery
-
-Self-healing system that detects execution failures, classifies errors using a taxonomy, and automatically applies fixes (retries, credential refreshes, prompt adjustments, rollbacks). An AI-driven healing orchestrator proposes multi-step recovery plans; the timeline tracks all healing attempts per execution. Circuit breakers prevent cascading failures.
-
-**Files:**
-- `src-tauri/src/engine/healing.rs`
-- `src-tauri/src/engine/healing_orchestrator.rs`
-- `src-tauri/src/engine/healing_timeline.rs`
-- `src-tauri/src/engine/auto_rollback.rs`
-- `src-tauri/src/engine/ai_healing.rs`
-- `src-tauri/src/engine/ai_helpers.rs`
-- `src-tauri/src/engine/error_taxonomy.rs`
-- `src-tauri/src/commands/execution/healing.rs`
-- `src-tauri/src/db/repos/execution/healing.rs`
-- `src-tauri/src/db/repos/execution/circuit_breaker.rs`
-- `src-tauri/src/db/models/healing.rs`
-- `src/api/overview/healing.ts`
-
-**Entry points:** src-tauri/src/engine/healing_orchestrator.rs, src-tauri/src/engine/healing.rs
-
-**Keywords:** healing, recovery, rollback, circuit-breaker, ai-healing, error-taxonomy, retry, resilience
-
-**Tech stack:** Rust, Tokio, SQLite
-
----
-
-### health-monitoring
-
-Provides per-agent health scoring, digest generation, and issue detection. Health checks run on demand or on a schedule; each check produces a scored result with specific issues and suggested fixes. Digests aggregate health history into a human-readable summary. The frontend renders health rings, issue cards, and trending panels.
-
-**Files:**
-- `src/features/agents/health/HealthCheckPanel.tsx`
-- `src/features/agents/health/HealthDigestPanel.tsx`
-- `src/features/agents/health/HealthIssueCard.tsx`
-- `src/features/agents/health/HealthScoreDisplay.tsx`
-- `src/features/agents/health/types.ts`
-- `src/features/agents/health/useApplyHealthFix.ts`
-- `src/features/agents/health/useHealthCheck.ts`
-- `src/features/agents/health/useHealthDigestScheduler.ts`
-- `src-tauri/src/commands/communication/observability/digest.rs`
-- `src-tauri/src/commands/communication/observability/alerts.rs`
-- `src-tauri/src/engine/healthcheck.rs`
-- `src-tauri/src/commands/infrastructure/system/health.rs`
-- `src/api/overview/healthcheckApi.ts`
-- `src/api/overview/healing.ts`
-
-**Entry points:** src/features/agents/health/HealthCheckPanel.tsx, src-tauri/src/engine/healthcheck.rs
-
-**Keywords:** health, score, digest, issue, alert, fix, monitoring, schedule
-
-**Tech stack:** React, TypeScript, Rust, SQLite
-
----
-
-## Knowledge & Memory
-
-> **Group type:** —
-> **Color:** indigo
-
-### agent-memory
-
-Stores and retrieves agent-specific episodic memories — facts the agent has learned, decisions made, and user preferences recorded during interactions. Memories are associated with a persona and can be retrieved by recency or relevance. The review/reject flow from design reviews feeds directly into this memory store.
-
-**Files:**
-- `src-tauri/src/commands/core/memories.rs`
-- `src-tauri/src/db/repos/core/memories.rs`
-- `src-tauri/src/db/models/memory.rs`
-- `src-tauri/src/validation/memory.rs`
-- `src/api/overview/memories.ts`
-- `src/stores/personalMemoryStore.ts`
-
-**Entry points:** src-tauri/src/commands/core/memories.rs
-
-**Keywords:** memory, episodic, persona-memory, recall, fact, preference, learning
-
-**Tech stack:** Rust, SQLite, React
-
----
-
-### ambient-context
-
-Captures ambient context from the user's environment — active window, clipboard contents, recent files, and screen state — and makes it available to agents as execution context. Context rules define which ambient data applies under which conditions. Includes OCR capabilities for extracting text from screen captures.
-
-**Files:**
-- `src-tauri/src/engine/ambient_context.rs`
-- `src-tauri/src/commands/execution/ambient.rs`
-- `src-tauri/src/commands/execution/clipboard_intel.rs`
-- `src-tauri/src/engine/app_focus.rs`
-- `src-tauri/src/engine/path_safety.rs`
-- `src-tauri/src/commands/ocr/mod.rs`
-- `src/api/ocr/index.ts`
-- `src/api/system/ambientContext.ts`
-- `src/lib/personas/executionHelpers.ts`
-
-**Entry points:** src-tauri/src/engine/ambient_context.rs, src-tauri/src/commands/execution/ambient.rs
-
-**Keywords:** ambient, context, clipboard, ocr, screen, app-focus, context-rules, environment
-
-**Tech stack:** Rust, Tauri, Tesseract/OCR
-
----
-
-### knowledge-base
-
-Manages the vector-backed knowledge base that provides agents with long-term factual context. Documents are ingested, chunked, embedded, and stored in a vector store for semantic retrieval at execution time. Supports multiple knowledge bases per persona with relevance scoring and citation tracking.
-
-**Files:**
-- `src-tauri/src/engine/knowledge.rs`
-- `src-tauri/src/engine/kb_ingest.rs`
-- `src-tauri/src/engine/vector_store.rs`
-- `src-tauri/src/engine/embedder.rs`
-- `src-tauri/src/commands/execution/knowledge.rs`
-- `src-tauri/src/db/repos/execution/knowledge.rs`
-- `src-tauri/src/db/models/knowledge.rs`
-- `src-tauri/src/db/models/knowledge_base.rs`
-- `src/api/agents/genome.ts`
-- `src/api/overview/intelligence/knowledge.ts`
-- `src/api/overview/intelligence/smartSearch.ts`
-- `src/api/overview/intelligence/teamSynthesis.ts`
-- `src/stores/knowledgeStore.ts`
-
-**Entry points:** src-tauri/src/engine/knowledge.rs, src-tauri/src/engine/kb_ingest.rs
-
-**Keywords:** knowledge-base, vector-store, embedding, semantic-search, rag, ingestion, chunking
-
-**Tech stack:** Rust, SQLite, Embeddings
-
----
-
-### obsidian-integration
-
-Integrates with an Obsidian vault as an external long-term knowledge graph. Syncs Obsidian markdown notes, resolves wikilinks, handles merge conflicts between vault and persona knowledge, and ingests vault content into the knowledge base. Used primarily for research workflows via the /research skill.
-
-**Files:**
-- `src-tauri/src/commands/obsidian_brain/conflict.rs`
-- `src-tauri/src/commands/obsidian_brain/markdown.rs`
-- `src-tauri/src/db/models/obsidian_brain.rs`
-- `src-tauri/src/db/repos/resources/obsidian_brain.rs`
-- `src/api/obsidianBrain/index.ts`
-
-**Entry points:** src-tauri/src/commands/obsidian_brain/markdown.rs
-
-**Keywords:** obsidian, vault, markdown, wikilink, knowledge-graph, sync, conflict-resolution
-
-**Tech stack:** Rust, Markdown, TypeScript
-
----
-
-## Lab & Testing
+## Event & Trigger Automation
 
 > **Group type:** —
 > **Color:** orange
 
-### agent-evolution
+### event-routing
 
-Implements evolutionary/genetic algorithms for automatically improving agent configurations over time. Each persona has a 'genome' (configuration gene set); evolution runs mutate genomes and evaluate fitness using test suites; successful mutations are promoted. The genome history tracks lineage and allows rollback to prior successful configurations.
+Implements the frontend event bus that routes real-time backend events to UI components via a typed bridge pattern. The eventBridge module subscribes to Tauri events and dispatches them to registered handlers. The commandNames generated module provides type-safe event name constants for all backend commands.
 
 **Files:**
-- `src-tauri/src/engine/evolution.rs`
-- `src-tauri/src/engine/genome.rs`
-- `src-tauri/src/commands/execution/evolution.rs`
-- `src-tauri/src/commands/execution/genome.rs`
-- `src-tauri/src/db/repos/lab/evolution.rs`
-- `src-tauri/src/db/repos/lab/genome.rs`
-- `src-tauri/src/db/repos/lab/versions.rs`
-- `src-tauri/src/db/repos/lab/ratings.rs`
-- `src-tauri/src/db/models/evolution.rs`
-- `src-tauri/src/db/models/genome.rs`
-- `src/api/agents/evolution.ts`
-- `src/api/agents/genome.ts`
+- `src/lib/eventBridge.ts`
+- `src/lib/commandNames.generated.ts`
+- `src/stores/slices/system/uiSlice.ts`
 
-**Entry points:** src-tauri/src/engine/evolution.rs, src-tauri/src/commands/execution/evolution.rs
+**Entry points:** src/lib/eventBridge.ts
 
-**Keywords:** evolution, genome, genetic-algorithm, mutation, fitness, lineage, versioning
+**Keywords:** event bridge, real-time, Tauri events, command names, pub-sub, reactive
 
-**Tech stack:** Rust, SQLite
+**Tech stack:** TypeScript, Tauri
 
 ---
 
-### quality-assurance
+### notification-management
 
-Output assertion engine that validates agent responses against user-defined rules (regex, semantic similarity, JSON schema, custom scripts). Quality gates enforce minimum assertion pass rates before an execution is considered successful. Supports the prompt lab for iterative prompt optimization against a fixed assertion set.
+Manages in-app notifications including a notification center store for aggregating system events, agent alerts, and execution outcomes. The notification settings panel allows users to configure per-channel delivery preferences. Drives toast notifications surfaced from background operations.
 
 **Files:**
-- `src-tauri/src/engine/output_assertions.rs`
-- `src-tauri/src/engine/quality_gate.rs`
-- `src-tauri/src/commands/execution/assertions.rs`
-- `src-tauri/src/commands/communication/observability/prompt_lab.rs`
-- `src-tauri/src/db/repos/execution/assertions.rs`
-- `src-tauri/src/db/models/output_assertion.rs`
-- `src/api/agents/outputAssertions.ts`
+- `src/stores/notificationCenterStore.ts`
+- `src/features/settings/sub_notifications/components/NotificationSettings.tsx`
+- `src/stores/slices/agents/chatSlice.ts`
 
-**Entry points:** src-tauri/src/engine/output_assertions.rs, src-tauri/src/commands/execution/assertions.rs
+**Entry points:** src/stores/notificationCenterStore.ts
 
-**Keywords:** assertion, quality-gate, output-validation, prompt-lab, regex, semantic-similarity, schema-validation
+**Keywords:** notifications, alerts, toast, notification center, delivery, channels
 
-**Tech stack:** Rust, SQLite
+**Tech stack:** React, TypeScript
 
 ---
 
-### recipes
+### trigger-configuration
 
-Agent recipe system for creating, versioning, and executing reusable multi-step agent workflows. Recipes are parameterized task templates that can be shared, cloned, and executed with different inputs. Recipe generation uses AI to propose recipes from observed execution patterns.
+Provides the UI for creating and configuring event triggers that launch agent workflows automatically. TriggerAddForm handles new trigger creation with connector-specific configuration panels, while TriggerConfig manages the complete trigger lifecycle. Integrates with the event bridge for real-time trigger state updates.
 
 **Files:**
-- `src-tauri/src/commands/recipes/crud.rs`
-- `src-tauri/src/commands/recipes/recipe_execution.rs`
-- `src-tauri/src/commands/recipes/recipe_generation.rs`
-- `src-tauri/src/commands/recipes/recipe_versioning.rs`
-- `src-tauri/src/db/repos/resources/recipes.rs`
-- `src-tauri/src/db/models/recipe.rs`
-- `src/features/agents/sub_recipes/RecipeGallery.tsx`
-- `src/features/agents/sub_recipes/RecipeEditor.tsx`
-- `src/features/agents/sub_recipes/RecipeTab.tsx`
-- `src/api/agents/lab.ts`
+- `src/features/triggers/sub_triggers/TriggerAddForm.tsx`
+- `src/features/triggers/sub_triggers/TriggerConfig.tsx`
+- `src/api/pipeline/triggers.ts`
+- `src-tauri/src/db/repos/core/triggers.rs`
 
-**Entry points:** src-tauri/src/commands/recipes/crud.rs, src/features/agents/sub_recipes/RecipeGallery.tsx
+**Entry points:** src/features/triggers/sub_triggers/TriggerAddForm.tsx, src/features/triggers/sub_triggers/TriggerConfig.tsx
 
-**Keywords:** recipe, template, versioning, parameterized, workflow, ai-generation, reusable
+**Keywords:** trigger, automation, event, webhook, schedule, cron, conditions
 
-**Tech stack:** React, TypeScript, Rust, SQLite
+**Tech stack:** React, TypeScript, Rust
 
 ---
 
-### test-lab
-
-A dedicated lab environment for running structured test suites against agent personas. Supports defining test cases with input/expected-output pairs, running full suites, and viewing pass/fail results in an eval panel. The lab also hosts A/B testing (arena) for comparing two persona configurations head-to-head.
-
-**Files:**
-- `src/features/agents/sub_lab/LabDashboard.tsx`
-- `src/features/agents/sub_lab/LabPanel.tsx`
-- `src/features/agents/sub_lab/LabTab.tsx`
-- `src/features/agents/sub_lab/LabTabContent.tsx`
-- `src-tauri/src/commands/execution/lab.rs`
-- `src-tauri/src/commands/execution/test_suites.rs`
-- `src-tauri/src/commands/execution/tests.rs`
-- `src-tauri/src/engine/test_runner.rs`
-- `src-tauri/src/engine/eval.rs`
-- `src-tauri/src/engine/dream_replay.rs`
-- `src-tauri/src/db/repos/lab/ab.rs`
-- `src-tauri/src/db/repos/lab/arena.rs`
-- `src-tauri/src/db/repos/lab/eval.rs`
-- `src-tauri/src/db/repos/execution/test_runs.rs`
-- `src-tauri/src/db/repos/execution/test_suites.rs`
-- `src-tauri/src/db/models/lab.rs`
-- `src-tauri/src/db/models/test_run.rs`
-- `src-tauri/src/db/models/test_suite.rs`
-- `src/api/agents/testSuites.ts`
-- `src/api/agents/tests.ts`
-- `src/stores/labStore.ts`
-
-**Entry points:** src/features/agents/sub_lab/LabTab.tsx, src-tauri/src/engine/test_runner.rs
-
-**Keywords:** lab, test-suite, eval, a-b-testing, arena, dream-replay, assertion, pass-fail
-
-**Tech stack:** React, TypeScript, Rust, SQLite
-
----
-
-## Platform Integration
+## Execution & Observability
 
 > **Group type:** —
-> **Color:** pink
+> **Color:** emerald
 
-### automation-tools
+### agent-health-monitoring
 
-Manages the tool registry — external integrations (APIs, scripts, browser actions) that agents can invoke during execution. Includes automation design (AI-generates tool configurations), deployment of automations to external platforms, and GitHub Actions integration. Tool audit logs track every invocation for compliance.
+Monitors the operational health of AI agents and their integrations, surfacing diagnostic results and enabling one-click fix application. Runs scheduled health digest checks and maintains health state in the agent store. Integrates with the notifications system to alert users on degraded agent status.
 
 **Files:**
-- `src-tauri/src/commands/tools/tools.rs`
-- `src-tauri/src/commands/tools/automations.rs`
-- `src-tauri/src/commands/tools/automation_design.rs`
-- `src-tauri/src/commands/tools/deploy_automation.rs`
-- `src-tauri/src/commands/tools/github_platform.rs`
-- `src-tauri/src/engine/tool_runner.rs`
-- `src-tauri/src/engine/api_proxy.rs`
-- `src-tauri/src/engine/api_definition.rs`
-- `src-tauri/src/db/repos/resources/tools.rs`
-- `src-tauri/src/db/repos/resources/automations.rs`
-- `src-tauri/src/db/repos/resources/tool_audit_log.rs`
-- `src-tauri/src/db/models/tool.rs`
-- `src-tauri/src/db/models/automation.rs`
-- `src-tauri/src/db/models/tool_audit.rs`
-- `src/api/agents/tools.ts`
-- `src/stores/globalStore.ts`
+- `src/features/agents/health/HealthCheckPanel.tsx`
+- `src/features/agents/health/useHealthCheck.ts`
+- `src/features/agents/health/useApplyHealthFix.ts`
+- `src/features/agents/health/useHealthDigestScheduler.ts`
+- `src/features/agents/health/types.ts`
+- `src/features/agents/health/index.ts`
 
-**Entry points:** src-tauri/src/commands/tools/tools.rs, src-tauri/src/engine/tool_runner.rs
+**Entry points:** src/features/agents/health/HealthCheckPanel.tsx, src/features/agents/health/useHealthCheck.ts
 
-**Keywords:** tool, automation, api-proxy, github-actions, tool-registry, invocation, audit
+**Keywords:** health, diagnostics, monitoring, fix, digest, agent status
 
-**Tech stack:** Rust, TypeScript, React
+**Tech stack:** React, TypeScript
 
 ---
 
-### gitlab-integration
+### execution-engine-backend
 
-Integrates with GitLab CI/CD pipelines — converts persona execution results into GitLab pipeline status updates, pulls pipeline events for the notification center, and supports triggering pipelines from persona executions. The cloud module handles deployment of personas to hosted infrastructure.
+The Rust execution engine processes agent runs including prompt templating, checksum verification, output assertions, and process activity monitoring. Manages the full lifecycle from execution start through result storage. The test runner handles automated test suite execution with assertion evaluation.
 
 **Files:**
-- `src-tauri/src/gitlab/client.rs`
-- `src-tauri/src/gitlab/config.rs`
-- `src-tauri/src/gitlab/converter.rs`
-- `src-tauri/src/gitlab/types.rs`
-- `src-tauri/src/gitlab/mod.rs`
-- `src-tauri/src/commands/infrastructure/gitlab.rs`
+- `src-tauri/src/engine/prompt.rs`
+- `src-tauri/src/engine/template_checksums.rs`
+- `src-tauri/src/engine/test_runner.rs`
+- `src-tauri/src/engine/process_activity.rs`
+- `src-tauri/src/engine/output_assertions.rs`
+- `src-tauri/src/engine/optimizer.rs`
+- `src-tauri/src/engine/cost.rs`
+- `src-tauri/src/engine/rate_limiter.rs`
+- `src-tauri/src/commands/execution/executions.rs`
+- `src-tauri/src/db/repos/execution/executions.rs`
+
+**Entry points:** src-tauri/src/commands/execution/executions.rs, src-tauri/src/engine/test_runner.rs
+
+**Keywords:** execution engine, prompt, test runner, assertions, process activity, rate limiting, cost
+
+**Tech stack:** Rust, Tauri, SQLite
+
+---
+
+### execution-list
+
+Renders the paginated execution history list with filtering, comparison, and drill-down detail views. Supports side-by-side comparison of execution runs with diff views and metric charts. Each execution item links to a full execution inspector with step-level trace navigation.
+
+**Files:**
+- `src/features/agents/sub_executions/components/list/ExecutionList.tsx`
+- `src/features/agents/sub_executions/components/list/ExecutionListItem.tsx`
+- `src/features/agents/sub_executions/components/list/ExecutionListRow.tsx`
+- `src/features/agents/sub_executions/components/list/ExecutionListFilters.tsx`
+- `src/features/agents/sub_executions/components/list/ExecutionDetail.tsx`
+- `src/features/agents/sub_executions/components/list/ExecutionComparison.tsx`
+- `src/features/agents/sub_executions/components/list/ComparisonDiff.tsx`
+- `src/features/agents/sub_executions/components/list/ComparisonMetrics.tsx`
+- `src/features/agents/sub_executions/components/list/ComparisonTable.tsx`
+- `src/features/agents/sub_executions/components/detail/ExecutionInspector.tsx`
+- `src/features/agents/sub_executions/components/detail/DetailHeader.tsx`
+- `src/features/agents/sub_executions/components/detail/DetailMetadata.tsx`
+- `src/features/agents/sub_executions/components/detail/DetailSteps.tsx`
+- `src/features/agents/sub_executions/components/detail/TraceInspector.tsx`
+- `src/features/agents/sub_executions/components/detail/TraceTree.tsx`
+
+**Entry points:** src/features/agents/sub_executions/components/list/ExecutionList.tsx, src/features/agents/sub_executions/components/detail/ExecutionInspector.tsx
+
+**Keywords:** execution, history, comparison, trace, inspector, diff, metrics
+
+**Tech stack:** React, TypeScript
+
+---
+
+### execution-replay
+
+Provides an interactive replay sandbox for stepping through past agent executions with a waterfall timeline and tool panel. Users can scrub the timeline, expand individual tool steps, and view the healing overlay for auto-corrected actions. Enables post-hoc debugging of agent behavior without re-running executions.
+
+**Files:**
+- `src/features/agents/sub_executions/components/replay/ReplaySandbox.tsx`
+- `src/features/agents/sub_executions/components/replay/ReplayControls.tsx`
+- `src/features/agents/sub_executions/components/replay/ReplayTimeline.tsx`
+- `src/features/agents/sub_executions/components/replay/ReplayToolPanel.tsx`
+- `src/features/agents/sub_executions/components/replay/ReplayTracePanel.tsx`
+- `src/features/agents/sub_executions/components/replay/PipelineWaterfall.tsx`
+- `src/features/agents/sub_executions/components/replay/PipelineStageIndicator.tsx`
+- `src/features/agents/sub_executions/components/replay/WaterfallStage.tsx`
+- `src/features/agents/sub_executions/components/replay/WaterfallTimeline.tsx`
+- `src/features/agents/sub_executions/components/replay/ExpandableToolStep.tsx`
+- `src/features/agents/sub_executions/components/replay/HealingOverlay.tsx`
+
+**Entry points:** src/features/agents/sub_executions/components/replay/ReplaySandbox.tsx, src/features/agents/sub_executions/components/replay/PipelineWaterfall.tsx
+
+**Keywords:** replay, waterfall, timeline, tool steps, healing, debugging, sandbox
+
+**Tech stack:** React, TypeScript
+
+---
+
+## Template & Recipe Library
+
+> **Group type:** —
+> **Color:** indigo
+
+### template-adoption
+
+Streamlined adoption flow for applying a template to create or configure an agent persona. The simplified AdoptionWizardModal replaced a large multi-step wizard; remaining components handle questionnaire forms, matrix glass/blueprint previews, and the matrix adoption view. Surfaces pre-adoption readiness state to the user.
+
+**Files:**
+- `src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx`
+- `src/features/templates/sub_generated/adoption/MatrixAdoptionView.tsx`
+- `src/features/templates/sub_generated/adoption/PersonaMatrixBlueprint.tsx`
+- `src/features/templates/sub_generated/adoption/PersonaMatrixGlass.tsx`
+- `src/features/templates/sub_generated/adoption/QuestionnaireFormGrid.tsx`
+- `src/features/templates/sub_generated/adoption/index.ts`
+- `src/features/templates/sub_generated/shared/AdoptCelebration.tsx`
+- `src/features/templates/sub_generated/shared/adoptionReadiness.ts`
+- `src/features/templates/sub_generated/shared/BaseModal.tsx`
+- `src/features/templates/sub_generated/shared/DimensionRadial.tsx`
+- `src/features/templates/sub_generated/shared/TabTransition.tsx`
+- `src/features/templates/sub_generated/shared/templateComplexity.ts`
+- `src/features/templates/sub_generated/shared/ThinkingLoader.tsx`
+
+**Entry points:** src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx
+
+**Keywords:** adoption, template, wizard, questionnaire, persona blueprint, readiness, onboarding
+
+**Tech stack:** React, TypeScript
+
+---
+
+### template-diagram-viewer
+
+Renders interactive activity and flow diagrams for visualizing template/workflow structures. The FlowDiagram component renders node graphs with popover detail panels. ActivityDiagramModal provides a full-screen diagram modal for complex template structures.
+
+**Files:**
+- `src/features/templates/sub_diagrams/FlowDiagram.tsx`
+- `src/features/templates/sub_diagrams/FlowNodeCard.tsx`
+- `src/features/templates/sub_diagrams/NodePopover.tsx`
+- `src/features/templates/sub_diagrams/PopoverPositioner.tsx`
+- `src/features/templates/sub_diagrams/ActivityDiagramModal.tsx`
+- `src/features/templates/sub_diagrams/activityDiagramTypes.ts`
+
+**Entry points:** src/features/templates/sub_diagrams/FlowDiagram.tsx, src/features/templates/sub_diagrams/ActivityDiagramModal.tsx
+
+**Keywords:** diagram, flow, activity, nodes, visualization, graph
+
+**Tech stack:** React, TypeScript
+
+---
+
+### template-gallery-browser
+
+The primary template discovery interface presenting a filterable gallery of persona templates in card or matrix view with explore, search, and recommendation carousels. Supports adoption completion notifications and provides modal overlays for credential linking and preview. The PersonaMatrix renders a full connector×persona grid.
+
+**Files:**
+- `src/features/templates/sub_generated/gallery/cards/renderers/TemplateCard.tsx`
+- `src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardBody.tsx`
+- `src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardHeader.tsx`
+- `src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardFooter.tsx`
+- `src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx`
+- `src/features/templates/sub_generated/gallery/cards/CompactRow.tsx`
+- `src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts`
+- `src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts`
+- `src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx`
+- `src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts`
+- `src/features/templates/sub_generated/gallery/explore/ExploreView.tsx`
+- `src/features/templates/sub_generated/gallery/explore/RecommendedCarousel.tsx`
+- `src/features/templates/sub_generated/gallery/explore/TrendingCarousel.tsx`
+- `src/features/templates/sub_generated/gallery/explore/AutomationOpportunitiesRail.tsx`
+- `src/features/templates/sub_generated/gallery/explore/BackgroundBanners.tsx`
+- `src/features/templates/sub_generated/gallery/matrix/PersonaMatrix.tsx`
+- `src/features/templates/sub_generated/gallery/matrix/ConnectorEditCell.tsx`
+- `src/features/templates/sub_generated/gallery/matrix/EditableMatrixCells.tsx`
+- `src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx`
+- `src/features/templates/sub_generated/gallery/modals/TemplatePreviewModal.tsx`
+- `src/features/templates/sub_generated/gallery/modals/CatalogCredentialModal.tsx`
+- `src/features/templates/sub_generated/gallery/search/SearchAutocomplete.tsx`
+
+**Entry points:** src/features/templates/sub_generated/gallery/explore/ExploreView.tsx, src/features/templates/sub_generated/gallery/matrix/PersonaMatrix.tsx
+
+**Keywords:** template gallery, persona matrix, explore, recommended, trending, search, connector grid
+
+**Tech stack:** React, TypeScript
+
+---
+
+### template-generation
+
+Drives the AI-powered template generation flow where users describe an automation goal and the system produces a template definition. A design runner manages the streaming generation state through idle/running/done phases. Includes a design result preview with connector sections and event visualizations.
+
+**Files:**
+- `src/features/templates/sub_generated/generation/useCreateTemplateActions.ts`
+- `src/features/templates/sub_generated/generation/useCreateTemplateReducer.ts`
+- `src/features/templates/sub_generated/generation/useCreateTemplateSnapshot.ts`
+- `src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts`
+- `src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts`
+- `src/features/templates/sub_generated/generation/modals/createTemplateTypes.ts`
+- `src/features/templates/sub_generated/generation/sources/TemplateSourceTypes.ts`
+- `src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx`
+- `src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx`
+- `src/features/templates/sub_generated/design-preview/DesignTestResults.tsx`
+- `src/features/templates/sub_generated/design-preview/EventsSection.tsx`
+- `src/features/templates/sub_generated/design-preview/DesignCheckbox.tsx`
+- `src/features/templates/sub_generated/design-preview/helpers.ts`
+
+**Entry points:** src/features/templates/sub_generated/generation/useCreateTemplateActions.ts, src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts
+
+**Keywords:** template generation, AI design, design runner, streaming, preview, create template
+
+**Tech stack:** React, TypeScript
+
+---
+
+## Deployment & Sharing
+
+> **Group type:** —
+> **Color:** red
+
+### deployment-config
+
+Handles agent deployment configuration including cloud deployment settings, publishing flows, and platform-specific build targets. Provides the frontend UI for configuring where and how agents are deployed. Coordinates with the cloud client for remote deployment operations.
+
+**Files:**
+- `src/api/system/cloud.ts`
 - `src-tauri/src/cloud/client.rs`
 - `src-tauri/src/cloud/config.rs`
 - `src-tauri/src/cloud/runner.rs`
 - `src-tauri/src/cloud/mod.rs`
-- `src-tauri/src/commands/infrastructure/cloud.rs`
-- `src-tauri/src/db/repos/resources/deployment_history.rs`
-- `src/api/system/gitlab.ts`
-- `src/api/system/cloud.ts`
-- `src/features/gitlab/components/NotificationCenter.tsx`
 
-**Entry points:** src-tauri/src/gitlab/client.rs, src-tauri/src/cloud/runner.rs
+**Entry points:** src/api/system/cloud.ts, src-tauri/src/cloud/client.rs
 
-**Keywords:** gitlab, ci-cd, pipeline, cloud, deployment, notification, webhook
+**Keywords:** deployment, cloud, publish, build, platform, release
 
-**Tech stack:** Rust, GitLab API, React
+**Tech stack:** Rust, TypeScript, Tauri
 
 ---
 
-### mcp-integration
+### network-exposure
 
-Implements the Model Context Protocol (MCP) server and client, allowing personas to expose and consume tools via the standardized MCP interface. The MCP server runs as a sidecar binary; tools are installed and managed through the mcp_server module. Agents can discover and invoke MCP tools from other servers on the local network.
+Manages peer-to-peer networking and secure agent endpoint exposure for cross-network access. The P2P engine handles messaging, protocol, and transport layers. Enclave management provides isolated execution environments, while the identity and exposure modules handle endpoint registration and discovery.
 
 **Files:**
-- `src-tauri/src/mcp_server/tools.rs`
-- `src-tauri/src/mcp_server/install.rs`
-- `src-tauri/src/mcp_server/db.rs`
-- `src-tauri/src/mcp_server/mod.rs`
-- `src-tauri/src/mcp_bin.rs`
-- `src-tauri/src/engine/mcp_tools.rs`
-- `src-tauri/src/commands/credentials/mcp_tools.rs`
-- `src-tauri/src/commands/infrastructure/system/mcp_integration.rs`
-- `src/api/agents/mcpTools.ts`
+- `src-tauri/src/engine/p2p/mod.rs`
+- `src-tauri/src/engine/topology_graph.rs`
+- `src/api/network/enclave.ts`
+- `src/api/network/exposure.ts`
+- `src/api/network/identity.ts`
+- `src/api/network/bundle.ts`
+- `src/api/network/discovery.ts`
 
-**Entry points:** src-tauri/src/mcp_bin.rs, src-tauri/src/mcp_server/tools.rs
+**Entry points:** src/api/network/exposure.ts, src-tauri/src/engine/p2p/mod.rs
 
-**Keywords:** mcp, model-context-protocol, tool-server, sidecar, tool-install, local-network
+**Keywords:** P2P, exposure, enclave, identity, networking, endpoint, discovery
 
-**Tech stack:** Rust, MCP Protocol, TypeScript
+**Tech stack:** Rust, TypeScript, Tauri
 
 ---
 
-### p2p-network
+### sharing-features
 
-Peer-to-peer networking layer enabling multiple Personas desktop instances to discover each other via mDNS, sync agent manifests, and exchange encrypted messages. The identity module manages each node's keypair for signing; exposure controls what is shared with peers. Used for collaborative multi-agent scenarios and team-level persona sharing.
+Enables sharing of agent configurations and templates between users through export/import and data portability flows. Manages signed artifact creation for verifiable sharing. The data portability API handles export formats and import validation.
 
 **Files:**
-- `src-tauri/src/engine/p2p/connection.rs`
-- `src-tauri/src/engine/p2p/manifest_sync.rs`
-- `src-tauri/src/engine/p2p/mdns.rs`
-- `src-tauri/src/engine/p2p/messaging.rs`
-- `src-tauri/src/engine/p2p/periodic.rs`
-- `src-tauri/src/engine/p2p/protocol.rs`
-- `src-tauri/src/engine/p2p/transport.rs`
-- `src-tauri/src/engine/p2p/types.rs`
-- `src-tauri/src/commands/network/bundle.rs`
-- `src-tauri/src/commands/network/discovery.rs`
-- `src-tauri/src/commands/network/enclave.rs`
-- `src-tauri/src/commands/network/exposure.rs`
-- `src-tauri/src/commands/network/identity.rs`
-- `src-tauri/src/engine/bundle.rs`
-- `src-tauri/src/engine/enclave.rs`
-- `src-tauri/src/engine/identity.rs`
-- `src-tauri/src/engine/share_link.rs`
-- `src-tauri/src/db/models/exposure.rs`
-- `src-tauri/src/db/models/identity.rs`
-- `src/features/network/`
-- `src/api/network/`
-- `src/stores/networkStore.ts`
+- `src/api/system/dataPortability.ts`
+- `src/api/signing.ts`
+- `src-tauri/src/commands/infrastructure/dev_tools.rs`
 
-**Entry points:** src-tauri/src/engine/p2p/connection.rs, src-tauri/src/commands/network/discovery.rs
+**Entry points:** src/api/system/dataPortability.ts
 
-**Keywords:** p2p, mdns, discovery, identity, enclave, manifest-sync, bundle, exposure, share-link
+**Keywords:** sharing, export, import, data portability, signing, artifact
 
-**Tech stack:** Rust, mDNS, P2P, TypeScript
+**Tech stack:** TypeScript, Rust
 
 ---
 
-### provider-management
+## Platform Administration
 
-Abstracts LLM provider integrations (Claude/Anthropic, OpenAI Codex) behind a uniform interface with automatic failover and circuit breaking. BYOM (Bring Your Own Model) allows users to configure custom API-compatible endpoints. Provider selection uses topology analysis to route executions to the optimal available model.
+> **Group type:** —
+> **Color:** pink
+
+### onboarding-flow
+
+Guides new users through initial platform setup with an overlay-based onboarding checklist that tracks completion of key configuration milestones. The useOnboardingChecklist hook drives step completion state. The overlay renders progressively as users complete each milestone.
 
 **Files:**
-- `src-tauri/src/engine/provider/claude.rs`
-- `src-tauri/src/engine/provider/codex.rs`
-- `src-tauri/src/engine/provider/mod.rs`
-- `src-tauri/src/engine/failover.rs`
-- `src-tauri/src/engine/llm_topology.rs`
-- `src-tauri/src/commands/infrastructure/byom.rs`
-- `src-tauri/src/engine/byom.rs`
-- `src-tauri/src/engine/tier.rs`
-- `src-tauri/src/commands/infrastructure/tier_usage.rs`
-- `src/api/system/byom.ts`
-- `src/stores/settingsStore.ts`
+- `src/features/onboarding/components/OnboardingOverlay.tsx`
+- `src/features/agents/components/onboarding/useOnboardingChecklist.ts`
 
-**Entry points:** src-tauri/src/engine/provider/claude.rs, src-tauri/src/engine/failover.rs
+**Entry points:** src/features/onboarding/components/OnboardingOverlay.tsx, src/features/agents/components/onboarding/useOnboardingChecklist.ts
 
-**Keywords:** llm, provider, claude, openai, byom, failover, model-selection, tier
+**Keywords:** onboarding, checklist, first-run, setup, overlay, milestones
 
-**Tech stack:** Rust, Tokio, Anthropic SDK, OpenAI API
+**Tech stack:** React, TypeScript
+
+---
+
+### plugin-dev-tools
+
+Provides developer tooling for plugin and agent lifecycle management, including the lifecycle page for inspecting plugin state, start/stop controls, and dev_tools backend commands. Supports the development workflow for building and testing agent integrations locally.
+
+**Files:**
+- `src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx`
+- `src-tauri/src/commands/infrastructure/dev_tools.rs`
+- `src-tauri/src/db/repos/dev_tools.rs`
+- `src-tauri/src/db/builtin_connectors.rs`
+
+**Entry points:** src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx, src-tauri/src/commands/infrastructure/dev_tools.rs
+
+**Keywords:** dev tools, plugin, lifecycle, connectors, builtin, development
+
+**Tech stack:** React, TypeScript, Rust
+
+---
+
+### settings-management
+
+Provides user-facing settings panels for account configuration, API key management, notification preferences, and quality gate thresholds. Each settings sub-panel is independently mounted with its own local state. Settings are persisted through the system settings Tauri command and surfaced through the auth store.
+
+**Files:**
+- `src/features/settings/sub_account/components/AccountSettings.tsx`
+- `src/features/settings/sub_notifications/components/NotificationSettings.tsx`
+- `src/features/settings/sub_quality_gates/components/QualityGateSettings.tsx`
+- `src/api/system/settings.ts`
+- `src/stores/authStore.ts`
+
+**Entry points:** src/features/settings/sub_account/components/AccountSettings.tsx
+
+**Keywords:** settings, account, API keys, quality gates, preferences, configuration
+
+**Tech stack:** React, TypeScript
 
 ---
 
 
 <!-- snapshot-meta
-git_head: 52182a0a66a8cb4c5c37cbee834110390a0df04e
-git_commit_count: 318
-generated_at: 2026-04-07T21:44:39.938Z
+git_head: dd844d6e75ad8541ee5b9e3cf3a5e85038f5ebd1
+git_commit_count: 548
+generated_at: 2026-04-17T09:41:45.173Z
 -->

@@ -56,10 +56,10 @@ export default function ClipContextMenu({
         return (
           <button
             key={item.label}
-            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors ${
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-md transition-colors ${
               isDanger
                 ? 'text-red-400 hover:bg-red-500/10'
-                : 'text-foreground/80 hover:bg-secondary/40'
+                : 'text-foreground hover:bg-secondary/40'
             }`}
             onClick={() => { item.action(); onClose(); }}
           >

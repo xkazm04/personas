@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Clock, Calendar, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2 } from 'lucide-react';
+import { Clock, Calendar, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -34,7 +34,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
-const SECTION_DEFS: Record<string, { icon: React.ElementType; color: string }> = {
+const SECTION_DEFS: Record<string, { icon: LucideIcon; color: string }> = {
   messages: { icon: MessageSquare, color: 'text-blue-400' },
   flow: { icon: ChevronRight, color: 'text-primary/60' },
   reviews: { icon: AlertTriangle, color: 'text-amber-400' },

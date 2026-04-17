@@ -25,7 +25,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
   return (
     <div className="mt-2 border border-border/20 rounded-lg overflow-hidden bg-background/80">
       <div className="flex items-center justify-between px-2.5 py-1 bg-secondary/30 border-b border-border/15">
-        <span className="text-[10px] font-mono text-muted-foreground/50">{lines.length} lines</span>
+        <span className="text-[10px] font-mono text-foreground">{lines.length} lines</span>
         <div className="flex items-center gap-1.5">
           {isRunning && (
             <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
@@ -35,7 +35,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
           )}
           <button
             onClick={() => setViewMode(viewMode === 'raw' ? 'rendered' : 'raw')}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
             title={viewMode === 'raw' ? 'Switch to rendered markdown' : 'Switch to raw log'}
           >
             {viewMode === 'raw' ? (
@@ -50,7 +50,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
       {viewMode === 'raw' ? (
         <div
           ref={scrollRef}
-          className="max-h-48 overflow-y-auto p-2 font-mono text-[11px] leading-relaxed text-foreground/70 whitespace-pre-wrap"
+          className="max-h-48 overflow-y-auto p-2 font-mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap"
         >
           {lines.map((line, i) => (
             <div key={i} className="hover:bg-secondary/20">{line}</div>
@@ -60,7 +60,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
       ) : (
         <div
           ref={scrollRef}
-          className="max-h-48 overflow-y-auto p-3 text-sm"
+          className="max-h-48 overflow-y-auto p-3 text-md"
         >
           <MarkdownRenderer content={fullText} />
           {isRunning && <span className="inline-block w-1.5 h-3 bg-primary/60 animate-pulse ml-1" />}

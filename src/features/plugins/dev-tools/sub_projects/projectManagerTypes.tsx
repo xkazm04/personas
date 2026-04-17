@@ -80,7 +80,7 @@ export const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; colo
   { id: 'rust', label: 'Rust', icon: '🦀', color: 'bg-orange-500/15 border-orange-500/25 text-orange-400' },
   { id: 'python', label: 'Python', icon: '🐍', color: 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400' },
   { id: 'combined', label: 'Combined', icon: '🔗', color: 'bg-violet-500/15 border-violet-500/25 text-violet-400' },
-  { id: 'other', label: 'Other', icon: '📁', color: 'bg-primary/10 border-primary/20 text-muted-foreground' },
+  { id: 'other', label: 'Other', icon: '📁', color: 'bg-primary/10 border-primary/20 text-foreground' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -89,9 +89,9 @@ export const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; colo
 
 export const STATUS_STYLES: Record<string, string> = {
   active: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  archived: 'bg-primary/10 text-muted-foreground border-primary/15',
+  archived: 'bg-primary/10 text-foreground border-primary/15',
   paused: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  open: 'bg-primary/10 text-muted-foreground border-primary/15',
+  open: 'bg-primary/10 text-foreground border-primary/15',
   'in-progress': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
   done: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
   blocked: 'bg-red-500/15 text-red-400 border-red-500/25',

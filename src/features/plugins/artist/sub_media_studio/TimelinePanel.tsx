@@ -288,7 +288,7 @@ function TimelinePanelImpl({
           className={`h-5 flex items-center gap-2 px-3 border-b border-primary/10 transition-colors ${c.collapsedRail}`}
         >
           <Icon className={`w-3 h-3 ${c.collapsedIcon}`} />
-          <span className={`text-[9px] font-semibold uppercase tracking-wider ${c.collapsedLabel}`}>
+          <span className={`typo-label ${c.collapsedLabel}`}>
             {meta.label}
           </span>
         </button>
@@ -305,11 +305,11 @@ function TimelinePanelImpl({
           className="flex items-center gap-1.5 flex-1 text-left hover:opacity-80 transition-opacity"
         >
           <Icon className={`w-3.5 h-3.5 ${c.railLabel}`} />
-          <span className={`typo-heading text-[10px] uppercase tracking-wider ${c.railLabel}`}>
+          <span className={`typo-label ${c.railLabel}`}>
             {meta.label}
           </span>
           {count > 0 && (
-            <span className={`text-[9px] rounded-full px-1.5 py-px tabular-nums ${c.countBadge}`}>
+            <span className={`text-md rounded-full px-1.5 py-px tabular-nums ${c.countBadge}`}>
               {count}
             </span>
           )}
@@ -346,7 +346,7 @@ function TimelinePanelImpl({
           <ZoomIn className="w-3.5 h-3.5" />
         </Button>
 
-        <span className="text-[10px] text-muted-foreground/50 w-14 text-center tabular-nums font-mono">
+        <span className="text-md text-foreground w-14 text-center tabular-nums font-mono">
           {Math.round(zoom)}px/s
         </span>
 
@@ -382,7 +382,7 @@ function TimelinePanelImpl({
 
         <div className="flex-1" />
 
-        <span className="text-[10px] text-muted-foreground/40 font-mono tabular-nums">
+        <span className="text-md text-foreground font-mono tabular-nums">
           {Math.round(totalDuration * 10) / 10}s
         </span>
       </div>
@@ -395,7 +395,7 @@ function TimelinePanelImpl({
             className="border-b border-primary/15 flex items-center justify-end pr-2 flex-shrink-0"
             style={{ height: `${RULER_HEIGHT}px` }}
           >
-            <span className="text-[9px] text-muted-foreground/40 uppercase tracking-widest font-mono">
+            <span className="typo-label text-foreground font-mono">
               timeline
             </span>
           </div>

@@ -28,7 +28,7 @@ export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
           qualityScore >= 55 ? 'text-amber-400' : 'text-red-400'
         }`} />
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+          <h3 className="typo-section-title">
             Lifecycle Readiness — {qualityScore}/100
           </h3>
           <p className="typo-body text-foreground mt-0.5">
@@ -57,12 +57,12 @@ export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
             {g.ok ? (
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             ) : (
-              <XCircle className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
+              <XCircle className="w-3.5 h-3.5 text-foreground shrink-0" />
             )}
             <span className="typo-caption text-foreground truncate" title={g.hint}>
               {g.label}
             </span>
-            <span className="typo-caption text-foreground/50 shrink-0 ml-auto">
+            <span className="typo-caption text-foreground shrink-0 ml-auto">
               +{g.weight}
             </span>
           </div>

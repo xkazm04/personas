@@ -47,7 +47,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-violet-400' : 'text-violet-400/60'}`} />
-        <span className={`typo-caption truncate ${isSelected ? 'text-violet-300' : 'text-foreground/60 group-hover:text-foreground/80'}`}>
+        <span className={`typo-caption truncate ${isSelected ? 'text-violet-300' : 'text-foreground group-hover:text-foreground'}`}>
           {node.name}
         </span>
       </button>
@@ -62,14 +62,14 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         )}
         <Folder className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-        <span className="typo-caption text-foreground/70 truncate">{node.name}</span>
+        <span className="typo-caption text-foreground truncate">{node.name}</span>
         {node.noteCount > 0 && (
-          <span className="typo-caption text-muted-foreground/30 ml-auto">{node.noteCount}</span>
+          <span className="typo-caption text-foreground ml-auto">{node.noteCount}</span>
         )}
       </button>
       {expanded && node.children.map((child) => (
@@ -158,19 +158,19 @@ export default function BrowsePanel() {
         {/* Selected vault header */}
         {vaultName && (
           <div className="px-2 pb-2 mb-2 border-b border-primary/10">
-            <p className="typo-caption text-muted-foreground/40 uppercase tracking-wide">Vault</p>
+            <p className="typo-label text-foreground/90">Vault</p>
             <p className="typo-heading text-violet-300 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
           </div>
         )}
         {/* Search */}
         <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-background/50 border border-primary/12 text-foreground/80 typo-caption placeholder:text-muted-foreground/30 focus-ring transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground focus-ring transition-all"
           />
         </div>
 
@@ -186,11 +186,11 @@ export default function BrowsePanel() {
                 <TreeItem key={child.path} node={child} depth={0} onSelect={selectNote} selectedPath={selectedPath} filter={filter} />
               ))}
               {tree.children.length === 0 && (
-                <p className="typo-caption text-muted-foreground/40 p-4">Vault is empty</p>
+                <p className="typo-caption text-foreground p-4">Vault is empty</p>
               )}
             </div>
           ) : (
-            <p className="typo-caption text-muted-foreground/40 p-4">Failed to load</p>
+            <p className="typo-caption text-foreground p-4">Failed to load</p>
           )}
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function BrowsePanel() {
         {selectedPath ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="typo-heading text-foreground/80 truncate">{selectedFileName}</p>
+              <p className="typo-heading typo-card-label truncate">{selectedFileName}</p>
               <button
                 onClick={openInObsidian}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring"
@@ -214,7 +214,7 @@ export default function BrowsePanel() {
                 <LoadingSpinner size="md" label="Loading note..." />
               </div>
             ) : noteContent ? (
-              <div className="prose prose-invert prose-sm max-w-none rounded-xl bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground/60 [&_li]:text-foreground/60 [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-muted-foreground/50">
+              <div className="prose prose-invert prose-sm max-w-none rounded-xl bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>
               </div>
             ) : null}

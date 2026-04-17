@@ -80,14 +80,14 @@ export default function TagEditorModal({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TagIcon className="w-4 h-4 text-rose-400" />
-            <h3 className="typo-heading text-foreground">{t.plugins.artist.edit_tags}</h3>
+            <h3 className="typo-section-title">{t.plugins.artist.edit_tags}</h3>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <p className="text-[11px] text-muted-foreground/70 truncate mb-3 font-mono">
+        <p className="text-md text-foreground truncate mb-3 font-mono">
           {assetLabel}
         </p>
 
@@ -98,7 +98,7 @@ export default function TagEditorModal({
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-rose-500/15 text-rose-400 text-[11px]"
+              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-rose-500/15 text-rose-400 text-md"
             >
               {tag}
               <button
@@ -118,11 +118,11 @@ export default function TagEditorModal({
             onKeyDown={handleInputKey}
             onBlur={() => { if (draft.trim()) commit(draft); }}
             placeholder={tags.length === 0 ? t.plugins.artist.tag_editor_placeholder : ''}
-            className="flex-1 min-w-[80px] bg-transparent outline-none text-xs text-foreground placeholder:text-muted-foreground/50"
+            className="flex-1 min-w-[80px] bg-transparent outline-none text-md text-foreground placeholder:text-foreground"
           />
         </div>
 
-        <p className="text-[10px] text-muted-foreground/50 mt-2">
+        <p className="text-md text-foreground mt-2">
           {t.plugins.artist.tag_editor_hint}
         </p>
 

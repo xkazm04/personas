@@ -22,7 +22,7 @@ function ConfidenceBar({ value }: { value: number }) {
       <div className="h-1 w-20 rounded-full bg-foreground/10 overflow-hidden">
         <div className={`h-full ${color}`} style={{ width: `${pct * 100}%` }} />
       </div>
-      <span className="typo-micro text-foreground/50">{Math.round(pct * 100)}%</span>
+      <span className="typo-micro text-foreground">{Math.round(pct * 100)}%</span>
     </div>
   );
 }
@@ -98,7 +98,7 @@ export default function HypothesesPanel() {
         onAction={() => setShowForm(true)}
         extra={
           <>
-            <span className="typo-caption text-foreground/40">{projectHypotheses.length}</span>
+            <span className="typo-caption text-foreground">{projectHypotheses.length}</span>
             {activeProject && personas.length > 0 && (
               <button
                 onClick={() => setShowGenerate(true)}
@@ -115,7 +115,7 @@ export default function HypothesesPanel() {
 
       {loading && projectHypotheses.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground/50">{t.common.loading}</p>
+          <p className="typo-body text-foreground">{t.common.loading}</p>
         </div>
       ) : projectHypotheses.length === 0 ? (
         <EmptyState
@@ -138,27 +138,27 @@ export default function HypothesesPanel() {
                 <div className="flex items-start gap-3">
                   <Lightbulb className="w-4 h-4 text-violet-400/80 mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="typo-body text-foreground font-medium leading-snug">{h.statement}</p>
+                    <p className="typo-card-label leading-snug">{h.statement}</p>
                     {h.rationale && (
-                      <p className="typo-caption text-foreground/50 mt-1.5 line-clamp-2">{h.rationale}</p>
+                      <p className="typo-body text-foreground mt-1.5 line-clamp-2">{h.rationale}</p>
                     )}
                     <div className="flex items-center gap-4 mt-3 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <span className="typo-micro text-foreground/40">{t.research_lab.confidence}</span>
+                        <span className="typo-caption text-foreground">{t.research_lab.confidence}</span>
                         <ConfidenceBar value={h.confidence} />
                       </div>
                       {supporting > 0 && (
-                        <span className="flex items-center gap-1 typo-micro text-emerald-400/80">
+                        <span className="flex items-center gap-1 typo-caption text-emerald-400/80">
                           <ThumbsUp className="w-3 h-3" /> {supporting} {t.research_lab.supporting.toLowerCase()}
                         </span>
                       )}
                       {counter > 0 && (
-                        <span className="flex items-center gap-1 typo-micro text-red-400/80">
+                        <span className="flex items-center gap-1 typo-caption text-red-400/80">
                           <ThumbsDown className="w-3 h-3" /> {counter} {t.research_lab.counter.toLowerCase()}
                         </span>
                       )}
                       {h.generatedBy && (
-                        <span className="typo-micro text-foreground/30">· {h.generatedBy}</span>
+                        <span className="typo-caption text-foreground">· {h.generatedBy}</span>
                       )}
                     </div>
                   </div>

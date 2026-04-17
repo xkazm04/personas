@@ -42,7 +42,7 @@ export function FlowStepsList({ steps }: { steps: FlowStep[] }) {
           ? <CheckCircle2 className="w-4 h-4 text-blue-400" />
           : step.status === 'error'
           ? <XCircle className="w-4 h-4 text-red-400" />
-          : <AlertCircle className="w-4 h-4 text-foreground/40" />;
+          : <AlertCircle className="w-4 h-4 text-foreground" />;
         return (
           <div key={step.id} className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
             step.status === 'active' ? 'bg-emerald-500/5'
@@ -52,8 +52,8 @@ export function FlowStepsList({ steps }: { steps: FlowStep[] }) {
             <div className={`w-8 h-8 rounded-interactive bg-${step.color}-500/15 border border-${step.color}-500/25 flex items-center justify-center flex-shrink-0`}>
               <Icon className={`w-4 h-4 text-${step.color}-400`} />
             </div>
-            <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)] shrink-0">{step.label}</span>
-            <span className="typo-body text-foreground/50 shrink-0">·</span>
+            <span className="typo-card-label shrink-0">{step.label}</span>
+            <span className="typo-body text-foreground shrink-0">·</span>
             <span className="typo-body text-foreground truncate flex-1 min-w-0">{step.description}</span>
             {statusIcon}
           </div>
@@ -67,7 +67,7 @@ export function TriggerList({ triggers }: { triggers: PersonaTrigger[] }) {
   if (triggers.length === 0) return null;
   return (
     <div className="space-y-2">
-      <h3 className="typo-caption text-foreground uppercase tracking-wider">
+      <h3 className="typo-caption text-primary uppercase tracking-wider">
         Active Triggers ({triggers.length})
       </h3>
       <div className="border border-primary/15 rounded-card overflow-hidden">

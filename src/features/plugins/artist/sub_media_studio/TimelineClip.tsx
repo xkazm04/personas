@@ -150,7 +150,7 @@ export default function TimelineClip({
       {/* Hover time badge — visible on hover, hidden during drag */}
       {!isDragging && (
         <div className="absolute -top-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40">
-          <span className="px-1.5 py-0.5 rounded text-[8px] font-mono bg-black/80 text-white/80 whitespace-nowrap tabular-nums">
+          <span className="px-1.5 py-0.5 rounded text-md font-mono bg-black/80 text-white/80 whitespace-nowrap tabular-nums">
             {tooltipText}
           </span>
         </div>

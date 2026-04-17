@@ -128,7 +128,7 @@ function ListView({
       <button
         type="button"
         onClick={() => drive.setSort(column)}
-        className={`flex items-center gap-1 py-2 typo-body font-semibold uppercase tracking-wider transition-colors ${
+        className={`flex items-center gap-1 py-2 typo-label transition-colors ${
           active
             ? "text-cyan-300"
             : "text-foreground/90 hover:text-foreground"
@@ -249,7 +249,7 @@ function ListView({
             >
               <div className="flex items-center gap-3 min-w-0">
                 <FileChip entry={entry} size={32} />
-                <span className="typo-body text-foreground truncate">
+                <span className="typo-body typo-card-label truncate">
                   {entry.name}
                 </span>
               </div>
@@ -331,7 +331,7 @@ function IconsView({
               >
                 <visual.Icon className={`w-8 h-8 ${visual.text}`} />
               </div>
-              <div className="w-full typo-body text-center text-foreground truncate">
+              <div className="w-full typo-body typo-card-label text-center truncate">
                 {entry.name}
               </div>
             </button>
@@ -463,7 +463,7 @@ function ColumnEntries({
             <FileChip entry={entry} size={22} />
             <span className="truncate flex-1">{entry.name}</span>
             {entry.kind === "folder" && (
-              <span className="text-foreground/90 text-sm">›</span>
+              <span className="text-foreground/90 typo-body">›</span>
             )}
           </button>
         );
@@ -555,7 +555,7 @@ function DriveEmptyState({
         <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-cyan-300 animate-pulse" />
       </div>
       <div className="space-y-1.5 max-w-sm">
-        <div className="typo-heading-sm text-foreground">
+        <div className="typo-heading-sm typo-section-title">
           {t.plugins.drive.empty_folder}
         </div>
         {isRoot && (

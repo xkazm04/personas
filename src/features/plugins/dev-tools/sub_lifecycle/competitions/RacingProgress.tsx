@@ -64,10 +64,10 @@ export function RacingProgress({ slots }: RacingProgressProps) {
   return (
     <div className="space-y-2">
       {/* Milestone legend */}
-      <div className="flex items-center gap-1 typo-caption text-foreground/60 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1 typo-caption text-foreground overflow-x-auto pb-1">
         {MILESTONES.map((m, i) => (
           <span key={m.id} className="flex items-center gap-1 shrink-0">
-            {i > 0 && <span className="text-foreground/20">→</span>}
+            {i > 0 && <span className="text-foreground">→</span>}
             <span className={`w-1.5 h-1.5 rounded-full bg-${m.color}-400`} />
             {m.label}
           </span>
@@ -89,7 +89,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
             : 'border-primary/10 bg-card/20'
           }`}>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)] w-16 shrink-0">
+              <span className="typo-card-label w-16 shrink-0">
                 {slot.strategy_label}
               </span>
               <div className="flex-1 h-2.5 bg-background/60 rounded-full overflow-hidden relative">
@@ -120,7 +120,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
               </span>
               <span className="text-foreground truncate flex-1">{detail}</span>
               {isRunning && task?.started_at && (
-                <span className="text-foreground/60 shrink-0">
+                <span className="text-foreground shrink-0">
                   {elapsedStr(new Date(task.started_at).getTime())}
                 </span>
               )}

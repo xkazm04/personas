@@ -57,11 +57,11 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-md font-semibold text-foreground/90">{project.name}</h3>
+            <h3 className="text-md font-semibold text-primary">{project.name}</h3>
             <span className={`rounded-full px-2 py-0.5 text-md font-medium border ${
               project.status === 'active'
                 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
-                : 'bg-muted/20 text-muted-foreground border-muted/30'
+                : 'bg-muted/20 text-foreground border-muted/30'
             }`}>
               {project.status}
             </span>
@@ -71,7 +71,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               </span>
             )}
           </div>
-          <p className="text-md text-muted-foreground/50 mt-0.5 font-mono truncate">{project.root_path}</p>
+          <p className="text-md text-foreground mt-0.5 font-mono truncate">{project.root_path}</p>
         </div>
         {hasContexts && (
           <button
@@ -84,7 +84,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
       </div>
 
       {/* Summary */}
-      <p className="text-md text-foreground/70 leading-relaxed mb-3">{project.summary}</p>
+      <p className="text-md text-foreground leading-relaxed mb-3">{project.summary}</p>
 
       {!hasContexts && (
         <div className="flex items-center gap-2 text-md text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg">
@@ -98,7 +98,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
           {/* Tech layers */}
           {project.tech_layers.length > 0 && (
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <Layers className="w-3.5 h-3.5 text-muted-foreground/50" />
+              <Layers className="w-3.5 h-3.5 text-foreground" />
               {project.tech_layers.map((layer) => (
                 <span key={layer} className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${techColor(layer)}`}>
                   {layer}
@@ -110,7 +110,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
           {/* Capabilities */}
           {project.capabilities.length > 0 && (
             <div className="mb-3">
-              <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+              <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 Capabilities
               </div>
@@ -118,9 +118,9 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 {project.capabilities.map((cap) => (
                   <span
                     key={cap.name}
-                    className="rounded-lg px-2.5 py-1 text-md font-medium bg-primary/10 border border-primary/15 text-foreground/80"
+                    className="rounded-lg px-2.5 py-1 text-md font-medium bg-primary/10 border border-primary/15 text-foreground"
                   >
-                    {cap.name} <span className="text-muted-foreground/50">· {cap.context_count}</span>
+                    {cap.name} <span className="text-foreground">· {cap.context_count}</span>
                   </span>
                 ))}
               </div>
@@ -130,20 +130,20 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-2 mb-3">
             <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground/80">{project.context_count}</div>
-              <div className="text-md text-muted-foreground/50">contexts</div>
+              <div className="text-md font-semibold text-foreground">{project.context_count}</div>
+              <div className="text-md text-foreground">contexts</div>
             </div>
             <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground/80">{project.keywords.length}</div>
-              <div className="text-md text-muted-foreground/50">keywords</div>
+              <div className="text-md font-semibold text-foreground">{project.keywords.length}</div>
+              <div className="text-md text-foreground">keywords</div>
             </div>
             <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground/80">{project.entry_points.length}</div>
-              <div className="text-md text-muted-foreground/50">entry points</div>
+              <div className="text-md font-semibold text-foreground">{project.entry_points.length}</div>
+              <div className="text-md text-foreground">entry points</div>
             </div>
             <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground/80">{project.db_tables.length}</div>
-              <div className="text-md text-muted-foreground/50">db tables</div>
+              <div className="text-md font-semibold text-foreground">{project.db_tables.length}</div>
+              <div className="text-md text-foreground">db tables</div>
             </div>
           </div>
 
@@ -152,13 +152,13 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
             <div className="space-y-3 pt-3 border-t border-primary/10">
               {project.keywords.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Tag className="w-3.5 h-3.5" />
                     Top Keywords
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.keywords.map((kw) => (
-                      <span key={kw} className="rounded px-1.5 py-0.5 text-md bg-background/60 text-foreground/70 border border-primary/10">
+                      <span key={kw} className="rounded px-1.5 py-0.5 text-md bg-background/60 text-foreground border border-primary/10">
                         {kw}
                       </span>
                     ))}
@@ -167,20 +167,20 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.entry_points.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Zap className="w-3.5 h-3.5" />
                     Entry Points
                   </div>
                   <div className="space-y-0.5">
                     {project.entry_points.slice(0, 8).map((ep) => (
-                      <div key={ep} className="text-md font-mono text-foreground/70 truncate">{ep}</div>
+                      <div key={ep} className="text-md font-mono text-foreground truncate">{ep}</div>
                     ))}
                   </div>
                 </div>
               )}
               {project.db_tables.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Database className="w-3.5 h-3.5" />
                     Database Tables
                   </div>
@@ -195,26 +195,26 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.api_surface.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Globe className="w-3.5 h-3.5" />
                     API Surface
                   </div>
                   <div className="space-y-0.5">
                     {project.api_surface.slice(0, 8).map((api) => (
-                      <div key={api} className="text-md font-mono text-foreground/70 truncate">{api}</div>
+                      <div key={api} className="text-md font-mono text-foreground truncate">{api}</div>
                     ))}
                   </div>
                 </div>
               )}
               {project.hot_directories.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-muted-foreground/50 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <FolderTree className="w-3.5 h-3.5" />
                     Hot Directories
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.hot_directories.map((d) => (
-                      <span key={d} className="rounded px-1.5 py-0.5 text-md font-mono bg-background/60 text-foreground/70 border border-primary/10">
+                      <span key={d} className="rounded px-1.5 py-0.5 text-md font-mono bg-background/60 text-foreground border border-primary/10">
                         {d}
                       </span>
                     ))}
@@ -223,8 +223,8 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.description && (
                 <div>
-                  <div className="text-md text-muted-foreground/50 mb-1.5">Purpose</div>
-                  <p className="text-md text-foreground/70 leading-relaxed">{project.description}</p>
+                  <div className="text-md text-foreground mb-1.5">Purpose</div>
+                  <p className="text-md text-foreground leading-relaxed">{project.description}</p>
                 </div>
               )}
             </div>
@@ -305,8 +305,8 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               <Network className="w-5 h-5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-md font-semibold text-foreground/90">Cross-Project Metadata Map</h2>
-              <p className="text-md text-muted-foreground/60">
+              <h2 className="text-md font-semibold text-primary">Cross-Project Metadata Map</h2>
+              <p className="text-md text-foreground">
                 Aggregated from existing context maps. Consumed by Codebases connector.
               </p>
             </div>
@@ -324,7 +324,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
             </Button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -334,7 +334,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">
+            <div className="flex items-center justify-center py-20 text-foreground">
               <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading...
             </div>
           ) : !map ? (
@@ -342,8 +342,8 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto">
                 <Network className="w-8 h-8 text-violet-400/60" />
               </div>
-              <p className="text-md text-foreground/80">No metadata map generated yet</p>
-              <p className="text-md text-muted-foreground/60 max-w-md mx-auto">
+              <p className="text-md text-foreground">No metadata map generated yet</p>
+              <p className="text-md text-foreground max-w-md mx-auto">
                 Click <strong>Generate</strong> to analyze all projects' context maps and build a rich cross-project metadata layer for the Codebases connector.
               </p>
             </div>
@@ -361,7 +361,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               )}
 
               {/* Generated timestamp */}
-              <div className="flex items-center gap-2 text-md text-muted-foreground/50">
+              <div className="flex items-center gap-2 text-md text-foreground">
                 <Clock className="w-3.5 h-3.5" />
                 Generated {new Date(map.generated_at).toLocaleString()}
               </div>
@@ -369,7 +369,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               {/* Tech distribution */}
               {map.cross_project.tech_distribution.length > 0 && (
                 <div className="rounded-xl border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-foreground/80 mb-2 flex items-center gap-2">
+                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-400" />
                     Tech Distribution
                   </h3>
@@ -386,11 +386,11 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               {/* Shared keywords */}
               {map.cross_project.shared_keywords.length > 0 && (
                 <div className="rounded-xl border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-foreground/80 mb-2 flex items-center gap-2">
+                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-violet-400" />
                     Shared Keywords ({map.cross_project.shared_keywords.length})
                   </h3>
-                  <p className="text-md text-muted-foreground/50 mb-2">
+                  <p className="text-md text-foreground mb-2">
                     Concepts present in multiple projects — signals where business tasks overlap.
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -410,7 +410,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               {/* Similarity matrix */}
               {map.cross_project.similarity_matrix.length > 0 && (
                 <div className="rounded-xl border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-foreground/80 mb-2 flex items-center gap-2">
+                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Link2 className="w-4 h-4 text-pink-400" />
                     Project Similarity
                   </h3>
@@ -420,9 +420,9 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
                       .slice(0, 10)
                       .map((sim, i) => (
                         <div key={i} className="flex items-center gap-3 text-md">
-                          <span className="text-foreground/70 flex-1 min-w-0 truncate">{sim.source}</span>
-                          <span className="text-muted-foreground/40">↔</span>
-                          <span className="text-foreground/70 flex-1 min-w-0 truncate">{sim.target}</span>
+                          <span className="text-foreground flex-1 min-w-0 truncate">{sim.source}</span>
+                          <span className="text-foreground">↔</span>
+                          <span className="text-foreground flex-1 min-w-0 truncate">{sim.target}</span>
                           <div className="w-24 h-1.5 bg-primary/10 rounded-full overflow-hidden flex-shrink-0">
                             <div
                               className="h-full bg-gradient-to-r from-pink-400 to-violet-400 rounded-full"
@@ -440,7 +440,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Projects */}
               <div className="space-y-3">
-                <h3 className="text-md font-semibold text-foreground/80 flex items-center gap-2">
+                <h3 className="text-md font-semibold text-primary flex items-center gap-2">
                   <FolderTree className="w-4 h-4 text-amber-400" />
                   Projects ({map.projects.length})
                 </h3>
@@ -470,7 +470,7 @@ function StatCard({ label, value, icon: Icon, color }: {
     <div className={`rounded-xl border border-${color}-500/20 bg-${color}-500/5 p-3`}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className={`w-3.5 h-3.5 text-${color}-400`} />
-        <span className="text-md text-muted-foreground/60">{label}</span>
+        <span className="text-md text-foreground">{label}</span>
       </div>
       <div className={`text-md font-bold text-${color}-400`}>{value}</div>
     </div>

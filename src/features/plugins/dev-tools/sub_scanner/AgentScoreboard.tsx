@@ -102,7 +102,7 @@ function formatAvg(value: number | null, fallback: string): string {
 
 /** Color-code an acceptance rate so the eye jumps to winners/losers. */
 function acceptRateColor(rate: number | null): string {
-  if (rate === null) return 'text-muted-foreground/40';
+  if (rate === null) return 'text-foreground';
   if (rate >= 0.66) return 'text-emerald-400';
   if (rate >= 0.33) return 'text-amber-400';
   return 'text-red-400';
@@ -157,30 +157,30 @@ export function AgentScoreboard() {
       >
         <BarChart3 className="w-4 h-4 text-violet-400 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-foreground/80">{dt.scoreboard_title}</h3>
-          <p className="text-[10px] text-muted-foreground/50 truncate">{dt.scoreboard_subtitle}</p>
+          <h3 className="typo-section-title">{dt.scoreboard_title}</h3>
+          <p className="text-md text-foreground truncate">{dt.scoreboard_subtitle}</p>
         </div>
         {/* Crown preview — tiny hint of the leader even when collapsed */}
         {!expanded && topAgent && topAgent.acceptRate !== null && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/60 mr-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-foreground mr-2">
             <Trophy className="w-3 h-3 text-amber-400" />
             <span>{topAgent.agent.emoji}</span>
-            <span className="font-medium text-foreground/70">{topAgent.agent.label}</span>
+            <span className="font-medium text-foreground">{topAgent.agent.label}</span>
             <span className={`font-mono ${acceptRateColor(topAgent.acceptRate)}`}>
               {formatPct(topAgent.acceptRate, fallback)}
             </span>
           </span>
         )}
         {expanded
-          ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
-          : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+          ? <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+          : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
       </button>
 
       {/* Body */}
       {expanded && (
         <div className="p-4 border-t border-primary/10 bg-background/50">
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground/50 text-center py-8">{dt.scoreboard_empty}</p>
+            <p className="text-md text-foreground text-center py-8">{dt.scoreboard_empty}</p>
           ) : (
             <ScoreboardTable
               rows={sortedRows}
@@ -240,12 +240,12 @@ function ScoreboardTable({
       type="button"
       onClick={() => onSort(key)}
       className={`text-left text-[10px] uppercase tracking-wider font-medium transition-colors flex items-center gap-1 ${
-        sort === key ? 'text-foreground/80' : 'text-muted-foreground/60 hover:text-foreground/70'
+        sort === key ? 'text-primary' : 'text-primary hover:text-foreground'
       } ${extra}`}
       title={tip}
     >
       {label}
-      <ArrowUpDown className={`w-3 h-3 ${sort === key ? 'text-foreground/60' : 'text-muted-foreground/30'}`} />
+      <ArrowUpDown className={`w-3 h-3 ${sort === key ? 'text-foreground' : 'text-foreground'}`} />
     </button>
   );
 
@@ -253,7 +253,7 @@ function ScoreboardTable({
     <div className="border border-primary/10 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1.6fr_0.5fr_0.7fr_0.7fr_0.7fr_0.7fr] gap-3 px-3 py-2 bg-primary/5 border-b border-primary/10 items-center">
-        <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground/60">{labels.agent}</span>
+        <span className="text-[10px] uppercase tracking-wider font-medium text-primary">{labels.agent}</span>
         {col('ideas', labels.ideas, tips.ideas, 'justify-end')}
         {col('accept', labels.accept, tips.accept, 'justify-end')}
         {col('impl', labels.impl, tips.impl, 'justify-end')}
@@ -272,52 +272,52 @@ function ScoreboardTable({
           >
             {/* Agent cell */}
             <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-lg ${tw.bg} border ${tw.border} flex items-center justify-center text-sm flex-shrink-0`}>
+              <div className={`w-7 h-7 rounded-lg ${tw.bg} border ${tw.border} flex items-center justify-center text-md flex-shrink-0`}>
                 {row.agent.emoji}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm text-foreground/80 font-medium truncate">{row.agent.label}</span>
+                  <span className="text-md text-foreground font-medium truncate">{row.agent.label}</span>
                   {isLeader && (
                     <span title={topPerformerLabel} className="flex-shrink-0">
                       <Trophy className="w-3 h-3 text-amber-400" />
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-muted-foreground/50 truncate block">
+                <span className="text-[10px] text-foreground truncate block">
                   {AGENT_CATEGORIES.find((c) => c.key === row.agent.categoryGroup)?.label ?? row.agent.categoryGroup}
                 </span>
               </div>
             </div>
 
             {/* Ideas count */}
-            <span className="text-sm text-foreground/70 font-mono text-right">{row.total}</span>
+            <span className="text-md text-foreground font-mono text-right">{row.total}</span>
 
             {/* Accept rate */}
             <div className="text-right">
-              <span className={`text-sm font-mono ${acceptRateColor(row.acceptRate)}`}>
+              <span className={`text-md font-mono ${acceptRateColor(row.acceptRate)}`}>
                 {formatPct(row.acceptRate, fallback)}
               </span>
               {row.pending > 0 && row.acceptRate === null && (
-                <div className="text-[9px] text-muted-foreground/40">{renderPending(row.pending)}</div>
+                <div className="text-[9px] text-foreground">{renderPending(row.pending)}</div>
               )}
             </div>
 
             {/* Impl rate */}
             <div className="text-right">
-              <span className={`text-sm font-mono ${acceptRateColor(row.implRate)}`}>
+              <span className={`text-md font-mono ${acceptRateColor(row.implRate)}`}>
                 {formatPct(row.implRate, fallback)}
               </span>
               {row.tasksCreated > 0 && (
-                <div className="text-[9px] text-muted-foreground/40">{row.tasksCompleted}/{row.tasksCreated}</div>
+                <div className="text-[9px] text-foreground">{row.tasksCompleted}/{row.tasksCreated}</div>
               )}
             </div>
 
             {/* Avg impact */}
-            <span className="text-sm text-foreground/60 font-mono text-right">{formatAvg(row.avgImpact, fallback)}</span>
+            <span className="text-md text-foreground font-mono text-right">{formatAvg(row.avgImpact, fallback)}</span>
 
             {/* Avg effort */}
-            <span className="text-sm text-foreground/60 font-mono text-right">{formatAvg(row.avgEffort, fallback)}</span>
+            <span className="text-md text-foreground font-mono text-right">{formatAvg(row.avgEffort, fallback)}</span>
           </div>
         );
       })}

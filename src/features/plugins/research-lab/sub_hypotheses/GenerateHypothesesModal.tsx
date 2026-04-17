@@ -145,21 +145,21 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
         saving={busy}
       >
         <div className="flex items-center justify-between">
-          <p className="typo-caption text-foreground/60">
+          <p className="typo-caption text-foreground">
             Review before saving. Uncheck any you don't want; edit text in place.
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={toggleAll}
-              className="typo-caption text-primary/70 hover:text-primary"
+              className="typo-caption text-primary hover:text-primary"
             >
               {candidates.every((c) => c.selected) ? 'Deselect all' : 'Select all'}
             </button>
             <button
               type="button"
               onClick={() => setCandidates(null)}
-              className="flex items-center gap-1 typo-caption text-foreground/60 hover:text-foreground"
+              className="flex items-center gap-1 typo-caption text-foreground hover:text-foreground"
             >
               <RotateCcw className="w-3 h-3" /> Re-run
             </button>
@@ -203,7 +203,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
                 onClick={() =>
                   setCandidates((prev) => (prev ? prev.filter((_, j) => j !== i) : prev))
                 }
-                className="p-1 rounded text-foreground/40 hover:text-red-400 flex-shrink-0"
+                className="p-1 rounded text-foreground hover:text-red-400 flex-shrink-0"
                 aria-label="Remove"
               >
                 <XIcon className="w-3.5 h-3.5" />
@@ -228,8 +228,8 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
       <div className="flex items-start gap-3 p-3 rounded-card bg-primary/5 border border-primary/15">
         <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
         <div>
-          <p className="typo-caption text-foreground font-medium">{project.name}</p>
-          <p className="typo-micro text-foreground/50 mt-0.5">
+          <p className="typo-card-label">{project.name}</p>
+          <p className="typo-caption text-foreground mt-0.5">
             {projectSources.length} {t.research_lab.sources_count}
             {project.thesis ? ` · ${project.thesis.slice(0, 80)}${project.thesis.length > 80 ? '…' : ''}` : ''}
           </p>
@@ -252,7 +252,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
       />
 
       {busy && (
-        <div className="flex items-center gap-2 typo-caption text-foreground/60">
+        <div className="flex items-center gap-2 typo-caption text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <Lightbulb className="w-3.5 h-3.5" />
           <span>{status || 'running'}…</span>

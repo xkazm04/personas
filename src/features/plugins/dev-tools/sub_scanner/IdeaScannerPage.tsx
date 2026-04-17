@@ -161,13 +161,13 @@ function AgentCard({
       <div className={`w-9 h-9 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
         {agent.emoji}
       </div>
-      <span className="text-md font-medium text-foreground/80 mb-0.5">{agent.label}</span>
-      <span className="text-md text-muted-foreground/50 line-clamp-2 leading-relaxed">{agent.description}</span>
+      <span className="text-md font-medium text-foreground mb-0.5">{agent.label}</span>
+      <span className="text-md text-foreground line-clamp-2 leading-relaxed">{agent.description}</span>
       <div className="absolute top-3 right-3">
         {selected ? (
           <CheckSquare className="w-4 h-4 text-amber-400" />
         ) : (
-          <Square className="w-4 h-4 text-muted-foreground/25" />
+          <Square className="w-4 h-4 text-foreground" />
         )}
       </div>
     </motion.button>
@@ -200,10 +200,10 @@ function ScanProgress({
           {currentAgent?.emoji ?? '...'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-md font-medium text-foreground/80">
+          <p className="text-md font-medium text-foreground">
             Scanning with {currentAgent?.label ?? '...'}
           </p>
-          <p className="text-md text-muted-foreground/50">
+          <p className="text-md text-foreground">
             Analyzing codebase patterns and generating ideas
           </p>
         </div>
@@ -244,8 +244,8 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
           {agent?.emoji ?? '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-md font-medium text-foreground/80 mb-0.5">{idea.title}</h4>
-          <p className="text-md text-muted-foreground/60 line-clamp-2">{idea.description}</p>
+          <h4 className="text-md font-medium text-foreground mb-0.5">{idea.title}</h4>
+          <p className="text-md text-foreground line-clamp-2">{idea.description}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
@@ -640,8 +640,8 @@ export default function IdeaScannerPage() {
                   <BrainCircuit className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-md font-medium text-foreground/80">Automated Context Scan</p>
-                  <p className="text-md text-muted-foreground/50">{autoScanStatus}</p>
+                  <p className="text-md font-medium text-foreground">Automated Context Scan</p>
+                  <p className="text-md text-foreground">{autoScanStatus}</p>
                 </div>
                 <span className="text-md text-violet-400 font-medium">{Math.round(scanProgress)}%</span>
               </div>
@@ -663,7 +663,7 @@ export default function IdeaScannerPage() {
               if (agents.length === 0) return null;
               return (
                 <div key={cat.key}>
-                  <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2.5 flex items-center gap-2">
+                  <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-2.5 flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${catTw.dot}`} />
                     {cat.label}
                   </h3>
@@ -685,7 +685,7 @@ export default function IdeaScannerPage() {
           {/* Results section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
                 Results ({ideas.length} idea{ideas.length !== 1 ? 's' : ''})
               </h3>
               {/* Category filter tabs */}
@@ -717,8 +717,8 @@ export default function IdeaScannerPage() {
 
             {filteredIdeas.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-primary/10 rounded-xl">
-                <Lightbulb className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-                <p className="text-md text-muted-foreground/50">
+                <Lightbulb className="w-8 h-8 text-foreground mx-auto mb-2" />
+                <p className="text-md text-foreground">
                   {ideas.length === 0
                     ? 'No scan results yet. Select agents above and run a scan.'
                     : 'No ideas match this filter.'}
@@ -741,15 +741,15 @@ export default function IdeaScannerPage() {
 
           {/* Scan history */}
           <div>
-            <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">
+            <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-3">
               Scan History ({history.length})
             </h3>
             {history.length === 0 ? (
-              <p className="text-md text-muted-foreground/40">No previous scans.</p>
+              <p className="text-md text-foreground">No previous scans.</p>
             ) : (
               <div className="border border-primary/10 rounded-xl overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-muted-foreground/60 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider">
                   <span>Agents</span>
                   <span>Status</span>
                   <span>Ideas</span>
@@ -764,23 +764,23 @@ export default function IdeaScannerPage() {
                   const totalTokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
                   return (
                     <div key={entry.id} className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center">
-                      <span className="text-md text-foreground/70 truncate" title={agentKeys.join(', ')}>
-                        {agentEmojis} <span className="text-muted-foreground/50">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
+                      <span className="text-md text-foreground truncate" title={agentKeys.join(', ')}>
+                        {agentEmojis} <span className="text-foreground">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
                       </span>
                       <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border w-fit ${statusStyle}`}>
                         {entry.status}
                       </span>
-                      <span className="text-md text-foreground/70 flex items-center gap-1">
-                        <BarChart3 className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <span className="text-md text-foreground flex items-center gap-1">
+                        <BarChart3 className="w-3.5 h-3.5 text-foreground" />
                         {entry.ideaCount}
                       </span>
-                      <span className="text-md text-muted-foreground/50 font-mono">
+                      <span className="text-md text-foreground font-mono">
                         {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}
                       </span>
-                      <span className="text-md text-muted-foreground/50">
+                      <span className="text-md text-foreground">
                         {formatDuration(entry.durationMs)}
                       </span>
-                      <span className="text-md text-muted-foreground/40 flex items-center gap-1">
+                      <span className="text-md text-foreground flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {relativeTime(entry.timestamp)}
                       </span>

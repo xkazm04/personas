@@ -28,7 +28,7 @@ function BaselineHealth({ json }: { json: string }) {
     };
     return (
       <div className="flex items-center gap-3 flex-wrap typo-caption text-foreground">
-        <span className="uppercase tracking-wider text-foreground/60">Baseline:</span>
+        <span className="uppercase tracking-wider text-primary">Baseline:</span>
         {bl.tsc_errors != null && (
           <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>TS errors: {bl.tsc_errors}</span>
         )}
@@ -137,7 +137,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
           <Swords className="w-4 h-4 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)] truncate">
+          <p className="typo-card-label truncate">
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
@@ -162,7 +162,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
             <>
               {detail.competition.task_description && (
                 <div className="rounded-interactive bg-background/40 border border-primary/10 p-3">
-                  <p className="typo-caption text-foreground uppercase tracking-wider mb-1">Task</p>
+                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">Task</p>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.task_description}</p>
                 </div>
               )}
@@ -203,7 +203,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                 <div className="rounded-interactive border border-emerald-500/20 bg-emerald-500/5 p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="typo-caption text-foreground uppercase tracking-wider">Winning insight</span>
+                    <span className="typo-caption text-primary uppercase tracking-wider">Winning insight</span>
                   </div>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.winner_insight}</p>
                 </div>

@@ -49,7 +49,7 @@ export function CompetitionList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-caption text-foreground uppercase tracking-wider">
+        <h3 className="typo-caption text-primary uppercase tracking-wider">
           Competitions {competitions.length > 0 && <span>({competitions.length})</span>}
         </h3>
         <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export function CompetitionList() {
 
       {competitions.length === 0 && !loading && (
         <div className="rounded-card border border-primary/10 bg-card/20 p-6 text-center">
-          <Swords className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+          <Swords className="w-8 h-8 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">
             No competitions yet. Start one to have 2-4 Dev Clone variants race on the same task in parallel worktrees.
           </p>

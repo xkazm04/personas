@@ -113,12 +113,12 @@ export default function ExperimentsPanel() {
         title={t.research_lab.experiments}
         actionLabel={t.research_lab.create_experiment}
         onAction={() => setShowForm(true)}
-        extra={<span className="typo-caption text-foreground/40">{projectExperiments.length}</span>}
+        extra={<span className="typo-caption text-foreground">{projectExperiments.length}</span>}
       />
 
       {loading && projectExperiments.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground/50">{t.common.loading}</p>
+          <p className="typo-body text-foreground">{t.common.loading}</p>
         </div>
       ) : projectExperiments.length === 0 ? (
         <EmptyState
@@ -143,7 +143,7 @@ export default function ExperimentsPanel() {
                 <div className="flex items-start gap-3">
                   <FlaskConical className="w-4 h-4 text-emerald-400/80 mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <h3 className="typo-body text-foreground font-semibold">{exp.name}</h3>
+                    <h3 className="typo-card-label">{exp.name}</h3>
 
                     {linked && (
                       <p className="flex items-center gap-1.5 typo-caption text-violet-300/80 mt-1.5">
@@ -161,24 +161,24 @@ export default function ExperimentsPanel() {
 
                     {exp.methodology && (
                       <div className="mt-2">
-                        <p className="typo-micro text-foreground/40 uppercase tracking-wide">{t.research_lab.methodology}</p>
-                        <p className="typo-caption text-foreground/60 mt-0.5 line-clamp-2">{exp.methodology}</p>
+                        <p className="typo-label text-foreground">{t.research_lab.methodology}</p>
+                        <p className="typo-body text-foreground mt-0.5 line-clamp-2">{exp.methodology}</p>
                       </div>
                     )}
 
                     {exp.successCriteria && (
                       <div className="mt-2 flex items-start gap-1.5">
-                        <ClipboardList className="w-3 h-3 text-foreground/40 mt-0.5 flex-shrink-0" />
-                        <p className="typo-caption text-foreground/60 line-clamp-2">{exp.successCriteria}</p>
+                        <ClipboardList className="w-3 h-3 text-foreground mt-0.5 flex-shrink-0" />
+                        <p className="typo-body text-foreground line-clamp-2">{exp.successCriteria}</p>
                       </div>
                     )}
 
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">
                         {exp.status.replace(/_/g, ' ')}
                       </span>
                       {!linked && (
-                        <span className="typo-micro text-foreground/30">{t.research_lab.no_linked_hypothesis}</span>
+                        <span className="typo-caption text-foreground">{t.research_lab.no_linked_hypothesis}</span>
                       )}
                       {persona && (
                         <button
@@ -194,7 +194,7 @@ export default function ExperimentsPanel() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setRunsDrawer(exp); }}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground transition-colors"
                       >
                         <History className="w-3 h-3" />
                         {t.research_lab.view_runs}

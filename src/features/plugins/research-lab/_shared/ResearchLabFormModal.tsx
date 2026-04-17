@@ -34,11 +34,11 @@ export function ResearchLabFormModal({
         className="flex flex-col max-h-[85vh] bg-background rounded-2xl overflow-hidden"
       >
         <header className="flex items-center justify-between px-6 py-4 border-b border-border/20">
-          <h2 id={titleId} className="typo-heading text-foreground">{title}</h2>
+          <h2 id={titleId} className="typo-section-title">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded hover:bg-secondary/50 text-foreground/50"
+            className="p-1 rounded hover:bg-secondary/50 text-foreground"
             aria-label={t.common.cancel}
           >
             <X className="w-4 h-4" />
@@ -53,7 +53,7 @@ export function ResearchLabFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg typo-body text-foreground/60 hover:bg-secondary/50 transition-colors"
+            className="px-4 py-2 rounded-lg typo-body text-foreground hover:bg-secondary/50 transition-colors"
           >
             {t.common.cancel}
           </button>

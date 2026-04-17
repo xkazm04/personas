@@ -108,7 +108,7 @@ const PRESETS = {
   text: {
     Icon: FileText,
     gradient: "from-slate-400/25 via-slate-400/10 to-slate-400/5",
-    text: "text-slate-200",
+    text: "text-foreground",
     ring: "ring-slate-400/40",
     label: "Document",
   },

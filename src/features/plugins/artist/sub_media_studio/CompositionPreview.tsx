@@ -398,18 +398,18 @@ export default function CompositionPreview({
               playsInline
             />
           ) : hasAnyMedia ? (
-            <div className="flex flex-col items-center gap-2 text-foreground/30">
+            <div className="flex flex-col items-center gap-2 text-foreground">
               <MonitorPlay className="w-10 h-10" />
-              <span className="typo-body text-sm">
+              <span className="typo-body">
                 {activeTexts.length + activeImages.length > 0
                   ? 'Overlay preview'
                   : 'No video at this time'}
               </span>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 text-foreground/20">
+            <div className="flex flex-col items-center gap-2 text-foreground">
               <MonitorPlay className="w-10 h-10" />
-              <span className="typo-body text-sm">{t.media_studio.empty_hint}</span>
+              <span className="typo-body">{t.media_studio.empty_hint}</span>
             </div>
           )}
 
@@ -478,12 +478,12 @@ export default function CompositionPreview({
 
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
             {activeVideo && safeSpeed(activeVideo.speed) !== 1 && (
-              <span className="px-1.5 py-0.5 rounded bg-rose-500/80 text-[9px] font-mono text-white tabular-nums">
+              <span className="px-1.5 py-0.5 rounded bg-rose-500/80 typo-code text-white tabular-nums">
                 {safeSpeed(activeVideo.speed).toFixed(2)}×
               </span>
             )}
             <div className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">
-              <span className="text-[10px] font-mono text-white/80 tabular-nums">
+              <span className="typo-code text-white/80 tabular-nums">
                 {formatTimecode(currentTime)}
               </span>
             </div>

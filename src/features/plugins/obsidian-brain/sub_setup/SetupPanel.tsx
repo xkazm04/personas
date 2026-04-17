@@ -149,7 +149,7 @@ export default function SetupPanel() {
             </button>
             <button
               onClick={browseFolder}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/40 text-foreground/70 hover:bg-secondary/60 transition-colors focus-ring"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             >
               <FolderOpen className="w-4 h-4" />
               Browse
@@ -159,7 +159,7 @@ export default function SetupPanel() {
           {/* Detected vaults */}
           {visibleDetectedVaults.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-caption text-muted-foreground/50">Detected vaults:</p>
+              <p className="typo-label text-foreground/90">Detected vaults:</p>
               {visibleDetectedVaults.map((v) => (
                 <button
                   key={v.path}
@@ -170,8 +170,8 @@ export default function SetupPanel() {
                       : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
                   }`}
                 >
-                  <p className="typo-heading text-foreground/80">{v.name}</p>
-                  <p className="typo-caption text-muted-foreground/40 truncate">{v.path}</p>
+                  <p className="typo-heading typo-card-label">{v.name}</p>
+                  <p className="typo-caption text-foreground truncate">{v.path}</p>
                 </button>
               ))}
             </div>
@@ -184,7 +184,7 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
-              className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground/80 typo-body placeholder:text-muted-foreground/30 focus-ring transition-all"
+              className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
             />
             <button
               onClick={testConnection}
@@ -212,7 +212,7 @@ export default function SetupPanel() {
                 {connectionResult.valid ? (
                   <>
                     <p className="typo-heading text-emerald-400">Connected to &ldquo;{connectionResult.vaultName}&rdquo;</p>
-                    <p className="typo-caption text-muted-foreground/50">{connectionResult.noteCount} notes found</p>
+                    <p className="typo-caption text-foreground">{connectionResult.noteCount} notes found</p>
                   </>
                 ) : (
                   <p className="typo-heading text-red-400">{connectionResult.error}</p>
@@ -234,8 +234,8 @@ export default function SetupPanel() {
           ].map((opt) => (
             <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-xl hover:bg-secondary/20 transition-colors">
               <div className="min-w-0">
-                <p className="typo-heading text-foreground/80">{opt.label}</p>
-                <p className="typo-caption text-muted-foreground/50">{opt.desc}</p>
+                <p className="typo-heading typo-card-label">{opt.label}</p>
+                <p className="typo-caption text-foreground">{opt.desc}</p>
               </div>
               <AccessibleToggle checked={opt.checked} onChange={opt.onChange} label={opt.label} size="sm" />
             </div>
@@ -253,17 +253,17 @@ export default function SetupPanel() {
               { label: 'Connectors Folder', value: connectorsFolder, onChange: setConnectorsFolder },
             ].map((field) => (
               <div key={field.label} className="space-y-1.5">
-                <label className="typo-caption text-muted-foreground/50">{field.label}</label>
+                <label className="typo-label text-foreground/90">{field.label}</label>
                 <input
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background/50 border border-primary/12 text-foreground/80 typo-body focus-ring transition-all"
+                  className="w-full px-3 py-1.5 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body focus-ring transition-all"
                 />
               </div>
             ))}
           </div>
-          <p className="typo-caption text-muted-foreground/30">
+          <p className="typo-caption text-foreground">
             Preview: <code className="text-violet-400/60">{personasFolder}/AgentName/{memoriesFolder}/fact/memory-title.md</code>
           </p>
         </div>

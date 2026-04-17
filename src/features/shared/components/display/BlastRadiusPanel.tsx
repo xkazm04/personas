@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History } from 'lucide-react';
+import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History, type LucideIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BlastRadiusItem } from '@/api/agents/personas';
 
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   automation: Zap,
   trigger: Clock,
   subscription: Radio,

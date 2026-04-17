@@ -26,8 +26,8 @@ export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title:
           <div className="w-16 h-16 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-violet-400/50" />
           </div>
-          <p className="typo-body text-foreground mb-1">{t.emptyState.noTwinSelected}</p>
-          <p className="typo-caption text-muted-foreground mb-4">{t.emptyState.createFirstTwin}</p>
+          <p className="typo-body text-primary mb-1">{t.emptyState.noTwinSelected}</p>
+          <p className="typo-caption text-foreground mb-4">{t.emptyState.createFirstTwin}</p>
           <Button onClick={() => setTwinTab('profiles')} size="sm" variant="accent" accentColor="violet">
             <Plus className="w-4 h-4 mr-1.5" />
             {t.selector.createTwin}

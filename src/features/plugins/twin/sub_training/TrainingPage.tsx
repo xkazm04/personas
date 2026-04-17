@@ -8,6 +8,7 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import * as twinApi from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
 
 /**
  * Training Room — teach the twin through conversation.
@@ -355,9 +356,26 @@ ${transcript}`;
           {/* ── Topic Selection ─────────────────────────────────────── */}
           {phase === 'topic' && (
             <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 py-8">
+              <div className="w-full mb-6">
+                <CoachMark id="training" title={t.coach.trainingTitle} body={t.coach.trainingBody} />
+              </div>
+
               <GraduationCap className="w-12 h-12 text-violet-400/40 mb-4" />
-              <h2 className="typo-heading text-foreground mb-1">{t.training.whatToTrain}</h2>
-              <p className="typo-caption text-muted-foreground mb-2 text-center">{t.training.topicHint}</p>
+              <h2 className="typo-section-title mb-1">{t.training.whatToTrain}</h2>
+              <p className="typo-caption text-foreground mb-2 text-center">{t.training.topicHint}</p>
+
+              {/* Brain-weight micro-stat bar (Direction 5) */}
+              {groundingFacts.length > 0 && (
+                <div className="flex items-center gap-2 mb-4 text-center">
+                  <span className="typo-caption text-foreground">{t.nudges.trainingStat}:</span>
+                  <span className={`typo-caption font-medium ${
+                    groundingFacts.length >= 20 ? 'text-emerald-400' : groundingFacts.length >= 5 ? 'text-amber-400' : 'text-violet-400'
+                  }`}>
+                    {groundingFacts.length >= 20 ? t.nudges.trainingStatStrong : groundingFacts.length >= 5 ? t.nudges.trainingStatMedium : t.nudges.trainingStatLight}
+                  </span>
+                  <span className="typo-caption text-foreground">· {groundingFacts.length} {t.brain.documents}</span>
+                </div>
+              )}
 
               {groundingFacts.length > 0 && (
                 <p className="typo-caption text-violet-400/80 mb-4 text-center">
@@ -415,7 +433,7 @@ ${transcript}`;
                   <span className="typo-caption text-foreground">
                     {t.training.questionProgress.replace('{current}', String(currentIdx + 1)).replace('{total}', String(questions.length))}
                   </span>
-                  <span className="typo-caption text-muted-foreground">{t.training.savedCount.replace('{count}', String(savedCount))}</span>
+                  <span className="typo-caption text-foreground">{t.training.savedCount.replace('{count}', String(savedCount))}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
                   <div
@@ -445,7 +463,7 @@ ${transcript}`;
                               {t.training.followupBadge}
                             </span>
                           )}
-                          <p className={`typo-body ${idx <= currentIdx ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+                          <p className={`typo-body ${idx <= currentIdx ? 'text-foreground' : 'text-foreground'}`}>
                             {qa.question}
                           </p>
                         </div>
@@ -459,7 +477,7 @@ ${transcript}`;
                             {qa.saved && (
                               <div className="flex items-center gap-1 mt-2">
                                 <Save className="w-3 h-3 text-emerald-400" />
-                                <span className="text-[10px] text-emerald-400">{t.training.savedToMemory}</span>
+                                <span className="text-md text-emerald-400">{t.training.savedToMemory}</span>
                               </div>
                             )}
                           </div>
@@ -490,7 +508,7 @@ ${transcript}`;
                     rows={1}
                     autoFocus
                     aria-label={t.training.answerPlaceholder}
-                    className="flex-1 resize-none rounded-card border border-primary/10 bg-background px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
+                    className="flex-1 resize-none rounded-card border border-primary/10 bg-background px-4 py-3 typo-body text-foreground placeholder:text-foreground focus-ring disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                     style={{ height: 'auto', overflow: 'auto' }}
                     onInput={(e) => {
                       const el = e.currentTarget;
@@ -502,7 +520,7 @@ ${transcript}`;
                     <button
                       onClick={() => void handleSkipFollowup()}
                       disabled={saving || followupLoading}
-                      className="flex-shrink-0 h-10 px-3 rounded-card border border-primary/10 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30"
+                      className="flex-shrink-0 h-10 px-3 rounded-card border border-primary/10 text-md text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30"
                     >
                       {t.training.skipFollowup}
                     </button>
@@ -520,7 +538,7 @@ ${transcript}`;
                     )}
                   </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground/30 mt-1.5 text-center select-none max-w-2xl mx-auto">
+                <p className="text-md text-foreground mt-1.5 text-center select-none max-w-2xl mx-auto">
                   {t.training.enterToSubmit}
                 </p>
               </div>
@@ -533,8 +551,8 @@ ${transcript}`;
               <div className="w-16 h-16 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
                 <BookOpen className="w-8 h-8 text-emerald-400" />
               </div>
-              <h2 className="typo-heading text-foreground mb-1">{t.training.sessionComplete}</h2>
-              <p className="typo-caption text-muted-foreground mb-4 text-center">
+              <h2 className="typo-section-title mb-1">{t.training.sessionComplete}</h2>
+              <p className="typo-caption text-foreground mb-4 text-center">
                 {t.training.sessionCompleteDetail
                   .replace('{saved}', String(savedCount))
                   .replace('{total}', String(questions.length))}
@@ -544,7 +562,7 @@ ${transcript}`;
                 <div className="w-full p-4 rounded-card border border-violet-500/20 bg-violet-500/5 mb-4">
                   <p className="typo-caption text-violet-400 font-medium mb-2">{t.training.sessionSummaryHeading}</p>
                   <p className="typo-body text-foreground whitespace-pre-wrap leading-relaxed">{sessionSummary}</p>
-                  <p className="typo-caption text-muted-foreground mt-3 italic">{t.training.summarySaved}</p>
+                  <p className="typo-caption text-foreground mt-3 italic">{t.training.summarySaved}</p>
                 </div>
               )}
 

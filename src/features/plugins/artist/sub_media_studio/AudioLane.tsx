@@ -66,11 +66,11 @@ function AudioLaneImpl({
       {!hideHeader && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border-b border-blue-500/20">
           <Music className="w-3.5 h-3.5 text-blue-400" />
-          <span className="typo-heading text-blue-400 text-xs uppercase tracking-wide">
+          <span className="typo-label text-blue-400">
             {t.media_studio.layer_audio}
           </span>
           {items.length > 0 && (
-            <span className="ml-auto text-[9px] text-blue-400/60 bg-blue-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+            <span className="ml-auto text-md text-blue-400/60 bg-blue-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
               {items.length}
             </span>
           )}
@@ -82,7 +82,7 @@ function AudioLaneImpl({
         {/* Empty lane hint */}
         {items.length === 0 && (
           <div className="absolute inset-1 rounded-lg border border-dashed border-blue-500/15 flex items-center justify-center">
-            <span className="text-[10px] text-blue-400/30">{t.media_studio.empty_lane}</span>
+            <span className="text-md text-blue-400/30">{t.media_studio.empty_lane}</span>
           </div>
         )}
         {items.map((clip) => (
@@ -192,10 +192,10 @@ function AudioClipBody({ clip }: { clip: AudioClip }) {
         </svg>
       </div>
       <Music className="w-3 h-3 text-blue-400 flex-shrink-0 z-10" />
-      <span className="text-[11px] text-foreground/80 truncate z-10">{clip.label}</span>
+      <span className="text-md text-foreground truncate z-10">{clip.label}</span>
       <div className="ml-auto flex items-center gap-0.5 flex-shrink-0 z-10">
         <Volume2 className="w-2.5 h-2.5 text-blue-400/60" />
-        <span className="text-[9px] text-blue-400/60 tabular-nums">
+        <span className="text-md text-blue-400/60 tabular-nums">
           {Math.round(volume * 100)}%
         </span>
       </div>

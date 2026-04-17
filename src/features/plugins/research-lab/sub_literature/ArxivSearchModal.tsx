@@ -106,7 +106,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
     >
       <div className="flex items-stretch gap-2">
         <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 focus-within:border-primary/40">
-          <Search className="w-4 h-4 text-foreground/40" />
+          <Search className="w-4 h-4 text-foreground" />
           <input
             type="text"
             value={query}
@@ -118,7 +118,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
               }
             }}
             placeholder="e.g. transformer reasoning chain-of-thought"
-            className="flex-1 bg-transparent text-foreground typo-body outline-none placeholder:text-foreground/30"
+            className="flex-1 bg-transparent text-foreground typo-body outline-none placeholder:text-foreground"
             autoFocus
           />
         </div>
@@ -135,11 +135,11 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
 
       {results.length > 0 && (
         <div className="flex items-center justify-between">
-          <p className="typo-caption text-foreground/50">{results.length} results</p>
+          <p className="typo-caption text-foreground">{results.length} results</p>
           <button
             type="button"
             onClick={selectAll}
-            className="typo-caption text-primary/70 hover:text-primary"
+            className="typo-caption text-primary hover:text-primary"
           >
             {selected.size === results.length ? 'Deselect all' : 'Select all'}
           </button>
@@ -164,15 +164,15 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="typo-caption text-foreground font-medium">{r.title}</p>
+                  <p className="typo-card-label">{r.title}</p>
                   {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />}
                 </div>
-                <p className="typo-micro text-foreground/50 mt-1">
+                <p className="typo-caption text-foreground mt-1">
                   {r.authors || 'Anon.'}{r.year ? ` · ${r.year}` : ''}
                   {r.doi ? ` · doi:${r.doi}` : ''}
                 </p>
                 {r.summary && (
-                  <p className="typo-micro text-foreground/40 mt-1 line-clamp-3">{r.summary}</p>
+                  <p className="typo-body text-foreground mt-1 line-clamp-3">{r.summary}</p>
                 )}
                 <div className="mt-1 flex items-center gap-3">
                   <a
@@ -180,7 +180,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 typo-micro text-primary/60 hover:text-primary"
+                    className="inline-flex items-center gap-1 typo-micro text-primary hover:text-primary"
                   >
                     <ExternalLink className="w-3 h-3" /> arXiv
                   </a>
@@ -190,7 +190,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 typo-micro text-primary/60 hover:text-primary"
+                      className="inline-flex items-center gap-1 typo-micro text-primary hover:text-primary"
                     >
                       <ExternalLink className="w-3 h-3" /> PDF
                     </a>
@@ -202,7 +202,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
         })}
 
         {!loading && results.length === 0 && query === '' && (
-          <p className="typo-caption text-foreground/40 text-center py-8">
+          <p className="typo-caption text-foreground text-center py-8">
             Type a query and press Enter to search arXiv.
           </p>
         )}

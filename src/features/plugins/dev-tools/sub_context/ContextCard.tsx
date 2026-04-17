@@ -19,15 +19,15 @@ export default function ContextCard({
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
       }`}
     >
-      <h4 className="text-sm font-medium text-foreground/80 mb-1">{ctx.name}</h4>
-      <p className="text-xs text-muted-foreground/60 line-clamp-2 mb-3">{ctx.description}</p>
+      <h4 className="typo-card-label mb-1">{ctx.name}</h4>
+      <p className="text-md text-foreground line-clamp-2 mb-3">{ctx.description}</p>
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 bg-primary/5 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">
           <File className="w-3 h-3" />
           {ctx.filePaths.length} files
         </span>
         {ctx.keywords.length > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 bg-primary/5 rounded-full px-2 py-0.5">
+          <span className="inline-flex items-center gap-1 text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">
             <Tag className="w-3 h-3" />
             {ctx.keywords.length}
           </span>

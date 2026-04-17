@@ -58,7 +58,7 @@ export default function PluginBrowsePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="typo-heading text-foreground">{plugin.label}</h3>
+                      <h3 className="typo-card-label">{plugin.label}</h3>
                       <button
                         onClick={() => togglePlugin(plugin.id)}
                         role="switch"
@@ -74,7 +74,7 @@ export default function PluginBrowsePage() {
                         />
                       </button>
                     </div>
-                    <p className="typo-body text-muted-foreground mt-1">{plugin.description}</p>
+                    <p className="typo-body text-foreground mt-1">{plugin.description}</p>
                   </div>
                 </div>
               </div>

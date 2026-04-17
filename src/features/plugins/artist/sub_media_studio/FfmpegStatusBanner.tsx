@@ -21,7 +21,7 @@ export default function FfmpegStatusBanner({
     return (
       <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-card border border-primary/10">
         <LoadingSpinner size="sm" />
-        <span className="typo-body text-muted-foreground">{t.media_studio.check_again}...</span>
+        <span className="typo-body text-foreground">{t.media_studio.check_again}...</span>
       </div>
     );
   }
@@ -42,10 +42,10 @@ export default function FfmpegStatusBanner({
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
         <div className="flex-1 space-y-2">
-          <p className="typo-heading text-amber-300">{t.media_studio.ffmpeg_not_found}</p>
-          <p className="typo-body text-foreground/70">{t.media_studio.ffmpeg_not_found_hint}</p>
+          <p className="typo-section-title text-amber-300">{t.media_studio.ffmpeg_not_found}</p>
+          <p className="typo-body text-foreground">{t.media_studio.ffmpeg_not_found_hint}</p>
 
-          <ul className="typo-body text-foreground/60 space-y-1 list-disc list-inside">
+          <ul className="typo-body text-foreground space-y-1 list-disc list-inside">
             <li>{t.media_studio.ffmpeg_install_windows}</li>
             <li>{t.media_studio.ffmpeg_install_mac}</li>
             <li>{t.media_studio.ffmpeg_install_linux}</li>

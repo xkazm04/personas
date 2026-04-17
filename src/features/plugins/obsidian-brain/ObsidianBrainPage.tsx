@@ -44,7 +44,7 @@ export default function ObsidianBrainPage() {
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg typo-caption font-medium transition-colors focus-ring ${
                     obsidianBrainTab === t.id
                       ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
-                      : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
+                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />

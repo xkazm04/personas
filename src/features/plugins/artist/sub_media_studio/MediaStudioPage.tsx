@@ -306,8 +306,8 @@ export default function MediaStudioPage() {
             <Film className="w-10 h-10 text-rose-400" />
           </div>
           <div className="max-w-md">
-            <h2 className="typo-heading text-foreground text-lg">{t.media_studio.empty_title}</h2>
-            <p className="typo-body text-muted-foreground mt-1">{t.media_studio.empty_hint}</p>
+            <h2 className="typo-section-title">{t.media_studio.empty_title}</h2>
+            <p className="typo-body text-foreground mt-1">{t.media_studio.empty_hint}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
@@ -327,7 +327,7 @@ export default function MediaStudioPage() {
               {t.media_studio.add_text_beat}
             </Button>
           </div>
-          <p className="text-[11px] text-muted-foreground/50">
+          <p className="text-md text-foreground">
             {t.media_studio.import_media} — drag & drop files anywhere
           </p>
         </div>

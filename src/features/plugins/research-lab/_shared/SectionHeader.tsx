@@ -11,7 +11,7 @@ interface Props {
 export function SectionHeader({ title, actionLabel, onAction, extra }: Props) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <h2 className="typo-heading text-foreground">{title}</h2>
+      <h2 className="typo-section-title">{title}</h2>
       <div className="flex items-center gap-2">
         {extra}
         {actionLabel && onAction && (

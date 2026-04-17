@@ -116,7 +116,7 @@ export default function GraphPanel() {
       <div className="flex items-center justify-between gap-4 p-4 border-b border-border/20">
         <div className="flex items-center gap-2 min-w-0">
           <FolderSearch className="w-4 h-4 text-primary/60 flex-shrink-0" />
-          <span className="typo-body text-foreground font-medium truncate">{project.name}</span>
+          <span className="typo-card-label truncate">{project.name}</span>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {toggles.map((tg) => (
@@ -126,7 +126,7 @@ export default function GraphPanel() {
               className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] transition-colors border ${
                 visible[tg.kind]
                   ? 'bg-primary/15 border-primary/30 text-primary'
-                  : 'bg-secondary/30 border-border/20 text-foreground/50 hover:text-foreground/80'
+                  : 'bg-secondary/30 border-border/20 text-foreground hover:text-foreground'
               }`}
             >
               <tg.icon className="w-3 h-3" />
@@ -159,7 +159,7 @@ export default function GraphPanel() {
             >
               <Background gap={24} size={1} className="opacity-20" />
               <Controls
-                className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-elevation-3 [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground/80"
+                className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-elevation-3 [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground"
                 showInteractive={false}
               />
               <MiniMap
@@ -175,11 +175,11 @@ export default function GraphPanel() {
           <aside className="w-72 border-l border-border/20 bg-secondary/30 p-4 overflow-y-auto">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selected.color }} />
-              <span className="typo-caption text-foreground/60 uppercase tracking-wide">{selected.kind}</span>
+              <span className="typo-label text-foreground">{selected.kind}</span>
             </div>
-            <h3 className="typo-body text-foreground font-semibold mb-1">{selected.label}</h3>
+            <h3 className="typo-card-label mb-1">{selected.label}</h3>
             {selected.sublabel && (
-              <p className="typo-caption text-foreground/50 mb-4">{selected.sublabel}</p>
+              <p className="typo-body text-foreground mb-4">{selected.sublabel}</p>
             )}
             {selected.kind !== 'project' && (
               <button

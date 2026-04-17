@@ -79,7 +79,7 @@ export default function ResearchProjectList() {
   if (loading && projects.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="typo-body text-foreground/50">{t.common.loading}</p>
+        <p className="typo-body text-foreground">{t.common.loading}</p>
       </div>
     );
   }
@@ -115,14 +115,14 @@ export default function ResearchProjectList() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="typo-body text-foreground font-semibold truncate">{project.name}</h3>
-                    <ChevronRight className="w-3.5 h-3.5 text-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    <h3 className="typo-card-label truncate">{project.name}</h3>
+                    <ChevronRight className="w-3.5 h-3.5 text-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
                   {project.description && (
-                    <p className="typo-caption text-foreground/60 mt-1 line-clamp-2">{project.description}</p>
+                    <p className="typo-body text-foreground mt-1 line-clamp-2">{project.description}</p>
                   )}
                   {project.thesis && (
-                    <p className="typo-micro text-foreground/40 mt-2 italic line-clamp-2">{project.thesis}</p>
+                    <p className="typo-caption text-foreground mt-2 italic line-clamp-2">{project.thesis}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -131,7 +131,7 @@ export default function ResearchProjectList() {
                   </span>
                   <button
                     onClick={(e) => handleEdit(e, project)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary/80 text-foreground/50 hover:text-foreground transition-all"
+                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary/80 text-foreground hover:text-foreground transition-all"
                     title={t.research_lab.edit_project}
                     aria-label={t.research_lab.edit_project}
                   >
@@ -148,7 +148,7 @@ export default function ResearchProjectList() {
               </div>
               <div className="mt-3 flex items-center gap-2 flex-wrap">
                 {project.domain && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">
                     {domainLabel(t, project.domain)}
                   </span>
                 )}

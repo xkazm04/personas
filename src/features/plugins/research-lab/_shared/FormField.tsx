@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 
 const FIELD_CLASS =
-  'w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40';
+  'w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40';
 
 interface FieldProps {
   label: string;
@@ -13,11 +13,11 @@ export function Field({ label, hint, children }: FieldProps) {
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="typo-caption text-foreground/60 block mb-1">
+      <label htmlFor={id} className="typo-caption text-foreground block mb-1">
         {label}
       </label>
       {children(id)}
-      {hint && <p className="typo-micro text-foreground/40 mt-1">{hint}</p>}
+      {hint && <p className="typo-micro text-foreground mt-1">{hint}</p>}
     </div>
   );
 }

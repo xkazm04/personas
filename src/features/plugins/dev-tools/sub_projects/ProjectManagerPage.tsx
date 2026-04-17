@@ -145,7 +145,7 @@ function ProjectModal({
           {step === 'form' ? (
             <>
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold text-foreground/90">
+                <h2 className="typo-section-title">
                   {isEdit ? 'Edit Project' : 'New Project'}
                 </h2>
                 <Button variant="ghost" size="icon-sm" onClick={handleClose}>
@@ -156,11 +156,11 @@ function ProjectModal({
               <div className="space-y-4">
                 {/* Folder picker (read-only in edit mode) */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Project Folder</label>
+                  <label className="text-xs font-medium text-foreground mb-1.5 block">Project Folder</label>
                   <div className="flex gap-2">
                     <div
                       onClick={isEdit ? undefined : handleSelectFolder}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl min-w-0 ${
+                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl min-w-0 ${
                         isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 transition-colors'
                       }`}
                     >
@@ -168,7 +168,7 @@ function ProjectModal({
                       {path ? (
                         <span className="text-foreground truncate">{path}</span>
                       ) : (
-                        <span className="text-muted-foreground/50">Select a folder...</span>
+                        <span className="text-foreground">Select a folder...</span>
                       )}
                     </div>
                     {!isEdit && (
@@ -181,10 +181,10 @@ function ProjectModal({
 
                 {/* Project Name */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Project Name
                     {!isEdit && path && !nameEdited && (
-                      <span className="text-[10px] text-muted-foreground/40 font-normal">(auto-filled from folder)</span>
+                      <span className="text-[10px] text-foreground font-normal">(auto-filled from folder)</span>
                     )}
                   </label>
                   <div className="relative">
@@ -192,17 +192,17 @@ function ProjectModal({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       placeholder="My Awesome App"
-                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring"
+                      className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
                     />
-                    <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
+                    <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
                   </div>
                 </div>
 
                 {/* Project Type */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Project Type
-                    <span className="text-[10px] text-muted-foreground/40 font-normal">(optional, visual only)</span>
+                    <span className="text-[10px] text-foreground font-normal">(optional, visual only)</span>
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {PROJECT_TYPES.map((pt) => (
@@ -212,7 +212,7 @@ function ProjectModal({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                           projectType === pt.id
                             ? `${pt.color} ring-1 ring-current/20 scale-105`
-                            : 'bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:bg-secondary/50'
+                            : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
                         }`}
                       >
                         <span>{pt.icon}</span>
@@ -247,11 +247,11 @@ function ProjectModal({
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                 </div>
-                <h2 className="text-base font-semibold text-foreground/90 mb-1">
+                <h2 className="typo-section-title mb-1">
                   Project Created
                 </h2>
-                <p className="text-xs text-muted-foreground/60 mb-6">
-                  <span className="font-medium text-foreground/70">{createdProject?.name}</span> is ready.
+                <p className="text-xs text-foreground mb-6">
+                  <span className="font-medium text-foreground">{createdProject?.name}</span> is ready.
                   Would you like to generate a context map now?
                 </p>
 
@@ -259,8 +259,8 @@ function ProjectModal({
                   <div className="flex items-start gap-3">
                     <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-foreground/80 mb-1">Generate Context Map</h4>
-                      <p className="text-xs text-muted-foreground/60">
+                      <h4 className="typo-card-label mb-1">Generate Context Map</h4>
+                      <p className="text-xs text-foreground">
                         Scans your codebase to identify business features and organize them into context groups.
                         This runs in the background -- you&apos;ll get a notification when it&apos;s done.
                       </p>
@@ -330,14 +330,14 @@ function GoalBoard({
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2 mb-3">
           <Target className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground/80">Goals</h3>
-          <span className="text-xs text-muted-foreground/60">{goals.length}</span>
+          <h3 className="typo-section-title">Goals</h3>
+          <span className="text-xs text-foreground">{goals.length}</span>
         </div>
 
         {goals.length === 0 ? (
           <div className="text-center py-12">
-            <Target className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground/60">No goals yet. Add one below.</p>
+            <Target className="w-8 h-8 text-foreground mx-auto mb-2" />
+            <p className="text-md text-foreground">No goals yet. Add one below.</p>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -353,9 +353,9 @@ function GoalBoard({
                   }`}
                   onClick={() => onSelectGoal(selectedGoalId === goal.id ? null : goal.id)}
                 >
-                  <GripVertical className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-                  <Icon className="w-4 h-4 flex-shrink-0 text-muted-foreground/60" />
-                  <span className="flex-1 min-w-0 text-sm text-foreground/80 truncate">{goal.title}</span>
+                  <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+                  <Icon className="w-4 h-4 flex-shrink-0 text-foreground" />
+                  <span className="flex-1 min-w-0 text-md text-foreground truncate">{goal.title}</span>
                   <div className="w-20 h-1.5 bg-primary/10 rounded-full overflow-hidden flex-shrink-0">
                     <div
                       className="h-full bg-amber-400/60 rounded-full transition-all"
@@ -384,7 +384,7 @@ function GoalBoard({
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-ring"
+            className="flex-1 px-3 py-2 text-md bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
           />
           <Button
             variant="accent"
@@ -447,7 +447,7 @@ function ProjectRowMenu({ projectId, projectName, onEdit }: { projectId: string;
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); setConfirming(false); }}
-        className="p-1 rounded-lg text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
+        className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -458,7 +458,7 @@ function ProjectRowMenu({ projectId, projectName, onEdit }: { projectId: string;
             <button
               type="button"
               onClick={handleEdit}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-foreground/70 hover:bg-primary/5 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-foreground hover:bg-primary/5 transition-colors"
             >
               <Pencil className="w-3 h-3" />
               Edit Project
@@ -630,8 +630,8 @@ export default function ProjectManagerPage() {
                   <Folder className="w-5 h-5 text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-foreground/90">{activeProject.name}</h2>
-                  <p className="text-xs text-muted-foreground/60 truncate">{activeProject.path}</p>
+                  <h2 className="typo-section-title">{activeProject.name}</h2>
+                  <p className="text-xs text-foreground truncate">{activeProject.path}</p>
                 </div>
                 <StatusBadge status={activeProject.status} />
               </div>
@@ -643,8 +643,8 @@ export default function ProjectManagerPage() {
                   { label: 'Created', value: activeProject.createdAt },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-primary/5 rounded-xl px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium">{stat.label}</p>
-                    <p className="text-sm text-foreground/80 mt-0.5 truncate">{stat.value}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{stat.label}</p>
+                    <p className="text-md text-foreground mt-0.5 truncate">{stat.value}</p>
                   </div>
                 ))}
               </div>
@@ -664,14 +664,14 @@ export default function ProjectManagerPage() {
             </div>
           ) : (
             <div className="border border-dashed border-primary/10 rounded-2xl p-8 text-center">
-              <Folder className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground/60">Select a project below or create a new one</p>
+              <Folder className="w-8 h-8 text-foreground mx-auto mb-2" />
+              <p className="text-md text-foreground">Select a project below or create a new one</p>
             </div>
           )}
 
           {/* Project list */}
           <div>
-            <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">
               All Projects ({projects.length})
             </h3>
 
@@ -680,7 +680,7 @@ export default function ProjectManagerPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <FolderKanban className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-sm text-muted-foreground/60 mb-4">No projects yet</p>
+                <p className="text-md text-foreground mb-4">No projects yet</p>
                 <Button
                   variant="accent"
                   accentColor="amber"
@@ -694,7 +694,7 @@ export default function ProjectManagerPage() {
             ) : (
               <div className="border border-primary/10 rounded-xl">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider rounded-t-xl">
+                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-primary uppercase tracking-wider rounded-t-xl">
                   <span>Name</span>
                   <span>Path</span>
                   <span>Tech Stack</span>
@@ -714,15 +714,15 @@ export default function ProjectManagerPage() {
                         : 'hover:bg-primary/5'
                     }`}
                   >
-                    <span className="text-sm text-foreground/80 font-medium flex items-center gap-2 truncate">
-                      <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
+                    <span className="text-md text-foreground font-medium flex items-center gap-2 truncate">
+                      <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
                       {project.name}
                     </span>
-                    <span className="text-xs text-muted-foreground/60 truncate self-center">{project.path}</span>
-                    <span className="text-xs text-muted-foreground/60 truncate self-center">{project.techStack.join(', ')}</span>
-                    <span className="text-xs text-muted-foreground/60 self-center">{project.goalCount}</span>
+                    <span className="text-xs text-foreground truncate self-center">{project.path}</span>
+                    <span className="text-xs text-foreground truncate self-center">{project.techStack.join(', ')}</span>
+                    <span className="text-xs text-foreground self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
-                    <span className="text-xs text-muted-foreground/60 self-center">{project.createdAt}</span>
+                    <span className="text-xs text-foreground self-center">{project.createdAt}</span>
                     <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
                   </div>
                 ))}

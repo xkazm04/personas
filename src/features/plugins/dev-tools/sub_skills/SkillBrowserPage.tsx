@@ -37,21 +37,21 @@ function SkillCard({
         <div className={`w-8 h-8 rounded-interactive flex items-center justify-center shrink-0 ${
           selected ? 'bg-primary/15 border border-primary/25' : 'bg-secondary/40 border border-primary/10'
         }`}>
-          <BookOpen className={`w-4 h-4 ${selected ? 'text-primary' : 'text-muted-foreground/60'}`} />
+          <BookOpen className={`w-4 h-4 ${selected ? 'text-primary' : 'text-foreground'}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-foreground truncate">{skill.name}</h4>
+          <h4 className="typo-card-label truncate">{skill.name}</h4>
           {skill.description && (
-            <p className="text-[10px] text-foreground/50 mt-0.5 truncate">{skill.description}</p>
+            <p className="text-[10px] text-foreground mt-0.5 truncate">{skill.description}</p>
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {skill.referenceFileCount > 0 && (
-            <span className="text-[9px] text-muted-foreground/40 bg-primary/5 rounded-full px-1.5 py-0.5">
+            <span className="text-[9px] text-foreground bg-primary/5 rounded-full px-1.5 py-0.5">
               {skill.referenceFileCount} ref{skill.referenceFileCount !== 1 ? 's' : ''}
             </span>
           )}
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         </div>
       </div>
     </button>
@@ -173,12 +173,12 @@ export default function SkillBrowserPage() {
           <div className="w-64 shrink-0 flex flex-col gap-3">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.plugins.dev_tools.search_skills}
-                className="w-full pl-9 pr-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="w-full pl-9 pr-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               />
             </div>
 
@@ -186,12 +186,12 @@ export default function SkillBrowserPage() {
             <div className="flex-1 overflow-y-auto space-y-1.5">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground/40" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="text-center py-8">
-                  <AlertCircle className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground/50">
+                  <AlertCircle className="w-6 h-6 text-foreground mx-auto mb-2" />
+                  <p className="text-xs text-foreground">
                     {search ? t.plugins.dev_tools.no_matching_skills : t.plugins.dev_tools.no_skills_found}
                   </p>
                 </div>
@@ -212,8 +212,8 @@ export default function SkillBrowserPage() {
           <div className="flex-1 min-w-0 border border-primary/10 rounded-card overflow-hidden flex flex-col">
             {!selectedSkill ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                <FolderOpen className="w-10 h-10 text-muted-foreground/20 mb-3" />
-                <p className="typo-body text-foreground/40">{t.plugins.dev_tools.select_skill}</p>
+                <FolderOpen className="w-10 h-10 text-foreground mb-3" />
+                <p className="typo-body text-foreground">{t.plugins.dev_tools.select_skill}</p>
               </div>
             ) : (
               <>
@@ -229,7 +229,7 @@ export default function SkillBrowserPage() {
                       className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
                         activeFile === f
                           ? 'bg-primary/10 text-foreground'
-                          : 'text-muted-foreground/60 hover:text-foreground/70 hover:bg-primary/5'
+                          : 'text-foreground hover:text-foreground hover:bg-primary/5'
                       }`}
                     >
                       <FileText className="w-3 h-3" />
@@ -289,19 +289,19 @@ export default function SkillBrowserPage() {
                   )}
                   {fileLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground/40" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
                     </div>
                   ) : editing ? (
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full h-full min-h-[300px] p-3 text-sm font-mono bg-secondary/20 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
+                      className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
                       spellCheck={false}
                     />
                   ) : fileContent ? (
                     <MarkdownRenderer content={fileContent} />
                   ) : !loadFailed ? (
-                    <p className="text-sm text-muted-foreground/40 text-center py-8">
+                    <p className="text-md text-foreground text-center py-8">
                       {t.plugins.dev_tools.file_empty}
                     </p>
                   ) : null}

@@ -58,7 +58,7 @@ export default function GalleryPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md transition-colors ${
                 galleryMode === m.id
                   ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  : 'text-muted-foreground hover:bg-secondary/40 border border-transparent'
+                  : 'text-foreground hover:bg-secondary/40 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -71,12 +71,12 @@ export default function GalleryPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.plugins.artist.search}
-            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 w-48"
+            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 w-48"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function GalleryPage() {
           <option value="name">{t.plugins.artist.sort_name}</option>
           <option value="size">{t.plugins.artist.sort_size}</option>
         </select>
-        <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
+        <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-foreground">
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
         </button>
 
@@ -98,7 +98,7 @@ export default function GalleryPage() {
         <button
           onClick={() => artistFolder && scanAndImport(artistFolder)}
           disabled={scanning || !artistFolder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
         >
           <FolderSearch className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
           {scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
@@ -107,14 +107,14 @@ export default function GalleryPage() {
 
       {/* Folder info */}
       {artistFolder && (
-        <p className="text-[11px] text-muted-foreground font-mono truncate">
+        <p className="text-md text-foreground font-mono truncate">
           {t.plugins.artist.watching} {artistFolder}
         </p>
       )}
 
       {/* Gallery content */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground typo-body">
+        <div className="flex items-center justify-center py-16 text-foreground typo-body">
           {t.plugins.artist.loading_assets}
         </div>
       ) : filteredAssets.length === 0 ? (
@@ -126,10 +126,10 @@ export default function GalleryPage() {
               <Box className="w-7 h-7 text-rose-400" />
             )}
           </div>
-          <p className="typo-heading text-foreground">
+          <p className="typo-section-title">
             {galleryMode === '2d' ? t.plugins.artist.no_images_yet : t.plugins.artist.no_models_yet}
           </p>
-          <p className="typo-body text-muted-foreground max-w-xs text-center">
+          <p className="typo-body text-foreground max-w-xs text-center">
             {galleryMode === '2d'
               ? t.plugins.artist.scan_import_images_hint
               : t.plugins.artist.scan_import_models_hint}

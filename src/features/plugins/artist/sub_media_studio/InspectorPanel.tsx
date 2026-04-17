@@ -63,10 +63,10 @@ function NumField({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="typo-label text-foreground">{label}</span>
       <input
         type="number"
-        className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-sm text-foreground tabular-nums focus:outline-none focus:border-rose-500/40"
+        className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground tabular-nums focus:outline-none focus:border-rose-500/40"
         value={Number(value.toFixed(3))}
         step={step}
         min={min}
@@ -96,8 +96,8 @@ function RangeField({
   return (
     <label className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</span>
-        <span className="text-[10px] font-mono text-foreground/70 tabular-nums">
+        <span className="typo-label text-foreground">{label}</span>
+        <span className="text-md font-mono text-foreground tabular-nums">
           {format ? format(value) : value.toFixed(2)}
         </span>
       </div>
@@ -138,13 +138,13 @@ function ToggleRow({
       }`}
     >
       {Icon && (
-        <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${value ? 'text-rose-400' : 'text-muted-foreground'}`} />
+        <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${value ? 'text-rose-400' : 'text-foreground'}`} />
       )}
       <div className="flex-1 min-w-0">
-        <div className={`text-xs font-medium ${value ? 'text-rose-400' : 'text-foreground/80'}`}>
+        <div className={`text-md ${value ? 'text-rose-400' : 'text-foreground'}`}>
           {label}
         </div>
-        {hint && <div className="text-[10px] text-muted-foreground mt-0.5">{hint}</div>}
+        {hint && <div className="text-md text-foreground mt-0.5">{hint}</div>}
       </div>
       <div
         className={`w-7 h-4 rounded-full relative flex-shrink-0 mt-1 transition-colors ${
@@ -310,25 +310,25 @@ export default function InspectorPanel({
   if (!selectedItem) {
     return (
       <div className="flex flex-col gap-4 p-4 overflow-y-auto">
-        <h3 className="typo-heading text-foreground/90 flex items-center gap-2">
+        <h3 className="typo-section-title flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-rose-400" />
           {t.media_studio.output_settings}
         </h3>
 
         {/* Composition name */}
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{t.media_studio.title}</span>
+          <span className="typo-label text-foreground">{t.media_studio.title}</span>
           <input
             type="text"
             value={composition.name}
             onChange={(e) => onUpdateComposition({ name: e.target.value })}
-            className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-sm text-foreground focus:outline-none focus:border-rose-500/40"
+            className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground focus:outline-none focus:border-rose-500/40"
           />
         </label>
 
         {/* Resolution presets */}
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{t.media_studio.resolution}</span>
+          <span className="typo-label text-foreground">{t.media_studio.resolution}</span>
           <div className="grid grid-cols-3 gap-1.5">
             {RESOLUTION_PRESETS.map((p) => {
               const active = composition.width === p.w && composition.height === p.h;
@@ -336,10 +336,10 @@ export default function InspectorPanel({
                 <button
                   key={p.label}
                   onClick={() => onUpdateComposition({ width: p.w, height: p.h })}
-                  className={`py-1.5 px-1 rounded-lg border text-[10px] font-medium transition-all ${
+                  className={`py-1.5 px-1 rounded-lg border text-md transition-all ${
                     active
                       ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-                      : 'bg-secondary/20 border-primary/10 text-muted-foreground/60 hover:bg-secondary/30'
+                      : 'bg-secondary/20 border-primary/10 text-foreground hover:bg-secondary/30'
                   }`}
                 >
                   {p.label}
@@ -347,7 +347,7 @@ export default function InspectorPanel({
               );
             })}
           </div>
-          <span className="text-[9px] text-muted-foreground/40 mt-0.5">
+          <span className="text-md text-foreground mt-0.5">
             {composition.width} x {composition.height}
           </span>
         </div>
@@ -363,7 +363,7 @@ export default function InspectorPanel({
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{t.media_studio.color}</span>
+          <span className="typo-label text-foreground">{t.media_studio.color}</span>
           <input
             type="color"
             value={composition.backgroundColor}
@@ -372,7 +372,7 @@ export default function InspectorPanel({
           />
         </label>
 
-        <p className="text-[10px] text-muted-foreground/40 mt-2">
+        <p className="text-md text-foreground mt-2">
           {t.media_studio.no_selection}
         </p>
       </div>
@@ -386,18 +386,18 @@ export default function InspectorPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 overflow-y-auto">
-      <h3 className="typo-heading text-foreground/90 flex items-center gap-2">
+      <h3 className="typo-section-title flex items-center gap-2">
         <Settings2 className="w-4 h-4 text-rose-400" />
         {t.media_studio.inspector_title}
       </h3>
 
       <div className="px-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/10">
-        <span className="text-xs text-foreground/70 font-medium truncate block">{selectedItem.label}</span>
+        <span className="text-md text-foreground truncate block">{selectedItem.label}</span>
       </div>
 
       {/* -- Clip actions (destructive / transform) ------------------------ */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+        <span className="typo-label text-foreground">
           {t.media_studio.clip_actions}
         </span>
         <Button variant="ghost" size="sm" onClick={handleSplit}>
@@ -481,7 +481,7 @@ export default function InspectorPanel({
       {/* -- Effects (FFmpeg filter graph) --------------------------------- */}
       {(isVideo || isAudio || isImage || isText) && (
         <div className="flex flex-col gap-3 pt-3 border-t border-primary/10">
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+          <span className="typo-label text-foreground">
             {t.media_studio.effects}
           </span>
 
@@ -546,7 +546,7 @@ export default function InspectorPanel({
                   icon={measuring ? Loader2 : Volume2}
                 />
                 {measuring && (
-                  <p className="text-[10px] text-rose-400/80 flex items-center gap-1 -mt-2 ml-1">
+                  <p className="text-md text-rose-400/80 flex items-center gap-1 -mt-2 ml-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Running ffmpeg loudnorm dry-run…
                   </p>
@@ -568,7 +568,7 @@ export default function InspectorPanel({
             min={8}
           />
           <label className="flex flex-col gap-1">
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wide">
+            <span className="typo-label text-foreground">
               {t.media_studio.color}
             </span>
             <input

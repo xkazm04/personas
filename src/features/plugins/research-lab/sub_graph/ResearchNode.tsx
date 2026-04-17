@@ -23,7 +23,7 @@ function ResearchNodeImpl({ data, selected }: Props) {
         <div className="min-w-0">
           <p className="typo-caption text-foreground font-medium truncate">{data.label}</p>
           {data.sublabel && (
-            <p className="typo-micro text-foreground/50 truncate mt-0.5">{data.sublabel}</p>
+            <p className="typo-caption text-foreground truncate mt-0.5">{data.sublabel}</p>
           )}
         </div>
       </div>

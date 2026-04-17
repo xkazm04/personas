@@ -111,7 +111,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <ScanLine className="w-5 h-5 text-violet-200" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="typo-heading-sm text-foreground">
+              <div className="typo-heading-sm typo-section-title">
                 {t.plugins.drive.ocr_title}
               </div>
               <div className="typo-body text-foreground/90 truncate">
@@ -133,7 +133,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* File card */}
           <div className="rounded-lg border border-primary/10 bg-secondary/25 px-3 py-2.5">
-            <div className="typo-body text-foreground/90 uppercase tracking-wider mb-0.5">
+            <div className="typo-label text-foreground/90 mb-0.5">
               {t.plugins.drive.details_path}
             </div>
             <div className="typo-body font-mono text-foreground break-all">
@@ -177,7 +177,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
           {/* Optional prompt */}
           {phase !== "done" && (
             <div>
-              <label className="typo-body text-foreground/90 uppercase tracking-wider block mb-1.5">
+              <label className="typo-label text-foreground/90 block mb-1.5">
                 {t.plugins.drive.ocr_prompt_label}
               </label>
               <textarea

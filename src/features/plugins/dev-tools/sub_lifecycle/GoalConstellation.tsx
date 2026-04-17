@@ -196,8 +196,8 @@ export default function GoalConstellation() {
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Target className="w-10 h-10 text-muted-foreground/20 mb-3" />
-        <p className="text-md text-muted-foreground/50">No goals yet. Create goals in the Projects tab to see the constellation.</p>
+        <Target className="w-10 h-10 text-foreground mb-3" />
+        <p className="text-md text-foreground">No goals yet. Create goals in the Projects tab to see the constellation.</p>
       </div>
     );
   }
@@ -215,7 +215,7 @@ export default function GoalConstellation() {
         <Button variant="ghost" size="icon-sm" onClick={handleReset} title="Reset view">
           <Maximize2 className="w-4 h-4" />
         </Button>
-        <span className="text-md text-muted-foreground/40 ml-2">{goals.length} goals, {edges.length} connections</span>
+        <span className="text-md text-foreground ml-2">{goals.length} goals, {edges.length} connections</span>
       </div>
 
       {/* SVG Canvas */}
@@ -229,7 +229,7 @@ export default function GoalConstellation() {
         >
           <defs>
             <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-              <path d="M0,0 L8,3 L0,6 Z" fill="currentColor" className="text-muted-foreground/30" />
+              <path d="M0,0 L8,3 L0,6 Z" fill="currentColor" className="text-foreground" />
             </marker>
           </defs>
 
@@ -312,7 +312,7 @@ export default function GoalConstellation() {
                   x={pos.x} y={pos.y + r + 14}
                   textAnchor="middle"
                   fill="currentColor"
-                  className="text-foreground/70"
+                  className="text-foreground"
                   fontSize={11}
                 >
                   {goal.title.length > 20 ? goal.title.slice(0, 18) + '...' : goal.title}
@@ -322,8 +322,8 @@ export default function GoalConstellation() {
                 {isHovered && (
                   <foreignObject x={pos.x - 100} y={pos.y - r - 50} width={200} height={40}>
                     <div className="bg-background/95 border border-primary/20 rounded-lg px-3 py-1.5 text-center shadow-lg">
-                      <p className="text-md font-medium text-foreground/90 truncate">{goal.title}</p>
-                      <p className="text-md text-muted-foreground/60">{goal.status} &middot; {goal.progress}%</p>
+                      <p className="text-md font-medium text-foreground truncate">{goal.title}</p>
+                      <p className="text-md text-foreground">{goal.status} &middot; {goal.progress}%</p>
                     </div>
                   </foreignObject>
                 )}
@@ -334,7 +334,7 @@ export default function GoalConstellation() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-md text-muted-foreground/50">
+      <div className="flex items-center gap-4 text-md text-foreground">
         {Object.entries(STATUS_COLORS).map(([status, colors]) => (
           <div key={status} className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.fill }} />

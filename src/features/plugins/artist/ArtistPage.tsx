@@ -38,7 +38,7 @@ export default function ArtistPage() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg typo-heading transition-colors ${
                     artistTab === t.id
                       ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                      : 'text-muted-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
+                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

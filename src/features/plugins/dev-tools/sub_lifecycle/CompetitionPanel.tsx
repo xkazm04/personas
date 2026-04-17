@@ -150,7 +150,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
               <Swords className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h2 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+              <h2 className="typo-section-title">
                 Start a Competition
               </h2>
               <p className="typo-body text-foreground">
@@ -162,7 +162,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div>
-            <label className="typo-caption text-foreground uppercase tracking-wider block mb-1.5">
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">
               Task title
             </label>
             <input
@@ -170,13 +170,13 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Add rate limiting to /api/auth/login"
-              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground/40 focus-ring"
+              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="typo-caption text-foreground uppercase tracking-wider block mb-1.5">
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">
               Task description (optional)
             </label>
             <textarea
@@ -184,13 +184,13 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What should the competitors accomplish? Constraints, target files, acceptance criteria..."
               rows={4}
-              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground/40 focus-ring resize-none"
+              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring resize-none"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="typo-caption text-foreground uppercase tracking-wider">
+              <label className="typo-caption text-primary uppercase tracking-wider">
                 Strategy slots (pick 2–4)
               </label>
               <span className="typo-caption text-foreground">
@@ -217,7 +217,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
                       ) : (
                         <div className="w-4 h-4 rounded-full border border-foreground/30" />
                       )}
-                      <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+                      <span className="typo-card-label">
                         {preset.label}
                       </span>
                     </div>
@@ -328,7 +328,7 @@ function CompetitionCard({
           <Swords className="w-4 h-4 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)] truncate">
+          <p className="typo-card-label truncate">
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
@@ -354,7 +354,7 @@ function CompetitionCard({
             <>
               {detail.competition.task_description && (
                 <div className="rounded-interactive bg-background/40 border border-primary/10 p-3">
-                  <p className="typo-caption text-foreground uppercase tracking-wider mb-1">Task</p>
+                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">Task</p>
                   <p className="typo-body text-foreground whitespace-pre-wrap">
                     {detail.competition.task_description}
                   </p>
@@ -369,7 +369,7 @@ function CompetitionCard({
                     taskStatus === 'running' ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
                     : taskStatus === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     : taskStatus === 'failed' ? <XCircle className="w-4 h-4 text-red-400" />
-                    : taskStatus === 'cancelled' ? <Ban className="w-4 h-4 text-foreground/50" />
+                    : taskStatus === 'cancelled' ? <Ban className="w-4 h-4 text-foreground" />
                     : <Clock className="w-4 h-4 text-amber-400" />;
 
                   return (
@@ -384,7 +384,7 @@ function CompetitionCard({
                       {taskStatusIcon}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+                          <span className="typo-card-label">
                             {slot.strategy_label}
                           </span>
                           {isWinner && (
@@ -394,10 +394,10 @@ function CompetitionCard({
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
-                          <span className="typo-caption text-foreground/70">Status: {taskStatus}</span>
-                          <span className="typo-code text-foreground/70">wt: {slot.worktree_name}</span>
+                          <span className="typo-caption text-foreground">Status: {taskStatus}</span>
+                          <span className="typo-code text-foreground">wt: {slot.worktree_name}</span>
                           {task?.progress_pct != null && task.progress_pct > 0 && (
-                            <span className="typo-caption text-foreground/70">{task.progress_pct}%</span>
+                            <span className="typo-caption text-foreground">{task.progress_pct}%</span>
                           )}
                         </div>
                       </div>
@@ -491,7 +491,7 @@ export function CompetitionPanel() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-caption text-foreground uppercase tracking-wider">
+        <h3 className="typo-caption text-primary uppercase tracking-wider">
           Competitions {competitions.length > 0 && <span>({competitions.length})</span>}
         </h3>
         <div className="flex items-center gap-2">
@@ -517,7 +517,7 @@ export function CompetitionPanel() {
 
       {competitions.length === 0 && !loading && (
         <div className="rounded-card border border-primary/10 bg-card/20 p-6 text-center">
-          <Swords className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+          <Swords className="w-8 h-8 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">
             No competitions yet. Start one to have 2–4 Dev Clone variants race on the same task in parallel worktrees.
           </p>

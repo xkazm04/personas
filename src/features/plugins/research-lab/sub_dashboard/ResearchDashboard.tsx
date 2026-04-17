@@ -52,7 +52,7 @@ export default function ResearchDashboard() {
   return (
     <div className="p-6 space-y-6 overflow-y-auto">
       <div className="flex items-center justify-between">
-        <h2 className="typo-heading text-foreground">{t.research_lab.dashboard}</h2>
+        <h2 className="typo-section-title">{t.research_lab.dashboard}</h2>
         <button
           onClick={() => setResearchLabTab('projects')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
@@ -72,11 +72,11 @@ export default function ResearchDashboard() {
           >
             <card.icon className="w-5 h-5 text-primary/60 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="typo-body text-foreground font-semibold">{card.value}</p>
-              <p className="typo-caption text-foreground/70">{card.label}</p>
-              {card.sub && <p className="typo-micro text-foreground/50">{card.sub}</p>}
+              <p className="typo-data-lg text-primary">{card.value}</p>
+              <p className="typo-caption text-foreground">{card.label}</p>
+              {card.sub && <p className="typo-caption text-foreground">{card.sub}</p>}
             </div>
-            <ArrowRight className="w-3.5 h-3.5 text-foreground/20 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+            <ArrowRight className="w-3.5 h-3.5 text-foreground mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
           </button>
         ))}
       </div>
@@ -85,10 +85,10 @@ export default function ResearchDashboard() {
       {projects.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="typo-body text-foreground/80 font-medium">{t.research_lab.recent_projects}</h3>
+            <h3 className="typo-card-label">{t.research_lab.recent_projects}</h3>
             <button
               onClick={() => setResearchLabTab('projects')}
-              className="typo-caption text-primary/60 hover:text-primary/80 transition-colors"
+              className="typo-caption text-primary hover:text-primary transition-colors"
             >
               {t.research_lab.view_all}
             </button>
@@ -106,16 +106,16 @@ export default function ResearchDashboard() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="typo-body text-foreground font-medium truncate">{project.name}</p>
+                    <p className="typo-card-label truncate">{project.name}</p>
                     {project.thesis && (
-                      <p className="typo-micro text-foreground/40 truncate mt-0.5">{project.thesis}</p>
+                      <p className="typo-caption text-foreground truncate mt-0.5">{project.thesis}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${projectStatusColor(project.status)}`}>
                       {projectStatusLabel(t, project.status)}
                     </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="w-3.5 h-3.5 text-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
               </button>
@@ -127,9 +127,9 @@ export default function ResearchDashboard() {
       {/* Empty state */}
       {projects.length === 0 && (
         <div className="rounded-card bg-secondary/30 border border-border/20 p-8 text-center space-y-3">
-          <FolderSearch className="w-10 h-10 text-foreground/15 mx-auto" />
-          <p className="typo-body text-foreground/50">{t.research_lab.no_projects}</p>
-          <p className="typo-caption text-foreground/30 max-w-md mx-auto">{t.research_lab.no_projects_hint}</p>
+          <FolderSearch className="w-10 h-10 text-foreground mx-auto" />
+          <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
+          <p className="typo-body text-foreground max-w-md mx-auto">{t.research_lab.no_projects_hint}</p>
         </div>
       )}
     </div>

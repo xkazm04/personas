@@ -50,13 +50,13 @@ export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
 };
 
 export const SOURCE_STATUS_COLORS: Record<SourceStatus, string> = {
-  pending: 'bg-foreground/10 text-foreground/40',
+  pending: 'bg-foreground/10 text-foreground',
   ingesting: 'bg-amber-500/20 text-amber-300',
   indexed: 'bg-green-500/20 text-green-300',
   failed: 'bg-red-500/20 text-red-300',
 };
 
-const FALLBACK_BADGE = 'bg-foreground/10 text-foreground/50';
+const FALLBACK_BADGE = 'bg-foreground/10 text-foreground';
 
 export function projectStatusColor(status: string): string {
   return PROJECT_STATUS_COLORS[status as ProjectStatus] ?? FALLBACK_BADGE;

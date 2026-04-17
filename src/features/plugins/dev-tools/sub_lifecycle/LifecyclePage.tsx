@@ -135,7 +135,7 @@ export default function LifecyclePage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-interactive typo-heading transition-colors ${
                   tab === t.id
                     ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                    : 'text-foreground/60 hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
+                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
                 }`}>
                 <Icon className="w-4 h-4" />
                 {t.label}

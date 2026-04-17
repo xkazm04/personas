@@ -75,9 +75,9 @@ function ModelScene({
 
 function LoadingFallback() {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground pointer-events-none">
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-foreground pointer-events-none">
       <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
-      <span className="text-[11px]">Loading model...</span>
+      <span className="text-md">Loading model...</span>
     </div>
   );
 }
@@ -87,7 +87,7 @@ function ErrorFallback({ error }: { error: Error }) {
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center p-8">
       <Box className="w-12 h-12 text-rose-400/40" />
       <p className="typo-body text-foreground">Could not load model</p>
-      <p className="text-[11px] text-muted-foreground max-w-sm font-mono break-all">{error.message}</p>
+      <p className="text-md text-foreground max-w-sm font-mono break-all">{error.message}</p>
     </div>
   );
 }

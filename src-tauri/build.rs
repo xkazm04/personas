@@ -17,6 +17,7 @@ fn main() {
         "GCP_DESKTOP_CLIENT_SECRET",
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
+        "SENTRY_DSN",
     ] {
         if let Ok(val) = std::env::var(key) {
             if !val.trim().is_empty() {

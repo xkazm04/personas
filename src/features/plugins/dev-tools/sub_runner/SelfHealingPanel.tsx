@@ -123,7 +123,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/10">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-red-400" />
-          <h3 className="text-md font-medium text-foreground/80">Self-Healing</h3>
+          <h3 className="text-md font-medium text-primary">Self-Healing</h3>
           <span className="rounded-full px-2 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
             {failedTasks.length} failed
           </span>
@@ -134,7 +134,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-md text-muted-foreground/60 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-md text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={autoHealEnabled}
@@ -166,11 +166,11 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
             <div key={task.id} className="flex items-center gap-3 px-4 py-3">
               <Icon className={`w-4 h-4 text-${pattern.color}-400 flex-shrink-0`} />
               <div className="flex-1 min-w-0">
-                <p className="text-md text-foreground/70 truncate">{task.title}</p>
+                <p className="text-md text-foreground truncate">{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-md text-muted-foreground/50">{pattern.label}</span>
-                  <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
-                  <span className="text-md text-muted-foreground/50">{pattern.suggestedAction}</span>
+                  <span className="text-md text-foreground">{pattern.label}</span>
+                  <ArrowRight className="w-3 h-3 text-foreground" />
+                  <span className="text-md text-foreground">{pattern.suggestedAction}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

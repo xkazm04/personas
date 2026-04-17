@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { errMsg } from '@/stores/storeTypes';
-import { Globe, Key, Loader2, Unplug } from 'lucide-react';
+import { Globe, Key, Loader2, Unplug, type LucideIcon } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
@@ -27,7 +27,7 @@ export function SectionCard({
 }: {
   section: HealthCheckSection;
   stubIdx: number;
-  SectionIcon: React.ElementType;
+  SectionIcon: LucideIcon;
   sectionStyle: { badge: string; icon: string };
   ipcError: boolean;
   nodeState: InstallState;

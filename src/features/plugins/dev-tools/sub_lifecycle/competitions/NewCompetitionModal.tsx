@@ -74,37 +74,37 @@ export function NewCompetitionModal({
           <div className="w-9 h-9 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
             <Swords className="w-4 h-4 text-violet-400" />
           </div>
-          <h2 id="new-competition-title" className="typo-heading text-primary [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+          <h2 id="new-competition-title" className="typo-section-title">
             Start a Competition
           </h2>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div>
-            <label className="typo-caption text-foreground uppercase tracking-wider block mb-1.5">Task title</label>
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">Task title</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus
               placeholder="e.g. Add rate limiting to /api/auth/login"
-              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground/40 focus-ring" />
+              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring" />
           </div>
           <div>
-            <label className="typo-caption text-foreground uppercase tracking-wider block mb-1.5">Task description (optional)</label>
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">Task description (optional)</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               placeholder="Acceptance criteria, target files, constraints..."
-              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground/40 focus-ring resize-none" />
+              className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring resize-none" />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="typo-caption text-foreground uppercase tracking-wider">Competitors</label>
+            <label className="typo-caption text-primary uppercase tracking-wider">Competitors</label>
             <div className="flex items-center gap-2">
               {[2, 3, 4].map((n) => (
                 <button key={n} onClick={() => setSlotCount(n)}
                   className={`w-8 h-8 rounded-interactive typo-heading transition-colors ${
                     slotCount === n ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
-                    : 'text-foreground/60 hover:bg-secondary/40 border border-transparent'
+                    : 'text-foreground hover:bg-secondary/40 border border-transparent'
                   }`}>{n}</button>
               ))}
               <button onClick={regenerate} title="Regenerate strategies"
-                className="p-1.5 rounded-interactive hover:bg-secondary/40 text-foreground/60 ml-2">
+                className="p-1.5 rounded-interactive hover:bg-secondary/40 text-foreground ml-2">
                 <RefreshCw className="w-4 h-4" />
               </button>
             </div>
@@ -115,7 +115,7 @@ export function NewCompetitionModal({
               <div key={i} className="rounded-interactive border border-primary/15 bg-card/30 p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Dna className="w-3.5 h-3.5 text-violet-400" />
-                  <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">{s.label}</span>
+                  <span className="typo-card-label">{s.label}</span>
                   <span className="typo-caption text-foreground ml-auto">{s.tagline}</span>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">

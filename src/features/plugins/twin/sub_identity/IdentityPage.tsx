@@ -7,6 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
 
 /**
  * Identity tab — editable bio, role, gender for the active twin.
@@ -167,6 +168,7 @@ export default function IdentityPage() {
 
       <ContentBody centered>
         <div className="max-w-2xl mx-auto space-y-6 pb-8">
+          <CoachMark id="identity" title={t.coach.identityTitle} body={t.coach.identityBody} />
           {/* Name + Role */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="space-y-2">
@@ -190,7 +192,7 @@ export default function IdentityPage() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-interactive border transition-colors ${
                     gender === g.id
                       ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
-                      : 'text-muted-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
+                      : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                   }`}
                 >
                   <span className="text-lg">{GENDER_ICONS[g.id]}</span>
@@ -238,7 +240,7 @@ export default function IdentityPage() {
               <span className="typo-body text-foreground font-medium">{t.identity.obsidianVaultSubpath}</span>
             </div>
             <input type="text" value={obsidianSubpath} onChange={(e) => { setObsidianSubpath(e.target.value); markDirty(); }} className={`${INPUT_FIELD} font-mono`} />
-            <p className="typo-caption text-muted-foreground">{t.identity.obsidianSubpathHint}</p>
+            <p className="typo-caption text-foreground">{t.identity.obsidianSubpathHint}</p>
           </div>
 
           {/* Prompt preview */}

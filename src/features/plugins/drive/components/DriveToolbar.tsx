@@ -211,7 +211,7 @@ function BreadcrumbPill({
       onClick={onClick}
       className={`flex items-center gap-1 px-2 py-1 rounded-md typo-body truncate max-w-[160px] transition-colors ${
         isLast
-          ? "text-foreground font-semibold"
+          ? "typo-section-title"
           : "text-foreground/90 hover:text-foreground hover:bg-primary/10"
       }`}
     >

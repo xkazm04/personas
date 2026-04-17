@@ -33,7 +33,7 @@ export function DevCloneAdoptionCard({
           <Bot className="w-6 h-6 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+          <h3 className="typo-section-title">
             Adopt Dev Clone
           </h3>
           <p className="typo-body text-foreground mt-1">

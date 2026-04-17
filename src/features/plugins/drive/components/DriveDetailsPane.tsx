@@ -24,7 +24,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
       <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/60 px-5 py-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-cyan-300" />
-          <span className="typo-body font-semibold text-foreground uppercase tracking-wider">
+          <span className="typo-label typo-section-title">
             {t.plugins.drive.details_title}
           </span>
         </div>
@@ -39,7 +39,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
           </div>
         </div>
         <div className="pt-3 border-t border-primary/10">
-          <div className="typo-body text-foreground/90 uppercase tracking-wider">
+          <div className="typo-label text-foreground/90">
             Location
           </div>
           <div className="mt-1 font-mono typo-body text-foreground break-all">
@@ -67,7 +67,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
           >
             <Icon className={`w-10 h-10 ${visual.text}`} />
           </div>
-          <div className="mt-3 typo-body font-semibold text-foreground break-all px-1 leading-tight">
+          <div className="mt-3 typo-body typo-card-label break-all px-1 leading-tight">
             {multi ? `${entries.length} items selected` : primary.name}
           </div>
           {!multi && (
@@ -120,7 +120,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
         {multi && (
           <div className="rounded-lg border border-primary/10 bg-secondary/30 p-3">
-            <div className="typo-body text-foreground/90 uppercase tracking-wider">
+            <div className="typo-label text-foreground/90">
               {t.plugins.drive.details_items}
             </div>
             <div className="mt-1 typo-body text-foreground">
@@ -139,7 +139,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
         {!multi && primary.kind === "file" && (
           <div className="space-y-2">
-            <div className="typo-body font-semibold text-foreground/90 uppercase tracking-wider">
+            <div className="typo-label text-foreground/90">
               {t.plugins.drive.details_preview}
             </div>
             <FilePreview entry={primary} />
@@ -167,7 +167,7 @@ function DetailRow({
 }) {
   return (
     <div className="px-3 py-2">
-      <div className="typo-body text-foreground/90 uppercase tracking-wider mb-1">
+      <div className="typo-label text-foreground/90 mb-1">
         {label}
       </div>
       <div className="typo-body text-foreground break-words">{children}</div>

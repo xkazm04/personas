@@ -21,11 +21,11 @@ export default function CreativeStudioPanel() {
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div className="space-y-1">
-        <h2 className="typo-heading text-foreground flex items-center gap-2">
+        <h2 className="typo-section-title flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-rose-400" />
           {t.plugins.artist.creative_studio_title}
         </h2>
-        <p className="typo-body text-muted-foreground">
+        <p className="typo-body text-foreground">
           {t.plugins.artist.creative_studio_desc}
         </p>
       </div>
@@ -113,11 +113,11 @@ function EnvironmentStatus({
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <h3 className="typo-heading text-foreground">{t.plugins.artist.env_status}</h3>
+          <h3 className="typo-section-title">{t.plugins.artist.env_status}</h3>
           {!expanded && (
             <div className="flex items-center gap-1.5 ml-2">
               {checking && !status ? (
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1 text-md text-foreground">
                   <RefreshCw className="w-3 h-3 animate-spin" />
                   {t.plugins.artist.checking_env}
                 </span>
@@ -129,13 +129,13 @@ function EnvironmentStatus({
                     <StatusDot key={c.id} ok={c.healthy} />
                   ))}
                   {allReady ? (
-                    <span className="text-[10px] text-emerald-400 ml-1">{t.plugins.artist.ready}</span>
+                    <span className="text-md text-emerald-400 ml-1">{t.plugins.artist.ready}</span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/60 ml-1">{t.plugins.artist.status_partial}</span>
+                    <span className="text-md text-foreground ml-1">{t.plugins.artist.status_partial}</span>
                   )}
                 </>
               ) : (
-                <span className="text-[10px] text-muted-foreground/60">{t.plugins.artist.status_not_checked}</span>
+                <span className="text-md text-foreground">{t.plugins.artist.status_not_checked}</span>
               )}
             </div>
           )}
@@ -144,12 +144,12 @@ function EnvironmentStatus({
           <button
             onClick={(e) => { e.stopPropagation(); onCheck(); }}
             disabled={checking}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-secondary/40 hover:bg-secondary/60 text-muted-foreground transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 px-2 py-1 rounded text-md bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
             {t.plugins.artist.refresh}
           </button>
-          <span className="text-muted-foreground text-md">{expanded ? '▲' : '▼'}</span>
+          <span className="text-foreground text-md">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ function EnvironmentStatus({
         <div className="px-5 pb-4 space-y-4 border-t border-primary/5 pt-3">
           {/* Blender + MCP status */}
           {checking && !status ? (
-            <div className="flex items-center gap-2 text-muted-foreground typo-body">
+            <div className="flex items-center gap-2 text-foreground typo-body">
               <RefreshCw className="w-4 h-4 animate-spin" />
               {t.plugins.artist.checking_env}
             </div>
@@ -178,7 +178,7 @@ function EnvironmentStatus({
                   <button
                     onClick={onInstall}
                     disabled={installing}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 px-2 py-1 rounded text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
                   >
                     <Download className={`w-3 h-3 ${installing ? 'animate-bounce' : ''}`} />
                     {installing ? t.plugins.artist.installing : t.plugins.artist.install}
@@ -186,7 +186,7 @@ function EnvironmentStatus({
                 ) : undefined}
               />
               {status.blenderPath && (
-                <div className="text-[10px] text-muted-foreground font-mono truncate ml-7">
+                <div className="text-md text-foreground font-mono truncate ml-7">
                   {status.blenderPath}
                 </div>
               )}
@@ -198,7 +198,7 @@ function EnvironmentStatus({
 
           {/* Creative tool connectors */}
           <div className="space-y-2">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            <span className="typo-label text-foreground">
               {t.plugins.artist.image_gen_tools}
             </span>
             {connectors.map((c) => {
@@ -216,9 +216,9 @@ function EnvironmentStatus({
                     ) : (
                       <meta.Icon className="w-3.5 h-3.5" style={{ color: meta.color }} />
                     )}
-                    <span className="typo-heading text-foreground text-md">{c.name}</span>
+                    <span className="text-md text-foreground">{c.name}</span>
                   </div>
-                  <span className="typo-body text-muted-foreground text-md flex-1">
+                  <span className="typo-body text-foreground text-md flex-1">
                     {c.connected
                       ? c.healthy ? t.plugins.artist.connected_healthy : t.plugins.artist.connected_not_verified
                       : t.plugins.artist.not_connected}
@@ -226,7 +226,7 @@ function EnvironmentStatus({
                   {!c.connected && (
                     <button
                       onClick={navigateToVault}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" />
                       {t.plugins.artist.connect}
@@ -287,9 +287,9 @@ function CreativeSessionChat({
       <div className="flex items-center justify-between px-5 py-3 border-b border-primary/5">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-rose-400" />
-          <h3 className="typo-heading text-foreground">{t.plugins.artist.creative_session}</h3>
+          <h3 className="typo-section-title">{t.plugins.artist.creative_session}</h3>
           {running && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 ml-1">
+            <span className="flex items-center gap-1 text-md text-emerald-400 ml-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               {t.plugins.artist.streaming}
             </span>
@@ -300,7 +300,7 @@ function CreativeSessionChat({
           {availableTools.map((tool) => (
             <span
               key={tool}
-              className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/10 text-rose-400"
+              className="px-1.5 py-0.5 rounded text-md bg-rose-500/10 text-rose-400"
             >
               {tool === 'blender'
                 ? t.plugins.artist.tool_blender
@@ -312,13 +312,13 @@ function CreativeSessionChat({
             </span>
           ))}
           {availableTools.length === 0 && (
-            <span className="text-[10px] text-amber-400">{t.plugins.artist.no_tools_connected}</span>
+            <span className="text-md text-amber-400">{t.plugins.artist.no_tools_connected}</span>
           )}
           {output.length > 0 && (
             <button
               onClick={clear}
               disabled={running}
-              className="p-1 rounded hover:bg-secondary/40 text-muted-foreground disabled:opacity-30 ml-2"
+              className="p-1 rounded hover:bg-secondary/40 text-foreground disabled:opacity-30 ml-2"
               title={t.plugins.artist.clear_session}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -337,7 +337,7 @@ function CreativeSessionChat({
             <div className="w-12 h-12 rounded-2xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-center">
               <Wand2 className="w-6 h-6 text-rose-400/30" />
             </div>
-            <p className="typo-body text-muted-foreground max-w-sm text-center">
+            <p className="typo-body text-foreground max-w-sm text-center">
               {t.plugins.artist.empty_session_hint}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -349,7 +349,7 @@ function CreativeSessionChat({
                 <button
                   key={example}
                   onClick={() => setPrompt(example)}
-                  className="px-3 py-1.5 rounded-lg text-[11px] bg-secondary/40 text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-md bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                 >
                   {example}
                 </button>
@@ -376,7 +376,7 @@ function CreativeSessionChat({
               : t.plugins.artist.connect_tools_first
           }
           disabled={running}
-          className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
+          className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
         />
         {running ? (
           <button
@@ -413,10 +413,10 @@ function OutputLine({ line }: { line: string }) {
 
   let className = 'text-md leading-relaxed ';
   if (isUser) className += 'text-rose-400 font-medium';
-  else if (isTool) className += 'text-blue-400 font-mono text-[11px]';
-  else if (isMilestone) className += 'text-emerald-400 font-medium text-[11px]';
+  else if (isTool) className += 'text-blue-400 font-mono';
+  else if (isMilestone) className += 'text-emerald-400 font-medium';
   else if (isError) className += 'text-red-400';
-  else if (isSystem) className += 'text-amber-400 text-[11px]';
+  else if (isSystem) className += 'text-amber-400';
   else className += 'text-foreground';
 
   return (
@@ -456,9 +456,9 @@ function StatusRow({
       ) : (
         <XCircle className="w-4 h-4 text-red-400" />
       )}
-      <span className="typo-heading text-foreground w-28 text-md">{label}</span>
-      <span className="typo-body text-muted-foreground text-md flex-1">{detail}</span>
-      {hint && <span className="text-[10px] text-amber-400">{hint}</span>}
+      <span className="text-md text-foreground w-28 font-medium">{label}</span>
+      <span className="typo-body text-foreground text-md flex-1">{detail}</span>
+      {hint && <span className="text-md text-amber-400">{hint}</span>}
       {action}
     </div>
   );

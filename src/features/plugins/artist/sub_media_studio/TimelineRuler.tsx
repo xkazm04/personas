@@ -51,7 +51,7 @@ export default function TimelineRuler({ zoom, duration }: TimelineRulerProps) {
           />
           {/* Label */}
           {tick.major && (
-            <span className="absolute bottom-0.5 left-1 text-[9px] font-mono text-muted-foreground/70 leading-none whitespace-nowrap tabular-nums">
+            <span className="absolute bottom-0.5 left-1 text-md font-mono text-foreground leading-none whitespace-nowrap tabular-nums">
               {tick.label}
             </span>
           )}

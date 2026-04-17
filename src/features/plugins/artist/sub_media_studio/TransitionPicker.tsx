@@ -9,7 +9,7 @@ interface TransitionPickerProps {
 }
 
 const TRANSITIONS: { id: TransitionType; icon: typeof Scissors; color: string }[] = [
-  { id: 'cut', icon: Scissors, color: 'text-foreground/60' },
+  { id: 'cut', icon: Scissors, color: 'text-foreground' },
   { id: 'crossfade', icon: Blend, color: 'text-violet-400' },
   { id: 'fade_to_black', icon: Moon, color: 'text-amber-400' },
 ];
@@ -29,7 +29,7 @@ export default function TransitionPicker({
 
   return (
     <div className="space-y-2">
-      <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wide">
+      <label className="typo-label text-foreground">
         {t.media_studio.transition}
       </label>
 
@@ -45,11 +45,11 @@ export default function TransitionPicker({
               className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border transition-all text-center ${
                 isActive
                   ? 'bg-primary/10 border-primary/30 text-foreground'
-                  : 'bg-secondary/20 border-primary/10 text-muted-foreground/60 hover:bg-secondary/30'
+                  : 'bg-secondary/20 border-primary/10 text-foreground hover:bg-secondary/30'
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? tr.color : ''}`} />
-              <span className="text-[9px] font-medium leading-tight">
+              <span className="text-md font-medium leading-tight">
                 {t.media_studio[TRANSITION_LABELS[tr.id]]}
               </span>
             </button>
@@ -60,7 +60,7 @@ export default function TransitionPicker({
       {/* Duration slider (only for non-cut transitions) */}
       {value !== 'cut' && (
         <div className="flex items-center gap-2">
-          <label className="text-[10px] text-muted-foreground/60 shrink-0">
+          <label className="text-md text-foreground shrink-0">
             {t.media_studio.transition_duration}
           </label>
           <input
@@ -72,7 +72,7 @@ export default function TransitionPicker({
             onChange={(e) => onChange(value, parseFloat(e.target.value))}
             className="flex-1 h-1 accent-primary"
           />
-          <span className="text-[10px] text-muted-foreground/50 w-7 text-right tabular-nums">
+          <span className="text-md text-foreground w-7 text-right tabular-nums">
             {duration.toFixed(1)}s
           </span>
         </div>

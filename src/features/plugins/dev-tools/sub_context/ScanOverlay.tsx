@@ -34,8 +34,8 @@ export default function ScanOverlay({
               <LoadingSpinner size="lg" className="text-amber-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground/90">{t.plugins.dev_tools.scanning_codebase}</h3>
-              <p className="text-[10px] text-muted-foreground/50">{t.plugins.dev_tools.analyzing_codebase}</p>
+              <h3 className="typo-section-title">{t.plugins.dev_tools.scanning_codebase}</h3>
+              <p className="text-md text-foreground">{t.plugins.dev_tools.analyzing_codebase}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onCancel} title="Cancel scan">
@@ -49,7 +49,7 @@ export default function ScanOverlay({
           className="bg-black/40 border border-primary/10 rounded-xl p-3 h-56 overflow-y-auto font-mono text-[11px] leading-relaxed"
         >
           {lines.length === 0 ? (
-            <p className="text-muted-foreground/30">{t.plugins.dev_tools.waiting_for_output}</p>
+            <p className="text-foreground">{t.plugins.dev_tools.waiting_for_output}</p>
           ) : (
             lines.map((line, i) => (
               <div
@@ -65,7 +65,7 @@ export default function ScanOverlay({
                     ? 'text-red-400'
                     : line.startsWith('[Complete]')
                     ? 'text-emerald-300 font-medium'
-                    : 'text-muted-foreground/60'
+                    : 'text-foreground'
                 }`}
               >
                 {line}
@@ -74,7 +74,7 @@ export default function ScanOverlay({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mt-3 text-[10px] text-muted-foreground/40">
+        <div className="flex items-center gap-2 mt-3 text-[10px] text-foreground">
           <Terminal className="w-3 h-3" />
           <span>{lines.length} lines</span>
         </div>

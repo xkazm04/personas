@@ -72,7 +72,7 @@ export function DriveSignaturesPanel({
       <aside className="w-[420px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-2xl">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <FileSignature className="w-4 h-4 text-rose-400" />
-          <div className="typo-heading-sm text-foreground flex-1">
+          <div className="typo-heading-sm typo-section-title flex-1">
             {t.plugins.doc_signing.history_heading}
           </div>
           <button
@@ -119,7 +119,7 @@ export function DriveSignaturesPanel({
                         onClose();
                       }
                     }}
-                    className="typo-body font-medium text-foreground truncate hover:text-sky-300 text-left"
+                    className="typo-body typo-card-label truncate hover:text-sky-300 text-left"
                   >
                     {sig.file_name}
                   </button>

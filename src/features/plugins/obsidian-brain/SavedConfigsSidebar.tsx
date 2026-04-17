@@ -55,16 +55,16 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
     <aside className="w-64 flex-shrink-0 border-l border-primary/10 pl-4 py-2 flex flex-col">
       <div className="flex items-center gap-2 mb-3 px-1">
         <BookMarked className="w-3.5 h-3.5 text-violet-400/70" />
-        <p className="typo-caption text-muted-foreground/60 uppercase tracking-wide">
+        <p className="typo-label typo-section-title">
           Saved Vaults
         </p>
         {configs.length > 0 && (
-          <span className="ml-auto typo-caption text-muted-foreground/40">{configs.length}</span>
+          <span className="ml-auto typo-caption text-foreground/90">{configs.length}</span>
         )}
       </div>
 
       {configs.length === 0 ? (
-        <p className="typo-caption text-muted-foreground/40 px-1 py-2 leading-relaxed">
+        <p className="typo-caption text-foreground px-1 py-2 leading-relaxed">
           {emptyHint ?? 'Connect and save a vault to see it here.'}
         </p>
       ) : (
@@ -87,20 +87,20 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                   <div className="flex items-center gap-2 min-w-0">
                     <p
                       className={`typo-heading truncate flex-1 ${
-                        active ? 'text-violet-300' : 'text-foreground/80'
+                        active ? 'text-violet-300' : 'typo-card-label'
                       }`}
                     >
                       {cfg.vaultName}
                     </p>
                     {active && <Check className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />}
                   </div>
-                  <p className="typo-caption text-muted-foreground/40 truncate mt-0.5">
+                  <p className="typo-caption text-foreground/90 truncate mt-0.5">
                     {cfg.vaultPath}
                   </p>
                 </button>
                 <button
                   onClick={(e) => removeConfig(e, cfg)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 focus-ring"
+                  className="absolute top-1.5 right-1.5 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
                   title={`Remove ${cfg.vaultName}`}
                   aria-label={`Remove ${cfg.vaultName}`}
                 >

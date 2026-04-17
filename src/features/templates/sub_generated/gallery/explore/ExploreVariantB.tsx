@@ -19,7 +19,7 @@
  * └─────────────────────────────────────────────────────┘
  */
 import { useMemo } from 'react';
-import { Search, TrendingUp, Download, Zap, MessageSquare, Database, Shield, BarChart3, Bell, GitBranch } from 'lucide-react';
+import { Search, TrendingUp, Download, Zap, MessageSquare, Database, Shield, BarChart3, Bell, GitBranch, type LucideIcon } from 'lucide-react';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -37,7 +37,7 @@ interface Props {
 
 interface UseCaseLane {
   title: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   color: string;
   categories: string[];
   /** Maps to a role illustration for the lane header */

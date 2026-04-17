@@ -66,18 +66,18 @@ export default function CreativeSessionHistory() {
       >
         <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-rose-400" />
-          <h3 className="typo-heading text-foreground">{t.plugins.artist.session_history}</h3>
-          <span className="text-[10px] text-muted-foreground/60 tabular-nums">({sessions.length})</span>
+          <h3 className="typo-section-title">{t.plugins.artist.session_history}</h3>
+          <span className="text-md text-foreground tabular-nums">({sessions.length})</span>
         </div>
         <ChevronRight
-          className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? 'rotate-90' : ''}`}
+          className={`w-4 h-4 text-foreground transition-transform ${expanded ? 'rotate-90' : ''}`}
         />
       </button>
 
       {expanded && (
         <div className="px-3 pb-3 border-t border-primary/5">
           {sessions.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground/60 py-4 text-center">
+            <p className="text-md text-foreground py-4 text-center">
               {t.plugins.artist.session_history_empty}
             </p>
           ) : (
@@ -91,10 +91,10 @@ export default function CreativeSessionHistory() {
                     <StatusIcon status={sess.status} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-foreground truncate">
+                    <p className="text-md text-foreground truncate">
                       {sess.prompt || '(empty prompt)'}
                     </p>
-                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground/60">
+                    <div className="flex items-center gap-2 text-md text-foreground">
                       <span>{formatRelative(sess.startedAt)}</span>
                       <span>&middot;</span>
                       <span>{statusLabel(sess.status)}</span>

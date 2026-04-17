@@ -42,7 +42,7 @@ export function DriveTextPrompt({
       }}
     >
       <div className="w-[360px] rounded-xl border border-primary/20 bg-background/95 shadow-xl p-4">
-        <div className="typo-heading-sm text-foreground mb-3">{title}</div>
+        <div className="typo-heading-sm typo-section-title mb-3">{title}</div>
         <input
           ref={inputRef}
           value={value}
@@ -108,7 +108,7 @@ export function DriveConfirm({
       }}
     >
       <div className="w-[400px] rounded-xl border border-primary/20 bg-background/95 shadow-xl p-4">
-        <div className="typo-heading-sm text-foreground mb-2">{title}</div>
+        <div className="typo-heading-sm typo-section-title mb-2">{title}</div>
         {body && (
           <div className="typo-body text-foreground/90 mb-4">{body}</div>
         )}

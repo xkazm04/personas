@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { GraduationCap, Clock } from 'lucide-react';
+import { GraduationCap, Clock, type LucideIcon } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import { getCategoryMeta } from '../filters/searchConstants';
@@ -8,10 +8,10 @@ import { DIFFICULTY_OPTIONS, SETUP_OPTIONS, DIFFICULTY_META, SETUP_META } from '
 import type { QueryChip } from './useStructuredQuery';
 
 type ChipType = QueryChip['type'];
-interface SuggestionItem { chip: QueryChip; icon: React.ElementType; color: string }
+interface SuggestionItem { chip: QueryChip; icon: LucideIcon; color: string }
 
 function buildSuggestions(
-  options: { value: string; label: string; icon: React.ElementType; color: string }[],
+  options: { value: string; label: string; icon: LucideIcon; color: string }[],
   activeChips: QueryChip[],
   chipType: ChipType,
   query: string,

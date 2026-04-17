@@ -32,13 +32,13 @@ export default function ExportPanel({ composition }: ExportPanelProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-t border-primary/10 bg-card/50">
       {/* Composition stats */}
-      <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 mr-auto tabular-nums font-mono">
-        <span className="text-foreground/50">{composition.width}x{composition.height}</span>
-        <span className="text-foreground/15">|</span>
+      <div className="flex items-center gap-2 text-md text-foreground mr-auto tabular-nums font-mono">
+        <span className="text-foreground">{composition.width}x{composition.height}</span>
+        <span className="text-foreground">|</span>
         <span>{composition.fps} fps</span>
-        <span className="text-foreground/15">|</span>
+        <span className="text-foreground">|</span>
         <span>{composition.items.length} items</span>
-        <span className="text-foreground/15">|</span>
+        <span className="text-foreground">|</span>
         <span>
           {formatMMSS(composition.items.reduce((max, it) => Math.max(max, it.startTime + it.duration), 0))}
         </span>
@@ -54,7 +54,7 @@ export default function ExportPanel({ composition }: ExportPanelProps) {
               style={{ width: `${exportState.progress * 100}%` }}
             />
           </div>
-          <span className="text-[11px] text-muted-foreground tabular-nums">
+          <span className="text-md text-foreground tabular-nums">
             {Math.round(exportState.progress * 100)}%
           </span>
           <Button variant="ghost" size="icon-sm" onClick={cancelExport} title={t.media_studio.export_cancel}>
@@ -66,14 +66,14 @@ export default function ExportPanel({ composition }: ExportPanelProps) {
       {isComplete && (
         <div className="flex items-center gap-1.5 text-emerald-400">
           <CheckCircle2 className="w-4 h-4" />
-          <span className="text-xs">{t.media_studio.export_complete}</span>
+          <span className="text-md">{t.media_studio.export_complete}</span>
         </div>
       )}
 
       {isError && (
         <div className="flex items-center gap-1.5 text-red-400">
           <AlertTriangle className="w-4 h-4" />
-          <span className="text-xs">{t.media_studio.export_failed}</span>
+          <span className="text-md">{t.media_studio.export_failed}</span>
         </div>
       )}
 

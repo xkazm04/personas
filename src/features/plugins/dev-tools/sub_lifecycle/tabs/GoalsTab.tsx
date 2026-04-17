@@ -13,7 +13,7 @@ export function GoalsTab() {
   if (goals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Target className="w-10 h-10 text-foreground/20 mb-3" />
+        <Target className="w-10 h-10 text-foreground mb-3" />
         <p className="typo-body text-foreground">
           No goals yet. Create goals in the Projects tab.
         </p>
@@ -24,7 +24,7 @@ export function GoalsTab() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center justify-between">
-        <h3 className="typo-caption text-foreground uppercase tracking-wider">
+        <h3 className="typo-caption text-primary uppercase tracking-wider">
           Goal Constellation ({goals.length})
         </h3>
         <Button

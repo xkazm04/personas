@@ -29,7 +29,7 @@ export function DriveSidebar({ drive }: Props) {
             <HardDrive className="w-4 h-4 text-cyan-200" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-semibold text-foreground tracking-tight">
+            <div className="typo-section-title tracking-tight">
               {t.plugins.drive.sidebar_root}
             </div>
             <div className="typo-body text-foreground/90">
@@ -39,7 +39,7 @@ export function DriveSidebar({ drive }: Props) {
             </div>
           </div>
           {drive.storage?.isDev && (
-            <span className="px-1.5 py-0.5 rounded typo-body font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            <span className="px-1.5 py-0.5 rounded typo-label bg-amber-500/20 text-amber-300 border border-amber-500/40">
               dev
             </span>
           )}
@@ -48,7 +48,7 @@ export function DriveSidebar({ drive }: Props) {
 
       {/* Folder tree */}
       <div className="flex-1 overflow-y-auto py-2 px-1">
-        <div className="px-2 mb-1 typo-body font-semibold text-foreground/90 uppercase tracking-wider">
+        <div className="px-2 mb-1 typo-label text-foreground/90">
           Folders
         </div>
         {drive.tree ? (
@@ -64,7 +64,7 @@ export function DriveSidebar({ drive }: Props) {
       {drive.storage && (
         <div className="border-t border-primary/10 px-4 py-3 bg-background/40">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="typo-body font-semibold text-foreground/90 uppercase tracking-wider">
+            <div className="typo-label text-foreground/90">
               {t.plugins.drive.sidebar_storage}
             </div>
             <Sparkles className="w-3 h-3 text-cyan-400/70" />

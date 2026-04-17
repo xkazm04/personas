@@ -21,9 +21,9 @@ const PRESETS = {
 };
 
 const PRESET_COLORS: Record<string, { active: string; inactive: string }> = {
-  emerald: { active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', inactive: 'bg-secondary/30 text-muted-foreground/50 border-border/20' },
-  amber: { active: 'bg-amber-500/20 text-amber-400 border-amber-500/30', inactive: 'bg-secondary/30 text-muted-foreground/50 border-border/20' },
-  red: { active: 'bg-red-500/20 text-red-400 border-red-500/30', inactive: 'bg-secondary/30 text-muted-foreground/50 border-border/20' },
+  emerald: { active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', inactive: 'bg-secondary/30 text-foreground border-border/20' },
+  amber: { active: 'bg-amber-500/20 text-amber-400 border-amber-500/30', inactive: 'bg-secondary/30 text-foreground border-border/20' },
+  red: { active: 'bg-red-500/20 text-red-400 border-red-500/30', inactive: 'bg-secondary/30 text-foreground border-border/20' },
 };
 
 function rangesEqual(a: [number, number], b: [number, number]) {
@@ -38,9 +38,9 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
       {/* Effort */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-md font-semibold text-muted-foreground/60 uppercase tracking-wider">Effort</span>
+          <span className="text-md font-semibold text-primary uppercase tracking-wider">Effort</span>
           {!rangesEqual(effortRange, allRange) && (
-            <button onClick={() => onEffortChange(allRange)} className="text-md text-primary/50 hover:text-primary">Clear</button>
+            <button onClick={() => onEffortChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
           )}
         </div>
         <div className="flex gap-1.5">
@@ -65,9 +65,9 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
       {/* Risk */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-md font-semibold text-muted-foreground/60 uppercase tracking-wider">Risk</span>
+          <span className="text-md font-semibold text-primary uppercase tracking-wider">Risk</span>
           {!rangesEqual(riskRange, allRange) && (
-            <button onClick={() => onRiskChange(allRange)} className="text-md text-primary/50 hover:text-primary">Clear</button>
+            <button onClick={() => onRiskChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
           )}
         </div>
         <div className="flex gap-1.5">

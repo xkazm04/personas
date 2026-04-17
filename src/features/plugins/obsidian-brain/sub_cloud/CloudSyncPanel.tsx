@@ -157,8 +157,8 @@ export default function CloudSyncPanel() {
         <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
           <User className="w-7 h-7 text-blue-400/80" />
         </div>
-        <p className="typo-heading-lg text-foreground/80 mb-1.5">Sign in to enable cloud sync</p>
-        <p className="typo-body text-muted-foreground/50 max-w-md text-center mb-6">
+        <p className="typo-heading-lg typo-section-title mb-1.5">Sign in to enable cloud sync</p>
+        <p className="typo-body text-foreground/90 max-w-md text-center mb-6">
           Sign in with your Google account to back up your vault to your own Google Drive
           (15 GB free). Files are stored under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
         </p>
@@ -194,8 +194,8 @@ export default function CloudSyncPanel() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="typo-heading text-foreground/80">{user.display_name || user.email}</p>
-                <p className="typo-caption text-muted-foreground/50">{user.email}</p>
+                <p className="typo-heading typo-card-label">{user.display_name || user.email}</p>
+                <p className="typo-caption text-foreground">{user.email}</p>
               </div>
               {driveConnected ? (
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 typo-caption">
@@ -220,10 +220,10 @@ export default function CloudSyncPanel() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <HardDrive className="w-4 h-4 text-muted-foreground/40" />
-                  <span className="typo-caption text-muted-foreground/60">Storage</span>
+                  <HardDrive className="w-4 h-4 text-foreground" />
+                  <span className="typo-label text-foreground/90">Storage</span>
                 </div>
-                <span className="typo-caption text-foreground/60">
+                <span className="typo-caption text-foreground tabular-nums">
                   {formatBytes(driveStorageUsed)} / {formatBytes(driveStorageLimit)}
                 </span>
               </div>
@@ -233,7 +233,7 @@ export default function CloudSyncPanel() {
                   style={{ width: `${Math.min(100, (driveStorageUsed / driveStorageLimit) * 100)}%` }}
                 />
               </div>
-              <p className="typo-caption text-muted-foreground/40">
+              <p className="typo-caption text-foreground">
                 {driveFileCount} files synced to Drive
                 {driveEmail && driveEmail !== user?.email && ` · ${driveEmail}`}
               </p>
@@ -242,7 +242,7 @@ export default function CloudSyncPanel() {
 
           {!driveConnected && (
             <div className="px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/15">
-              <p className="typo-body text-foreground/60">
+              <p className="typo-body text-foreground/90">
                 Connect Google Drive to back up your vault across devices. Files are stored in your own
                 Google Drive under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
                 Free alternative to Obsidian Sync ($4/month).
@@ -275,7 +275,7 @@ export default function CloudSyncPanel() {
               </button>
             </div>
 
-            <p className="typo-caption text-muted-foreground/40">
+            <p className="typo-caption text-foreground">
               Push uploads local vault changes to Google Drive. Pull downloads remote changes to your local vault.
               Only files that have changed since the last sync are transferred.
             </p>
@@ -287,12 +287,12 @@ export default function CloudSyncPanel() {
       {lastResult && (
         <SectionCard status={lastResult.errors.length > 0 ? 'warning' : 'success'}>
           <div className="space-y-2">
-            <p className="typo-caption text-muted-foreground/60">Last Sync Result</p>
+            <p className="typo-label text-foreground/90">Last Sync Result</p>
             <div className="flex gap-4 typo-body">
               {lastResult.uploaded > 0 && <span className="text-blue-400">{lastResult.uploaded} uploaded</span>}
               {lastResult.downloaded > 0 && <span className="text-emerald-400">{lastResult.downloaded} downloaded</span>}
               {lastResult.deleted > 0 && <span className="text-red-400">{lastResult.deleted} deleted</span>}
-              <span className="text-muted-foreground/40">{lastResult.skipped} skipped</span>
+              <span className="text-foreground">{lastResult.skipped} skipped</span>
               {lastResult.errors.length > 0 && <span className="text-amber-400">{lastResult.errors.length} errors</span>}
             </div>
             {lastResult.errors.length > 0 && (
@@ -315,8 +315,8 @@ export default function CloudSyncPanel() {
                 <span className="typo-caption text-blue-400 font-medium">1</span>
               </div>
               <div>
-                <p className="typo-heading text-foreground/80">Connect Google Drive</p>
-                <p className="typo-caption text-muted-foreground/50">Grant Personas access to create files in your Drive. Only the app&apos;s own folder is accessible.</p>
+                <p className="typo-heading typo-card-label">Connect Google Drive</p>
+                <p className="typo-caption text-foreground">Grant Personas access to create files in your Drive. Only the app&apos;s own folder is accessible.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -324,8 +324,8 @@ export default function CloudSyncPanel() {
                 <span className="typo-caption text-blue-400 font-medium">2</span>
               </div>
               <div>
-                <p className="typo-heading text-foreground/80">Push your vault</p>
-                <p className="typo-caption text-muted-foreground/50">Vault notes are uploaded as markdown files to Drive. Only changed files are synced (content-hash comparison).</p>
+                <p className="typo-heading typo-card-label">Push your vault</p>
+                <p className="typo-caption text-foreground">Vault notes are uploaded as markdown files to Drive. Only changed files are synced (content-hash comparison).</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -333,8 +333,8 @@ export default function CloudSyncPanel() {
                 <span className="typo-caption text-blue-400 font-medium">3</span>
               </div>
               <div>
-                <p className="typo-heading text-foreground/80">Sync across devices</p>
-                <p className="typo-caption text-muted-foreground/50">Pull on another device to download. Your 15 GB free Google Drive storage is more than enough for thousands of notes.</p>
+                <p className="typo-heading typo-card-label">Sync across devices</p>
+                <p className="typo-caption text-foreground">Pull on another device to download. Your 15 GB free Google Drive storage is more than enough for thousands of notes.</p>
               </div>
             </div>
           </div>

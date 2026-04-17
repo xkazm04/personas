@@ -42,7 +42,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+      <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">
         Implementation Log
       </h4>
 
@@ -54,7 +54,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
           onChange={(e) => setNoteText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
           placeholder={t.plugins.dev_tools.add_note_placeholder}
-          className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-lg text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
           onClick={handleAddNote}
@@ -67,19 +67,19 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
 
       {/* Timeline */}
       {sorted.length === 0 ? (
-        <p className="text-xs text-muted-foreground/40 italic py-4 text-center">{t.plugins.dev_tools.no_activity}</p>
+        <p className="text-xs text-foreground italic py-4 text-center">{t.plugins.dev_tools.no_activity}</p>
       ) : (
         <div className="space-y-1 max-h-64 overflow-y-auto">
           {sorted.map((signal) => {
-            const config = SIGNAL_ICONS[signal.signal_type] ?? { icon: Circle, color: 'text-muted-foreground/50' };
+            const config = SIGNAL_ICONS[signal.signal_type] ?? { icon: Circle, color: 'text-foreground' };
             const Icon = config.icon;
             return (
               <div key={signal.id} className="flex items-start gap-2 py-1.5 px-1">
                 <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${config.color}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-foreground/80 leading-relaxed">{signal.message}</p>
+                  <p className="text-xs text-foreground leading-relaxed">{signal.message}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground/40">{relativeTime(signal.created_at)}</span>
+                    <span className="text-[10px] text-foreground">{relativeTime(signal.created_at)}</span>
                     {signal.delta != null && signal.delta !== 0 && (
                       <span className={`text-[10px] font-mono ${signal.delta > 0 ? 'text-emerald-400/60' : 'text-red-400/60'}`}>
                         {signal.delta > 0 ? '+' : ''}{signal.delta}

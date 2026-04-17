@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Activity, CheckCircle2, Bot, Key } from 'lucide-react';
+import { Activity, CheckCircle2, Bot, Key, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
@@ -49,7 +49,7 @@ function useFleetMetrics() {
 }
 
 interface PillProps {
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
   value: string | number;
   onClick: () => void;

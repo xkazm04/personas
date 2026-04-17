@@ -6,6 +6,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
+import { Radio } from 'lucide-react';
 
 /**
  * Voice tab — ElevenLabs voice configuration (picker mode).
@@ -34,6 +36,12 @@ export default function VoicePage() {
   const fetchVoiceProfile = useSystemStore((s) => s.fetchTwinVoiceProfile);
   const upsertVoiceProfile = useSystemStore((s) => s.upsertTwinVoiceProfile);
   const deleteVoiceProfile = useSystemStore((s) => s.deleteTwinVoiceProfile);
+  // Nudge data: does a voice channel exist for this twin?
+  const twinChannels = useSystemStore((s) => s.twinChannels);
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const hasVoiceChannel = twinChannels.some(
+    (c) => c.twin_id === activeTwinId && c.channel_type === 'voice' && c.is_active,
+  );
 
   const [voiceId, setVoiceId] = useState('');
   const [modelId, setModelId] = useState('eleven_multilingual_v2');
@@ -114,6 +122,22 @@ export default function VoicePage() {
           <p className="typo-body text-foreground text-center py-12">{t.voice.loading}</p>
         ) : (
           <div className="max-w-2xl mx-auto space-y-6 pb-8">
+            <CoachMark id="voice" title={t.coach.voiceTitle} body={t.coach.voiceBody} />
+
+            {/* Nudge: voice configured but no voice channel deployed */}
+            {voiceProfile && !hasVoiceChannel && (
+              <div className="p-3 rounded-card border border-amber-500/25 bg-amber-500/5 flex items-center gap-3">
+                <Radio className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <p className="typo-caption text-foreground flex-1">{t.nudges.voiceUndeployed}</p>
+                <button
+                  onClick={() => setTwinTab('channels')}
+                  className="px-2.5 py-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/25 rounded-interactive hover:bg-amber-500/20 transition-colors flex-shrink-0"
+                >
+                  {t.nudges.voiceUndeployedCta}
+                </button>
+              </div>
+            )}
+
             {/* Voice ID + Credential */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="space-y-1.5">
@@ -144,7 +168,7 @@ export default function VoicePage() {
                   onChange={(e) => { setCredentialId(e.target.value); markDirty(); }}
                   className={`${INPUT_FIELD} font-mono`}
                 />
-                <p className="typo-caption text-muted-foreground">{t.voice.credentialIdHint}</p>
+                <p className="typo-caption text-foreground">{t.voice.credentialIdHint}</p>
               </label>
             </div>
 
@@ -167,7 +191,7 @@ export default function VoicePage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.stability}</span>
-                  <span className="typo-caption text-muted-foreground">{stability.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground">{stability.toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -176,7 +200,7 @@ export default function VoicePage() {
                   onChange={(e) => { setStability(parseFloat(e.target.value)); markDirty(); }}
                   className="w-full accent-violet-400"
                 />
-                <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
+                <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreExpressive}</span>
                   <span>{t.voice.moreConsistent}</span>
                 </div>
@@ -185,7 +209,7 @@ export default function VoicePage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.similarityBoost}</span>
-                  <span className="typo-caption text-muted-foreground">{similarityBoost.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground">{similarityBoost.toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -194,7 +218,7 @@ export default function VoicePage() {
                   onChange={(e) => { setSimilarityBoost(parseFloat(e.target.value)); markDirty(); }}
                   className="w-full accent-violet-400"
                 />
-                <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
+                <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreNatural}</span>
                   <span>{t.voice.closerToOriginal}</span>
                 </div>
@@ -203,7 +227,7 @@ export default function VoicePage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.style}</span>
-                  <span className="typo-caption text-muted-foreground">{style.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground">{style.toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -212,7 +236,7 @@ export default function VoicePage() {
                   onChange={(e) => { setStyle(parseFloat(e.target.value)); markDirty(); }}
                   className="w-full accent-violet-400"
                 />
-                <div className="flex justify-between typo-caption text-muted-foreground mt-0.5">
+                <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.neutral}</span>
                   <span>{t.voice.exaggerated}</span>
                 </div>
@@ -225,7 +249,7 @@ export default function VoicePage() {
                 <button
                   onClick={handleDelete}
                   aria-label={t.voice.removeVoice}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
+                  className="flex items-center gap-1.5 text-md text-foreground hover:text-red-400 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   {t.voice.removeVoice}

@@ -58,8 +58,8 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Box className="w-4 h-4 text-rose-400" />
-                <span className="typo-heading text-foreground">{selectedAsset.fileName}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">
+                <span className="typo-section-title">{selectedAsset.fileName}</span>
+                <span className="text-md text-foreground font-mono">
                   {selectedAsset.fileName.split('.').pop()?.toUpperCase()}
                 </span>
               </div>
@@ -68,7 +68,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <button
                   onClick={toggleAutoRotate}
                   className={`p-1.5 rounded-lg text-md transition-colors ${
-                    autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
+                    autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
                   }`}
                   title={t.plugins.artist.auto_rotate}
                 >
@@ -77,7 +77,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <button
                   onClick={toggleWireframe}
                   className={`p-1.5 rounded-lg text-md transition-colors ${
-                    wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
+                    wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
                   }`}
                   title={t.plugins.artist.wireframe}
                 >
@@ -86,7 +86,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <select
                   value={lightingPreset}
                   onChange={(e) => setLightingPreset(e.target.value as 'studio' | 'outdoor' | 'soft')}
-                  className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-[11px] text-foreground"
+                  className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground"
                 >
                   <option value="studio">{ t.plugins.artist.lighting_studio}</option>
                   <option value="outdoor">{ t.plugins.artist.lighting_outdoor}</option>
@@ -94,7 +94,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 </select>
                 <button
                   onClick={() => setSelectedIndex(null)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary/40 ml-2"
+                  className="p-1.5 rounded-lg text-foreground hover:bg-secondary/40 ml-2"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -106,9 +106,9 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
               {isViewable ? (
                 <Suspense
                   fallback={
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2 text-foreground">
                       <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
-                      <span className="text-[11px]">Loading viewer…</span>
+                      <span className="text-md">Loading viewer…</span>
                     </div>
                   }
                 >
@@ -122,10 +122,10 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
               ) : (
                 <div className="text-center space-y-3">
                   <Box className="w-16 h-16 text-rose-400 mx-auto" />
-                  <p className="typo-heading text-foreground">
+                  <p className="typo-section-title">
                     {t.plugins.artist.preview_not_available}
                   </p>
-                  <p className="typo-body text-muted-foreground max-w-sm">
+                  <p className="typo-body text-foreground max-w-sm">
                     {t.plugins.artist.preview_glb_hint}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             </div>
 
             {/* Footer metadata */}
-            <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-[11px] text-muted-foreground">
+            <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-md text-foreground">
               <span>{formatFileSize(selectedAsset.fileSize)}</span>
               <span>{selectedAsset.createdAt}</span>
               {selectedAsset.tags && <span>{t.plugins.artist.tags_label} {selectedAsset.tags}</span>}

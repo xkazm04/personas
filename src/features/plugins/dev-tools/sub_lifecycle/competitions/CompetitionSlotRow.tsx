@@ -88,11 +88,11 @@ export function CompetitionSlotRow({
   }, [slot.id]);
 
   const taskStatusIcon =
-    isDq ? <BanIcon className="w-4 h-4 text-foreground/40" />
+    isDq ? <BanIcon className="w-4 h-4 text-foreground" />
     : taskStatus === 'running' ? <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
     : taskStatus === 'completed' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
     : taskStatus === 'failed' ? <XCircle className="w-4 h-4 text-red-400" />
-    : taskStatus === 'cancelled' ? <Ban className="w-4 h-4 text-foreground/50" />
+    : taskStatus === 'cancelled' ? <Ban className="w-4 h-4 text-foreground" />
     : <Clock className="w-4 h-4 text-amber-400" />;
 
   return (
@@ -109,7 +109,7 @@ export function CompetitionSlotRow({
         {taskStatusIcon}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="typo-heading text-primary [text-shadow:_0_0_8px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+            <span className="typo-card-label">
               {slot.strategy_label}
             </span>
             {isWinner && (
@@ -170,7 +170,7 @@ export function CompetitionSlotRow({
           {/* Completion achievements — shown once task finishes */}
           {taskStatus === 'completed' && diffStats && (
             <div className="mt-1.5 flex items-center gap-2 flex-wrap typo-caption text-foreground">
-              <span className="text-foreground/60">Achievements:</span>
+              <span className="text-foreground">Achievements:</span>
               <span>Modified {diffStats.files_changed} file{diffStats.files_changed !== 1 ? 's' : ''}</span>
               <span className="text-emerald-400">+{diffStats.lines_added} lines</span>
               <span className="text-red-400">{diffStats.lines_removed} lines</span>

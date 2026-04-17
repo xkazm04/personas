@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { TwinSelector } from './TwinSelector';
+import { useHydrateActiveTwin } from './useTwinReadiness';
 
 const ProfilesPage = lazy(() => import('./sub_profiles/ProfilesPage'));
 const IdentityPage = lazy(() => import('./sub_identity/IdentityPage'));
@@ -27,6 +28,11 @@ export default function TwinPage() {
       void fetchTwinProfiles();
     }
   }, [fetchTwinProfiles]);
+
+  // Hydrate all per-twin layers (tones/channels/voice/memories) whenever
+  // the active twin changes — so the progress strip + readiness score in
+  // the selector banner stay accurate regardless of which subtab is open.
+  useHydrateActiveTwin();
 
   // If the user lands on a subpage but has no twin yet, bounce them to
   // Profiles so the selector banner's CTA matches the page they see.

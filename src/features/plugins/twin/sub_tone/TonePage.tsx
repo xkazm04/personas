@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 
 /**
@@ -133,6 +134,7 @@ export default function TonePage() {
           <p className="typo-body text-foreground text-center py-12">{t.tone.loading}</p>
         ) : (
           <div className="max-w-2xl mx-auto space-y-3 pb-8">
+            <CoachMark id="tone" title={t.coach.toneTitle} body={t.coach.toneBody} />
             {WELL_KNOWN_CHANNELS.map(({ id: channel, label, color, bg }) => {
               const isExpanded = expandedChannel === channel;
               const exists = hasTone(channel);
@@ -154,19 +156,19 @@ export default function TonePage() {
                     className="w-full flex items-center gap-3 px-4 py-3 text-left"
                   >
                     {isExpanded
-                      ? <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      : <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                      ? <ChevronDown className="w-4 h-4 text-foreground flex-shrink-0" />
+                      : <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0" />}
                     <div className={`w-7 h-7 rounded-interactive ${bg} flex items-center justify-center flex-shrink-0`}>
                       <Mic className={`w-3.5 h-3.5 ${color}`} />
                     </div>
-                    <span className="typo-heading text-foreground flex-1">{label}</span>
+                    <span className="typo-card-label flex-1">{label}</span>
                     {exists && (
                       <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">
                         {t.tone.configured}
                       </span>
                     )}
                     {!exists && channel !== 'generic' && (
-                      <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-muted-foreground">
+                      <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">
                         {t.tone.fallsBackToGeneric}
                       </span>
                     )}
@@ -225,7 +227,7 @@ export default function TonePage() {
                           <button
                             onClick={() => handleDelete(channel)}
                             aria-label={`${t.tone.removeOverride} — ${label}`}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors"
+                            className="flex items-center gap-1.5 text-md text-foreground hover:text-red-400 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             {t.tone.removeOverride}

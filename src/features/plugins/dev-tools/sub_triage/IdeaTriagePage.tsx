@@ -140,16 +140,16 @@ function SwipeCard({
         </div>
 
         {/* Title + description */}
-        <h3 className="text-lg font-semibold text-foreground/90 mb-2">{idea.title}</h3>
-        <p className="text-md text-muted-foreground/70 mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
+        <h3 className="text-lg font-semibold text-primary mb-2">{idea.title}</h3>
+        <p className="text-md text-foreground mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
           {idea.description}
         </p>
 
         {/* Reasoning */}
         {idea.reasoning && (
           <div className="bg-primary/5 rounded-xl p-3">
-            <p className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">{dt.reasoning_label}</p>
-            <p className="text-md text-muted-foreground/60 leading-relaxed">{idea.reasoning}</p>
+            <p className="text-md uppercase tracking-wider text-primary font-medium mb-1">{dt.reasoning_label}</p>
+            <p className="text-md text-foreground leading-relaxed">{idea.reasoning}</p>
           </div>
         )}
       </div>
@@ -281,7 +281,7 @@ export default function IdeaTriagePage() {
               className="ml-1 w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
               title={dt.shortcuts_open_title}
             >
-              <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
+              <HelpCircle className="w-3.5 h-3.5 text-foreground" />
             </button>
           </div>
         }
@@ -298,15 +298,15 @@ export default function IdeaTriagePage() {
         <div className="flex gap-2 h-full min-h-[500px]">
           {/* Left sidebar: category + scan type filters + effort/risk filter */}
           <div className="w-52 flex-shrink-0 space-y-1">
-            <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+            <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
               {dt.sidebar_category}
             </h3>
             <button
               onClick={() => { setFilterCategory('all'); setFilterScanType(null); }}
               className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors ${
                 filterCategory === 'all' && !filterScanType
-                  ? 'bg-primary/10 text-foreground/80 font-medium'
-                  : 'text-muted-foreground/60 hover:bg-primary/5'
+                  ? 'bg-primary/10 text-foreground font-medium'
+                  : 'text-foreground hover:bg-primary/5'
               }`}
             >
               {tx(dt.sidebar_all, { count: pendingCount })}
@@ -320,19 +320,19 @@ export default function IdeaTriagePage() {
                   onClick={() => { setFilterCategory(cat.key as CategoryKey); setFilterScanType(null); }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors flex items-center gap-2 ${
                     filterCategory === cat.key && !filterScanType
-                      ? 'bg-primary/10 text-foreground/80 font-medium'
-                      : 'text-muted-foreground/60 hover:bg-primary/5'
+                      ? 'bg-primary/10 text-foreground font-medium'
+                      : 'text-foreground hover:bg-primary/5'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${catTw.dot}`} />
                   <span className="flex-1">{cat.label}</span>
-                  <span className="text-muted-foreground/40">{count}</span>
+                  <span className="text-foreground">{count}</span>
                 </button>
               );
             })}
 
             {/* Scan type filter */}
-            <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mt-3 pt-3 border-t border-border/15 mb-2">
+            <h3 className="text-md uppercase tracking-wider text-primary font-medium mt-3 pt-3 border-t border-border/15 mb-2">
               {dt.sidebar_scan_type}
             </h3>
             <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
@@ -347,13 +347,13 @@ export default function IdeaTriagePage() {
                     onClick={() => { setFilterScanType(filterScanType === agent.key ? null : agent.key); setFilterCategory('all'); }}
                     className={`w-full text-left px-3 py-1.5 rounded-lg text-md transition-colors flex items-center gap-2 ${
                       filterScanType === agent.key
-                        ? 'bg-primary/10 text-foreground/80 font-medium'
-                        : 'text-muted-foreground/60 hover:bg-primary/5'
+                        ? 'bg-primary/10 text-foreground font-medium'
+                        : 'text-foreground hover:bg-primary/5'
                     }`}
                   >
                     <span>{agent.emoji}</span>
                     <span className="flex-1 truncate">{agent.label}</span>
-                    <span className="text-muted-foreground/40">{count}</span>
+                    <span className="text-foreground">{count}</span>
                   </button>
                 );
               })}
@@ -375,7 +375,7 @@ export default function IdeaTriagePage() {
             {/* Progress bar */}
             {totalCount > 0 && (
               <div className="w-full max-w-lg mb-6">
-                <div className="flex items-center justify-between text-md text-muted-foreground/50 mb-1.5">
+                <div className="flex items-center justify-between text-md text-foreground mb-1.5">
                   <span>{tx(dt.remaining_count, { count: pendingIdeas.length })}</span>
                   <span>{tx(dt.reviewed_count, { done: totalCount - pendingCount, total: totalCount })}</span>
                 </div>
@@ -394,10 +394,10 @@ export default function IdeaTriagePage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <ArrowLeftRight className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-md text-muted-foreground/60 mb-1">
+                <p className="text-md text-foreground mb-1">
                   {totalCount === 0 ? dt.empty_no_ideas : dt.empty_all_reviewed}
                 </p>
-                <p className="text-md text-muted-foreground/40">
+                <p className="text-md text-foreground">
                   {totalCount === 0
                     ? dt.empty_no_ideas_hint
                     : tx(dt.empty_all_reviewed_summary, { accepted: acceptedCount, rejected: rejectedCount })}
@@ -439,7 +439,7 @@ export default function IdeaTriagePage() {
                   className="w-10 h-10 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center hover:bg-primary/15 transition-colors"
                   title={dt.shortcuts_btn_delete_title}
                 >
-                  <Trash2 className="w-4 h-4 text-muted-foreground/60" />
+                  <Trash2 className="w-4 h-4 text-foreground" />
                 </motion.button>
 
                 <motion.button
@@ -456,7 +456,7 @@ export default function IdeaTriagePage() {
 
             {/* Keyboard hint */}
             {pendingIdeas.length > 0 && (
-              <p className="text-md text-muted-foreground/30 mt-3 flex items-center gap-3">
+              <p className="text-md text-foreground mt-3 flex items-center gap-3">
                 <span className="flex items-center gap-1">
                   <ChevronLeft className="w-3 h-3" /> / A = {dt.hint_reject}
                 </span>
@@ -486,7 +486,7 @@ export default function IdeaTriagePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-elevation-4 p-6"
             >
-              <h3 className="text-md font-semibold text-foreground/90 mb-4">{dt.shortcuts_title}</h3>
+              <h3 className="text-md font-semibold text-primary mb-4">{dt.shortcuts_title}</h3>
               <div className="space-y-2.5">
                 {[
                   { keys: ['<-', 'A'], action: dt.shortcuts_reject },
@@ -495,12 +495,12 @@ export default function IdeaTriagePage() {
                   { keys: ['Esc'], action: dt.shortcuts_close },
                 ].map((shortcut) => (
                   <div key={shortcut.action} className="flex items-center justify-between">
-                    <span className="text-md text-muted-foreground/70">{shortcut.action}</span>
+                    <span className="text-md text-foreground">{shortcut.action}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.map((key, ki) => (
                         <span key={ki}>
-                          {ki > 0 && <span className="text-muted-foreground/30 text-[10px] mx-0.5">/</span>}
-                          <kbd className="inline-block px-1.5 py-0.5 text-md font-mono bg-primary/10 border border-primary/15 rounded text-muted-foreground/80">
+                          {ki > 0 && <span className="text-foreground text-[10px] mx-0.5">/</span>}
+                          <kbd className="inline-block px-1.5 py-0.5 text-md font-mono bg-primary/10 border border-primary/15 rounded text-foreground">
                             {key}
                           </kbd>
                         </span>
@@ -511,7 +511,7 @@ export default function IdeaTriagePage() {
               </div>
               <button
                 onClick={() => setShowShortcuts(false)}
-                className="mt-5 w-full text-center text-md text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+                className="mt-5 w-full text-center text-md text-foreground hover:text-foreground transition-colors"
               >
                 {dt.shortcuts_dismiss_hint}
               </button>

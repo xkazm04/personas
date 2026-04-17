@@ -24,7 +24,7 @@ export function IdeaEvolutionPanel() {
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-1">
         <Dna className="w-4 h-4 text-violet-400" />
-        <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60">
+        <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
           Idea Evolution
         </h3>
       </div>
@@ -33,8 +33,8 @@ export function IdeaEvolutionPanel() {
       {fitness.length > 0 && (
         <div className="rounded-xl border border-primary/10 overflow-hidden">
           <div className="px-4 py-2.5 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
-            <span className="text-md font-medium text-foreground/70">Fitness Ranking</span>
-            <div className="flex items-center gap-3 text-md text-muted-foreground/50">
+            <span className="text-md font-medium text-foreground">Fitness Ranking</span>
+            <div className="flex items-center gap-3 text-md text-foreground">
               <span className="text-emerald-400">{highFitness.length} high</span>
               {penalizedCount > 0 && (
                 <span className="text-red-400 flex items-center gap-1">
@@ -47,7 +47,7 @@ export function IdeaEvolutionPanel() {
             {fitness.slice(0, 8).map((f) => (
               <div key={f.idea.id} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="flex-1 min-w-0">
-                  <p className="text-md text-foreground/70 truncate">{f.idea.title}</p>
+                  <p className="text-md text-foreground truncate">{f.idea.title}</p>
                   {f.similarRejections.length > 0 && (
                     <p className="text-md text-red-400/60 truncate">
                       Similar to rejected: {f.similarRejections[0]}
@@ -79,16 +79,16 @@ export function IdeaEvolutionPanel() {
         <div className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-md font-medium text-foreground/70">Synthesis Suggestions</span>
+            <span className="text-md font-medium text-foreground">Synthesis Suggestions</span>
           </div>
           {syntheses.map((s, i) => (
             <div key={i} className="rounded-lg border border-violet-500/10 bg-background/30 p-3">
-              <p className="text-md font-medium text-foreground/70">{s.suggestedTitle}</p>
-              <p className="text-md text-muted-foreground/50 mt-1">{s.reasoning}</p>
+              <p className="text-md font-medium text-foreground">{s.suggestedTitle}</p>
+              <p className="text-md text-foreground mt-1">{s.reasoning}</p>
               <div className="flex items-center gap-2 mt-2 text-md text-violet-400/60">
                 <Link2 className="w-3 h-3" />
                 {s.parentA.title.slice(0, 30)} + {s.parentB.title.slice(0, 30)}
-                <span className="text-muted-foreground/30 ml-auto">{Math.round(s.similarity * 100)}% similar</span>
+                <span className="text-foreground ml-auto">{Math.round(s.similarity * 100)}% similar</span>
               </div>
             </div>
           ))}
@@ -100,10 +100,10 @@ export function IdeaEvolutionPanel() {
         <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-md font-medium text-foreground/70">Potential Duplicates</span>
+            <span className="text-md font-medium text-foreground">Potential Duplicates</span>
           </div>
           {similarPairs.map((pair, i) => (
-            <div key={i} className="flex items-center gap-2 text-md text-muted-foreground/60">
+            <div key={i} className="flex items-center gap-2 text-md text-foreground">
               <span className="truncate flex-1">{pair.ideaA.title}</span>
               <span className="text-amber-400 flex-shrink-0">{Math.round(pair.similarity * 100)}%</span>
               <span className="truncate flex-1">{pair.ideaB.title}</span>

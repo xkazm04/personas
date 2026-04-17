@@ -67,11 +67,11 @@ function VideoLaneImpl({
       {!hideHeader && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border-b border-rose-500/20">
           <Film className="w-3.5 h-3.5 text-rose-400" />
-          <span className="typo-heading text-rose-400 text-xs uppercase tracking-wide">
+          <span className="typo-label text-rose-400">
             {t.media_studio.layer_video}
           </span>
           {items.length > 0 && (
-            <span className="ml-auto text-[9px] text-rose-400/60 bg-rose-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+            <span className="ml-auto text-md text-rose-400/60 bg-rose-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
               {items.length}
             </span>
           )}
@@ -83,7 +83,7 @@ function VideoLaneImpl({
         {/* Empty lane hint */}
         {items.length === 0 && (
           <div className="absolute inset-1 rounded-lg border border-dashed border-rose-500/15 flex items-center justify-center">
-            <span className="text-[10px] text-rose-400/30">{t.media_studio.empty_lane}</span>
+            <span className="text-md text-rose-400/30">{t.media_studio.empty_lane}</span>
           </div>
         )}
         {/* Transition indicators between clips */}
@@ -182,10 +182,10 @@ function VideoClipBody({ clip }: { clip: VideoClip }) {
       {/* Dark scrim so the label stays readable over the thumbs */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent pointer-events-none" />
       <Film className="w-3 h-3 text-rose-400 flex-shrink-0 z-10" />
-      <span className="text-[11px] text-foreground/80 truncate z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+      <span className="text-md text-foreground truncate z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
         {clip.label}
       </span>
-      <span className="ml-auto text-[8px] text-rose-300/90 bg-black/50 rounded px-1 py-0.5 tabular-nums font-mono z-10 flex-shrink-0">
+      <span className="ml-auto text-md text-rose-300/90 bg-black/50 rounded px-1 py-0.5 tabular-nums font-mono font-semibold z-10 flex-shrink-0">
         {formatDurationHuman(clip.duration)}
       </span>
     </div>

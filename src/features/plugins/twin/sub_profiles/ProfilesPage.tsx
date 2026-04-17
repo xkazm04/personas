@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Plus, Trash2, Check, Pencil, X, FolderTree } from 'lucide-react';
+import { Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Volume2, Radio, BookOpen, Globe, FileText } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useProfileDashboards } from '../useProfileDashboards';
+import { CreateTwinWizard } from './CreateTwinWizard';
+import { TwinHero } from './TwinHero';
+import { CoachMark } from '../CoachMark';
+import type { MilestoneStatus } from '../useTwinReadiness';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
+import type { LucideIcon } from 'lucide-react';
 
 interface DraftForm {
   name: string;
@@ -14,39 +20,71 @@ interface DraftForm {
 
 const EMPTY_DRAFT: DraftForm = { name: '', role: '' };
 
+// Gender sigils (sourced from pronouns). Kept here so the card's avatar
+// stays consistent with the Identity tab's gender selector.
+function genderSigilFromPronouns(pronouns: string | null): { glyph: string; color: string } {
+  if (!pronouns) return { glyph: '⚧', color: 'text-violet-400/70' };
+  const p = pronouns.toLowerCase();
+  if (p.includes('he/') || p === 'male') return { glyph: '♂', color: 'text-sky-400/80' };
+  if (p.includes('she/') || p === 'female') return { glyph: '♀', color: 'text-rose-400/80' };
+  return { glyph: '⚧', color: 'text-violet-400/70' };
+}
+
+function languagesFromString(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function readinessColor(score: number): { ring: string; text: string } {
+  if (score >= 80) return { ring: 'ring-emerald-500/60', text: 'text-emerald-400' };
+  if (score >= 40) return { ring: 'ring-amber-500/60', text: 'text-amber-400' };
+  return { ring: 'ring-primary/20', text: 'text-foreground' };
+}
+
+interface ChipProps {
+  icon: LucideIcon;
+  label: string;
+  status: MilestoneStatus;
+}
+
+function Chip({ icon: Icon, label, status }: ChipProps) {
+  const classes =
+    status === 'complete'
+      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+      : status === 'partial'
+      ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+      : 'bg-secondary/30 text-foreground border-primary/10';
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full border ${classes}`}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
+  );
+}
+
 export default function ProfilesPage() {
   const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
-  const createTwinProfile = useSystemStore((s) => s.createTwinProfile);
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);
   const deleteTwinProfile = useSystemStore((s) => s.deleteTwinProfile);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
 
-  const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState<DraftForm>(EMPTY_DRAFT);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<DraftForm>(EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { fetchTwinProfiles(); }, [fetchTwinProfiles]);
 
-  // Sort by name ascending
   const sorted = [...twinProfiles].sort((a, b) => a.name.localeCompare(b.name));
-
-  const handleCreate = async () => {
-    if (!draft.name.trim()) return;
-    setSubmitting(true);
-    try {
-      await createTwinProfile(draft.name.trim(), undefined, draft.role.trim() || undefined);
-      setDraft(EMPTY_DRAFT);
-      setCreating(false);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const dashboards = useProfileDashboards(sorted);
 
   const startEdit = (profile: TwinProfile) => {
     setEditingId(profile.id);
@@ -72,6 +110,16 @@ export default function ProfilesPage() {
     await deleteTwinProfile(id);
   };
 
+  // First-run hero — no twins at all
+  if (!isLoading && sorted.length === 0) {
+    return (
+      <>
+        <TwinHero onCreate={() => setWizardOpen(true)} />
+        {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
+      </>
+    );
+  }
+
   return (
     <ContentBox>
       <ContentHeader
@@ -80,7 +128,7 @@ export default function ProfilesPage() {
         title={t.profiles.title}
         subtitle={t.profiles.subtitle}
         actions={
-          <Button onClick={() => setCreating(true)} size="sm" variant="accent" accentColor="violet">
+          <Button onClick={() => setWizardOpen(true)} size="sm" variant="accent" accentColor="violet">
             <Plus className="w-4 h-4 mr-1.5" />
             {t.profiles.newTwin}
           </Button>
@@ -88,44 +136,19 @@ export default function ProfilesPage() {
       />
 
       <ContentBody centered>
-        {/* Inline create form */}
-        {creating && (
-          <div className="mb-6 p-4 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="typo-heading text-foreground">{t.profiles.newTwin}</h3>
-              <button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} className="text-muted-foreground hover:text-foreground" aria-label={t.profiles.cancel}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input type="text" placeholder={t.profiles.namePlaceholder} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={INPUT_FIELD} autoFocus />
-              <input type="text" placeholder={t.profiles.rolePlaceholder} value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} className={INPUT_FIELD} />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => { setCreating(false); setDraft(EMPTY_DRAFT); }} variant="ghost" size="sm">{t.profiles.cancel}</Button>
-              <Button onClick={handleCreate} disabled={!draft.name.trim() || submitting} size="sm">{submitting ? t.profiles.creating : t.profiles.createTwin}</Button>
-            </div>
-          </div>
-        )}
+        <CoachMark id="profiles" title={t.coach.profilesTitle} body={t.coach.profilesBody} />
 
-        {/* List */}
         {isLoading && sorted.length === 0 ? (
           <p className="typo-body text-foreground text-center py-12">{t.profiles.loading}</p>
-        ) : sorted.length === 0 && !creating ? (
-          <div className="py-12 text-center">
-            <Sparkles className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-            <p className="typo-body text-foreground">{t.profiles.noTwinsYet}</p>
-            <p className="typo-caption text-muted-foreground mt-1">{t.profiles.noTwinsHint}</p>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {sorted.map((profile) => {
               const isActive = profile.id === activeTwinId;
               const isEditing = editingId === profile.id;
 
               if (isEditing) {
                 return (
-                  <div key={profile.id} className="p-4 rounded-card border border-violet-500/30 bg-violet-500/5 space-y-3 col-span-1">
+                  <div key={profile.id} className="p-4 rounded-card border border-violet-500/30 bg-violet-500/5 space-y-3">
                     <input type="text" placeholder={t.profiles.name} value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} className={INPUT_FIELD} />
                     <input type="text" placeholder={t.profiles.role} value={editDraft.role} onChange={(e) => setEditDraft({ ...editDraft, role: e.target.value })} className={INPUT_FIELD} />
                     <div className="flex justify-end gap-2">
@@ -136,45 +159,97 @@ export default function ProfilesPage() {
                 );
               }
 
+              const dash = dashboards[profile.id];
+              const readiness = dash?.readiness;
+              const sigil = genderSigilFromPronouns(profile.pronouns ?? null);
+              const languages = languagesFromString(profile.languages ?? null);
+              const ring = readiness ? readinessColor(readiness.score) : readinessColor(0);
+
               return (
                 <div
                   key={profile.id}
                   className={`p-4 rounded-card border transition-colors ${
-                    isActive
-                      ? 'border-violet-500/30 bg-violet-500/5'
-                      : 'border-primary/10 bg-card/40 hover:border-primary/20'
+                    isActive ? 'border-violet-500/30 bg-violet-500/5' : 'border-primary/10 bg-card/40 hover:border-primary/20'
                   }`}
                 >
+                  {/* Header row: avatar + name + readiness ring */}
                   <div className="flex items-start gap-3">
-                    <div className={`w-9 h-9 rounded-card flex items-center justify-center flex-shrink-0 border ${
+                    <div className={`w-10 h-10 rounded-card flex items-center justify-center flex-shrink-0 border ${
                       isActive ? 'bg-violet-500/15 border-violet-500/30' : 'bg-secondary/40 border-primary/10'
                     }`}>
-                      <Sparkles className={`w-4 h-4 ${isActive ? 'text-violet-400' : 'text-muted-foreground'}`} />
+                      <span className={`text-xl leading-none ${sigil.color}`} aria-hidden>{sigil.glyph}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="typo-heading text-foreground truncate">{profile.name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="typo-card-label truncate">{profile.name}</h3>
                         {isActive && (
                           <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25 flex-shrink-0">{t.profiles.active}</span>
                         )}
                       </div>
                       {profile.role && <p className="typo-caption text-foreground mt-0.5 truncate">{profile.role}</p>}
-                      <div className="flex items-center gap-1.5 mt-2 typo-caption text-muted-foreground">
+                      <div className="flex items-center gap-1.5 mt-1 typo-caption text-foreground">
                         <FolderTree className="w-3 h-3" />
-                        <span className="font-mono truncate">{profile.obsidian_subpath}</span>
+                        <span className="font-mono truncate text-[10px]">{profile.obsidian_subpath}</span>
                       </div>
                     </div>
+                    {/* Readiness ring */}
+                    <div
+                      className={`flex-shrink-0 w-10 h-10 rounded-full ring-2 ring-offset-0 ${ring.ring} flex items-center justify-center`}
+                      title={`${t.progress.readiness}: ${readiness?.score ?? 0}%`}
+                    >
+                      <span className={`typo-caption font-semibold ${ring.text} text-md`}>
+                        {readiness?.score ?? 0}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Chip row — 6 milestones */}
+                  {readiness && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      <Chip icon={FileText} label={readiness.identity === 'partial' ? t.profiles.chipBioPartial : t.profiles.chipBio} status={readiness.identity} />
+                      <Chip icon={Mic} label={readiness.tone === 'partial' && !readiness.counts.toneHasSpecific ? t.profiles.chipToneGeneric : `${t.profiles.chipTone} ${readiness.counts.toneRows > 0 ? `×${readiness.counts.toneRows}` : ''}`.trim()} status={readiness.tone} />
+                      <Chip icon={Brain} label={readiness.brain === 'partial' ? t.profiles.chipBrainObsidian : t.profiles.chipBrain} status={readiness.brain} />
+                      <Chip icon={Volume2} label={t.profiles.chipVoice} status={readiness.voice} />
+                      <Chip icon={Radio} label={readiness.channels === 'partial' ? t.profiles.chipChannelsPaused : `${t.profiles.chipChannels} ${readiness.counts.channelsActive > 0 ? `×${readiness.counts.channelsActive}` : ''}`.trim()} status={readiness.channels} />
+                      <Chip icon={BookOpen} label={`${t.profiles.chipMemories} ${readiness.counts.memoriesApproved > 0 ? `×${readiness.counts.memoriesApproved}` : ''}`.trim()} status={readiness.memories} />
+                    </div>
+                  )}
+
+                  {/* Channel icons row */}
+                  {dash && dash.channelTypes.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                      {dash.channelTypes.map((ct) => (
+                        <span key={ct} className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider font-medium rounded-full bg-violet-500/8 text-violet-400/80 border border-violet-500/15">
+                          {ct}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Languages row */}
+                  {languages.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2 typo-caption text-foreground">
+                      <Globe className="w-3 h-3" />
+                      <span className="sr-only">{t.profiles.languages}:</span>
+                      {languages.map((lang) => (
+                        <span key={lang} className="px-1.5 py-0.5 text-[10px] rounded-full bg-secondary/30 text-foreground">
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actions */}
                   <div className="flex items-center gap-1 mt-3 pt-3 border-t border-primary/5">
                     {!isActive && (
-                      <button onClick={() => setActiveTwin(profile.id)} title={t.profiles.setActive} aria-label={`${t.profiles.setActive} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors">
+                      <button onClick={() => setActiveTwin(profile.id)} title={t.profiles.setActive} aria-label={`${t.profiles.setActive} — ${profile.name}`} className="p-1.5 rounded-interactive text-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors">
                         <Check className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => startEdit(profile)} title={t.profiles.edit} aria-label={`${t.profiles.edit} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+                    <button onClick={() => startEdit(profile)} title={t.profiles.edit} aria-label={`${t.profiles.edit} — ${profile.name}`} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(profile.id, profile.name)} title={t.profiles.delete} aria-label={`${t.profiles.delete} — ${profile.name}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                    <button onClick={() => handleDelete(profile.id, profile.name)} title={t.profiles.delete} aria-label={`${t.profiles.delete} — ${profile.name}`} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -184,6 +259,8 @@ export default function ProfilesPage() {
           </div>
         )}
       </ContentBody>
+
+      {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
     </ContentBox>
   );
 }

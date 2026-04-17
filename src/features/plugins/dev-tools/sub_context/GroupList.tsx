@@ -51,7 +51,7 @@ export default function GroupList({
           <div className="animate-fade-slide-in overflow-hidden">
             <div className="border border-primary/10 rounded-xl p-4 bg-primary/5 space-y-3">
               <div className="flex items-center gap-2">
-                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-ring" autoFocus />
+                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring" autoFocus />
                 <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreate}>{t.plugins.dev_tools.create}</Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => onShowNewGroup(false)}><X className="w-3.5 h-3.5" /></Button>
               </div>
@@ -65,8 +65,8 @@ export default function GroupList({
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
             <FolderTree className="w-7 h-7 text-amber-400/50" />
           </div>
-          <p className="text-sm text-muted-foreground/60 mb-1">{t.plugins.dev_tools.no_context_groups}</p>
-          <p className="text-xs text-muted-foreground/40 mb-4">{t.plugins.dev_tools.scan_or_create}</p>
+          <p className="text-md text-foreground mb-1">{t.plugins.dev_tools.no_context_groups}</p>
+          <p className="text-md text-foreground mb-4">{t.plugins.dev_tools.scan_or_create}</p>
           <div className="flex justify-center gap-2">
             <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onShowNewGroup(true)}>{t.plugins.dev_tools.add_group}</Button>
             <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>{t.plugins.dev_tools.scan_codebase}</Button>
@@ -80,16 +80,16 @@ export default function GroupList({
             return (
               <div key={group.id} className="animate-fade-slide-in border border-primary/10 rounded-xl overflow-hidden">
                 <button onClick={() => toggleGroup(group.id)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-colors">
-                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />}
+                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
                   <span className={`w-2.5 h-2.5 rounded-full ${dot.bg} flex-shrink-0`} />
-                  <span className="text-sm font-medium text-foreground/80 flex-1 text-left">{group.name}</span>
-                  <span className="text-[10px] text-muted-foreground/50 bg-primary/5 rounded-full px-2 py-0.5">{group.contexts.length} context{group.contexts.length !== 1 ? 's' : ''}</span>
+                  <span className="typo-card-label flex-1 text-left">{group.name}</span>
+                  <span className="text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">{group.contexts.length} context{group.contexts.length !== 1 ? 's' : ''}</span>
                 </button>
                 {isExpanded && (
                     <div className="animate-fade-slide-in overflow-hidden">
                       <div className="px-4 pb-4 pt-1">
                         {group.contexts.length === 0 ? (
-                          <p className="text-xs text-muted-foreground/40 py-3 text-center">{t.plugins.dev_tools.no_contexts_in_group}</p>
+                          <p className="text-md text-foreground py-3 text-center">{t.plugins.dev_tools.no_contexts_in_group}</p>
                         ) : (
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                             {group.contexts.map((ctx) => (
@@ -107,7 +107,7 @@ export default function GroupList({
       )}
 
       {groups.length > 0 && (
-        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 text-xs text-muted-foreground/50">
+        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 text-xs text-foreground">
           <span>{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
           <span>{totalContexts} context{totalContexts !== 1 ? 's' : ''}</span>
         </div>

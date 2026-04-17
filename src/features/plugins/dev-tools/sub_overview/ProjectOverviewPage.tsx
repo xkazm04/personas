@@ -62,8 +62,8 @@ function StatCard({
         <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
       <div className="min-w-0">
-        <p className="text-lg font-semibold text-foreground leading-tight truncate">{value}</p>
-        <p className="text-[11px] text-foreground/50 truncate">{label}</p>
+        <p className="text-lg font-semibold text-primary leading-tight truncate">{value}</p>
+        <p className="text-[11px] text-foreground truncate">{label}</p>
       </div>
     </div>
   );
@@ -96,8 +96,8 @@ function ConnectionCard({
   if (state === 'loading') {
     return (
       <div className="rounded-card border border-primary/10 bg-card/30 p-6 flex items-center justify-center gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground/40" />
-        <span className="text-sm text-foreground/50">{po.loading_stats}</span>
+        <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
+        <span className="text-md text-foreground">{po.loading_stats}</span>
       </div>
     );
   }
@@ -105,8 +105,8 @@ function ConnectionCard({
   if (state === 'empty') {
     return (
       <div className="rounded-card border border-primary/10 bg-card/30 p-6 text-center">
-        <Key className="w-8 h-8 text-muted-foreground/25 mx-auto mb-3" />
-        <p className="text-sm text-foreground/60 mb-3">
+        <Key className="w-8 h-8 text-foreground mx-auto mb-3" />
+        <p className="text-md text-foreground mb-3">
           {po.connect_to_see_stats.replace('{{service}}', serviceName).replace('{{category}}', title.toLowerCase())}
         </p>
         {onAction && (
@@ -123,7 +123,7 @@ function ConnectionCard({
       <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-5">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
-          <span className="text-sm font-medium text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
+          <span className="text-md font-medium text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
         </div>
         {children}
       </div>
@@ -134,7 +134,7 @@ function ConnectionCard({
     return (
       <div className="rounded-card border border-red-500/20 bg-red-500/5 p-5 text-center">
         <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-        <p className="text-sm text-foreground/60 mb-3">{po.failed_to_load}</p>
+        <p className="text-md text-foreground mb-3">{po.failed_to_load}</p>
         {onAction && (
           <Button variant="secondary" size="sm" onClick={onAction}>
             {po.retry}
@@ -149,7 +149,7 @@ function ConnectionCard({
     <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4">
       <div className="flex items-center gap-2 mb-3">
         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-        <span className="text-sm font-medium text-foreground">{serviceName}</span>
+        <span className="text-md font-medium text-foreground">{serviceName}</span>
         <span className="text-[10px] text-emerald-400 ml-auto">{po.connected}</span>
       </div>
       {children}
@@ -196,7 +196,7 @@ function MonitoringLinkForm({
 
   return (
     <div className="space-y-3 mt-3">
-      <p className="text-xs text-foreground/50">{po.link_monitoring}</p>
+      <p className="text-xs text-foreground">{po.link_monitoring}</p>
       {credentials.length > 1 && (
         <select
           value={selectedCredId}
@@ -213,7 +213,7 @@ function MonitoringLinkForm({
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           placeholder={po.project_slug_placeholder}
-          className="flex-1 px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50"
+          className="flex-1 px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground"
         />
         <Button
           variant="accent"
@@ -369,9 +369,9 @@ export default function ProjectOverviewPage() {
         />
         <ContentBody centered>
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <LayoutDashboard className="w-10 h-10 text-muted-foreground/20 mb-3" />
-            <p className="typo-heading text-foreground/50">{po.no_project_selected}</p>
-            <p className="typo-body text-foreground/30 mt-1">{po.select_project_hint}</p>
+            <LayoutDashboard className="w-10 h-10 text-foreground mb-3" />
+            <p className="typo-section-title">{po.no_project_selected}</p>
+            <p className="typo-body text-foreground mt-1">{po.select_project_hint}</p>
           </div>
         </ContentBody>
       </ContentBox>
@@ -411,7 +411,7 @@ export default function ProjectOverviewPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-blue-400" />
-              <h2 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+              <h2 className="typo-section-title">
                 {po.codebase}
               </h2>
             </div>
@@ -431,7 +431,7 @@ export default function ProjectOverviewPage() {
                 state="unmapped"
                 serviceName={repoCreds.length > 0 ? (repoCreds[0]!.service_type === 'gitlab' ? 'GitLab' : 'GitHub') : 'GitHub'}
               >
-                <p className="text-xs text-foreground/50 mt-1">{po.set_repo_url}</p>
+                <p className="text-xs text-foreground mt-1">{po.set_repo_url}</p>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -490,7 +490,7 @@ export default function ProjectOverviewPage() {
                   />
                 </div>
                 {repoStats.lastPushAt && (
-                  <p className="text-[10px] text-foreground/40 mt-2">
+                  <p className="text-[10px] text-foreground mt-2">
                     {po.last_push}: {new Date(repoStats.lastPushAt).toLocaleDateString()}
                   </p>
                 )}
@@ -504,7 +504,7 @@ export default function ProjectOverviewPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-red-400" />
-              <h2 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
+              <h2 className="typo-section-title">
                 {po.monitoring}
               </h2>
             </div>

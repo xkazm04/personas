@@ -51,12 +51,12 @@ export default function FindingsPanel() {
         title={t.research_lab.findings}
         actionLabel={t.research_lab.create_finding}
         onAction={() => setShowForm(true)}
-        extra={<span className="typo-caption text-foreground/40">{projectFindings.length}</span>}
+        extra={<span className="typo-caption text-foreground">{projectFindings.length}</span>}
       />
 
       {loading && projectFindings.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground/50">{t.common.loading}</p>
+          <p className="typo-body text-foreground">{t.common.loading}</p>
         </div>
       ) : projectFindings.length === 0 ? (
         <EmptyState
@@ -76,22 +76,22 @@ export default function FindingsPanel() {
               <div className="flex items-start gap-3">
                 <Target className="w-4 h-4 text-cyan-400/80 mt-1 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="typo-body text-foreground font-semibold">{f.title}</h3>
+                  <h3 className="typo-card-label">{f.title}</h3>
                   {f.description && (
-                    <p className="typo-caption text-foreground/60 mt-1.5 line-clamp-3">{f.description}</p>
+                    <p className="typo-body text-foreground mt-1.5 line-clamp-3">{f.description}</p>
                   )}
                   <div className="flex items-center gap-2 mt-3 flex-wrap">
                     {f.category && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] bg-cyan-500/15 text-cyan-300">{f.category}</span>
                     )}
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">
                       {f.status.replace(/_/g, ' ')}
                     </span>
-                    <span className="typo-micro text-foreground/40">
+                    <span className="typo-caption text-foreground">
                       {t.research_lab.confidence} {Math.round(f.confidence * 100)}%
                     </span>
                     {f.generatedBy && (
-                      <span className="typo-micro text-foreground/30">· {f.generatedBy}</span>
+                      <span className="typo-caption text-foreground">· {f.generatedBy}</span>
                     )}
                   </div>
                 </div>

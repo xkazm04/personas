@@ -3,6 +3,7 @@ import {
   Wifi, WifiOff, Radio, Users, AlertTriangle, Hash,
   MessageSquare, Link2, RefreshCw, ChevronDown,
   ArrowUpRight, ArrowDownLeft,
+  type LucideIcon,
 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { usePolling } from '@/hooks/utility/timing/usePolling';
@@ -73,7 +74,7 @@ function MetricsSection({
   defaultOpen = false,
 }: {
   title: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {

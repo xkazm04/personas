@@ -52,11 +52,11 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
             className="w-full h-full object-cover"
           />
         ) : isImage && !dataUrl ? (
-          <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+          <Loader2 className="w-5 h-5 text-foreground animate-spin" />
         ) : (
           <div className="flex flex-col items-center gap-2">
             <Box className="w-10 h-10 text-rose-400" />
-            <span className="text-[10px] font-mono text-muted-foreground uppercase">{ext}</span>
+            <span className="text-md font-mono text-foreground uppercase">{ext}</span>
           </div>
         )}
 
@@ -101,8 +101,8 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
 
       {/* Info */}
       <div className="px-3 py-2 space-y-0.5">
-        <p className="text-md text-foreground truncate font-medium">{asset.fileName}</p>
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+        <p className="typo-card-label truncate">{asset.fileName}</p>
+        <div className="flex items-center gap-2 text-md text-foreground">
           <span>{ext}</span>
           <span>&middot;</span>
           <span>{sizeStr}</span>
@@ -112,7 +112,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
             {asset.tags.split(',').map((t) => t.trim()).filter(Boolean).map((t) => (
               <span
                 key={t}
-                className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/10 text-rose-400"
+                className="px-1.5 py-0.5 rounded text-md bg-rose-500/10 text-rose-400"
               >
                 {t}
               </span>

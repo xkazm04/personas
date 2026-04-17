@@ -41,7 +41,7 @@ function BeatEditModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="typo-heading text-foreground">{t.media_studio.beat_word}</h3>
+          <h3 className="typo-section-title">{t.media_studio.beat_word}</h3>
           <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
@@ -52,7 +52,7 @@ function BeatEditModal({
             value={word}
             onChange={(e) => setWord(e.target.value)}
             placeholder={t.media_studio.beat_word_placeholder}
-            className="w-full px-3 py-2 text-sm font-semibold bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+            className="w-full px-3 py-2 text-md font-semibold bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
             autoFocus
           />
           <textarea
@@ -60,7 +60,7 @@ function BeatEditModal({
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t.media_studio.beat_description_placeholder}
             rows={4}
-            className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 resize-none"
+            className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 resize-none"
           />
         </div>
 
@@ -132,11 +132,11 @@ function TextLaneImpl({
         {!hideHeader && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20">
             <Type className="w-3.5 h-3.5 text-amber-400" />
-            <span className="typo-heading text-amber-400 text-xs uppercase tracking-wide">
+            <span className="typo-label text-amber-400">
               {t.media_studio.layer_text}
             </span>
             {items.length > 0 && (
-              <span className="ml-auto text-[9px] text-amber-400/60 bg-amber-500/10 rounded-full px-1.5 py-0.5 font-medium tabular-nums">
+              <span className="ml-auto text-md text-amber-400/60 bg-amber-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
                 {items.length}
               </span>
             )}
@@ -147,7 +147,7 @@ function TextLaneImpl({
         <div className="relative h-10 bg-amber-500/[0.02] border-b border-primary/10">
           {items.length === 0 && (
             <div className="absolute inset-0.5 rounded-lg border border-dashed border-amber-500/15 flex items-center justify-center">
-              <span className="text-[10px] text-amber-400/30">{t.media_studio.empty_lane}</span>
+              <span className="text-md text-amber-400/30">{t.media_studio.empty_lane}</span>
             </div>
           )}
           {items.map((item) => (
@@ -169,7 +169,7 @@ function TextLaneImpl({
             >
               <div className="flex items-center gap-1 h-full px-2 overflow-hidden">
                 <Type className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                <span className="text-[11px] font-bold text-amber-200 truncate">
+                <span className="text-md font-bold text-amber-200 truncate">
                   {item.label}
                 </span>
               </div>

@@ -51,8 +51,8 @@ export function ProjectSelector() {
       <div className="mx-4 mt-3 mb-1 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center gap-3">
         <AlertCircle className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-foreground/70">{dt.no_project_configured}</p>
-          <p className="text-[10px] text-muted-foreground/50">{dt.create_project_hint}</p>
+          <p className="text-xs text-foreground">{dt.no_project_configured}</p>
+          <p className="text-[10px] text-foreground">{dt.create_project_hint}</p>
         </div>
         <button
           onClick={() => setDevToolsTab('projects')}
@@ -69,8 +69,8 @@ export function ProjectSelector() {
     return (
       <div className="mx-4 mt-3 mb-1 px-3 py-2 rounded-xl bg-primary/5 border border-primary/10 flex items-center gap-2.5">
         <FolderKanban className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-        <span className="text-xs text-foreground/70 font-medium truncate">{activeProject.name}</span>
-        <span className="text-[10px] text-muted-foreground/40 truncate">{activeProject.root_path}</span>
+        <span className="text-xs text-foreground font-medium truncate">{activeProject.name}</span>
+        <span className="text-[10px] text-foreground truncate">{activeProject.root_path}</span>
       </div>
     );
   }
@@ -84,7 +84,7 @@ export function ProjectSelector() {
           onChange={(e) => {
             if (e.target.value) setActiveProject(e.target.value);
           }}
-          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground/70 bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
+          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
         >
           <option value="" disabled>{dt.select_project}</option>
           {projects.map((p) => (
@@ -94,7 +94,7 @@ export function ProjectSelector() {
           ))}
         </select>
         <FolderKanban className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-amber-400/60 pointer-events-none" />
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40 pointer-events-none" />
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
       </div>
     </div>
   );

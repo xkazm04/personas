@@ -1,4 +1,4 @@
-import { Play, Zap, Brain, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Play, Zap, Brain, AlertTriangle, MessageSquare, type LucideIcon } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
@@ -17,7 +17,7 @@ export interface ActivityItem {
   raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaMessage;
 }
 
-export const TYPE_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   execution: { icon: Play, color: 'text-blue-400', bg: 'bg-blue-500/10' },
   event: { icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   memory: { icon: Brain, color: 'text-violet-400', bg: 'bg-violet-500/10' },

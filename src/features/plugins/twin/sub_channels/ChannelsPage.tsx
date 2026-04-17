@@ -9,6 +9,8 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
+import { Mic } from 'lucide-react';
 
 /**
  * Channels tab — deployment cockpit.
@@ -29,7 +31,7 @@ const CHANNEL_TYPES: { id: string; label: string; color: string; bg: string; ser
 ];
 
 function getChannelMeta(type: string) {
-  return CHANNEL_TYPES.find((c) => c.id === type) ?? { id: type, label: type, color: 'text-muted-foreground', bg: 'bg-secondary/40', serviceType: type };
+  return CHANNEL_TYPES.find((c) => c.id === type) ?? { id: type, label: type, color: 'text-foreground', bg: 'bg-secondary/40', serviceType: type };
 }
 
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({
@@ -61,10 +63,10 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelC
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-heading text-foreground">{channel.label ?? meta.label}</span>
+            <span className="typo-card-label">{channel.label ?? meta.label}</span>
             <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
             {!channel.is_active && (
-              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-muted-foreground">{t.channels.paused}</span>
+              <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-foreground">{t.channels.paused}</span>
             )}
           </div>
           <div className="flex items-center gap-3 mt-1">
@@ -72,17 +74,17 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: ChannelC
               {credential ? credential.name : channel.credential_id.slice(0, 12) + '...'}
             </span>
             {channel.persona_id && (
-              <span className="flex items-center gap-1 typo-caption text-muted-foreground">
+              <span className="flex items-center gap-1 typo-caption text-foreground">
                 <User className="w-3 h-3" />{channel.persona_id.slice(0, 8)}...
               </span>
             )}
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={() => onToggle(channel)} title={channel.is_active ? t.channels.pause : t.channels.activate} aria-label={`${channel.is_active ? t.channels.pause : t.channels.activate} — ${meta.label}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button onClick={() => onToggle(channel)} title={channel.is_active ? t.channels.pause : t.channels.activate} aria-label={`${channel.is_active ? t.channels.pause : t.channels.activate} — ${meta.label}`} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             {channel.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
           </button>
-          <button onClick={() => onDelete(channel)} title={t.channels.remove} aria-label={`${t.channels.remove} — ${meta.label}`} className="p-1.5 rounded-interactive text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+          <button onClick={() => onDelete(channel)} title={t.channels.remove} aria-label={`${t.channels.remove} — ${meta.label}`} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -190,6 +192,16 @@ export default function ChannelsPage() {
 
   if (!activeTwinId) return <TwinEmptyState icon={Radio} title={t.channels.title} />;
 
+  // Nudge: which active channel types lack a matching tone row?
+  const tones = useSystemStore.getState().twinTones;
+  const setTwinTab = useSystemStore.getState().setTwinTab;
+  const channelsWithoutTone = channels
+    .filter((ch) => ch.is_active)
+    .map((ch) => ch.channel_type)
+    .filter((type, idx, arr) => arr.indexOf(type) === idx)
+    .filter((type) => !tones.some((tn) => tn.twin_id === activeTwinId && tn.channel === type))
+    .slice(0, 3); // cap the list so the page doesn't grow a wall of nudges
+
   return (
     <ContentBox>
       <ContentHeader
@@ -208,12 +220,30 @@ export default function ChannelsPage() {
 
       <ContentBody centered>
         <div className="max-w-2xl mx-auto space-y-4 pb-8">
+          <CoachMark id="channels" title={t.coach.channelsTitle} body={t.coach.channelsBody} />
+
+          {/* Nudge: active channels with no matching tone row */}
+          {channelsWithoutTone.map((ch) => (
+            <div key={ch} className="p-3 rounded-card border border-amber-500/25 bg-amber-500/5 flex items-center gap-3">
+              <Mic className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <p className="typo-caption text-foreground flex-1">
+                {t.nudges.channelWithoutTone.replace('{channel}', ch).replace('{channel}', ch)}
+              </p>
+              <button
+                onClick={() => setTwinTab('tone')}
+                className="px-2.5 py-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/25 rounded-interactive hover:bg-amber-500/20 transition-colors flex-shrink-0"
+              >
+                {t.nudges.channelWithoutToneCta.replace('{channel}', ch)}
+              </button>
+            </div>
+          ))}
+
           {/* Add form */}
           {adding && (
             <div className="p-4 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="typo-heading text-foreground">{t.channels.addChannel}</h3>
-                <button onClick={resetForm} aria-label={t.channels.cancelBtn} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                <h3 className="typo-section-title">{t.channels.addChannel}</h3>
+                <button onClick={resetForm} aria-label={t.channels.cancelBtn} className="text-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -271,7 +301,7 @@ export default function ChannelsPage() {
             <div className="py-12 text-center">
               <Radio className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
               <p className="typo-body text-foreground">{t.channels.noChannelsConfigured}</p>
-              <p className="typo-caption text-muted-foreground mt-1">{t.channels.noChannelsHint}</p>
+              <p className="typo-caption text-foreground mt-1">{t.channels.noChannelsHint}</p>
             </div>
           ) : (
             <div className="space-y-2">

@@ -80,7 +80,7 @@ export default function LiteratureSearchPanel() {
         onAction={() => setShowAddForm(true)}
         extra={
           <>
-            <span className="typo-caption text-foreground/40">
+            <span className="typo-caption text-foreground">
               {filtered.length} / {sources.length} {t.research_lab.sources_count}
             </span>
             <button
@@ -101,13 +101,13 @@ export default function LiteratureSearchPanel() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder={t.research_lab.filter_sources_placeholder}
-          className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/30 focus:outline-none focus:border-primary/40"
+          className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40"
         />
       )}
 
       {loading && sources.length === 0 ? (
         <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground/50">{t.common.loading}</p>
+          <p className="typo-body text-foreground">{t.common.loading}</p>
         </div>
       ) : filtered.length === 0 ? (
         sources.length === 0 ? (
@@ -131,21 +131,21 @@ export default function LiteratureSearchPanel() {
               <div className="flex items-start gap-3">
                 <BookOpen className="w-4 h-4 text-primary/50 mt-1 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="typo-body text-foreground font-medium">{source.title}</h3>
+                  <h3 className="typo-card-label">{source.title}</h3>
                   {source.authors && (
-                    <p className="typo-caption text-foreground/50 mt-0.5">
+                    <p className="typo-caption text-foreground mt-0.5">
                       {source.authors}{source.year ? ` (${source.year})` : ''}
                     </p>
                   )}
                   {source.abstractText && (
-                    <p className="typo-micro text-foreground/40 mt-2 line-clamp-3">{source.abstractText}</p>
+                    <p className="typo-body text-foreground mt-2 line-clamp-3">{source.abstractText}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">{sourceTypeLabel(t, source.sourceType)}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">{sourceTypeLabel(t, source.sourceType)}</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] ${sourceStatusColor(source.status)}`}>
                       {sourceStatusLabel(t, source.status)}
                     </span>
-                    {source.doi && <span className="typo-micro text-foreground/30">{source.doi}</span>}
+                    {source.doi && <span className="typo-micro text-foreground">{source.doi}</span>}
                     {source.url && (
                       <a
                         href={source.url}
@@ -163,8 +163,8 @@ export default function LiteratureSearchPanel() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {source.relevanceScore != null && (
                     <div className="text-right">
-                      <span className="typo-micro text-foreground/30">{t.research_lab.relevance}</span>
-                      <p className="typo-caption text-foreground/60 font-medium">{Math.round(source.relevanceScore * 100)}%</p>
+                      <span className="typo-caption text-foreground">{t.research_lab.relevance}</span>
+                      <p className="typo-data text-primary">{Math.round(source.relevanceScore * 100)}%</p>
                     </div>
                   )}
                   {source.status === 'pending' && (

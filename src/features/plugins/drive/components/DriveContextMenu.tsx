@@ -111,7 +111,7 @@ export function DriveContextMenu({
       }}
       className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-md mx-1 ${
         opts.disabled
-          ? "text-foreground/30 cursor-not-allowed"
+          ? "text-foreground cursor-not-allowed"
           : opts.danger
           ? "text-rose-300 hover:bg-gradient-to-r hover:from-rose-500/25 hover:to-rose-500/5 hover:text-rose-100"
           : "text-foreground hover:bg-gradient-to-r hover:from-cyan-500/25 hover:to-cyan-500/5 hover:text-cyan-50"

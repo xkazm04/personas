@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { CoachMark } from '../CoachMark';
 
 /**
  * Brain tab — the twin's memory system.
@@ -124,29 +125,30 @@ export default function BrainPage() {
 
       <ContentBody>
         <div className="space-y-6 pb-8">
+          <CoachMark id="brain" title={t.coach.brainTitle} body={t.coach.brainBody} />
 
           {/* ── Layer 1: Obsidian Vault ───────────────────────────────── */}
           <div className="p-4 rounded-card border border-violet-500/15 bg-violet-500/5">
             <div className="flex items-center gap-2 mb-2">
               <FolderTree className="w-4 h-4 text-violet-400" />
-              <span className="typo-heading text-foreground">{t.brain.obsidianVault}</span>
-              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/30 text-muted-foreground">{t.brain.optional}</span>
+              <span className="typo-section-title">{t.brain.obsidianVault}</span>
+              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/30 text-foreground">{t.brain.optional}</span>
             </div>
             <p className="typo-body text-foreground mb-2">
               {t.brain.obsidianDescription}{' '}
               {t.brain.obsidianTwinReadsFrom} <code className="typo-code">{activeTwin?.obsidian_subpath}</code>.
             </p>
-            <p className="typo-caption text-muted-foreground">{t.brain.obsidianHint}</p>
+            <p className="typo-caption text-foreground">{t.brain.obsidianHint}</p>
           </div>
 
           {/* ── Layer 2: Knowledge Base ───────────────────────────────── */}
           <div className="p-4 rounded-card border border-primary/10 bg-card/40">
             <div className="flex items-center gap-2 mb-1">
               <Database className="w-4 h-4 text-violet-400" />
-              <span className="typo-heading text-foreground">{t.brain.knowledgeBase}</span>
+              <span className="typo-section-title">{t.brain.knowledgeBase}</span>
               <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{t.brain.requiredForRecall}</span>
             </div>
-            <p className="typo-caption text-muted-foreground mb-3">{t.brain.kbDescription}</p>
+            <p className="typo-caption text-foreground mb-3">{t.brain.kbDescription}</p>
 
             {kbLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -157,7 +159,7 @@ export default function BrainPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="typo-body text-foreground font-medium">{kbInfo.name}</p>
+                    <p className="typo-body text-primary font-medium">{kbInfo.name}</p>
                     <p className="typo-caption text-foreground mt-0.5">{kbInfo.document_count} {t.brain.documents}, {kbInfo.chunk_count} {t.brain.chunks}</p>
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${
@@ -191,14 +193,14 @@ export default function BrainPage() {
                   <div className="p-3 rounded-interactive border border-primary/15 bg-background space-y-2">
                     <p className="typo-caption text-foreground font-medium">{t.brain.selectExistingKb}</p>
                     {allKbs.length === 0 ? (
-                      <p className="typo-caption text-muted-foreground">{t.brain.noKbsFound}</p>
+                      <p className="typo-caption text-foreground">{t.brain.noKbsFound}</p>
                     ) : allKbs.map((kb) => (
                       <button key={kb.id} onClick={() => handleBind(kb.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-interactive hover:bg-secondary/40 transition-colors text-left">
                         <span className="typo-body text-foreground">{kb.name}</span>
-                        <span className="typo-caption text-muted-foreground">{kb.document_count} {t.brain.docs}</span>
+                        <span className="typo-caption text-foreground">{kb.document_count} {t.brain.docs}</span>
                       </button>
                     ))}
-                    <button onClick={() => setPickMode(false)} className="typo-caption text-muted-foreground hover:text-foreground mt-1">{t.profiles.cancel}</button>
+                    <button onClick={() => setPickMode(false)} className="typo-caption text-foreground hover:text-foreground mt-1">{t.profiles.cancel}</button>
                   </div>
                 )}
               </div>

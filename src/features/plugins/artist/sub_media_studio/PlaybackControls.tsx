@@ -102,7 +102,7 @@ export default function PlaybackControls({
         className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
           looping
             ? 'bg-rose-500/20 border border-rose-500/30 text-rose-400'
-            : 'text-muted-foreground/40 hover:text-foreground/60 border border-transparent'
+            : 'text-foreground hover:text-foreground/60 border border-transparent'
         }`}
         title="Loop"
       >
@@ -111,11 +111,11 @@ export default function PlaybackControls({
 
       {/* Time display */}
       <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-secondary/20 border border-primary/10">
-        <span className="text-sm font-mono text-rose-400 tabular-nums font-semibold">
+        <span className="text-md font-mono text-rose-400 tabular-nums font-semibold">
           {formatDurationShort(displayTime)}
         </span>
-        <span className="text-xs text-muted-foreground/40">/</span>
-        <span className="text-sm font-mono text-muted-foreground/60 tabular-nums">
+        <span className="text-md text-foreground">/</span>
+        <span className="text-md font-mono text-foreground tabular-nums">
           {formatDurationShort(totalDuration)}
         </span>
       </div>
@@ -124,7 +124,7 @@ export default function PlaybackControls({
       <div className="flex-1" />
 
       {/* Keyboard shortcut hint */}
-      <div className="flex items-center gap-1 text-[9px] text-muted-foreground/30">
+      <div className="flex items-center gap-1 text-md text-foreground">
         <Keyboard className="w-3 h-3" />
         <span>Space / Del / Arrows</span>
       </div>

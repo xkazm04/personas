@@ -244,22 +244,22 @@ export function PrBridge({ task }: { task: DevTask }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground/80">{dt.pr_bridge_title}</span>
+            <span className="typo-card-label">{dt.pr_bridge_title}</span>
             {content.agentLabel && content.agentEmoji && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60 bg-primary/5 border border-primary/10 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[10px] text-foreground bg-primary/5 border border-primary/10 rounded-full px-2 py-0.5">
                 <Sparkles className="w-2.5 h-2.5 text-violet-400" />
                 <span>{content.agentEmoji}</span>
                 <span>{content.agentLabel}</span>
               </span>
             )}
           </div>
-          <p className="text-[10px] text-muted-foreground/50 truncate">
+          <p className="text-[10px] text-foreground truncate">
             {expanded ? dt.pr_bridge_collapse : dt.pr_bridge_subtitle}
           </p>
         </div>
         {expanded
-          ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
-          : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />}
+          ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
       </button>
 
       {expanded && (
@@ -268,7 +268,7 @@ export function PrBridge({ task }: { task: DevTask }) {
           {!hasGithubUrl && (
             <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground/70 flex-1">{dt.pr_bridge_no_github}</p>
+              <p className="text-xs text-foreground flex-1">{dt.pr_bridge_no_github}</p>
               <Button
                 variant="secondary"
                 size="xs"
@@ -284,25 +284,25 @@ export function PrBridge({ task }: { task: DevTask }) {
           {hasGithubUrl && !hasRecognizedRepo && (
             <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground/70">{dt.pr_bridge_unsupported_host}</p>
+              <p className="text-xs text-foreground">{dt.pr_bridge_unsupported_host}</p>
             </div>
           )}
 
           {/* PR preview fields */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <PreviewField label={dt.pr_bridge_branch} mono>
-              <code className="text-xs text-foreground/80">{content.branchName}</code>
+              <code className="text-xs text-foreground">{content.branchName}</code>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_pr_title}>
-              <span className="text-xs text-foreground/80">{content.prTitle}</span>
+              <span className="text-xs text-foreground">{content.prTitle}</span>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_commit_msg} mono fullRow>
-              <pre className="text-[11px] text-foreground/70 whitespace-pre-wrap font-mono max-h-24 overflow-y-auto">
+              <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-24 overflow-y-auto">
                 {content.commitMessage}
               </pre>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_pr_body} mono fullRow>
-              <pre className="text-[11px] text-foreground/70 whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+              <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
                 {content.prBody}
               </pre>
             </PreviewField>
@@ -350,7 +350,7 @@ export function PrBridge({ task }: { task: DevTask }) {
           </div>
 
           {hasRecognizedRepo && (
-            <p className="text-[10px] text-muted-foreground/50 leading-relaxed">{dt.pr_bridge_draft_hint}</p>
+            <p className="text-[10px] text-foreground leading-relaxed">{dt.pr_bridge_draft_hint}</p>
           )}
         </div>
       )}
@@ -375,7 +375,7 @@ function PreviewField({
 }) {
   return (
     <div className={`rounded-lg border border-primary/10 bg-primary/3 px-3 py-2 ${fullRow ? 'lg:col-span-2' : ''}`}>
-      <span className="block text-[9px] uppercase tracking-wider font-medium text-muted-foreground/60 mb-1">
+      <span className="block text-[9px] uppercase tracking-wider font-medium text-primary mb-1">
         {label}
       </span>
       <div className="min-w-0">{children}</div>
