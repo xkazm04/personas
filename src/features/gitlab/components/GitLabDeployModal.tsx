@@ -219,7 +219,7 @@ export function GitLabDeployModal({
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
             <LoadingSpinner />
-            <span className="sr-only">Deploying persona to GitLab...</span>
+            <span className="sr-only">{t.gitlab.deploying_to_gitlab}</span>
           </span>
         ) : (
           <Rocket className="w-4 h-4" />

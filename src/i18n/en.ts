@@ -1121,6 +1121,12 @@ export const en = {
       no_dream_trace: "No trace data available for dream replay",
       // {index}/{total} = frame position
       frame_count: "Frame {index}/{total}",
+      // Footer depth label in DreamReplayTheater
+      depth_label: "Depth:",
+      // Section headers in FrameStatePanel
+      active_count_label: "Active ({count})",
+      completed_count_label: "Completed ({count})",
+      metadata_section: "Metadata",
 
       // Phase labels (shared across runner)
       phase_initializing: "Initializing",
@@ -5750,14 +5756,42 @@ export const en = {
     review_results: { title: "AI Memory Review", review_failed: "Review failed" },
     anomaly_drilldown_extra: { title: "Anomaly Drill-Down", value_label: "Value:", baseline_label: "Baseline:", correlating: "Correlating events...", likely_root_causes: "Likely Root Causes", correlated_events: "Correlated Events", no_correlated: "No correlated events found in the \u00b124h window." },
     healing_issue_modal: { issue_resolved: "Issue Resolved", analysis: "Analysis", suggested_fix: "Suggested Fix", copied: "Copied", copy_fix: "Copy Fix", persona_auto_disabled: "Persona auto-disabled", persona_auto_disabled_desc: "This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.", marking_resolved_note: "Marking resolved means you have addressed this issue outside the healing system.", retry_in_progress: "Retry in progress -- status will update when complete", auto_resolved: "This issue was automatically resolved", close: "Close", resolving: "Resolving\u2026", mark_resolved: "Mark as Resolved" },
-    healing_issues_panel: { title: "Health Issues", analyzing: "Analyzing...", run_analysis: "Run Analysis", no_open_issues: "No open issues", run_analysis_hint: "Run analysis to check for problems.", healing_audit_log: "Healing Audit Log", no_silent_failures: "No silent failures recorded." },
-    healing_timeline: { loading: "Loading timeline...", no_events: "No healing events", no_events_hint: "Run analysis to build the resilience timeline.", knowledge_base: "Knowledge Base", patterns_hint: "Patterns influencing healing decisions" },
-    ipc_panel: { title: "IPC Performance", by_command: "By Command", slowest_calls: "Slowest Calls", command: "Command", calls_header: "Calls", duration_header: "Duration", when_header: "When" },
-    system_trace_extra: { no_traces: "No system traces recorded", no_traces_hint: "Traces appear when design, credential, or template operations run", all_operations: "All operations", clear_completed: "Clear completed traces", span: "Span" },
-    event_log_sidebar: { title: "Event Log", no_events: "No events yet", open_detail_drawer: "Open in detail drawer" },
+    healing_issues_panel: { title: "Health Issues", analyzing: "Analyzing...", run_analysis: "Run Analysis", no_open_issues: "No open issues", run_analysis_hint: "Run analysis to check for problems.", healing_audit_log: "Healing Audit Log", no_silent_failures: "No silent failures recorded.", analysis_complete_prefix: "Analysis complete:" },
+    healing_timeline: { loading: "Loading timeline...", no_events: "No healing events", no_events_hint: "Run analysis to build the resilience timeline.", knowledge_base: "Knowledge Base", patterns_hint: "Patterns influencing healing decisions", retry_badge: "retry #{count}" },
+    ipc_panel: { title: "IPC Performance", by_command: "By Command", slowest_calls: "Slowest Calls", command: "Command", calls_header: "Calls", duration_header: "Duration", when_header: "When", commands_table_label: "IPC command performance", slowest_table_label: "Slowest IPC calls", error_rate: "Error rate:", timeout_rate: "Timeout rate:" },
+    system_trace_extra: { no_traces: "No system traces recorded", no_traces_hint: "Traces appear when design, credential, or template operations run", all_operations: "All operations", clear_completed: "Clear completed traces", span: "Span", zero_ms: "0ms" },
+    event_log_sidebar: { title: "Event Log", no_events: "No events yet", open_detail_drawer: "Open in detail drawer", filter_placeholder: "Filter events…" },
     chart_error: { chart_unavailable: "Chart unavailable" },
     realtime_idle: { idle: "Idle" },
     day_range: { apply: "Apply" },
+    // Event detail drawer labels (shared by realtime + events sub-modules)
+    event_detail_drawer: { event_id_label: "Event ID", broadcast: "(broadcast)" },
+    // Dropped-event overlay on the event bus canvas
+    event_bus_overlay: { earlier_events_not_shown_one: "{count} earlier event not shown", earlier_events_not_shown_other: "{count} earlier events not shown" },
+    // Event bus filter bar search placeholder
+    event_bus_filter: { search_placeholder: "Search events..." },
+    // Inline text labels in the realtime stats bar
+    realtime_stats: { events_per_min: "events/min", pending: "pending", success: "success", in_window: "in window", test_flow: "Test Flow" },
+    // SVG text on the event queue lane
+    bus_lane: { event_queue: "EVENT QUEUE" },
+    // View-toggle button titles + headings in the health dashboard
+    health_dashboard: { heartbeats_view: "Heartbeats view", status_page_view: "Status page view", reliability_view: "SLA reliability view", refresh_tooltip: "Refresh health data", persona_heartbeats: "Persona Heartbeats", system_health: "System Health:", computing: "Computing health signals...", no_match: "No personas match the selected filter.", loading_status_page: "Loading status page...", loading_reliability: "Loading reliability data...", heartbeats_btn: "Heartbeats", reliability_btn: "Reliability" },
+    // Crash logs collapsible section
+    crash_logs: { title: "Crash Logs", no_logs: "No crash logs recorded.", component_stack_separator: "--- Component Stack ---" },
+    // Popup field footer for Ollama sign-up
+    popup_fields: { sign_up_free_at: "Sign up free at", ollama_domain: "ollama.com", ollama_key_instructions: ", then copy your API key from Settings. This key is stored locally and shared across all agents." },
+    // Tooltip title attrs on events list action buttons
+    events_list: { save_view_tooltip: "Save current filters as a view", clear_filters_tooltip: "Clear all filters" },
+    // Dashboard home greeting strip
+    dashboard_home: { you_have: "You have" },
+    // Fleet optimization section heading
+    fleet_optimization_card: { title: "Fleet Optimization" },
+    // aria-label for time range group in DashboardFilters
+    usage_filters: { time_range_label: "Time range" },
+    // DayRangePicker date range popover
+    day_range_picker: { start_date: "Start Date", end_date: "End Date" },
+    // Summary strip above healing issues list
+    healing_summary: { auto_fixed_this_week: "auto-fixed this week", issues_in_7d: "issues in 7d" },
   },
 
   // -------------------------------------------------------------------
@@ -9368,6 +9402,90 @@ export const en = {
       scoreboard_no_signal: "—",
       scoreboard_n_pending: "{n} pending",
       scoreboard_top_performer: "Top performer",
+      // Goal Constellation controls
+      zoom_in: "Zoom in",
+      zoom_out: "Zoom out",
+      reset_view: "Reset view",
+      goals_label: "goals,",
+      connections_label: "connections",
+      legend_parent: "━━ parent",
+      legend_dependency: "┄┄ dependency",
+      competitors_dot: "competitors ·",
+      of_4_selected: "/4 selected",
+      status_label: "Status:",
+      wt_label: "wt:",
+      winning_insight: "Winning insight",
+      completed_in: "Completed in",
+      achievements_label: "Achievements:",
+      output_lines: "output lines",
+      loading_diff: "Loading diff...",
+      first_slot_bias: "First slot biased toward previous winner's approach.",
+      start_competition_prefix: "Start Competition (",
+      slots_suffix: "slots)",
+      strategy_leaderboard: "Strategy Leaderboard",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "Aggregated across resolved competitions. Higher wins.",
+      capture_winning_insight: "Capture the winning insight",
+      capture_insight_desc: "What made this approach win? This note is stored with the winner and used to seed future competitions.",
+      insight_placeholder: "Describe what made this approach succeed…",
+      confirm_winner: "Confirm winner",
+      github_required_title: "GitHub repository required",
+      folder_required_title: "Project folder required",
+      requirements_met_title: "All requirements met",
+      can_still_adopt: "You can still adopt now — add GitHub URL and project folder later in project settings.",
+      active_triggers_prefix: "Active Triggers (",
+      lifecycle_readiness: "Lifecycle Readiness —",
+      goals_tab_no_goals: "No goals yet. Create goals in the Project Manager.",
+      goal_constellation_prefix: "Goal Constellation (",
+      sync_to_obsidian: "Sync to Obsidian",
+      select_or_create: "Select a project below or create a new one.",
+      all_projects_prefix: "All Projects (",
+      percent_overall: "% overall",
+      task_queue_prefix: "Task Queue (",
+      project_created_title: "Project Created",
+      generate_context_map_desc: "Scans your codebase to identify business logic, entry points, and data structures.",
+      source_label: "Source:",
+      auto_filled_hint: "(auto-filled from folder)",
+      project_type_optional: "(optional, visual only)",
+      optional_label: "(optional)",
+      implementation_log_label: "Implementation Log",
+      cross_project_desc_btn: "Aggregated from existing context maps. Click any project to expand.",
+      shared_keywords_subtitle: "Concepts present in multiple projects — may indicate shared architecture.",
+      generate_metadata_prompt: "to analyze all projects' context maps and extract shared patterns.",
+      shared_keywords_prefix: "Shared Keywords (",
+      projects_count_prefix: "Projects (",
+      entry_points_header: "Entry Points",
+      db_tables_header: "Database Tables",
+      entry_points_count: "entry points",
+      db_tables_count: "db tables",
+      run_context_map_scan: "Run Context Map scan for this project to populate metadata.",
+      active_goals_label: "active goals",
+      no_goals_add_below: "No goals yet. Add one below.",
+      goal_title_placeholder: "Goal title…",
+      loading_repos: "Loading repositories...",
+      github_url_label: "GitHub URL",
+      github_repo_label: "GitHub Repository",
+      idea_evolution_title: "Idea Evolution",
+      fitness_ranking_label: "Fitness Ranking",
+      similar_to_rejected: "Similar to rejected:",
+      synthesis_suggestions: "Synthesis Suggestions",
+      percent_similar: "% similar",
+      potential_duplicates: "Potential Duplicates",
+      scanning_with: "Scanning with",
+      scanning_subtitle: "Analyzing codebase patterns and generating context groups…",
+      no_previous_scans: "No previous scans.",
+      run_scan_prefix: "Run Scan (",
+      automated_context_scan: "Automated Context Scan",
+      results_prefix: "Results (",
+      scan_history_prefix: "Scan History (",
+      action_label: "Action:",
+      self_healing_title: "Self-Healing",
+      heal_all_prefix: "Heal All (",
+      task_title_placeholder: "Task title…",
+      task_details_placeholder: "Task details or paste a spec…",
+      goal_link_placeholder: "Select a goal…",
+      no_tasks_queued_sub: "Create tasks manually or batch from accepted ideas.",
+
     },
 
     doc_signing: {
@@ -10433,6 +10551,18 @@ export const en = {
     // -- CiCdTemplatesPicker --
     cicd_agent_templates: "CI/CD Agent Templates",
     your_tier: "(yours)",
+    // Prefix before the trigger name in CI/CD template cards, e.g. "on: push"
+    trigger_on: "on:",
+
+    // -- GitLabConnectionForm sr-only status while connecting --
+    connecting_to_gitlab: "Connecting to GitLab...",
+
+    // -- GitLabDeployModal sr-only status while deploying --
+    deploying_to_gitlab: "Deploying persona to GitLab...",
+
+    // -- GitLabPipelineViewer / NotificationCenter -- pipeline header label
+    // {id} = pipeline ID number
+    pipeline_hash: "Pipeline #",
   },
 
   // -------------------------------------------------------------------

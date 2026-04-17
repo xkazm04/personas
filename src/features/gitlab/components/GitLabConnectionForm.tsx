@@ -114,7 +114,7 @@ export function GitLabConnectionForm({
               {isConnecting ? (
                 <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
                   <LoadingSpinner />
-                  <span className="sr-only">Connecting to GitLab...</span>
+                  <span className="sr-only">{t.gitlab.connecting_to_gitlab}</span>
                 </span>
               ) : (
                 <LogIn className="w-4 h-4" />

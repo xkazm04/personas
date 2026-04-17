@@ -87,7 +87,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                         {template.description}
                       </p>
                       <span className="inline-block mt-1 text-[10px] text-foreground font-mono">
-                        on: {template.trigger}
+                        {t.gitlab.trigger_on} {template.trigger}
                       </span>
                     </div>
                   </div>

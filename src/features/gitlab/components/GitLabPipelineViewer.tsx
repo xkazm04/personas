@@ -143,7 +143,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                 <div className="flex items-center gap-2">
                   <StatusIcon status={activePipeline.status} />
                   <span className="typo-body font-medium text-foreground/90">
-                    Pipeline #{activePipeline.id}
+                    {t.gitlab.pipeline_hash}{activePipeline.id}
                   </span>
                   <span className={`typo-caption capitalize ${statusColor(activePipeline.status)}`}>
                     {activePipeline.status}

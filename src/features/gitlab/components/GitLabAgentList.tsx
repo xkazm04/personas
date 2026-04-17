@@ -60,7 +60,7 @@ export function GitLabAgentList({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="typo-body text-foreground">{agents.length} agent(s)</p>
+        <p className="typo-body text-foreground">{t.gitlab.agents_deployed.replace('{count}', String(agents.length))}</p>
         <button
           onClick={() => onFetchAgents(projectId)}
           className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"

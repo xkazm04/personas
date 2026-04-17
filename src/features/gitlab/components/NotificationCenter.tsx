@@ -213,7 +213,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       <div className="flex items-center gap-2 mb-1.5">
         <StatusIcon status={notification.status} />
         <span className="typo-body font-medium text-foreground/90">
-          Pipeline #{notification.pipelineId}
+          {t.gitlab.pipeline_hash}{notification.pipelineId}
         </span>
         <span className="typo-caption text-foreground ml-auto mr-4">
           {formatTimestamp(notification.timestamp)}
