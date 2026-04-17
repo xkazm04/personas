@@ -208,7 +208,7 @@ export default function GoalConstellation() {
     <div className="space-y-3">
       {/* Controls */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} t.plugins.dev_tools.zoom_in>
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title={t.plugins.dev_tools.zoom_in}>
           <ZoomIn className="w-4 h-4" />
         </Button>
         <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title={t.plugins.dev_tools.zoom_out}>
