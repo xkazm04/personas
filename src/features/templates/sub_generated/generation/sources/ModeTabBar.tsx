@@ -2,6 +2,7 @@
  * ModeTabBar -- tab bar for selecting run mode in DesignReviewRunner.
  */
 import { Beaker, FileText, List } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type RunMode = 'predefined' | 'custom' | 'batch';
 
@@ -12,10 +13,11 @@ interface ModeTabBarProps {
 }
 
 export function ModeTabBar({ mode, onModeChange, batchCount }: ModeTabBarProps) {
+  const { t } = useTranslation();
   const tabs: { id: RunMode; label: string; Icon: typeof Beaker }[] = [
-    { id: 'predefined', label: 'Predefined (5)', Icon: Beaker },
-    { id: 'custom', label: 'Custom', Icon: FileText },
-    { id: 'batch', label: `Batch${batchCount > 0 ? ` (${batchCount})` : ''}`, Icon: List },
+    { id: 'predefined', label: t.templates.generation.mode_predefined, Icon: Beaker },
+    { id: 'custom', label: t.templates.generation.mode_custom, Icon: FileText },
+    { id: 'batch', label: batchCount > 0 ? t.templates.generation.mode_batch_count.replace('{count}', String(batchCount)) : t.templates.generation.mode_batch, Icon: List },
   ];
 
   return (

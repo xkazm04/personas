@@ -183,7 +183,7 @@ export function TemplateDetailModal({
         {/* Tabs with accent underline */}
         <div
           role="tablist"
-          aria-label="Template details"
+          aria-label={t.templates.gallery.template_details_tabs_aria}
           onKeyDown={handleTabKeyDown}
           className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20"
         >

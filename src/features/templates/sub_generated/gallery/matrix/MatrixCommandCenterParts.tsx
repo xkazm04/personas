@@ -423,6 +423,7 @@ export function CliOutputStream({ lines }: { lines: string[] }) {
 
 /** Design question prompt for creation mode. */
 export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQuestion; onAnswer: (answer: string) => void }) {
+  const { t } = useTranslation();
   const [answer, setAnswer] = useState('');
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
@@ -443,7 +444,7 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
         </div>
       ) : (
         <div className="w-full flex gap-1.5">
-          <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer..."
+          <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t.templates.matrix_variants.your_answer_placeholder}
             className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }} />
           <button type="button" onClick={() => { if (answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }}
@@ -458,11 +459,12 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
 
 /** Test running indicator -- streaming output + cancel button. */
 export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { testOutputLines?: string[]; onCancelTest?: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <BuildStatusIndicator phaseLabel="Testing agent..." />
       <p className="text-xs text-foreground text-center leading-relaxed max-w-xs">
-        This may take a few minutes. You can leave this page and come back later — testing continues in the background.
+        {t.templates.matrix_variants.testing_background_hint}
       </p>
       {testOutputLines.length > 0 && (
         <CliOutputStream lines={testOutputLines} />
@@ -473,7 +475,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
           onClick={onCancelTest}
           className="text-xs text-foreground hover:text-muted-foreground/70 transition-colors"
         >
-          Cancel Test
+          {t.templates.matrix_variants.cancel_test}
         </button>
       )}
     </div>
@@ -496,6 +498,7 @@ export function TestResultsPanel({
   toolResults?: ToolTestResult[];
   summary?: string | null;
 }) {
+  const { t } = useTranslation();
   const [showReport, setShowReport] = useState(false);
   const testConnectors = useAgentStore((s) => s.buildTestConnectors);
   const missingConnectors = testConnectors.filter((c) => !c.has_credential);
@@ -541,7 +544,7 @@ export function TestResultsPanel({
 
       {hasConnectorGaps && (
         <p className="text-sm text-amber-400/80 leading-snug">
-          Missing keys: <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
+          {t.templates.matrix_variants.missing_keys} <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
         </p>
       )}
 
@@ -569,7 +572,7 @@ export function TestResultsPanel({
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            Approve Anyway
+            {t.templates.matrix_variants.approve_anyway}
           </button>
         )}
         {(toolResults.length > 0 || error) && (
@@ -598,11 +601,11 @@ export function TestResultsPanel({
             type="button"
             onClick={onDeleteDraft}
             data-testid="agent-delete-draft-btn"
-            title="Discard this draft persona and close"
+            title={t.templates.matrix_variants.delete_draft_title}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Delete Draft
+            {t.templates.matrix_variants.delete_draft}
           </button>
         )}
       </div>
@@ -622,6 +625,7 @@ export function TestResultsPanel({
 // --- TestReportModal + helpers extracted to TestReportModal.tsx ---
 /** Promotion success indicator -- checkmark with emerald glow. */
 export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }) {
+  const { t } = useTranslation();
   return (
     <div data-testid="promotion-success" className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
@@ -629,7 +633,7 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="typo-body text-foreground font-medium">Agent Promoted</span>
+      <span className="typo-body text-foreground font-medium">{t.templates.matrix_variants.agent_promoted}</span>
       {onViewAgent && (
         <button
           type="button"
@@ -637,7 +641,7 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
           className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 typo-body text-foreground hover:bg-primary/5 transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
-          View Agent
+          {t.templates.matrix_variants.view_agent}
         </button>
       )}
     </div>

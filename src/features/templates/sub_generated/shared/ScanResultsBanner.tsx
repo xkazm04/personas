@@ -115,6 +115,7 @@ interface ScanResultsBannerProps {
 // -- Finding row ------------------------------------------------------
 
 function FindingRow({ finding }: { finding: ScanFinding }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const config = SEVERITY_CONFIG[finding.severity];
 
@@ -148,7 +149,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
         <div className="px-3 pb-2.5 pt-0">
           <div className="ml-4 pl-3 border-l-2 border-white/5">
             <p className="text-sm uppercase tracking-wider text-foreground mb-1">
-              Source: <span className="text-foreground">{finding.source}</span>
+              {t.templates.scan.source_label} <span className="text-foreground">{finding.source}</span>
             </p>
             <pre className="text-sm text-foreground whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
               {finding.context}
@@ -241,13 +242,13 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
           <div className="flex-1">
             <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
             <p className="text-sm text-emerald-300/50">
-              {result.info.length} informational note{result.info.length !== 1 ? 's' : ''} for review
+              {t.templates.scan.info_notes.replace('{count}', String(result.info.length))}
             </p>
           </div>
         </div>
         <div className="px-4 pb-3">
           <SeveritySection
-            label="Informational"
+            label={t.templates.scan.informational_label}
             icon={<Info className="w-3 h-3 text-blue-400/50" />}
             findings={result.info}
             defaultOpen={false}
@@ -275,14 +276,14 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         )}
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium ${titleColor}`}>
-            {hasCritical ? 'Critical security issues detected' : 'Security warnings detected'}
+            {hasCritical ? t.templates.scan.critical_issues : t.templates.scan.security_warnings}
           </p>
           <p className={`text-sm ${subtitleColor} mt-0.5`}>
             {result.critical.length > 0 && `${result.critical.length} critical`}
             {result.critical.length > 0 && result.warnings.length > 0 && ', '}
             {result.warnings.length > 0 && `${result.warnings.length} warning${result.warnings.length !== 1 ? 's' : ''}`}
             {result.info.length > 0 && `, ${result.info.length} info`}
-            {' -- review findings before creating this persona'}
+            {` -- ${t.templates.scan.review_findings}`}
           </p>
         </div>
 
@@ -290,12 +291,12 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {result.critical.length > 0 && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body font-medium rounded bg-red-500/15 text-red-400 border border-red-500/20">
-              {result.critical.length} critical
+              {result.critical.length} {t.templates.scan.critical_label}
             </span>
           )}
           {result.warnings.length > 0 && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body font-medium rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
-              {result.warnings.length} warn
+              {result.warnings.length} {t.templates.scan.warnings_label}
             </span>
           )}
         </div>
@@ -304,19 +305,19 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
       {/* Findings */}
       <div className="px-4 pb-3 space-y-3">
         <SeveritySection
-          label="Critical"
+          label={t.templates.scan.critical_label}
           icon={<ShieldX className="w-3 h-3 text-red-400/50" />}
           findings={result.critical}
           defaultOpen={true}
         />
         <SeveritySection
-          label="Warnings"
+          label={t.templates.scan.warnings_label}
           icon={<AlertTriangle className="w-3 h-3 text-amber-400/50" />}
           findings={result.warnings}
           defaultOpen={result.critical.length === 0}
         />
         <SeveritySection
-          label="Informational"
+          label={t.templates.scan.informational_label}
           icon={<Info className="w-3 h-3 text-blue-400/50" />}
           findings={result.info}
           defaultOpen={false}

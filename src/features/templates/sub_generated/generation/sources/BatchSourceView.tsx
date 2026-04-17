@@ -2,8 +2,10 @@ import { useRef, useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import { CATEGORY_COLORS } from '../runner/designRunnerConstants';
 import type { BatchProps } from './TemplateSourceTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function BatchSourceView({ templates, categoryFilter, onCategoryFilterChange, onClear, onFileUpload }: BatchProps) {
+  const { t } = useTranslation();
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = useMemo(() => {
@@ -23,7 +25,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
     return (
       <div className="space-y-3">
         <p className="typo-body text-foreground">
-          Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI.
+          {t.templates.generation.batch_upload_hint}
         </p>
         <div className="flex justify-center">
           <input
@@ -38,11 +40,11 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
             className="px-4 py-3 rounded-modal border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-foreground hover:text-violet-300 transition-all flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
-            Upload list.md
+            {t.templates.generation.batch_upload_btn}
           </button>
         </div>
         <p className="typo-body text-foreground text-center">
-          Expected format: <code className="text-foreground">**1. Template Name**</code> followed by description and metadata
+          {t.templates.generation.batch_format_hint} <code className="text-foreground">{t.templates.generation.batch_format_example}</code>
         </p>
       </div>
     );
@@ -61,7 +63,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
                 : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
             }`}
           >
-            All ({templates.length})
+            {t.templates.generation.batch_all.replace('{count}', String(templates.length))}
           </button>
           {categories.map((cat) => {
             const count = templates.filter((t) => t.category === cat).length;
@@ -108,7 +110,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
       {/* Actions */}
       <div className="flex items-center justify-between">
         <p className="typo-body text-foreground">
-          {filtered.length} template{filtered.length !== 1 ? 's' : ''} will be generated via Claude CLI (~45s each)
+          {t.templates.generation.batch_count.replace('{count}', String(filtered.length)).replace('{plural}', filtered.length !== 1 ? 's' : '')}
         </p>
         <button
           onClick={onClear}

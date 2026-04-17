@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TestRunResult {
   testRunId: string;
@@ -22,6 +23,7 @@ interface TerminalOutputProps {
 }
 
 export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }: TerminalOutputProps) {
+  const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
 
@@ -57,12 +59,12 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
         onScroll={handleScroll}
         role="log"
         aria-live="polite"
-        aria-label="Design review output"
+        aria-label={t.templates.generation.terminal_aria_label}
         className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono typo-code bg-background transition-all`}
       >
         {!hasStarted ? (
           <div className="flex items-center justify-center h-full text-foreground typo-body">
-            Output will appear here when the review starts
+            {t.templates.generation.terminal_placeholder}
           </div>
         ) : (
           <div className="p-3">
@@ -89,7 +91,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
             {isRunning && (
               <div className="flex items-center gap-2 py-1 text-blue-400/60">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                <span>Running...</span>
+                <span>{t.templates.generation.terminal_running}</span>
               </div>
             )}
           </div>
@@ -102,6 +104,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 // -- Result Summary --------------------------------------------------
 
 export function ResultSummary({ result }: { result: TestRunResult }) {
+  const { t } = useTranslation();
   return (
     <div className="px-4 py-3 border-t border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
       <div className="flex items-center gap-4 typo-body">
@@ -118,7 +121,7 @@ export function ResultSummary({ result }: { result: TestRunResult }) {
           {result.errored} errors
         </span>
         <span className="ml-auto text-foreground typo-body">
-          {result.totalTests} total tests
+          {t.templates.generation.result_total.replace('{count}', String(result.totalTests))}
         </span>
       </div>
     </div>

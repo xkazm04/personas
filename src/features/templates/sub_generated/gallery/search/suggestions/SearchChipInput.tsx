@@ -110,20 +110,20 @@ function SearchChipInputImpl({
         {aiSearchMode ? (
           <>
             {inputValue && (
-              <button onClick={clearAll} aria-label="Clear search" className="p-1 text-foreground hover:text-foreground/70">
+              <button onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
             <button onClick={() => onAiSearchSubmit?.(inputValue.trim())}
               disabled={!inputValue.trim() || aiSearchLoading}
               className="p-1.5 rounded-card bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              aria-label="Search with AI">
+              aria-label={t.templates.search.search_with_ai_aria}>
               {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
           </>
         ) : (
           (inputValue || chips.length > 0) && (
-            <button onClick={clearAll} aria-label="Clear search" className="p-1 text-foreground hover:text-foreground/70">
+            <button onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
               <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )

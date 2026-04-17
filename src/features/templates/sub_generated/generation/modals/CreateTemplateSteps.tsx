@@ -3,6 +3,7 @@ import { TransformProgress } from '@/features/shared/components/progress/Transfo
 import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
 import type { useCreateTemplateReducer } from '../useCreateTemplateReducer';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Step 1: Describe --
 
@@ -14,6 +15,7 @@ interface DescribeStepProps {
 }
 
 export function DescribeStep({ templateName, description, error, reducer }: DescribeStepProps) {
+  const { t } = useTranslation();
   return (
     <div
       key="describe"
@@ -21,13 +23,13 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
     >
       <div className="space-y-1.5">
         <label className="typo-heading font-semibold text-foreground uppercase tracking-wider">
-          Template Name
+          {t.templates.generation.template_name_label_step}
         </label>
         <input
           type="text"
           value={templateName}
           onChange={(e) => reducer.setTemplateName(e.target.value)}
-          placeholder="Template name..."
+          placeholder={t.templates.generation.template_name_placeholder}
           className="w-full px-4 py-3 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
           autoFocus
         />
@@ -44,7 +46,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
           className="w-full h-48 px-4 py-3 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
         />
         <p className="typo-body text-foreground">
-          The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables.
+          {t.templates.generation.description_hint}
         </p>
       </div>
 

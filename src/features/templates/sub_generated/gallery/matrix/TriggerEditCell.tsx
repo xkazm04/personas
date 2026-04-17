@@ -82,7 +82,7 @@ function TriggerPopup({
             value={config.url ?? (trigger.config.url as string | undefined) ?? ''}
             onChange={(e) => onConfigChange(index, { ...config, url: e.target.value })}
             onKeyDown={(e) => e.key === 'Enter' && onClose()}
-            placeholder="https://..."
+            placeholder={t.templates.trigger_edit.webhook_url_placeholder}
             className={inputClass}
           />
         </div>

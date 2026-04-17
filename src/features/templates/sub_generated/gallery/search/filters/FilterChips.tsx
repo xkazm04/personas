@@ -2,6 +2,7 @@ import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../matrix/architecturalCategories';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function FilterChips({
   selectedCategory,
@@ -24,6 +25,7 @@ export function FilterChips({
   componentFilter?: string[];
   onComponentFilterChange?: (components: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
 
@@ -102,7 +104,7 @@ export function FilterChips({
           {(selectedCategory || connectorFilter.length > 0) && <div className="w-px h-5 bg-primary/10 mx-0.5" />}
           <div
             role="radiogroup"
-            aria-label="Coverage filter"
+            aria-label={t.templates.search.coverage_filter_aria}
             onKeyDown={(e) => {
               const values = ['all', 'full', 'partial'];
               const idx = values.indexOf(coverageFilter ?? 'all');

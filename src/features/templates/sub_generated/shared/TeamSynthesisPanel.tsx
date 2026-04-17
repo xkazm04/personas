@@ -61,7 +61,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             <div>
               <h2 id="team-synthesis-title" className="typo-heading font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
               <p className="typo-body text-foreground">
-                AI selects templates and assembles a connected team
+                {t.templates.team_synthesis.subtitle}
               </p>
             </div>
           </div>
@@ -76,13 +76,13 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             <>
               <div>
                 <label className="typo-body font-medium text-foreground block mb-1.5">
-                  Team Name
+                  {t.templates.team_synthesis.team_name_label}
                 </label>
                 <input
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g., Content Pipeline Team"
+                  placeholder={t.templates.team_synthesis.team_name_placeholder}
                   className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
@@ -90,12 +90,12 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
 
               <div>
                 <label className="typo-body font-medium text-foreground block mb-1.5">
-                  Describe what this team should do
+                  {t.templates.team_synthesis.describe_team}
                 </label>
                 <textarea
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="e.g., Monitor social media mentions, analyze sentiment, generate reports, and send alerts to Slack when negative trends are detected"
+                  placeholder={t.templates.team_synthesis.describe_placeholder}
                   rows={4}
                   className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
@@ -119,7 +119,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   {result.team_name}
                 </h3>
                 <p className="typo-body text-foreground mt-1">
-                  {result.member_count} personas created and connected
+                  {t.templates.team_synthesis.personas_created.replace('{count}', String(result.member_count))}
                 </p>
                 <p className="typo-body text-foreground mt-2 max-w-sm leading-relaxed">
                   {result.description}
@@ -140,12 +140,12 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               {loading ? (
                 <>
                   <Sparkles className="w-4 h-4 animate-pulse" />
-                  Synthesizing...
+                  {t.templates.team_synthesis.synthesizing}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Synthesize Team
+                  {t.templates.team_synthesis.synthesize_team}
                 </>
               )}
             </button>
@@ -154,7 +154,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               onClick={handleClose}
               className="px-4 py-2.5 typo-body font-medium rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
             >
-              Done
+              {t.templates.team_synthesis.done}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

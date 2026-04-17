@@ -127,6 +127,7 @@ function DatabaseRow({
   callbacks: MatrixEditCallbacks;
   editState: MatrixEditState;
 }) {
+  const { t } = useTranslation();
   const [showTablePicker, setShowTablePicker] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   useClickOutside(pickerRef, showTablePicker, () => setShowTablePicker(false));
@@ -199,7 +200,7 @@ function DatabaseRow({
                   type="text"
                   value={tableName || ''}
                   onChange={(e) => handleSetTable(e.target.value)}
-                  placeholder="e.g. persona_data"
+                  placeholder={t.templates.connector_edit.table_name_placeholder}
                   className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 typo-body text-foreground placeholder:text-foreground focus-ring"
                 />
               </div>

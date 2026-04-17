@@ -130,7 +130,7 @@ export function SearchAutocomplete({
           className="animate-fade-slide-in bg-background border border-primary/15 rounded-modal shadow-elevation-3 overflow-hidden"
           role="listbox"
           id="search-suggestions-listbox"
-          aria-label="Search suggestions"
+          aria-label={t.templates.search.search_suggestions_aria}
         >
           <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-foreground border-b border-primary/10">
             {prefix.startsWith('category') ? t.templates.search.autocomplete_categories
