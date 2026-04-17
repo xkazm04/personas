@@ -20,6 +20,7 @@ interface DayRangePickerProps {
 }
 
 export function DayRangePicker({ value, onChange, customDateRange, onCustomDateRangeChange }: DayRangePickerProps) {
+  const { t } = useTranslation();
   const [showCustom, setShowCustom] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -47,7 +48,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 
   return (
     <div className="relative">
-      <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
+      <div role="group" aria-label={t.overview.usage_filters.time_range_label} className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button key={opt.value} onClick={() => { onChange(opt.value); setShowCustom(false); }} aria-pressed={!isCustomActive && value === opt.value}
             className={`px-3 py-1 rounded-modal typo-body font-medium transition-all ${!isCustomActive && value === opt.value ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-foreground hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Calendar } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -25,6 +26,7 @@ interface DayRangePickerProps {
 }
 
 export function DayRangePicker({ value, onChange, customDateRange, onCustomDateRangeChange }: DayRangePickerProps) {
+  const { t } = useTranslation();
   const [showCustom, setShowCustom] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -64,7 +66,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 
   return (
     <div className="relative">
-      <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
+      <div role="group" aria-label={t.overview.usage_filters.time_range_label} className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -113,7 +115,6 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 // ---------------------------------------------------------------------------
 
 import { forwardRef } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 
 interface DateRangePopoverProps {
   value: CustomDateRange | null;

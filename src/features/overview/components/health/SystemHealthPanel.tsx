@@ -8,7 +8,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ConfigurationPopup } from '@/features/agents/components/onboarding/ConfigurationPopup';
 
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
-import { OLLAMA_FIELDS, OLLAMA_FOOTER, LITELLM_FIELDS } from './popupFieldConfigs';
+import { OLLAMA_FIELDS, OllamaFooter, LITELLM_FIELDS } from './popupFieldConfigs';
 import { CrashLogsSection } from './CrashLogsSection';
 import { SectionCard } from './SectionCard';
 import { FooterActions } from './FooterActions';
@@ -140,7 +140,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 accent="emerald"
                 fields={OLLAMA_FIELDS}
                 saveLabel={t.overview.system_health.save_key}
-                footerText={OLLAMA_FOOTER}
+                footerText={<OllamaFooter />}
                 onClose={() => setShowOllamaPopup(false)}
                 onSaved={() => { setShowOllamaPopup(false); runChecks(); }}
               />

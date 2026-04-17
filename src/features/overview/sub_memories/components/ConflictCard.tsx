@@ -90,10 +90,10 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
                 <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
               )}
               <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_a')}>
-                Keep &ldquo;{stripHtml(conflict.memoryA.title).slice(0, 20)}...&rdquo;
+                {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryA.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
               <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('keep_b')}>
-                Keep &ldquo;{stripHtml(conflict.memoryB.title).slice(0, 20)}...&rdquo;
+                {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryB.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
               <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason="Processing resolution..." onClick={() => onResolve('dismiss')}>{t.common.dismiss}</Button>
             </div>

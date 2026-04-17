@@ -3971,6 +3971,8 @@ export const en = {
       enable_sync: "Enable sync mode",
       source_ref: "Source reference",
       poll_interval: "Poll interval",
+      // Hint shown below sync configuration
+      sync_hint: "Watches the external vault for changes and auto-updates credentials using polling.",
     },
     // Empty state
     empty_state: {
@@ -4022,6 +4024,22 @@ export const en = {
       query_parameters: "Query Parameters",
       param_name_placeholder: "Param name",
       request_body: "Request Body (JSON)",
+      // AutopilotInputStep
+      from_url: "From URL",
+      paste_content: "Paste Content",
+      openapi_spec_url: "OpenAPI Spec URL",
+      openapi_format_hint: "Supports OpenAPI 3.x and Swagger 2.x specs in JSON or YAML format",
+      parsing_spec: "Parsing Spec...",
+      parse_analyze: "Parse & Analyze",
+      // AutopilotGeneratedStep
+      // {connectorLabel} = connector name, {toolCount} = number of tools
+      connector_in_catalog: "{connectorLabel} is now available in your connector catalog with {toolCount} tool definitions.",
+      // {count} = number of generated tools
+      generated_tools: "Generated Tools ({count})",
+      credential_fields: "Credential Fields",
+      open_playground: "Open Playground",
+      copy_connector_id: "Copy Connector ID",
+      go_to_catalog: "Go to Catalog",
     },
     // Foraging (auto-discover)
     foraging: {
@@ -4298,6 +4316,17 @@ export const en = {
       creating_credentials: "Creating credentials...",
       all_created: "All credentials created",
       some_failed: "Some credentials failed",
+      // {selected}/{total} = counts
+      selected_count: "{selected} of {total} selected",
+      select_all: "Select all",
+      // {count} = number of services
+      connect_services_one: "Connect {count} service with one login",
+      connect_services_other: "Connect {count} services with one login",
+      granting_access_one: "This will grant access to {count} service",
+      granting_access_other: "This will grant access to {count} services",
+      credentials_created_one: "{count} credential created from a single login.",
+      credentials_created_other: "{count} credentials created from a single login.",
+      sign_in_browser: "Sign in with your Google account in the browser window.",
     },
     // Gateway members modal
     gateway: {
@@ -6216,6 +6245,8 @@ export const en = {
       no_flows: "No flows",
       // Readiness percentage tooltip -- {percent}% of connectors are ready
       readiness_tooltip: "{percent}% of services connected",
+      // aria-label on the tablist in TemplateDetailModal
+      template_details_tabs_aria: "Template details",
     },
 
     // Template card action buttons
@@ -6670,6 +6701,14 @@ export const en = {
       autocomplete_difficulty: "Difficulty",
       autocomplete_setup_time: "Setup Time",
       autocomplete_suggestions: "Suggestions",
+      // aria-label on the coverage radiogroup in FilterChips
+      coverage_filter_aria: "Coverage filter",
+      // aria-label on the suggestions listbox in SearchAutocomplete
+      search_suggestions_aria: "Search suggestions",
+      // aria-label on the clear button in SearchChipInput
+      clear_search_aria: "Clear search",
+      // aria-label on the AI search submit button in SearchChipInput
+      search_with_ai_aria: "Search with AI",
     },
 
     // Virtual list column headers
@@ -7371,6 +7410,8 @@ export const en = {
       schedule_placeholder: "Every weekday at 9am",
       schedule_hint: "Natural language or cron (e.g. \"0 9 * * 1-5\")",
       webhook_url: "Webhook URL",
+      // Placeholder for the webhook URL input field
+      webhook_url_placeholder: "https://...",
       check_interval: "Check Interval",
       check_interval_placeholder: "Every 5 minutes",
       no_config_needed: "No configuration needed",

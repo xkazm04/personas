@@ -81,17 +81,17 @@ export function StatusPageView() {
           </div>
           <div>
             <span className="typo-body text-foreground">
-              Score: <span className="text-foreground/90 font-semibold">{globalScore}</span>/100
+              {t.overview.health_extra.score_prefix} <span className="text-foreground/90 font-semibold">{globalScore}</span>/100
             </span>
             <span className="mx-3 text-foreground">|</span>
             <span className="typo-body text-foreground">
-              30d uptime: <span className="text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
+              {t.overview.health_extra.uptime_30d_prefix} <span className="text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {lastRefreshLabel && (
-            <span className="typo-caption text-foreground">Updated {lastRefreshLabel}</span>
+            <span className="typo-caption text-foreground">{t.overview.health_extra.updated_prefix} {lastRefreshLabel}</span>
           )}
           <button
             onClick={() => void refresh()}
