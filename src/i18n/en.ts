@@ -10864,6 +10864,116 @@ export const en = {
     // Accessible label for the ellipsis button that reveals collapsed segments
     breadcrumb_show_hidden: "Show hidden breadcrumbs",
   },
+
+  // ---------------------------------------------------------------------------
+  // releases — "What's New" panel (home feature)
+  //
+  // This section was migrated from the deprecated feature-scoped bundle at
+  // src/features/home/components/releases/i18n/. Non-English locales fall back
+  // to English via the main deep-merge loader; translation teams should add
+  // entries to their respective locale files under src/i18n/ as usual.
+  //
+  // Interpolation: summary pill counts use {count} (curly-brace style).
+  //   e.g. tx(t.releases.whats_new.summary_in_progress, { count: 3 })
+  //
+  // Release item keys (title / description / label / summary) are keyed by
+  // release version string and item id exactly matching src/data/releases.ts.
+  // ---------------------------------------------------------------------------
+  releases: {
+    whats_new: {
+      title: "What's New",
+      subtitle_roadmap: "What we're building now and what comes next.",
+      subtitle_changelog: "What's new in your version of Personas.",
+      nav_bar_roadmap_label: "Roadmap",
+      empty: "Nothing to share for this release yet — check back soon.",
+
+      // Status badge labels for each release status value
+      status_released: "Released",
+      status_active: "Current",
+      status_planned: "Planned",
+      status_roadmap: "Roadmap",
+
+      // Type badge labels for each release item type
+      type_feature: "New",
+      type_fix: "Fixed",
+      type_security: "Security",
+      type_docs: "Docs",
+      type_chore: "Chore",
+      type_breaking: "Breaking",
+
+      // Item status badge labels
+      item_status_in_progress: "In Progress",
+      item_status_planned: "Planned",
+      item_status_completed: "Done",
+
+      // Priority badge labels
+      priority_now: "Now",
+      priority_next: "Next",
+      priority_later: "Later",
+
+      // Summary pills — {count} is replaced with the numeric count
+      summary_in_progress: "{count} In Progress",
+      summary_next: "{count} Next",
+
+      // Release 0.0.1 — Alpha 1
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "The first preview of Personas.",
+      release_0_0_1_item_1_title: "First public preview",
+      release_0_0_1_item_1_description: "Design AI agents, run them on a schedule or trigger, and watch their work live on your desktop.",
+
+      // Release 0.0.2 — Alpha 2
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "Connect Personas to other AI tools and read what's new without leaving the app.",
+      release_0_0_2_item_1_title: "Open your agents to other AI tools",
+      release_0_0_2_item_1_description: "Personas can now talk to other AI tools through a shared protocol. Pick exactly which agents you want to share, and protect them with access keys you control — your private agents stay private by default.",
+      release_0_0_2_item_2_title: "Safer access for the desktop app",
+      release_0_0_2_item_2_description: "The desktop app creates its own short-lived access key on every launch, so it can talk to its background services without exposing anything you didn't approve.",
+      release_0_0_2_item_3_title: "Release notes inside the app",
+      release_0_0_2_item_3_description: "See what's new in every Personas release without leaving the app. Switch between past versions, the current release, and the long-term roadmap from one place.",
+      release_0_0_2_item_4_title: "Your agents learn from every session",
+      release_0_0_2_item_4_description: "Personas now captures the lessons from each agent session, distills them into reusable knowledge, and brings them forward to the next run. Your agents get smarter the longer you use them — no manual training needed.",
+      release_0_0_2_item_5_title: "Turn any document into a listenable briefing",
+      release_0_0_2_item_5_description: "A new template that turns research reports, meeting transcripts, or long articles into a 5- to 15-minute two-host audio conversation you can listen to on the go. You pick the style — casual, formal, news, or executive — and review the script before the voices are generated.",
+      release_0_0_2_item_6_title: "A Stanford-trained editor for your writing",
+      release_0_0_2_item_6_description: "A new template that reviews your drafts using the Stanford \"Writing in the Sciences\" method. It flags passive voice, dead-weight phrases, and jargon — and explains exactly why every suggested change makes the sentence clearer. It learns your voice from the edits you accept or reject.",
+      release_0_0_2_item_7_title: "Turn 20 hours of YouTube production into 3",
+      release_0_0_2_item_7_description: "A new template compresses a full YouTube video cycle down to about three hours by handling everything except filming. It checks your niche is worth pursuing, drafts a hook-first script in your voice, and auto-removes retakes from raw footage using the approved script as ground truth — so you can film naturally, stumble freely, and keep going.",
+      release_0_0_2_item_8_title: "Run Apify scrapers from your agents",
+      release_0_0_2_item_8_description: "Connect any actor from the Apify platform — YouTube scrapers, Twitter scrapers, browser automation, and hundreds of others — directly to your agents. Unlocks research workflows that need data the official APIs cannot reach.",
+      release_0_0_2_item_9_title: "X (Twitter) is now a connector",
+      release_0_0_2_item_9_description: "Search recent tweets, track trending topics, and post directly from your agents. Useful for content research, social listening, and marketing automation without leaving Personas.",
+      release_0_0_2_item_10_title: "Watch YouTube from your agents",
+      release_0_0_2_item_10_description: "The first video platform connector in Personas. Search videos, fetch channel statistics, pull trending content, and analyze competitors directly from any agent that needs to understand what is happening on YouTube.",
+      release_0_0_2_item_11_title: "Turn audio into text with Deepgram",
+      release_0_0_2_item_11_description: "A new speech-to-text connector that transcribes audio files or URLs with word-level timing. Powers the YouTube creator assistant for auto-editing, and gives any agent the ability to process voice notes, meeting recordings, or podcast content.",
+      release_0_0_2_item_12_title: "Other AI tools can check on and stop your agents",
+      release_0_0_2_item_12_description: "When another AI tool calls one of your shared agents, it can now ask 'is this still running?' and 'please stop now' in mid-flight. Long research jobs no longer have to keep the connection open the whole time, and stuck runs can be cancelled cleanly from the calling side. Each agent only ever sees its own runs, so nothing leaks across agents.",
+      release_0_0_2_item_13_title: "New connector: Humbalytics analytics",
+      release_0_0_2_item_13_description: "Track traffic, run A/B experiments, and swap landing-page copy without touching your code. Personas can now pull heat maps and conversion data from Humbalytics and use them to guide your experiments.",
+      release_0_0_2_item_14_title: "New connector: Firecrawl web scraping",
+      release_0_0_2_item_14_description: "Agents can now read any website — even modern JavaScript-heavy ones — as clean, structured content. Useful for research, market intelligence, and content-monitoring agents.",
+      release_0_0_2_item_15_title: "A marketing agent that actually runs your A/B tests",
+      release_0_0_2_item_15_description: "A new template that proposes headline variants, deploys them with your approval, waits for statistical significance, and promotes winners automatically. Every change is human-gated before going live, and each experiment runs long enough for the results to actually mean something.",
+      release_0_0_2_item_16_title: "Read your team's BI dashboards from any agent",
+      release_0_0_2_item_16_description: "Personas can now pull results from saved Redash queries and dashboards. If your team already maintains shared dashboards, your agents read the same numbers humans see — no SQL rewriting, no CSV exports, no copy-paste.",
+      release_0_0_2_item_17_title: "Metabase is now a connector",
+      release_0_0_2_item_17_description: "Your agents can run saved Metabase questions and read dashboards straight from your workspace. Works with Metabase Pro, Enterprise, and any self-hosted instance.",
+      release_0_0_2_item_18_title: "Daily BI digest delivered to you",
+      release_0_0_2_item_18_description: "A new template picks up the saved queries you already maintain in Redash or Metabase, summarizes the latest numbers each morning, and posts a plain-English digest with week-over-week anomaly flags. Your dashboards stay useful even when no one opens them.",
+
+      // Roadmap release entry
+      release_roadmap_label: "Roadmap",
+      release_roadmap_summary: "What we're building now and what comes next.",
+      release_roadmap_item_2_title: "Cloud Integration",
+      release_roadmap_item_2_description: "Run your agents 24/7 in the cloud and stream their work back to your desktop in real time.",
+      release_roadmap_item_3_title: "Web App",
+      release_roadmap_item_3_description: "A web companion for accounts, billing, and managing agents from any browser.",
+      release_roadmap_item_4_title: "Use Personas in your language",
+      release_roadmap_item_4_description: "Full multi-language support, including right-to-left layouts and language-specific fonts.",
+      release_roadmap_item_6_title: "Team Workspaces",
+      release_roadmap_item_6_description: "Build agents together with your team — shared spaces, role permissions, and live dashboards.",
+    },
+  },
 };
 
 export type Translations = typeof en;
