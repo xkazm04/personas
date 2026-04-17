@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ListChecks } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
+import { useTranslation } from '@/i18n/useTranslation';
 import type {
   DesignContextData,
   DesignFilesSection,
@@ -139,6 +140,7 @@ interface UseCasesListProps {
 }
 
 export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCasesListProps) {
+  const { t } = useTranslation();
   const contextData = useMemo(() => parseDesignContext(designContext), [designContext]);
   const useCases = contextData.useCases ?? [];
 
@@ -161,7 +163,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
       <div className="flex items-center gap-2 px-1">
         <ListChecks className="w-3.5 h-3.5 text-foreground" />
         <p className="typo-body text-foreground">
-          {useCases.length} use case{useCases.length !== 1 ? 's' : ''} identified
+          {useCases.length} {t.shared.use_cases_extra.use_case_singular}{useCases.length !== 1 ? 's' : ''} identified
         </p>
       </div>
 

@@ -85,7 +85,7 @@ export function UseCaseRow({
               <div className="flex items-center gap-2 mt-1.5">
                 {hasModelOverride && (
                   <span className="flex items-center gap-1 typo-caption text-primary/60">
-                    <Cpu className="w-2.5 h-2.5" /> Custom model
+                    <Cpu className="w-2.5 h-2.5" /> {t.shared.use_cases_extra.custom_model}
                   </span>
                 )}
                 {hasNotifications && (

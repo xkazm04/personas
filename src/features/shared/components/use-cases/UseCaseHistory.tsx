@@ -60,7 +60,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
   if (loading) {
     return (
       <div className="px-4 py-3 typo-body text-foreground">
-        Loading history...
+        {t.shared.use_cases_extra.loading_history}
       </div>
     );
   }
@@ -71,16 +71,16 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
           <Clock className="w-5 h-5 text-primary/30" />
         </div>
-        <h4 className="typo-heading text-foreground">No executions yet</h4>
+        <h4 className="typo-heading text-foreground">{t.shared.use_cases_extra.no_executions}</h4>
         <p className="typo-body text-foreground text-center max-w-xs">
-          Run this use case to see execution history, timings, and costs here.
+          {t.shared.use_cases_extra.run_to_see_history}
         </p>
         <button
           onClick={() => onRerun('')}
           className="mt-1 inline-flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
           <Play className="w-3.5 h-3.5" />
-          Run this use case
+          {t.shared.use_cases_extra.run_use_case}
         </button>
       </div>
     );
@@ -133,7 +133,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
               <div className="mt-2 ml-6 space-y-1.5 typo-body">
                 {exec.input_data && (
                   <div>
-                    <span className="text-foreground font-medium">Input: </span>
+                    <span className="text-foreground font-medium">{t.shared.use_cases_extra.input_prefix}</span>
                     <code className="text-foreground typo-code break-all">
                       {exec.input_data.length > 200 ? exec.input_data.slice(0, 200) + '...' : exec.input_data}
                     </code>
@@ -141,13 +141,13 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                 )}
                 {exec.error_message && (
                   <div>
-                    <span className="text-red-400/70 font-medium">Error: </span>
+                    <span className="text-red-400/70 font-medium">{t.shared.use_cases_extra.error_prefix}</span>
                     <span className="text-red-400/60">{exec.error_message}</span>
                   </div>
                 )}
                 {exec.output_data && (
                   <div>
-                    <span className="text-foreground font-medium">Output: </span>
+                    <span className="text-foreground font-medium">{t.shared.use_cases_extra.output_prefix}</span>
                     <code className="text-foreground typo-code break-all">
                       {exec.output_data.length > 300 ? exec.output_data.slice(0, 300) + '...' : exec.output_data}
                     </code>

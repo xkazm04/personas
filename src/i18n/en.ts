@@ -111,6 +111,8 @@ export const en = {
     error: "Error",
     success: "Success",
     required: "required",
+    // Qualifier shown next to optional form fields
+    optional: "optional",
 
     // Default select dropdown placeholder (the dashes are decorative)
     select: "-- select --",
@@ -3209,6 +3211,19 @@ export const en = {
       open_in_browser: "Open in Browser",
       completed_step: "I've completed this",
       input_requested: "Input Requested",
+      // Button to cancel an in-progress browser automation session
+      cancel_session: "Cancel Session",
+      // ReviewActions buttons
+      test_connection: "Test Connection",
+      testing: "Testing...",
+      re_run_browser: "Re-run Browser",
+      // Button to discard extracted credentials without saving
+      discard: "Discard",
+      // Button to save the extracted credential
+      save_credential: "Save Credential",
+      // Dev-only button to persist the browser automation procedure
+      save_procedure: "Save Procedure",
+      procedure_saved: "Procedure Saved",
     },
     // Vector knowledge base
     vector: {
@@ -4070,6 +4085,28 @@ export const en = {
       step_browser_review: "Return here for your review before saving",
       step_guided_review: "Review and save the credential",
       setup_context: "Setup context from design analysis:",
+      // AutoCredReview header
+      review_extracted: "Review Extracted Credentials",
+      review_extracted_hint: "Values extracted from browser -- verify before saving",
+      // {filled} = filled count, {total} = total required fields
+      completeness_partial: "{filled} of {total} required fields filled. Complete the missing fields before saving.",
+      // UniversalAutoCredInputPhase header
+      universal_auto_setup: "Universal Auto-Setup",
+      // The <em> portion is handled in JSX; this is the plain-text description part
+      universal_auto_setup_hint: "Provide a URL and description, and AI will navigate the site to discover and create API credentials automatically.",
+      service_url_label: "Service URL",
+      what_do_you_need: "What do you need?",
+      discover_credentials: "Discover Credentials",
+      // UniversalAutoCredReview header
+      // {label} = discovered service name
+      discovered_label: "Discovered: {label}",
+      // {count} = number of discovered fields
+      fields_discovered_one: "{count} field discovered",
+      fields_discovered_other: "{count} fields discovered",
+      extracted_values_label: "Extracted Values",
+      no_fields_discovered: "No fields were discovered. Try again with a more specific description.",
+      // {label} = service/connector name
+      credential_stored: "{label} credential has been securely stored.",
     },
     // Negotiator extra strings
     negotiator_extra: {
@@ -4185,12 +4222,29 @@ export const en = {
       deploy_persona: "Deploy Persona",
       select_persona: "Select a persona to deploy",
       all_deployed: "All personas are already deployed",
+      // Empty state shown when no deployments exist yet
+      no_deployments_yet: "No deployments yet. Select a persona above to deploy it as a cloud API endpoint.",
+      // Section heading: Active Deployments (N)
+      active_deployments: "Active Deployments",
     },
 
     // Execution row detail (dt = t.deployment.exec_detail)
     exec_detail: {
       fetching_output: "Fetching output...",
       no_output: "No output",
+      // Detail row labels in the expanded execution panel
+      label_status: "Status:",
+      label_duration: "Duration:",
+      label_cost: "Cost:",
+      label_tokens: "Tokens:",
+      label_started: "Started:",
+      label_completed: "Completed:",
+      label_input: "Input:",
+      // Button to load and show the execution output
+      view_output: "View Output",
+      // Output section header prefix, e.g. "Output (42 lines)"
+      output_prefix: "Output (",
+      output_lines_suffix: "lines)",
     },
 
     // OAuth panel (dt = t.deployment.oauth_panel)
@@ -4204,6 +4258,20 @@ export const en = {
       token_unknown: "Token status unknown",
       expires: "Expires",
       scopes: "Scopes",
+      // Inline link shown in the auth flow to open the OAuth window
+      open_auth_window: "Open authorization window",
+      // Button to finish the authorization code exchange
+      complete_authorization: "Complete Authorization",
+      // Button to refresh an existing OAuth token
+      refresh_token: "Refresh Token",
+      // Button to open the OAuth authorization window (not-connected state)
+      open_authorization_window: "Open Authorization Window",
+      // Message shown when token validity could not be verified
+      token_unknown_msg: "Token validity could not be verified. Refresh the token to confirm it is still active.",
+      // Message shown in the not-connected empty state
+      connect_anthropic_msg: "Connect your Anthropic account to enable OAuth-based authentication for cloud executions.",
+      // Prefix for the expired-token message (the expiry date is appended dynamically)
+      token_expired_msg_prefix: "This OAuth token has expired",
     },
 
     // Create trigger form (dt = t.deployment.trigger_form)
@@ -4215,11 +4283,21 @@ export const en = {
       schedule_cron: "Schedule (cron)",
       create_trigger: "Create Trigger",
       creating: "Creating...",
+      // Label for the cron expression input field
+      cron_expression: "Cron Expression",
+      // Timezone indicator appended to the cron expression label
+      utc_suffix: "(UTC)",
+      // Help text shown when webhook trigger type is selected
+      webhook_info: "A webhook endpoint will be created for this trigger. You can configure payload filtering after creation.",
     },
 
     // Daily breakdown chart (dt = t.deployment.chart)
     chart: {
       daily_executions: "Daily executions",
+      // Tooltip row labels in the hover tooltip
+      tooltip_runs: "Runs:",
+      tooltip_cost: "Cost:",
+      tooltip_success: "Success:",
     },
 
     // Deployment card actions (dt = t.deployment.deploy_card)
@@ -4230,6 +4308,8 @@ export const en = {
       remove_deployment: "Remove deployment",
       copy_endpoint: "Copy endpoint",
       open_endpoint: "Open endpoint",
+      // Budget gauge label prefix
+      budget_label: "Budget:",
     },
 
     // Cloud panel tab labels
@@ -4280,6 +4360,10 @@ export const en = {
       last_30_days: "Last 30 days",
       last_90_days: "Last 90 days",
       top_errors: "Top Errors",
+      // Link to clear active filters when no results found
+      clear_filters: "Clear filters",
+      // Section heading above list, e.g. "Execution History (12)"
+      execution_history: "Execution History",
     },
 
     // Cloud schedules panel
@@ -5771,7 +5855,7 @@ export const en = {
     // Event bus filter bar search placeholder
     event_bus_filter: { search_placeholder: "Search events..." },
     // Inline text labels in the realtime stats bar
-    realtime_stats: { events_per_min: "events/min", pending: "pending", success: "success", in_window: "in window", test_flow: "Test Flow" },
+    realtime_stats: { events_per_min: "events/min", pending: "pending", success: "success", in_window: "in window", test_flow: "Test Flow", to_simulate_traffic: "to simulate traffic" },
     // SVG text on the event queue lane
     bus_lane: { event_queue: "EVENT QUEUE" },
     // View-toggle button titles + headings in the health dashboard
@@ -6105,6 +6189,27 @@ export const en = {
       build_complete: "Build Complete",
       adjust_placeholder: "Adjust anything...",
       answer_placeholder: "Your answer...",
+      // Button label: click to answer a specific dimension cell. {cell} = friendly dimension name (e.g. "Triggers")
+      answer_cell: "Answer: {cell}",
+      // Progress label shown while build resolves cells. {cells} = comma-separated dimension names
+      working_on: "Working on: {cells}",
+      // Short "Draft Ready" label used in the command center post-generation header
+      draft_ready_label: "Draft Ready",
+      // Label when inline-editing a specific cell. {cell} = friendly cell name
+      editing_cell: "Editing: {cell}",
+      // Badge shown on a cell when a protocol capability is active (e.g. memory protocol)
+      protocol_active: "Protocol Active",
+      // Shown in the matrix container when no design data is available
+      matrix_unavailable: "Matrix data unavailable.",
+      // Header label for the PersonaMatrix component (uppercase title above the 3×3 grid)
+      persona_matrix_title: "Persona Matrix",
+      // Cell status badge labels — shown in bottom-right of each matrix cell
+      cell_status_analyzing: "Analyzing",
+      cell_status_answered: "Answered",
+      cell_status_resolved: "Resolved",
+      cell_status_input_needed: "Input needed",
+      cell_status_missing_credential: "Missing credential",
+      cell_status_error: "Error",
     },
 
     // Sandbox/trust warning banners
@@ -6406,6 +6511,13 @@ export const en = {
       answer_remaining: "Answer remaining ({count})",
       next: "Next",
       setup: "Setup",
+      // Aria-labels for Previous / Next question navigation buttons
+      previous_question: "Previous question",
+      next_question: "Next question",
+      // Dot nav aria-label. {number} = question index (1-based), answered/unanswered suffix appended by component
+      go_to_question: "Go to question {number}",
+      question_answered_suffix: " (answered)",
+      question_unanswered_suffix: " (unanswered)",
     },
 
     // Sandbox warning banner
@@ -11224,16 +11336,22 @@ export const en = {
       s_elapsed: "s elapsed",
       // EstimatedProgressBar — remaining time suffix (e.g. "~5s remaining")
       s_remaining: "s remaining",
-      // TransformModeView — toggle text appended after "Show"/"Hide"
-      cli_output: "CLI output",
+      // TransformModeView — toggle button label when terminal is hidden
+      show_cli_output: "Show CLI output",
+      // TransformModeView — toggle button label when terminal is visible
+      hide_cli_output: "Hide CLI output",
     },
     terminal_extra: { press_enter: "Press Enter or click Play to start", connection_failed: "Connection failed -- check provider settings and retry", search_output: "Search output...", dismiss: "Dismiss",
       // TerminalBody — "Connecting to provider" empty state text
       connecting: "Connecting to provider",
       // TerminalBody — "Queued at position {n}" empty state prefix
       queued_at: "Queued at position",
-      // TerminalBody — aria-label for the Shift+Enter keyboard hint
+      // TerminalBody — singular word used in the unseen-lines scroll badge and Shift+Enter hint
       new_line: "new line",
+      // TerminalBody — plural form for the unseen-lines scroll badge
+      new_lines: "new lines",
+      // TerminalBody — word appended after "{n} new line(s)" in the scroll badge
+      below: "below",
       // TerminalHeader — suffix inside the running status: "({n} lines)"
       lines_suffix: "lines)",
       // TerminalSearchBar — collapsed search/filter button label

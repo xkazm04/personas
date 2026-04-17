@@ -3,6 +3,7 @@ import { formatElapsed } from '@/lib/utils/formatters';
 import { Square, X, Minus, Plus } from 'lucide-react';
 import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TerminalHeaderProps {
   isRunning: boolean;
@@ -24,6 +25,7 @@ interface TerminalHeaderProps {
 
 
 export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label, onToggleFullscreen, isFullscreen, onClose, onMinimize }: TerminalHeaderProps) {
+  const { t } = useTranslation();
   const elapsed = useElapsedTimer(isRunning, 1000);
 
   return (
@@ -73,7 +75,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Running
               <span className="text-foreground">{formatElapsed(elapsed, 'clock')}</span>
-              <span className="text-foreground">({lineCount} lines)</span>
+              <span className="text-foreground">({lineCount} {t.shared.terminal_extra.lines_suffix}</span>
             </span>
           ) : (
             <>

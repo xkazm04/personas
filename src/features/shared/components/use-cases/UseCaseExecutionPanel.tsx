@@ -55,7 +55,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
         {useCase.time_filter && (
           <div className="flex items-center gap-1.5 typo-body text-cyan-400/70">
             <Timer className="w-3 h-3" />
-            <span>{useCase.time_filter.description} (window: {useCase.time_filter.default_window})</span>
+            <span>{useCase.time_filter.description} {t.shared.use_cases_extra.window_prefix} {useCase.time_filter.default_window})</span>
           </div>
         )}
         {exec.hasSchema ? (
@@ -73,7 +73,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}
-              placeholder='{"key": "value"}'
+              placeholder={t.shared.use_cases_extra.input_placeholder}
             />
           </>
         )}

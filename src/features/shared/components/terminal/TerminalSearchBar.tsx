@@ -65,7 +65,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
         className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors border-b border-border/10"
       >
         <Search className="w-3 h-3" />
-        Search & Filter
+        {t.shared.terminal_extra.search_and_filter}
         {isFiltering && (
           <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
         )}

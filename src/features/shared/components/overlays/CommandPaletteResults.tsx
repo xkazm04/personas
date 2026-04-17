@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 import type { ResultKind, PaletteItem } from './commandPaletteUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const KIND_COLORS: Record<ResultKind, { icon: string; border: string }> = {
   agent:          { icon: 'text-violet-400',            border: 'border-l-violet-400' },
@@ -33,6 +34,7 @@ export function CommandPaletteResults({
   onHover,
   listRef,
 }: CommandPaletteResultsProps) {
+  const { t } = useTranslation();
   const { canScrollUp, canScrollDown } = useScrollShadow(listRef);
 
   return (
@@ -40,7 +42,7 @@ export function CommandPaletteResults({
       <div ref={listRef} className="max-h-[50vh] overflow-y-auto py-1">
         {sections.length === 0 && (
           <div className="px-4 py-8 text-center typo-body text-foreground">
-            No results found
+            {t.shared.use_cases_extra.no_results}
           </div>
         )}
 

@@ -35,7 +35,7 @@ export function ConfigureStep({
           className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors mt-2"
         >
           <SkipForward className="w-3.5 h-3.5" />
-          Skip configuration
+          {t.shared.progress_extra.skip_configuration}
         </button>
       </div>
     );
@@ -45,7 +45,7 @@ export function ConfigureStep({
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <Settings2 className="w-8 h-8 text-foreground" />
-        <p className="typo-body text-foreground">No configuration questions needed.</p>
+        <p className="typo-body text-foreground">{t.shared.progress_extra.no_config_questions}</p>
         <p className="typo-body text-foreground">{t.shared.draft_editor.click_next}</p>
       </div>
     );
@@ -57,7 +57,7 @@ export function ConfigureStep({
         <div>
           <p className="typo-heading text-foreground">{t.shared.draft_editor.configure_transform}</p>
           <p className="typo-body text-foreground mt-0.5">
-            Answer these questions to customize the persona generation.
+            {t.shared.progress_extra.answer_questions}
           </p>
         </div>
         <button

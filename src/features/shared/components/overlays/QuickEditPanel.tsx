@@ -91,14 +91,14 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
           value={model}
           onChange={e => setModel(e.target.value)}
           className="w-full rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2 typo-body text-foreground placeholder:text-foreground outline-none focus:border-violet-400/50 transition-colors"
-          placeholder="e.g. claude-sonnet-4-20250514"
+          placeholder={t.shared.use_cases_extra.model_placeholder}
         />
       </div>
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-1">
         <span className="typo-caption text-foreground">
-          <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">Ctrl+Enter</kbd>
+          <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">{t.shared.use_cases_extra.ctrl_enter}</kbd>
           {' '}save
           <span className="mx-2">·</span>
           <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">Esc</kbd>

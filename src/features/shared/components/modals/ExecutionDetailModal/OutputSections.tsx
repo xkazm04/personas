@@ -97,7 +97,7 @@ export function MemoriesList({ memories }: { memories: Record<string, unknown>[]
               <div className="text-sm text-foreground">{String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}</div>
               <div className="flex items-center gap-2 mt-1.5">
                 {typeof m.category === 'string' && <span className="text-sm px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400/80">{m.category}</span>}
-                {typeof m.importance === 'number' && <span className="text-sm text-foreground">importance: {m.importance}/10</span>}
+                {typeof m.importance === 'number' && <span className="text-sm text-foreground">{t.shared.execution_detail.importance_prefix} {m.importance}/10</span>}
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function KnowledgeSection({ annotation }: { annotation: Record<string, un
         <BookOpen className="w-4 h-4 text-emerald-400" />
         <span className="text-sm font-semibold text-foreground/85">{t.shared.execution_detail.knowledge_insight}</span>
         {typeof annotation.confidence === 'number' && (
-          <span className="text-sm text-foreground ml-auto">{Math.round(annotation.confidence * 100)}% confidence</span>
+          <span className="text-sm text-foreground ml-auto">{Math.round(annotation.confidence * 100)}{t.shared.execution_detail.confidence_suffix}</span>
         )}
       </div>
       {typeof annotation.scope === 'string' && (

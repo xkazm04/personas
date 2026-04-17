@@ -149,7 +149,7 @@ export function TerminalBody({
               <div className="flex flex-col items-center gap-2">
                 <Wifi className="w-4 h-4 text-blue-400/60 animate-pulse" />
                 <span className="typo-body text-foreground">
-                  Connecting to provider
+                  {t.shared.terminal_extra.connecting}
                   <span className="inline-flex w-6 text-left animate-[ellipsis_1.5s_steps(3,end)_infinite] overflow-hidden">...</span>
                 </span>
               </div>
@@ -158,7 +158,7 @@ export function TerminalBody({
               <div className="flex flex-col items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-400/60 animate-pulse" />
                 <span className="typo-body text-amber-300/60">
-                  Queued at position {emptyState.position}{emptyState.depth != null ? ` of ${emptyState.depth}` : ''}
+                  {t.shared.terminal_extra.queued_at} {emptyState.position}{emptyState.depth != null ? ` of ${emptyState.depth}` : ''}
                 </span>
               </div>
             )}
@@ -286,7 +286,7 @@ export function TerminalBody({
               className="animate-fade-slide-in absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground typo-heading shadow-elevation-3 shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
             >
               <ArrowDown className="w-3 h-3" />
-              {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below
+              {unseenCount} {unseenCount !== 1 ? t.shared.terminal_extra.new_lines : t.shared.terminal_extra.new_line} {t.shared.terminal_extra.below}
             </button>
           )}
         </>
