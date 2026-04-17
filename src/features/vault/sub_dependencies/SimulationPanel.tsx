@@ -15,9 +15,12 @@ interface SimulationPanelProps {
 }
 
 export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dep = t.vault.dependencies;
   const sev = getSeverityStyles(t)[simulation.severity];
+
+  const workflowPlural = simulation.totalAffectedWorkflows !== 1 ? 's' : '';
+  const personaPlural = simulation.totalAffectedPersonas !== 1 ? 's' : '';
 
   return (
     <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
@@ -61,20 +64,35 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
         {/* Scenario description */}
         <div className="typo-caption text-foreground leading-relaxed px-1">
           {simulation.severity === 'critical' ? (
-            <span>
-              Revoking <strong className="text-fuchsia-400">{simulation.credentialName}</strong> would break{' '}
-              <strong className="text-red-400">{simulation.totalAffectedWorkflows} workflow{simulation.totalAffectedWorkflows !== 1 ? 's' : ''}</strong>{' '}
-              and halt {simulation.totalAffectedPersonas} persona{simulation.totalAffectedPersonas !== 1 ? 's' : ''}.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: tx(dep.sim_critical, {
+                  credentialName: `<strong class="text-fuchsia-400">${simulation.credentialName}</strong>`,
+                  workflows: `<strong class="text-red-400">${simulation.totalAffectedWorkflows}</strong>`,
+                  workflowPlural,
+                  personas: simulation.totalAffectedPersonas,
+                  personaPlural,
+                }),
+              }}
+            />
           ) : simulation.severity === 'high' ? (
-            <span>
-              Revoking <strong className="text-red-400">{simulation.credentialName}</strong> would impact{' '}
-              {simulation.totalAffectedPersonas} persona{simulation.totalAffectedPersonas !== 1 ? 's' : ''} across your workspace.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: tx(dep.sim_high, {
+                  credentialName: `<strong class="text-red-400">${simulation.credentialName}</strong>`,
+                  personas: simulation.totalAffectedPersonas,
+                  personaPlural,
+                }),
+              }}
+            />
           ) : simulation.severity === 'medium' ? (
-            <span>
-              Revoking <strong className="text-amber-400">{simulation.credentialName}</strong> has limited blast radius.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: tx(dep.sim_medium, {
+                  credentialName: `<strong class="text-amber-400">${simulation.credentialName}</strong>`,
+                }),
+              }}
+            />
           ) : (
             <span>{dep.sim_low}</span>
           )}

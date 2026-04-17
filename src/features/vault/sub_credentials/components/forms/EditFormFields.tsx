@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { FieldCaptureRow } from './FieldCaptureRow';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EditFormFieldsProps {
   fields: CredentialTemplateField[];
@@ -19,10 +20,11 @@ export function EditFormFields({
   onValueChange,
   onBlur,
 }: EditFormFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div>
       <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
-        Credential Fields
+        {t.vault.forms.credential_fields_heading}
       </h4>
       <div className="space-y-3">
         {fields.map((field) => (

@@ -50,7 +50,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
         >
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
           <span className="flex-1">
-            <strong>{entry.credentialName}</strong> ({entry.serviceType}) -- access was revoked. Please re-authorize to resume automations.
+            <strong>{entry.credentialName}</strong> ({entry.serviceType}{t.vault.reauth_banner.access_revoked}
           </span>
           {onNavigate && (
             <button
@@ -58,7 +58,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
               className="flex items-center gap-1 text-amber-400 hover:text-amber-300 typo-caption font-medium shrink-0"
             >
               <ExternalLink className="w-3 h-3" />
-              Reconnect
+              {t.vault.reauth_banner.reconnect}
             </button>
           )}
           <button

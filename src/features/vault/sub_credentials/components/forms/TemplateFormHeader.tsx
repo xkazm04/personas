@@ -20,13 +20,14 @@ export function TemplateFormHeader({
   onDesktopDetect,
 }: TemplateFormHeaderProps) {
   const { t, tx } = useTranslation();
+  const cf = t.vault.forms;
   return (
     <div className="flex items-center gap-3 mb-4">
       {onBack && (
         <button
           onClick={onBack}
           className="p-2 -ml-2 rounded-card hover:bg-secondary/50 transition-colors"
-          title={t.vault.credential_forms.back_to_catalog}
+          title={cf.back_to_catalog}
         >
           <ArrowLeft className="w-4 h-4 text-foreground" />
         </button>
@@ -45,11 +46,11 @@ export function TemplateFormHeader({
         )}
       </div>
       <div className="flex-1">
-        <h4 className="font-medium text-foreground">{tx(t.vault.credential_forms.new_credential, { label: selectedConnector.label })}</h4>
+        <h4 className="font-medium text-foreground">{tx(cf.new_credential, { label: selectedConnector.label })}</h4>
         <p className="typo-body text-foreground">
           {activeMethod?.type === 'mcp'
-            ? 'Configure MCP server connection'
-            : selectedConnector.healthcheck_config?.description || t.vault.credential_forms.configure_fields}
+            ? cf.configure_mcp
+            : selectedConnector.healthcheck_config?.description || cf.configure_fields}
         </p>
       </div>
       {isDesktopBridge(selectedConnector) ? (
@@ -59,7 +60,7 @@ export function TemplateFormHeader({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-orange-500/20 bg-orange-500/8 hover:bg-orange-500/15 text-orange-300 typo-body font-medium transition-colors"
           >
             <Monitor className="w-3.5 h-3.5" />
-            Detect
+            {cf.detect}
           </button>
         )
       ) : (
@@ -69,7 +70,7 @@ export function TemplateFormHeader({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 typo-body font-medium transition-colors"
           >
             <Bot className="w-3.5 h-3.5" />
-            Auto Add
+            {cf.auto_add}
           </button>
         )
       )}

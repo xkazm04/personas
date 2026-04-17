@@ -24,7 +24,8 @@ export function ConnectorCredentialModal({
   onSave,
   onClose,
 }: ConnectorCredentialModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const cf = t.vault.credential_forms;
   const health = useCredentialHealth(`connector:${connector.name}`);
 
   // Merge field definitions: DB connector fields take priority, then CLI-generated ones
@@ -92,7 +93,7 @@ export function ConnectorCredentialModal({
         {existingCredential && (
           <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-modal typo-body text-emerald-400">
             <Check className="w-3.5 h-3.5" />
-            Credential already configured -- update below to replace
+            {cf.already_configured}
           </div>
         )}
 
@@ -110,7 +111,7 @@ export function ConnectorCredentialModal({
             <div className="flex-1 min-w-0">
               <span className="font-semibold text-foreground/90">{t.vault.credential_forms.get_credentials}</span>
               <span className="typo-body text-foreground block truncate mt-0.5">
-                Open {label} to generate an API key or token
+                {tx(cf.open_to_generate, { label })}
               </span>
             </div>
             <ExternalLink className="w-4 h-4 text-amber-400/70 flex-shrink-0 group-hover:scale-110 transition-transform" />
@@ -137,7 +138,7 @@ export function ConnectorCredentialModal({
         {connector.setup_instructions && (
           <div className="mb-4 px-3.5 py-2.5 bg-secondary/60 border border-primary/10 rounded-modal">
             <p className="typo-code font-mono text-foreground uppercase tracking-wider mb-1.5">
-              Setup Instructions
+              {cf.setup_instructions_label}
             </p>
             <p className="typo-body text-foreground whitespace-pre-line leading-relaxed">
               {connector.setup_instructions}
@@ -161,13 +162,13 @@ export function ConnectorCredentialModal({
         ) : (
           <div className="text-center py-6">
             <p className="typo-body text-foreground">
-              No credential fields defined for this connector.
+              {cf.no_fields_defined}
             </p>
             <button
               onClick={onClose}
               className="mt-3 px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
             >
-              Close
+              {t.common.close}
             </button>
           </div>
         )}

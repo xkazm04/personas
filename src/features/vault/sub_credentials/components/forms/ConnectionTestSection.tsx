@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Activity, Info } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { HealthcheckResultDisplay } from './HealthcheckResultDisplay';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectionTestSectionProps {
   onTest: () => void;
@@ -16,6 +17,8 @@ export function ConnectionTestSection({
   result,
   testHint,
 }: ConnectionTestSectionProps) {
+  const { t } = useTranslation();
+  const cf = t.vault.forms;
   const [showTestHint, setShowTestHint] = useState(false);
 
   return (
@@ -23,7 +26,7 @@ export function ConnectionTestSection({
       <div className="border-t border-primary/8" />
       <div>
         <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
-          Connection Test
+          {cf.connection_test_heading}
         </h4>
         <div className="flex items-center gap-2">
           <button
@@ -40,7 +43,7 @@ export function ConnectionTestSection({
             ) : (
               <Activity className="w-4 h-4" />
             )}
-            Test Connection
+            {cf.test_connection_btn}
           </button>
 
           {testHint && (

@@ -76,7 +76,7 @@ export function ColumnList({
                     {col.is_nullable === 'YES' ? (
                       <span className="text-foreground">yes</span>
                     ) : (
-                      <span className="text-amber-400/70 font-medium">NOT NULL</span>
+                      <span className="text-amber-400/70 font-medium">{db.not_null}</span>
                     )}
                   </td>
                 )}

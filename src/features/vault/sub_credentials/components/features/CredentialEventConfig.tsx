@@ -105,7 +105,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     return (
       <div className="flex items-center gap-2 py-3 text-foreground typo-body">
         <LoadingSpinner size="xs" />
-        Loading events...
+        {t.vault.event_config.loading}
       </div>
     );
   }

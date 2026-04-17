@@ -7,6 +7,7 @@ import { WizardBatchPhase } from './WizardBatchPhase';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProvisioningWizardProps {
   onClose: () => void;
@@ -17,6 +18,8 @@ interface ProvisioningWizardProps {
  * instead of as a modal overlay, so progress is never lost on accidental close.
  */
 export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
+  const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const phase = useProvisioningWizardStore((s) => s.phase);
   const selectedConnectors = useProvisioningWizardStore((s) => s.selectedConnectors);
   const selectConnectors = useProvisioningWizardStore((s) => s.selectConnectors);
@@ -75,10 +78,11 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
 
   if (phase === 'closed') return null;
 
+  const plural = selectedConnectors.length !== 1 ? 's' : '';
   const subtitle =
     phase === 'batch'
-      ? `Setting up ${selectedConnectors.length} service${selectedConnectors.length !== 1 ? 's' : ''}`
-      : 'AI-guided credential setup';
+      ? tx(wd.wizard_subtitle_batch, { count: selectedConnectors.length, plural })
+      : wd.wizard_subtitle;
 
   return (
     <div
@@ -101,7 +105,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
           </div>
           <div>
             <h2 className="text-sm font-bold tracking-tight text-foreground">
-              Credential Setup Wizard
+              {wd.wizard_title}
             </h2>
             <p className="text-xs text-foreground">{subtitle}</p>
           </div>

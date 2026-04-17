@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SetupGuideSectionProps {
   guide: string;
@@ -7,6 +8,7 @@ interface SetupGuideSectionProps {
 }
 
 export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionProps) {
+  const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
   const steps = guide.split('\n').filter(Boolean);
 
@@ -22,7 +24,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
         <span className="typo-body font-medium text-foreground">
-          How to get {connectorLabel} credentials
+          {tx(t.vault.forms.how_to_get_connector, { connectorLabel })}
         </span>
       </button>
       {open && (

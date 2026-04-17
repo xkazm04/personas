@@ -23,7 +23,7 @@ export function CredentialRotationSection({
   onRefresh,
   onHealthcheck,
 }: CredentialRotationSectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const anomalyScore = rotationStatus?.anomaly_score ?? null;
@@ -82,7 +82,7 @@ export function CredentialRotationSection({
       {/* Last Rotation Info */}
       {rotationStatus?.last_rotated_at && (
         <div className="typo-body text-foreground">
-          Last rotated {formatRelativeTime(rotationStatus.last_rotated_at)}
+          {tx(t.vault.rotation_section.last_rotated, { time: formatRelativeTime(rotationStatus.last_rotated_at) })}
           {rotationStatus.last_status && (
             <span className={`ml-1.5 ${
               rotationStatus.last_status === 'success' ? 'text-emerald-400/60' : 'text-red-400/60'

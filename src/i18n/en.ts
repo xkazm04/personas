@@ -3005,6 +3005,8 @@ export const en = {
       no_dependencies: "No agents depend on this credential. Safe to modify or remove.",
       affected_agents: "Affected Agents",
       affected_events: "Affected Events",
+      // CredentialFilterBar -- sort dropdown prefix label
+      sort_label: "Sort:",
     },
     import: {
       title: "Import Source",
@@ -3022,6 +3024,19 @@ export const en = {
         hour6: "6 hours",
         day1: "24 hours",
       },
+      // ImportInputPhase parse button
+      parse_secrets: "Parse Secrets",
+      // ImportPreview -- selected count label and auto-detected badge
+      selected_for_import: "selected for import",
+      auto_detected: "Auto-detected",
+      // ImportSourcePicker -- sync badge
+      sync_supported: "Sync supported",
+      // ImportPreview -- secrets count heading -- {count} = number
+      secrets_found_one: "{count} secret found",
+      secrets_found_other: "{count} secrets found",
+      // ImportPreview -- import button -- {count} = selected count
+      import_secrets_one: "Import {count} Secret",
+      import_secrets_other: "Import {count} Secrets",
     },
     features: {
       // Alert shown when a credential starts failing unexpectedly
@@ -3164,6 +3179,28 @@ export const en = {
       configure_fields: "Configure credential fields",
       detect: "Detect",
       auto_add: "Auto Add",
+      // ConnectionTestSection heading and button
+      connection_test_heading: "Connection Test",
+      test_connection_btn: "Test Connection",
+      // EditFormFields heading
+      credential_fields_heading: "Credential Fields",
+      // SetupGuideSection — {connectorLabel} = connector name
+      how_to_get_connector: "How to get {connectorLabel} credentials",
+      // OAuthProgressRing — screen reader label for completion state
+      authorization_complete: "Authorization complete",
+      // FieldCaptureHelpers — copy-to-clipboard tooltip
+      copied_to_clipboard: "Copied to clipboard",
+      // TemplateFormBody — credential name input label
+      credential_name: "Credential Name",
+      // TemplateFormBody — credential name placeholder — {label} = connector label
+      credential_name_placeholder: "Label this credential — e.g. My {label} Account, Production {label}",
+      // TemplateFormBody — OAuth consent button labels — {label} = connector label
+      authorizing_with: "Authorizing with {label}...",
+      authorize_with: "Authorize with {label}",
+      // TemplateFormBody — OAuth consent hint — {label} = connector label
+      oauth_consent_hint: "Opens {label} in your browser. Grant access, then return here.",
+      // TemplateFormBody — OAuth success badge — {label} = connector label, {time} = timestamp
+      oauth_connected_at: "{label} connected at {time}",
     },
     // Credential type picker (shown in vault "Add Credential" flow)
     type_picker: {
@@ -3529,6 +3566,10 @@ export const en = {
       filter_tables: "Filter tables...",
       refresh: "Refresh",
       introspection_unavailable: "Table introspection is not available for this connector type.",
+      // ColumnList -- NOT NULL constraint badge
+      not_null: "NOT NULL",
+      // ConsoleTab -- keyboard shortcut hint
+      ctrl_enter: "Ctrl+Enter",
     },
     // -- Dependencies / blast radius (sub_dependencies/) ---------------
     dependencies: {
@@ -3579,6 +3620,8 @@ export const en = {
       sim_critical: "Revoking {credentialName} would break {workflows} workflow{workflowPlural} and halt {personas} persona{personaPlural}.",
       sim_high: "Revoking {credentialName} would impact {personas} persona{personaPlural} across your workspace.",
       sim_medium: "Revoking {credentialName} has limited blast radius.",
+      // SimulationControls -- executions per day label suffix
+      per_day: "/day",
     },
     // -- Shared vault components (shared/) ----------------------------
     shared: {
@@ -3765,6 +3808,10 @@ export const en = {
       title: "Healthcheck Results",
       needs_attention: "Needs Attention",
       slowest_responses: "Slowest Responses",
+      // {count} = number of credentials passed/failed/total
+      passed_count: "{count} passed",
+      failed_count: "{count} failed",
+      total_count: "{count} total",
     },
     // Health status bar
     health_bar: {
@@ -3875,6 +3922,15 @@ export const en = {
       avg_drift: "Avg Drift",
       recent_ttls: "Recent provider TTLs (newest first)",
       recent_refreshes: "Recent refreshes",
+      // OAuthTokenMetricsPanel -- fallback TTL usage notice
+      // {rate} = percentage, {fallback} = fallback seconds, {count} = fallback count, {total} = total count
+      fallback_used: "Fallback ({fallback}s) used in {rate}% of refreshes ({count}/{total}) — provider omits",
+    },
+    // Reauth banner (OAuth revocation notification)
+    reauth_banner: {
+      // {name} = credential name, {service} = service type
+      access_revoked: ") -- access was revoked. Please re-authorize to resume automations.",
+      reconnect: "Reconnect",
     },
     // Rotation section
     rotation_section: {
@@ -3896,6 +3952,8 @@ export const en = {
       enabling: "Enabling...",
       enable_rotation: "Enable Rotation",
       enable_failed: "Failed to enable rotation: {error}",
+      // CredentialRotationSection -- last rotation info -- {time} = relative time
+      last_rotated: "Last rotated {time}",
     },
     // Event config
     event_config: {
@@ -3925,6 +3983,8 @@ export const en = {
       healthcheck_auto_rotate: "Rotation will trigger automatically when a previously-healthy credential begins failing its healthcheck.",
       // EventTemplateCard -- last evaluated timestamp
       last_evaluated: "Last evaluated: {time}",
+      // CredentialEventConfig -- loading spinner label
+      loading: "Loading events...",
     },
     // Credential forms
     credential_forms: {
@@ -4030,6 +4090,23 @@ export const en = {
       batch_complete: "Batch setup complete",
       skip_service: "Skip this service",
       no_filter_match: "Try a different search term or clear your filter.",
+      // WizardDetectPhase heading and action buttons
+      set_up_credentials: "Set up credentials",
+      clear_selection: "Clear selection",
+      // {count} = number of selected services, {plural} = "s" or ""
+      set_up_services: "Set up {count} service{plural}",
+      // WizardBatchPhase progress label
+      // {current} = 1-based index, {total} = total count
+      setting_up: "Setting up {current} of {total}",
+      // ProvisioningWizard modal title
+      wizard_title: "Credential Setup Wizard",
+      // WizardServiceSelect
+      choose_service: "Choose a service to set up",
+      ai_walk_description: "The AI will walk you step-by-step through obtaining API credentials.",
+      // ProvisioningWizard subtitle when wizard is in detect phase
+      wizard_subtitle: "AI-guided credential setup",
+      // ProvisioningWizard subtitle when in batch phase -- {count} = number of selected services, {plural} = "" or "s"
+      wizard_subtitle_batch: "Setting up {count} service{plural}",
     },
     // Autopilot (OpenAPI)
     autopilot: {
@@ -4070,6 +4147,17 @@ export const en = {
       open_playground: "Open Playground",
       copy_connector_id: "Copy Connector ID",
       go_to_catalog: "Go to Catalog",
+      // PlaygroundOutput -- response headers collapsible label
+      // {count} = number of response headers
+      response_headers: "Response Headers ({count})",
+      // PlaygroundRequestBuilder & AutopilotInputStep -- placeholder for base URL
+      base_url_placeholder: "https://api.example.com",
+      // AutopilotInputStep -- placeholder for OpenAPI spec URL
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      // AutopilotPreviewStep -- auth schemes count label suffix
+      auth_schemes: "auth schemes",
+      // PlaygroundRequestBuilder -- body textarea placeholder
+      body_placeholder: '{ "key": "value" }',
     },
     // Foraging (auto-discover)
     foraging: {
@@ -4103,6 +4191,14 @@ export const en = {
       imported: "Imported",
       // ForagingResults import button label suffix
       to_vault: "to vault",
+      // ForagingResults -- credential count heading (singular/plural)
+      credentials_found_one: "{count} credential found",
+      credentials_found_other: "{count} credentials found",
+      // ForagingResults -- selected count label
+      selected: "selected",
+      // ForagingResults -- import button (singular/plural)
+      import_to_vault_one: "Import {count} credential to vault",
+      import_to_vault_other: "Import {count} credentials to vault",
       // McpServerCard -- env var count suffix (singular/plural)
       env_var_one: "{count} env var",
       env_var_other: "{count} env vars",
@@ -4110,6 +4206,11 @@ export const en = {
       import_server: "Import",
       // McpServerCard -- sources count in ({n} sources in ...)
       sources_in: "sources in",
+      // ForagingStepIndicator -- accessible group aria-label
+      progress_aria: "Foraging progress",
+      // ForagingPanel -- sources count label
+      // {count} = number of sources, {ms} = scan duration in milliseconds
+      scanned_sources: "Scanned {count} sources in {ms}ms",
     },
     // Desktop discovery
     desktop_discovery: {

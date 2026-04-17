@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ForagedCredential, ForageSource } from "@/api/vault/foraging";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface ForagingResultCardProps {
   credential: ForagedCredential;
@@ -45,6 +46,8 @@ export function ForagingResultCard({
   isImported,
   onToggle,
 }: ForagingResultCardProps) {
+  const { t } = useTranslation();
+  const fg = t.vault.foraging;
   const meta = SOURCE_META[credential.source] ?? SOURCE_META.env_var;
   const Icon = meta.icon;
   const disabled = credential.already_imported || isImported || isImporting;
@@ -98,12 +101,12 @@ export function ForagingResultCard({
             </span>
             {credential.already_imported && (
               <span className="typo-body px-1.5 py-0.5 rounded bg-muted-foreground/10 text-foreground font-medium">
-                Already in vault
+                {fg.already_in_vault}
               </span>
             )}
             {isImported && (
               <span className="typo-body px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
-                Imported
+                {fg.imported}
               </span>
             )}
           </div>

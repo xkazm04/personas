@@ -14,7 +14,8 @@ interface WizardBatchPhaseProps {
 }
 
 export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const [items, setItems] = useState<BatchItem[]>(() =>
     connectors.map((c) => ({ connector: c, status: 'pending' as ItemStatus })),
   );
@@ -95,7 +96,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
       <div className="flex items-center justify-between">
         <div>
           <h3 className="typo-heading font-bold text-foreground">
-            Setting up {activeIndex + 1} of {items.length}
+            {tx(wd.setting_up, { current: activeIndex + 1, total: items.length })}
           </h3>
           <p className="typo-body text-foreground">
             {activeItem?.connector.label}
@@ -107,9 +108,9 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
           className="text-foreground hover:text-foreground/90"
-          title={t.vault.wizard_detect.skip_service}
+          title={wd.skip_service}
         >
-          Skip
+          {t.common.skip}
         </Button>
       </div>
 

@@ -8,7 +8,8 @@ interface BulkHealthcheckSummaryProps {
 }
 
 export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSummaryProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const bh = t.vault.bulk_healthcheck;
   return (
     <>
       {summary && (
@@ -21,7 +22,7 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
                 <div className="p-1.5 rounded-card bg-violet-500/10 text-violet-400">
                   <HeartPulse className="w-3.5 h-3.5" />
                 </div>
-                Healthcheck Results
+                {bh.title}
               </h4>
               <button
                 onClick={onDismiss}
@@ -35,23 +36,23 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
             <div className="flex items-center gap-4 typo-body">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                {summary.passed} passed
+                {tx(bh.passed_count, { count: summary.passed })}
               </span>
               {summary.failed > 0 && (
                 <span className="flex items-center gap-1.5 text-red-400">
                   <XCircle className="w-3.5 h-3.5" />
-                  {summary.failed} failed
+                  {tx(bh.failed_count, { count: summary.failed })}
                 </span>
               )}
               <span className="text-foreground">
-                {summary.total} total
+                {tx(bh.total_count, { count: summary.total })}
               </span>
             </div>
 
             {summary.needsAttention.length > 0 && (
               <div className="space-y-1.5">
                 <div className="typo-body font-medium text-red-400/80 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3 h-3" /> Needs Attention
+                  <AlertTriangle className="w-3 h-3" /> {bh.needs_attention}
                 </div>
                 {summary.needsAttention.map((r) => (
                   <div
@@ -70,7 +71,7 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
             {summary.slowest.length > 0 && (
               <div className="space-y-1.5">
                 <div className="typo-body font-medium text-foreground flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" /> Slowest Responses
+                  <Clock className="w-3 h-3" /> {bh.slowest_responses}
                 </div>
                 <div className="flex items-center gap-3 typo-body text-foreground">
                   {summary.slowest.map((r) => (

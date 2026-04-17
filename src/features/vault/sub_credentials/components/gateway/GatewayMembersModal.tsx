@@ -49,7 +49,8 @@ interface GatewayMembersModalProps {
 }
 
 export function GatewayMembersModal({ credential, onClose }: GatewayMembersModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const gw = t.vault.gateway;
   const [members, setMembers] = useState<GatewayMember[]>([]);
   const [allCreds, setAllCreds] = useState<PersonaCredential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,8 +82,6 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
     refresh();
   }, [refresh]);
 
-  // Credentials eligible to be added as members: every credential that is
-  // NOT this gateway itself AND NOT another gateway AND NOT already a member.
   const memberIds = useMemo(
     () => new Set(members.map((m) => m.memberCredentialId)),
     [members],
@@ -100,7 +99,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
   const handleAdd = useCallback(async () => {
     if (!newMemberCredentialId || !newMemberDisplayName.trim()) {
-      setActionError(t.vault.gateway.pick_error);
+      setActionError(gw.pick_error);
       return;
     }
     setIsAdding(true);
@@ -126,6 +125,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
     newMemberDisplayName,
     members.length,
     refresh,
+    gw.pick_error,
   ]);
 
   const handleToggle = useCallback(
@@ -174,12 +174,10 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
           id="gateway-members-modal-title"
           className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
         >
-          {credential.name} — gateway members
+          {tx(gw.gateway_members, { name: credential.name })}
         </h2>
         <p className="typo-body text-foreground mt-1">
-          Bundle multiple MCP credentials under this gateway. Attached personas inherit every
-          enabled member&apos;s tools, namespaced as{' '}
-          <span className="font-mono text-[11px]">&lt;display_name&gt;::&lt;tool&gt;</span>.
+          {gw.gateway_description}
         </p>
       </div>
 
@@ -188,25 +186,25 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
           {isLoading ? (
             <div className="flex items-center gap-2 text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="typo-body">{t.vault.gateway.loading_members}</span>
+              <span className="typo-body">{gw.loading_members}</span>
             </div>
           ) : loadError ? (
             <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
               <p className="typo-body text-foreground">{loadError}</p>
               <Button variant="secondary" size="sm" onClick={refresh} className="mt-2">
-                Retry
+                {t.common.try_again}
               </Button>
             </div>
           ) : (
             <>
               <section>
                 <h3 className="typo-caption text-foreground uppercase tracking-wider mb-2">
-                  Current members ({members.length})
+                  {tx(gw.current_members, { count: members.length })}
                 </h3>
                 {members.length === 0 ? (
                   <div className="rounded-interactive border border-primary/10 bg-background/50 p-3">
                     <p className="typo-body text-foreground">
-                      No members yet. Add one below to start bundling tools.
+                      {gw.no_members}
                     </p>
                   </div>
                 ) : (
@@ -226,7 +224,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             </p>
                             <p className="typo-caption text-foreground">
                               {m.memberServiceType}
-                              {!m.enabled && ' · disabled'}
+                              {!m.enabled && gw.disabled_suffix}
                             </p>
                           </div>
                           <Button
@@ -254,23 +252,23 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
               <section>
                 <h3 className="typo-caption text-foreground uppercase tracking-wider mb-2">
-                  Add a member
+                  {gw.add_member_heading}
                 </h3>
                 {eligibleCreds.length === 0 ? (
                   <p className="typo-body text-foreground">
-                    No eligible credentials. Add an MCP credential first in the credentials list.
+                    {gw.no_eligible}
                   </p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     <label className="typo-caption text-foreground">
-                      Credential
+                      {gw.credential_label}
                       <select
                         className={`${INPUT_FIELD} mt-1`}
                         value={newMemberCredentialId}
                         onChange={(e) => setNewMemberCredentialId(e.target.value)}
                         disabled={isAdding}
                       >
-                        <option value="">{t.vault.gateway.pick_credential}</option>
+                        <option value="">{gw.pick_credential}</option>
                         {eligibleCreds.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.service_type})
@@ -279,10 +277,10 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                       </select>
                     </label>
                     <label className="typo-caption text-foreground">
-                      Display name (tool prefix)
+                      {gw.display_name}
                       <input
                         className={`${INPUT_FIELD} mt-1 font-mono text-[12px]`}
-                        placeholder="e.g. arcade, research_tools, docs"
+                        placeholder={gw.display_name_placeholder}
                         value={newMemberDisplayName}
                         onChange={(e) => setNewMemberDisplayName(e.target.value)}
                         disabled={isAdding}
@@ -307,7 +305,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                           !newMemberDisplayName.trim()
                         }
                       >
-                        {isAdding ? t.vault.gateway.adding : t.vault.gateway.add_member}
+                        {isAdding ? gw.adding : gw.add_member}
                       </Button>
                     </div>
                   </div>
@@ -326,7 +324,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
       <div className="border-t border-primary/10 px-6 py-3 flex items-center justify-end shrink-0">
         <Button variant="secondary" size="sm" onClick={onClose}>
-          Close
+          {t.common.close}
         </Button>
       </div>
     </BaseModal>

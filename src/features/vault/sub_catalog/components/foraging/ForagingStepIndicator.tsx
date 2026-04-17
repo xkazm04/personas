@@ -28,7 +28,7 @@ export function ForagingStepIndicator({ phase }: ForagingStepIndicatorProps) {
   const currentIndex = STEP_INDEX[phase] ?? 0;
 
   return (
-    <div className="flex items-center justify-center gap-0 py-1" role="group" aria-label="Foraging progress">
+    <div className="flex items-center justify-center gap-0 py-1" role="group" aria-label={t.vault.foraging.progress_aria}>
       {STEPS.map((step, i) => {
         const isCompleted = i < currentIndex;
         const isCurrent = i === currentIndex;

@@ -55,7 +55,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
                 <span className="text-[10px] text-foreground font-mono">{persona.via}</span>
               )}
               <span className="text-[10px] text-foreground">
-                {Math.round(persona.recentExecutions / 7)}/day
+                {Math.round(persona.recentExecutions / 7)}{dep.per_day}
               </span>
             </div>
           );

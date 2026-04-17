@@ -44,7 +44,7 @@ export function PlaygroundRequestBuilder({
           type="url"
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
-          placeholder="https://api.example.com"
+          placeholder={t.vault.autopilot.base_url_placeholder}
           className="w-full px-3 py-2 bg-secondary/30 border border-primary/15 rounded-card typo-code font-mono text-foreground focus:outline-none focus:border-blue-500/40"
         />
       </div>
@@ -75,7 +75,7 @@ export function PlaygroundRequestBuilder({
             <input
               value={h.value}
               onChange={(e) => updateHeader(i, 'value', e.target.value)}
-              placeholder="Value"
+              placeholder={t.common.value_placeholder}
               className="flex-[2] px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-card typo-code font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
             <button onClick={() => removeHeader(i)} className="text-foreground hover:text-red-400">
@@ -104,7 +104,7 @@ export function PlaygroundRequestBuilder({
             <input
               value={q.value}
               onChange={(e) => updateQueryParam(i, 'value', e.target.value)}
-              placeholder="Value"
+              placeholder={t.common.value_placeholder}
               className="flex-[2] px-2.5 py-1.5 bg-secondary/30 border border-primary/15 rounded-card typo-code font-mono text-foreground focus:outline-none focus:border-blue-500/40"
             />
             <button onClick={() => removeQueryParam(i)} className="text-foreground hover:text-red-400">
@@ -121,7 +121,7 @@ export function PlaygroundRequestBuilder({
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder='{ "key": "value" }'
+            placeholder={t.vault.autopilot.body_placeholder}
             rows={5}
             className="w-full px-3 py-2 bg-secondary/30 border border-primary/15 rounded-card typo-code font-mono text-foreground focus:outline-none focus:border-blue-500/40 resize-y"
           />

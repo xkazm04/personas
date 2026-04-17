@@ -23,12 +23,14 @@ export function ProviderSection({
   onBack,
   onComplete,
 }: ProviderSectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ws = useWorkspaceConnect(provider);
+  const wp = t.vault.workspace_panel;
 
   const isSelectPhase = ws.phase === 'select';
   const isDone = ws.phase === 'done';
   const isError = ws.phase === 'error';
+  const createdCount = ws.provisionStates.filter((s) => s.status === 'created').length;
 
   return (
     <div className="space-y-4">
@@ -50,11 +52,11 @@ export function ProviderSection({
           <div>
             <h3 className="typo-heading font-semibold text-foreground">{provider.label}</h3>
             <p className="typo-caption text-foreground">
-              {isSelectPhase && t.vault.workspace_panel.select_services}
-              {ws.phase === 'authorizing' && t.vault.workspace_panel.browser_sign_in}
-              {ws.phase === 'provisioning' && t.vault.workspace_panel.creating_credentials}
-              {isDone && t.vault.workspace_panel.all_created}
-              {isError && t.vault.workspace_panel.some_failed}
+              {isSelectPhase && wp.select_services}
+              {ws.phase === 'authorizing' && wp.browser_sign_in}
+              {ws.phase === 'provisioning' && wp.creating_credentials}
+              {isDone && wp.all_created}
+              {isError && wp.some_failed}
             </p>
           </div>
         </div>
@@ -65,7 +67,7 @@ export function ProviderSection({
         <>
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">
-              {ws.selectedServices.length} of {provider.services.length} selected
+              {tx(wp.selected_count, { selected: ws.selectedServices.length, total: provider.services.length })}
             </span>
             {ws.selectedServices.length < provider.services.length && (
               <Button
@@ -74,7 +76,7 @@ export function ProviderSection({
                 size="xs"
                 className="text-blue-400 hover:text-blue-300"
               >
-                Select all
+                {wp.select_all}
               </Button>
             )}
           </div>
@@ -100,7 +102,7 @@ export function ProviderSection({
             data-testid="vault-workspace-connect"
             className="bg-blue-600 hover:bg-blue-500"
           >
-            Connect {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''} with one login
+            {tx(ws.selectedServices.length === 1 ? wp.connect_services_one : wp.connect_services_other, { count: ws.selectedServices.length })}
           </Button>
         </>
       )}
@@ -110,10 +112,10 @@ export function ProviderSection({
         <div className="flex flex-col items-center gap-3 py-8">
           <LoadingSpinner size="2xl" className="text-blue-400" />
           <p className="typo-body text-foreground text-center">
-            Sign in with your Google account in the browser window.
+            {wp.sign_in_browser}
             <br />
             <span className="typo-caption text-foreground">
-              This will grant access to {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''}
+              {tx(ws.selectedServices.length === 1 ? wp.granting_access_one : wp.granting_access_other, { count: ws.selectedServices.length })}
             </span>
           </p>
         </div>
@@ -128,7 +130,7 @@ export function ProviderSection({
             <div className="flex items-center gap-2 p-3 rounded-modal border border-emerald-500/20 bg-emerald-500/5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <p className="typo-body text-emerald-400">
-                {ws.provisionStates.filter((s) => s.status === 'created').length} credential{ws.provisionStates.filter((s) => s.status === 'created').length !== 1 ? 's' : ''} created from a single login.
+                {tx(createdCount === 1 ? wp.credentials_created_one : wp.credentials_created_other, { count: createdCount })}
               </p>
             </div>
           )}
@@ -149,7 +151,7 @@ export function ProviderSection({
                 block
                 className="py-2 rounded-modal"
               >
-                Done
+                {t.common.done}
               </Button>
             )}
             {isError && (
@@ -160,7 +162,7 @@ export function ProviderSection({
                 size="md"
                 icon={<RefreshCw className="w-3.5 h-3.5" />}
               >
-                Retry
+                {t.common.try_again}
               </Button>
             )}
           </div>

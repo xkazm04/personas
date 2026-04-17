@@ -39,7 +39,8 @@ export function ImportPreview({
   onSyncConfigChange,
   onBack,
 }: ImportPreviewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const vi = t.vault.import;
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
   const groups = groupByService(secrets, mappings);
   const selectedCount = selectedKeys.size;
@@ -56,17 +57,17 @@ export function ImportPreview({
           </button>
           <div>
             <h3 className="typo-body font-medium text-foreground">
-              {secrets.length} secret{secrets.length !== 1 ? 's' : ''} found
+              {tx(secrets.length !== 1 ? vi.secrets_found_other : vi.secrets_found_one, { count: secrets.length })}
             </h3>
             <p className="typo-body text-foreground">
-              {selectedCount} selected for import
+              {selectedCount} {vi.selected_for_import}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onSelectAll} className="typo-body text-primary hover:underline">{t.vault.import.select_all}</button>
+          <button onClick={onSelectAll} className="typo-body text-primary hover:underline">{vi.select_all}</button>
           <span className="text-foreground">|</span>
-          <button onClick={onDeselectAll} className="typo-body text-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
+          <button onClick={onDeselectAll} className="typo-body text-foreground hover:text-foreground hover:underline">{vi.deselect_all}</button>
         </div>
       </div>
 
@@ -99,7 +100,7 @@ export function ImportPreview({
                 <span className="typo-body font-medium text-foreground">{service}</span>
                 {mapping?.confidence === 'high' && (
                   <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
-                    Auto-detected
+                    {vi.auto_detected}
                   </span>
                 )}
               </div>
@@ -151,7 +152,7 @@ export function ImportPreview({
           className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Import className="w-4 h-4" />
-          Import {selectedCount} Secret{selectedCount !== 1 ? 's' : ''}
+          {tx(selectedCount !== 1 ? vi.import_secrets_other : vi.import_secrets_one, { count: selectedCount })}
         </button>
       </div>
     </div>

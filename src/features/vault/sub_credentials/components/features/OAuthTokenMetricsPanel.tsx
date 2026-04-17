@@ -8,7 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 const formatDuration = (secs: number) => _formatDuration(secs, { unit: 's' });
 
 export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [summary, setSummary] = useState<OAuthTokenLifetimeSummary | null>(null);
   const [recentMetrics, setRecentMetrics] = useState<OAuthTokenMetric[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,8 +97,12 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
         <div className="flex items-center gap-2 typo-body text-foreground px-1">
           <ArrowDown className="w-3 h-3 text-amber-400" />
           <span>
-            Fallback (3600s) used in <span className="font-mono tabular-nums text-amber-400">{fallbackRate}%</span> of
-            refreshes ({summary.fallbackCount}/{summary.totalRefreshes}) — provider omits <code className="typo-code font-mono bg-secondary/40 px-1 rounded">expires_in</code>
+            {tx(t.vault.token_metrics.fallback_used, {
+              fallback: 3600,
+              rate: fallbackRate,
+              count: summary.fallbackCount,
+              total: summary.totalRefreshes,
+            })} <code className="typo-code font-mono bg-secondary/40 px-1 rounded">expires_in</code>
           </span>
         </div>
       )}

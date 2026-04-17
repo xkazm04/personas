@@ -12,6 +12,7 @@ interface ImportInputPhaseProps {
 
 export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, onBack }: ImportInputPhaseProps) {
   const { t, tx } = useTranslation();
+  const vi = t.vault.import;
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
 
   const placeholder = sourceId === 'env_file'
@@ -67,7 +68,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
           className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Upload className="w-4 h-4" />
-          Parse Secrets
+          {vi.parse_secrets}
         </button>
       </div>
     </div>

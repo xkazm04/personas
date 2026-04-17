@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle, Copy } from 'lucide-react';
 import type { PlaygroundTestResult } from '@/lib/bindings/PlaygroundTestResult';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function formatJson(str: string): string {
   try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
@@ -11,6 +12,8 @@ interface PlaygroundOutputProps {
 }
 
 export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
+  const { t, tx } = useTranslation();
+  const ap = t.vault.autopilot;
   return (
     <>
       {/* Error */}
@@ -34,14 +37,14 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
               onClick={() => navigator.clipboard.writeText(testResult.body)}
               className="typo-caption text-foreground hover:text-foreground flex items-center gap-1 ml-auto"
             >
-              <Copy className="w-3 h-3" /> Copy
+              <Copy className="w-3 h-3" /> {t.common.copy}
             </button>
           </div>
 
           {/* Response Headers (collapsed by default) */}
           <details className="typo-caption">
             <summary className="text-foreground cursor-pointer hover:text-muted-foreground">
-              Response Headers ({Object.keys(testResult.headers).length})
+              {tx(ap.response_headers, { count: Object.keys(testResult.headers).length })}
             </summary>
             <div className="mt-1 p-2 bg-secondary/20 rounded-card font-mono space-y-0.5 max-h-32 overflow-y-auto">
               {Object.entries(testResult.headers).map(([k, v]) => (

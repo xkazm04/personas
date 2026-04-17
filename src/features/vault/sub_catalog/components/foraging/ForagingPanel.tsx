@@ -11,6 +11,7 @@ import {
   ForagingError,
 } from "./ForagingStatusPanels";
 import { Button } from "@/features/shared/components/buttons";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface ForagingPanelProps {
   onComplete: () => void;
@@ -18,6 +19,7 @@ interface ForagingPanelProps {
 }
 
 export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
+  const { t, tx } = useTranslation();
   const forage = useCredentialForaging();
 
   const handleImport = useCallback(() => {
@@ -43,12 +45,14 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           onClick={onBack}
           className="text-foreground hover:text-foreground/90"
         >
-          Back
+          {t.common.back}
         </Button>
         {forage.phase === "results" && forage.scanResult && (
           <span className="typo-body text-foreground">
-            Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
-            {forage.scanResult.scan_duration_ms}ms
+            {tx(t.vault.foraging.scanned_sources, {
+              count: forage.scanResult.scanned_sources.length,
+              ms: forage.scanResult.scan_duration_ms,
+            })}
           </span>
         )}
       </div>

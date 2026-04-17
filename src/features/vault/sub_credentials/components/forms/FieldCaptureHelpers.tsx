@@ -126,7 +126,7 @@ export function FieldActionButtons({
             </button>
             {isSecret && copied && (
               <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
-                Copied to clipboard
+                {t.vault.forms.copied_to_clipboard}
               </span>
             )}
           </div>

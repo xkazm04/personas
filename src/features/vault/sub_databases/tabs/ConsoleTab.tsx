@@ -99,7 +99,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             {executing ? db.running : db.run_query}
           </button>
-          <span className="typo-body text-foreground">Ctrl+Enter</span>
+          <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSafeMode((v) => !v)}

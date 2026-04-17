@@ -56,7 +56,7 @@ export function AutopilotPreviewStep({
         )}
         <div className="flex gap-4 typo-caption text-foreground">
           <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> {parseResult.endpoints.length} endpoints</span>
-          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {parseResult.authSchemes.length} auth schemes</span>
+          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {parseResult.authSchemes.length} {t.vault.autopilot.auth_schemes}</span>
           <span className="flex items-center gap-1"><Database className="w-3 h-3" /> {parseResult.models.length} models</span>
         </div>
       </div>
@@ -99,7 +99,7 @@ export function AutopilotPreviewStep({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="typo-label font-medium text-foreground uppercase tracking-wider">
-            Endpoints ({selectedEndpoints.size}/{parseResult.endpoints.length} selected)
+            {tx(t.vault.autopilot.endpoints_selected, { selected: selectedEndpoints.size, total: parseResult.endpoints.length })}
           </h4>
           <div className="flex gap-2 typo-caption">
             <button onClick={onSelectAll} className="text-blue-400 hover:text-blue-300">{t.vault.import.select_all}</button>
@@ -124,7 +124,7 @@ export function AutopilotPreviewStep({
           onClick={onBack}
           className="px-4 py-2.5 border border-primary/15 text-foreground hover:text-foreground rounded-card typo-body transition-colors"
         >
-          Back
+          {t.common.back}
         </button>
         <button
           onClick={onGenerate}

@@ -17,6 +17,7 @@ interface ImportSourcePickerProps {
 
 export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps) {
   const { t } = useTranslation();
+  const vi = t.vault.import;
   return (
     <div
       className="animate-fade-slide-in space-y-4"
@@ -56,7 +57,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                 <p className="typo-body text-foreground leading-snug">{source.description}</p>
                 {source.syncSupported && (
                   <span className="inline-block mt-1 px-1.5 py-0.5 text-[11px] rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                    Sync supported
+                    {vi.sync_supported}
                   </span>
                 )}
               </div>

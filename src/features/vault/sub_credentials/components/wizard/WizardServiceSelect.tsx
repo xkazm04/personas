@@ -13,6 +13,7 @@ interface WizardServiceSelectProps {
 
 export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
   const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
@@ -41,10 +42,10 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
     <div className="space-y-6">
       <div>
         <h2 className="typo-heading-lg font-bold text-foreground tracking-tight">
-          Choose a service to set up
+          {wd.choose_service}
         </h2>
         <p className="typo-body text-foreground mt-1">
-          The AI will walk you step-by-step through obtaining API credentials.
+          {wd.ai_walk_description}
         </p>
       </div>
 
@@ -55,7 +56,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.vault.wizard_detect.search_services}
+          placeholder={wd.search_services}
           autoFocus
           className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
@@ -104,7 +105,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                     </span>
                     <span className="typo-body text-foreground block truncate">
                       {isDesktopBridge(connector)
-                        ? t.vault.wizard_detect.desktop_bridge
+                        ? wd.desktop_bridge
                         : `${connector.fields.length} field${connector.fields.length !== 1 ? 's' : ''} required`}
                     </span>
                   </div>
@@ -117,7 +118,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
 
         {grouped.length === 0 && (
           <div className="text-center py-10">
-            <p className="typo-body text-foreground">{tx(t.vault.wizard_detect.no_services, { search })}</p>
+            <p className="typo-body text-foreground">{tx(wd.no_services, { search })}</p>
           </div>
         )}
       </div>

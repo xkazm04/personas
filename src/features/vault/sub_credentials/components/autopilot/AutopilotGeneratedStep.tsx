@@ -14,24 +14,24 @@ export function AutopilotGeneratedStep({
   onPlayground,
   onComplete,
 }: AutopilotGeneratedStepProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const ap = t.vault.autopilot;
   return (
     <div className="space-y-4">
       <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-modal">
         <div className="flex items-center gap-2 mb-2">
           <Check className="w-5 h-5 text-emerald-400" />
-          <h4 className="typo-body font-medium text-emerald-400">{t.vault.autopilot.connector_generated}</h4>
+          <h4 className="typo-body font-medium text-emerald-400">{ap.connector_generated}</h4>
         </div>
         <p className="typo-body text-foreground">
-          <strong>{generatedResult.connectorLabel}</strong> is now available in your connector catalog
-          with {generatedResult.tools.length} tool definitions.
+          {tx(ap.connector_in_catalog, { connectorLabel: generatedResult.connectorLabel, toolCount: generatedResult.tools.length })}
         </p>
       </div>
 
       {/* Generated Tools */}
       <div className="space-y-2">
         <h4 className="typo-label font-medium text-foreground uppercase tracking-wider">
-          Generated Tools ({generatedResult.tools.length})
+          {tx(ap.generated_tools, { count: generatedResult.tools.length })}
         </h4>
         <div className="max-h-60 overflow-y-auto space-y-1 rounded-card border border-primary/10 p-2 bg-secondary/15">
           {generatedResult.tools.map((tool) => (
@@ -47,7 +47,7 @@ export function AutopilotGeneratedStep({
       {/* Credential Fields */}
       <div className="space-y-2">
         <h4 className="typo-label font-medium text-foreground uppercase tracking-wider">
-          Credential Fields
+          {ap.credential_fields}
         </h4>
         <div className="flex flex-wrap gap-2">
           {generatedResult.credentialFields.map((field: unknown, i) => {
@@ -68,7 +68,7 @@ export function AutopilotGeneratedStep({
           className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-card typo-body font-medium transition-all"
         >
           <Play className="w-4 h-4" />
-          Open Playground
+          {ap.open_playground}
         </button>
         <button
           onClick={() => {
@@ -77,14 +77,14 @@ export function AutopilotGeneratedStep({
           className="flex items-center gap-2 px-4 py-2.5 border border-primary/15 text-foreground hover:text-foreground rounded-card typo-body transition-colors"
         >
           <Copy className="w-4 h-4" />
-          Copy Connector ID
+          {ap.copy_connector_id}
         </button>
         <button
           onClick={onComplete}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 rounded-card typo-body font-medium transition-all ml-auto"
         >
           <ExternalLink className="w-4 h-4" />
-          Go to Catalog
+          {ap.go_to_catalog}
         </button>
       </div>
     </div>

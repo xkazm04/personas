@@ -1,6 +1,7 @@
 import { Tag, ChevronDown, X } from 'lucide-react';
 import { getTagStyle } from '@/features/vault/shared/utils/credentialTags';
 import { type HealthFilter, type SortKey, healthFilterLabel, sortLabel } from './credentialListTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CredentialFilterBarProps {
   allTags: string[];
@@ -23,6 +24,7 @@ export function CredentialFilterBar({
   openDropdown, setOpenDropdown,
   hasFilters, clearFilters,
 }: CredentialFilterBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 flex-wrap pb-1">
       {/* Tag chips */}
@@ -94,7 +96,7 @@ export function CredentialFilterBar({
           aria-expanded={openDropdown === 'sort'}
           className="flex items-center gap-1 typo-body font-medium px-2 py-1 rounded border bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50 transition-colors"
         >
-          Sort: {sortLabel(sortKey)}
+          {t.vault.list.sort_label} {sortLabel(sortKey)}
           <ChevronDown className="w-2.5 h-2.5" />
         </button>
         {openDropdown === 'sort' && (
@@ -125,7 +127,7 @@ export function CredentialFilterBar({
           onClick={clearFilters}
           className="flex items-center gap-1 typo-body font-medium px-1.5 py-0.5 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
-          <X className="w-2.5 h-2.5" /> Clear
+          <X className="w-2.5 h-2.5" /> {t.common.clear}
         </button>
       )}
     </div>

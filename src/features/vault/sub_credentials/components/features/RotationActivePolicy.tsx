@@ -81,7 +81,7 @@ export function RotationActivePolicy({
             data-testid="rotation-rotate-now-btn"
             className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
           >
-            Rotate Now
+            {t.vault.rotation_section.rotate_now}
           </Button>
           <Button
             variant="ghost"

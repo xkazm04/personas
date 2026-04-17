@@ -47,7 +47,8 @@ interface PendingAuthModalProps {
 }
 
 export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const pa = t.vault.pending_auth;
   const [urlOpened, setUrlOpened] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
@@ -67,18 +68,15 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
     setRetryError(null);
     try {
       await onRetry();
-      // Success: close the modal.
       onDismiss();
     } catch (e) {
-      // Preserve modal state so the user can click retry again after, e.g.,
-      // completing the consent grant if they hadn't yet.
       setRetryError(
-        e instanceof Error ? e.message : typeof e === 'string' ? e : t.vault.pending_auth.retry_failed,
+        e instanceof Error ? e.message : typeof e === 'string' ? e : pa.retry_failed,
       );
     } finally {
       setIsRetrying(false);
     }
-  }, [onRetry, onDismiss]);
+  }, [onRetry, onDismiss, pa.retry_failed]);
 
   return (
     <BaseModal
@@ -100,19 +98,17 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
                 id="pending-auth-modal-title"
                 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
               >
-                Authorization required
+                {pa.title}
               </h2>
               <p className="typo-body text-foreground mt-1">
-                The tool{' '}
-                <span className="font-mono text-[12px]">{details.tool_name}</span> needs fresh
-                OAuth consent before it can be invoked.
+                {tx(pa.tool_needs_consent, { tool: details.tool_name })}
               </p>
             </div>
           </div>
 
           <div className="rounded-interactive border border-primary/10 bg-background/50 p-3">
             <p className="typo-caption text-foreground mb-2 uppercase tracking-wider">
-              Authorization URL
+              {pa.auth_url_label}
             </p>
             <p className="typo-body text-foreground break-all font-mono text-[11px]">
               {details.authorize_url}
@@ -120,15 +116,9 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
           </div>
 
           <ol className="typo-body text-foreground space-y-1 list-decimal pl-4">
-            <li>
-              Click <span className="font-semibold">Open authorization URL</span> to grant consent
-              in your browser.
-            </li>
-            <li>Complete the consent flow for the requested scopes.</li>
-            <li>
-              Return here and click{' '}
-              <span className="font-semibold">I&apos;ve authorized — retry</span>.
-            </li>
+            <li>{pa.step_1}</li>
+            <li>{pa.step_2}</li>
+            <li>{pa.step_3}</li>
           </ol>
 
           {retryError && (
@@ -139,7 +129,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="ghost" size="sm" onClick={onDismiss} disabled={isRetrying}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button
               variant="secondary"
@@ -148,7 +138,7 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
               onClick={handleOpenUrl}
               disabled={isRetrying}
             >
-              {urlOpened ? t.vault.pending_auth.reopen_url : t.vault.pending_auth.open_auth_url}
+              {urlOpened ? pa.reopen_url : pa.open_auth_url}
             </Button>
             <Button
               variant="primary"
@@ -156,9 +146,9 @@ export function PendingAuthModal({ details, onDismiss, onRetry }: PendingAuthMod
               icon={isRetrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : undefined}
               onClick={handleRetry}
               disabled={!urlOpened || isRetrying}
-              disabledReason={!urlOpened ? t.vault.pending_auth.open_first : undefined}
+              disabledReason={!urlOpened ? pa.open_first : undefined}
             >
-              {isRetrying ? t.vault.pending_auth.retrying : t.vault.pending_auth.retry_authorized}
+              {isRetrying ? pa.retrying : pa.retry_authorized}
             </Button>
           </div>
         </div>
