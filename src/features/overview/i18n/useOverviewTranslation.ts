@@ -19,7 +19,7 @@ const translations = { en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs };
 export function useOverviewTranslation() {
   const { language } = useI18nStore();
 
-  const t = translations[language].overview;
+  const t = (translations[language] ?? translations.en).overview;
 
   return { t, language };
 }

@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { LocaleCode } from '@/i18n/locales.manifest';
 
-export type Language = 'en' | 'zh' | 'ar' | 'hi' | 'ru' | 'id' | 'es' | 'fr' | 'bn' | 'ja' | 'vi' | 'de' | 'ko' | 'cs';
+/**
+ * Supported UI languages. Driven by the LOCALES manifest —
+ * to add/remove a language, edit `src/i18n/locales.manifest.ts`.
+ */
+export type Language = LocaleCode;
 
 interface I18nState {
   language: Language;

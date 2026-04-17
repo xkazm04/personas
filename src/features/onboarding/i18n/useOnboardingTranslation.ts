@@ -19,7 +19,7 @@ const translations = { en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs };
 export function useOnboardingTranslation() {
   const { language } = useI18nStore();
 
-  const t = translations[language].onboarding;
+  const t = (translations[language] ?? translations.en).onboarding;
 
   return { t, language };
 }

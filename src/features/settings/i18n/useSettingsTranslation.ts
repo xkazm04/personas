@@ -24,7 +24,7 @@ const translations = { en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs };
 
 export function useSettingsTranslation() {
   const { language } = useI18nStore();
-  const t = translations[language].settings;
+  const t = (translations[language] ?? translations.en).settings;
   return { t, language };
 }
 

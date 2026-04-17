@@ -56,23 +56,21 @@ function flatten(obj: Record<string, unknown>, prefix = ''): Record<string, stri
   return result;
 }
 
-/** Dynamic import loaders for each language file — mirrors useTranslation loaders. */
-const langLoaders: Record<Language, () => Promise<Record<string, unknown>>> = {
-  en: () => import('@/i18n/en').then(m => m.en as unknown as Record<string, unknown>),
-  zh: () => import('@/i18n/zh').then(m => m.zh as unknown as Record<string, unknown>),
-  es: () => import('@/i18n/es').then(m => m.es as unknown as Record<string, unknown>),
-  ar: () => import('@/i18n/ar').then(m => m.ar as unknown as Record<string, unknown>),
-  hi: () => import('@/i18n/hi').then(m => m.hi as unknown as Record<string, unknown>),
-  ru: () => import('@/i18n/ru').then(m => m.ru as unknown as Record<string, unknown>),
-  id: () => import('@/i18n/id').then(m => m.id as unknown as Record<string, unknown>),
-  fr: () => import('@/i18n/fr').then(m => m.fr as unknown as Record<string, unknown>),
-  bn: () => import('@/i18n/bn').then(m => m.bn as unknown as Record<string, unknown>),
-  ja: () => import('@/i18n/ja').then(m => m.ja as unknown as Record<string, unknown>),
-  vi: () => import('@/i18n/vi').then(m => m.vi as unknown as Record<string, unknown>),
-  de: () => import('@/i18n/de').then(m => m.de as unknown as Record<string, unknown>),
-  ko: () => import('@/i18n/ko').then(m => m.ko as unknown as Record<string, unknown>),
-  cs: () => import('@/i18n/cs').then(m => m.cs as unknown as Record<string, unknown>),
-};
+/**
+ * Dynamic JSON-import loaders for each locale, discovered via Vite's
+ * import.meta.glob. Mirrors the loader in `@/i18n/useTranslation` so this
+ * component stays decoupled and self-contained.
+ */
+const localeJsonLoaders = import.meta.glob<{ default: Record<string, unknown> }>(
+  '@/i18n/locales/*.json',
+  { eager: false },
+);
+
+function loadBundle(code: Language): Promise<Record<string, unknown>> {
+  const entry = Object.entries(localeJsonLoaders).find(([path]) => path.endsWith(`/${code}.json`));
+  if (!entry) return Promise.reject(new Error(`No locale bundle for "${code}"`));
+  return entry[1]().then((m) => m.default);
+}
 
 export default function TranslationContributor() {
   const { language } = useI18nStore();
@@ -88,7 +86,7 @@ export default function TranslationContributor() {
       const results: Record<string, number> = {};
       for (const lang of ALL_LANGUAGES) {
         try {
-          const bundle = await langLoaders[lang.code]();
+          const bundle = await loadBundle(lang.code);
           const keys = countKeys(bundle);
           if (!cancelled) results[lang.code] = keys;
         } catch {
@@ -103,7 +101,7 @@ export default function TranslationContributor() {
   const handleExport = useCallback(async (code: Language) => {
     setExporting(code);
     try {
-      const bundle = await langLoaders[code]();
+      const bundle = await loadBundle(code);
       const flat = flatten(bundle);
       const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

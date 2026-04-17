@@ -18,6 +18,6 @@ const translations = { en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs };
 
 export function useRecipeSharedTranslation() {
   const { language } = useI18nStore();
-  const t = translations[language].recipeShared;
+  const t = (translations[language] ?? translations.en).recipeShared;
   return { t, language };
 }
