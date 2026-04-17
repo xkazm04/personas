@@ -38,6 +38,7 @@ function ResourceExposureCard({
   resource: ExposedResource;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const AccessIcon = ACCESS_ICONS[resource.access_level] ?? Eye;
   const colorClass = ACCESS_COLORS[resource.access_level] ?? ACCESS_COLORS.read;
 
@@ -83,7 +84,7 @@ function ResourceExposureCard({
         {({ requestConfirm }) => (
           <button
             onClick={requestConfirm}
-            title="Remove exposure"
+            title={t.sharing.remove_exposure}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors flex-shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />

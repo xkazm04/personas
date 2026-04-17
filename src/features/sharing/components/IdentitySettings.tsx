@@ -245,7 +245,7 @@ export default function IdentitySettings() {
                       {({ requestConfirm }) => (
                         <button
                           onClick={requestConfirm}
-                          title="Revoke trust"
+                          title={t.sharing.revoke_trust}
                           className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
@@ -260,7 +260,7 @@ export default function IdentitySettings() {
                     {({ requestConfirm }) => (
                       <button
                         onClick={requestConfirm}
-                        title="Remove peer"
+                        title={t.sharing.remove_peer}
                         className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

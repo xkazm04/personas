@@ -291,7 +291,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 onClick={handleCreateShareLink}
                 disabled={selected.size === 0 || creatingLink || copying || exporting}
                 className="px-3 py-1.5 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title="Generate a one-time share link (expires in 24h)"
+                title={st.share_link_tooltip}
               >
                 {creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
                 {creatingLink ? st.creating_link : linkCopied ? st.link_copied : st.share_link}
@@ -300,7 +300,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 onClick={handleCopyToClipboard}
                 disabled={selected.size === 0 || copying || exporting || creatingLink}
                 className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                title="Copy bundle as base64 to clipboard (max 256 KB)"
+                title={st.copy_clipboard_tooltip}
               >
                 {copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Clipboard className="w-3.5 h-3.5" />}
                 {copying ? st.copying : copied ? st.copied : st.copy_to_clipboard}

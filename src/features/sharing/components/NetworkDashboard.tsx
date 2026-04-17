@@ -104,10 +104,12 @@ function MetricsSection({
 }
 
 function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   return (
-    <MetricsSection title="Message Throughput" icon={MessageSquare}>
+    <MetricsSection title={st.message_throughput} icon={MessageSquare}>
       <MetricRow
-        label="Sent"
+        label={st.sent}
         value={
           <span className="flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3 text-emerald-400" />
@@ -117,7 +119,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         }
       />
       <MetricRow
-        label="Received"
+        label={st.received}
         value={
           <span className="flex items-center gap-1">
             <ArrowDownLeft className="w-3 h-3 text-blue-400" />
@@ -130,13 +132,13 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         <>
           {m.messagesDroppedBufferFull > 0 && (
             <MetricRow
-              label="Dropped (buffer full)"
+              label={st.dropped_buffer_full}
               value={<span className="text-amber-400">{m.messagesDroppedBufferFull}</span>}
             />
           )}
           {m.messagesRateLimited > 0 && (
             <MetricRow
-              label="Rate limited"
+              label={st.rate_limited}
               value={<span className="text-amber-400">{m.messagesRateLimited}</span>}
             />
           )}
@@ -147,6 +149,8 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
 }
 
 function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const totalDropped =
     m.connectionsDroppedHealth +
     m.connectionsDroppedUser +
@@ -154,11 +158,11 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
     m.connectionsDroppedProtocol;
 
   return (
-    <MetricsSection title="Connection Lifecycle" icon={Link2}>
-      <MetricRow label="Attempts" value={m.connectionAttempts.toLocaleString()} />
-      <MetricRow label="Established" value={m.connectionsEstablished.toLocaleString()} />
+    <MetricsSection title={st.connection_lifecycle} icon={Link2}>
+      <MetricRow label={st.attempts} value={m.connectionAttempts.toLocaleString()} />
+      <MetricRow label={st.established} value={m.connectionsEstablished.toLocaleString()} />
       <MetricRow
-        label="Avg connect time"
+        label={st.avg_connect_time}
         value={
           m.avgConnectDurationMs != null
             ? `${Math.round(m.avgConnectDurationMs)}ms`
@@ -167,7 +171,7 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
       />
       {totalDropped > 0 && (
         <MetricRow
-          label="Disconnects"
+          label={st.disconnects}
           value={
             <span className="text-foreground">
               {totalDropped}
@@ -180,7 +184,7 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
       )}
       {m.connectionsRejectedCapacity > 0 && (
         <MetricRow
-          label="Rejected (capacity)"
+          label={st.rejected_capacity}
           value={<span className="text-amber-400">{m.connectionsRejectedCapacity}</span>}
         />
       )}
@@ -189,16 +193,18 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
 }
 
 function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
+  const { t } = useTranslation();
+  const st = t.sharing;
   const successRate =
     m.syncRounds > 0
       ? ((m.syncSuccesses / m.syncRounds) * 100).toFixed(0)
       : null;
 
   return (
-    <MetricsSection title="Manifest Sync" icon={RefreshCw}>
-      <MetricRow label="Sync rounds" value={m.syncRounds.toLocaleString()} />
+    <MetricsSection title={st.manifest_sync} icon={RefreshCw}>
+      <MetricRow label={st.sync_rounds} value={m.syncRounds.toLocaleString()} />
       <MetricRow
-        label="Success / Fail"
+        label={st.success_fail}
         value={
           <span>
             <span className="text-emerald-400">{m.syncSuccesses}</span>
@@ -211,7 +217,7 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
         }
       />
       <MetricRow
-        label="Avg sync duration"
+        label={st.avg_sync_duration}
         value={
           m.avgSyncDurationMs != null
             ? `${Math.round(m.avgSyncDurationMs)}ms`
@@ -219,7 +225,7 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
         }
       />
       <MetricRow
-        label="Entries received"
+        label={st.entries_received}
         value={m.totalEntriesReceived.toLocaleString()}
       />
     </MetricsSection>
@@ -254,7 +260,7 @@ export function NetworkDashboard() {
       {networkError && (
         <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Network data may be stale &mdash; {networkError}</span>
+          <span>{st.network_data_stale} {networkError}</span>
         </div>
       )}
 
@@ -336,7 +342,7 @@ export function NetworkDashboard() {
           {/* Peer ID footer */}
           {isRunning && networkStatus.local_peer_id && (
             <div className="flex items-center gap-1.5 px-1 pt-1">
-              <span className="text-[10px] uppercase tracking-wider text-foreground">Peer ID</span>
+              <span className="text-[10px] uppercase tracking-wider text-foreground">{st.peer_id_footer}</span>
               <span className="text-[11px] font-mono text-foreground">
                 {networkStatus.local_peer_id.slice(0, 8)}...{networkStatus.local_peer_id.slice(-8)}
               </span>

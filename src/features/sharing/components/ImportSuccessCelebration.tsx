@@ -137,7 +137,7 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
         <div className="typo-caption text-foreground space-y-0.5">
           <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
           {importResult.skipped > 0 && (
-            <p>{importResult.skipped} skipped (conflicts)</p>
+            <p>{t.sharing.skipped_conflicts.replace('{count}', String(importResult.skipped))}</p>
           )}
           {importResult.errors.length > 0 && (
             <div className="mt-2 text-left">

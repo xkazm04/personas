@@ -4158,6 +4158,8 @@ export const en = {
       // RecipeConfidenceBanner usage count -- {count} = usage count
       recipe_used_one: "-- used {count} time",
       recipe_used_other: "-- used {count} times",
+      // IdlePhase textarea placeholder -- example service names
+      instruction_placeholder: "e.g. Slack, OpenAI, GitHub, Stripe...",
     },
     // Auto-cred extra strings
     auto_cred_extra: {
@@ -4682,6 +4684,8 @@ export const en = {
     persistence_denied: "Denied",
     capabilities_label: "Capabilities:",
     capabilities_none: "None",
+    // Label prefix before the enclave hash value
+    enclave_hash_label: "Hash:",
 
     // -- ExposureManager --
     network_sharing_title: "Network & Sharing",
@@ -4767,8 +4771,32 @@ export const en = {
     // -- PeerList --
     discovered_peers: "Discovered Peers",
     refresh: "Refresh",
+    // Tooltip on the refresh button in PeerList
+    refresh_peer_list: "Refresh peer list",
     scanning_network: "Scanning local network...",
     lan_hint: "Other Personas instances on the same LAN will appear here automatically.",
+    // Stale warning shown when network data may be outdated — {error} = error message
+    peer_list_stale: "Peer list may be stale \u2014",
+    // Stale warning in NetworkDashboard — {error} = error message
+    network_data_stale: "Network data may be stale \u2014",
+    // Label prefix before the local peer ID in NetworkDashboard footer
+    peer_id_footer: "Peer ID",
+
+    // -- ExposureManager row action --
+    // Tooltip on the remove-exposure trash button
+    remove_exposure: "Remove exposure",
+
+    // -- IdentitySettings peer actions --
+    // Tooltip on revoke-trust button next to a peer
+    revoke_trust: "Revoke trust",
+    // Tooltip on remove-peer button
+    remove_peer: "Remove peer",
+
+    // -- BundleExportDialog button tooltips --
+    // Tooltip on share-link button
+    share_link_tooltip: "Generate a one-time share link (expires in 24h)",
+    // Tooltip on copy-to-clipboard button
+    copy_clipboard_tooltip: "Copy bundle as base64 to clipboard (max 256 KB)",
 
     // -- Network metrics --
     message_throughput: "Message Throughput",

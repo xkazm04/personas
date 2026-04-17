@@ -121,7 +121,7 @@ export function BundlePreviewContent({
       {/* Resources list */}
       <div>
         <div className="typo-caption text-foreground mb-1.5">
-          {preview.resources.length} {preview.resources.length !== 1 ? 'resources' : 'resource'} in bundle
+          {st.resources_in_bundle.replace('{count}', String(preview.resources.length)).replace('{plural}', preview.resources.length !== 1 ? 's' : '')}
         </div>
         <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
           {preview.resources.map((resource) => (

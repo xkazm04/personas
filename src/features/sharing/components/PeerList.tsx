@@ -102,7 +102,7 @@ export function PeerList() {
         <div className="flex flex-col items-end gap-0.5">
           <button
             onClick={() => doFetch()}
-            title="Refresh peer list"
+            title={st.refresh_peer_list}
             className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export function PeerList() {
       {networkError && (
         <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Peer list may be stale &mdash; {networkError}</span>
+          <span>{st.peer_list_stale} {networkError}</span>
         </div>
       )}
 

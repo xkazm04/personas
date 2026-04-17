@@ -95,7 +95,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
 
       {/* Enclave hash */}
       <div className="text-[10px] text-foreground font-mono truncate">
-        Hash: {result.enclaveHash}
+        {st.enclave_hash_label} {result.enclaveHash}
       </div>
     </div>
   );
