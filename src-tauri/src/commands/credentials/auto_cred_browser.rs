@@ -1111,7 +1111,7 @@ fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
 
     tmp.write_all(
         serde_json::to_string_pretty(&config)
-            .unwrap()
+            .map_err(|e| format!("Failed to serialize MCP config: {e}"))?
             .as_bytes(),
     )
     .map_err(|e| format!("Failed to write temp MCP config: {e}"))?;
