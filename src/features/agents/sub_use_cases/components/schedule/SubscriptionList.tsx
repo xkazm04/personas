@@ -29,7 +29,7 @@ export function ActiveTriggers({ items, onRetire }: ActiveTriggersProps) {
   if (items.length === 0) return null;
   return (
     <div className="space-y-1.5">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Zap className="w-3.5 h-3.5 text-amber-400" />
         {t.agents.use_cases.active_triggers}
       </h5>
@@ -39,16 +39,16 @@ export function ActiveTriggers({ items, onRetire }: ActiveTriggersProps) {
           <SectionCard key={item.key} size="sm" className="flex items-center gap-2.5">
             <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-foreground block truncate">
+              <span className="typo-body font-medium text-foreground block truncate">
                 {item.triggerType}
               </span>
               {item.triggerConfig && (
-                <span className="text-sm text-foreground block truncate">
+                <span className="typo-body text-foreground block truncate">
                   {item.triggerConfig}
                 </span>
               )}
             </div>
-            <span className={`text-sm px-1.5 py-0.5 rounded border ${badge.className}`}>
+            <span className={`typo-body px-1.5 py-0.5 rounded border ${badge.className}`}>
               {badge.label}
             </span>
             <button
@@ -74,7 +74,7 @@ export function ActiveSubscriptions({ items, onRetire }: ActiveSubscriptionsProp
   if (items.length === 0) return null;
   return (
     <div className="space-y-1.5">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Radio className="w-3.5 h-3.5 text-cyan-400" />
         {t.agents.use_cases.active_subscriptions}
       </h5>
@@ -84,16 +84,16 @@ export function ActiveSubscriptions({ items, onRetire }: ActiveSubscriptionsProp
           <SectionCard key={item.key} size="sm" className="flex items-center gap-2.5">
             <Radio className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-foreground block truncate">
+              <span className="typo-body font-medium text-foreground block truncate">
                 {item.eventType}
               </span>
               {item.sourceFilter && (
-                <span className="text-sm text-foreground block truncate">
+                <span className="typo-body text-foreground block truncate">
                   filter: {item.sourceFilter}
                 </span>
               )}
             </div>
-            <span className={`text-sm px-1.5 py-0.5 rounded border ${badge.className}`}>
+            <span className={`typo-body px-1.5 py-0.5 rounded border ${badge.className}`}>
               {badge.label}
             </span>
             <button
@@ -135,11 +135,11 @@ export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger
         <div className="flex items-center gap-2.5 p-2 border border-dashed rounded-card border-amber-500/20 bg-amber-500/5">
           <Clock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground block truncate">
+            <span className="typo-body font-medium text-foreground block truncate">
               {suggestedTrigger.type}
             </span>
             {suggestedTrigger.description && (
-              <span className="text-sm text-foreground block truncate">
+              <span className="typo-body text-foreground block truncate">
                 {suggestedTrigger.description}
               </span>
             )}
@@ -147,7 +147,7 @@ export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger
           <button
             onClick={() => void onActivate(suggestedTriggerItem)}
             disabled={activating.has(suggestedTriggerItem.key)}
-            className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-modal bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 typo-body rounded-modal bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Zap className="w-3 h-3" />
             {t.agents.use_cases.activate}

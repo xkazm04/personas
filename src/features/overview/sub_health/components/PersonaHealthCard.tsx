@@ -55,10 +55,10 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <TrendIcon className={`w-3 h-3 ${TREND_COLOR[signal.failureTrend]}`} />
-            <span className={`text-xs ${TREND_COLOR[signal.failureTrend]}`}>
+            <span className={`typo-caption ${TREND_COLOR[signal.failureTrend]}`}>
               {signal.failureTrend === 'improving' ? t.overview.health_extra.improving : signal.failureTrend === 'degrading' ? t.overview.health_extra.degrading : t.overview.health_extra.stable}
             </span>
-            <span className="text-xs text-foreground ml-1">{signal.successRate.toFixed(0)}% success</span>
+            <span className="typo-caption text-foreground ml-1">{signal.successRate.toFixed(0)}% success</span>
           </div>
         </div>
         {expanded
@@ -107,7 +107,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                   {signal.projectedExhaustionDays !== null && (
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-amber-400" />
-                      <span className="text-xs text-foreground">
+                      <span className="typo-caption text-foreground">
                         Budget exhaustion in{' '}
                         <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground'}>
                           {signal.projectedExhaustionDays === 0 ? 'exhausted' : `${signal.projectedExhaustionDays}d`}
@@ -118,7 +118,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                   {signal.predictedFailureInDays !== null && (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="w-3 h-3 text-red-400" />
-                      <span className="text-xs text-foreground">
+                      <span className="typo-caption text-foreground">
                         Predicted failure spike in{' '}
                         <span className="text-red-400 font-semibold">{signal.predictedFailureInDays}d</span>
                       </span>

@@ -32,7 +32,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <Globe className="w-4 h-4 text-foreground" />
-        <span className="text-sm font-medium text-foreground">
+        <span className="typo-body font-medium text-foreground">
           {state.endpoints.length} example endpoint{state.endpoints.length !== 1 ? 's' : ''}
         </span>
         <div className="flex-1" />
@@ -45,7 +45,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               value={state.search}
               onChange={(e) => state.setSearch(e.target.value)}
               placeholder="Filter..."
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded typo-body bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
             />
           </div>
         )}
@@ -68,7 +68,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       </div>
 
       {state.parseError && (
-        <div className="mx-4 mt-3 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
+        <div className="mx-4 mt-3 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-start gap-2">
           <span className="flex-1">{state.parseError}</span>
           <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
             <X className="w-3 h-3" />
@@ -116,7 +116,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                 <div className={`grid gap-0 ${state.response || state.sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
                   <div className="space-y-4 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm uppercase tracking-wider text-blue-400/70 font-semibold">Request Builder</span>
+                      <span className="typo-heading uppercase tracking-wider text-blue-400/70 font-semibold">Request Builder</span>
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">Close</Button>
                     </div>
@@ -126,9 +126,9 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
                   {(state.response || state.sendError) && (
                     <div className="min-w-0 pl-4">
-                      <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">Response</span>
+                      <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">Response</span>
                       {state.sendError && (
-                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
+                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
                     </div>

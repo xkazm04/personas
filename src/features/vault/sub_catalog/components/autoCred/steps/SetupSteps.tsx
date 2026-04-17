@@ -20,7 +20,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
         </div>
         <div className="flex-1">
           <h4 className="font-medium text-foreground">{connector.label} is a desktop app</h4>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             This connector uses a local desktop bridge, not an online API. Use the Desktop Apps panel to detect and connect it.
           </p>
         </div>
@@ -28,7 +28,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 typo-body font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
         >
           Back
         </button>
@@ -69,19 +69,19 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
       </div>
       <div className="flex-1">
         <h4 className="font-medium text-foreground">Auto-Setup {connector.label}</h4>
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">
           {phase === 'analyzing' ? t.vault.auto_cred_extra.analyzing_setup : t.vault.auto_cred_extra.browser_hint}
         </p>
       </div>
       {mode === 'guided' ? (
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-violet-500/10 border border-violet-500/20">
           <MessageSquare className="w-3 h-3 text-violet-400" />
-          <span className="text-xs font-medium text-violet-400">{t.vault.auto_cred_extra.guided_badge}</span>
+          <span className="typo-caption font-medium text-violet-400">{t.vault.auto_cred_extra.guided_badge}</span>
         </div>
       ) : (
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-cyan-500/10 border border-cyan-500/20">
           <Bot className="w-3 h-3 text-cyan-400" />
-          <span className="text-xs font-medium text-cyan-400">{t.vault.auto_cred_extra.playwright_badge}</span>
+          <span className="typo-caption font-medium text-cyan-400">{t.vault.auto_cred_extra.playwright_badge}</span>
         </div>
       )}
     </div>

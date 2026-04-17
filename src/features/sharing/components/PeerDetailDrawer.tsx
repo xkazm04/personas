@@ -146,7 +146,7 @@ export function PeerDetailDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 id="peer-drawer-title" className="text-base font-semibold text-foreground truncate">
+              <h2 id="peer-drawer-title" className="typo-body-lg font-semibold text-foreground truncate">
                 {peer.display_name}
               </h2>
               {isTrusted ? (
@@ -155,7 +155,7 @@ export function PeerDetailDrawer({
                 <TrustUnknownIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
               )}
             </div>
-            <div className="text-xs font-mono text-foreground mt-0.5">
+            <div className="typo-code font-mono text-foreground mt-0.5">
               {truncatedId}
             </div>
           </div>
@@ -171,7 +171,7 @@ export function PeerDetailDrawer({
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Connection state */}
           <div className="flex items-center gap-3">
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            <span className={`typo-caption px-2 py-1 rounded-full font-medium ${
               isConnected ? 'bg-emerald-500/10 text-emerald-400' :
               state === 'Connecting' ? 'bg-amber-500/10 text-amber-400' :
               state === 'Failed' ? 'bg-red-500/10 text-red-400' :
@@ -182,7 +182,7 @@ export function PeerDetailDrawer({
             {isConnected ? (
               <button
                 onClick={() => onDisconnect(peer.peer_id)}
-                className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <NodeDisconnectedIcon className="w-3.5 h-3.5" />
                 {st.disconnect}
@@ -190,7 +190,7 @@ export function PeerDetailDrawer({
             ) : (
               <button
                 onClick={() => onConnect(peer.peer_id)}
-                className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
                 <NodeConnectedIcon className="w-3.5 h-3.5" />
                 {st.connect}
@@ -200,8 +200,8 @@ export function PeerDetailDrawer({
 
           {/* Peer info */}
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{st.peer_info}</h4>
-            <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 text-sm">
+            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{st.peer_info}</h4>
+            <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 typo-body">
               <div className="flex justify-between">
                 <span className="text-foreground">{st.trust_label}</span>
                 <span className={isTrusted ? 'text-emerald-400' : 'text-foreground'}>
@@ -223,7 +223,7 @@ export function PeerDetailDrawer({
               {addresses.length > 0 && (
                 <div className="flex justify-between">
                   <span className="text-foreground">{st.address}</span>
-                  <span className="text-foreground font-mono text-xs">
+                  <span className="text-foreground font-mono typo-code">
                     {addresses[0]}
                   </span>
                 </div>
@@ -244,7 +244,7 @@ export function PeerDetailDrawer({
               )}
 
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (
@@ -271,7 +271,7 @@ export function PeerDetailDrawer({
               </div>
 
               {manifest.length === 0 ? (
-                <div className="rounded-card border border-dashed border-border p-4 text-center text-xs text-foreground">
+                <div className="rounded-card border border-dashed border-border p-4 text-center typo-caption text-foreground">
                   {st.no_shared_resources}
                 </div>
               ) : (
@@ -297,7 +297,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
       <Package className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-foreground truncate">{entry.display_name}</span>
+          <span className="typo-body text-foreground truncate">{entry.display_name}</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
             {entry.resource_type}
           </span>

@@ -152,7 +152,7 @@ export default function EventBusVisualization({ events, personas, animationMapRe
             {seenTypes.slice(0, 6).map(type => (
                 <div key={type} className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }} />
-                  <span className="text-sm font-mono text-foreground">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
+                  <span className="typo-code font-mono text-foreground">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
                 </div>
               ))}
           </div>
@@ -161,8 +161,8 @@ export default function EventBusVisualization({ events, personas, animationMapRe
         {events.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex flex-col items-center gap-2 bg-background/40 backdrop-blur-sm border border-purple-500/10 rounded-2xl px-6 py-4">
-              <span className="text-sm text-foreground font-mono">{t.overview.realtime_idle.idle}</span>
-              <span className="text-xs text-foreground">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
+              <span className="typo-code text-foreground font-mono">{t.overview.realtime_idle.idle}</span>
+              <span className="typo-caption text-foreground">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
             </div>
           </div>
         )}

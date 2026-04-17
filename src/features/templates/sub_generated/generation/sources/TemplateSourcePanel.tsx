@@ -10,7 +10,7 @@ export type { TemplateSourcePanelProps } from './TemplateSourceTypes';
 
 function PredefinedView() {
   return (
-    <div className="text-sm text-foreground space-y-1">
+    <div className="typo-body text-foreground space-y-1">
       <p>Runs {PREDEFINED_TEST_CASES.length} predefined use cases through the design engine:</p>
       <ul className="list-disc list-inside text-foreground space-y-0.5 ml-1">
         {PREDEFINED_TEST_CASES.map((tc) => (

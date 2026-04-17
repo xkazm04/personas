@@ -35,7 +35,7 @@ export function SchedulePanel({
                 key={f}
                 type="button"
                 onClick={() => setFrequency(f)}
-                className={`px-3.5 h-8 rounded-input text-xs font-medium transition-all duration-200 ${
+                className={`px-3.5 h-8 rounded-input typo-caption font-medium transition-all duration-200 ${
                   frequency === f
                     ? 'bg-primary/15 text-primary shadow-elevation-1'
                     : 'text-foreground hover:text-muted-foreground/70'
@@ -57,7 +57,7 @@ export function SchedulePanel({
                   key={day.key}
                   type="button"
                   onClick={() => toggleDay(day.key)}
-                  className={`w-9 h-9 rounded-card text-xs font-semibold transition-all duration-200 ${
+                  className={`w-9 h-9 rounded-card typo-caption font-semibold transition-all duration-200 ${
                     days.includes(day.key)
                       ? 'bg-primary/20 text-primary border border-primary/30'
                       : 'bg-secondary/15 text-foreground border border-transparent hover:border-primary/15'

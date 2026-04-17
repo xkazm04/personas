@@ -85,8 +85,8 @@ export function CredentialTypePicker({
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.type_picker.title}</h3>
-          <p className="text-sm text-foreground">{t.vault.type_picker.subtitle}</p>
+          <h3 className="typo-heading font-semibold text-foreground">{t.vault.type_picker.title}</h3>
+          <p className="typo-body text-foreground">{t.vault.type_picker.subtitle}</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function CredentialTypePicker({
                   draggable={false}
                 />
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-medium text-foreground">{type.label}</h4>
+                  <h4 className="typo-body font-medium text-foreground">{type.label}</h4>
                   {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">DEV</span>}
                 </div>
               </div>
@@ -129,8 +129,8 @@ export function CredentialTypePicker({
             <Globe className="w-4.5 h-4.5 text-blue-400" />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
-            <p className="text-sm text-foreground">
+            <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
+            <p className="typo-body text-foreground">
               One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
             </p>
           </div>
@@ -149,8 +149,8 @@ export function CredentialTypePicker({
               <Radar className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
-              <p className="text-sm text-foreground">
+              <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
+              <p className="typo-body text-foreground">
                 Scan your filesystem for existing API keys, AWS profiles, env vars, and more
               </p>
             </div>

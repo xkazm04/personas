@@ -19,7 +19,7 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
       {unlinked > 0 && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-amber-500/5 border border-amber-500/15">
           <AlertTriangle className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
+          <div className="typo-body">
             <p className="font-medium text-amber-400/80">{tx(t.agents.connectors.st_unlinked_warn, { count: unlinked })}</p>
             <p className="text-amber-400/50 mt-0.5">{t.agents.connectors.st_unlinked_hint}</p>
           </div>
@@ -28,7 +28,7 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
       {unlinked === 0 && unhealthy > 0 && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-red-500/5 border border-red-500/15">
           <AlertCircle className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
+          <div className="typo-body">
             <p className="font-medium text-red-400/80">{tx(t.agents.connectors.st_unhealthy_warn, { count: unhealthy })}</p>
             <p className="text-red-400/50 mt-0.5">{t.agents.connectors.st_unhealthy_hint}</p>
           </div>
@@ -75,17 +75,17 @@ export function ConnectorsSection({
         badge={(
           <>
             {healthy > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                 <CheckCircle2 className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_healthy, { count: healthy })}
               </span>
             )}
             {unhealthy > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
                 <AlertCircle className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_failed, { count: unhealthy })}
               </span>
             )}
             {unlinked > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
                 <AlertCircle className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_missing, { count: unlinked })}
               </span>
             )}
@@ -93,7 +93,7 @@ export function ConnectorsSection({
         )}
         trailing={testableCount > 0 ? (
           <button onClick={onTestAll} disabled={testingAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
             {testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />} {t.agents.connectors.st_test_all}
           </button>
         ) : undefined}

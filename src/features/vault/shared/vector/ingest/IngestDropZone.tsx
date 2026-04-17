@@ -74,7 +74,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
 
       {/* Drop error banner */}
       {dropError && (
-        <div className="absolute top-2 left-2 right-2 z-10 p-2 rounded-card bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
+        <div className="absolute top-2 left-2 right-2 z-10 p-2 rounded-card bg-red-500/10 border border-red-500/20 typo-caption text-red-400 flex items-center gap-2">
           <span className="flex-1">{dropError}</span>
           <button onClick={() => setDropError(null)} className="text-red-400/60 hover:text-red-400 shrink-0">&times;</button>
         </div>
@@ -87,8 +87,8 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
             <div className="w-12 h-12 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Upload className="w-6 h-6 text-violet-400" />
             </div>
-            <p className="text-sm font-medium text-violet-300">{sh.drop_to_ingest}</p>
-            <p className="text-xs text-foreground">{sh.drop_supported}</p>
+            <p className="typo-body font-medium text-violet-300">{sh.drop_to_ingest}</p>
+            <p className="typo-caption text-foreground">{sh.drop_supported}</p>
           </div>
         </div>
       )}
@@ -98,7 +98,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
         <div className="absolute inset-0 z-10 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-            <span className="text-sm text-foreground">{sh.starting_ingestion}</span>
+            <span className="typo-body text-foreground">{sh.starting_ingestion}</span>
           </div>
         </div>
       )}

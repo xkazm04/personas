@@ -26,7 +26,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-3 py-2.5 border-b border-primary/10">
-        <h3 className="text-xs font-semibold text-foreground tracking-wide">{t.triggers.studio.building_blocks}</h3>
+        <h3 className="typo-caption font-semibold text-foreground tracking-wide">{t.triggers.studio.building_blocks}</h3>
         <p className="text-[10px] text-foreground mt-0.5">{t.triggers.studio.drag_or_click_to_add}</p>
       </div>
 

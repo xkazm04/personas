@@ -52,7 +52,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
 
   if (!progress) {
     return (
-      <div className="flex items-center gap-2 text-sm text-foreground">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <LoadingSpinner className="text-violet-400" />
         <span>{sh.preparing_ingestion}</span>
       </div>
@@ -67,7 +67,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 typo-body">
         {hasError ? (
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
         ) : done ? (
@@ -86,7 +86,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
             : sh.processing}
         </span>
 
-        <span className="text-xs text-foreground shrink-0">
+        <span className="typo-caption text-foreground shrink-0">
           {tx(sh.file_progress, { done: progress.documentsDone, total: progress.documentsTotal })}
         </span>
       </div>

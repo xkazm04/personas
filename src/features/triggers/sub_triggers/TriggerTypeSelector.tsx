@@ -27,7 +27,7 @@ export function TriggerTypeSelector({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-1.5">
+      <label className="block typo-body font-medium text-foreground mb-1.5">
         {t.triggers.type_selector.trigger_type}
       </label>
       <div
@@ -72,11 +72,11 @@ export function TriggerTypeSelector({
             >
               <div className="flex items-center gap-2">
                 <Icon className={`w-4 h-4 ${colorClass}`} />
-                <span className="text-sm font-medium text-foreground/90">
+                <span className="typo-body font-medium text-foreground/90">
                   {option.label}
                 </span>
               </div>
-              <span className="text-xs text-foreground">
+              <span className="typo-caption text-foreground">
                 {option.description}
               </span>
             </button>

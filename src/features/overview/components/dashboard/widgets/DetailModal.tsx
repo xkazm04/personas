@@ -30,9 +30,9 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       {/* Header */}
       <div className="relative flex items-start justify-between px-6 py-4 border-b border-primary/[0.08] flex-shrink-0 bg-secondary/10">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 id="detail-modal-title" className="text-base font-semibold text-foreground/95 tracking-tight">{title}</h3>
+          <h3 id="detail-modal-title" className="typo-body-lg font-semibold text-foreground/95 tracking-tight">{title}</h3>
           {subtitle && (
-            <p className="text-sm text-foreground mt-1 leading-relaxed">{subtitle}</p>
+            <p className="typo-body text-foreground mt-1 leading-relaxed">{subtitle}</p>
           )}
         </div>
         <button

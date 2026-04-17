@@ -28,7 +28,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
     <div className="mt-2">
       <div className="flex items-center gap-2 mb-4">
         <LayoutTemplate className="w-4 h-4 text-indigo-400/60" />
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t.pipeline.starter_templates}</h2>
+        <h2 className="typo-heading font-semibold text-foreground uppercase tracking-wider">{t.pipeline.starter_templates}</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -68,13 +68,13 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-base leading-none">{tpl.icon}</span>
-                        <h3 className="text-sm font-semibold text-foreground/90 truncate">{tpl.name}</h3>
+                        <span className="typo-body-lg leading-none">{tpl.icon}</span>
+                        <h3 className="typo-heading font-semibold text-foreground/90 truncate">{tpl.name}</h3>
                       </div>
-                      <p className="text-sm text-foreground line-clamp-2 leading-relaxed">
+                      <p className="typo-body text-foreground line-clamp-2 leading-relaxed">
                         {tpl.description}
                       </p>
-                      <div className="flex items-center gap-2 mt-1.5 text-sm text-foreground font-mono">
+                      <div className="flex items-center gap-2 mt-1.5 typo-code text-foreground font-mono">
                         <span>{tpl.nodes.length} {t.pipeline.nodes}</span>
                         <span className="opacity-40">·</span>
                         <span>{tpl.edges.length} {t.pipeline.edges}</span>
@@ -97,7 +97,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                                 className="w-2 h-2 rounded-full shrink-0"
                                 style={{ backgroundColor: NODE_ROLE_FILLS[node.role] || '#6366f1' }}
                               />
-                              <span className="text-sm text-foreground truncate">{node.label}</span>
+                              <span className="typo-body text-foreground truncate">{node.label}</span>
                               <RoleBadge role={node.role} />
                             </div>
                           ))}
@@ -108,7 +108,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                           {[...new Set(tpl.edges.map((e) => e.type))].map((type) => (
                             <span
                               key={type}
-                              className="inline-flex items-center gap-1 text-sm font-mono px-1.5 py-0.5 rounded bg-background/40 border border-primary/8"
+                              className="inline-flex items-center gap-1 typo-code font-mono px-1.5 py-0.5 rounded bg-background/40 border border-primary/8"
                             >
                               <span
                                 className="w-3 h-[2px] rounded-full inline-block"
@@ -125,7 +125,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                             e.stopPropagation();
                             onAdopt(tpl);
                           }}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium transition-all"
                           style={{
                             backgroundColor: colorWithAlpha(tpl.color, 0.09),
                             borderColor: colorWithAlpha(tpl.color, 0.19),

@@ -119,22 +119,22 @@ export function ConfigurationPopup({
         className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-elevation-4 w-full max-w-md mx-4 overflow-hidden"
       >
         <div className="px-4 py-4 border-b border-primary/10">
-          <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+          <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
           </h3>
-          <p className="text-sm text-foreground mt-1">{subtitle}</p>
+          <p className="typo-body text-foreground mt-1">{subtitle}</p>
         </div>
 
         <div className="px-4 py-4 space-y-3">
           {loadError && (
-            <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-card px-3 py-2">
+            <p className="typo-caption text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-card px-3 py-2">
               {t.agents.config_popup.load_error}
             </p>
           )}
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
+              <label className="block typo-body font-medium text-foreground mb-1.5">
                 {field.label}
               </label>
               <input
@@ -146,12 +146,12 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : 'Loading\u2026'}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-modal text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
               />
             </div>
           ))}
           {footerText && (
-            <p className="text-sm text-foreground leading-relaxed">
+            <p className="typo-body text-foreground leading-relaxed">
               {footerText}
             </p>
           )}
@@ -161,21 +161,21 @@ export function ConfigurationPopup({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm font-medium rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
+              className="px-3 py-1.5 typo-body font-medium rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
-              className={`px-3 py-1.5 text-sm font-medium rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`px-3 py-1.5 typo-body font-medium rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {saving ? t.common.saving : saveLabel}
             </button>
           </div>
           {!hasAnyValue && !saving && loaded && (
             <p
-              className="animate-fade-slide-in text-foreground text-xs mt-1.5 text-right"
+              className="animate-fade-slide-in text-foreground typo-caption mt-1.5 text-right"
             >
               {t.agents.config_popup.fill_hint}
             </p>

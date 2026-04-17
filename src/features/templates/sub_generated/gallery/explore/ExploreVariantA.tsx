@@ -116,8 +116,8 @@ export function ExploreVariantA({
                       <GroupIcon className="w-5 h-5 text-primary/80" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
-                      <p className="text-xs text-foreground truncate">{group.description}</p>
+                      <h3 className="typo-heading font-semibold text-foreground">{group.label}</h3>
+                      <p className="typo-caption text-foreground truncate">{group.description}</p>
                     </div>
                   </div>
 
@@ -128,7 +128,7 @@ export function ExploreVariantA({
                       return (
                         <span
                           key={cat}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-input text-xs bg-secondary/30 text-foreground"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-input typo-caption bg-secondary/30 text-foreground"
                         >
                           <meta.icon className="w-3 h-3 flex-shrink-0" style={{ color: meta.color }} />
                           {meta.label}
@@ -136,7 +136,7 @@ export function ExploreVariantA({
                       );
                     })}
                     {group.categories.length > 4 && (
-                      <span className="px-2 py-0.5 rounded-input text-xs text-foreground">
+                      <span className="px-2 py-0.5 rounded-input typo-caption text-foreground">
                         +{group.categories.length - 4}
                       </span>
                     )}
@@ -152,10 +152,10 @@ export function ExploreVariantA({
           <>
             {/* Role description + category navigation */}
             <div className="rounded-modal border border-primary/10 bg-secondary/10 p-5">
-              <h3 className="text-base font-semibold text-foreground mb-1">
+              <h3 className="typo-body-lg font-semibold text-foreground mb-1">
                 {t.templates.explore.role_templates.replace('{role}', roleGroup.label)}
               </h3>
-              <p className="text-sm text-foreground mb-3">
+              <p className="typo-body text-foreground mb-3">
                 {t.templates.explore.categories_for_role
                   .replace('{count}', String(roleGroup.categories.length))
                   .replace('{role}', roleGroup.label.toLowerCase())}
@@ -167,7 +167,7 @@ export function ExploreVariantA({
                     <button
                       key={cat}
                       onClick={(e) => { e.stopPropagation(); onSelectCategory(cat); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-sm bg-secondary/40 border border-primary/10 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-body bg-secondary/40 border border-primary/10 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                     >
                       <meta.icon className="w-3.5 h-3.5" style={{ color: meta.color }} />
                       {meta.label}
@@ -182,7 +182,7 @@ export function ExploreVariantA({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Top templates for role */}
               <div className="lg:col-span-2 space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">
+                <h3 className="typo-heading font-semibold text-foreground">
                   {t.templates.explore.popular_in.replace('{role}', roleGroup.label)}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -192,12 +192,12 @@ export function ExploreVariantA({
                       onClick={() => onSelectTemplate(tmpl)}
                       className="text-left p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
                     >
-                      <div className="text-sm font-medium text-foreground/85 mb-1 group-hover/card:text-foreground transition-colors">
+                      <div className="typo-body font-medium text-foreground/85 mb-1 group-hover/card:text-foreground transition-colors">
                         {tmpl.test_case_name}
                       </div>
-                      <p className="text-sm text-foreground line-clamp-2">{tmpl.instruction}</p>
+                      <p className="typo-body text-foreground line-clamp-2">{tmpl.instruction}</p>
                       {tmpl.adoption_count > 0 && (
-                        <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
+                        <div className="flex items-center gap-1 mt-2 typo-body text-emerald-400/60">
                           <Download className="w-3 h-3" />
                           {(tmpl.adoption_count === 1
                             ? t.templates.explore.adoption_count_one
@@ -214,7 +214,7 @@ export function ExploreVariantA({
               <div className="space-y-3">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
-                  <h3 className="text-sm font-semibold text-foreground">{t.templates.explore.ready_to_deploy}</h3>
+                  <h3 className="typo-heading font-semibold text-foreground">{t.templates.explore.ready_to_deploy}</h3>
                 </div>
                 {roleReadyTemplates.length > 0 ? (
                   <div className="space-y-2">
@@ -224,15 +224,15 @@ export function ExploreVariantA({
                         onClick={() => onSelectTemplate(tmpl)}
                         className="w-full text-left p-3 rounded-modal border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
                       >
-                        <div className="text-sm font-medium text-foreground/85">{tmpl.test_case_name}</div>
-                        <div className="text-sm text-foreground truncate mt-0.5">
+                        <div className="typo-body font-medium text-foreground/85">{tmpl.test_case_name}</div>
+                        <div className="typo-body text-foreground truncate mt-0.5">
                           {(tmpl.instruction ?? '').slice(0, 60)}
                         </div>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-modal border border-primary/10 bg-secondary/5 text-sm text-foreground text-center">
+                  <div className="p-4 rounded-modal border border-primary/10 bg-secondary/5 typo-body text-foreground text-center">
                     {t.templates.explore.configure_to_unlock}
                   </div>
                 )}

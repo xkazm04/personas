@@ -64,7 +64,7 @@ export function ProjectRowMenu({
             <button
               type="button"
               onClick={handleEdit}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-foreground hover:bg-primary/5 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-left text-foreground hover:bg-primary/5 transition-colors"
             >
               <Pencil className="w-3 h-3" />
               Edit Project
@@ -72,7 +72,7 @@ export function ProjectRowMenu({
             <button
               type="button"
               onClick={handleDelete}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${
+              className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-left transition-colors ${
                 confirming ? 'bg-red-500/10 text-red-400' : 'text-red-400/70 hover:bg-red-500/5'
               }`}
             >
@@ -127,7 +127,7 @@ export function GoalBoard({
         <div className="flex items-center gap-2 mb-3">
           <Target className="w-4 h-4 text-amber-400" />
           <h3 className="typo-section-title">Goals</h3>
-          <span className="text-xs text-foreground">{goals.length}</span>
+          <span className="typo-caption text-foreground">{goals.length}</span>
         </div>
 
         {goals.length === 0 ? (

@@ -28,7 +28,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       transition={phaseTransition}
       className="space-y-3"
     >
-      <p className="text-sm text-foreground/90">
+      <p className="typo-body text-foreground/90">
         Let the AI guide you step-by-step through obtaining {connectorLabel} API credentials.
         It will open the right pages, tell you exactly what to click, and auto-capture your keys.
       </p>
@@ -36,7 +36,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
         <button
           onClick={onStart}
           disabled={authDetectLoading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-violet-500/15 border border-violet-500/25 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-violet-500/15 border border-violet-500/25 text-violet-300 typo-body font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {authDetectLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -46,7 +46,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
           {authDetectLoading ? t.vault.negotiator_extra.detecting_auth : t.vault.negotiator_extra.start_auto}
         </button>
         {!authDetectLoading && (
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             Takes ~{Math.ceil(60 / 60)}-2 minutes
           </span>
         )}
@@ -75,13 +75,13 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
         <Zap className="w-5 h-5 text-emerald-400" />
       </div>
-      <p className="text-sm text-foreground font-medium">{t.vault.negotiator.captured}</p>
-      <p className="text-sm text-foreground">
+      <p className="typo-body text-foreground font-medium">{t.vault.negotiator.captured}</p>
+      <p className="typo-body text-foreground">
         {capturedValuesCount} field(s) auto-filled from the provisioning flow.
       </p>
       <button
         onClick={onFinish}
-        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal text-sm font-medium transition-colors mt-1"
+        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors mt-1"
       >
         Apply to credential form
       </button>
@@ -108,19 +108,19 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
       className="space-y-3"
     >
       <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
-        <p className="text-sm text-red-300">{error}</p>
+        <p className="typo-body text-red-300">{error}</p>
       </div>
       <div className="flex gap-2">
         <button
           onClick={onRetry}
           disabled={authDetectLoading}
-          className="px-4 py-2 rounded-modal bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-modal bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Try again
         </button>
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-modal text-foreground text-sm hover:text-foreground/95 transition-colors"
+          className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-foreground/95 transition-colors"
         >
           Close
         </button>

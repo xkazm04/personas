@@ -268,7 +268,7 @@ export function PrBridge({ task }: { task: DevTask }) {
           {!hasGithubUrl && (
             <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground flex-1">{dt.pr_bridge_no_github}</p>
+              <p className="typo-caption text-foreground flex-1">{dt.pr_bridge_no_github}</p>
               <Button
                 variant="secondary"
                 size="xs"
@@ -284,17 +284,17 @@ export function PrBridge({ task }: { task: DevTask }) {
           {hasGithubUrl && !hasRecognizedRepo && (
             <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground">{dt.pr_bridge_unsupported_host}</p>
+              <p className="typo-caption text-foreground">{dt.pr_bridge_unsupported_host}</p>
             </div>
           )}
 
           {/* PR preview fields */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <PreviewField label={dt.pr_bridge_branch} mono>
-              <code className="text-xs text-foreground">{content.branchName}</code>
+              <code className="typo-caption text-foreground">{content.branchName}</code>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_pr_title}>
-              <span className="text-xs text-foreground">{content.prTitle}</span>
+              <span className="typo-caption text-foreground">{content.prTitle}</span>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_commit_msg} mono fullRow>
               <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-24 overflow-y-auto">

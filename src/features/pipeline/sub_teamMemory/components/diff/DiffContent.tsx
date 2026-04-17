@@ -18,11 +18,11 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
 
   return (
     <div className={`px-2 py-1.5 rounded-card border ${borderColor} ${bgColor}`}>
-      <p className="text-xs font-medium text-foreground truncate">{memory.title}</p>
-      <p className="text-xs text-foreground line-clamp-1 mt-0.5">{memory.content}</p>
+      <p className="typo-caption font-medium text-foreground truncate">{memory.title}</p>
+      <p className="typo-caption text-foreground line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
-        <span className={`text-xs capitalize ${catColor}`}>{memory.category}</span>
-        <span className="text-xs text-foreground">imp: {memory.importance}</span>
+        <span className={`typo-caption capitalize ${catColor}`}>{memory.category}</span>
+        <span className="typo-caption text-foreground">imp: {memory.importance}</span>
       </div>
     </div>
   );
@@ -41,27 +41,27 @@ export default function DiffContent({ diff }: DiffContentProps) {
     <div className="animate-fade-slide-in space-y-2">
       {/* Summary bar */}
       <div className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-primary/5 border border-primary/10">
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 typo-caption">
           <span className="text-foreground">{diff.totalA}</span>
           <ArrowRight className="w-3 h-3 text-foreground" />
           <span className="text-foreground font-medium">{diff.totalB}</span>
         </div>
         <div className="flex-1" />
         {diff.added.length > 0 && (
-          <span className="flex items-center gap-0.5 text-xs text-emerald-400"><Plus className="w-3 h-3" />{diff.added.length}</span>
+          <span className="flex items-center gap-0.5 typo-caption text-emerald-400"><Plus className="w-3 h-3" />{diff.added.length}</span>
         )}
         {diff.removed.length > 0 && (
-          <span className="flex items-center gap-0.5 text-xs text-red-400"><Minus className="w-3 h-3" />{diff.removed.length}</span>
+          <span className="flex items-center gap-0.5 typo-caption text-red-400"><Minus className="w-3 h-3" />{diff.removed.length}</span>
         )}
       </div>
 
       {/* Category diffs */}
       {diff.categoryDiffs.length > 0 && (
         <div className="px-1">
-          <p className="text-xs font-medium text-foreground mb-1">{pt.category_changes}</p>
+          <p className="typo-caption font-medium text-foreground mb-1">{pt.category_changes}</p>
           <div className="space-y-0.5">
             {diff.categoryDiffs.map((cd) => (
-              <div key={cd.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
+              <div key={cd.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
                 <span className={`capitalize ${CATEGORY_COLORS[cd.category] ?? 'text-foreground'}`}>{cd.category}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-foreground">{cd.countA} {'→'} {cd.countB}</span>
@@ -76,10 +76,10 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Importance shifts */}
       {diff.importanceShifts.some((s) => Math.abs(s.delta) >= 0.1) && (
         <div className="px-1">
-          <p className="text-xs font-medium text-foreground mb-1">{pt.importance_shifts}</p>
+          <p className="typo-caption font-medium text-foreground mb-1">{pt.importance_shifts}</p>
           <div className="space-y-0.5">
             {diff.importanceShifts.filter((s) => Math.abs(s.delta) >= 0.1).map((s) => (
-              <div key={s.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
+              <div key={s.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
                 <span className={`capitalize ${CATEGORY_COLORS[s.category] ?? 'text-foreground'}`}>{s.category}</span>
                 <span className="flex items-center gap-1.5">
                   <span className="text-foreground">{s.avgA.toFixed(1)} {'→'} {s.avgB.toFixed(1)}</span>
@@ -94,7 +94,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Added memories */}
       {diff.added.length > 0 && (
         <div className="px-1">
-          <button onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 text-xs font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
+          <button onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
             <Plus className="w-3 h-3" />{diff.added.length} new memor{diff.added.length === 1 ? 'y' : 'ies'}
           </button>
           {expandedSection === 'added' && (
@@ -108,7 +108,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Removed memories */}
       {diff.removed.length > 0 && (
         <div className="px-1">
-          <button onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 text-xs font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
+          <button onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
             <Minus className="w-3 h-3" />{diff.removed.length} removed
           </button>
           {expandedSection === 'removed' && (
@@ -120,7 +120,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       )}
 
       {diff.added.length === 0 && diff.removed.length === 0 && (
-        <div className="text-center py-3"><p className="text-xs text-foreground">{pt.no_memory_diff}</p></div>
+        <div className="text-center py-3"><p className="typo-caption text-foreground">{pt.no_memory_diff}</p></div>
       )}
     </div>
   );

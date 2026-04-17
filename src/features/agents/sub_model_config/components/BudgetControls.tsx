@@ -21,7 +21,7 @@ export function BudgetControls({
   return (
     <div className="flex gap-3">
       <div className="flex-1">
-        <label className="block text-sm font-medium text-foreground mb-1">
+        <label className="block typo-body font-medium text-foreground mb-1">
           <span className="flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> {mc.max_budget_label}
             <FieldHint
@@ -46,7 +46,7 @@ export function BudgetControls({
         />
       </div>
       <div className="flex-1">
-        <label className="block text-sm font-medium text-foreground mb-1">
+        <label className="block typo-body font-medium text-foreground mb-1">
           {mc.max_turns_label}
           <FieldHint
             text={mc.max_turns_hint}

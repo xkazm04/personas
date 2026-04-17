@@ -27,7 +27,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
         </div>
         <div>
           <h3 className="typo-heading text-foreground/90">{t.overview.burn_rate_extra.title}</h3>
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {projections.activeCount} active personas &middot; local month boundary
           </p>
         </div>
@@ -70,7 +70,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
           </div>
           <div className="space-y-1">
             {projections.atRisk.map((s) => (
-              <div key={s.personaId} className="flex items-center justify-between text-xs">
+              <div key={s.personaId} className="flex items-center justify-between typo-caption">
                 <span className="text-foreground truncate">
                   {s.personaIcon && <span className="mr-1">{s.personaIcon}</span>}
                   {s.personaName}
@@ -93,14 +93,14 @@ function BurnBar({ signal, maxBurn }: { signal: PersonaHealthSignal; maxBurn: nu
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 truncate text-xs text-foreground">
+      <div className="w-24 truncate typo-caption text-foreground">
         {signal.personaIcon && <span className="mr-1">{signal.personaIcon}</span>}
         {signal.personaName}
       </div>
       <div className="flex-1 h-2 rounded-full bg-secondary/40 overflow-hidden">
         <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-mono text-foreground w-16 text-right">${signal.dailyBurnRate.toFixed(2)}/d</span>
+      <span className="typo-code font-mono text-foreground w-16 text-right">${signal.dailyBurnRate.toFixed(2)}/d</span>
     </div>
   );
 }

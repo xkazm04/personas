@@ -26,12 +26,12 @@ export function ModelDropdown({
 
   return (
     <div className="space-y-1">
-      <label className={`text-xs font-medium ${accentColor} uppercase tracking-wider`}>{label}</label>
+      <label className={`typo-label font-medium ${accentColor} uppercase tracking-wider`}>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full px-2.5 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/20
+        className="w-full px-2.5 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/20
                    text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40
                    disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >

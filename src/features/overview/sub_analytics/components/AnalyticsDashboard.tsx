@@ -96,15 +96,15 @@ export default function AnalyticsDashboard() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-300">
+                  <p className="typo-body font-medium text-amber-300">
                     {metrics.costAnomalies.length === 1 ? tx(t.overview.analytics_dashboard.cost_anomaly_detected, { count: 1 }) : tx(t.overview.analytics_dashboard.cost_anomalies_detected, { count: metrics.costAnomalies.length })}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {metrics.costAnomalies.map((a, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal text-sm border bg-amber-500/15 text-amber-300 border-amber-500/25">
+                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-body border bg-amber-500/15 text-amber-300 border-amber-500/25">
                         {new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        <span className="font-mono text-sm opacity-80">${a.cost.toFixed(2)}</span>
-                        <span className="font-mono text-sm font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
+                        <span className="font-mono typo-code opacity-80">${a.cost.toFixed(2)}</span>
+                        <span className="font-mono typo-code font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
                       </span>
                     ))}
                   </div>

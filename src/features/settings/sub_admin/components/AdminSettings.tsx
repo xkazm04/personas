@@ -78,8 +78,8 @@ export default function AdminSettings() {
                 <Map className="w-4.5 h-4.5 text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground/90">{s.guided_tour}</h3>
-                <p className="text-sm text-foreground">{s.tour_hint}</p>
+                <h3 className="typo-heading font-semibold text-foreground/90">{s.guided_tour}</h3>
+                <p className="typo-body text-foreground">{s.tour_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-card text-[11px] font-semibold border ${statusColor}`}>
                 {statusLabel}
@@ -91,13 +91,13 @@ export default function AdminSettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.progress}</p>
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="typo-body font-medium text-foreground">
                     {completedCount} / {TOUR_STEPS.length} {s.steps}
                   </p>
                 </div>
                 <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.current_step}</p>
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="typo-body font-medium text-foreground">
                     {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
                   </p>
                 </div>
@@ -118,7 +118,7 @@ export default function AdminSettings() {
                       }`}>
                         {tourStepCompleted[step.id] ? <Check className="w-3 h-3" /> : i + 1}
                       </div>
-                      <span className={`text-sm ${
+                      <span className={`typo-body ${
                         tourStepCompleted[step.id]
                           ? 'text-emerald-400/80 line-through'
                           : 'text-foreground'
@@ -137,7 +137,7 @@ export default function AdminSettings() {
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={handleForceStart}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
+                  className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
                     bg-violet-500/15 text-violet-300 border border-violet-500/25
                     hover:bg-violet-500/25 transition-colors"
                 >
@@ -147,7 +147,7 @@ export default function AdminSettings() {
 
                 <button
                   onClick={handleReset}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border transition-colors ${
                     confirmReset
                       ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
                       : 'bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground/70'
@@ -170,7 +170,7 @@ export default function AdminSettings() {
                   <>
                     <button
                       onClick={() => finishTour()}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
+                      className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
                         bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
                         hover:bg-emerald-500/20 transition-colors"
                     >
@@ -179,7 +179,7 @@ export default function AdminSettings() {
                     </button>
                     <button
                       onClick={() => dismissTour()}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
+                      className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
                         bg-amber-500/10 text-amber-400 border border-amber-500/20
                         hover:bg-amber-500/20 transition-colors"
                     >
@@ -198,8 +198,8 @@ export default function AdminSettings() {
                 <ScrollText className="w-4.5 h-4.5 text-cyan-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground/90">{s.user_consent}</h3>
-                <p className="text-sm text-foreground">{s.consent_hint}</p>
+                <h3 className="typo-heading font-semibold text-foreground/90">{s.user_consent}</h3>
+                <p className="typo-body text-foreground">{s.consent_hint}</p>
               </div>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-card text-[11px] font-semibold border ${
                 consentStatus
@@ -213,7 +213,7 @@ export default function AdminSettings() {
             <div className="px-5 py-4 space-y-4">
               <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                 <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.storage_key}</p>
-                <p className="text-sm font-mono text-foreground">__personas_user_consent_accepted</p>
+                <p className="typo-code font-mono text-foreground">__personas_user_consent_accepted</p>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -228,7 +228,7 @@ export default function AdminSettings() {
                     setConsentStatus(false);
                     setConfirmConsentReset(false);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border transition-colors ${
                     confirmConsentReset
                       ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
                       : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20'
@@ -250,7 +250,7 @@ export default function AdminSettings() {
                 {!consentStatus && (
                   <button
                     onClick={() => window.location.reload()}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
+                    className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
                       bg-amber-500/10 text-amber-400 border border-amber-500/20
                       hover:bg-amber-500/20 transition-colors"
                   >

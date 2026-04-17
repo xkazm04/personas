@@ -34,7 +34,7 @@ export function TopPerformersWidget() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground">{t.overview.widgets.top_performers}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{t.overview.widgets.top_performers}</h3>
         </div>
         <button
           onClick={() => setOverviewTab('leaderboard')}
@@ -70,19 +70,19 @@ function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
             {medal.label}
           </span>
         ) : (
-          <span className="text-xs text-foreground">#{entry.rank}</span>
+          <span className="typo-caption text-foreground">#{entry.rank}</span>
         )}
       </div>
 
       {/* Avatar + name */}
       <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
-      <span className="text-sm text-foreground truncate flex-1 min-w-0">{entry.personaName}</span>
+      <span className="typo-body text-foreground truncate flex-1 min-w-0">{entry.personaName}</span>
 
       {/* Trend */}
       <TrendIcon className={`w-3 h-3 flex-shrink-0 ${trend.color}`} />
 
       {/* Score */}
-      <span className={`text-sm font-bold flex-shrink-0 ${scoreColor}`}>{entry.compositeScore}</span>
+      <span className={`typo-heading font-bold flex-shrink-0 ${scoreColor}`}>{entry.compositeScore}</span>
     </div>
   );
 }

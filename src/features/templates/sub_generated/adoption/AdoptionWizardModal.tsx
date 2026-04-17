@@ -95,7 +95,7 @@ export default function AdoptionWizardModal({
               <Grid3X3 className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 id="adoption-matrix-title" className="text-sm font-semibold text-foreground/90">
+              <h2 id="adoption-matrix-title" className="typo-heading font-semibold text-foreground/90">
                 Adopt Template
               </h2>
               <p className="text-[11px] text-foreground">{review.test_case_name}</p>

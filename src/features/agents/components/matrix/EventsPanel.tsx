@@ -71,13 +71,13 @@ export function EventsPanel({
               }`}
             >
               <PersonaIcon icon={p.icon} color={p.color} />
-              <span className={`text-xs truncate ${selectedPersonaId === p.id ? 'text-primary font-medium' : 'text-foreground'}`}>
+              <span className={`typo-caption truncate ${selectedPersonaId === p.id ? 'text-primary font-medium' : 'text-foreground'}`}>
                 {p.name}
               </span>
             </button>
           ))}
           {personas.filter((p) => p.enabled).length === 0 && (
-            <p className="text-xs text-foreground py-2">{t.agents.events_panel.no_agents}</p>
+            <p className="typo-caption text-foreground py-2">{t.agents.events_panel.no_agents}</p>
           )}
         </div>
       </div>
@@ -88,9 +88,9 @@ export function EventsPanel({
           {selectedPersona ? tx(t.agents.events_panel.events_from, { name: selectedPersona.name }) : t.agents.events_panel.select_agent}
         </span>
         {loading ? (
-          <p className="text-xs text-foreground py-2 animate-pulse">{t.agents.events_panel.loading_events}</p>
+          <p className="typo-caption text-foreground py-2 animate-pulse">{t.agents.events_panel.loading_events}</p>
         ) : designEvents.length === 0 && triggers.length === 0 ? (
-          <p className="text-xs text-foreground py-2">
+          <p className="typo-caption text-foreground py-2">
             {selectedPersonaId ? t.agents.events_panel.no_subscriptions : t.agents.events_panel.choose_agent}
           </p>
         ) : (
@@ -117,7 +117,7 @@ export function EventsPanel({
                 >
                   <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-foreground'}`} />
                   <div className="min-w-0 flex-1">
-                    <span className={`text-xs font-mono block truncate ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
+                    <span className={`typo-code font-mono block truncate ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
                       {de.event_type}
                     </span>
                     {de.description && (
@@ -158,7 +158,7 @@ export function EventsPanel({
                   }`}
                 >
                   <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-foreground'}`} />
-                  <span className={`text-xs font-mono ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
+                  <span className={`typo-code font-mono ${isSelected ? 'text-teal-300 font-medium' : 'text-foreground'}`}>
                     {eventLabel}
                   </span>
                   {isSelected && (

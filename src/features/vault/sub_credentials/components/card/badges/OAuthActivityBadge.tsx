@@ -64,7 +64,7 @@ export function OAuthActivityBadge({
           title={`Token expires: ${oauthTokenExpiresAt}\nLast refresh: ${oauthLastRefreshAt ?? 'Never'}`}
         >
           <Clock className={`w-2.5 h-2.5 ${expiry.color}`} />
-          <span className={`text-xs font-mono ${expiry.color}`}>{expiry.label}</span>
+          <span className={`typo-code font-mono ${expiry.color}`}>{expiry.label}</span>
         </span>
       )}
       {expiry.urgent && (
@@ -79,7 +79,7 @@ export function OAuthActivityBadge({
           ) : (
             <RefreshCw className="w-2.5 h-2.5" />
           )}
-          <span className="text-xs font-medium">{t.vault.credential_card.refresh}</span>
+          <span className="typo-caption font-medium">{t.vault.credential_card.refresh}</span>
         </button>
       )}
       {oauthRefreshCount > 0 && (
@@ -88,7 +88,7 @@ export function OAuthActivityBadge({
           title={`${oauthRefreshCount} token refresh${oauthRefreshCount !== 1 ? 'es' : ''}\nLast: ${formatTimestamp(oauthLastRefreshAt, 'Never')}`}
         >
           <RefreshCw className="w-2.5 h-2.5" />
-          <span className="text-xs font-mono">{oauthRefreshCount}</span>
+          <span className="typo-code font-mono">{oauthRefreshCount}</span>
         </span>
       )}
     </div>

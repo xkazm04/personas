@@ -28,7 +28,7 @@ export default function EngineSettings() {
           subtitle={s.loading_capabilities}
         />
         <ContentBody centered>
-          <div className="h-40 flex items-center justify-center text-foreground text-sm">
+          <div className="h-40 flex items-center justify-center text-foreground typo-body">
             {s.detecting_providers}
           </div>
         </ContentBody>
@@ -54,7 +54,7 @@ export default function EngineSettings() {
               action={
                 <button
                   onClick={resetToDefaults}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-sm text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   {s.reset_defaults}
@@ -64,7 +64,7 @@ export default function EngineSettings() {
 
             {/* Matrix grid */}
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full typo-body">
                 <thead>
                   <tr className="border-b border-primary/10">
                     <th className="text-left py-2 pr-4 text-foreground font-medium w-[45%]">
@@ -111,7 +111,7 @@ export default function EngineSettings() {
           {/* Legend */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-2">
             <SectionHeading title={s.legend} />
-            <div className="flex flex-wrap gap-4 text-sm text-foreground">
+            <div className="flex flex-wrap gap-4 typo-body text-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                   <Check className="w-2.5 h-2.5 text-emerald-400" />
@@ -141,7 +141,7 @@ export default function EngineSettings() {
           {/* Protocol warning */}
           <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-foreground">
+            <div className="typo-body text-foreground">
               <p className="font-medium text-amber-400/90 mb-1">{s.defaults_heading}</p>
               <p>
                 {s.defaults_description}

@@ -39,14 +39,14 @@ export default function AccountSettings() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-base font-medium text-foreground/90 truncate">
+                  <div className="typo-body-lg font-medium text-foreground/90 truncate">
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
-                    <div className="text-sm text-foreground truncate">{user.email}</div>
+                    <div className="typo-body text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-sm font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
                       Offline
                     </span>
                   )}
@@ -56,7 +56,7 @@ export default function AccountSettings() {
               <div className="border-t border-primary/10 pt-4">
                 <button
                   onClick={logout}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm text-foreground/90
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal typo-body text-foreground/90
                     hover:bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -69,11 +69,11 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-foreground mb-4">{st.sign_in_prompt}</p>
+              <p className="typo-body text-foreground mb-4">{st.sign_in_prompt}</p>
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm font-medium
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal typo-body font-medium
                   bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                   transition-colors disabled:opacity-50"
               >

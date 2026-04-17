@@ -110,7 +110,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
 
   return (
     <div className="space-y-2" data-testid="use-case-model-section">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Cpu className="w-3.5 h-3.5" />
         {uc.model}
       </h5>
@@ -119,7 +119,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
         {/* Use Default toggle */}
         <button
           onClick={handleUseDefault}
-          className={`px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all ${
+          className={`px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
             !hasOverride
               ? 'bg-primary/10 border-primary/30 text-primary'
               : 'bg-background/30 border-primary/10 text-foreground hover:border-primary/20'
@@ -139,7 +139,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
               type="button"
               onClick={toggle}
               aria-expanded={isOpen}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all ${
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
                 hasOverride
                   ? 'bg-primary/10 border-primary/30 text-primary'
                   : 'bg-background/30 border-primary/10 text-foreground hover:border-primary/20'
@@ -167,7 +167,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
                   return (
                     <div key={opt.id}>
                       {showGroup && (
-                        <div className="px-3 pt-2 pb-1 text-sm font-semibold uppercase tracking-wider text-foreground">
+                        <div className="px-3 pt-2 pb-1 typo-heading font-semibold uppercase tracking-wider text-foreground">
                           {opt.group}
                         </div>
                       )}
@@ -175,7 +175,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
                         role="option"
                         aria-selected={isActive}
                         onClick={() => { handleSelectModel(opt); close(); }}
-                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors ${
+                        className={`flex items-center gap-2 w-full px-3 py-1.5 typo-body transition-colors ${
                           focusIndex === i ? 'bg-secondary/60' : 'hover:bg-secondary/40'
                         } ${isActive ? 'text-primary' : 'text-foreground'}`}
                       >

@@ -98,14 +98,14 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           <div className="p-4 space-y-3">
             {selectedReview.description && (
               <div>
-                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.description}</div>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{selectedReview.description}</p>
+                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.description}</div>
+                <p className="typo-body text-foreground whitespace-pre-wrap">{selectedReview.description}</p>
               </div>
             )}
             {selectedReview.context_data && (
               <div>
-                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.context}</div>
-                <pre className="text-sm text-foreground bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
+                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.context}</div>
+                <pre className="typo-body text-foreground bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
             {selectedReview.status === 'pending' && (
@@ -113,14 +113,14 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                 <button
                   onClick={() => handleReviewAction('approved')}
                   disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
                 >
                   {t.agents.activity.approve}
                 </button>
                 <button
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                 >
                   {t.agents.activity.reject}
                 </button>
@@ -128,8 +128,8 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             )}
             {selectedReview.reviewer_notes && (
               <div>
-                <div className="text-sm font-mono text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
-                <p className="text-sm text-foreground italic">{selectedReview.reviewer_notes}</p>
+                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.agents.activity.reviewer_notes}</div>
+                <p className="typo-body text-foreground italic">{selectedReview.reviewer_notes}</p>
               </div>
             )}
           </div>

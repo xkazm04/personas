@@ -42,10 +42,10 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
             <span className={`typo-heading px-1.5 py-0.5 rounded-input ${meta.bgClass} ${meta.textClass}`}>
               {meta.label}
             </span>
-            <span className="text-sm text-foreground font-mono">{action.score}/10</span>
+            <span className="typo-code text-foreground font-mono">{action.score}/10</span>
           </div>
           <p className="typo-heading text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
-          <p className="text-sm text-foreground line-clamp-2">{action.rule}</p>
+          <p className="typo-body text-foreground line-clamp-2">{action.rule}</p>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
         <h3 className="typo-label text-foreground">
           {t.overview.memory_actions.memory_insights}
         </h3>
-        <span className="text-sm text-foreground ml-auto">{visible.length !== 1 ? tx(t.overview.memory_actions.suggestions, { count: visible.length }) : tx(t.overview.memory_actions.suggestions_one, { count: visible.length })}</span>
+        <span className="typo-body text-foreground ml-auto">{visible.length !== 1 ? tx(t.overview.memory_actions.suggestions, { count: visible.length }) : tx(t.overview.memory_actions.suggestions_one, { count: visible.length })}</span>
       </div>
       {visible.map((action) => (
           <MemoryActionCardItem key={action.id} action={action} onDismiss={onDismiss} />

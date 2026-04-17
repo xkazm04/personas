@@ -53,12 +53,12 @@ export function N8nUseCasesTab({
         {useCases.length === 0 ? (
           <div className="text-center py-12 space-y-2">
             <ListChecks className="w-10 h-10 text-foreground mx-auto" />
-            <p className="text-sm font-medium text-foreground">
+            <p className="typo-body font-medium text-foreground">
               {draft.design_context
                 ? t.templates.n8n.no_use_cases_design
                 : t.templates.n8n.no_use_cases_yet}
             </p>
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               {t.templates.n8n.use_adjustment_hint}
             </p>
           </div>
@@ -66,7 +66,7 @@ export function N8nUseCasesTab({
           <>
             <div className="flex items-center gap-2 px-1">
               <ListChecks className="w-3.5 h-3.5 text-foreground" />
-              <p className="text-sm text-foreground">
+              <p className="typo-body text-foreground">
                 {useCases.length} use case{useCases.length !== 1 ? 's' : ''} identified
               </p>
             </div>
@@ -82,22 +82,22 @@ export function N8nUseCasesTab({
                   <div key={uc.id || i} className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                     <div className="p-3.5">
                       <div className="flex items-start gap-3">
-                        <span className="text-sm font-semibold text-foreground mt-0.5 w-5 text-right flex-shrink-0">
+                        <span className="typo-heading font-semibold text-foreground mt-0.5 w-5 text-right flex-shrink-0">
                           {i + 1}.
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
+                            <p className="typo-heading font-semibold text-foreground/95">{uc.title}</p>
                             {uc.category && catStyle && (
-                              <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                              <span className={`px-1.5 py-0.5 typo-body font-medium rounded-card border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                                 {uc.category.replace('-', ' ')}
                               </span>
                             )}
-                            <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+                            <span className={`px-1.5 py-0.5 typo-body font-medium rounded-card border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
                               {modeBadge.label}
                             </span>
                           </div>
-                          <p className="text-sm text-foreground mt-1 leading-relaxed">
+                          <p className="typo-body text-foreground mt-1 leading-relaxed">
                             {uc.description}
                           </p>
                         </div>
@@ -141,7 +141,7 @@ export function N8nUseCasesTab({
                           </button>
                         )}
                         {!onTestUseCase && mode !== 'non_executable' && (
-                          <span className="text-sm text-foreground flex-shrink-0 mt-1">
+                          <span className="typo-body text-foreground flex-shrink-0 mt-1">
                             {t.templates.n8n.save_to_test}
                           </span>
                         )}
@@ -151,8 +151,8 @@ export function N8nUseCasesTab({
                     {/* Mock viewer */}
                     {mode === 'mock' && mockViewId === uc.id && (
                       <div className="border-t border-amber-500/15 bg-amber-500/5 p-3">
-                        <p className="text-sm text-amber-400/70 mb-1.5">{t.templates.n8n.example_output}</p>
-                        <pre className="text-sm font-mono text-foreground bg-background/40 rounded-card p-2.5 overflow-auto max-h-40 border border-amber-500/10">
+                        <p className="typo-body text-amber-400/70 mb-1.5">{t.templates.n8n.example_output}</p>
+                        <pre className="typo-code font-mono text-foreground bg-background/40 rounded-card p-2.5 overflow-auto max-h-40 border border-amber-500/10">
                           {uc.sample_input
                             ? JSON.stringify(uc.sample_input, null, 2)
                             : t.templates.n8n.no_sample_data}
@@ -169,7 +169,7 @@ export function N8nUseCasesTab({
         {/* Protocol capabilities */}
         {capabilities.length > 0 && (
           <div className="space-y-2 pt-2 border-t border-primary/10">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wider px-1">
+            <p className="typo-heading font-semibold text-foreground uppercase tracking-wider px-1">
               Capabilities
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -179,7 +179,7 @@ export function N8nUseCasesTab({
                 return (
                   <span
                     key={cap.type}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-modal border ${style.bg} ${style.text}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border ${style.bg} ${style.text}`}
                     title={cap.context}
                   >
                     <CapIcon className="w-3 h-3" />
@@ -194,7 +194,7 @@ export function N8nUseCasesTab({
 
       {/* Adjustment request panel */}
       <div className="border-t border-primary/10 pt-4 space-y-2 flex-shrink-0">
-        <label className="text-sm font-semibold text-foreground uppercase tracking-wider flex items-center gap-1">
+        <label className="typo-heading font-semibold text-foreground uppercase tracking-wider flex items-center gap-1">
           <Sparkles className="w-3 h-3" />
           {t.templates.n8n.request_ai_adjustments}
         </label>
@@ -203,13 +203,13 @@ export function N8nUseCasesTab({
             value={adjustmentRequest}
             onChange={(e) => onAdjustmentChange(e.target.value)}
             placeholder={t.templates.n8n.adjustment_placeholder}
-            className="flex-1 h-16 p-2.5 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground resize-none placeholder-muted-foreground/30"
+            className="flex-1 h-16 p-2.5 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground resize-none placeholder-muted-foreground/30"
             disabled={disabled || transforming}
           />
           <button
             onClick={onApplyAdjustment}
             disabled={disabled || transforming || !adjustmentRequest.trim()}
-            className="self-end px-4 py-2 text-sm font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
+            className="self-end px-4 py-2 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
           >
             Apply
           </button>

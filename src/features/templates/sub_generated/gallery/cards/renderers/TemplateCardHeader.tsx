@@ -43,7 +43,7 @@ export function TemplateCardHeader({
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-foreground/90 truncate">
+          <h3 className="typo-body-lg font-semibold text-foreground/90 truncate">
             {name}
           </h3>
           <TrustBadge trustLevel={verification.trustLevel} compact />
@@ -81,7 +81,7 @@ export function TemplateCardHeader({
             </span>
           )}
         </div>
-        <p className="text-sm text-foreground mt-1 line-clamp-2 leading-relaxed">
+        <p className="typo-body text-foreground mt-1 line-clamp-2 leading-relaxed">
           {instruction.length > 120
             ? instruction.slice(0, 120) + '...'
             : instruction}
@@ -106,7 +106,7 @@ export function TemplateCardHeader({
                 setMenuOpen(false);
                 onViewDetails();
               }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
             >
               <Eye className="w-4 h-4" />
               View Details
@@ -117,7 +117,7 @@ export function TemplateCardHeader({
                 setMenuOpen(false);
                 onDelete();
               }}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
             >
               <Trash2 className="w-4 h-4" />
               Delete

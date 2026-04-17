@@ -217,7 +217,7 @@ export default function GeneratedReviewsTab({
               <button
                 key={id}
                 onClick={() => setExploreVariant(id)}
-                className={`px-3 py-1.5 text-sm rounded-card transition-colors ${
+                className={`px-3 py-1.5 typo-body rounded-card transition-colors ${
                   exploreVariant === id ? 'bg-primary/10 text-foreground font-medium' : 'text-foreground hover:text-foreground/80 hover:bg-secondary/30'
                 }`}
               >

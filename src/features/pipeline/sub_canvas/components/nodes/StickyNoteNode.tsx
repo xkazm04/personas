@@ -129,12 +129,12 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
               onKeyDown={handleKeyDown}
               placeholder={pt.note_placeholder}
               rows={3}
-              className="w-full bg-transparent text-sm text-foreground/90 placeholder:text-foreground resize-y outline-none min-h-[48px] font-mono"
+              className="w-full bg-transparent typo-code text-foreground/90 placeholder:text-foreground resize-y outline-none min-h-[48px] font-mono"
             />
             <div className="flex justify-end">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-card bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-card bg-primary/15 border border-primary/25 typo-caption font-medium text-primary hover:bg-primary/25 transition-colors"
               >
                 <Check className="w-3 h-3" />
                 {pt.done}
@@ -142,7 +142,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             </div>
           </div>
         ) : (
-          <div className="text-sm text-foreground prose prose-invert prose-sm max-w-none [&_p]:my-0.5 [&_ul]:my-0.5 [&_ol]:my-0.5 [&_li]:my-0 [&_code]:text-xs [&_code]:bg-primary/10 [&_code]:px-1 [&_code]:rounded">
+          <div className="typo-body text-foreground prose prose-invert prose-sm max-w-none [&_p]:my-0.5 [&_ul]:my-0.5 [&_ol]:my-0.5 [&_li]:my-0 [&_code]:typo-caption [&_code]:bg-primary/10 [&_code]:px-1 [&_code]:rounded">
             {d.text ? (
               <Markdown remarkPlugins={[remarkGfm]}>{d.text}</Markdown>
             ) : (

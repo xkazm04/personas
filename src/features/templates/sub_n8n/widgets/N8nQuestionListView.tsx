@@ -45,7 +45,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
             {showSeparator && dim && (
               <div className="flex items-center gap-2.5 pt-4 pb-1.5">
                 <dim.Icon className="w-4 h-4 text-foreground flex-shrink-0" />
-                <span className="text-sm uppercase tracking-wider text-foreground font-semibold whitespace-nowrap">
+                <span className="typo-heading uppercase tracking-wider text-foreground font-semibold whitespace-nowrap">
                   {dim.label}
                 </span>
                 <hr className="flex-1 border-primary/10" />
@@ -55,12 +55,12 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
             <div
               className={`animate-fade-slide-in p-4 rounded-modal border ${tone.border} ${tone.bg}`}
             >
-              <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
+              <label className={`block typo-body font-medium mb-2 ${tone.accent}`}>
                 {q.question}
               </label>
 
               {q.context && (
-                <p className="text-sm text-foreground mb-2 leading-relaxed">
+                <p className="typo-body text-foreground mb-2 leading-relaxed">
                   {q.context}
                 </p>
               )}
@@ -80,7 +80,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                   value={userAnswers[q.id] ?? q.default ?? ''}
                   onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                   placeholder={q.default ?? 'Type your answer...'}
-                  className="w-full px-3 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
+                  className="w-full px-3 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
                 />
               )}
 
@@ -93,7 +93,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                         key={opt}
                         type="button"
                         onClick={() => onAnswerUpdated(q.id, opt)}
-                        className={`px-4 py-1.5 text-sm rounded-modal border transition-all ${
+                        className={`px-4 py-1.5 typo-body rounded-modal border transition-all ${
                           isSelected
                             ? tone.selectBg
                             : 'text-foreground border-primary/10 hover:bg-secondary/30'

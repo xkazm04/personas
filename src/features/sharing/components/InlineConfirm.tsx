@@ -38,7 +38,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
       {children({ requestConfirm: () => setOpen(true) })}
       {open && (
         <div className="absolute right-0 bottom-full mb-1 z-50 rounded-card border border-border bg-background shadow-elevation-3 p-2.5 min-w-[180px]">
-          <p className="text-xs text-foreground mb-2">{message}</p>
+          <p className="typo-caption text-foreground mb-2">{message}</p>
           <div className="flex gap-1.5 justify-end">
             <button
               onClick={() => setOpen(false)}

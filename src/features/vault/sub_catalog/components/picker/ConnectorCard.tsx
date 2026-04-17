@@ -92,7 +92,7 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
       </div>
 
       {/* Label — 2-line clamp keeps card height stable whether label is 1 or 2 lines */}
-      <span className="text-sm font-semibold text-foreground/90 w-full leading-tight line-clamp-2 min-h-[2rem] flex items-center justify-center px-1">
+      <span className="typo-heading font-semibold text-foreground/90 w-full leading-tight line-clamp-2 min-h-[2rem] flex items-center justify-center px-1">
         {connector.label}
       </span>
     </button>

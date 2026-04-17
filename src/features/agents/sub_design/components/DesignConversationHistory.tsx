@@ -30,8 +30,8 @@ export function DesignConversationHistory({
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 px-1">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70" />
-            <span className="text-sm font-medium text-amber-400/80 uppercase tracking-wide">{t.agents.design.design_drift}</span>
-            <span className="text-sm text-foreground">({visibleDrift.length})</span>
+            <span className="typo-body font-medium text-amber-400/80 uppercase tracking-wide">{t.agents.design.design_drift}</span>
+            <span className="typo-body text-foreground">({visibleDrift.length})</span>
           </div>
           {visibleDrift.map((event) => (
               <DriftNotificationCard key={event.id} event={event} onDismiss={() => onDismissDrift?.(event.id)} />
@@ -43,8 +43,8 @@ export function DesignConversationHistory({
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 px-1">
             <MessageSquare className="w-3.5 h-3.5 text-foreground" />
-            <span className="text-sm font-medium text-foreground uppercase tracking-wide">{t.agents.design.design_sessions}</span>
-            <span className="text-sm text-foreground">({conversations.length})</span>
+            <span className="typo-body font-medium text-foreground uppercase tracking-wide">{t.agents.design.design_sessions}</span>
+            <span className="typo-body text-foreground">({conversations.length})</span>
           </div>
           <div className="space-y-1">
             {conversations.map((conv) => (

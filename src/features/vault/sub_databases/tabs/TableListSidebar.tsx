@@ -71,13 +71,13 @@ export function TableListSidebar({
         {loading && tables.length === 0 && redisKeys.length === 0 && (
           <div className="flex items-center justify-center py-12 gap-2">
             <LoadingSpinner className="text-foreground" />
-            <span className="text-sm text-foreground">{dbt.loading}</span>
+            <span className="typo-body text-foreground">{dbt.loading}</span>
           </div>
         )}
 
         {error && (
           <div className="space-y-2">
-            <div className="p-2.5 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
+            <div className="p-2.5 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 break-words">
               {error}
             </div>
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
@@ -87,7 +87,7 @@ export function TableListSidebar({
         {/* SQL / API tables */}
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length === 0 && (
           <div className="flex flex-col items-center py-8 gap-1">
-            <p className="text-sm text-foreground text-center">
+            <p className="typo-body text-foreground text-center">
               {isApi ? dbt.no_databases_found : dbt.no_tables_found}
             </p>
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
@@ -95,7 +95,7 @@ export function TableListSidebar({
         )}
 
         {!isRedis && !loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-          <p className="text-sm text-foreground text-center py-8">{dbt.no_matching_tables}</p>
+          <p className="typo-body text-foreground text-center py-8">{dbt.no_matching_tables}</p>
         )}
 
         {!isRedis && filteredTables.map((table) => {
@@ -115,15 +115,15 @@ export function TableListSidebar({
               onContextMenu={(e) => onContextMenu(e, table.table_name)}
             >
               <Icon className="w-3 h-3 text-foreground shrink-0" />
-              <span className={`flex-1 text-sm text-foreground truncate ${isApi ? '' : 'font-mono'}`}>
+              <span className={`flex-1 typo-code text-foreground truncate ${isApi ? '' : 'font-mono'}`}>
                 {displayName}
               </span>
               {isPinned && <Pin className="w-2.5 h-2.5 text-blue-400/50 shrink-0" />}
               {table.table_type === 'VIEW' && (
-                <span className="px-1 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70 shrink-0">VIEW</span>
+                <span className="px-1 py-0.5 rounded typo-body font-medium bg-violet-500/10 text-violet-400/70 shrink-0">VIEW</span>
               )}
               {table.table_type === 'DATABASE' && (
-                <span className="px-1 py-0.5 rounded text-sm font-medium bg-blue-500/10 text-blue-400/70 shrink-0">DB</span>
+                <span className="px-1 py-0.5 rounded typo-body font-medium bg-blue-500/10 text-blue-400/70 shrink-0">DB</span>
               )}
             </div>
           );
@@ -131,11 +131,11 @@ export function TableListSidebar({
 
         {/* Redis keys */}
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length === 0 && (
-          <p className="text-sm text-foreground text-center py-8">{dbt.no_keys_found}</p>
+          <p className="typo-body text-foreground text-center py-8">{dbt.no_keys_found}</p>
         )}
 
         {isRedis && !loading && !error && filteredKeys.length === 0 && redisKeys.length > 0 && (
-          <p className="text-sm text-foreground text-center py-8">{dbt.no_matching_keys}</p>
+          <p className="typo-body text-foreground text-center py-8">{dbt.no_matching_keys}</p>
         )}
 
         {isRedis && filteredKeys.map((keyInfo) => {
@@ -151,7 +151,7 @@ export function TableListSidebar({
               onClick={() => onSelectKey(keyInfo.key)}
             >
               <Key className="w-3 h-3 text-foreground shrink-0" />
-              <span className="flex-1 text-sm font-mono text-foreground truncate">{keyInfo.key}</span>
+              <span className="flex-1 typo-code font-mono text-foreground truncate">{keyInfo.key}</span>
               <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
             </div>
           );
@@ -160,7 +160,7 @@ export function TableListSidebar({
 
       {/* Footer: count */}
       {!loading && !error && (
-        <div className="px-3 py-2 border-t border-primary/5 text-sm text-foreground">
+        <div className="px-3 py-2 border-t border-primary/5 typo-body text-foreground">
           {isRedis
             ? tx(redisKeys.length !== 1 ? dbt.key_count_other : dbt.key_count_one, { count: redisKeys.length })
             : isApi

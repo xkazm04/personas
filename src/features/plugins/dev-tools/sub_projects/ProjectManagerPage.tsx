@@ -169,7 +169,7 @@ export default function ProjectManagerPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="typo-section-title">{activeProject.name}</h2>
-                  <p className="text-xs text-foreground truncate">{activeProject.path}</p>
+                  <p className="typo-caption text-foreground truncate">{activeProject.path}</p>
                 </div>
                 <StatusBadge status={activeProject.status} />
               </div>
@@ -209,7 +209,7 @@ export default function ProjectManagerPage() {
 
           {/* Project list */}
           <div>
-            <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">
+            <h3 className="typo-label font-semibold text-primary uppercase tracking-wider mb-3">
               All Projects ({projects.length})
             </h3>
 
@@ -232,7 +232,7 @@ export default function ProjectManagerPage() {
             ) : (
               <div className="border border-primary/10 rounded-modal">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-primary uppercase tracking-wider rounded-t-xl">
+                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
                   <span>Name</span>
                   <span>Path</span>
                   <span>Tech Stack</span>
@@ -256,11 +256,11 @@ export default function ProjectManagerPage() {
                       <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
                       {project.name}
                     </span>
-                    <span className="text-xs text-foreground truncate self-center">{project.path}</span>
-                    <span className="text-xs text-foreground truncate self-center">{project.techStack.join(', ')}</span>
-                    <span className="text-xs text-foreground self-center">{project.goalCount}</span>
+                    <span className="typo-caption text-foreground truncate self-center">{project.path}</span>
+                    <span className="typo-caption text-foreground truncate self-center">{project.techStack.join(', ')}</span>
+                    <span className="typo-caption text-foreground self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
-                    <span className="text-xs text-foreground self-center">{project.createdAt}</span>
+                    <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
                     <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
                   </div>
                 ))}

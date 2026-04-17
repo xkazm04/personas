@@ -61,7 +61,7 @@ export function MonthView({
                 }`}
               >
                 {/* Day number + conflict badge */}
-                <div className={`flex items-center justify-between text-xs mb-0.5 ${
+                <div className={`flex items-center justify-between typo-caption mb-0.5 ${
                   day.isToday
                     ? 'text-blue-400 font-bold'
                     : day.isCurrentMonth

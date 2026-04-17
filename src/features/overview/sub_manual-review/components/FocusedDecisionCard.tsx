@@ -21,9 +21,9 @@ export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: F
           <div className="md:w-1/2 p-4 flex flex-col justify-between">
             <div>
               <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
-              <h3 className="text-base font-semibold text-foreground mb-2">{decision.label}</h3>
+              <h3 className="typo-body-lg font-semibold text-foreground mb-2">{decision.label}</h3>
               {decision.description && (
-                <p className="text-sm text-foreground leading-relaxed">{decision.description}</p>
+                <p className="typo-body text-foreground leading-relaxed">{decision.description}</p>
               )}
             </div>
             <VerdictButtons verdict={verdict} onToggle={onToggle} layout="full" />
@@ -35,9 +35,9 @@ export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: F
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <DecisionMeta category={decision.category} />
-              <h3 className="text-base font-semibold text-foreground mb-1">{decision.label}</h3>
+              <h3 className="typo-body-lg font-semibold text-foreground mb-1">{decision.label}</h3>
               {decision.description && (
-                <p className="text-sm text-foreground leading-relaxed">{decision.description}</p>
+                <p className="typo-body text-foreground leading-relaxed">{decision.description}</p>
               )}
             </div>
             <VerdictButtons verdict={verdict} onToggle={onToggle} layout="compact" />
@@ -55,7 +55,7 @@ function DecisionMeta({ category, mediaType }: { category?: string; mediaType?: 
   return (
     <div className="flex items-center gap-2 mb-1.5">
       {category && (
-        <span className="text-xs font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
+        <span className="typo-caption font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
       )}
       {mediaType === 'video' ? (
         <Video className="w-3 h-3 text-foreground" />
@@ -95,8 +95,8 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
     : 'flex items-center gap-1.5 flex-shrink-0 pt-1';
 
   const btnBase = layout === 'full'
-    ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-card text-sm font-medium transition-all'
-    : 'flex items-center gap-1.5 px-3 py-2 rounded-card text-sm font-medium transition-all';
+    ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-card typo-body font-medium transition-all'
+    : 'flex items-center gap-1.5 px-3 py-2 rounded-card typo-body font-medium transition-all';
 
   return (
     <div className={wrapperClass}>

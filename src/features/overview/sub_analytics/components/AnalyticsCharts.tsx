@@ -101,7 +101,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             title={t.overview.analytics_dashboard.executions_by_persona}
             height={180}
             emptySlot={pieData.length === 0 ? (
-              <div className="h-[180px] flex items-center justify-center text-sm text-foreground">{t.overview.analytics_dashboard.no_execution_data}</div>
+              <div className="h-[180px] flex items-center justify-center typo-body text-foreground">{t.overview.analytics_dashboard.no_execution_data}</div>
             ) : undefined}
           >
             <PieChart>
@@ -112,7 +112,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
               </Pie>
               <Tooltip content={<ChartTooltip />} />
               <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => (
-                <span className="text-sm text-foreground/90">{value}</span>
+                <span className="typo-body text-foreground/90">{value}</span>
               )} />
             </PieChart>
           </MetricChart>

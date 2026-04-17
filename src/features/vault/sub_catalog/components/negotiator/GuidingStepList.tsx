@@ -18,18 +18,18 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 text-foreground" />
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             ~{Math.ceil(plan.estimated_time_seconds / 60)} min
           </span>
         </div>
         <div className="h-3 w-px bg-primary/10" />
-        <span className="text-sm text-foreground font-medium">
+        <span className="typo-body text-foreground font-medium">
           {completedCount}/{totalSteps} steps
         </span>
         {skippedSteps.length > 0 && (
           <>
             <div className="h-3 w-px bg-primary/10" />
-            <span className="inline-flex items-center gap-1 text-sm text-foreground">
+            <span className="inline-flex items-center gap-1 typo-body text-foreground">
               <SkipForward className="w-3 h-3" />
               {skippedSteps.length} skipped
             </span>
@@ -56,13 +56,13 @@ export function GuidingSkippedSummary({ skippedSteps }: GuidingSkippedSummaryPro
 
   return (
     <details className="group rounded-modal border border-primary/10 bg-secondary/15 px-4 py-2">
-      <summary className="cursor-pointer text-sm text-foreground hover:text-muted-foreground transition-colors flex items-center gap-1.5">
+      <summary className="cursor-pointer typo-body text-foreground hover:text-muted-foreground transition-colors flex items-center gap-1.5">
         <SkipForward className="w-3 h-3" />
         {skippedSteps.length} step{skippedSteps.length !== 1 ? 's' : ''} auto-skipped
       </summary>
       <ul className="mt-2 space-y-1 pl-5">
         {skippedSteps.map((node) => (
-          <li key={node.originalIndex} className="text-sm text-foreground">
+          <li key={node.originalIndex} className="typo-body text-foreground">
             <span className="line-through">{node.step.title}</span>
             {node.skipReason && (
               <span className="ml-1.5 text-foreground">-- {node.skipReason}</span>
@@ -86,11 +86,11 @@ export function GuidingPrerequisites({ prerequisites }: GuidingPrerequisitesProp
     <div className="px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-modal">
       <div className="flex items-center gap-2 mb-1.5">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-sm font-medium text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
+        <span className="typo-body font-medium text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
       </div>
       <ul className="space-y-0.5">
         {prerequisites.map((prereq, i) => (
-          <li key={i} className="text-sm text-amber-200/60 pl-5">
+          <li key={i} className="typo-body text-amber-200/60 pl-5">
             {prereq}
           </li>
         ))}
@@ -158,13 +158,13 @@ export function GuidingTips({ tips }: GuidingTipsProps) {
 
   return (
     <details className="group rounded-modal border border-primary/10 bg-secondary/20 px-4 py-2.5">
-      <summary className="cursor-pointer text-sm text-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+      <summary className="cursor-pointer typo-body text-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
         <Lightbulb className="w-3 h-3" />
         Tips & best practices
       </summary>
       <ul className="mt-2 space-y-1 pl-5">
         {tips.map((tip, i) => (
-          <li key={i} className="text-sm text-foreground">
+          <li key={i} className="typo-body text-foreground">
             {tip}
           </li>
         ))}
@@ -188,8 +188,8 @@ export function GuidingCompletionBanner({ allDone, verificationHint }: GuidingCo
     >
       <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
       <div>
-        <p className="text-sm text-emerald-300 font-medium">{t.vault.negotiator.all_steps_completed}</p>
-        <p className="text-sm text-emerald-200/60 mt-0.5">{verificationHint}</p>
+        <p className="typo-body text-emerald-300 font-medium">{t.vault.negotiator.all_steps_completed}</p>
+        <p className="typo-body text-emerald-200/60 mt-0.5">{verificationHint}</p>
       </div>
     </div>
   );

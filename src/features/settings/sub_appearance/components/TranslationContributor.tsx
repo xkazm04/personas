@@ -127,7 +127,7 @@ export default function TranslationContributor() {
 
       {/* Current language display */}
       <div className="flex items-center gap-3 p-3 rounded-card bg-secondary/30 border border-primary/10">
-        <span className="text-lg">{currentLang?.flag}</span>
+        <span className="typo-heading-lg">{currentLang?.flag}</span>
         <div>
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
           <p className="typo-caption text-foreground">
@@ -167,7 +167,7 @@ export default function TranslationContributor() {
                     : 'border-primary/8 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'
                 }`}
               >
-                <span className="text-sm">{lang.flag}</span>
+                <span className="typo-body">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
                   <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-foreground'}`}>
                     {lang.label}

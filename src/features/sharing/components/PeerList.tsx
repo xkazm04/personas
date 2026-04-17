@@ -95,7 +95,7 @@ export function PeerList() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
           <Users className="w-4 h-4" />
           {st.discovered_peers}
         </h3>
@@ -103,7 +103,7 @@ export function PeerList() {
           <button
             onClick={() => doFetch()}
             title="Refresh peer list"
-            className="px-2.5 py-1 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
@@ -117,7 +117,7 @@ export function PeerList() {
       </div>
 
       {networkError && (
-        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Peer list may be stale &mdash; {networkError}</span>
         </div>
@@ -236,7 +236,7 @@ function RadarEmptyState() {
         className="w-[120px] h-[120px] opacity-80"
         style={{ imageRendering: 'auto' }}
       />
-      <div className="flex items-center gap-1.5 text-xs text-foreground">
+      <div className="flex items-center gap-1.5 typo-caption text-foreground">
         <Wifi className="w-3.5 h-3.5 text-emerald-400/50" />
         {st.scanning_network}
       </div>
@@ -258,7 +258,7 @@ function PeerScanSkeleton() {
         <Wifi className="w-6 h-6 text-emerald-400/60" />
         <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
       </div>
-      <span className="text-xs text-foreground mb-2">{_st.scanning_network}</span>
+      <span className="typo-caption text-foreground mb-2">{_st.scanning_network}</span>
 
       {/* Skeleton PeerCard placeholders */}
       <div className="w-full space-y-2">

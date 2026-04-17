@@ -49,7 +49,7 @@ export function SavedViewsDropdown({
       wide
     >
       {savedViews.length === 0 && !saveDialogOpen && (
-        <p className="text-xs text-foreground px-2 py-1.5">{t.overview.realtime_page.no_saved_views}</p>
+        <p className="typo-caption text-foreground px-2 py-1.5">{t.overview.realtime_page.no_saved_views}</p>
       )}
       {savedViews.map((view) => (
         <div
@@ -59,7 +59,7 @@ export function SavedViewsDropdown({
           }`}
           onClick={() => { onApplyView(view); onClose(); }}
         >
-          <span className="text-sm truncate">{view.name}</span>
+          <span className="typo-body truncate">{view.name}</span>
           <button
             onClick={(e) => { e.stopPropagation(); onDeleteView(view.id); }}
             className="p-0.5 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
@@ -79,12 +79,12 @@ export function SavedViewsDropdown({
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder={t.overview.realtime_page.view_name_placeholder}
             autoFocus
-            className="flex-1 px-2 py-1 text-sm rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring"
+            className="flex-1 px-2 py-1 typo-body rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring"
           />
           <button
             onClick={handleSave}
             disabled={!saveName.trim()}
-            className="px-2 py-1 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors"
+            className="px-2 py-1 typo-caption rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors"
           >
             Save
           </button>
@@ -101,7 +101,7 @@ export function SavedViewsDropdown({
         hasActiveFilter && (
           <button
             onClick={() => setSaveDialogOpen(true)}
-            className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 pt-1.5 border-t border-primary/8 text-sm text-primary hover:bg-primary/5 rounded-input transition-colors"
+            className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 pt-1.5 border-t border-primary/8 typo-body text-primary hover:bg-primary/5 rounded-input transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.overview.realtime_page.save_current_filter}

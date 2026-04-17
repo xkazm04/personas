@@ -61,12 +61,12 @@ function GraphNodeChip({
       >
         <Icon className="w-3 h-3" style={{ color: node.color }} />
       </div>
-      <span className="text-xs text-foreground truncate flex-1">{node.label}</span>
+      <span className="typo-caption text-foreground truncate flex-1">{node.label}</span>
       {edgeCount > 0 && (
-        <span className="text-xs text-foreground">{edgeCount} dep{edgeCount !== 1 ? 's' : ''}</span>
+        <span className="typo-caption text-foreground">{edgeCount} dep{edgeCount !== 1 ? 's' : ''}</span>
       )}
       {brokenCount > 0 && (
-        <span className="text-xs text-red-400/70">{brokenCount}</span>
+        <span className="typo-caption text-red-400/70">{brokenCount}</span>
       )}
       <HealthIndicator healthy={node.healthy} />
     </button>
@@ -86,7 +86,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-foreground" />
-          <span className="text-sm font-medium text-foreground/85">{t.agents.connectors.dg_blast_radius}</span>
+          <span className="typo-body font-medium text-foreground/85">{t.agents.connectors.dg_blast_radius}</span>
         </div>
         <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
           <X className="w-3.5 h-3.5 text-foreground" />
@@ -96,15 +96,15 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Key className="w-3.5 h-3.5 text-foreground" />
-            <span className="text-sm font-medium text-foreground">{blast.credentialName}</span>
+            <span className="typo-body font-medium text-foreground">{blast.credentialName}</span>
             <HealthIndicator healthy={blast.healthy} />
           </div>
-          <span className={`px-2 py-0.5 text-xs font-medium rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
+          <span className={`px-2 py-0.5 typo-caption font-medium rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sevLabel}
           </span>
         </div>
 
-        <div className="text-xs text-foreground leading-relaxed">
+        <div className="typo-caption text-foreground leading-relaxed">
           {blast.severity === 'high' ? (
             <span>{tx(t.agents.connectors.dg_high_blast, { count: blast.affectedTools.length + blast.affectedAutomations.length })}</span>
           ) : blast.severity === 'medium' ? (
@@ -116,12 +116,12 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
 
         {blast.affectedTools.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-foreground mb-1.5">{t.agents.connectors.dg_affected_tools}</div>
+            <div className="typo-caption font-medium text-foreground mb-1.5">{t.agents.connectors.dg_affected_tools}</div>
             <div className="space-y-1">
               {blast.affectedTools.map((t) => (
                 <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                   <Wrench className="w-3 h-3 text-blue-400/60" />
-                  <span className="text-xs text-foreground truncate">{t.name}</span>
+                  <span className="typo-caption text-foreground truncate">{t.name}</span>
                 </div>
               ))}
             </div>
@@ -130,12 +130,12 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
 
         {blast.affectedAutomations.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-foreground mb-1.5">{t.agents.connectors.dg_affected_auto}</div>
+            <div className="typo-caption font-medium text-foreground mb-1.5">{t.agents.connectors.dg_affected_auto}</div>
             <div className="space-y-1">
               {blast.affectedAutomations.map((a) => (
                 <div key={a.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                   <Zap className="w-3 h-3 text-violet-400/60" />
-                  <span className="text-xs text-foreground truncate">{a.name}</span>
+                  <span className="typo-caption text-foreground truncate">{a.name}</span>
                 </div>
               ))}
             </div>
@@ -225,7 +225,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
 
   if (graph.nodes.length === 0) {
     return (
-      <div className="text-center py-6 text-foreground text-sm">
+      <div className="text-center py-6 text-foreground typo-body">
         {t.agents.connectors.dg_no_deps}
       </div>
     );
@@ -244,7 +244,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
               key={kind}
               type="button"
               onClick={() => setFilterKind(active ? 'all' : kind)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border text-xs transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border typo-caption transition-colors cursor-pointer ${
                 active
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
                   : 'bg-secondary/25 border-primary/10 text-foreground hover:border-primary/20 hover:bg-secondary/40'
@@ -257,7 +257,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
           );
         })}
         {brokenEdges.length > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border bg-red-500/8 border-red-500/20 text-xs text-red-400">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border bg-red-500/8 border-red-500/20 typo-caption text-red-400">
             <AlertTriangle className="w-3 h-3" />
             <span>{tx(t.agents.connectors.dg_broken, { count: brokenEdges.length })}</span>
           </div>
@@ -270,7 +270,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
         <div className="lg:col-span-2 space-y-2">
           {groupedNodes.map(({ kind, label, nodes }) => (
             <div key={kind} className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
-              <div className="text-xs font-medium text-foreground mb-2">
+              <div className="typo-caption font-medium text-foreground mb-2">
                 {label} ({nodes.length})
               </div>
               <div className="space-y-0.5">
@@ -303,7 +303,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                 className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
-                  <span className="text-sm font-medium text-foreground/85">{t.agents.connectors.dg_dependencies}</span>
+                  <span className="typo-body font-medium text-foreground/85">{t.agents.connectors.dg_dependencies}</span>
                   <button type="button" onClick={() => setSelectedNodeId(null)} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
                     <X className="w-3.5 h-3.5 text-foreground" />
                   </button>
@@ -324,8 +324,8 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                           className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
                         >
                           <OtherIcon className="w-3 h-3 flex-shrink-0" style={{ color: other.color }} />
-                          <span className="text-xs text-foreground truncate flex-1">{other.label}</span>
-                          <span className={`text-xs ${edge.broken ? 'text-red-400/70' : 'text-foreground'}`}>{edge.label}</span>
+                          <span className="typo-caption text-foreground truncate flex-1">{other.label}</span>
+                          <span className={`typo-caption ${edge.broken ? 'text-red-400/70' : 'text-foreground'}`}>{edge.label}</span>
                           {edge.broken && <AlertTriangle className="w-3 h-3 text-red-400/60" />}
                         </button>
                       );
@@ -338,7 +338,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                 className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-6 text-center"
               >
                 <Shield className="w-8 h-8 mx-auto mb-2 text-foreground" />
-                <p className="text-xs text-foreground">
+                <p className="typo-caption text-foreground">
                   {t.agents.connectors.dg_select_cred}
                 </p>
               </div>
@@ -347,7 +347,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
           {/* Relationships */}
           {filteredEdges.length > 0 && (
             <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
-              <div className="text-xs font-medium text-foreground mb-2">
+              <div className="typo-caption font-medium text-foreground mb-2">
                 {tx(t.agents.connectors.dg_relationships, { count: filteredEdges.length })}
               </div>
               <div className="space-y-1 max-h-[180px] overflow-y-auto">
@@ -358,7 +358,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                   return (
                     <div
                       key={edge.id}
-                      className={`flex items-center gap-1.5 text-xs ${edge.broken ? 'text-red-400/70' : 'text-foreground'}`}
+                      className={`flex items-center gap-1.5 typo-caption ${edge.broken ? 'text-red-400/70' : 'text-foreground'}`}
                     >
                       <span className="truncate max-w-[80px]" title={src.label}>{src.label}</span>
                       <ArrowRight className="w-3 h-3 flex-shrink-0 text-foreground" />
@@ -370,7 +370,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                   );
                 })}
                 {filteredEdges.length > 20 && (
-                  <div className="text-xs text-foreground pt-1">{tx(t.agents.connectors.dg_more, { count: filteredEdges.length - 20 })}</div>
+                  <div className="typo-caption text-foreground pt-1">{tx(t.agents.connectors.dg_more, { count: filteredEdges.length - 20 })}</div>
                 )}
               </div>
             </div>

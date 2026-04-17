@@ -142,8 +142,8 @@ export function RenameEventDialog({
             <Pencil className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground mb-1">{t.triggers.builder.rename_event_type}</h3>
-            <p className="text-xs text-foreground leading-relaxed">
+            <h3 className="typo-heading font-semibold text-foreground mb-1">{t.triggers.builder.rename_event_type}</h3>
+            <p className="typo-caption text-foreground leading-relaxed">
               {t.triggers.builder.rename_event_desc}
             </p>
           </div>
@@ -161,7 +161,7 @@ export function RenameEventDialog({
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-foreground mb-1">
               {t.triggers.builder.current_name}
             </label>
-            <div className="px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/10 text-sm font-mono text-foreground/90">
+            <div className="px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/10 typo-code font-mono text-foreground/90">
               {oldEventType}
             </div>
           </div>
@@ -189,7 +189,7 @@ export function RenameEventDialog({
                   onCancel();
                 }
               }}
-              className={`w-full px-2.5 py-1.5 text-sm font-mono rounded-card bg-secondary/30 border text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full px-2.5 py-1.5 typo-code font-mono rounded-card bg-secondary/30 border text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
                 clientError && !reserved
                   ? 'border-amber-400/40 focus:border-amber-400/60'
                   : 'border-primary/15 focus:border-cyan-400/50'
@@ -204,7 +204,7 @@ export function RenameEventDialog({
               <CheckCircle2 className="w-3 h-3 text-cyan-400/70" />
               {t.triggers.builder.impact_preview}
             </div>
-            <div className="text-xs text-foreground space-y-0.5">
+            <div className="typo-caption text-foreground space-y-0.5">
               <div>
                 <span className="text-foreground">{t.triggers.builder.source_personas}</span>{' '}
                 <span className="font-semibold">{affectedCounts.sources}</span>
@@ -223,7 +223,7 @@ export function RenameEventDialog({
           {(clientError || serverError) && (
             <div className="flex items-start gap-2 rounded-card border border-amber-400/25 bg-amber-500/10 px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-300/90 leading-relaxed break-words">
+              <p className="typo-caption text-amber-300/90 leading-relaxed break-words">
                 {serverError ?? clientError}
               </p>
             </div>
@@ -235,14 +235,14 @@ export function RenameEventDialog({
           <button
             onClick={onCancel}
             disabled={busy}
-            className="px-3 py-1.5 rounded-card text-xs font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 rounded-card typo-caption font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
           >
             {t.triggers.builder.cancel}
           </button>
           <button
             onClick={() => void handleConfirm()}
             disabled={disabled}
-            className="px-3 py-1.5 rounded-card text-xs font-medium bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-400/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-card typo-caption font-medium bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-400/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {busy ? t.triggers.builder.renaming : t.triggers.builder.rename}
           </button>

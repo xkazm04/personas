@@ -35,10 +35,10 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-          <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="text-base font-semibold text-foreground/90">{section.label}</h3></div>
+          <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="typo-body-lg font-semibold text-foreground/90">{section.label}</h3></div>
           <button onClick={onClose} className="p-1.5 rounded-card hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-foreground" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{section.content}</pre></div>
+        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap typo-body text-foreground font-sans leading-relaxed">{section.content}</pre></div>
       </div>
     </div>,
     document.body,
@@ -107,8 +107,8 @@ export function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string;
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <LoadingSpinner size="lg" className="text-primary relative z-10" />
       </div>
-      <span className="text-sm text-foreground font-medium">{phaseLabel}</span>
-      {hint && <p className="text-xs text-foreground text-center leading-relaxed">{hint}</p>}
+      <span className="typo-body text-foreground font-medium">{phaseLabel}</span>
+      {hint && <p className="typo-caption text-foreground text-center leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -562,7 +562,7 @@ export function TestResultsPanel({
             title={hasConnectorGaps
               ? `Promote without credentials for: ${missingConnectors.map((c) => c.name).join(', ')}`
               : 'Promote this agent despite skipped or failed tests'}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             Approve Anyway
@@ -572,7 +572,7 @@ export function TestResultsPanel({
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-primary/15 text-foreground hover:bg-primary/5 hover:text-foreground/80 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             Report
@@ -583,7 +583,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onReject}
             data-testid="agent-reject-btn"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground hover:bg-primary/5 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-primary/15 text-foreground hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Retry
@@ -595,7 +595,7 @@ export function TestResultsPanel({
             onClick={onDeleteDraft}
             data-testid="agent-delete-draft-btn"
             title="Discard this draft persona and close"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Delete Draft
@@ -625,12 +625,12 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="text-sm text-foreground font-medium">Agent Promoted</span>
+      <span className="typo-body text-foreground font-medium">Agent Promoted</span>
       {onViewAgent && (
         <button
           type="button"
           onClick={onViewAgent}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 text-sm text-foreground hover:bg-primary/5 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 typo-body text-foreground hover:bg-primary/5 transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
           View Agent

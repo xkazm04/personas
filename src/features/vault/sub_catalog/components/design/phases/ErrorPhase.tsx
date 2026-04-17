@@ -76,13 +76,13 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
         <AlertTriangle className="w-4 h-4 mt-0.5 text-red-400 shrink-0" />
         <div>
-          <p className="text-sm text-red-300">{friendly}</p>
+          <p className="typo-body text-red-300">{friendly}</p>
           {friendly !== error && error && (
             <details className="mt-2">
-              <summary className="text-sm text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
+              <summary className="typo-body text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
                 Technical details
               </summary>
-              <p className="mt-1 text-sm text-red-400/30 font-mono break-all">
+              <p className="mt-1 typo-code text-red-400/30 font-mono break-all">
                 {error}
               </p>
             </details>
@@ -94,11 +94,11 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/15 rounded-modal space-y-2">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-sm font-medium text-amber-300/80">{t.vault.design_modal.how_to_fix}</span>
+          <span className="typo-body font-medium text-amber-300/80">{t.vault.design_modal.how_to_fix}</span>
         </div>
         <ul className="space-y-1.5 pl-6">
           {tips.map((tip, i) => (
-            <li key={i} className="text-sm text-foreground list-disc">{tip}</li>
+            <li key={i} className="typo-body text-foreground list-disc">{tip}</li>
           ))}
         </ul>
       </div>
@@ -106,8 +106,8 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       {/* Show preserved instruction */}
       {hasInstruction && (
         <div className="px-4 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
-          <p className="text-sm text-foreground mb-1">{t.vault.design_modal.original_request}</p>
-          <p className="text-sm text-foreground/90 italic">"{instruction}"</p>
+          <p className="typo-body text-foreground mb-1">{t.vault.design_modal.original_request}</p>
+          <p className="typo-body text-foreground/90 italic">"{instruction}"</p>
         </div>
       )}
 
@@ -115,14 +115,14 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="flex items-center justify-between">
         <button
           onClick={onStartOver}
-          className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-foreground/95 text-sm transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-foreground/95 typo-body transition-colors"
         >
           <X className="w-3 h-3" />
           Start over
         </button>
         <button
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal typo-body font-medium transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {hasInstruction ? t.vault.design_modal.try_again_with : t.common.try_again}

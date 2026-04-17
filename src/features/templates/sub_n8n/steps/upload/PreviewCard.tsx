@@ -36,12 +36,12 @@ export function PreviewCard({
             <>
               <FileIcon className="w-4 h-4 text-violet-400 flex-shrink-0" />
               {preview.platform && (
-                <span className="text-sm font-mono uppercase px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400/80 border border-violet-500/20 flex-shrink-0">
+                <span className="typo-code font-mono uppercase px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400/80 border border-violet-500/20 flex-shrink-0">
                   {preview.platform}
                 </span>
               )}
-              <span className="text-sm font-medium text-foreground/90 truncate">{preview.workflowName}</span>
-              <span className="text-sm text-foreground flex-shrink-0">
+              <span className="typo-body font-medium text-foreground/90 truncate">{preview.workflowName}</span>
+              <span className="typo-body text-foreground flex-shrink-0">
                 {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} &middot; </>}
                 {preview.fileSize}
               </span>
@@ -50,7 +50,7 @@ export function PreviewCard({
           ) : (
             <>
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <span className="text-sm text-red-400 truncate">{preview.message}</span>
+              <span className="typo-body text-red-400 truncate">{preview.message}</span>
             </>
           )}
         </div>

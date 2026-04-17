@@ -33,19 +33,19 @@ export function AutoCredBrowserError({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
-            <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+            <p className="typo-heading font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
+            <span className={`typo-body font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
           </div>
-          <p className="text-sm text-foreground mt-1">{error.guidance}</p>
+          <p className="typo-body text-foreground mt-1">{error.guidance}</p>
         </div>
       </div>
 
       {/* Persistent terminal log */}
       <div
         ref={scrollRef}
-        className="max-h-[26rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
+        className="max-h-[26rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/30 p-3 font-mono typo-code space-y-1"
       >
         {logs.map((entry, i) => (
           <div key={i} className={`flex items-start gap-2 ${
@@ -71,14 +71,14 @@ export function AutoCredBrowserError({
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+            className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
           >
             Set Up Manually
           </button>
           {error.retryable && (
             <button
               onClick={onRetry}
-              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal text-sm font-medium transition-colors"
+              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
             >
               Retry
             </button>

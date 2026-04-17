@@ -105,11 +105,11 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-            <span className="text-sm font-semibold text-foreground/90">
+            <span className="typo-heading font-semibold text-foreground/90">
               {tx(t.agents.onboarding.setup_complete, { score: checklist.score })}
             </span>
           </div>
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             {tx(t.agents.onboarding.steps_done, { completed: checklist.completed, total: checklist.total })}
           </span>
         </div>
@@ -146,7 +146,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
               ) : (
                 <Circle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
               )}
-              <span className={`text-sm flex-1 ${item.done ? 'line-through' : ''}`}>
+              <span className={`typo-body flex-1 ${item.done ? 'line-through' : ''}`}>
                 {item.label}
               </span>
             </button>

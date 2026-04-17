@@ -104,7 +104,7 @@ export default function PersonaHealthDashboard() {
             <div className="flex items-center border border-primary/10 rounded-card overflow-hidden mr-2">
               <button
                 onClick={() => setHealthView('heartbeats')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'heartbeats'
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
@@ -115,7 +115,7 @@ export default function PersonaHealthDashboard() {
               </button>
               <button
                 onClick={() => setHealthView('status-page')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'status-page'
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
@@ -126,7 +126,7 @@ export default function PersonaHealthDashboard() {
               </button>
               <button
                 onClick={() => setHealthView('reliability')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'reliability'
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
@@ -138,7 +138,7 @@ export default function PersonaHealthDashboard() {
             </div>
 
             {lastRefreshLabel && (
-              <span className="text-xs text-foreground mr-2">Updated {lastRefreshLabel}</span>
+              <span className="typo-caption text-foreground mr-2">Updated {lastRefreshLabel}</span>
             )}
             <button
               onClick={handleRefresh}
@@ -154,11 +154,11 @@ export default function PersonaHealthDashboard() {
 
       <ContentBody>
         {healthView === 'status-page' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground text-sm">Loading status page...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">Loading status page...</div>}>
             <StatusPageView />
           </Suspense>
         ) : healthView === 'reliability' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground text-sm">Loading reliability data...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">Loading reliability data...</div>}>
             <SLADashboard />
           </Suspense>
         ) : (
@@ -190,7 +190,7 @@ export default function PersonaHealthDashboard() {
                   globalGrade === 'critical' ? 'text-red-400' : 'text-zinc-400'
                 }>{globalGrade.charAt(0).toUpperCase() + globalGrade.slice(1)}</span>
               </h2>
-              <p className="text-sm text-foreground mt-0.5">
+              <p className="typo-body text-foreground mt-0.5">
                 {healthSignals.length} persona{healthSignals.length !== 1 ? 's' : ''} monitored
               </p>
             </div>
@@ -211,11 +211,11 @@ export default function PersonaHealthDashboard() {
               <div className="flex items-center gap-2 mb-1">
                 <Heart className="w-4 h-4 text-rose-400" />
                 <h3 className="typo-heading text-foreground">Persona Heartbeats</h3>
-                <span className="text-xs text-foreground">{filteredSignals.length} persona{filteredSignals.length !== 1 ? 's' : ''}</span>
+                <span className="typo-caption text-foreground">{filteredSignals.length} persona{filteredSignals.length !== 1 ? 's' : ''}</span>
               </div>
 
               {filteredSignals.length === 0 ? (
-                <div className="flex items-center justify-center py-12 text-foreground text-sm">
+                <div className="flex items-center justify-center py-12 text-foreground typo-body">
                   {healthLoading ? 'Computing health signals...' : 'No personas match the selected filter.'}
                 </div>
               ) : (

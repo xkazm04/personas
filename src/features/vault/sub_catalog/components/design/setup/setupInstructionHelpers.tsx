@@ -105,7 +105,7 @@ export function ProgressRingBadge({
           </linearGradient>
         </defs>
       </svg>
-      <span className={`text-sm font-medium px-1.5 py-0.5 rounded ${
+      <span className={`typo-body font-medium px-1.5 py-0.5 rounded ${
         completedCount === totalSteps && totalSteps > 0
           ? 'bg-emerald-500/15 text-emerald-400'
           : completedCount > 0

@@ -28,7 +28,7 @@ export function WizardStepIndicator({ stepIndex, onGoToStep }: WizardStepIndicat
                 if (i < stepIndex) onGoToStep(i);
               }}
               disabled={i > stepIndex}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-body transition-all ${
                 isActive
                   ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                   : isComplete

@@ -55,7 +55,7 @@ export function RowActionMenu({
               onViewDetails();
             }}
             data-testid="menu-view-details"
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
           >
             <Eye className="w-4 h-4" />
             {t.templates.row_actions.view_details}
@@ -68,7 +68,7 @@ export function RowActionMenu({
                   setOpen(false);
                   onRebuild();
                 }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
               >
                 <RefreshCw className="w-4 h-4" />
                 {t.templates.row_actions.rebuild}
@@ -79,7 +79,7 @@ export function RowActionMenu({
                   setOpen(false);
                   onDelete(reviewId);
                 }}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
               >
                 <Trash2 className="w-4 h-4" />
                 {t.templates.row_actions.delete_template}

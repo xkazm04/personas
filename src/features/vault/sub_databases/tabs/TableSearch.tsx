@@ -32,7 +32,7 @@ export function TableSearch({
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
             placeholder={isRedis ? db.filter_keys : isApi ? db.filter_databases : db.filter_tables}
-            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            className="w-full pl-7 pr-2 py-1.5 rounded-modal bg-secondary/30 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
           />
         </div>
         <button
@@ -59,7 +59,7 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
       <button
         onClick={checkStored}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
       >
         {isHealthchecking ? (
           <Loader2 className="w-3 h-3 animate-spin" />
@@ -70,7 +70,7 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
       </button>
       {result && !isHealthchecking && (
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-input text-xs ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption ${
             result.success
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-red-500/10 text-red-400'

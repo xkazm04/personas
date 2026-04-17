@@ -60,7 +60,7 @@ export function CredentialCardHeader({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <h4 className="font-medium text-foreground text-sm truncate" title={credential.name}>
+              <h4 className="font-medium text-foreground typo-body truncate" title={credential.name}>
                 {credential.name}
               </h4>
               <CompositeHealthDot

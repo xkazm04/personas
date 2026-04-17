@@ -36,7 +36,7 @@ export function TypewriterBullets({ items, speed = 150 }: { items: string[]; spe
       {items.slice(0, visibleCount).map((item, i) => (
         <motion.li key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex items-start gap-2 leading-tight">
           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className="text-sm text-foreground leading-snug">{item}</span>
+          <span className="typo-body text-foreground leading-snug">{item}</span>
         </motion.li>
       ))}
     </ul>
@@ -80,7 +80,7 @@ function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Adjust anything..."
-        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onRefine(text.trim()); setText(''); } }}
       />
       <button
@@ -173,7 +173,7 @@ export function MatrixCommandCenter({
             <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
             <LoadingSpinner size="lg" className="text-primary relative z-10" />
           </div>
-          <span className="text-xs font-semibold text-foreground tracking-wide uppercase">Initializing...</span>
+          <span className="typo-label font-semibold text-foreground tracking-wide uppercase">Initializing...</span>
           <span className="text-[10px] text-foreground">Creating draft agent and starting CLI</span>
         </div>
       );
@@ -223,13 +223,13 @@ export function MatrixCommandCenter({
         )}
         <div className="flex gap-1.5">
           {onStartTest && (
-            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
+            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
               <Play className="w-3.5 h-3.5" />
               Test Agent
             </button>
           )}
           {onSaveVersion && (
-            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
+            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
               <Save className="w-3.5 h-3.5" />
               Save Version
             </button>
@@ -275,7 +275,7 @@ export function MatrixCommandCenter({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
             placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
             rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
-            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
+            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}
         {/* Import mode: workflow upload zone */}
         {inputMode === 'import' && isCreation && (
@@ -311,7 +311,7 @@ export function MatrixCommandCenter({
           </button>
         ); })}
       </div>
-      {sections.length > 0 && <p className="text-sm text-foreground leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
+      {sections.length > 0 && <p className="typo-body text-foreground leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
       {openSection && <PromptModal section={openSection} onClose={() => setOpenSection(null)} />}
     </div>
   );

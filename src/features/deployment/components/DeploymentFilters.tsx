@@ -33,7 +33,7 @@ export function DeploymentFilters({
           placeholder={dt.search_placeholder}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/15
+          className="w-full pl-9 pr-3 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15
                      text-foreground placeholder:text-foreground
                      focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         />
@@ -42,7 +42,7 @@ export function DeploymentFilters({
       <div className="relative">
         <button
           onClick={() => setFilterOpen(!filterOpen)}
-          className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-modal border transition-colors cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors cursor-pointer ${
             targetFilter !== 'all' || statusFilter !== 'all'
               ? 'bg-primary/10 border-primary/25 text-primary'
               : 'bg-secondary/40 border-primary/15 text-foreground hover:border-primary/25'
@@ -56,13 +56,13 @@ export function DeploymentFilters({
         {filterOpen && (
           <div className="absolute top-full right-0 mt-1 z-30 bg-background border border-primary/20 rounded-modal shadow-elevation-3 p-3 min-w-[200px] space-y-3">
             <div>
-              <label className="text-xs font-medium text-foreground uppercase tracking-wider">{dt.filter_target}</label>
+              <label className="typo-label font-medium text-foreground uppercase tracking-wider">{dt.filter_target}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'cloud', 'gitlab'] as const).map((v) => (
                   <button
                     key={v}
                     onClick={() => onTargetFilterChange(v)}
-                    className={`px-2.5 py-1 text-xs rounded-card border transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
                       targetFilter === v
                         ? 'bg-primary/15 border-primary/25 text-primary'
                         : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
@@ -74,13 +74,13 @@ export function DeploymentFilters({
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground uppercase tracking-wider">{dt.filter_status}</label>
+              <label className="typo-label font-medium text-foreground uppercase tracking-wider">{dt.filter_status}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'active', 'paused', 'failed'] as const).map((v) => (
                   <button
                     key={v}
                     onClick={() => onStatusFilterChange(v)}
-                    className={`px-2.5 py-1 text-xs rounded-card border transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
                       statusFilter === v
                         ? 'bg-primary/15 border-primary/25 text-primary'
                         : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'

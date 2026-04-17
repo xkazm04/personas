@@ -44,7 +44,7 @@ export function StuckExecutionGuidance({
           <Clock className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
         )}
         <span
-          className={`flex-1 text-sm font-medium ${
+          className={`flex-1 typo-body font-medium ${
             isStuck ? 'text-red-300/90' : 'text-amber-300/90'
           }`}
         >
@@ -76,7 +76,7 @@ export function StuckExecutionGuidance({
       {expanded && (
         <div className="animate-fade-slide-in px-4 pb-3 space-y-3 border-t border-primary/10 pt-3">
           {/* Explanation */}
-          <p className="text-xs text-foreground leading-relaxed">
+          <p className="typo-caption text-foreground leading-relaxed">
             {isStuck
               ? e.stuck_detail
               : e.silent_detail}
@@ -91,7 +91,7 @@ export function StuckExecutionGuidance({
               {isStuck && (
                 <button
                   onClick={onCancel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
                 >
                   <XCircle className="w-3 h-3" />
                   {e.cancel_retry}
@@ -100,7 +100,7 @@ export function StuckExecutionGuidance({
               {executionId && onViewLog && (
                 <button
                   onClick={onViewLog}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-colors border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-colors border ${
                     isStuck
                       ? 'bg-red-500/10 hover:bg-red-500/20 text-red-300/80 border-red-500/15'
                       : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300/80 border-amber-500/15'
@@ -111,7 +111,7 @@ export function StuckExecutionGuidance({
                 </button>
               )}
               {!isStuck && (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-foreground">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 typo-caption text-foreground">
                   <RotateCw className="w-3 h-3" />
                   {e.wait_hint}
                 </span>

@@ -431,7 +431,7 @@ export default function ProjectOverviewPage() {
                 state="unmapped"
                 serviceName={repoCreds.length > 0 ? (repoCreds[0]!.service_type === 'gitlab' ? 'GitLab' : 'GitHub') : 'GitHub'}
               >
-                <p className="text-xs text-foreground mt-1">{po.set_repo_url}</p>
+                <p className="typo-caption text-foreground mt-1">{po.set_repo_url}</p>
                 <Button
                   variant="secondary"
                   size="sm"

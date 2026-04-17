@@ -54,7 +54,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
         <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
-        <p className="text-sm text-foreground/90">
+        <p className="typo-body text-foreground/90">
           First {triggerType === 'polling' ? 'poll' : 'run'}:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
           , then every{' '}
@@ -70,7 +70,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
         {/* "Now" marker */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-sm text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
         </div>
 
         {/* Run dots */}
@@ -83,7 +83,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
-              <span className={`text-sm mt-1.5 absolute top-full whitespace-nowrap ${
+              <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
                 i === 0 ? 'text-primary/70 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
               }`}>
                 {formatRunTime(run)}
@@ -116,11 +116,11 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
         <CalendarClock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-        <p className="text-sm text-foreground/90">
+        <p className="typo-body text-foreground/90">
           <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
           {' -- '}next run:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
-          <span className="text-foreground ml-1 text-xs">(local)</span>
+          <span className="text-foreground ml-1 typo-caption">(local)</span>
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         {/* "Now" marker */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
           <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="text-sm text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
+          <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
         </div>
 
         {/* Run dots */}
@@ -144,7 +144,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-400' : 'bg-amber-400/40'} ring-2 ring-amber-400/10`} />
-              <span className={`text-sm mt-1.5 absolute top-full whitespace-nowrap ${
+              <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
                 i === 0 ? 'text-amber-400/80 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
               }`}>
                 {formatRunTime(run)}

@@ -24,7 +24,7 @@ export function OperationRow({
     <tr className="border-b border-primary/5 hover:bg-primary/[0.02] transition-colors">
       <td className="py-2.5 pr-4">
         <div className="flex flex-col">
-          <span className="text-sm text-foreground/90">{label}</span>
+          <span className="typo-body text-foreground/90">{label}</span>
           <span className="text-[11px] text-foreground leading-tight">{description}</span>
         </div>
       </td>

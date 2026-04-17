@@ -44,7 +44,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               value={hmacSecret}
               onChange={(e) => setHmacSecret(e.target.value)}
               placeholder={t.triggers.auto_generated_hint}
-              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
+              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono typo-code' : ''}`}
             />
             <button
               type="button"
@@ -88,7 +88,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
         </div>
       </TriggerFieldGroup>
       <div className="p-3 bg-background/30 rounded-modal border border-primary/10">
-        <p className="text-sm text-foreground">{t.triggers.webhook_url_note}</p>
+        <p className="typo-body text-foreground">{t.triggers.webhook_url_note}</p>
       </div>
     </div>
   );

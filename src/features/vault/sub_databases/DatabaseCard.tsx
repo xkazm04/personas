@@ -33,10 +33,10 @@ export function DatabaseCard({ credential, connector, tableCount, queryCount, on
 
         {/* Name + service type */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-foreground/90 truncate group-hover:text-foreground transition-colors">
+          <h3 className="typo-body font-medium text-foreground/90 truncate group-hover:text-foreground transition-colors">
             {credential.name}
           </h3>
-          <p className="text-sm text-foreground mt-0.5">
+          <p className="typo-body text-foreground mt-0.5">
             {connector?.label || credential.service_type}
           </p>
         </div>
@@ -44,13 +44,13 @@ export function DatabaseCard({ credential, connector, tableCount, queryCount, on
         {/* Stats badges */}
         <div className="flex items-center gap-2 shrink-0">
           {tableCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400/80 text-sm">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400/80 typo-body">
               <Table2 className="w-3 h-3" />
               {tableCount}
             </span>
           )}
           {queryCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 text-sm">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 typo-body">
               <Code2 className="w-3 h-3" />
               {queryCount}
             </span>

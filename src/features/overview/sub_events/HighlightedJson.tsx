@@ -60,7 +60,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
         <CopyButton text={pretty} iconSize="w-3.5 h-3.5" />
       </div>
 
-      <pre className="json-lines bg-background/60 p-3 rounded-card overflow-auto flex-1 text-sm font-mono leading-relaxed">
+      <pre className="json-lines bg-background/60 p-3 rounded-card overflow-auto flex-1 typo-code font-mono leading-relaxed">
         {lines
           ? lines.map((lineNodes, i) => (
               <span key={i} className="json-line block">

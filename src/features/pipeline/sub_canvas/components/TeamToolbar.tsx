@@ -46,7 +46,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-sm font-semibold text-foreground/90">{teamName}</h2>
+        <h2 className="typo-heading font-semibold text-foreground/90">{teamName}</h2>
       </div>
 
       <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 text-sm font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 typo-body font-medium transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             {t.pipeline.add_agent}
@@ -65,7 +65,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
             <div className="absolute right-0 top-full mt-1 w-56 rounded-modal bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 z-50 overflow-hidden">
               <div className="p-1.5 max-h-60 overflow-y-auto">
                 {availablePersonas.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-sm text-foreground">
+                  <div className="px-3 py-4 text-center typo-body text-foreground">
                     {t.pipeline.all_agents_added}
                   </div>
                 ) : (
@@ -79,7 +79,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
                       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-modal hover:bg-secondary/60 transition-colors"
                     >
                       <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-                      <span className="text-sm font-medium text-foreground truncate">{p.name}</span>
+                      <span className="typo-body font-medium text-foreground truncate">{p.name}</span>
                     </button>
                   ))
                 )}
@@ -92,7 +92,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {onAddNote && (
           <button
             onClick={onAddNote}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 text-sm font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 typo-body font-medium transition-all"
           >
             <StickyNote className="w-3.5 h-3.5" />
             {t.pipeline.note}
@@ -102,7 +102,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Auto Layout */}
         <button
           onClick={onAutoLayout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-secondary/60 border border-primary/15 text-foreground hover:text-foreground/95 hover:bg-secondary/80 text-sm font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-secondary/60 border border-primary/15 text-foreground hover:text-foreground/95 hover:bg-secondary/80 typo-body font-medium transition-all"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
           {t.pipeline.layout}
@@ -112,7 +112,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         <button
           onClick={onSave}
           disabled={saveStatus === 'saving'}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal border text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal border typo-body font-medium transition-all ${
             saveStatus === 'saved'
               ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300/60'
               : saveStatus === 'saving'

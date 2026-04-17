@@ -71,7 +71,7 @@ export function PlaygroundTabContent({
           />
         )}
         {activeTab === 'overview' && !connector && (
-          <div className="p-6 text-sm text-foreground">
+          <div className="p-6 typo-body text-foreground">
             {t.vault.shared.no_connector_available}
           </div>
         )}

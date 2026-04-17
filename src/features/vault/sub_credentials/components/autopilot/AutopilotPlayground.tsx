@@ -83,8 +83,8 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.autopilot.api_playground}</h3>
-          <p className="text-sm text-foreground">{t.vault.autopilot.api_playground_hint}</p>
+          <h3 className="typo-heading font-semibold text-foreground">{t.vault.autopilot.api_playground}</h3>
+          <p className="typo-body text-foreground">{t.vault.autopilot.api_playground_hint}</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
             <button
               key={tool.toolName}
               onClick={() => { setSelectedTool(tool); setTestResult(null); setError(null); }}
-              className={`w-full text-left px-2 py-1.5 rounded-input text-xs transition-colors ${
+              className={`w-full text-left px-2 py-1.5 rounded-input typo-caption transition-colors ${
                 selectedTool?.toolName === tool.toolName
                   ? 'bg-blue-500/15 border border-blue-500/20 text-foreground'
                   : 'hover:bg-secondary/30 text-foreground'
@@ -134,7 +134,7 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
               <button
                 onClick={handleTest}
                 disabled={isTesting || !baseUrl.trim()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-card text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-card typo-body font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 {isTesting ? 'Sending...' : 'Send Request'}

@@ -100,7 +100,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
   if (!hasSelector) {
     return (
       <div>
-        <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
           <Github className="w-3 h-3" />
           GitHub URL
           <span className="text-[10px] text-foreground font-normal">(optional)</span>
@@ -137,7 +137,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
 
   return (
     <div className="relative">
-      <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Github className="w-3 h-3" />
         GitHub Repository
         <span className="text-[10px] text-foreground font-normal">(optional)</span>
@@ -168,13 +168,13 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.plugins.dev_tools.filter_repositories}
-                className="flex-1 text-xs bg-transparent text-foreground placeholder:text-foreground outline-none"
+                className="flex-1 typo-caption bg-transparent text-foreground placeholder:text-foreground outline-none"
               />
             </div>
             {/* Repo list */}
             <div className="overflow-y-auto flex-1">
               {filtered.length === 0 ? (
-                <div className="px-3 py-4 text-xs text-foreground text-center">
+                <div className="px-3 py-4 typo-caption text-foreground text-center">
                   No repositories found
                 </div>
               ) : (
@@ -189,7 +189,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-foreground truncate">{repo.full_name}</span>
+                        <span className="typo-caption font-medium text-foreground truncate">{repo.full_name}</span>
                         {repo.private && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">private</span>
                         )}

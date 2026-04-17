@@ -14,14 +14,14 @@ export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }:
       {/* Header */}
       <div className="flex items-start gap-2.5">
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-card flex items-center justify-center text-sm"
+          className="flex-shrink-0 w-9 h-9 rounded-card flex items-center justify-center typo-body"
           style={{ backgroundColor: `${entry.color ?? '#3b82f6'}15` }}
         >
           {entry.icon ?? '📡'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-foreground truncate">{entry.name}</span>
+            <span className="typo-caption font-semibold text-foreground truncate">{entry.name}</span>
             {entry.isFeatured && <Star className="w-3 h-3 text-amber-400 flex-shrink-0" />}
           </div>
           <span className="text-[10px] text-foreground capitalize">{entry.category}</span>

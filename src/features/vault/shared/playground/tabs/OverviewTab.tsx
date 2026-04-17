@@ -127,7 +127,7 @@ export function OverviewTab({
 
           {/* Healthcheck result */}
           {effectiveHealthcheckResult && (
-            <div className={`flex items-start gap-2 px-4 py-3 rounded-modal text-sm ${
+            <div className={`flex items-start gap-2 px-4 py-3 rounded-modal typo-body ${
               effectiveHealthcheckResult.success
                 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                 : 'bg-red-500/10 border border-red-500/20 text-red-400'

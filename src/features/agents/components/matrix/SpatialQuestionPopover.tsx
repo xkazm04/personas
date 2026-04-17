@@ -115,7 +115,7 @@ function QuestionModal({
               <HelpCircle className={`w-5 h-5 ${dimensionColor}`} />
             </div>
             <div>
-              <h3 className={`text-base font-bold ${dimensionColor}`}>
+              <h3 className={`typo-body-lg font-bold ${dimensionColor}`}>
                 {dimensionLabel}
               </h3>
               <p className="text-[10px] text-foreground uppercase tracking-wider">
@@ -153,7 +153,7 @@ function QuestionModal({
                   <span className="flex-shrink-0 w-6 h-6 rounded-input bg-primary/10 border border-primary/15 flex items-center justify-center text-[11px] font-bold text-primary/70 group-hover:bg-primary/20 group-hover:text-primary transition-colors mt-0.5">
                     {idx + 1}
                   </span>
-                  <span className="text-sm text-foreground leading-relaxed">{option}</span>
+                  <span className="typo-body text-foreground leading-relaxed">{option}</span>
                 </button>
               ))}
               <p className="text-[10px] text-foreground mt-1 flex items-center gap-1.5">
@@ -186,14 +186,14 @@ function QuestionModal({
               }}
               placeholder={t.agents.spatial_question.type_answer}
               rows={2}
-              className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
+              className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 typo-body text-foreground/90 placeholder:text-foreground focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
               data-testid="freetext-input"
             />
             <button
               type="button"
               onClick={handleFreeTextSubmit}
               disabled={!freeText.trim()}
-              className="self-end inline-flex items-center gap-2 rounded-modal bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="self-end inline-flex items-center gap-2 rounded-modal bg-primary text-primary-foreground px-4 py-2 typo-body font-medium transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               data-testid="submit-button"
             >
               <Send className="w-3.5 h-3.5" />

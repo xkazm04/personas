@@ -101,8 +101,8 @@ export default function N8nImportTab() {
         >
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-red-400 font-medium">{t.templates.n8n.import_error}</p>
-            <p className="text-sm text-red-400/70 mt-0.5">{state.error}</p>
+            <p className="typo-body text-red-400 font-medium">{t.templates.n8n.import_error}</p>
+            <p className="typo-body text-red-400/70 mt-0.5">{state.error}</p>
           </div>
           <Button
             onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
@@ -124,8 +124,8 @@ export default function N8nImportTab() {
         >
           <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-amber-300 font-medium">{t.templates.n8n.partial_session_restore}</p>
-            <p className="text-sm text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
+            <p className="typo-body text-amber-300 font-medium">{t.templates.n8n.partial_session_restore}</p>
+            <p className="typo-body text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
           </div>
           <Button
             onClick={() => dispatch({ type: 'CLEAR_SESSION_WARNING' })}

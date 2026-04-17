@@ -28,7 +28,7 @@ function MiniScoreRing({ score }: { score: HealthScore }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-bold text-foreground/90">{score.value}</span>
+        <span className="typo-heading font-bold text-foreground/90">{score.value}</span>
       </div>
     </div>
   );
@@ -106,7 +106,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
       ) : (
         <div className="flex flex-col items-center gap-2 py-4">
           <Activity className="w-6 h-6 text-foreground" />
-          <p className="text-xs text-foreground text-center">{t.agents.ops_health.no_health_data}</p>
+          <p className="typo-caption text-foreground text-center">{t.agents.ops_health.no_health_data}</p>
         </div>
       )}
 
@@ -115,7 +115,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
         onClick={handleRunCheck}
         disabled={healthDigestRunning}
         data-testid="ops-health-run-btn"
-        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-card text-sm font-medium transition-all bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-card typo-body font-medium transition-all bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {healthDigestRunning ? (
           <>
@@ -138,19 +138,19 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
             {errorCount > 0 && (
               <div className="flex items-center gap-1">
                 <XCircle className="w-3 h-3 text-red-400" />
-                <span className="text-xs text-red-400 font-medium">{errorCount}</span>
+                <span className="typo-caption text-red-400 font-medium">{errorCount}</span>
               </div>
             )}
             {warningCount > 0 && (
               <div className="flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-amber-400" />
-                <span className="text-xs text-amber-400 font-medium">{warningCount}</span>
+                <span className="typo-caption text-amber-400 font-medium">{warningCount}</span>
               </div>
             )}
             {infoCount > 0 && (
               <div className="flex items-center gap-1">
                 <Info className="w-3 h-3 text-blue-400" />
-                <span className="text-xs text-blue-400 font-medium">{infoCount}</span>
+                <span className="typo-caption text-blue-400 font-medium">{infoCount}</span>
               </div>
             )}
           </div>

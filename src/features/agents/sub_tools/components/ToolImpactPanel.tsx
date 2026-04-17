@@ -19,7 +19,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
   if (!impact) {
     return (
       <div className="px-3 pb-3 pt-1">
-        <p className="text-sm text-foreground italic">{t.agents.tools.no_impact}</p>
+        <p className="typo-body text-foreground italic">{t.agents.tools.no_impact}</p>
       </div>
     );
   }
@@ -40,23 +40,23 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
               <div className="space-y-1">
                 {useCaseRefs.slice(0, 4).map((uc) => (
                   <div key={uc.useCaseId} className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-foreground truncate">{uc.title}</span>
-                    <span className="text-sm text-foreground flex-shrink-0 tabular-nums">
+                    <span className="typo-body text-foreground truncate">{uc.title}</span>
+                    <span className="typo-data text-foreground flex-shrink-0 tabular-nums">
                       {tx(t.agents.tools.runs, { count: uc.executionCount })}
                     </span>
                   </div>
                 ))}
                 {useCaseRefs.length > 4 && (
-                  <p className="text-sm text-foreground">{tx(t.agents.tools.more_uc, { count: useCaseRefs.length - 4 })}</p>
+                  <p className="typo-body text-foreground">{tx(t.agents.tools.more_uc, { count: useCaseRefs.length - 4 })}</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-foreground">{t.agents.tools.no_uc}</p>
+              <p className="typo-body text-foreground">{t.agents.tools.no_uc}</p>
             )}
             {isAssigned && hasUseCases && (
               <div className="flex items-center gap-1.5 mt-1 px-1.5 py-0.5 rounded bg-amber-500/8 border border-amber-500/15">
                 <AlertTriangle className="w-3 h-3 text-amber-400/70 flex-shrink-0" />
-                <span className="text-sm text-amber-400/80">
+                <span className="typo-body text-amber-400/80">
                   {tx(t.agents.tools.removing_affects, { count: useCaseRefs.length })}
                 </span>
               </div>
@@ -70,7 +70,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 <StatPill label={t.agents.tools.stat_agents} value={usage.unique_personas.toLocaleString()} />
               </div>
             ) : (
-              <p className="text-sm text-foreground">{t.agents.tools.no_usage}</p>
+              <p className="typo-body text-foreground">{t.agents.tools.no_usage}</p>
             )}
           </ImpactSection>
           {hasCost && (
@@ -78,14 +78,14 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
               <div className="flex items-center gap-3">
                 {avgCostPerInvocation !== null && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-foreground">{t.agents.tools.per_call}</span>
-                    <span className="text-sm font-mono text-foreground">{formatCost(avgCostPerInvocation)}</span>
+                    <span className="typo-body text-foreground">{t.agents.tools.per_call}</span>
+                    <span className="typo-code font-mono text-foreground">{formatCost(avgCostPerInvocation)}</span>
                   </div>
                 )}
                 {totalCost > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-foreground">{t.agents.tools.total_cost}</span>
-                    <span className="text-sm font-mono text-foreground">{formatCost(totalCost)}</span>
+                    <span className="typo-body text-foreground">{t.agents.tools.total_cost}</span>
+                    <span className="typo-code font-mono text-foreground">{formatCost(totalCost)}</span>
                   </div>
                 )}
               </div>
@@ -97,10 +97,10 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
               : <XCircle className="w-3 h-3 text-red-400/80" />
             } label={t.agents.tools.credential}>
               <div className="flex items-center gap-1.5">
-                <span className={`text-sm ${credentialLinked ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
+                <span className={`typo-body ${credentialLinked ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
                   {credentialType}
                 </span>
-                <span className="text-sm text-foreground">
+                <span className="typo-body text-foreground">
                   {credentialLinked ? t.agents.tools.linked : t.agents.tools.cred_missing}
                 </span>
               </div>
@@ -112,7 +112,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 {coUsedTools.map((co) => (
                   <span
                     key={co.toolName}
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground`}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-body bg-primary/5 border ${TOOLS_BORDER} text-foreground`}
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}
@@ -139,9 +139,9 @@ function ImpactSection({
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
         <span className="text-foreground">{icon}</span>
-        <span className="text-sm font-medium text-foreground uppercase tracking-wider">{label}</span>
+        <span className="typo-body font-medium text-foreground uppercase tracking-wider">{label}</span>
         {badge && (
-          <span className={`ml-auto text-sm font-mono px-1 py-px rounded bg-primary/8 text-foreground border ${TOOLS_BORDER}`}>
+          <span className={`ml-auto typo-code font-mono px-1 py-px rounded bg-primary/8 text-foreground border ${TOOLS_BORDER}`}>
             {badge}
           </span>
         )}
@@ -154,8 +154,8 @@ function ImpactSection({
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className={`flex flex-col items-center px-2 py-1 rounded-card bg-background/30 border ${TOOLS_BORDER}`}>
-      <span className="text-sm font-mono text-foreground tabular-nums">{value}</span>
-      <span className="text-sm text-foreground uppercase tracking-wider">{label}</span>
+      <span className="typo-code font-mono text-foreground tabular-nums">{value}</span>
+      <span className="typo-body text-foreground uppercase tracking-wider">{label}</span>
     </div>
   );
 }

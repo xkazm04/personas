@@ -21,4 +21,4 @@ export function channelIconMeta(type: string): { Icon: LucideIcon; color: string
   }
 }
 
-export const SECTION_LABEL = 'text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2';
+export const SECTION_LABEL = 'typo-heading font-semibold uppercase tracking-wider text-foreground flex items-center gap-2';

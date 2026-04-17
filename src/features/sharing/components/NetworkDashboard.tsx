@@ -45,7 +45,7 @@ function StatCard({
       <div className="text-[10px] uppercase tracking-wider text-foreground mb-1">
         {label}
       </div>
-      <div className="text-lg font-semibold text-foreground">{children}</div>
+      <div className="typo-heading-lg font-semibold text-foreground">{children}</div>
     </div>
   );
 }
@@ -247,19 +247,19 @@ export function NetworkDashboard() {
 
   return (
     <section>
-      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+      <h3 className="typo-heading font-semibold text-foreground mb-3 flex items-center gap-2">
         <Radio className="w-4 h-4" />
         {st.network_status}
       </h3>
       {networkError && (
-        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Network data may be stale &mdash; {networkError}</span>
         </div>
       )}
 
       {!networkStatus ? (
-        <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 text-sm text-foreground">
+        <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 typo-body text-foreground">
           <div className="relative">
             <Wifi className="w-4 h-4 text-emerald-400/50" />
             <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />

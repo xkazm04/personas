@@ -26,7 +26,7 @@ export default function FlowNodeCard({
     >
       <div className="flex items-center justify-center gap-2">
         <Icon className={`w-4 h-4 shrink-0 ${meta.iconColor}`} />
-        <span className={`text-sm font-medium ${meta.textColor}`}>{truncatedLabel}</span>
+        <span className={`typo-body font-medium ${meta.textColor}`}>{truncatedLabel}</span>
       </div>
     </div>
   );

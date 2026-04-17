@@ -46,7 +46,7 @@ export default function DebuggerControls({
       {/* Debug badge */}
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/15 border border-amber-500/25">
         <Bug className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">{t.pipeline.dry_run_label}</span>
+        <span className="typo-heading font-semibold text-amber-300 uppercase tracking-wider">{t.pipeline.dry_run_label}</span>
       </div>
 
       {/* Transport controls */}
@@ -89,7 +89,7 @@ export default function DebuggerControls({
       </div>
 
       {/* Step progress */}
-      <div className="flex items-center gap-2 text-sm font-mono text-foreground">
+      <div className="flex items-center gap-2 typo-code font-mono text-foreground">
         <span>Step {Math.max(0, stepIndex + 1)} / {totalSteps}</span>
         {isFinished && <span className="text-emerald-400">{t.pipeline.complete_label}</span>}
         {paused && isStarted && !isFinished && <span className="text-amber-400">{t.pipeline.paused}</span>}
@@ -101,7 +101,7 @@ export default function DebuggerControls({
       {inspectedNode && panelCollapsed && (
         <button
           onClick={onExpandInspector}
-          className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 transition-colors text-sm"
+          className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 transition-colors typo-body"
         >
           <ChevronUp className="w-3 h-3" />
           {t.pipeline.inspector}
@@ -110,7 +110,7 @@ export default function DebuggerControls({
 
       {/* Breakpoint count */}
       {breakpointCount > 0 && (
-        <span className="flex items-center gap-1 text-sm font-mono text-red-400/80">
+        <span className="flex items-center gap-1 typo-code font-mono text-red-400/80">
           <CircleDot className="w-3 h-3" />
           {breakpointCount} breakpoint{breakpointCount !== 1 ? 's' : ''}
         </span>

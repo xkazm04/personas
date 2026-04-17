@@ -38,14 +38,14 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-medium ${op.color}`}>{op.label}</span>
+                <span className={`typo-caption font-medium ${op.color}`}>{op.label}</span>
                 {entry.persona_name && (
-                  <span className="text-xs text-foreground">by {entry.persona_name}</span>
+                  <span className="typo-caption text-foreground">by {entry.persona_name}</span>
                 )}
                 {entry.detail && !entry.persona_name && (
-                  <span className="text-xs text-foreground truncate max-w-[200px]">{entry.detail}</span>
+                  <span className="typo-caption text-foreground truncate max-w-[200px]">{entry.detail}</span>
                 )}
-                <span className="text-xs text-foreground tabular-nums ml-auto shrink-0">
+                <span className="typo-caption text-foreground tabular-nums ml-auto shrink-0">
                   {formatRelativeTime(entry.created_at, '')}
                 </span>
               </div>
@@ -71,7 +71,7 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
               )}
               {/* Detail line for persona entries */}
               {entry.detail && entry.persona_name && (
-                <div className="text-xs text-foreground truncate">{entry.detail}</div>
+                <div className="typo-caption text-foreground truncate">{entry.detail}</div>
               )}
             </div>
           </div>

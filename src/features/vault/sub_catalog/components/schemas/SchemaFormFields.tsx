@@ -17,8 +17,8 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
       </button>
       {config.headerIcon}
       <div>
-        <h3 className="text-sm font-semibold text-foreground">{config.title}</h3>
-        <p className="text-sm text-foreground">{config.subtitle}</p>
+        <h3 className="typo-heading font-semibold text-foreground">{config.title}</h3>
+        <p className="typo-body text-foreground">{config.subtitle}</p>
       </div>
     </div>
   );
@@ -35,7 +35,7 @@ interface SchemaNameFieldProps {
 export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder, error }: SchemaNameFieldProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-1.5">
+      <label className="block typo-body font-medium text-foreground mb-1.5">
         {nameLabel} <span className="text-red-400 ml-1">*</span>
       </label>
       <input
@@ -46,7 +46,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
         aria-invalid={!!error}
         aria-describedby={error ? 'schema-form-error' : undefined}
         data-testid="vault-schema-name"
-        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground text-sm focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-body focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
       />
     </div>
   );
@@ -64,7 +64,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
 
   return (
     <div data-testid="vault-schema-subtype">
-      <label className="block text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
+      <label className="block typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
         {config.subTypeLabel}
       </label>
 
@@ -75,7 +75,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
               <button
                 key={st.id}
                 onClick={() => onSubTypeChange(st.id)}
-                className={`flex-1 px-4 py-2.5 rounded-modal text-sm font-medium border transition-all ${
+                className={`flex-1 px-4 py-2.5 rounded-modal typo-body font-medium border transition-all ${
                   subTypeId === st.id
                     ? config.subTypeActiveClass
                     : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
@@ -85,7 +85,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
               </button>
             ))}
           </div>
-          <p className="mt-1.5 text-sm text-foreground">{activeSubType.description}</p>
+          <p className="mt-1.5 typo-body text-foreground">{activeSubType.description}</p>
         </>
       ) : (
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
@@ -93,17 +93,17 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
             <button
               key={st.id}
               onClick={() => onSubTypeChange(st.id)}
-              className={`text-left px-3 py-2.5 rounded-modal text-sm border transition-all ${
+              className={`text-left px-3 py-2.5 rounded-modal typo-body border transition-all ${
                 subTypeId === st.id
                   ? config.subTypeActiveClass
                   : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
               }`}
             >
-              <div className="font-medium text-sm flex items-center gap-2">
+              <div className="font-medium typo-body flex items-center gap-2">
                 {st.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />}
                 {st.label}
               </div>
-              <div className="text-sm text-foreground mt-0.5">{st.description}</div>
+              <div className="typo-body text-foreground mt-0.5">{st.description}</div>
             </button>
           ))}
         </div>

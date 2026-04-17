@@ -61,7 +61,7 @@ export function BuildReviewPanel({
     <div className="flex flex-col gap-3 w-full">
       {/* Agent identity */}
       <div className="text-center">
-        <h3 className="text-sm font-semibold text-foreground/90 truncate">{agentName}</h3>
+        <h3 className="typo-heading font-semibold text-foreground/90 truncate">{agentName}</h3>
         {description && (
           <p className="text-[11px] text-foreground line-clamp-2 mt-0.5">{description}</p>
         )}

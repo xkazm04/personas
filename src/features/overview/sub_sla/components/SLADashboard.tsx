@@ -40,7 +40,7 @@ export default function SLADashboard() {
         actions={
           <div className="flex items-center gap-1.5">
             {DAY_OPTIONS.map((d) => (
-              <button key={d} onClick={() => setDays(d)} className={`px-2.5 py-1 text-xs rounded-modal transition-colors ${days === d ? 'bg-primary/15 text-primary border border-primary/30' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5 border border-transparent'}`}>
+              <button key={d} onClick={() => setDays(d)} className={`px-2.5 py-1 typo-caption rounded-modal transition-colors ${days === d ? 'bg-primary/15 text-primary border border-primary/30' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5 border border-transparent'}`}>
                 {d}d
               </button>
             ))}
@@ -64,17 +64,17 @@ export default function SLADashboard() {
 
             {data.daily_trend.length > 0 && (
               <div className="rounded-modal border border-primary/10 bg-card-bg p-5 space-y-3">
-                <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{tx(t.overview.sla.daily_success_rate, { days })}</h2>
+                <h2 className="typo-code font-mono text-foreground uppercase tracking-wider">{tx(t.overview.sla.daily_success_rate, { days })}</h2>
                 <DailyTrendChart points={data.daily_trend} />
               </div>
             )}
 
             <div className="rounded-modal border border-primary/10 bg-card-bg overflow-hidden">
               <div className="px-5 py-3.5 border-b border-primary/10">
-                <h2 className="text-sm font-mono text-foreground uppercase tracking-wider">{t.overview.sla.per_agent}</h2>
+                <h2 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.overview.sla.per_agent}</h2>
               </div>
               {data.persona_stats.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-foreground">{t.overview.sla.no_agent_data}</div>
+                <div className="px-5 py-8 text-center typo-body text-foreground">{t.overview.sla.no_agent_data}</div>
               ) : (
                 <div className="divide-y divide-primary/5">
                   {data.persona_stats.map((ps) => (

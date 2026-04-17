@@ -39,7 +39,7 @@ export function ProgressBar({ answered, total }: { answered: number; total: numb
           transition={{ duration: 0.4, ease: 'easeOut' }}
         />
       </div>
-      <span className="text-xs text-foreground tabular-nums whitespace-nowrap">
+      <span className="typo-caption text-foreground tabular-nums whitespace-nowrap">
         {answered}/{total} answered
       </span>
     </div>
@@ -71,7 +71,7 @@ function DynamicSelectBody({
 
   if (!state) {
     return (
-      <div className="flex items-center gap-2 text-sm text-foreground">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         {t.templates.adopt_modal.preparing}
       </div>
@@ -80,7 +80,7 @@ function DynamicSelectBody({
 
   if (state.waitingOnParent) {
     return (
-      <div className="flex items-center gap-2 text-sm text-foreground">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <CircleDot className="w-3.5 h-3.5" />
         {t.templates.adopt_modal.waiting_for_parent}
       </div>
@@ -89,7 +89,7 @@ function DynamicSelectBody({
 
   if (state.loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-foreground">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         {tx(t.templates.adopt_modal.loading_from_service, { service: src.service_type })}
       </div>
@@ -99,7 +99,7 @@ function DynamicSelectBody({
   if (state.error) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-rose-300/80">
+        <div className="flex items-center gap-2 typo-body text-rose-300/80">
           <AlertCircle className="w-3.5 h-3.5" />
           {state.error}
         </div>
@@ -107,7 +107,7 @@ function DynamicSelectBody({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-white/[0.03] border border-white/[0.1] text-foreground hover:bg-white/[0.06] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-white/[0.03] border border-white/[0.1] text-foreground hover:bg-white/[0.06] transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             {t.templates.adopt_modal.retry}
@@ -116,7 +116,7 @@ function DynamicSelectBody({
             <button
               type="button"
               onClick={() => onAddCredential(question.vault_category!)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
             >
               <Plus className="w-3 h-3" />
               {t.templates.adopt_modal.add_credential}
@@ -358,7 +358,7 @@ export function QuestionCard({
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
             rows={3}
-            className="w-full max-w-lg px-3 py-2 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
+            className="w-full max-w-lg px-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
           />
         ) : (
           <input
@@ -367,7 +367,7 @@ export function QuestionCard({
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.type_your_answer}
-            className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
         )}
       </div>

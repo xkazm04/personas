@@ -17,7 +17,7 @@ const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: s
   return (
     <span
         key={String(value)}
-        className={`animate-fade-slide-in font-bold text-sm ${color ?? 'text-foreground'}`}
+        className={`animate-fade-slide-in font-bold typo-heading ${color ?? 'text-foreground'}`}
       >
         {value}
       </span>
@@ -51,7 +51,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.events_per_min}</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.events_per_min}</span>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.pending}</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.pending}</span>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.success}</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.success}</span>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="text-sm text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.in_window}</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_page.in_window}</span>
           </div>
         </div>
       </div>

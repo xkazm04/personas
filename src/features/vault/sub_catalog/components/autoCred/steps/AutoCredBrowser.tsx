@@ -142,7 +142,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         {visibleLogs.length === 0 && (
           <div className="text-foreground text-center py-10 space-y-2">
             <LoadingSpinner size="xl" className="mx-auto text-foreground" />
-            <p className="text-sm">
+            <p className="typo-body">
               {isGuided ? t.vault.auto_cred_extra.preparing_guided : t.vault.auto_cred_extra.starting_browser}
             </p>
           </div>
@@ -154,7 +154,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
+          className="px-4 py-2 typo-body text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
         >
           Cancel Session
         </button>

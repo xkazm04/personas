@@ -56,12 +56,12 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
 
   return (
     <div className="flex flex-col gap-1 px-3 py-2 rounded-card bg-secondary/30 border border-border/40">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+      <div className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
         <Activity className="w-3 h-3" />
         {t.agents.connectors.ch_delivery_health}
       </div>
       {activeStats.map(({ type: chType, stats: s }) => (
-        <div key={chType} className={`flex items-center gap-2 text-xs ${getHealthColor(s)}`}>
+        <div key={chType} className={`flex items-center gap-2 typo-caption ${getHealthColor(s)}`}>
           <span className="font-medium capitalize w-16">{chType}</span>
           <span className="text-foreground">{formatStats(s, t.agents.connectors.ch_no_deliveries)}</span>
         </div>

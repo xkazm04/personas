@@ -41,8 +41,8 @@ export function SummaryCard({
         <Icon className={`w-4 h-4 ${color}`} />
       </div>
       <div className="min-w-0">
-        <div className={`text-lg font-semibold tabular-nums ${color}`}>{value}</div>
-        <div className="text-xs text-foreground flex items-center gap-1">
+        <div className={`typo-heading-lg font-semibold tabular-nums ${color}`}>{value}</div>
+        <div className="typo-caption text-foreground flex items-center gap-1">
           {label}
           {connected !== undefined && (
             <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
@@ -75,7 +75,7 @@ export function SortHeader({
   const isActive = current === key;
   return (
     <th
-      className={`px-4 py-2.5 text-xs font-medium text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/90 transition-colors select-none ${
+      className={`px-4 py-2.5 typo-label font-medium text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/90 transition-colors select-none ${
         align === 'right' ? 'text-right' : 'text-left'
       }`}
       onClick={() => onToggle(key)}

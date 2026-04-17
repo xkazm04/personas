@@ -107,7 +107,7 @@ export default function GroupList({
       )}
 
       {groups.length > 0 && (
-        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 text-xs text-foreground">
+        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 typo-caption text-foreground">
           <span>{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
           <span>{totalContexts} context{totalContexts !== 1 ? 's' : ''}</span>
         </div>

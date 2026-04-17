@@ -52,7 +52,7 @@ export function BadgeRow({
           title={t.vault.credential_card.corrupted_tooltip}
         >
           <DatabaseZap className="w-2.5 h-2.5" />
-          <span className="text-sm font-medium">{t.vault.credential_card.corrupted}</span>
+          <span className="typo-body font-medium">{t.vault.credential_card.corrupted}</span>
         </span>
       ),
     });
@@ -80,7 +80,7 @@ export function BadgeRow({
       node: (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex-shrink-0">
           <RotateCw className="w-2.5 h-2.5 text-cyan-400/70" />
-          <span className="text-sm text-cyan-400/70 font-mono">{rotationCountdown}</span>
+          <span className="typo-code text-cyan-400/70 font-mono">{rotationCountdown}</span>
         </span>
       ),
     });
@@ -110,7 +110,7 @@ export function BadgeRow({
         key: 'auth',
         label: adopted.label,
         node: (
-          <span className={`text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
+          <span className={`typo-code px-1.5 py-0.5 rounded-card font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
             {adopted.label}
           </span>
         ),
@@ -121,7 +121,7 @@ export function BadgeRow({
       key: 'service',
       label: credential.service_type,
       node: (
-        <span className="text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 bg-secondary/40 border-primary/15 text-foreground">
+        <span className="typo-code px-1.5 py-0.5 rounded-card font-mono border shrink-0 bg-secondary/40 border-primary/15 text-foreground">
           {credential.service_type}
         </span>
       ),
@@ -137,7 +137,7 @@ export function BadgeRow({
       node: (
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground shrink-0">
           <Lock className="w-2.5 h-2.5" />
-          <span className="text-sm font-medium">{count} field{count !== 1 ? 's' : ''}</span>
+          <span className="typo-body font-medium">{count} field{count !== 1 ? 's' : ''}</span>
         </span>
       ),
     });
@@ -150,7 +150,7 @@ export function BadgeRow({
       key: `tag-${tag}`,
       label: tag,
       node: (
-        <span className={`text-sm font-medium px-1.5 py-0.5 rounded border shrink-0 ${style.bg} ${style.text} ${style.border}`}>
+        <span className={`typo-body font-medium px-1.5 py-0.5 rounded border shrink-0 ${style.bg} ${style.text} ${style.border}`}>
           {tag}
         </span>
       ),

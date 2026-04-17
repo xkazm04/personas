@@ -28,12 +28,12 @@ export function UseCaseSubscriptionsSection() {
         badge={(
           <>
             {manager.totalActive > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
                 {tx(t.agents.connectors.sub_active, { count: manager.totalActive })}
               </span>
             )}
             {manager.totalSuggested > 0 && manager.totalActive === 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
                 {tx(t.agents.connectors.sub_suggested, { count: manager.totalSuggested })}
               </span>
             )}
@@ -42,7 +42,7 @@ export function UseCaseSubscriptionsSection() {
       />
 
       {manager.error && (
-        <div className="px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+        <div className="px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/10 typo-body text-red-400/80">
           {manager.error}
         </div>
       )}
@@ -62,12 +62,12 @@ export function UseCaseSubscriptionsSection() {
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors focus-ring"
               >
                 <ChevronDown className={`w-3 h-3 text-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                <span className="text-sm font-medium text-foreground flex-1 truncate">{uc.title}</span>
+                <span className="typo-body font-medium text-foreground flex-1 truncate">{uc.title}</span>
                 {activeCount > 0 && (
-                  <span className="text-sm text-cyan-400/70">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>
+                  <span className="typo-body text-cyan-400/70">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>
                 )}
                 {activeCount === 0 && suggestedCount > 0 && (
-                  <span className="text-sm text-amber-400/70">{tx(t.agents.connectors.sub_suggested, { count: suggestedCount })}</span>
+                  <span className="typo-body text-amber-400/70">{tx(t.agents.connectors.sub_suggested, { count: suggestedCount })}</span>
                 )}
               </button>
 

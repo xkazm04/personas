@@ -111,10 +111,10 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-bold text-foreground tracking-tight">
+        <h2 className="typo-heading-lg font-bold text-foreground tracking-tight">
           Set up credentials
         </h2>
-        <p className="text-sm text-foreground mt-1">
+        <p className="typo-body text-foreground mt-1">
           {hasDetected && detected.length > 0
             ? `Found ${detected.length} service${detected.length !== 1 ? 's' : ''} you're signed into. Select which to add.`
             : t.vault.wizard_detect.select_services}
@@ -141,7 +141,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
       {hasDetected && detected.length === 0 && (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
           <Radar className="w-4 h-4 text-foreground" />
-          <p className="text-sm text-foreground">{t.vault.list.no_credentials}</p>
+          <p className="typo-body text-foreground">{t.vault.list.no_credentials}</p>
         </div>
       )}
 
@@ -153,7 +153,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.vault.wizard_detect.search_services}
-          className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
+          className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>
 

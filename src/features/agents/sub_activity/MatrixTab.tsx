@@ -229,7 +229,7 @@ export function MatrixTab() {
   const hasData = Object.keys(cellBuildStates).length > 0 || designResult;
   if (!hasData) {
     return (
-      <div className="py-8 text-center text-foreground text-sm">
+      <div className="py-8 text-center text-foreground typo-body">
         {t.agents.matrix_tab.no_data}
       </div>
     );

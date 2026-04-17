@@ -60,7 +60,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         {/* Sticky header */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full typo-body">
             <thead>
               <tr className="bg-secondary/40 border-b border-primary/10">
                 {result.columns.map((col, i) => {
@@ -96,7 +96,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
         {/* Virtualized body */}
         <div ref={scrollRef} className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 400 }}>
           <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
-            <table className="w-full text-sm" style={{ position: 'absolute', top: 0, left: 0 }}>
+            <table className="w-full typo-body" style={{ position: 'absolute', top: 0, left: 0 }}>
               <tbody>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                   const rowIdx = virtualRow.index;
@@ -160,7 +160,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
       </div>
 
       {/* Status bar */}
-      <div className="flex items-center gap-3 text-sm text-foreground">
+      <div className="flex items-center gap-3 typo-body text-foreground">
         <span>{tx(result.row_count !== 1 ? db.row_count_other : db.row_count_one, { count: result.row_count })}</span>
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />

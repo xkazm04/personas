@@ -9,7 +9,7 @@ export function DesignPhaseApplying() {
       className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
     >
       <LoadingSpinner size="xl" className="text-primary" />
-      <span className="text-sm text-foreground">{t.agents.design.applying_changes}</span>
+      <span className="typo-body text-foreground">{t.agents.design.applying_changes}</span>
     </div>
   );
 }

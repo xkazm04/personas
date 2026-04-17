@@ -25,10 +25,10 @@ export function MessageBubble({ message }: { message: DesignConversationMessage 
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={`text-sm font-medium uppercase tracking-wide ${isUser ? 'text-blue-400/80' : 'text-purple-400/80'}`}>{typeLabel}</span>
-          <span className="text-sm text-foreground">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
+          <span className={`typo-body font-medium uppercase tracking-wide ${isUser ? 'text-blue-400/80' : 'text-purple-400/80'}`}>{typeLabel}</span>
+          <span className="typo-body text-foreground">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
         </div>
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
+        <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
       </div>
     </div>
   );
@@ -51,15 +51,15 @@ export function ConversationCard({
         <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
           <MessageSquare className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-          <span className="text-sm font-medium truncate">{conversation.title}</span>
+          <span className="typo-body font-medium truncate">{conversation.title}</span>
           {isCompleted && <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />}
         </button>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-sm text-foreground tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
-          <span className="text-sm text-foreground">·</span>
-          <span className="text-sm text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
+          <span className="typo-data text-foreground tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
+          <span className="typo-body text-foreground">·</span>
+          <span className="typo-body text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
           {!isActive && conversation.status === 'active' && (
-            <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
+            <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 typo-body font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
           )}
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-foreground hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
         </div>
@@ -85,13 +85,13 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center gap-1.5">
-            <span className={`text-sm font-semibold ${meta.textClass}`}>{event.title}</span>
+            <span className={`typo-heading font-semibold ${meta.textClass}`}>{event.title}</span>
             <span className={`text-[10px] px-1 py-0.5 rounded ${meta.bgClass} ${meta.textClass} font-medium uppercase tracking-wider`}>{meta.label}</span>
           </div>
-          <p className="text-sm text-foreground line-clamp-2">{event.description}</p>
+          <p className="typo-body text-foreground line-clamp-2">{event.description}</p>
           <div className="flex items-center gap-1 pt-0.5">
             <ArrowRight className="w-2.5 h-2.5 text-foreground" />
-            <p className="text-sm text-foreground italic">{event.suggestion}</p>
+            <p className="typo-body text-foreground italic">{event.suggestion}</p>
           </div>
         </div>
       </div>

@@ -47,7 +47,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
-              <span className="text-xs font-semibold" style={{ color: fg }}>{t.settings.appearance.preview_dashboard}</span>
+              <span className="typo-caption font-semibold" style={{ color: fg }}>{t.settings.appearance.preview_dashboard}</span>
             </div>
             <div
               className="px-2 py-0.5 rounded-input text-[9px] font-medium"

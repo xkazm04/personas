@@ -154,7 +154,7 @@ export function CredentialDesignModalBody({
               className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
             >
               <LoadingSpinner size="2xl" className="text-primary" />
-              <p className="text-sm text-foreground">{t.vault.design_phases.saving}</p>
+              <p className="typo-body text-foreground">{t.vault.design_phases.saving}</p>
             </div>
           )}
 

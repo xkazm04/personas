@@ -172,7 +172,7 @@ export default function TeamMemoryPanel({
       {stats && stats.total > 0 && (
         <div className="border-t border-primary/10 px-3 py-2">
           <button
-            className="flex items-center justify-between w-full text-sm text-foreground hover:text-muted-foreground/70"
+            className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
             <span>Avg importance: {stats.avg_importance.toFixed(1)} | {stats.category_counts.length} categories</span>
@@ -181,7 +181,7 @@ export default function TeamMemoryPanel({
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (
-                <div key={cat} className="flex items-center justify-between text-sm">
+                <div key={cat} className="flex items-center justify-between typo-body">
                   <span className="text-foreground capitalize">{cat}</span>
                   <span className="text-foreground">{count}</span>
                 </div>

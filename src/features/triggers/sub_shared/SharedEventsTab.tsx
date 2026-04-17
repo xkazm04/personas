@@ -84,7 +84,7 @@ export function SharedEventsTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setView('browse')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-input transition-colors ${
+            className={`px-3 py-1.5 typo-caption font-medium rounded-input transition-colors ${
               view === 'browse' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
@@ -93,7 +93,7 @@ export function SharedEventsTab() {
           </button>
           <button
             onClick={() => setView('subscriptions')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-input transition-colors ${
+            className={`px-3 py-1.5 typo-caption font-medium rounded-input transition-colors ${
               view === 'subscriptions' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
@@ -108,7 +108,7 @@ export function SharedEventsTab() {
         <button
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -127,7 +127,7 @@ export function SharedEventsTab() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={t.triggers.search_feeds}
-                className="w-full pl-8 pr-7 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full pl-8 pr-7 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -181,10 +181,10 @@ export function SharedEventsTab() {
                 <div className="w-12 h-12 rounded-modal bg-sky-500/10 flex items-center justify-center">
                   <RssIcon className="w-6 h-6 text-sky-400" />
                 </div>
-                <p className="text-sm text-foreground">
+                <p className="typo-body text-foreground">
                   {loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
                 </p>
-                <p className="text-xs text-foreground">
+                <p className="typo-caption text-foreground">
                   {t.triggers.no_feeds_hint}
                 </p>
               </div>

@@ -70,7 +70,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
             key={opt.value}
             onClick={() => handlePresetClick(opt.value)}
             aria-pressed={!isCustomActive && value === opt.value}
-            className={`px-3 py-1 rounded-modal text-sm font-medium transition-all ${
+            className={`px-3 py-1 rounded-modal typo-body font-medium transition-all ${
               !isCustomActive && value === opt.value
                 ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                 : 'text-foreground hover:text-muted-foreground'
@@ -83,7 +83,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
           ref={buttonRef}
           onClick={handleCustomClick}
           aria-pressed={isCustomActive}
-          className={`px-3 py-1 rounded-modal text-sm font-medium transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1 rounded-modal typo-body font-medium transition-all flex items-center gap-1.5 ${
             isCustomActive
               ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
               : 'text-foreground hover:text-muted-foreground'
@@ -146,28 +146,28 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-foreground mb-1">{t.overview.filters.start_date}</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.start_date}</label>
             <input
               type="date"
               value={startDate}
               max={endDate || today}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           <div>
-            <label className="block text-sm text-foreground mb-1">{t.overview.filters.end_date}</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.end_date}</label>
             <input
               type="date"
               value={endDate}
               min={startDate}
               max={today}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           {isValid && (
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               {dayCount} day{dayCount !== 1 ? 's' : ''} selected
             </p>
           )}
@@ -175,14 +175,14 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             <button
               onClick={handleApply}
               disabled={!isValid}
-              className="flex-1 px-3 py-1.5 text-sm font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-1.5 typo-body font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>
             {value && (
               <button
                 onClick={() => onChange(null)}
-                className="px-3 py-1.5 text-sm font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                className="px-3 py-1.5 typo-body font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               >
                 Clear
               </button>
@@ -207,7 +207,7 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
         enabled
           ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
           : 'bg-secondary/40 text-foreground border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'

@@ -50,7 +50,7 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
         <Clock className="w-3.5 h-3.5 text-foreground" />
-        <span className="text-sm text-foreground">
+        <span className="typo-body text-foreground">
           {uc.general_history}
           {!showGeneralHistory && generalHistory.length > 0 && (
             <span className="ml-1 text-foreground">
@@ -65,9 +65,9 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
       {showGeneralHistory && (
         <div className="border-t border-primary/10">
           {generalHistoryLoading ? (
-            <div className="px-4 py-3 text-sm text-foreground">{t.common.loading}</div>
+            <div className="px-4 py-3 typo-body text-foreground">{t.common.loading}</div>
           ) : generalHistory.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-foreground">
+            <div className="px-4 py-3 typo-body text-foreground">
               {uc.no_unlinked_executions}
             </div>
           ) : (
@@ -76,17 +76,17 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
                 const statusEntry = getStatusEntry(exec.status);
                 return (
                   <div key={exec.id} className="px-4 py-2 flex items-center gap-3">
-                    <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
+                    <span className={`px-1.5 py-0.5 typo-body font-medium rounded border ${badgeClass(statusEntry)} uppercase`}>
                       {statusEntry.label}
                     </span>
-                    <span className="text-sm text-foreground font-mono w-14 flex-shrink-0">
+                    <span className="typo-code text-foreground font-mono w-14 flex-shrink-0">
                       {formatDuration(exec.duration_ms)}
                     </span>
-                    <span className="text-sm text-foreground flex-1 truncate">
+                    <span className="typo-body text-foreground flex-1 truncate">
                       {formatRelativeTime(exec.created_at)}
                     </span>
                     {exec.cost_usd > 0 && (
-                      <span className="text-sm text-foreground font-mono flex-shrink-0">
+                      <span className="typo-code text-foreground font-mono flex-shrink-0">
                         ${exec.cost_usd.toFixed(4)}
                       </span>
                     )}

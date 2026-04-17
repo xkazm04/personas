@@ -52,7 +52,7 @@ function LatencyBar({ value, max }: { value: number; max: number }) {
 function CommandRow({ stat, maxP95 }: { stat: IpcCommandStats; maxP95: number }) {
   const shortName = stat.command.replace(/^(get_|list_|fetch_|create_|update_|delete_)/, '');
   return (
-    <div role="row" tabIndex={0} className="grid grid-cols-[1fr_60px_60px_60px_52px] items-center gap-2 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none text-sm">
+    <div role="row" tabIndex={0} className="grid grid-cols-[1fr_60px_60px_60px_52px] items-center gap-2 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none typo-body">
       <div role="cell" className="flex flex-col gap-0.5 min-w-0">
         <span className="font-mono text-foreground truncate" title={stat.command}>{shortName}</span>
         <LatencyBar value={stat.p95} max={maxP95} />
@@ -69,13 +69,13 @@ function SlowestCallRow({ record }: { record: IpcCallRecord }) {
   const age = Date.now() - record.timestamp;
   const ageLabel = age < 60_000 ? `${Math.floor(age / 1000)}s ago` : age < 3_600_000 ? `${Math.floor(age / 60_000)}m ago` : `${Math.floor(age / 3_600_000)}h ago`;
   return (
-    <div role="row" tabIndex={0} className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none text-sm">
+    <div role="row" tabIndex={0} className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none typo-body">
       <span role="cell" className={`font-mono font-bold min-w-[60px] text-right ${latencyColor(record.durationMs)}`}>
         {formatMs(record.durationMs)}
       </span>
       <span role="cell" className="font-mono text-foreground flex-1 truncate" title={record.command}>{record.command}</span>
       {!record.ok && <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />}
-      <span role="cell" className="text-foreground text-sm min-w-[50px] text-right">{ageLabel}</span>
+      <span role="cell" className="text-foreground typo-body min-w-[50px] text-right">{ageLabel}</span>
     </div>
   );
 }
@@ -106,7 +106,7 @@ export default function IpcPerformancePanel() {
           </div>
           <div className="text-left">
             <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.ipc_panel.title}</h3>
-            <div className="flex items-center gap-3 mt-0.5 text-sm text-foreground">
+            <div className="flex items-center gap-3 mt-0.5 typo-body text-foreground">
               <span>{summary.totalCalls.toLocaleString()} calls</span>
               <span className="text-primary/15">|</span>
               <span>p50 <span className={latencyColor(summary.p50)}>{formatMs(summary.p50)}</span></span>
@@ -137,7 +137,7 @@ export default function IpcPerformancePanel() {
 
           {tab === 'commands' && (
             <div role="table" aria-label="IPC command performance">
-              <div role="row" className="grid grid-cols-[1fr_60px_60px_60px_52px] gap-2 px-3 py-1.5 text-sm text-foreground border-b border-primary/5">
+              <div role="row" className="grid grid-cols-[1fr_60px_60px_60px_52px] gap-2 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
                 <span role="columnheader">{t.overview.ipc_panel.command}</span>
                 <span role="columnheader" className="text-right">p50</span>
                 <span role="columnheader" className="text-right">p95</span>
@@ -152,7 +152,7 @@ export default function IpcPerformancePanel() {
 
           {tab === 'slowest' && (
             <div role="table" aria-label="Slowest IPC calls">
-              <div role="row" className="flex items-center gap-3 px-3 py-1.5 text-sm text-foreground border-b border-primary/5">
+              <div role="row" className="flex items-center gap-3 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
                 <span role="columnheader" className="min-w-[60px] text-right">{t.overview.ipc_panel.duration_header}</span>
                 <span role="columnheader" className="flex-1">Command</span>
                 <span role="columnheader" className="min-w-[50px] text-right">{t.overview.ipc_panel.when_header}</span>
@@ -164,7 +164,7 @@ export default function IpcPerformancePanel() {
           )}
 
           {(summary.errorRate > 0 || summary.timeoutRate > 0) && (
-            <div className="px-4 py-2 border-t border-primary/5 bg-secondary/30 flex items-center gap-4 text-sm">
+            <div className="px-4 py-2 border-t border-primary/5 bg-secondary/30 flex items-center gap-4 typo-body">
               {summary.errorRate > 0 && <span className="text-red-400/80">Error rate: {formatRate(summary.errorRate)}</span>}
               {summary.timeoutRate > 0 && <span className="text-amber-400/80">Timeout rate: {formatRate(summary.timeoutRate)}</span>}
             </div>

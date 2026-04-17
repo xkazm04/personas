@@ -21,8 +21,8 @@ const GRADE_COLORS: Record<HealthGrade, { ring: string; pulse: string; bg: strin
 
 const SIZE_MAP = {
   sm: { outer: 'w-8 h-8', inner: 'w-3 h-3', text: 'text-[9px]', iconSize: 'w-4 h-4' },
-  md: { outer: 'w-12 h-12', inner: 'w-4 h-4', text: 'text-xs', iconSize: 'w-6 h-6' },
-  lg: { outer: 'w-16 h-16', inner: 'w-5 h-5', text: 'text-sm', iconSize: 'w-8 h-8' },
+  md: { outer: 'w-12 h-12', inner: 'w-4 h-4', text: 'typo-caption', iconSize: 'w-6 h-6' },
+  lg: { outer: 'w-16 h-16', inner: 'w-5 h-5', text: 'typo-body', iconSize: 'w-8 h-8' },
 };
 
 export function HeartbeatIndicator({ score, grade, size = 'md', animate = true, personaIcon, personaColor }: HeartbeatIndicatorProps) {

@@ -80,8 +80,8 @@ export function GenerationEvolutionChart({
   return (
     <div className="space-y-3" role="region" aria-label="Generation evolution chart">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-foreground">{t.agents.lab.evolution_progress}</h4>
-        <span className="text-xs text-foreground">
+        <h4 className="typo-caption font-medium text-foreground">{t.agents.lab.evolution_progress}</h4>
+        <span className="typo-caption text-foreground">
           {stats.length} generation{stats.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -117,7 +117,7 @@ export function GenerationEvolutionChart({
                 />
 
                 {/* Tooltip on hover */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-input px-2 py-1 text-xs whitespace-nowrap z-10 shadow-elevation-3">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-input px-2 py-1 typo-caption whitespace-nowrap z-10 shadow-elevation-3">
                   Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>
@@ -145,7 +145,7 @@ export function GenerationEvolutionChart({
         const first = stats[0]!;
         const last = stats[stats.length - 1]!;
         return (
-          <div className="flex items-center gap-3 text-xs text-foreground border-t border-primary/5 pt-2">
+          <div className="flex items-center gap-3 typo-caption text-foreground border-t border-primary/5 pt-2">
             <div className="flex items-center gap-1">
               <TrendIndicator
                 current={last.bestFitness}

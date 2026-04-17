@@ -207,14 +207,14 @@ export function SelectPills({
               if (!multi) commitCustom();
             }}
             placeholder={t.templates.adopt_modal.type_custom_value}
-            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-card border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="flex-1 max-w-sm px-3 py-1.5 typo-body rounded-card border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
           {multi && (
             <button
               type="button"
               onClick={commitCustom}
               disabled={!customDraft.trim()}
-              className="px-3 py-1.5 text-xs font-medium rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
+              className="px-3 py-1.5 typo-caption font-medium rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
             >
               {t.templates.adopt_modal.add_custom}
             </button>

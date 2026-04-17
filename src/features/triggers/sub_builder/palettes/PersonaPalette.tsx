@@ -93,7 +93,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={t.triggers.builder.filter_personas_placeholder}
-                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full pl-7 pr-2 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
           </div>

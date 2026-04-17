@@ -56,7 +56,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
   return (
     <button id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm font-bold border ${
+        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading font-bold border ${
           isCompleted
             ? `${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`
             : isActive
@@ -68,21 +68,21 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
+          <span className={`typo-body font-medium ${isActive ? 'text-foreground' : 'text-foreground/90'}`}>
             {step.title}
           </span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-medium border ${colorClasses}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body font-medium border ${colorClasses}`}>
             <Icon className="w-2.5 h-2.5" />
             {step.action_type.replace('_', ' ')}
           </span>
           {step.requires_human && (
-            <span className="px-1.5 py-0.5 rounded text-sm font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
+            <span className="px-1.5 py-0.5 rounded typo-body font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
               manual
             </span>
           )}
         </div>
         {!isActive && (
-          <p className="text-sm text-foreground mt-0.5 truncate">{step.description}</p>
+          <p className="typo-body text-foreground mt-0.5 truncate">{step.description}</p>
         )}
       </div>
       {isActive
@@ -139,7 +139,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
     >
       <button
         onClick={() => setShowHelp(!showHelp)}
-        className="inline-flex items-center gap-1.5 text-sm text-foreground hover:text-foreground/95 transition-colors duration-snap"
+        className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors duration-snap"
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
       >
         <HelpCircle className="w-3 h-3" />
@@ -161,13 +161,13 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                 placeholder={t.vault.negotiator_extra.ask_question}
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button
                 onClick={handleAskHelp}
                 disabled={!helpQuestion.trim() || isLoadingHelp}
-                className={`px-3 py-1.5 rounded-modal text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
+                className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
                 {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
@@ -175,7 +175,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && (
               <div
-                className={`px-3 py-2 rounded-modal text-sm text-foreground ${AI_STATUS.bg} border ${AI_STATUS.border}`}
+                className={`px-3 py-2 rounded-modal typo-body text-foreground ${AI_STATUS.bg} border ${AI_STATUS.border}`}
                 data-testid={`negotiator-step-${stepIndex}-help-answer`}
               >
                 {stepHelp.answer}

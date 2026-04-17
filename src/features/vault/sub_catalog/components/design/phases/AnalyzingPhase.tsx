@@ -66,14 +66,14 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       {/* Time estimate + elapsed (hidden for first 5s to reduce anxiety) */}
       <div className="flex items-center justify-between px-1">
         {elapsed >= 5 ? (
-          <div className="flex items-center gap-1.5 text-sm text-foreground">
+          <div className="flex items-center gap-1.5 typo-body text-foreground">
             <Clock className="w-3 h-3" />
             <span>{formatElapsed(elapsed)} elapsed</span>
           </div>
         ) : (
           <div />
         )}
-        <span className="text-sm text-foreground">{t.vault.design_phases.typical_time}</span>
+        <span className="typo-body text-foreground">{t.vault.design_phases.typical_time}</span>
       </div>
 
       {/* Progress bar */}
@@ -106,7 +106,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
               </div>
               {/* Label + description */}
               <div className="flex-1 min-w-0">
-                <span className={`text-sm font-medium ${
+                <span className={`typo-body font-medium ${
                   step.status === 'completed'
                     ? 'text-foreground'
                     : step.status === 'active'
@@ -116,7 +116,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
                   {def.label}
                 </span>
                 {step.status === 'active' && (
-                  <span className="ml-2 text-sm text-foreground">{def.description}</span>
+                  <span className="ml-2 typo-body text-foreground">{def.description}</span>
                 )}
               </div>
             </div>
@@ -128,7 +128,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       {tailLines.length > 0 && (
         <div
           ref={tailRef}
-          className="px-3 hidden py-2 rounded-modal bg-secondary/30 border border-primary/10 text-sm text-foreground font-mono max-h-[4.5rem] overflow-y-auto"
+          className="px-3 hidden py-2 rounded-modal bg-secondary/30 border border-primary/10 typo-code text-foreground font-mono max-h-[4.5rem] overflow-y-auto"
         >
           {tailLines.map((line, i) => (
             <div key={outputLines.length - tailLines.length + i}>{line}</div>
@@ -139,7 +139,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       <div className="flex justify-end">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
           data-testid="analyzing-cancel-btn"
         >
           Cancel

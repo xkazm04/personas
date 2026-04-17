@@ -58,7 +58,7 @@ export function ServicesPanel({
 
   if (connectors.length === 0) {
     return (
-      <p className="text-xs text-foreground px-1 py-2">
+      <p className="typo-caption text-foreground px-1 py-2">
         {t.agents.services_panel.no_connectors}
       </p>
     );

@@ -75,7 +75,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
       {totalCount > 0 && (
         <div className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/20">
           <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-xs text-foreground font-medium">
+          <span className="typo-caption text-foreground font-medium">
             {tx(t.agents.ops_assertions.active_count, { enabled: enabledCount, total: totalCount })}
           </span>
         </div>
@@ -90,7 +90,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
         ) : assertions.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-4">
             <ShieldCheck className="w-6 h-6 text-foreground" />
-            <p className="text-xs text-foreground text-center">{t.agents.ops_assertions.no_assertions}</p>
+            <p className="typo-caption text-foreground text-center">{t.agents.ops_assertions.no_assertions}</p>
           </div>
         ) : (
           assertions.map((assertion) => {
@@ -109,7 +109,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
                   <XCircle className="w-3 h-3 flex-shrink-0 text-foreground" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{assertion.name}</p>
+                  <p className="typo-caption font-medium text-foreground truncate">{assertion.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-input border ${sevStyle}`}>
                       {assertion.severity}

@@ -46,10 +46,10 @@ export function TemplateCardPreview({
           <div className={`${CARD_PADDING.standard} space-y-4`}>
             {/* Full Description */}
             <div>
-              <h4 className="text-sm font-semibold text-foreground/90 mb-1.5">
+              <h4 className="typo-heading font-semibold text-foreground/90 mb-1.5">
                 {name}
               </h4>
-              <p className="text-sm text-foreground leading-relaxed">
+              <p className="typo-body text-foreground leading-relaxed">
                 {instruction}
               </p>
             </div>
@@ -63,11 +63,11 @@ export function TemplateCardPreview({
                     <div key={flow.id} className="flex items-start gap-2">
                       <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <span className="text-sm text-foreground font-medium">
+                        <span className="typo-body text-foreground font-medium">
                           {flow.name}
                         </span>
                         {flow.description && (
-                          <p className="text-xs text-foreground mt-0.5 line-clamp-2">
+                          <p className="typo-caption text-foreground mt-0.5 line-clamp-2">
                             {flow.description}
                           </p>
                         )}
@@ -95,7 +95,7 @@ export function TemplateCardPreview({
                         >
                           <ConnectorIcon meta={meta} size="w-3 h-3" />
                         </div>
-                        <span className="text-sm text-foreground flex-1 truncate">
+                        <span className="typo-body text-foreground flex-1 truncate">
                           {meta.label}
                         </span>
                         {isReady ? (
@@ -117,7 +117,7 @@ export function TemplateCardPreview({
                   <FileText className="w-3 h-3" />
                   System Prompt
                 </SectionLabel>
-                <p className="text-xs text-foreground leading-relaxed bg-primary/3 rounded-card px-2.5 py-2 font-mono">
+                <p className="typo-code text-foreground leading-relaxed bg-primary/3 rounded-card px-2.5 py-2 font-mono">
                   {systemPromptPreview}
                 </p>
               </div>

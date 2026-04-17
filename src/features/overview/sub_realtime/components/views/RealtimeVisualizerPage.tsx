@@ -87,7 +87,7 @@ export default function RealtimeVisualizerPage() {
                   key={key}
                   onClick={() => setVariant(key)}
                   title={m.description}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-mono transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-code font-mono transition-all ${
                     isActive
                       ? 'bg-primary/10 text-foreground/90 shadow-elevation-1'
                       : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/50'

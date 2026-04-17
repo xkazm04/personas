@@ -51,7 +51,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
         <div className="flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-xs font-semibold text-foreground">Canvas Assistant</span>
+          <span className="typo-caption font-semibold text-foreground">Canvas Assistant</span>
         </div>
         <button onClick={onClose} className="p-0.5 rounded hover:bg-secondary/60">
           <X className="w-3.5 h-3.5 text-foreground" />
@@ -89,7 +89,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
           placeholder="Describe your event topology..."
-          className="flex-1 px-2.5 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="flex-1 px-2.5 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
           onClick={handleSubmit}

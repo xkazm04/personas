@@ -32,7 +32,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       className="fixed z-50 w-48 rounded-modal bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 py-1 overflow-hidden"
       style={{ left: x, top: y }}
     >
-      <div className="px-3 py-1.5 text-sm font-mono uppercase text-foreground border-b border-primary/10">
+      <div className="px-3 py-1.5 typo-code font-mono uppercase text-foreground border-b border-primary/10">
         {memberName}
       </div>
 
@@ -42,13 +42,13 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           <button
             key={role.value}
             onClick={() => { onChangeRole(role.value); onClose(); }}
-            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-modal transition-colors ${
+            className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-modal transition-colors ${
               currentRole === role.value ? 'bg-indigo-500/15 text-indigo-300' : 'text-foreground/90 hover:bg-secondary/60'
             }`}
           >
             <UserCog className="w-3 h-3" />
             <span className="capitalize">{role.label}</span>
-            {currentRole === role.value && <span className="ml-auto text-sm text-indigo-400">{t.pipeline.current_role}</span>}
+            {currentRole === role.value && <span className="ml-auto typo-body text-indigo-400">{t.pipeline.current_role}</span>}
           </button>
         ))}
       </div>
@@ -57,14 +57,14 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       <div className="px-1 py-1">
         <button
           onClick={() => { onConfigure(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-modal transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body text-foreground/90 hover:bg-secondary/60 rounded-modal transition-colors"
         >
           <Settings className="w-3 h-3" />
           {t.pipeline.configure}
         </button>
         <button
           onClick={() => { onRemove(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
         >
           <Trash2 className="w-3 h-3" />
           {t.pipeline.remove_from_team}

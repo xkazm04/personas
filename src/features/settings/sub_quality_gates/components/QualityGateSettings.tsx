@@ -19,7 +19,7 @@ function RuleRow({ rule }: { rule: QualityGateRule }) {
   return (
     <div className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-secondary/40 transition-colors">
       <ActionIcon size={13} className={`shrink-0 ${action.color}`} />
-      <code className="text-xs font-mono text-foreground bg-secondary/40 px-1.5 py-0.5 rounded min-w-0 truncate">
+      <code className="typo-code font-mono text-foreground bg-secondary/40 px-1.5 py-0.5 rounded min-w-0 truncate">
         {rule.pattern}
       </code>
       <span className="text-[11px] text-foreground shrink-0 ml-auto">
@@ -44,7 +44,7 @@ function RuleSection({ title, icon: Icon, description, rules, categories, reject
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Icon size={14} className="text-foreground" />
-        <h3 className="text-sm font-medium text-foreground">{title}</h3>
+        <h3 className="typo-body font-medium text-foreground">{title}</h3>
         <span className="text-[10px] text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
           {rules.length} rule{rules.length !== 1 ? 's' : ''}
         </span>
@@ -128,13 +128,13 @@ export default function QualityGateSettings() {
       />
       <ContentBody>
         {error && (
-          <div className="text-xs text-red-400 bg-red-400/10 rounded p-2 mb-3">
+          <div className="typo-caption text-red-400 bg-red-400/10 rounded p-2 mb-3">
             {error}
           </div>
         )}
 
         {loading && !config && (
-          <div className="text-xs text-foreground py-8 text-center">{s.loading_config}</div>
+          <div className="typo-caption text-foreground py-8 text-center">{s.loading_config}</div>
         )}
 
         {config && (

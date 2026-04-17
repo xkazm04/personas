@@ -42,7 +42,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-semibold text-primary uppercase tracking-wider">
+      <h4 className="typo-label font-semibold text-primary uppercase tracking-wider">
         Implementation Log
       </h4>
 
@@ -54,12 +54,12 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
           onChange={(e) => setNoteText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
           placeholder={t.plugins.dev_tools.add_note_placeholder}
-          className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="flex-1 px-2.5 py-1.5 typo-caption bg-secondary/50 border border-border/30 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
           onClick={handleAddNote}
           disabled={!noteText.trim()}
-          className="px-2.5 py-1.5 text-xs font-medium rounded-card bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1.5 typo-caption font-medium rounded-card bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -67,7 +67,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
 
       {/* Timeline */}
       {sorted.length === 0 ? (
-        <p className="text-xs text-foreground italic py-4 text-center">{t.plugins.dev_tools.no_activity}</p>
+        <p className="typo-caption text-foreground italic py-4 text-center">{t.plugins.dev_tools.no_activity}</p>
       ) : (
         <div className="space-y-1 max-h-64 overflow-y-auto">
           {sorted.map((signal) => {
@@ -77,7 +77,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
               <div key={signal.id} className="flex items-start gap-2 py-1.5 px-1">
                 <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${config.color}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-foreground leading-relaxed">{signal.message}</p>
+                  <p className="typo-caption text-foreground leading-relaxed">{signal.message}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] text-foreground">{relativeTime(signal.created_at)}</span>
                     {signal.delta != null && signal.delta !== 0 && (

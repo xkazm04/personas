@@ -119,7 +119,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40">
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 text-sm text-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back
@@ -128,7 +128,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         <button
           onClick={handleSave}
           disabled={!isValid || saving}
-          className="flex items-center gap-1.5 rounded-modal bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="flex items-center gap-1.5 rounded-modal bg-primary px-3 py-1.5 typo-body font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
           {recipe ? t.recipes.save_changes : t.recipes.create_recipe}
@@ -139,35 +139,35 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">{t.recipes.name_label}</label>
+          <label className="block typo-body font-medium text-foreground mb-1.5">{t.recipes.name_label}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Summarize PR Changes"
-            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
+            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">{t.recipes.description_label}</label>
+          <label className="block typo-body font-medium text-foreground mb-1.5">{t.recipes.description_label}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t.recipes.description_placeholder}
             rows={2}
-            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-none"
+            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">{t.recipes.category_label}</label>
+          <label className="block typo-body font-medium text-foreground mb-1.5">{t.recipes.category_label}</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:border-primary/50"
+            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-body text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           >
             <option value="">{t.common.none}</option>
             {CATEGORIES.map((c) => (
@@ -178,10 +178,10 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
 
         {/* Prompt Template */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
+          <label className="block typo-body font-medium text-foreground mb-1.5">
             Prompt Template *
           </label>
-          <p className="text-sm text-foreground mb-1.5">
+          <p className="typo-body text-foreground mb-1.5">
             {'Use {{variable}} syntax for placeholders that will be filled from input schema.'}
           </p>
           <textarea
@@ -189,16 +189,16 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setPromptTemplate(e.target.value)}
             placeholder={'You are a helpful assistant.\n\nAnalyze the following: {{input}}'}
             rows={10}
-            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-y"
+            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-y"
           />
         </div>
 
         {/* Input Schema — Visual Builder */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
+          <label className="block typo-body font-medium text-foreground mb-1.5">
             Input Schema
           </label>
-          <p className="text-sm text-foreground mb-1.5">
+          <p className="typo-body text-foreground mb-1.5">
             {t.recipes.input_schema_help}
           </p>
           <SchemaFieldBuilder fields={schemaFields} onChange={setSchemaFields} />
@@ -206,7 +206,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
 
         {/* Tags — Chip Input */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">{t.recipes.tags_label}</label>
+          <label className="block typo-body font-medium text-foreground mb-1.5">{t.recipes.tags_label}</label>
           <TagChipInput tags={tags} onChange={setTags} />
         </div>
       </div>

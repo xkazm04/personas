@@ -54,7 +54,7 @@ export function LanguageCardGrid() {
               </div>
               <div className="px-2 py-1.5 bg-card/80">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{lang.flag}</span>
+                  <span className="typo-body">{lang.flag}</span>
                   <span className={`truncate ${isActive ? 'text-primary typo-card-label' : 'typo-card-label group-hover:text-foreground'}`}>{lang.label}</span>
                 </div>
               </div>

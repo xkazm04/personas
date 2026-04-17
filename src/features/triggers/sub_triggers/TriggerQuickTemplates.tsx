@@ -7,7 +7,7 @@ export interface TriggerQuickTemplatesProps {
 export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplatesProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-1.5">
+      <label className="block typo-body font-medium text-foreground mb-1.5">
         Quick Templates
       </label>
       <div className="grid grid-cols-2 gap-1.5">
@@ -23,8 +23,8 @@ export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplates
             >
               <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground/90 truncate">{tpl.label}</p>
-                <p className="text-sm text-foreground line-clamp-1">{tpl.description}</p>
+                <p className="typo-body font-medium text-foreground/90 truncate">{tpl.label}</p>
+                <p className="typo-body text-foreground line-clamp-1">{tpl.description}</p>
               </div>
             </button>
           );

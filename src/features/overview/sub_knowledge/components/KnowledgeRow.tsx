@@ -47,8 +47,8 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
         >
           <ChevronRight className="w-3 h-3 text-foreground" />
         </motion.div>
-        <span className="text-xs uppercase tracking-wider text-foreground">{label}</span>
-        <span className="text-xs text-foreground ml-auto">{Object.keys(data).length} fields</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{label}</span>
+        <span className="typo-caption text-foreground ml-auto">{Object.keys(data).length} fields</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -66,8 +66,8 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
               {Object.entries(data).map(([k, v]) =>
                 isPrimitive(v) ? (
                   <div key={k} className="bg-secondary/10 rounded-card p-2">
-                    <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{formatLabel(k)}</div>
-                    <div className="text-sm font-medium text-foreground break-words">{formatPrimitiveValue(v)}</div>
+                    <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{formatLabel(k)}</div>
+                    <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(v)}</div>
                   </div>
                 ) : (
                   <div key={k} className="col-span-full">
@@ -90,10 +90,10 @@ function PatternValueCard({ label, value }: { label: string; value: unknown }) {
     if (allPrimitive) {
       return (
         <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
-          <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{label}</div>
+          <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{label}</div>
           <div className="flex flex-wrap gap-1 mt-1">
             {value.map((item, i) => (
-              <span key={i} className="text-xs font-medium text-foreground bg-secondary/20 rounded px-1.5 py-0.5">
+              <span key={i} className="typo-caption font-medium text-foreground bg-secondary/20 rounded px-1.5 py-0.5">
                 {formatPrimitiveValue(item)}
               </span>
             ))}
@@ -116,8 +116,8 @@ function PatternValueCard({ label, value }: { label: string; value: unknown }) {
   }
   return (
     <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
-      <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{label}</div>
-      <div className="text-sm font-medium text-foreground break-words">{formatPrimitiveValue(value)}</div>
+      <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{label}</div>
+      <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(value)}</div>
     </motion.div>
   );
 }
@@ -210,14 +210,14 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
       <div role="button" tabIndex={0} onClick={toggleExpanded} onKeyDown={handleRowKeyDown} className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground/90 truncate">
+            <span className="typo-body font-medium text-foreground/90 truncate">
               {isAnnotation && entry.annotation_text ? entry.annotation_text : entry.pattern_key}
             </span>
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${colors.bg} ${colors.text} border ${colors.border} font-medium`}>
+            <span className={`typo-caption px-1.5 py-0.5 rounded-full ${colors.bg} ${colors.text} border ${colors.border} font-medium`}>
               {config?.label ?? entry.knowledge_type}
             </span>
             {entry.scope_type !== 'persona' && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${scopeColors.bg} ${scopeColors.text} border ${scopeColors.border} font-medium flex items-center gap-1`}>
+              <span className={`typo-caption px-1.5 py-0.5 rounded-full ${scopeColors.bg} ${scopeColors.text} border ${scopeColors.border} font-medium flex items-center gap-1`}>
                 <ScopeIcon className="w-2.5 h-2.5" />
                 {entry.scope_id ?? entry.scope_type}
               </span>
@@ -226,7 +226,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             )}
           </div>
-          <div className="flex items-center gap-3 mt-0.5 text-xs text-foreground">
+          <div className="flex items-center gap-3 mt-0.5 typo-caption text-foreground">
             {personaName && <span>{personaName}</span>}
             {!isAnnotation && <span>{total} run{total !== 1 ? 's' : ''}</span>}
             {!isAnnotation && recentResults.length > 1 && <ExecutionSparkline results={recentResults} />}
@@ -257,7 +257,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
             </>
           )}
           <ConfidenceArc value={confidencePct} />
-          <span className="text-xs font-mono text-foreground w-8 text-right">{confidencePct}%</span>
+          <span className="typo-code font-mono text-foreground w-8 text-right">{confidencePct}%</span>
           <motion.div
             animate={{ rotate: expanded ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
@@ -286,8 +286,8 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
                 >
-                  <div className="text-xs uppercase tracking-wider text-foreground mb-1">{t.overview.knowledge_row.annotation}</div>
-                  <p className="text-sm text-foreground bg-secondary/20 rounded-card p-2">{entry.annotation_text}</p>
+                  <div className="typo-label uppercase tracking-wider text-foreground mb-1">{t.overview.knowledge_row.annotation}</div>
+                  <p className="typo-body text-foreground bg-secondary/20 rounded-card p-2">{entry.annotation_text}</p>
                 </motion.div>
               )}
               <motion.div
@@ -297,24 +297,24 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                 variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
               >
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.successes}</div>
-                  <div className="text-sm font-semibold text-emerald-400">{entry.success_count}</div>
+                  <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.successes}</div>
+                  <div className="typo-heading font-semibold text-emerald-400">{entry.success_count}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.failures}</div>
-                  <div className="text-sm font-semibold text-red-400">{entry.failure_count}</div>
+                  <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.failures}</div>
+                  <div className="typo-heading font-semibold text-red-400">{entry.failure_count}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.avg_cost}</div>
-                  <div className="text-sm font-semibold text-foreground">{formatCost(entry.avg_cost_usd)}</div>
+                  <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.avg_cost}</div>
+                  <div className="typo-heading font-semibold text-foreground">{formatCost(entry.avg_cost_usd)}</div>
                 </motion.div>
                 <motion.div variants={{ hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}>
-                  <div className="text-xs uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.avg_duration}</div>
-                  <div className="text-sm font-semibold text-foreground">{formatDuration(entry.avg_duration_ms)}</div>
+                  <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{t.overview.knowledge_row.avg_duration}</div>
+                  <div className="typo-heading font-semibold text-foreground">{formatDuration(entry.avg_duration_ms)}</div>
                 </motion.div>
                 {Object.keys(patternData).length > 0 && (
                   <motion.div className="col-span-full" variants={cardVariants} transition={cardTransition}>
-                    <div className="text-xs uppercase tracking-wider text-foreground mb-2">{t.overview.knowledge_row.pattern_data}</div>
+                    <div className="typo-label uppercase tracking-wider text-foreground mb-2">{t.overview.knowledge_row.pattern_data}</div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {Object.entries(patternData).map(([key, value]) => (
                         <PatternValueCard key={key} label={formatLabel(key)} value={value} />

@@ -54,7 +54,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
             <div className="w-12 h-12 rounded-modal bg-secondary/20 border border-primary/10 flex items-center justify-center">
               <Wand2 className="w-5 h-5 text-foreground" />
             </div>
-            <p className="text-sm text-foreground">{t.vault.databases.select_or_create}</p>
+            <p className="typo-body text-foreground">{t.vault.databases.select_or_create}</p>
           </div>
         )}
       </div>

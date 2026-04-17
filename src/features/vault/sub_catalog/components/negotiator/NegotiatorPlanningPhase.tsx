@@ -16,7 +16,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
     >
       <div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border border-violet-500/20 rounded-modal">
         <Brain className="w-4 h-4 text-violet-400 shrink-0 animate-pulse" />
-        <p className="text-sm text-violet-200/80">
+        <p className="typo-body text-violet-200/80">
           AI is analyzing the developer portal and generating a step-by-step provisioning plan...
         </p>
       </div>
@@ -34,7 +34,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
               ) : (
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               )}
-              <span className={`text-sm ${isLast ? 'text-foreground' : 'text-foreground'}`}>
+              <span className={`typo-body ${isLast ? 'text-foreground' : 'text-foreground'}`}>
                 {line}
               </span>
             </div>
@@ -43,7 +43,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
         {progressLines.length === 0 && (
           <div className="flex items-center gap-3 py-1.5">
             <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
-            <span className="text-sm text-foreground">{t.vault.negotiator.initializing}</span>
+            <span className="typo-body text-foreground">{t.vault.negotiator.initializing}</span>
           </div>
         )}
       </div>
@@ -51,7 +51,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
       <div className="flex justify-end">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
         >
           Cancel
         </button>

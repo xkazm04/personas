@@ -35,7 +35,7 @@ function TriggerPopup({
   const isPolling = trigger.trigger_type === 'polling';
 
   const inputClass =
-    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
+    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
 
   return (
     <div
@@ -46,7 +46,7 @@ function TriggerPopup({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-amber-500/70" />
-          <span className="text-sm font-medium text-foreground capitalize">{trigger.trigger_type}</span>
+          <span className="typo-body font-medium text-foreground capitalize">{trigger.trigger_type}</span>
         </div>
         <button type="button" onClick={onClose} className="p-0.5 rounded hover:bg-primary/10 transition-colors">
           <X className="w-3.5 h-3.5 text-foreground" />
@@ -54,12 +54,12 @@ function TriggerPopup({
       </div>
 
       {trigger.description && (
-        <p className="text-sm text-foreground leading-relaxed">{trigger.description}</p>
+        <p className="typo-body text-foreground leading-relaxed">{trigger.description}</p>
       )}
 
       {isSchedule && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.schedule}</label>
+          <label className="typo-body font-medium text-foreground">{t.templates.trigger_edit.schedule}</label>
           <input
             type="text"
             autoFocus
@@ -69,13 +69,13 @@ function TriggerPopup({
             placeholder={t.templates.trigger_edit.schedule_placeholder}
             className={inputClass}
           />
-          <p className="text-sm text-foreground">Natural language or cron (e.g. "0 9 * * 1-5")</p>
+          <p className="typo-body text-foreground">Natural language or cron (e.g. "0 9 * * 1-5")</p>
         </div>
       )}
 
       {isWebhook && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.webhook_url}</label>
+          <label className="typo-body font-medium text-foreground">{t.templates.trigger_edit.webhook_url}</label>
           <input
             type="text"
             autoFocus
@@ -90,7 +90,7 @@ function TriggerPopup({
 
       {isPolling && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">{t.templates.trigger_edit.check_interval}</label>
+          <label className="typo-body font-medium text-foreground">{t.templates.trigger_edit.check_interval}</label>
           <input
             type="text"
             autoFocus
@@ -104,7 +104,7 @@ function TriggerPopup({
       )}
 
       {(trigger.trigger_type === 'manual' || trigger.trigger_type === 'event') && (
-        <p className="text-sm text-foreground italic">{t.templates.trigger_edit.no_config_needed}</p>
+        <p className="typo-body text-foreground italic">{t.templates.trigger_edit.no_config_needed}</p>
       )}
     </div>
   );
@@ -135,7 +135,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
   }, [triggers]);
 
   if (uniqueTriggers.length === 0) {
-    return <span className="text-sm text-foreground">Manual execution only</span>;
+    return <span className="typo-body text-foreground">Manual execution only</span>;
   }
 
   return (
@@ -169,7 +169,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
                   type="button"
                   onClick={() => setOpenPopupIndex(isOpen ? null : index)}
                   className={[
-                    'flex-1 min-w-0 text-left text-sm truncate py-0.5',
+                    'flex-1 min-w-0 text-left typo-body truncate py-0.5',
                     'border-b border-dashed border-amber-500/30',
                     'hover:border-amber-500/60 hover:text-foreground/90',
                     'transition-colors cursor-pointer',
@@ -181,7 +181,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
                   <Pencil className="w-3 h-3 text-amber-500/40 flex-shrink-0" />
                 </button>
               ) : (
-                <span className="text-sm text-foreground truncate">{displayValue}</span>
+                <span className="typo-body text-foreground truncate">{displayValue}</span>
               )}
             </div>
 

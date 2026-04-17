@@ -57,12 +57,12 @@ export function TriggerListItem({
         <span className={`${trigger.enabled ? 'text-indigo-400' : 'text-foreground'}`}>
           {triggerTypeIcon(trigger.trigger_type)}
         </span>
-        <span className="text-sm text-foreground truncate flex-1">
+        <span className="typo-body text-foreground truncate flex-1">
           {personaName}
           <span className="text-foreground ml-2">{triggerTypeLabel(trigger.trigger_type)}</span>
         </span>
         {config.cron && (
-          <span className="text-xs font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
+          <span className="typo-code font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
             {`${config.cron}`}
           </span>
         )}
@@ -74,14 +74,14 @@ export function TriggerListItem({
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-3">
           {/* Trigger info */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-2 typo-caption">
             <div><span className="text-foreground">Type:</span> <span className="text-foreground">{triggerTypeLabel(trigger.trigger_type)}</span></div>
             <div><span className="text-foreground">Status:</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
             <div><span className="text-foreground">Last triggered:</span> <span className="text-foreground">{timeAgo(trigger.last_triggered_at)}</span></div>
             <div><span className="text-foreground">Next trigger:</span> <span className="text-foreground">{trigger.next_trigger_at ? new Date(trigger.next_trigger_at).toLocaleString() : '-'}</span></div>
             {config.cron && <div className="col-span-2"><span className="text-foreground">Cron:</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
             {trigger.health_message && (
-              <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 text-xs text-amber-400">
+              <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 typo-caption text-amber-400">
                 {trigger.health_message}
               </div>
             )}
@@ -91,7 +91,7 @@ export function TriggerListItem({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleEnabled}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
                 trigger.enabled
                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15'
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
@@ -101,7 +101,7 @@ export function TriggerListItem({
             </button>
             <button
               onClick={onDelete}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors"
             >
               <Trash2 className="w-3 h-3" /> Delete
             </button>
@@ -109,17 +109,17 @@ export function TriggerListItem({
 
           {/* Recent firings */}
           <div>
-            <SectionHeading as="h4" className="text-xs text-foreground mb-2">{dt.recent_firings}</SectionHeading>
+            <SectionHeading as="h4" className="typo-caption text-foreground mb-2">{dt.recent_firings}</SectionHeading>
             {isLoadingFirings ? (
-              <div className="flex items-center gap-2 text-xs text-foreground py-2">
+              <div className="flex items-center gap-2 typo-caption text-foreground py-2">
                 <LoadingSpinner size="xs" /> Loading...
               </div>
             ) : firings.length === 0 ? (
-              <p className="text-xs text-foreground">{dt.no_firings}</p>
+              <p className="typo-caption text-foreground">{dt.no_firings}</p>
             ) : (
               <div className="space-y-1">
                 {firings.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
+                  <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
                     {f.status === 'completed' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> :
                      f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
                      <LoadingSpinner size="xs" className="text-blue-400" />}

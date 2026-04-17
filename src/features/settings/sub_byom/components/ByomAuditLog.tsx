@@ -14,17 +14,17 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
     <div className="space-y-4">
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.audit_title} />
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">
           {s.audit_hint}
         </p>
 
         {auditLog.length === 0 ? (
-          <p className="text-sm text-foreground text-center py-6">
+          <p className="typo-body text-foreground text-center py-6">
             {s.audit_empty}
           </p>
         ) : (
           <div className="border border-primary/10 rounded-card overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="w-full typo-body">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
                   <th className="text-left p-2.5 text-foreground font-medium">{s.audit_provider}</th>
@@ -44,7 +44,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
                           {ENGINE_LABELS[entry.engine_kind] || entry.engine_kind}
                         </span>
                         {entry.was_failover && (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                          <span className="typo-caption px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
                             {s.failover}
                           </span>
                         )}
@@ -57,7 +57,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
                       {entry.persona_name}
                     </td>
                     <td className="p-2.5">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      <span className={`typo-caption px-1.5 py-0.5 rounded-full ${
                         entry.status === 'completed'
                           ? 'bg-emerald-500/15 text-emerald-400'
                           : entry.status === 'failed'

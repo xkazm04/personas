@@ -67,7 +67,7 @@ export function TimelineEntry({
         >
           <div className="flex items-start gap-2">
             {/* Version number */}
-            <span className="text-sm font-mono font-semibold text-foreground flex-shrink-0">
+            <span className="typo-code font-mono font-semibold text-foreground flex-shrink-0">
               v{version.version_number}
             </span>
 
@@ -94,7 +94,7 @@ export function TimelineEntry({
 
           {/* Change summary + date */}
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-xs text-foreground truncate flex-1">
+            <p className="typo-caption text-foreground truncate flex-1">
               {version.change_summary || t.agents.lab.no_change_summary}
             </p>
             <span className="text-[10px] text-foreground flex-shrink-0">

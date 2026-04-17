@@ -158,13 +158,13 @@ export function UnifiedDeploymentDashboard() {
       <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-lg font-semibold text-foreground/90">{dt.title}</h1>
-            <p className="text-sm text-foreground mt-0.5">{dt.subtitle}</p>
+            <h1 className="typo-heading-lg font-semibold text-foreground/90">{dt.title}</h1>
+            <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
           </div>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {dt.refresh}
@@ -191,8 +191,8 @@ export function UnifiedDeploymentDashboard() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
               <Cloud className="w-7 h-7 text-primary/60" />
             </div>
-            <p className="text-sm font-medium text-foreground">{dt.no_targets_title}</p>
-            <p className="text-sm text-foreground mt-1 max-w-xs">
+            <p className="typo-body font-medium text-foreground">{dt.no_targets_title}</p>
+            <p className="typo-body text-foreground mt-1 max-w-xs">
               {dt.no_targets_hint}
             </p>
           </div>
@@ -201,10 +201,10 @@ export function UnifiedDeploymentDashboard() {
             <div className="w-14 h-14 rounded-2xl bg-secondary/50 border border-primary/15 flex items-center justify-center mb-4">
               <Activity className="w-7 h-7 text-foreground" />
             </div>
-            <p className="text-sm font-medium text-foreground">
+            <p className="typo-body font-medium text-foreground">
               {search || targetFilter !== 'all' || statusFilter !== 'all' ? dt.no_match_filters : dt.no_deployments}
             </p>
-            <p className="text-sm text-foreground mt-1">
+            <p className="typo-body text-foreground mt-1">
               {search || targetFilter !== 'all' || statusFilter !== 'all'
                 ? dt.adjust_filters
                 : dt.deploy_hint}
@@ -239,7 +239,7 @@ export function UnifiedDeploymentDashboard() {
 
       {/* Footer stats */}
       {displayRows.length > 0 && (
-        <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between text-xs text-foreground flex-shrink-0">
+        <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between typo-caption text-foreground flex-shrink-0">
           <span>{tx(dt.showing_of, { showing: displayRows.length, total: unified.length, plural: unified.length !== 1 ? 's' : '' })}</span>
           <span>{dt.total_invocations} <span className="text-foreground font-medium">{totalInvocations.toLocaleString()}</span></span>
         </div>

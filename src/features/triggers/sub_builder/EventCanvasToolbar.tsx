@@ -209,4 +209,4 @@ export function EventCanvasToolbar({
 /*  Dropdown item style                                                */
 /* ------------------------------------------------------------------ */
 
-const dropdownItemCls = 'flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors cursor-pointer';
+const dropdownItemCls = 'flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground hover:bg-secondary/60 transition-colors cursor-pointer';

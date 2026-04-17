@@ -55,13 +55,13 @@ export function TwinBindingCard() {
 
   return (
     <div className="space-y-3">
-      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         Twin
       </h4>
       <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label className="block typo-body font-medium text-foreground mb-1">
             Speak as
           </label>
           {twinProfiles.length === 0 ? (

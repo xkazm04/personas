@@ -30,13 +30,13 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
         <span className="ml-auto flex items-center gap-2">
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>
               <ShieldAlert className="w-3 h-3" />
               {t.triggers.unknown_budget_label}
             </span>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>

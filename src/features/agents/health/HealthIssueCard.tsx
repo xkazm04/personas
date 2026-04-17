@@ -42,7 +42,7 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
         className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2.5 rounded-modal ${SEVERITY_STYLES.success.border} ${SEVERITY_STYLES.success.bg}`}
       >
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-        <span className="text-sm text-foreground line-through leading-relaxed">
+        <span className="typo-body text-foreground line-through leading-relaxed">
           {issue.description}
         </span>
       </div>
@@ -56,20 +56,20 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
       <div className="flex items-start gap-2.5">
         <Icon className={`w-3.5 h-3.5 ${style.text} mt-0.5 shrink-0`} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="typo-body text-foreground leading-relaxed">
             {issue.description}
           </p>
           {issue.proposal ? (
             <button
               type="button"
               onClick={handleApply}
-              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-modal bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 typo-body font-medium rounded-modal bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
             >
               <Wrench className="w-3 h-3" />
               {tx(t.agents.health_issue.apply_fix, { label: issue.proposal.label })}
             </button>
           ) : (
-            <p className="mt-1.5 text-sm text-foreground italic">
+            <p className="mt-1.5 typo-body text-foreground italic">
               {t.agents.health_issue.manual_action}
             </p>
           )}

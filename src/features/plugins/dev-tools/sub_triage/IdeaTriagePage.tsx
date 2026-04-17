@@ -108,13 +108,13 @@ function SwipeCard({
         <>
           <motion.div
             style={{ opacity: rejectOpacity }}
-            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 font-bold text-lg uppercase -rotate-12"
+            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 font-bold typo-heading-lg uppercase -rotate-12"
           >
             {dt.swipe_reject}
           </motion.div>
           <motion.div
             style={{ opacity: acceptOpacity }}
-            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 font-bold text-lg uppercase rotate-12"
+            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 font-bold typo-heading-lg uppercase rotate-12"
           >
             {dt.swipe_accept}
           </motion.div>
@@ -125,7 +125,7 @@ function SwipeCard({
       <div className="p-6 h-full flex flex-col">
         {/* Category + agent + effort/impact/risk */}
         <div className="flex items-center gap-1.5 flex-wrap mb-4">
-          <span className="text-xl">{idea.agentEmoji}</span>
+          <span className="typo-heading-lg">{idea.agentEmoji}</span>
           <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
@@ -140,7 +140,7 @@ function SwipeCard({
         </div>
 
         {/* Title + description */}
-        <h3 className="text-lg font-semibold text-primary mb-2">{idea.title}</h3>
+        <h3 className="typo-heading-lg font-semibold text-primary mb-2">{idea.title}</h3>
         <p className="text-md text-foreground mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
           {idea.description}
         </p>

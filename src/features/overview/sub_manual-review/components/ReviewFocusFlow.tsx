@@ -38,7 +38,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 function SeverityBadge({ severity }: { severity: string }) {
   const cfg = getSevCfg(severity);
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
       {cfg.icon}
       {cfg.label}
     </span>

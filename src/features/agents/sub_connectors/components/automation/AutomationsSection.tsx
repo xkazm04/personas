@@ -110,12 +110,12 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           badge={
             <>
               {activeCount > 0 && (
-                <span className="text-sm font-normal text-brand-emerald/70">
+                <span className="typo-body font-normal text-brand-emerald/70">
                   {tx(t.agents.connectors.auto_active, { count: activeCount })}
                 </span>
               )}
               {!expanded && preview && (
-                <span className="text-sm font-normal text-foreground truncate max-w-48">
+                <span className="typo-body font-normal text-foreground truncate max-w-48">
                   {preview}
                 </span>
               )}
@@ -124,7 +124,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           trailing={
             <button
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}
             >
               <Plus className="w-3 h-3" />
               {t.common.add}
@@ -162,7 +162,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               {automations.length === 0 && (
                 <button
                   onClick={onAdd}
-                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border text-sm text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border typo-body text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   <span>{t.agents.connectors.auto_add_from_platforms}</span>
@@ -186,8 +186,8 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <h3 id="delete-automation-dialog" className="text-sm font-semibold text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
-                <p className="text-sm text-foreground mt-1">
+                <h3 id="delete-automation-dialog" className="typo-heading font-semibold text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
+                <p className="typo-body text-foreground mt-1">
                   {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
               </div>
@@ -198,13 +198,13 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
+                className="px-4 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 text-sm font-medium rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                className="px-4 py-2 typo-body font-medium rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
                 {t.common.delete}
               </button>

@@ -135,12 +135,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       {!isDraftMode && isDirty && (
         <button onClick={handleSave} disabled={isSaving}
           title={isSaving ? t.agents.connectors.ch_saving : undefined}
-          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-modal font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
+          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-modal font-medium typo-body bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
           {isSaving ? t.agents.connectors.ch_saving : t.agents.connectors.ch_save}
         </button>
       )}
       {saveError && (
-        <div className="px-3 py-2 mt-2 rounded-modal border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+        <div className="px-3 py-2 mt-2 rounded-modal border border-red-500/20 bg-red-500/10 typo-body text-red-400/80">
           {saveError}
         </div>
       )}

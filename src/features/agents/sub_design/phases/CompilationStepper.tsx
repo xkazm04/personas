@@ -125,10 +125,10 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
           key={activeIndex}
           className="animate-fade-slide-in flex items-center justify-between px-0.5"
         >
-          <span className="text-xs text-foreground">
+          <span className="typo-caption text-foreground">
             {COMPILATION_STAGES[activeIndex]!.description}
           </span>
-          <span className="text-xs tabular-nums font-mono text-foreground shrink-0 ml-2">
+          <span className="typo-code tabular-nums font-mono text-foreground shrink-0 ml-2">
             {formatElapsed(elapsed)}
           </span>
         </div>

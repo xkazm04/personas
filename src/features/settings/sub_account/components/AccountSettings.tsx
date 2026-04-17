@@ -36,19 +36,19 @@ export default function AccountSettings() {
         {/* Telemetry */}
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
           <SectionHeading title={s.telemetry_title} icon={<Activity className="text-rose-400" />} />
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="typo-body text-foreground leading-relaxed">
             {s.telemetry_description}
           </p>
           <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground/85">{s.telemetry_toggle}</p>
-              <p className="text-xs text-foreground mt-0.5">
+              <p className="typo-body font-medium text-foreground/85">{s.telemetry_toggle}</p>
+              <p className="typo-caption text-foreground mt-0.5">
                 {telemetryOn
                   ? s.telemetry_on
                   : s.telemetry_off}
               </p>
               {telemetryChanged && (
-                <p className="text-xs text-amber-400/80 mt-1.5 flex items-center gap-1.5">
+                <p className="typo-caption text-amber-400/80 mt-1.5 flex items-center gap-1.5">
                   <RefreshCw className="w-3 h-3" />
                   {s.telemetry_restart}
                 </p>
@@ -93,14 +93,14 @@ export default function AccountSettings() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-base font-medium text-foreground/90 truncate">
+                  <div className="typo-body-lg font-medium text-foreground/90 truncate">
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
-                    <div className="text-sm text-foreground truncate">{user.email}</div>
+                    <div className="typo-body text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-sm font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
                       {s.offline}
                     </span>
                   )}
@@ -118,14 +118,14 @@ export default function AccountSettings() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
-              <p className="text-sm text-foreground mb-4">{s.sign_in_prompt}</p>
+              <p className="typo-body text-foreground mb-4">{s.sign_in_prompt}</p>
 
               {/* Error display */}
               {error && (
                 <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-modal border border-red-500/20 bg-red-500/5 text-left">
                   <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-red-300/90">{error}</p>
+                    <p className="typo-body text-red-300/90">{error}</p>
                     <Button variant="link" size="xs" onClick={clearError} className="mt-1">
                       {s.dismiss}
                     </Button>
@@ -135,7 +135,7 @@ export default function AccountSettings() {
 
               {isLoading ? (
                 <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm font-medium
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal typo-body font-medium
                     bg-primary/10 text-primary border border-primary/20">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     {s.waiting_sign_in}

@@ -65,7 +65,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     return (
       <span className={`inline-flex items-center gap-1 ${config.color}`} title={config.label}>
         <StatusIcon className="w-3.5 h-3.5" />
-        <span className="text-xs font-medium">{overall === 'ready' ? t.templates.connector_readiness.ready : overall === 'partial' ? t.templates.connector_readiness.needs_setup : t.templates.connector_readiness.not_ready}</span>
+        <span className="typo-caption font-medium">{overall === 'ready' ? t.templates.connector_readiness.ready : overall === 'partial' ? t.templates.connector_readiness.needs_setup : t.templates.connector_readiness.not_ready}</span>
       </span>
     );
   }
@@ -73,7 +73,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
   if (compact) {
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full border ${config.bg} ${config.color}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 typo-body rounded-full border ${config.bg} ${config.color}`}
         title={`${statuses.length} connector${statuses.length !== 1 ? 's' : ''}: ${config.label}`}
       >
         <StatusIcon className="w-3 h-3" />
@@ -86,7 +86,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <StatusIcon className={`w-4 h-4 ${config.color}`} />
-        <span className="text-sm font-medium text-foreground/90">{config.label}</span>
+        <span className="typo-body font-medium text-foreground/90">{config.label}</span>
       </div>
       {statuses.map((status) => {
         const Icon = STATUS_ICON[status.health];
@@ -94,12 +94,12 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
         return (
           <div key={status.connector_name} className="flex items-center gap-2 pl-6">
             <Icon className={`w-3.5 h-3.5 ${color}`} />
-            <span className="text-sm text-foreground">{status.connector_name}</span>
+            <span className="typo-body text-foreground">{status.connector_name}</span>
             {!status.has_credential && status.installed && (
-              <span className="text-sm text-status-warning/60">{t.templates.connector_readiness.needs_credential}</span>
+              <span className="typo-body text-status-warning/60">{t.templates.connector_readiness.needs_credential}</span>
             )}
             {!status.installed && (
-              <span className="text-sm text-status-warning/60">{t.templates.connector_readiness.not_installed}</span>
+              <span className="typo-body text-status-warning/60">{t.templates.connector_readiness.not_installed}</span>
             )}
           </div>
         );

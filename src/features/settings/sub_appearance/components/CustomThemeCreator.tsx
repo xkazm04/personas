@@ -105,14 +105,14 @@ export default function CustomThemeCreator() {
         ) : undefined}
       />
 
-      <p className="text-xs text-foreground">
+      <p className="typo-caption text-foreground">
         {s.custom_theme_hint}
       </p>
 
       {/* Base mode + theme name */}
       <div className="flex items-end gap-4">
         <div className="space-y-2">
-          <label className="text-xs font-medium text-foreground">{s.base_mode}</label>
+          <label className="typo-caption font-medium text-foreground">{s.base_mode}</label>
           <div className="flex gap-1.5">
             {(['dark', 'light'] as const).map((mode) => {
               const active = baseMode === mode;
@@ -121,7 +121,7 @@ export default function CustomThemeCreator() {
                 <button
                   key={mode}
                   onClick={() => setBaseMode(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption font-medium transition-all ${
                     active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
@@ -133,20 +133,20 @@ export default function CustomThemeCreator() {
           </div>
         </div>
         <div className="space-y-2 flex-1 max-w-xs">
-          <label className="text-xs font-medium text-foreground">{s.theme_name}</label>
+          <label className="typo-caption font-medium text-foreground">{s.theme_name}</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Custom"
             maxLength={24}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
           />
         </div>
       </div>
 
       {/* Color rows */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-foreground">{s.colors}</label>
+        <label className="typo-caption font-medium text-foreground">{s.colors}</label>
         <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
           {colorRows.map((row) => (
             <ColorRow key={row.label} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
@@ -158,7 +158,7 @@ export default function CustomThemeCreator() {
       <div className="space-y-2">
         <button
           onClick={() => { const next = !showGradient; setShowGradient(next); if (!next) setBackgroundEndColor(null); }}
-          className="flex items-center gap-1.5 text-xs text-foreground hover:text-muted-foreground transition-colors"
+          className="flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground transition-colors"
         >
           <ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />
           {s.background_gradient}
@@ -169,9 +169,9 @@ export default function CustomThemeCreator() {
               <ColorRow label="End Color" value={backgroundEndColor} derivedValue={backgroundColor ?? baseVars['--background']} onChange={setBackgroundEndColor} />
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-xs text-foreground w-24 flex-shrink-0">{s.angle}</label>
+              <label className="typo-caption text-foreground w-24 flex-shrink-0">{s.angle}</label>
               <input type="range" min={0} max={360} value={backgroundAngle} onChange={(e) => setBackgroundAngle(Number(e.target.value))} className="flex-1 accent-primary h-1.5" />
-              <span className="text-xs font-mono text-foreground w-10 text-right">{backgroundAngle}&deg;</span>
+              <span className="typo-code font-mono text-foreground w-10 text-right">{backgroundAngle}&deg;</span>
             </div>
           </div>
         )}
@@ -179,7 +179,7 @@ export default function CustomThemeCreator() {
 
       {/* Live preview */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-foreground">{s.preview}</label>
+        <label className="typo-caption font-medium text-foreground">{s.preview}</label>
         <ThemePreview vars={derivedVars} />
       </div>
 

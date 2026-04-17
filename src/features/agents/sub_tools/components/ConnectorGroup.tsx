@@ -60,7 +60,7 @@ export function ConnectorGroup({
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
           </div>
         )}
-        <span className="text-sm font-medium text-foreground flex-1">{label}</span>
+        <span className="typo-body font-medium text-foreground flex-1">{label}</span>
         {!isGeneral && (
           hasCredential ? (
             <span title={`${label} credential connected`}>
@@ -69,7 +69,7 @@ export function ConnectorGroup({
           ) : (
             <button
               onClick={onAddCredential}
-              className="inline-flex items-center gap-1 text-sm text-amber-400/80 hover:text-amber-300 transition-colors"
+              className="inline-flex items-center gap-1 typo-body text-amber-400/80 hover:text-amber-300 transition-colors"
               title={`Needs ${label} credential`}
             >
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -77,7 +77,7 @@ export function ConnectorGroup({
             </button>
           )
         )}
-        <span className="text-sm font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground">
+        <span className="typo-code font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground">
           {assignedInGroup.length}/{tools.length}
         </span>
       </div>

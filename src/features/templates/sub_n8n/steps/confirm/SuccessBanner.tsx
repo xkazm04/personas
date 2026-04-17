@@ -18,18 +18,18 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
         <CheckCircle2 className="w-8 h-8 text-emerald-400" />
       </div>
       <p
-        className="animate-fade-slide-in text-sm font-semibold text-emerald-400 mb-1"
+        className="animate-fade-slide-in typo-heading font-semibold text-emerald-400 mb-1"
       >
         Persona Created Successfully
       </p>
       <p
-        className="animate-fade-slide-in text-sm text-emerald-400/60 mb-2"
+        className="animate-fade-slide-in typo-body text-emerald-400/60 mb-2"
       >
         {personaName ?? 'Your persona'} is ready to use. Find it in the sidebar.
       </p>
       {confirmResult && (confirmResult.triggersCreated > 0 || confirmResult.toolsCreated > 0) && (
         <p
-          className="animate-fade-slide-in text-sm text-emerald-400/50 mb-2"
+          className="animate-fade-slide-in typo-body text-emerald-400/50 mb-2"
         >
           Created {confirmResult.triggersCreated > 0 ? `${confirmResult.triggersCreated} trigger${confirmResult.triggersCreated !== 1 ? 's' : ''}` : ''}
           {confirmResult.triggersCreated > 0 && confirmResult.toolsCreated > 0 ? ' + ' : ''}
@@ -38,7 +38,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
       )}
       {confirmResult && confirmResult.entityErrors.length > 0 && (
         <div
-          className="animate-fade-slide-in text-sm text-red-400/70 mb-2 space-y-1"
+          className="animate-fade-slide-in typo-body text-red-400/70 mb-2 space-y-1"
         >
           <div className="flex items-center gap-1.5 justify-center">
             <XCircle className="w-3 h-3" />
@@ -46,7 +46,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
               {confirmResult.entityErrors.length} {confirmResult.entityErrors.length === 1 ? 'entity' : 'entities'} failed
             </span>
           </div>
-          <div className="text-sm text-red-400/50 max-h-24 overflow-y-auto">
+          <div className="typo-body text-red-400/50 max-h-24 overflow-y-auto">
             {confirmResult.entityErrors.map((e, i) => (
               <div key={i}>{e.entity_type} &lsquo;{e.entity_name}&rsquo;: {e.error}</div>
             ))}
@@ -55,7 +55,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
       )}
       {confirmResult && confirmResult.connectorsNeedingSetup.length > 0 && (
         <div
-          className="animate-fade-slide-in flex items-center gap-2 justify-center text-sm text-amber-400/60 mb-2"
+          className="animate-fade-slide-in flex items-center gap-2 justify-center typo-body text-amber-400/60 mb-2"
         >
           <AlertTriangle className="w-3 h-3" />
           Configure connector{confirmResult.connectorsNeedingSetup.length !== 1 ? 's' : ''}: {confirmResult.connectorsNeedingSetup.join(', ')}
@@ -66,7 +66,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
       >
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-modal border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Import Another

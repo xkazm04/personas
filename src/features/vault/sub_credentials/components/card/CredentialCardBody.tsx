@@ -50,7 +50,7 @@ export function CredentialCardBody({
   if (!connector) {
     return (
       <div className="px-3 pb-3 border-t border-primary/10">
-        <div className="text-sm text-foreground py-3">
+        <div className="typo-body text-foreground py-3">
           {t.vault.credential_card.no_connector}
         </div>
       </div>

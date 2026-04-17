@@ -86,7 +86,7 @@ export function ExpandedRowContent({
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={onAdopt}
-          className={`px-3 py-1.5 text-sm rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+          className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
         >
           <Download className="w-3.5 h-3.5" />
           {t.templates.expanded.adopt}
@@ -94,7 +94,7 @@ export function ExpandedRowContent({
         {allConnectorsReady && (
           <button
             onClick={onTryIt}
-            className={`px-3 py-1.5 text-sm rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+            className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
           >
             <Play className="w-3.5 h-3.5" />
             {t.templates.expanded.try_it}
@@ -103,7 +103,7 @@ export function ExpandedRowContent({
         {flows.length > 0 && onViewFlows && (
           <button
             onClick={() => onViewFlows(review)}
-            className="px-3 py-1.5 text-sm rounded-modal border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors inline-flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors inline-flex items-center gap-1.5"
           >
             <Workflow className="w-3.5 h-3.5" />
             {t.templates.expanded.flows}
@@ -126,7 +126,7 @@ export function ExpandedRowContent({
               title={`${stat.count} ${stat.label}`}
             >
               <Icon className="w-4 h-4" style={{ color: hasItems ? stat.color : undefined }} />
-              <span className="text-sm tabular-nums text-foreground">{stat.count}</span>
+              <span className="typo-data tabular-nums text-foreground">{stat.count}</span>
             </div>
           );
         })}

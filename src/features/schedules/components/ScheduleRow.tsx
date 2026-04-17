@@ -73,9 +73,9 @@ export default function ScheduleRow({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-foreground mt-0.5">
+          <div className="flex items-center gap-2 typo-caption text-foreground mt-0.5">
             <Clock className="w-3 h-3 shrink-0" />
-            <span className="font-mono text-xs text-foreground">{schedule}</span>
+            <span className="font-mono typo-code text-foreground">{schedule}</span>
             {agent.cron_expression && (
               <span className="text-amber-400/50 text-[10px] font-medium">{tzLabel}</span>
             )}
@@ -91,12 +91,12 @@ export default function ScheduleRow({
         {/* Next / last run */}
         <div className="text-right shrink-0 min-w-[90px]">
           {nextRun ? (
-            <div className="text-xs text-foreground">
+            <div className="typo-caption text-foreground">
               <span className="text-foreground">next </span>
               {formatRelative(nextRun.toISOString())}
             </div>
           ) : (
-            <div className="text-xs text-foreground">--</div>
+            <div className="typo-caption text-foreground">--</div>
           )}
           {lastRun && (
             <div className="text-[10px] text-foreground mt-0.5">
@@ -110,7 +110,7 @@ export default function ScheduleRow({
           <HealthIcon className={`w-4 h-4 ${healthColor}`} />
           <div className="flex flex-col items-end">
             {agent.recent_executions > 0 && (
-              <span className={`text-xs font-mono ${healthColor}`}>
+              <span className={`typo-code font-mono ${healthColor}`}>
                 {agent.recent_executions - agent.recent_failures}/{agent.recent_executions}
               </span>
             )}

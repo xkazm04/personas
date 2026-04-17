@@ -21,7 +21,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
         ) : (
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
-        <span className="text-sm font-medium text-foreground">
+        <span className="typo-body font-medium text-foreground">
           How to get {connectorLabel} credentials
         </span>
       </button>
@@ -34,10 +34,10 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
                 const stripped = line.replace(/^\d+\.\s*/, '');
                 return (
                   <div key={i} className="flex gap-2.5">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center text-sm font-bold text-primary/70">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center typo-heading font-bold text-primary/70">
                       {i + 1}
                     </span>
-                    <p className="text-sm text-foreground pt-0.5 leading-relaxed">{stripped}</p>
+                    <p className="typo-body text-foreground pt-0.5 leading-relaxed">{stripped}</p>
                   </div>
                 );
               })}

@@ -36,22 +36,22 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">{app.label}</span>
+            <span className="typo-body font-medium text-foreground">{app.label}</span>
             {app.installed && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <span className="flex items-center gap-1 typo-caption text-emerald-400">
                 <CheckCircle2 className="w-3 h-3" />
                 Installed
               </span>
             )}
             {app.running && (
-              <span className="flex items-center gap-1 text-xs text-cyan-400">
+              <span className="flex items-center gap-1 typo-caption text-cyan-400">
                 <CircleDot className="w-3 h-3" />
                 Running
               </span>
             )}
           </div>
           {app.binary_path && (
-            <p className="text-xs text-foreground truncate">{app.binary_path}</p>
+            <p className="typo-caption text-foreground truncate">{app.binary_path}</p>
           )}
         </div>
         {!disabled && <ChevronRight className="w-4 h-4 text-foreground" />}

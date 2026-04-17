@@ -11,7 +11,7 @@ export function LabEmptyState({ icon: Icon, title, subtitle, action, size = 'sta
     return (
       <div className="flex items-center gap-2 py-4 px-3">
         <Icon className="w-5 h-5 text-foreground flex-shrink-0" />
-        <span className="text-sm text-foreground">{title}</span>
+        <span className="typo-body text-foreground">{title}</span>
       </div>
     );
   }
@@ -19,8 +19,8 @@ export function LabEmptyState({ icon: Icon, title, subtitle, action, size = 'sta
   return (
     <div className={`text-center bg-secondary/30 border border-primary/10 rounded-modal ${size === 'full' ? 'py-12' : 'py-8'}`}>
       <Icon className="w-8 h-8 text-foreground mx-auto mb-3" />
-      <p className="text-sm text-foreground">{title}</p>
-      {subtitle && <p className="text-xs text-foreground mt-1">{subtitle}</p>}
+      <p className="typo-body text-foreground">{title}</p>
+      {subtitle && <p className="typo-caption text-foreground mt-1">{subtitle}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

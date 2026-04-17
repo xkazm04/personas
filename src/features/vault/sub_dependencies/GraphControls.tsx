@@ -30,8 +30,8 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
           >
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
             <div>
-              <span className="text-lg font-semibold leading-none">{stats[kind]}</span>
-              <span className="text-xs ml-1.5">{kindLabels[kind]}</span>
+              <span className="typo-heading-lg font-semibold leading-none">{stats[kind]}</span>
+              <span className="typo-caption ml-1.5">{kindLabels[kind]}</span>
             </div>
           </button>
         );

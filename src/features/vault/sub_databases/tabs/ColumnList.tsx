@@ -26,14 +26,14 @@ export function ColumnList({
     return (
       <div className="flex items-center gap-2 py-8 justify-center">
         <LoadingSpinner className="text-foreground" />
-        <span className="text-sm text-foreground">{db.loading_columns}</span>
+        <span className="typo-body text-foreground">{db.loading_columns}</span>
       </div>
     );
   }
 
   if (columnsError) {
     return (
-      <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
+      <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 break-words">
         {columnsError}
       </div>
     );
@@ -41,7 +41,7 @@ export function ColumnList({
 
   if (columns.length === 0) {
     return (
-      <p className="text-sm text-foreground text-center py-8">
+      <p className="typo-body text-foreground text-center py-8">
         {isApi ? db.no_properties : db.no_columns}
       </p>
     );
@@ -50,7 +50,7 @@ export function ColumnList({
   return (
     <>
       <div className="rounded-card border border-primary/10 overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full typo-body">
           <thead>
             <tr className="bg-secondary/40 border-b border-primary/10">
               <th className="px-3 py-2 text-left font-semibold text-foreground w-1/3">{columnLabel}</th>
@@ -93,7 +93,7 @@ export function ColumnList({
         </table>
       </div>
 
-      <div className="mt-3 text-sm text-foreground">
+      <div className="mt-3 typo-body text-foreground">
         {isApi
           ? tx(columns.length !== 1 ? db.property_count_other : db.property_count_one, { count: columns.length })
           : tx(columns.length !== 1 ? db.column_count_other : db.column_count_one, { count: columns.length })}

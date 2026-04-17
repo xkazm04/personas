@@ -324,7 +324,7 @@ export default function HomeLearning() {
                       <trick.icon className={`w-3.5 h-3.5 ${trick.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-foreground group-hover:text-foreground/90 transition-colors">{trick.title}</h4>
+                      <h4 className="typo-body font-medium text-foreground group-hover:text-foreground/90 transition-colors">{trick.title}</h4>
                       <p className="text-[11px] text-foreground truncate">{trick.tagline}</p>
                     </div>
                   </button>
@@ -390,7 +390,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
               {trick.steps.map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <span className="text-[11px] font-mono text-foreground mt-0.5 w-5 flex-shrink-0 text-right">{i + 1}.</span>
-                  <p className="text-sm text-foreground leading-relaxed">
+                  <p className="typo-body text-foreground leading-relaxed">
                     {step.bold ? (
                       <>{step.text} <span className="font-semibold text-foreground">{step.bold}</span></>
                     ) : step.text}
@@ -403,7 +403,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
           {/* Pro tip */}
           {trick.proTip && (
             <div className="rounded-modal bg-amber-500/5 border border-amber-500/15 px-4 py-3">
-              <p className="text-sm text-amber-300/70 leading-relaxed">
+              <p className="typo-body text-amber-300/70 leading-relaxed">
                 <span className="font-semibold text-amber-400">{ht.pro_tip}</span>{trick.proTip}
               </p>
             </div>

@@ -34,19 +34,19 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center gap-2 text-sm text-foreground">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <Calendar className="w-3.5 h-3.5" />
         <span>Created {formatTimestamp(createdAt, 'Unknown')}</span>
       </div>
 
       <div className="space-y-1.5">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
           <History className="w-3.5 h-3.5" />
           Recent Activity
         </h3>
 
         {!loading && entries.length === 0 && (
-          <div className="text-sm text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
+          <div className="typo-body text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
             No recorded activity yet
           </div>
         )}
@@ -60,10 +60,10 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                   key={entry.id}
                   className="flex items-center gap-3 px-3 py-2 bg-secondary/15 border border-primary/8 rounded-card"
                 >
-                  <span className={`text-sm font-mono px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
+                  <span className={`typo-code font-mono px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
                     {entry.operation}
                   </span>
-                  <div className="flex-1 min-w-0 text-sm text-foreground truncate">
+                  <div className="flex-1 min-w-0 typo-body text-foreground truncate">
                     {entry.persona_name && (
                       <span className="text-foreground">{entry.persona_name}</span>
                     )}
@@ -74,7 +74,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                       <span className="text-foreground italic">--</span>
                     )}
                   </div>
-                  <span className="text-sm text-foreground shrink-0">
+                  <span className="typo-body text-foreground shrink-0">
                     {formatTimestamp(entry.created_at, '')}
                   </span>
                 </div>

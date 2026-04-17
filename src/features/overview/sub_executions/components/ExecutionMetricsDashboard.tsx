@@ -30,8 +30,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <AlertTriangle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-red-400">{m.error}</p>
-          <button onClick={m.load} className="mt-2 text-sm text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
+          <p className="typo-body text-red-400">{m.error}</p>
+          <button onClick={m.load} className="mt-2 typo-body text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
         </div>
       </div>
     );
@@ -42,7 +42,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <TrendingUp className="w-6 h-6 text-foreground mx-auto mb-2" />
-          <p className="text-sm text-foreground">{t.overview.execution_metrics.no_data}</p>
+          <p className="typo-body text-foreground">{t.overview.execution_metrics.no_data}</p>
         </div>
       </div>
     );

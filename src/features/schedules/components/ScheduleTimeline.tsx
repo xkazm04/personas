@@ -164,7 +164,7 @@ export default function ScheduleTimeline() {
             {schedulerStats && (
               <button
                 onClick={handleToggleScheduler}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-card border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
                   schedulerStats.running
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
@@ -193,7 +193,7 @@ export default function ScheduleTimeline() {
             )}
 
             {/* Stats badges */}
-            <div className="flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-1.5 typo-caption">
               <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Zap className="w-3 h-3" />
                 {tx(t.schedules.active_count, { count: activeCount })}
@@ -228,7 +228,7 @@ export default function ScheduleTimeline() {
         {filterPersonaId && (() => {
           const agent = cronAgents.find((a) => a.persona_id === filterPersonaId);
           return agent ? (
-            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 text-xs text-blue-400/90">
+            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
               <Filter className="w-3.5 h-3.5 shrink-0" />
               <span>
                 Showing schedules for <span className="font-semibold">{agent.persona_name}</span>
@@ -258,7 +258,7 @@ export default function ScheduleTimeline() {
             </div>
             <div className="text-center space-y-1.5">
               <p className="typo-heading text-foreground">{t.schedules.no_scheduled_agents}</p>
-              <p className="text-xs text-foreground max-w-[280px] mx-auto leading-relaxed">
+              <p className="typo-caption text-foreground max-w-[280px] mx-auto leading-relaxed">
                 {t.schedules.no_scheduled_hint}
               </p>
             </div>
@@ -340,7 +340,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(opt.value)}
-            className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 typo-caption flex items-center gap-1.5 transition-all ${
               selected
                 ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
                 : 'text-foreground hover:text-foreground/70 hover:bg-primary/5'

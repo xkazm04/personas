@@ -91,7 +91,7 @@ export function VersionsPanel() {
   };
 
   if (!personaId) {
-    return <div className="text-sm text-foreground text-center py-8">{t.agents.lab.no_persona_selected}</div>;
+    return <div className="typo-body text-foreground text-center py-8">{t.agents.lab.no_persona_selected}</div>;
   }
 
   const handleViewChange = (v: VersionView) => {
@@ -118,11 +118,11 @@ export function VersionsPanel() {
         <div className="flex items-center gap-2 mb-3 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
           <div>
-            <h3 className="text-sm font-medium text-foreground">{t.agents.lab.persona_versions}</h3>
+            <h3 className="typo-body font-medium text-foreground">{t.agents.lab.persona_versions}</h3>
             <p className="text-[10px] text-foreground">{t.agents.lab.persona_versions_subtitle}</p>
           </div>
           <ViewToggle view={view} onChange={handleViewChange} />
-          <span className="ml-auto text-sm text-foreground">{promptVersions.length}</span>
+          <span className="ml-auto typo-body text-foreground">{promptVersions.length}</span>
         </div>
 
         {loading ? (
@@ -130,8 +130,8 @@ export function VersionsPanel() {
         ) : promptVersions.length === 0 ? (
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-foreground mx-auto" />
-            <p className="text-sm text-foreground">{t.agents.lab.no_versions}</p>
-            <p className="text-sm text-foreground">{t.agents.lab.versions_auto_edit}</p>
+            <p className="typo-body text-foreground">{t.agents.lab.no_versions}</p>
+            <p className="typo-body text-foreground">{t.agents.lab.versions_auto_edit}</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
@@ -167,8 +167,8 @@ export function VersionsPanel() {
         ) : (
           <div className="text-center py-12 space-y-2">
             <ArrowLeftRight className="w-8 h-8 text-foreground mx-auto" />
-            <p className="text-sm text-foreground">{t.agents.lab.select_two_compare}</p>
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">{t.agents.lab.select_two_compare}</p>
+            <p className="typo-body text-foreground">
               Click the <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> buttons on any version
             </p>
           </div>
@@ -178,7 +178,7 @@ export function VersionsPanel() {
         {compareA && compareB && (
           <button
             onClick={() => { setAbPreselect(compareAId, compareBId); setLabMode('ab'); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
+            className="flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors typo-body self-start"
           >
             {t.agents.lab.run_ab_versions}
           </button>
@@ -211,11 +211,11 @@ export function VersionsPanel() {
         <div className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-emerald-400" />
-            <h4 className="text-sm font-medium text-foreground">{t.agents.lab.error_rate_monitor}</h4>
+            <h4 className="typo-body font-medium text-foreground">{t.agents.lab.error_rate_monitor}</h4>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <div className="flex items-center justify-between text-sm text-foreground mb-1">
+              <div className="flex items-center justify-between typo-body text-foreground mb-1">
                 <span>{t.agents.lab.last_10_execs}</span>
                 <span>{healthLoading ? '...' : healthErrorRate != null ? `${(healthErrorRate * 100).toFixed(0)}%` : '--'}</span>
               </div>
@@ -241,7 +241,7 @@ export function VersionsPanel() {
               <RotateCcw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             If error rate exceeds 50% after a prompt change, rollback to the production version using the version list.
           </p>
         </div>

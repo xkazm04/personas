@@ -45,7 +45,7 @@ export function AdminToolsDropdown({
             <button
               onClick={() => { onCleanupDuplicates(); setOpen(false); }}
               disabled={isCleaningUp}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-amber-400/80 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-amber-400/80 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
             >
               <Trash2 className={`w-4 h-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
               {t.templates.search.deduplicate}
@@ -55,7 +55,7 @@ export function AdminToolsDropdown({
             <button
               onClick={() => { onBackfillPipeline(); setOpen(false); }}
               disabled={isBackfillingPipeline}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-violet-400/80 hover:bg-violet-500/10 transition-colors text-left disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-violet-400/80 hover:bg-violet-500/10 transition-colors text-left disabled:opacity-50"
             >
               <GitBranch className={`w-4 h-4 ${isBackfillingPipeline ? 'animate-spin' : ''}`} />
               {t.templates.search.backfill_pipelines}
@@ -65,7 +65,7 @@ export function AdminToolsDropdown({
             <button
               onClick={() => { onBackfillTools(); setOpen(false); }}
               disabled={isBackfillingTools}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-cyan-400/80 hover:bg-cyan-500/10 transition-colors text-left disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-cyan-400/80 hover:bg-cyan-500/10 transition-colors text-left disabled:opacity-50"
             >
               <Puzzle className={`w-4 h-4 ${isBackfillingTools ? 'animate-spin' : ''}`} />
               {t.templates.search.backfill_tools}

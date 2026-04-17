@@ -20,7 +20,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
 
   return (
     <div
-      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all min-w-0 ${
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all min-w-0 ${
         hasAny
           ? 'bg-cyan-500/8 border-cyan-500/20 text-foreground/90'
           : 'bg-secondary/40 border-primary/10 text-foreground'
@@ -37,7 +37,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
           <>
             <Clock className="w-3 h-3 text-amber-400/70 inline mr-0.5" />
             {trigger.type}
-            {trigger.cron && <span className="text-foreground text-sm ml-1">{trigger.cron}</span>}
+            {trigger.cron && <span className="text-foreground typo-body ml-1">{trigger.cron}</span>}
           </>
         )}
         {!hasTrigger && hasSubscriptions && (
@@ -51,7 +51,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
         )}
       </span>
       {hasAny && (
-        <span className="text-sm font-semibold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 flex-shrink-0">
+        <span className="typo-heading font-semibold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 flex-shrink-0">
           {t.agents.use_cases.stage_input}
         </span>
       )}

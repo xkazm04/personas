@@ -59,7 +59,7 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
+        <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"
@@ -81,7 +81,7 @@ export function TriggerConfig() {
 
       {/* Trigger Error */}
       {triggerError?.kind === 'crud' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card text-sm text-red-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
           <span className="flex-1">{triggerError.message}</span>
           <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
             <X className="w-3.5 h-3.5" />
@@ -102,7 +102,7 @@ export function TriggerConfig() {
         ))}
 
         {triggers.length === 0 && (
-          <div className="text-center py-10 text-foreground text-sm">
+          <div className="text-center py-10 text-foreground typo-body">
             {t.triggers.config.empty}
           </div>
         )}

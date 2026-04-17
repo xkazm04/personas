@@ -78,7 +78,7 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.className}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption font-medium border ${cfg.className}`}>
       <Icon className={`w-3 h-3 ${cfg.pulse ? 'animate-spin' : ''}`} />
       {cfg.label}
     </span>
@@ -141,7 +141,7 @@ function TaskModal({
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Title</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -150,7 +150,7 @@ function TaskModal({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Description</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -162,7 +162,7 @@ function TaskModal({
 
             {/* Task depth selector */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Task Depth</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">Task Depth</label>
               <div className="grid grid-cols-3 gap-2">
                 {DEPTH_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
@@ -176,7 +176,7 @@ function TaskModal({
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
                     >
                       <Icon className={`w-4 h-4 ${selected ? `text-${opt.color}-400` : 'text-foreground'}`} />
-                      <span className={`text-xs font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
+                      <span className={`typo-caption font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
                     </button>
                   );
                 })}
@@ -187,7 +187,7 @@ function TaskModal({
             </div>
 
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">
                 Goal Link <span className="text-foreground">(optional)</span>
               </label>
               <div className="relative">
@@ -548,7 +548,7 @@ export default function TaskRunnerPage() {
 
           {/* Task queue */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-primary mb-3">
+            <h3 className="typo-label font-semibold uppercase tracking-wider text-primary mb-3">
               Task Queue ({totalCount})
             </h3>
 

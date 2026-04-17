@@ -94,16 +94,16 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <button
             onClick={handleExecute}
             disabled={executing || !query.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             {executing ? db.running : db.run_query}
           </button>
-          <span className="text-sm text-foreground">Ctrl+Enter</span>
+          <span className="typo-body text-foreground">Ctrl+Enter</span>
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSafeMode((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
                 safeMode
                   ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
                   : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
@@ -118,12 +118,12 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
         {history.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-foreground">{db.recent}</span>
+            <span className="typo-body text-foreground">{db.recent}</span>
             {history.map((h, i) => (
               <button
                 key={i}
                 onClick={() => handleHistoryClick(h.query)}
-                className="px-2 py-0.5 rounded text-sm font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
+                className="px-2 py-0.5 rounded typo-code font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
                 title={h.query}
               >
                 {h.query.length > 40 ? h.query.slice(0, 40) + '...' : h.query}
@@ -139,11 +139,11 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300/90">{db.modifies_data}</p>
-              <p className="text-sm text-foreground">
+              <p className="typo-body font-medium text-amber-300/90">{db.modifies_data}</p>
+              <p className="typo-body text-foreground">
                 {db.modifies_data_hint}
               </p>
-              <pre className="text-sm font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
+              <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
                 {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
               </pre>
             </div>
@@ -151,13 +151,13 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-center gap-2 pl-6">
             <button
               onClick={handleConfirmMutation}
-              className="px-3 py-1.5 rounded-modal text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               {db.execute_anyway}
             </button>
             <button
               onClick={handleCancelMutation}
-              className="px-3 py-1.5 rounded-modal text-sm font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
             >
               {t.common.cancel}
             </button>

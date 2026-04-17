@@ -70,8 +70,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <circle cx="66" cy="58" r="1.5" fill="#c4b5fd" fillOpacity="0.4" />
             <circle cx="94" cy="58" r="1.5" fill="#c4b5fd" fillOpacity="0.4" />
           </svg>
-          <h3 className="text-sm font-medium text-foreground mb-1">{t.agents.health_check.title}</h3>
-          <p className="text-sm text-foreground mb-4 max-w-sm mx-auto">
+          <h3 className="typo-body font-medium text-foreground mb-1">{t.agents.health_check.title}</h3>
+          <p className="typo-body text-foreground mb-4 max-w-sm mx-auto">
             {t.agents.health_check.idle_description}
           </p>
           <Button
@@ -116,8 +116,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <circle cx="140" cy="50" r="3" fill="#a78bfa" fillOpacity="0.4" />
           <circle cx="80" cy="35" r="2" fill="#c4b5fd" fillOpacity="0.3" />
         </svg>
-        <p className="text-sm font-medium text-foreground">{t.agents.health_check.scanning}</p>
-        <p className="text-xs text-foreground mt-1">{t.agents.health_check.scanning_detail}</p>
+        <p className="typo-body font-medium text-foreground">{t.agents.health_check.scanning}</p>
+        <p className="typo-caption text-foreground mt-1">{t.agents.health_check.scanning_detail}</p>
       </div>
     );
   }
@@ -129,8 +129,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <div className="flex items-start gap-2">
             <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-red-400">{t.agents.health_check.check_failed}</p>
-              <p className="text-sm text-foreground mt-0.5">{error}</p>
+              <p className="typo-body font-medium text-red-400">{t.agents.health_check.check_failed}</p>
+              <p className="typo-body text-foreground mt-0.5">{error}</p>
             </div>
           </div>
         </div>
@@ -160,18 +160,18 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ScoreBadge score={score} />
-            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card text-xs font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-caption font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
               {dryRun.status === 'ready' ? <CheckCircle2 className="w-3 h-3" /> : dryRun.status === 'blocked' ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
               {dryRun.status.charAt(0).toUpperCase() + dryRun.status.slice(1)}
             </div>
           </div>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {remainingIssues > 0 ? tx(remainingIssues === 1 ? t.agents.health_check.issues_found_one : t.agents.health_check.issues_found_other, { count: remainingIssues }) : t.agents.health_check.no_issues}
             {' \u00b7 '}Checked {new Date(result.checkedAt).toLocaleTimeString()}
             {isStale && (
               <span className="inline-flex items-center gap-1 ml-1.5 text-amber-400/90">
                 <Clock className="w-3 h-3" />
-                <span className="text-xs">{t.agents.health_check.stale}</span>
+                <span className="typo-caption">{t.agents.health_check.stale}</span>
               </span>
             )}
           </p>
@@ -187,10 +187,10 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
       {!isSimple && dryRun.capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-sm font-medium text-foreground uppercase tracking-wider">{t.agents.health_check.capabilities}</p>
+          <p className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.health_check.capabilities}</p>
           <div className="space-y-1">
             {dryRun.capabilities.map((cap: string, i: number) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-emerald-400/80">
+              <div key={i} className="flex items-center gap-2 typo-body text-emerald-400/80">
                 <CheckCircle2 className="w-3 h-3 shrink-0" />
                 <span className="text-foreground">{cap}</span>
               </div>
@@ -201,7 +201,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
       {dryRun.issues.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-sm font-medium text-foreground uppercase tracking-wider">{t.agents.ops_health.issues}</p>
+            <p className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.ops_health.issues}</p>
             <div className="space-y-2">
               {dryRun.issues.map((issue: DryRunIssue) => (
                 <HealthIssueCard key={issue.id} issue={issue} personaId={result.personaId}
@@ -217,8 +217,8 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <path d="M24 2L4 12v16c0 14 8.5 22 20 26 11.5-4 20-12 20-26V12L24 2z" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.4" strokeLinejoin="round" />
             <path d="M16 28l6 6 10-12" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="text-sm font-medium text-emerald-400/80">{t.agents.health_check.all_healthy}</p>
-          <p className="text-xs text-foreground mt-0.5">{t.agents.health_check.all_healthy_detail}</p>
+          <p className="typo-body font-medium text-emerald-400/80">{t.agents.health_check.all_healthy}</p>
+          <p className="typo-caption text-foreground mt-0.5">{t.agents.health_check.all_healthy_detail}</p>
         </div>
       )}
     </div>
@@ -266,7 +266,7 @@ function HealthWatchToggle() {
         data-testid="health-watch-toggle"
         onClick={toggle}
         disabled={loading || !persona}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
           enabled
             ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
             : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'

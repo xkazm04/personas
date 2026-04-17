@@ -49,13 +49,13 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
         <Wrench className="w-3.5 h-3.5 text-foreground" />
-        <span className="text-sm font-medium text-foreground truncate">{tool.name}</span>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-primary/10 bg-secondary/30 text-foreground">
+        <span className="typo-body font-medium text-foreground truncate">{tool.name}</span>
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
           <TypeIcon className="w-2.5 h-2.5" />
           {toolType}
         </span>
         {result && (
-          <span className={`ml-auto inline-flex items-center gap-1 text-sm ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
             {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
             {result.duration_ms}ms
           </span>
@@ -69,19 +69,19 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
               {tool.description && (
-                <p className="text-sm text-foreground">{tool.description}</p>
+                <p className="typo-body text-foreground">{tool.description}</p>
               )}
 
               {/* Input */}
               <div>
-                <label className="text-sm font-semibold text-foreground uppercase tracking-wider mb-1 block">
+                <label className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
                   {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-modal border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
+                  className="w-full rounded-modal border border-primary/20 bg-background/60 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
                   placeholder='{ "key": "value" }'
                 />
               </div>
@@ -90,7 +90,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               <button
                 onClick={handleRun}
                 disabled={isRunning}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
               >
                 {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
                 {isRunning ? t.agents.tool_runner.running : t.agents.tool_runner.run}
@@ -109,12 +109,12 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
   const { t } = useTranslation();
   if (error) {
     return (
-      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 text-sm text-red-400">
+      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400">
         <div className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
         </div>
-        <pre className="text-sm font-mono whitespace-pre-wrap break-all opacity-80">{error}</pre>
+        <pre className="typo-code font-mono whitespace-pre-wrap break-all opacity-80">{error}</pre>
       </div>
     );
   }
@@ -122,7 +122,7 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
   if (!result) return null;
 
   return (
-    <div className={`rounded-modal border px-3 py-2 text-sm ${
+    <div className={`rounded-modal border px-3 py-2 typo-body ${
       result.success
         ? 'border-emerald-500/15 bg-emerald-500/5'
         : 'border-red-500/15 bg-red-500/5'
@@ -136,19 +136,19 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
         <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
           {result.success ? t.agents.tool_runner.success : t.agents.tool_runner.failed}
         </span>
-        <span className="ml-auto flex items-center gap-1 text-foreground text-sm">
+        <span className="ml-auto flex items-center gap-1 text-foreground typo-body">
           <Clock className="w-2.5 h-2.5" />
           {result.duration_ms}ms
         </span>
       </div>
 
       {result.output && (
-        <pre className="text-sm font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+        <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formatOutput(result.output)}
         </pre>
       )}
       {result.error && (
-        <pre className="text-sm font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">
+        <pre className="typo-code font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">
           {result.error}
         </pre>
       )}

@@ -80,18 +80,18 @@ export function StatusPageView() {
             <span className={`typo-heading ${globalBadge.text}`}>{globalBadge.label}</span>
           </div>
           <div>
-            <span className="text-sm text-foreground">
+            <span className="typo-body text-foreground">
               Score: <span className="text-foreground/90 font-semibold">{globalScore}</span>/100
             </span>
             <span className="mx-3 text-foreground">|</span>
-            <span className="text-sm text-foreground">
+            <span className="typo-body text-foreground">
               30d uptime: <span className="text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {lastRefreshLabel && (
-            <span className="text-xs text-foreground">Updated {lastRefreshLabel}</span>
+            <span className="typo-caption text-foreground">Updated {lastRefreshLabel}</span>
           )}
           <button
             onClick={() => void refresh()}
@@ -106,11 +106,11 @@ export function StatusPageView() {
 
       {/* Persona rows */}
       {loading && entries.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-foreground text-sm">
+        <div className="flex items-center justify-center py-16 text-foreground typo-body">
           {t.overview.health_extra.loading_status}
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex items-center justify-center py-16 text-foreground text-sm">
+        <div className="flex items-center justify-center py-16 text-foreground typo-body">
           {t.overview.health_extra.no_personas}
         </div>
       ) : (
@@ -122,7 +122,7 @@ export function StatusPageView() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-foreground pt-2">
+      <div className="flex items-center gap-4 typo-caption text-foreground pt-2">
         <span className="font-medium text-foreground">{t.overview.health_extra.legend}</span>
         <LegendItem color="bg-emerald-400" label={t.overview.health_extra.operational} />
         <LegendItem color="bg-amber-400" label={t.overview.health_extra.degraded} />
@@ -151,7 +151,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
       >
         {/* Persona identity */}
         <div className="flex items-center gap-2 w-44 flex-shrink-0">
-          {entry.personaIcon && <span className="text-base">{entry.personaIcon}</span>}
+          {entry.personaIcon && <span className="typo-body-lg">{entry.personaIcon}</span>}
           <span className="typo-heading text-foreground/90 truncate">{entry.personaName}</span>
         </div>
 
@@ -163,7 +163,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
         </div>
 
         {/* Uptime percent */}
-        <span className="text-xs text-foreground w-16 text-right flex-shrink-0">
+        <span className="typo-caption text-foreground w-16 text-right flex-shrink-0">
           {(entry.uptimePercent * 100).toFixed(1)}%
         </span>
 
@@ -173,7 +173,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
         {/* Health badge */}
         <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-input border ${badge.bg} flex-shrink-0`}>
           <badge.Icon className={`w-3 h-3 ${badge.text}`} />
-          <span className={`text-xs font-medium ${badge.text}`}>{entry.score}</span>
+          <span className={`typo-caption font-medium ${badge.text}`}>{entry.score}</span>
         </div>
       </button>
 
@@ -188,7 +188,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
             <ScoreBreakdown label="SLA Compliance" score={entry.slaComplianceScore} detail={`${(entry.slaCompliance * 100).toFixed(1)}%`} />
           </div>
           {entry.consecutiveFailures > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400/80">
+            <div className="mt-2 flex items-center gap-1.5 typo-caption text-red-400/80">
               <AlertTriangle className="w-3 h-3" />
               {entry.consecutiveFailures} consecutive failure{entry.consecutiveFailures !== 1 ? 's' : ''}
             </div>
@@ -228,8 +228,8 @@ function ScoreBreakdown({ label, score, detail }: { label: string; score: number
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-foreground">{label}</span>
-        <span className={`text-xs font-semibold ${color}`}>{score}</span>
+        <span className="typo-caption text-foreground">{label}</span>
+        <span className={`typo-caption font-semibold ${color}`}>{score}</span>
       </div>
       <div className="h-1 rounded-full bg-secondary/30 overflow-hidden">
         <div

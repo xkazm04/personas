@@ -379,7 +379,7 @@ export function QuestionnaireFormFocus({
               })}
             </motion.div>
             {/* Helpful tip below the preview */}
-            <p className="mt-4 text-sm text-foreground leading-relaxed">
+            <p className="mt-4 typo-body text-foreground leading-relaxed">
               {t.templates.adopt_modal.jump_to_question_hint}
             </p>
           </div>
@@ -394,7 +394,7 @@ export function QuestionnaireFormFocus({
             type="button"
             onClick={prev}
             disabled={activeIdx === 0}
-            className="flex items-center gap-1.5 text-sm text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             {t.templates.adopt_modal.previous}
@@ -404,7 +404,7 @@ export function QuestionnaireFormFocus({
               <button
                 type="button"
                 onClick={onSubmit}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-6 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 {t.templates.adopt_modal.submit_all}
@@ -414,7 +414,7 @@ export function QuestionnaireFormFocus({
                 type="button"
                 onClick={next}
                 disabled={isAtEnd}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-5 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 {t.templates.adopt_modal.next}
                 <ChevronRight className="w-4 h-4" />

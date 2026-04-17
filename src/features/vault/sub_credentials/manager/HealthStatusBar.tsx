@@ -87,7 +87,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-2 bg-secondary/20 border-b border-primary/10">
       {/* Health counts */}
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-4 typo-body">
         {counts.healthy > 0 && (
           <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-3 h-3" />
@@ -114,7 +114,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
       {/* Test All button */}
       <button
         onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-sm font-medium border transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body font-medium border transition-colors ${
           bulk.isRunning
             ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-600/25 dark:border-amber-500/20'
             : bulk.summary

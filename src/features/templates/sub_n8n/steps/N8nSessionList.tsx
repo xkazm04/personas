@@ -44,19 +44,19 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       data-testid={`n8n-session-card-${session.id}`}
     >
       <div className="w-10 h-10 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-        <span className="text-sm font-mono font-medium text-violet-400">
+        <span className="typo-code font-mono font-medium text-violet-400">
           {(STEP_META[session.step as N8nWizardStep]?.index ?? 0) + 1}/{WIZARD_STEPS.length}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground/90 truncate">
+        <p className="typo-body font-medium text-foreground/90 truncate">
           {session.workflow_name}
         </p>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card ${style.bg} ${style.text}`}>
+          <span className={`px-1.5 py-0.5 typo-body font-medium rounded-card ${style.bg} ${style.text}`}>
             {style.label}
           </span>
-          <span className="text-sm text-foreground flex items-center gap-1">
+          <span className="typo-body text-foreground flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(session.updated_at)}
           </span>
@@ -74,7 +74,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
           <Trash2 className="w-3.5 h-3.5" />
         </button>
         {interrupted ? (
-          <span className="flex items-center gap-1 text-sm text-amber-400 font-medium">
+          <span className="flex items-center gap-1 typo-body text-amber-400 font-medium">
             <RotateCcw className="w-3 h-3" />
             Retry
           </span>
@@ -259,10 +259,10 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground/90 uppercase tracking-wider">
+        <h3 className="typo-body font-medium text-foreground/90 uppercase tracking-wider">
           Previous Imports
         </h3>
-        <span className="text-sm text-foreground">
+        <span className="typo-body text-foreground">
           {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -273,11 +273,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
             className="flex items-center justify-between gap-3 rounded-modal border border-red-500/20 bg-red-500/10 px-3 py-2"
             aria-live="polite"
           >
-            <p className="text-sm text-red-400/80">{error}</p>
+            <p className="typo-body text-red-400/80">{error}</p>
             <button
               type="button"
               onClick={() => void fetchSessions()}
-              className="px-3 py-1.5 text-sm rounded-modal border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
             >
               Retry
             </button>

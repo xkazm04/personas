@@ -87,7 +87,7 @@ export function LabProgress() {
         </div>
 
         {/* Detail row: status text + counters */}
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between typo-body">
           <span className="text-foreground">
             {labProgress.phase === 'drafting'
               ? t.agents.lab.generating_draft
@@ -103,13 +103,13 @@ export function LabProgress() {
           {labProgress.total != null && (
             <div className="flex items-center gap-3">
               {labProgress.elapsedMs != null && (
-                <span className="text-xs text-foreground tabular-nums">
+                <span className="typo-caption text-foreground tabular-nums">
                   {labProgress.elapsedMs >= 60000
                     ? `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
                     : `${(labProgress.elapsedMs / 1000).toFixed(1)}s`}
                 </span>
               )}
-              <span className="text-sm text-foreground tabular-nums">
+              <span className="typo-data text-foreground tabular-nums">
                 {labProgress.current ?? 0} / {labProgress.total}
               </span>
             </div>
@@ -118,7 +118,7 @@ export function LabProgress() {
 
         {/* Scores */}
         {labProgress.scores && (
-          <div className="flex items-center gap-4 text-sm text-foreground">
+          <div className="flex items-center gap-4 typo-body text-foreground">
             <span>Tool: {labProgress.scores.tool_accuracy ?? '--'}</span>
             <span>Output: {labProgress.scores.output_quality ?? '--'}</span>
             <span>Protocol: {labProgress.scores.protocol_compliance ?? '--'}</span>

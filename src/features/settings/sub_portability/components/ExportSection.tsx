@@ -48,7 +48,7 @@ export function ExportSection({
   return (
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.export_import_title} />
-      <p className="text-sm text-foreground">
+      <p className="typo-body text-foreground">
         {s.export_import_hint}
       </p>
 
@@ -56,7 +56,7 @@ export function ExportSection({
         <button
           onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal text-sm font-medium
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
             bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
             transition-colors disabled:opacity-50"
         >
@@ -78,7 +78,7 @@ export function ExportSection({
           <button
             onClick={() => setShowImportInput(true)}
             disabled={importStatus === 'loading'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal text-sm font-medium
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
               bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
               transition-colors disabled:opacity-50"
           >
@@ -93,7 +93,7 @@ export function ExportSection({
               value={importPassphrase}
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
-              className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm
+              className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body
                 text-foreground/90 placeholder:text-foreground outline-none
                 focus-visible:border-blue-500/30 w-56"
               autoFocus
@@ -101,7 +101,7 @@ export function ExportSection({
             <button
               onClick={handleImport}
               disabled={importStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-card text-sm font-medium
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium
                 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
                 transition-colors disabled:opacity-50"
             >
@@ -110,7 +110,7 @@ export function ExportSection({
             </button>
             <button
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
-              className="text-xs text-foreground hover:text-muted-foreground/80 transition-colors"
+              className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors"
             >
               {s.cancel}
             </button>
@@ -121,11 +121,11 @@ export function ExportSection({
       {/* Import result */}
       {importResult && (
         <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
+          <div className="flex items-center gap-2 typo-body font-medium text-emerald-400">
             <PackageCheck className="w-4 h-4" />
             {s.import_complete}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 text-sm text-foreground">
+          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 typo-body text-foreground">
             {importResult.personas_created > 0 && (
               <span>{importResult.personas_created} persona(s)</span>
             )}
@@ -144,9 +144,9 @@ export function ExportSection({
           </div>
           {importResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="text-sm font-medium text-amber-400">{s.warnings}</p>
+              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
               {importResult.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-foreground pl-2">
+                <p key={i} className="typo-body text-foreground pl-2">
                   - {w}
                 </p>
               ))}

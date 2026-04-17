@@ -127,16 +127,16 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           ? <ClipboardCheck className="w-4 h-4 text-amber-400" />
           : <StatusIcon status={notification.status} />
         }
-        <span className="text-sm font-medium text-foreground/90">
+        <span className="typo-body font-medium text-foreground/90">
           {headerTitle}
         </span>
-        <span className="text-xs text-foreground ml-auto mr-4">
+        <span className="typo-caption text-foreground ml-auto mr-4">
           {formatTimestamp(notification.timestamp)}
         </span>
       </div>
 
       {/* Body — show stored message or fall back to status label */}
-      <p className="text-xs text-foreground mb-2.5 pl-6 leading-relaxed">
+      <p className="typo-caption text-foreground mb-2.5 pl-6 leading-relaxed">
         {bodyText}
       </p>
 
@@ -145,7 +145,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         {redirectSection && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
           >
             <ArrowRight className="w-3 h-3" />
@@ -212,16 +212,16 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Header */}
       <div className="flex items-center gap-2 mb-1.5">
         <StatusIcon status={notification.status} />
-        <span className="text-sm font-medium text-foreground/90">
+        <span className="typo-body font-medium text-foreground/90">
           Pipeline #{notification.pipelineId}
         </span>
-        <span className="text-xs text-foreground ml-auto mr-4">
+        <span className="typo-caption text-foreground ml-auto mr-4">
           {formatTimestamp(notification.timestamp)}
         </span>
       </div>
 
       {/* Body */}
-      <p className="text-xs text-foreground mb-2.5 pl-6">
+      <p className="typo-caption text-foreground mb-2.5 pl-6">
         <span className="font-mono text-foreground">{notification.ref}</span>
         {' '}&mdash;{' '}{statusLabel(notification.status)}
       </p>
@@ -231,7 +231,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.webUrl && (
           <button
             onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3 h-3" />
@@ -241,7 +241,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.status === 'failed' && notification.projectId && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRetry(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.common.retry}
           >
             <RefreshCw className="w-3 h-3" />
@@ -259,7 +259,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
               }
               markRead(notification.id);
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.view_logs}
           >
             <FileText className="w-3 h-3" />
@@ -302,7 +302,7 @@ export function NotificationCenter() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="text-sm font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
+                <h2 className="typo-heading font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
                 {unreadCount > 0 && (
                   <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-white">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -348,7 +348,7 @@ export function NotificationCenter() {
                     <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
                       <BellOff className="w-7 h-7 text-foreground" />
                     </div>
-                    <p className="text-lg text-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
+                    <p className="typo-heading-lg text-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
                     <p className="text-md text-foreground mt-1 max-w-[220px]">
                       {t.gitlab.pipeline_status_hint}
                     </p>

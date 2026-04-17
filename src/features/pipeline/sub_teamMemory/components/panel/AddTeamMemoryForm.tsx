@@ -42,7 +42,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   if (!expanded) {
     return (
       <button
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-sm text-foreground hover:text-foreground/80 border border-dashed border-primary/10 hover:border-primary/20 rounded-card transition-colors"
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 typo-body text-foreground hover:text-foreground/80 border border-dashed border-primary/10 hover:border-primary/20 rounded-card transition-colors"
         onClick={() => setExpanded(true)}
       >
         <Plus className="w-3 h-3" />
@@ -54,7 +54,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   return (
     <div className="border border-primary/15 rounded-card p-2.5 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">{t.pipeline.new_memory}</span>
+        <span className="typo-body font-medium text-foreground">{t.pipeline.new_memory}</span>
         <button
           className="p-0.5 rounded hover:bg-primary/10 text-foreground"
           onClick={() => setExpanded(false)}
@@ -64,14 +64,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <input
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
         placeholder={t.pipeline.title_placeholder}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <textarea
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
+        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
         placeholder={t.pipeline.content_placeholder}
         rows={3}
         value={content}
@@ -80,7 +80,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <div className="flex items-center gap-2">
         <select
-          className="text-sm bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-1 text-foreground focus-visible:outline-none"
+          className="typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-1 text-foreground focus-visible:outline-none"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
@@ -90,7 +90,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         </select>
 
         <div className="flex items-center gap-1">
-          <span className="text-sm text-foreground">{t.pipeline.importance_label}</span>
+          <span className="typo-body text-foreground">{t.pipeline.importance_label}</span>
           <input
             type="range"
             min={IMPORTANCE_MIN}
@@ -99,12 +99,12 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
             onChange={(e) => setImportance(Number(e.target.value))}
             className="w-14 h-1 accent-amber-500"
           />
-          <span className="text-sm text-foreground w-3 text-right">{importance}</span>
+          <span className="typo-body text-foreground w-3 text-right">{importance}</span>
         </div>
       </div>
 
       <button
-        className="w-full text-sm py-1.5 rounded-card bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
+        className="w-full typo-body py-1.5 rounded-card bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
         disabled={!title.trim() || !content.trim()}
         onClick={handleSubmit}
       >

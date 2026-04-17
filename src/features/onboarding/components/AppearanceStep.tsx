@@ -37,7 +37,7 @@ export function AppearanceStep() {
     <div className="space-y-6">
       <div>
         <h3 className="typo-heading text-foreground/90 mb-1">{t.onboarding.appearance_heading}</h3>
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">
           {t.onboarding.appearance_description}
         </p>
       </div>
@@ -46,7 +46,7 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-foreground" />
-          <span className="text-sm font-medium text-foreground">{t.onboarding.language_label}</span>
+          <span className="typo-body font-medium text-foreground">{t.onboarding.language_label}</span>
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
           {ONBOARDING_LANGUAGES.map((lang) => {
@@ -55,7 +55,7 @@ export function AppearanceStep() {
               <button
                 key={lang.code}
                 onClick={() => setLanguage(lang.code)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors text-sm ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
                   isActive
                     ? 'border-primary/30 bg-primary/5 text-foreground/90 font-medium'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-foreground'
@@ -74,12 +74,12 @@ export function AppearanceStep() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-foreground" />
-          <span className="text-sm font-medium text-foreground">{t.onboarding.text_size_label}</span>
+          <span className="typo-body font-medium text-foreground">{t.onboarding.text_size_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {TEXT_SCALES.map((scale) => {
             const isActive = textScale === scale.id;
-            const sizeClass = scale.id === 'large' ? 'text-base' : scale.id === 'larger' ? 'text-lg' : 'text-xl';
+            const sizeClass = scale.id === 'large' ? 'typo-body-lg' : scale.id === 'larger' ? 'typo-heading-lg' : 'typo-heading-lg';
             return (
               <button
                 key={scale.id}
@@ -91,7 +91,7 @@ export function AppearanceStep() {
                 }`}
               >
                 <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>Aa</span>
-                <span className={`text-sm ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>{scale.label}</span>
+                <span className={`typo-body ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>{scale.label}</span>
                 {isActive && <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-primary" /></div>}
               </button>
             );
@@ -101,7 +101,7 @@ export function AppearanceStep() {
 
       {/* Dark themes */}
       <div className="space-y-2">
-        <span className="text-sm text-foreground">{t.onboarding.dark_label}</span>
+        <span className="typo-body text-foreground">{t.onboarding.dark_label}</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {darkThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -121,7 +121,7 @@ export function AppearanceStep() {
                 >
                   {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                 </div>
-                <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+                <span className={`typo-body ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {t.label}
                 </span>
               </button>
@@ -132,7 +132,7 @@ export function AppearanceStep() {
 
       {/* Light themes */}
       <div className="space-y-2">
-        <span className="text-sm text-foreground">{t.onboarding.light_label}</span>
+        <span className="typo-body text-foreground">{t.onboarding.light_label}</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {lightThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -152,7 +152,7 @@ export function AppearanceStep() {
                 >
                   {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                 </div>
-                <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+                <span className={`typo-body ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {t.label}
                 </span>
               </button>
@@ -163,8 +163,8 @@ export function AppearanceStep() {
 
       {/* Brightness */}
       <div className="space-y-2">
-        <span className="text-sm text-foreground">{t.onboarding.brightness_label}</span>
-        <p className="text-sm text-foreground">
+        <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
+        <p className="typo-body text-foreground">
           {t.onboarding.brightness_hint}
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -182,10 +182,10 @@ export function AppearanceStep() {
                 }`}
               >
                 <Sun className={`w-4 h-4 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-                <span className={`text-xs ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+                <span className={`typo-caption ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                   {level.label}
                 </span>
-                <span className="text-sm text-foreground">{level.description}</span>
+                <span className="typo-body text-foreground">{level.description}</span>
                 {isActive && (
                   <div className="absolute top-1.5 right-1.5">
                     <Check className="w-3 h-3 text-primary" />

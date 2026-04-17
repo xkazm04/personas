@@ -206,12 +206,12 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
       {!isAutoFixed && !isAutoFixPending && (
         <div className="px-5 py-4 border-t border-primary/10 space-y-2">
           {(issue.severity === 'high' || issue.severity === 'critical') && (
-            <div className="flex items-center gap-1.5 text-sm text-amber-400/60">
+            <div className="flex items-center gap-1.5 typo-body text-amber-400/60">
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
               This issue is marked as {issue.severity} severity
             </div>
           )}
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {t.overview.healing_issue_modal.marking_resolved_note}
           </p>
         </div>
@@ -220,7 +220,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         {isAutoFixPending && (
           <div className="flex items-center gap-1.5 mr-auto">
             <LoadingSpinner size="sm" className="text-amber-400" />
-            <span className="text-sm text-amber-400/60">Retry in progress — status will update when complete</span>
+            <span className="typo-body text-amber-400/60">Retry in progress — status will update when complete</span>
           </div>
         )}
         {isAutoFixed && (
@@ -228,7 +228,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <div>
               <CheckCircle className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" />
             </div>
-            <span className="text-sm text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
+            <span className="typo-body text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
           </div>
         )}
         <button onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">

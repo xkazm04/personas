@@ -23,17 +23,17 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {/* Status line */}
       <div className="flex items-center gap-3">
         {result.is_error ? (
-          <span className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-red-500/15 text-red-400 border border-red-500/25">
             <AlertCircle className="w-3 h-3" />
             Error
           </span>
         ) : (
-          <span className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <span className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
             <Check className="w-3 h-3" />
             Success
           </span>
         )}
-        <span className="flex items-center gap-1 text-sm text-foreground">
+        <span className="flex items-center gap-1 typo-body text-foreground">
           <Clock className="w-3 h-3" />
           {result.duration_ms}ms
         </span>
@@ -43,11 +43,11 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {result.content.map((block, i) => (
         <div key={i} className="rounded-card border border-primary/8 overflow-hidden">
           {block.content_type !== 'text' && (
-            <div className="px-3 py-1 text-sm text-foreground bg-secondary/20 border-b border-primary/5">
+            <div className="px-3 py-1 typo-body text-foreground bg-secondary/20 border-b border-primary/5">
               {block.content_type}
             </div>
           )}
-          <pre className="p-3 text-sm font-mono text-foreground whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
+          <pre className="p-3 typo-code font-mono text-foreground whitespace-pre-wrap break-words overflow-auto max-h-[400px]">
             {formatContent(block.text)}
           </pre>
         </div>
@@ -63,14 +63,14 @@ export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
       <Server className="w-10 h-10 text-foreground" />
       <div className="text-center space-y-1">
-        <p className="text-sm text-foreground">Discover MCP server tools</p>
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">Discover MCP server tools</p>
+        <p className="typo-body text-foreground">
           Connect to the MCP server to discover available tools and test them.
         </p>
       </div>
       <button
         onClick={onDiscover}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-modal text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
         Discover Tools

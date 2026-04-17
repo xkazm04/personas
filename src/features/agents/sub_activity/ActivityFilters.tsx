@@ -22,7 +22,7 @@ export function ActivityFilters({
           <button
             key={tab.id}
             onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
-            className={`px-3 py-1.5 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-3 py-1.5 typo-body font-medium rounded-t-lg transition-colors ${
               filter === tab.id
                 ? 'bg-primary/10 text-primary border-b-2 border-primary'
                 : 'text-foreground hover:text-foreground'
@@ -39,7 +39,7 @@ export function ActivityFilters({
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground outline-none"
+          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
         >
           <option value="all">{t.agents.activity.all_statuses}</option>
           {availableStatuses.map((s) => (

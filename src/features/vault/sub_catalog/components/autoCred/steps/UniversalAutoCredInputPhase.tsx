@@ -36,10 +36,10 @@ export function UniversalAutoCredInputPhase({
           <Sparkles className="w-6 h-6 text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="typo-body-lg font-semibold text-foreground">
             Universal Auto-Setup
           </h3>
-          <p className="text-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             Connect to <em>any</em> web service. Provide a URL and description, and AI will navigate the site to discover and create API credentials automatically.
           </p>
         </div>
@@ -47,7 +47,7 @@ export function UniversalAutoCredInputPhase({
 
       {/* Service URL */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground/90 flex items-center gap-1.5">
+        <label className="typo-body font-medium text-foreground/90 flex items-center gap-1.5">
           <Link2 className="w-3.5 h-3.5 text-foreground" />
           Service URL
         </label>
@@ -57,17 +57,17 @@ export function UniversalAutoCredInputPhase({
           onChange={(e) => onServiceUrlChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="https://app.example.com or https://developer.example.com"
-          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
+          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
           autoFocus
         />
         {serviceUrl && !isValidUrl && (
-          <p className="text-xs text-red-400/80">{t.vault.auto_cred_extra.invalid_url}</p>
+          <p className="typo-caption text-red-400/80">{t.vault.auto_cred_extra.invalid_url}</p>
         )}
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground/90 flex items-center gap-1.5">
+        <label className="typo-body font-medium text-foreground/90 flex items-center gap-1.5">
           <MessageSquareText className="w-3.5 h-3.5 text-foreground" />
           What do you need?
           <span className="text-foreground font-normal">(optional)</span>
@@ -77,13 +77,13 @@ export function UniversalAutoCredInputPhase({
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="e.g. I need an API key for their REST API to read and write data. The developer portal has an API Keys section under Settings."
           rows={3}
-          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 resize-none transition-colors"
+          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 resize-none transition-colors"
         />
       </div>
 
       {/* Mode badge */}
       {modeChecked && (
-        <div className="flex items-center gap-2 text-xs text-foreground">
+        <div className="flex items-center gap-2 typo-caption text-foreground">
           <Globe className="w-3 h-3" />
           {mode === 'playwright'
             ? t.vault.auto_cred_extra.playwright_available
@@ -95,14 +95,14 @@ export function UniversalAutoCredInputPhase({
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onStart}
           disabled={!isValidUrl || !modeChecked}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-indigo-600/20"
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-indigo-600/20"
         >
           <Sparkles className="w-4 h-4" />
           Discover Credentials

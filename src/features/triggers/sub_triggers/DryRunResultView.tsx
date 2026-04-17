@@ -17,7 +17,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
       >
         <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-3 space-y-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
+            <div className="flex items-center gap-1.5 typo-body font-medium text-amber-400">
               <FlaskConical className="w-3.5 h-3.5" />
               {t.triggers.dry_run_result_title}
             </div>
@@ -27,7 +27,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           </div>
 
           {/* Validation status */}
-          <div className={`flex items-center gap-1.5 text-sm ${dryRunResult.valid ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className={`flex items-center gap-1.5 typo-body ${dryRunResult.valid ? 'text-emerald-400' : 'text-red-400'}`}>
             {dryRunResult.valid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
             {dryRunResult.valid ? t.triggers.all_checks_passed : t.triggers.validation_failed}
           </div>
@@ -36,7 +36,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {!dryRunResult.valid && dryRunResult.validation.checks && (
             <div className="space-y-1 pl-5">
               {dryRunResult.validation.checks.filter(c => !c.passed).map((c, i) => (
-                <div key={i} className="text-sm text-red-400/80">{c.label}: {c.message}</div>
+                <div key={i} className="typo-body text-red-400/80">{c.label}: {c.message}</div>
               ))}
             </div>
           )}
@@ -44,8 +44,8 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Simulated Event */}
           {dryRunResult.simulated_event && (
             <div className="space-y-1.5">
-              <div className="text-sm text-foreground font-medium">{t.triggers.simulated_event}</div>
-              <div className="rounded-card bg-background/40 border border-primary/8 p-2 space-y-1 text-sm font-mono">
+              <div className="typo-body text-foreground font-medium">{t.triggers.simulated_event}</div>
+              <div className="rounded-card bg-background/40 border border-primary/8 p-2 space-y-1 typo-code font-mono">
                 <div className="flex items-center gap-1.5">
                   <Radio className="w-3 h-3 text-amber-400/60" />
                   <span className="text-amber-400">{dryRunResult.simulated_event.event_type}</span>
@@ -65,12 +65,12 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {/* Matched Subscriptions */}
           {dryRunResult.matched_subscriptions.length > 0 && (
             <div className="space-y-1.5">
-              <div className="text-sm text-foreground font-medium">
+              <div className="typo-body text-foreground font-medium">
                 Matched Subscriptions ({dryRunResult.matched_subscriptions.length})
               </div>
               <div className="space-y-1">
                 {dryRunResult.matched_subscriptions.map((sub) => (
-                  <div key={sub.subscription_id} className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-background/30 border border-primary/5 text-sm">
+                  <div key={sub.subscription_id} className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-background/30 border border-primary/5 typo-body">
                     <Zap className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <span className="text-foreground/90 truncate">{sub.persona_name}</span>
                     <ArrowRight className="w-3 h-3 text-foreground flex-shrink-0" />
@@ -83,7 +83,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
 
           {/* Empty state */}
           {dryRunResult.valid && dryRunResult.matched_subscriptions.length === 0 && (
-            <div className="text-sm text-foreground italic">
+            <div className="typo-body text-foreground italic">
               {t.triggers.no_subscriptions_activated}
             </div>
           )}

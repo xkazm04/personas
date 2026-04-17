@@ -61,7 +61,7 @@ export function TemplateFormBody({
   return (
     <>
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">
+        <label className="block typo-body font-medium text-foreground mb-1.5">
           Credential Name
         </label>
         <input
@@ -69,7 +69,7 @@ export function TemplateFormBody({
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={`Label this credential — e.g. My ${selectedConnector.label} Account, Production ${selectedConnector.label}`}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 

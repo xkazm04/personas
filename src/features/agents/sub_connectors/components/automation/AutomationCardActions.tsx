@@ -43,7 +43,7 @@ export function AutomationCardActions({
           >
             <button
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
             >
               <Pencil className="w-3 h-3" /> {t.common.edit}
             </button>
@@ -51,7 +51,7 @@ export function AutomationCardActions({
             {automation.deploymentStatus === 'active' && (
               <button
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
               >
                 <Pause className="w-3 h-3" /> {t.agents.connectors.auto_pause}
               </button>
@@ -60,7 +60,7 @@ export function AutomationCardActions({
             {(automation.deploymentStatus === 'paused' || automation.deploymentStatus === 'draft') && (
               <button
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50"
+                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
               >
                 <Play className="w-3 h-3" /> {t.agents.connectors.auto_activate}
               </button>
@@ -70,7 +70,7 @@ export function AutomationCardActions({
 
             <button
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-brand-rose hover:bg-brand-rose/10"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-brand-rose hover:bg-brand-rose/10"
             >
               <Trash2 className="w-3 h-3" />
               {confirmDelete ? t.agents.connectors.auto_confirm : t.common.delete}

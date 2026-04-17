@@ -23,7 +23,7 @@ function JobLogViewer({ log }: { log: string | null }) {
 
   if (log == null) {
     return (
-      <div className="flex items-center justify-center py-6 text-foreground text-sm">
+      <div className="flex items-center justify-center py-6 text-foreground typo-body">
         <LoadingSpinner className="mr-2" />
         {t.gitlab.loading_log}
       </div>
@@ -32,14 +32,14 @@ function JobLogViewer({ log }: { log: string | null }) {
 
   if (log.length === 0) {
     return (
-      <div className="text-center py-4 text-sm text-foreground">{t.gitlab.no_log_output}</div>
+      <div className="text-center py-4 typo-body text-foreground">{t.gitlab.no_log_output}</div>
     );
   }
 
   return (
     <pre
       ref={scrollRef}
-      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 text-xs font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
+      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
     >
       {log}
     </pre>
@@ -82,11 +82,11 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
         )}
         <StatusIcon status={job.status} />
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground/85">{job.name}</span>
-          <span className="text-xs text-foreground ml-2">{job.stage}</span>
+          <span className="typo-body font-medium text-foreground/85">{job.name}</span>
+          <span className="typo-caption text-foreground ml-2">{job.stage}</span>
         </div>
         {job.duration != null && (
-          <span className="text-xs text-foreground">{formatDuration(job.duration)}</span>
+          <span className="typo-caption text-foreground">{formatDuration(job.duration)}</span>
         )}
         {sanitizeExternalUrl(job.webUrl) && (
           <a

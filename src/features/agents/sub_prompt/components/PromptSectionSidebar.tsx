@@ -94,7 +94,7 @@ export function PromptSectionSidebar({
               id={`prompt-tab-${tab.key}`}
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-modal transition-colors text-left relative ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 typo-body font-medium rounded-modal transition-colors text-left relative ${
                 active
                   ? 'bg-primary/10 text-foreground border border-primary/30'
                   : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
@@ -135,7 +135,7 @@ export function PromptSectionSidebar({
             {filled}/{total}
           </text>
         </svg>
-        <span className="text-xs text-foreground">{t.agents.prompt_editor.sections}</span>
+        <span className="typo-caption text-foreground">{t.agents.prompt_editor.sections}</span>
         <style>{`
           @keyframes prompt-gauge-glow {
             0%, 100% { filter: drop-shadow(0 0 0px transparent); }
@@ -151,14 +151,14 @@ export function PromptSectionSidebar({
       <div className="flex items-center gap-2 px-1 py-1 flex-shrink-0">
         {showSaved && (
             <div
-              className="animate-fade-slide-in flex items-center gap-1 text-sm text-emerald-400"
+              className="animate-fade-slide-in flex items-center gap-1 typo-body text-emerald-400"
             >
               <Check className="w-3 h-3" />
               {t.agents.prompt_editor.saved}
             </div>
           )}
         {isSaving && (
-          <div className="flex items-center gap-1 text-sm text-foreground">
+          <div className="flex items-center gap-1 typo-body text-foreground">
             <Save className="w-3 h-3 animate-pulse" />
             {t.common.saving}
           </div>

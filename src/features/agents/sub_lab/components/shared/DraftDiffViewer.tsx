@@ -39,24 +39,24 @@ export function DraftDiffViewer({ currentPromptJson, draftPromptJson, changeSumm
   return (
     <div className="space-y-3">
       {changeSummary && (
-        <div className="px-3 py-2 rounded-modal bg-violet-500/10 border border-violet-500/20 text-sm text-violet-300">
+        <div className="px-3 py-2 rounded-modal bg-violet-500/10 border border-violet-500/20 typo-body text-violet-300">
           {changeSummary}
         </div>
       )}
 
       {!hasChanges ? (
-        <p className="text-sm text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
+        <p className="typo-body text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
       ) : (
         diffs.map((d) => (
           <div key={d.key} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">{d.label}</h4>
+              <h4 className="typo-body font-medium text-foreground uppercase tracking-wider">{d.label}</h4>
               {!d.changed && (
-                <span className="text-sm text-foreground">{t.agents.lab.no_changes_diff}</span>
+                <span className="typo-body text-foreground">{t.agents.lab.no_changes_diff}</span>
               )}
             </div>
             {d.changed && (
-              <div className="text-sm leading-relaxed">
+              <div className="typo-body leading-relaxed">
                 {d.diff.map((seg, i) => (
                   <span
                     key={i}

@@ -18,13 +18,13 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className={`w-3.5 h-3.5 ${rem.color}`} />
-          <span className={`text-sm font-medium ${rem.color}`}>{rem.label}</span>
+          <span className={`typo-body font-medium ${rem.color}`}>{rem.label}</span>
         </div>
         <div className="flex items-center gap-2">
           {score.data_stale && (
-            <span className="text-sm text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
+            <span className="typo-body text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
           )}
-          <span className="text-sm text-foreground tabular-nums">{score.sample_count} samples</span>
+          <span className="typo-data text-foreground tabular-nums">{score.sample_count} samples</span>
         </div>
       </div>
 
@@ -37,7 +37,7 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
 
       {/* Error classification breakdown */}
       {(score.permanent_failure_rate_1h > 0 || score.transient_failure_rate_1h > 0) && (
-        <div className="flex items-center gap-3 text-sm text-foreground">
+        <div className="flex items-center gap-3 typo-body text-foreground">
           {score.permanent_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
@@ -68,8 +68,8 @@ function RateBar({ label, rate, threshold }: { label: string; rate: number; thre
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-foreground font-mono">{label}</span>
-        <span className={`text-sm font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
+        <span className="typo-code text-foreground font-mono">{label}</span>
+        <span className={`typo-code font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
           {pct.toFixed(0)}%
         </span>
       </div>

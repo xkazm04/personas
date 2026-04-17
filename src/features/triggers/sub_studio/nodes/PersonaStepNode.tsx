@@ -29,7 +29,7 @@ function PersonaStepNodeInner({ data, selected }: NodeProps) {
 
       <div className="flex flex-col min-w-0">
         <span className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-medium">Persona</span>
-        <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{d.name}</span>
       </div>
 
       <Handle

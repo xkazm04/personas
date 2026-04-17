@@ -48,8 +48,8 @@ export function ProviderSection({
             <Globe className="w-4 h-4" style={{ color: provider.color }} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">{provider.label}</h3>
-            <p className="text-xs text-foreground">
+            <h3 className="typo-heading font-semibold text-foreground">{provider.label}</h3>
+            <p className="typo-caption text-foreground">
               {isSelectPhase && t.vault.workspace_panel.select_services}
               {ws.phase === 'authorizing' && t.vault.workspace_panel.browser_sign_in}
               {ws.phase === 'provisioning' && t.vault.workspace_panel.creating_credentials}
@@ -64,7 +64,7 @@ export function ProviderSection({
       {isSelectPhase && (
         <>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-foreground">
+            <span className="typo-caption text-foreground">
               {ws.selectedServices.length} of {provider.services.length} selected
             </span>
             {ws.selectedServices.length < provider.services.length && (
@@ -109,10 +109,10 @@ export function ProviderSection({
       {ws.phase === 'authorizing' && (
         <div className="flex flex-col items-center gap-3 py-8">
           <LoadingSpinner size="2xl" className="text-blue-400" />
-          <p className="text-sm text-foreground text-center">
+          <p className="typo-body text-foreground text-center">
             Sign in with your Google account in the browser window.
             <br />
-            <span className="text-xs text-foreground">
+            <span className="typo-caption text-foreground">
               This will grant access to {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''}
             </span>
           </p>
@@ -127,7 +127,7 @@ export function ProviderSection({
           {isDone && (
             <div className="flex items-center gap-2 p-3 rounded-modal border border-emerald-500/20 bg-emerald-500/5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <p className="text-sm text-emerald-400">
+              <p className="typo-body text-emerald-400">
                 {ws.provisionStates.filter((s) => s.status === 'created').length} credential{ws.provisionStates.filter((s) => s.status === 'created').length !== 1 ? 's' : ''} created from a single login.
               </p>
             </div>
@@ -136,7 +136,7 @@ export function ProviderSection({
           {isError && ws.error && (
             <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{ws.error}</p>
+              <p className="typo-body text-red-400">{ws.error}</p>
             </div>
           )}
 

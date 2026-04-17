@@ -54,7 +54,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
                 placeholder={db.query_title_placeholder}
-                className="flex-1 px-2.5 py-1.5 rounded-modal text-sm bg-background/50 border border-primary/15 text-foreground focus-ring placeholder:text-foreground"
+                className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-primary/15 text-foreground focus-ring placeholder:text-foreground"
               />
               <Button variant="ghost" size="icon-sm" onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
                 <Check className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <button
               key="create-btn"
               onClick={() => setIsCreating(true)}
-              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               {db.new_query}
@@ -86,7 +86,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             }`}
             onClick={() => onSelect(q.id)}
           >
-            <span className="flex-1 text-sm text-foreground truncate">{q.title}</span>
+            <span className="flex-1 typo-body text-foreground truncate">{q.title}</span>
 
             {q.last_run_ok !== null && (
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${q.last_run_ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
@@ -113,7 +113,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center">
               <Plus className="w-4 h-4 text-foreground" />
             </div>
-            <p className="text-sm text-foreground">{db.no_saved_queries}</p>
+            <p className="typo-body text-foreground">{db.no_saved_queries}</p>
           </div>
         )}
       </div>

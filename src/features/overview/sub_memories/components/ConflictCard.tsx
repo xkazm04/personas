@@ -36,9 +36,9 @@ function MemoryPreview({
       </div>
       <div className="px-2.5 py-2 space-y-1">
         <p className="typo-caption text-foreground line-clamp-2">{stripHtml(memory.title)}</p>
-        <p className="text-xs text-foreground line-clamp-3 whitespace-pre-wrap">{stripHtml(memory.content)}</p>
-        <div className="flex items-center gap-2 text-xs text-foreground pt-0.5">
-          <span className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/10 text-xs">{memory.category}</span>
+        <p className="typo-caption text-foreground line-clamp-3 whitespace-pre-wrap">{stripHtml(memory.content)}</p>
+        <div className="flex items-center gap-2 typo-caption text-foreground pt-0.5">
+          <span className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/10 typo-caption">{memory.category}</span>
           <span>{new Date(memory.created_at).toLocaleDateString()}</span>
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
     <div className={`rounded-modal border transition-colors ${isActive ? 'border-primary/25 bg-secondary/30' : 'border-primary/10 bg-background/30'}`}>
       <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? 'Processing resolution...' : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
         {kindBadge(conflict.kind)}
-        <span className="text-sm text-foreground flex-1 truncate">
+        <span className="typo-body text-foreground flex-1 truncate">
           {stripHtml(conflict.memoryA.title)}
           <span className="text-foreground mx-1.5">vs</span>
           {stripHtml(conflict.memoryB.title)}
@@ -80,7 +80,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
       {isActive && (
         <div className="animate-fade-slide-in overflow-hidden">
           <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
-            <p className="text-xs text-foreground">{conflict.reason}</p>
+            <p className="typo-caption text-foreground">{conflict.reason}</p>
             <div className="grid grid-cols-2 gap-2">
               <MemoryPreview label={t.overview.memory_conflict.memory_a} memory={conflict.memoryA} agentName={nameA} accent="blue" />
               <MemoryPreview label={t.overview.memory_conflict.memory_b} memory={conflict.memoryB} agentName={nameB} accent="amber" />

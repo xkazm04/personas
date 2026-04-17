@@ -38,7 +38,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
         return (
           <span
             key={tag}
-            className={`inline-flex items-center gap-1 text-sm font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+            className={`inline-flex items-center gap-1 typo-body font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
           >
             {tag}
             <Button
@@ -63,7 +63,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
             onBlur={onTagInputBlur}
             autoFocus
             placeholder={t.vault.credential_card.add_tag_placeholder}
-            className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-20 typo-body px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
           />
           {showSuggestions && filteredSuggestions.length > 0 && (
             <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
@@ -96,7 +96,7 @@ export function CredentialTagsRow({ tags }: CredentialTagsRowProps) {
         onCopy={copyCredentialId}
         label="id"
         tooltip={t.vault.credential_card.copy_credential_id}
-        className="border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80 px-2 py-0.5 text-xs font-mono"
+        className="border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80 px-2 py-0.5 typo-code font-mono"
       />
     </div>
   );

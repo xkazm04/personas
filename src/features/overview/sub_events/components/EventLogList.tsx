@@ -128,7 +128,7 @@ export default function EventLogList() {
       ),
       render: (event) => {
         const label = SOURCE_TYPE_LABELS[event.source_type] ?? event.source_type;
-        return <span className="text-sm text-foreground">{label}</span>;
+        return <span className="typo-body text-foreground">{label}</span>;
       },
     },
     {
@@ -145,14 +145,14 @@ export default function EventLogList() {
       render: (event) => {
         const targetPersona = getPersona(event.target_persona_id);
         if (targetPersona) {
-          return <span className="text-sm text-foreground truncate">{targetPersona.name}</span>;
+          return <span className="typo-body text-foreground truncate">{targetPersona.name}</span>;
         }
         // Strip "persona:" prefix from source_type values
         const raw = event.source_type || '';
         const display = raw.startsWith('persona:') ? raw.slice(8) : '';
         return display
-          ? <span className="text-sm text-foreground truncate">{display}</span>
-          : <span className="text-sm text-foreground">—</span>;
+          ? <span className="typo-body text-foreground truncate">{display}</span>
+          : <span className="typo-body text-foreground">—</span>;
       },
     },
     {
@@ -182,7 +182,7 @@ export default function EventLogList() {
             : event.status === 'processing' ? <LoadingSpinner size="xs" />
               : <Clock className="w-3 h-3" />;
         return (
-          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1.5 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {statusIcon}
             {event.status}
           </span>
@@ -196,7 +196,7 @@ export default function EventLogList() {
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <span className="text-sm text-foreground">{formatRelativeTime(event.created_at)}</span>
+        <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
       ),
     },
   ];
@@ -237,7 +237,7 @@ export default function EventLogList() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder={t.overview.events.search_placeholder}
-              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
+              className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
             />
             {searchText && (
               <button
@@ -253,14 +253,14 @@ export default function EventLogList() {
             <>
               <button
                 onClick={() => setShowSaveDialog(true)}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
                 title="Save current filters as a view"
               >
                 <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
               </button>
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
                 title="Clear all filters"
               >
                 <X className="w-3 h-3" /> {t.common.clear}
@@ -272,12 +272,12 @@ export default function EventLogList() {
         {/* Saved views chips */}
         {savedViews.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-foreground">{t.overview.events.views_label}</span>
+            <span className="typo-caption text-foreground">{t.overview.events.views_label}</span>
             {savedViews.map((view) => (
               <button
                 key={view.id}
                 onClick={() => applySavedView(view)}
-                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-card border transition-colors ${activeViewId === view.id
+                className={`group flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
                     ? 'bg-primary/15 text-primary border-primary/30'
                     : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
                   }`}
@@ -304,20 +304,20 @@ export default function EventLogList() {
               value={viewName}
               onChange={(e) => setViewName(e.target.value)}
               placeholder={t.overview.events.view_name_placeholder}
-              className="flex-1 px-2 py-1 text-sm rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30"
+              className="flex-1 px-2 py-1 typo-body rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30"
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
               autoFocus
             />
             <button
               onClick={handleSaveView}
               disabled={!viewName.trim()}
-              className="px-3 py-1 text-xs rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
               {t.common.save}
             </button>
             <button
               onClick={() => { setShowSaveDialog(false); setViewName(''); }}
-              className="px-2 py-1 text-xs rounded-card text-foreground hover:text-foreground transition-colors"
+              className="px-2 py-1 typo-caption rounded-card text-foreground hover:text-foreground transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -353,13 +353,13 @@ export default function EventLogList() {
             {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
                 {isLoadingOlder ? (
-                  <span className="flex items-center gap-2 text-xs text-foreground">
+                  <span className="flex items-center gap-2 typo-caption text-foreground">
                     <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
                   </span>
                 ) : (
                   <button
                     onClick={loadOlder}
-                    className="text-xs text-foreground hover:text-foreground transition-colors"
+                    className="typo-caption text-foreground hover:text-foreground transition-colors"
                   >
                     {t.overview.events.load_older}
                   </button>

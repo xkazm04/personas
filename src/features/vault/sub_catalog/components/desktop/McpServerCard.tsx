@@ -16,16 +16,16 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         <Monitor className="w-4 h-4 text-cyan-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">{server.label}</p>
-        <p className="text-xs text-foreground truncate font-mono">{server.command}</p>
+        <p className="typo-body font-medium text-foreground">{server.label}</p>
+        <p className="typo-code text-foreground truncate font-mono">{server.command}</p>
         {Object.keys(server.env).length > 0 && (
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {Object.keys(server.env).length} env var{Object.keys(server.env).length !== 1 ? 's' : ''}
           </p>
         )}
       </div>
       {imported ? (
-        <span className="flex items-center gap-1 text-xs text-emerald-400">
+        <span className="flex items-center gap-1 typo-caption text-emerald-400">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Imported
         </span>
@@ -33,7 +33,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         <button
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 typo-caption font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
         >
           {importing ? (
             <LoadingSpinner size="sm" />

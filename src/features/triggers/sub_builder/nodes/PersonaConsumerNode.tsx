@@ -41,7 +41,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
       </div>
 
       <div className="flex flex-col min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{d.name}</span>
         <div className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
           <span className="text-[10px] text-foreground">

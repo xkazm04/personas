@@ -95,7 +95,7 @@ export default function FrequencyEditor({
             </div>
             <div>
               <h3 className="typo-heading text-foreground/90">{t.schedules.change_frequency_title}</h3>
-              <p className="text-xs text-foreground">{agent.persona_name}</p>
+              <p className="typo-caption text-foreground">{agent.persona_name}</p>
             </div>
           </div>
           <button
@@ -108,7 +108,7 @@ export default function FrequencyEditor({
 
         <div className="px-6 py-5 space-y-5">
           {/* Current schedule */}
-          <div className="text-xs text-foreground">
+          <div className="typo-caption text-foreground">
             Current: <span className="font-mono text-foreground">{currentSchedule}</span>
           </div>
 
@@ -120,7 +120,7 @@ export default function FrequencyEditor({
                 <button
                   key={preset.cron}
                   onClick={() => handlePresetSelect(preset.cron)}
-                  className={`px-2.5 py-2 text-xs rounded-card border transition-all text-center ${
+                  className={`px-2.5 py-2 typo-caption rounded-card border transition-all text-center ${
                     cronInput === preset.cron
                       ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-elevation-1'
                       : 'bg-secondary/40 border-primary/10 text-foreground hover:bg-secondary/60 hover:text-foreground/80 hover:border-primary/20'
@@ -136,7 +136,7 @@ export default function FrequencyEditor({
           <div className="flex gap-2">
             <button
               onClick={() => setMode('custom')}
-              className={`flex-1 px-3 py-2 text-xs rounded-card border transition-colors ${
+              className={`flex-1 px-3 py-2 typo-caption rounded-card border transition-colors ${
                 mode === 'custom'
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
@@ -146,7 +146,7 @@ export default function FrequencyEditor({
             </button>
             <button
               onClick={() => setMode('preset')}
-              className={`flex-1 px-3 py-2 text-xs rounded-card border transition-colors ${
+              className={`flex-1 px-3 py-2 typo-caption rounded-card border transition-colors ${
                 mode === 'preset'
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
@@ -164,14 +164,14 @@ export default function FrequencyEditor({
                 value={cronInput}
                 onChange={(e) => setCronInput(e.target.value)}
                 placeholder="*/15 * * * *"
-                className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="w-full px-3 py-2 typo-code font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
               {/* Preview */}
               {previewLoading && (
-                <p className="text-xs text-foreground">{t.schedules.previewing}</p>
+                <p className="typo-caption text-foreground">{t.schedules.previewing}</p>
               )}
               {preview && !previewLoading && (
-                <div className={`text-xs space-y-1 p-2.5 rounded-card border ${
+                <div className={`typo-caption space-y-1 p-2.5 rounded-card border ${
                   preview.valid
                     ? 'bg-emerald-500/5 border-emerald-500/15 text-emerald-400/90'
                     : 'bg-red-500/5 border-red-500/15 text-red-400/90'
@@ -208,14 +208,14 @@ export default function FrequencyEditor({
               onChange={(e) => setIntervalInput(e.target.value)}
               placeholder="300"
               min={10}
-              className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
+              className="w-full px-3 py-2 typo-code font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
             />
           )}
         </div>
 
         {/* Overlap warning */}
         {overlapCount > 0 && (
-          <div className="mx-6 mb-1 flex items-start gap-2 p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 text-xs text-amber-400/90">
+          <div className="mx-6 mb-1 flex items-start gap-2 p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 typo-caption text-amber-400/90">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
               This schedule overlaps with {overlapCount} other execution{overlapCount > 1 ? 's' : ''} in the next 7 days.
@@ -228,14 +228,14 @@ export default function FrequencyEditor({
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-primary/10 bg-primary/[0.03]">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs rounded-card border border-primary/10 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
+            className="px-3 py-1.5 typo-caption rounded-card border border-primary/10 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!isValid}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-card border border-blue-500/30 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-blue-500/30 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Check className="w-3 h-3" />
             Save

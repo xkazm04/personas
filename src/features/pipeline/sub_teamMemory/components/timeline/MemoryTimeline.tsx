@@ -86,7 +86,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
     return (
       <div className="text-center py-4">
         <GitCommitVertical className="w-6 h-6 mx-auto mb-1.5 text-foreground" />
-        <p className="text-sm text-foreground">No timeline data</p>
+        <p className="typo-body text-foreground">No timeline data</p>
       </div>
     );
   }
@@ -98,11 +98,11 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
       {totalRuns > 0 && (
         <div className="flex items-center gap-2 px-2 py-1">
           <GitCommitVertical className="w-3 h-3 text-violet-400/60" />
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             {totalRuns} run{totalRuns !== 1 ? 's' : ''}
           </span>
           {activeRunFilter && (
-            <button onClick={() => onFilterRun(null)} className="text-sm text-violet-400 hover:text-violet-300 transition-colors ml-auto">
+            <button onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
               Clear filter
             </button>
           )}

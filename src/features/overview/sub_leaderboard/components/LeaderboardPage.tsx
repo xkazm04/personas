@@ -54,7 +54,7 @@ export default function LeaderboardPage() {
         actions={
           <div className="flex items-center gap-3">
             {leaderboard.length > 0 && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 typo-caption">
                 <StatusBadge variant="info">{leaderboard.length} agents</StatusBadge>
                 <StatusBadge accent="amber">Fleet avg: {fleetAvgScore}</StatusBadge>
               </div>
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
         {loading && leaderboard.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <LoadingSpinner size="lg" />
-            <p className="text-sm text-foreground">Computing agent scores...</p>
+            <p className="typo-body text-foreground">Computing agent scores...</p>
           </div>
         ) : leaderboard.length === 0 ? (
           <EmptyState />
@@ -103,7 +103,7 @@ export default function LeaderboardPage() {
             {/* Right: radar + detail */}
             <div className="w-64 flex-shrink-0 space-y-4">
               <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03]">
-                <h4 className="text-xs font-medium text-foreground mb-3 text-center">
+                <h4 className="typo-caption font-medium text-foreground mb-3 text-center">
                   {selectedEntry ? selectedEntry.personaName : 'Top Agent'}
                 </h4>
                 <div className="flex justify-center">
@@ -133,8 +133,8 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3">
       <Trophy className="w-10 h-10 text-foreground" />
-      <p className="text-sm font-medium text-foreground">No agent data yet</p>
-      <p className="text-xs text-foreground max-w-sm text-center">
+      <p className="typo-body font-medium text-foreground">No agent data yet</p>
+      <p className="typo-caption text-foreground max-w-sm text-center">
         Run some agents to see performance rankings. The leaderboard needs execution
         history and health data to compute scores.
       </p>
@@ -146,7 +146,7 @@ function SingleAgentView({ entry }: { entry: LeaderboardEntry }) {
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <Users className="w-8 h-8 text-foreground" />
-      <p className="text-sm text-foreground">
+      <p className="typo-body text-foreground">
         Add more agents to see rankings. Currently only <strong className="text-foreground">{entry.personaName}</strong> has data.
       </p>
       <div className="flex justify-center">
@@ -158,7 +158,7 @@ function SingleAgentView({ entry }: { entry: LeaderboardEntry }) {
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-xs">
+    <div className="flex items-center justify-between typo-caption">
       <span className="text-foreground">{label}</span>
       <span className="text-foreground font-medium">{value}</span>
     </div>

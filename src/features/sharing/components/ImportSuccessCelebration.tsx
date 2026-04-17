@@ -131,10 +131,10 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
     >
       <PackageUnwrapSvg />
       <div className="text-center space-y-1">
-        <div className="text-sm font-medium text-emerald-400">
+        <div className="typo-body font-medium text-emerald-400">
           {st.import_complete}
         </div>
-        <div className="text-xs text-foreground space-y-0.5">
+        <div className="typo-caption text-foreground space-y-0.5">
           <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
           {importResult.skipped > 0 && (
             <p>{importResult.skipped} skipped (conflicts)</p>

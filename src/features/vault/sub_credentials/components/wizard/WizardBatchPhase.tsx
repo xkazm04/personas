@@ -94,10 +94,10 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
       {/* Progress header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-foreground">
+          <h3 className="typo-heading font-bold text-foreground">
             Setting up {activeIndex + 1} of {items.length}
           </h3>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {activeItem?.connector.label}
           </p>
         </div>
@@ -118,7 +118,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
         {items.map((item, i) => (
           <div
             key={item.connector.id}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-card border text-sm shrink-0 ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-card border typo-body shrink-0 ${
               i === activeIndex
                 ? 'border-violet-500/30 bg-violet-500/10 text-violet-300'
                 : item.status === 'done'

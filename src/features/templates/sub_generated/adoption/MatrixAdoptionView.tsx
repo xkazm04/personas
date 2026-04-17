@@ -551,7 +551,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+        <div className="typo-body text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
       </div>
     );
   }

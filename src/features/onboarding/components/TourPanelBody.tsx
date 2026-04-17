@@ -59,7 +59,7 @@ export function TourPanelBody({
         <h4 className="typo-heading text-foreground/90 flex items-center gap-2">
           {currentStep.title}
           {isStepCompleted && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 text-sm font-medium text-emerald-400">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 typo-body font-medium text-emerald-400">
               <Check className="w-2.5 h-2.5" />
               {t.onboarding.done_button}
             </span>
@@ -92,7 +92,7 @@ export function TourPanelBody({
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-3" key={currentStep.id}>
-        <Suspense fallback={<div className="py-4 text-center text-foreground text-sm">{t.onboarding.tour_loading}</div>}>
+        <Suspense fallback={<div className="py-4 text-center text-foreground typo-body">{t.onboarding.tour_loading}</div>}>
           {/* Tour 1: Getting Started - specialized content */}
           {isGettingStarted && currentStep.id === 'appearance-setup' && <TourAppearanceContent />}
           {isGettingStarted && currentStep.id === 'credentials-intro' && <CredentialsTourContent subStepIndex={subStepIndex} />}

@@ -23,12 +23,12 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-foreground" />
-          <span className="text-sm font-medium text-foreground">{t.onboarding.text_size_label}</span>
+          <span className="typo-body font-medium text-foreground">{t.onboarding.text_size_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {TEXT_SCALES.map((scale) => {
             const isActive = textScale === scale.id;
-            const sizeClass = scale.id === 'large' ? 'text-base' : scale.id === 'larger' ? 'text-lg' : 'text-xl';
+            const sizeClass = scale.id === 'large' ? 'typo-body-lg' : scale.id === 'larger' ? 'typo-heading-lg' : 'typo-heading-lg';
             return (
               <button
                 key={scale.id}
@@ -53,7 +53,7 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Sun className="w-3.5 h-3.5 text-foreground" />
-          <span className="text-sm font-medium text-foreground">{t.onboarding.brightness_label}</span>
+          <span className="typo-body font-medium text-foreground">{t.onboarding.brightness_label}</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {brightnessLevels.map((level, i) => {

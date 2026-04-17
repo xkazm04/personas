@@ -67,10 +67,10 @@ export function UniversalAutoCredReview({
           <Sparkles className="w-5 h-5" style={{ color: discoveredConnector?.color ?? '#6366f1' }} />
         </div>
         <div className="flex-1">
-          <h4 className="text-sm font-semibold text-foreground">
+          <h4 className="typo-heading font-semibold text-foreground">
             Discovered: {connectorLabel}
           </h4>
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {fields.length} field{fields.length !== 1 ? 's' : ''} discovered
             {discoveredConnector?.category ? ` \u00b7 ${discoveredConnector.category}` : ''}
           </p>
@@ -78,27 +78,27 @@ export function UniversalAutoCredReview({
         {isPartial && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/10 border border-amber-500/20">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
-            <span className="text-xs font-medium text-amber-400">{t.vault.auto_cred_extra.partial_badge}</span>
+            <span className="typo-caption font-medium text-amber-400">{t.vault.auto_cred_extra.partial_badge}</span>
           </div>
         )}
       </div>
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-foreground uppercase tracking-wider">
+        <label className="typo-label font-medium text-foreground uppercase tracking-wider">
           Credential Name
         </label>
         <input
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-card text-sm text-foreground focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-card typo-body text-foreground focus:outline-none focus:border-indigo-500/40 transition-colors"
         />
       </div>
 
       {/* Extracted fields */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-foreground uppercase tracking-wider">
+        <label className="typo-label font-medium text-foreground uppercase tracking-wider">
           Extracted Values
         </label>
         <div className="space-y-2">
@@ -112,7 +112,7 @@ export function UniversalAutoCredReview({
           ))}
         </div>
         {fields.length === 0 && (
-          <div className="text-sm text-foreground text-center py-4">
+          <div className="typo-body text-foreground text-center py-4">
             No fields were discovered. Try again with a more specific description.
           </div>
         )}
@@ -123,12 +123,12 @@ export function UniversalAutoCredReview({
         {allFilled ? (
           <>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm text-emerald-400">All {fields.length} fields captured</span>
+            <span className="typo-body text-emerald-400">All {fields.length} fields captured</span>
           </>
         ) : (
           <>
             <XCircle className="w-4 h-4 text-amber-400" />
-            <span className="text-sm text-amber-400">{filledCount}/{fields.length} fields captured</span>
+            <span className="typo-body text-amber-400">{filledCount}/{fields.length} fields captured</span>
           </>
         )}
       </div>
@@ -138,14 +138,14 @@ export function UniversalAutoCredReview({
         <div className="flex items-center gap-2">
           <button
             onClick={onRetry}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-foreground hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 typo-body text-foreground hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
           </button>
           <button
             onClick={onCancel}
-            className="px-3 py-2 text-sm text-foreground hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
+            className="px-3 py-2 typo-body text-foreground hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
           >
             Cancel
           </button>
@@ -153,7 +153,7 @@ export function UniversalAutoCredReview({
         <button
           onClick={onSave}
           disabled={isSaving || fields.length === 0}
-          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-emerald-600/20"
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-emerald-600/20"
         >
           {isSaving ? (
             <LoadingSpinner className="text-white" />

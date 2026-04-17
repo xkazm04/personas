@@ -28,7 +28,7 @@ export function BulkActionBar({
         >
           {confirmAction ? (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 typo-body">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
                 <span className="text-foreground">
                   {confirmAction === 'approved' ? t.overview.review.approve : t.overview.review.reject}{' '}
@@ -40,7 +40,7 @@ export function BulkActionBar({
                 <button
                   onClick={() => onConfirmAction(null)}
                   disabled={isBulkProcessing}
-                  className="px-3 py-1.5 rounded-modal text-sm border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
+                  className="px-3 py-1.5 rounded-modal typo-body border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -59,14 +59,14 @@ export function BulkActionBar({
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">
+              <span className="typo-body text-foreground">
                 <span className="font-semibold text-foreground/90">{activeSelectionCount}</span>{' '}
                 pending review{activeSelectionCount !== 1 ? 's' : ''} selected
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={onDeselect}
-                  className="px-3 py-1.5 rounded-modal text-sm border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
+                  className="px-3 py-1.5 rounded-modal typo-body border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
                 >
                   {t.overview.review.deselect}
                 </button>

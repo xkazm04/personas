@@ -107,7 +107,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               <button
                 type="button"
                 onClick={() => togglePanel('conditions')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-all duration-200 ${
                   openPanel === 'conditions'
                     ? 'bg-primary/15 text-primary border border-primary/25'
                     : 'bg-secondary/20 text-foreground border border-transparent hover:border-primary/15'
@@ -125,7 +125,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               <button
                 type="button"
                 onClick={() => togglePanel('services')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-all duration-200 ${
                   openPanel === 'services'
                     ? 'bg-primary/15 text-primary border border-primary/25'
                     : 'bg-secondary/20 text-foreground border border-transparent hover:border-primary/15'

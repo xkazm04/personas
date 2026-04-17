@@ -80,7 +80,7 @@ function JsonHighlight({ json }: { json: string }) {
   }, [highlighted]);
 
   return (
-    <pre className="text-xs leading-relaxed pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
+    <pre className="typo-caption leading-relaxed pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
       {parts}
     </pre>
   );

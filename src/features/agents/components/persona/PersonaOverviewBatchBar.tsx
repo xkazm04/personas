@@ -12,7 +12,7 @@ export function PersonaOverviewBatchBar({ count, onDelete, onClear }: PersonaOve
   if (count === 0) return null;
   return (
     <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-2 rounded-modal border border-primary/15 bg-secondary/40 backdrop-blur-sm">
-      <span className="text-sm text-foreground font-medium">{tx(t.agents.persona_list.batch_selected, { count })}</span>
+      <span className="typo-body text-foreground font-medium">{tx(t.agents.persona_list.batch_selected, { count })}</span>
       <div className="w-px h-4 bg-primary/15" />
       <button
         type="button"

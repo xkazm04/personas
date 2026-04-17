@@ -49,7 +49,7 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
       {/* Syntax-highlighted layer */}
       <pre
         ref={preRef}
-        className="absolute inset-0 p-3 text-sm font-mono whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
+        className="absolute inset-0 p-3 typo-code font-mono whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
         aria-hidden
       >
         {tokens.map((token, i) => (
@@ -69,7 +69,7 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
         onScroll={handleScroll}
         placeholder={placeholder}
         spellCheck={false}
-        className="relative w-full h-full p-3 text-sm font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus-visible:outline-none placeholder:text-foreground"
+        className="relative w-full h-full p-3 typo-code font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus-visible:outline-none placeholder:text-foreground"
         style={{ minHeight }}
       />
     </div>

@@ -43,8 +43,8 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <div className="w-9 h-9 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
             <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
           </div>
-          <p className="text-sm font-medium text-foreground mb-1">{t.vault.empty_state.catalog_heading}</p>
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="typo-body font-medium text-foreground mb-1">{t.vault.empty_state.catalog_heading}</p>
+          <p className="typo-body text-foreground leading-relaxed">
             {t.vault.empty_state.catalog_description}
           </p>
           <div className="flex items-center gap-1.5 mt-3">
@@ -66,7 +66,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
               </div>
             ))}
             {connectorDefinitions.length > 4 && (
-              <span className="text-sm text-foreground ml-0.5">+{connectorDefinitions.length - 4}</span>
+              <span className="typo-body text-foreground ml-0.5">+{connectorDefinitions.length - 4}</span>
             )}
           </div>
         </button>
@@ -80,11 +80,11 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           <div className="w-9 h-9 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
-          <p className="text-sm font-medium text-foreground mb-1">{t.vault.empty_state.ai_heading}</p>
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="typo-body font-medium text-foreground mb-1">{t.vault.empty_state.ai_heading}</p>
+          <p className="typo-body text-foreground leading-relaxed">
             {t.vault.empty_state.ai_description}
           </p>
-          <span className="inline-flex items-center gap-1 mt-3 text-sm text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
+          <span className="inline-flex items-center gap-1 mt-3 typo-body text-violet-400/60 group-hover:text-violet-400/80 transition-colors">
             {t.vault.empty_state.works_with_any} <ArrowRight className="w-3 h-3" />
           </span>
         </button>
@@ -101,8 +101,8 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
               <Globe className="w-4.5 h-4.5 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">{t.vault.workspace_connect}</p>
-              <p className="text-sm text-foreground">
+              <p className="typo-body font-medium text-foreground">{t.vault.workspace_connect}</p>
+              <p className="typo-body text-foreground">
                 {t.vault.type_picker.workspace_connect_hint}
               </p>
             </div>
@@ -113,13 +113,13 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       {/* Quick-start row */}
       {quickConnectors.length > 0 && onQuickStart && (
         <div className="space-y-2">
-          <p className="text-sm font-mono uppercase tracking-wider text-foreground text-center">{t.vault.quick_start}</p>
+          <p className="typo-code font-mono uppercase tracking-wider text-foreground text-center">{t.vault.quick_start}</p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {quickConnectors.map((connector) => (
               <button
                 key={connector.id}
                 onClick={() => onQuickStart(connector)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all typo-body"
               >
                 <div
                   className="w-4.5 h-4.5 rounded flex items-center justify-center"

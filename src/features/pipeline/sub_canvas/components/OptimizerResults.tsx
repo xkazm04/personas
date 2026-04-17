@@ -45,7 +45,7 @@ function ConfidenceBar({ value }: { value: number }) {
           }}
         />
       </div>
-      <span className="text-sm text-foreground font-mono">{Math.round(value * 100)}%</span>
+      <span className="typo-code text-foreground font-mono">{Math.round(value * 100)}%</span>
     </div>
   );
 }
@@ -57,7 +57,7 @@ function ImpactBadge({ impact }: { impact: string }) {
     low: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   };
   return (
-    <span className={`px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${colors[impact as keyof typeof colors] ?? colors.low}`}>
+    <span className={`px-1.5 py-0.5 typo-code font-mono uppercase rounded border ${colors[impact as keyof typeof colors] ?? colors.low}`}>
       {impact}
     </span>
   );
@@ -89,23 +89,23 @@ export default function OptimizerResults({
       {loading && !hasData && (
         <div className="px-3 py-6 text-center">
           <div className="w-5 h-5 mx-auto mb-2 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-          <p className="text-sm text-foreground">{pt.analyzing_pipeline}</p>
+          <p className="typo-body text-foreground">{pt.analyzing_pipeline}</p>
         </div>
       )}
 
       {!loading && !hasData && (
         <div className="px-3 py-6 text-center">
           <Sparkles className="w-5 h-5 mx-auto mb-2 text-foreground" />
-          <p className="text-sm text-foreground">{pt.run_pipeline_twice}</p>
-          <p className="text-sm text-foreground mt-0.5">{pt.run_pipeline_twice_hint}</p>
+          <p className="typo-body text-foreground">{pt.run_pipeline_twice}</p>
+          <p className="typo-body text-foreground mt-0.5">{pt.run_pipeline_twice_hint}</p>
         </div>
       )}
 
       {hasData && suggestions.length === 0 && (
         <div className="px-3 py-6 text-center">
           <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400/60" />
-          <p className="text-sm text-foreground">{pt.topology_looks_good}</p>
-          <p className="text-sm text-foreground mt-0.5">{pt.no_improvements}</p>
+          <p className="typo-body text-foreground">{pt.topology_looks_good}</p>
+          <p className="typo-body text-foreground mt-0.5">{pt.no_improvements}</p>
         </div>
       )}
 
@@ -129,12 +129,12 @@ export default function OptimizerResults({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-sm font-semibold text-foreground/90 truncate">
+                  <span className="typo-heading font-semibold text-foreground/90 truncate">
                     {s.title}
                   </span>
                   <ImpactBadge impact={s.impact} />
                 </div>
-                <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                <p className="typo-body text-foreground leading-relaxed line-clamp-2">
                   {s.description}
                 </p>
                 <div className="flex items-center justify-between mt-1.5">

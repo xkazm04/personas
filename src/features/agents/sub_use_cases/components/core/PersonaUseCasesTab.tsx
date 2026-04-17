@@ -123,7 +123,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
       {/* Summary */}
       {contextData.summary && (
         <div className="px-1 mt-2">
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="typo-body text-foreground leading-relaxed">
             {contextData.summary}
           </p>
         </div>

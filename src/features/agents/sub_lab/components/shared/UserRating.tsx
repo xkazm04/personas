@@ -41,7 +41,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <span className={`text-xs font-semibold text-foreground uppercase tracking-wider ${compact ? 'mr-1' : 'mr-2'}`}>
+        <span className={`typo-label font-semibold text-foreground uppercase tracking-wider ${compact ? 'mr-1' : 'mr-2'}`}>
           Rate
         </span>
         {RATING_OPTIONS.map((opt) => {
@@ -66,7 +66,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         {selected !== undefined && !saved && (
           <button
             onClick={handleSave}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card text-xs font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
           >
             <Send className="w-3 h-3" />
             Save
@@ -74,7 +74,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         )}
 
         {saved && (
-          <span className="ml-1 text-xs text-foreground">{t.agents.lab.saved_label}</span>
+          <span className="ml-1 typo-caption text-foreground">{t.agents.lab.saved_label}</span>
         )}
       </div>
 
@@ -84,7 +84,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           value={feedback}
           onChange={(e) => { setFeedback(e.target.value); setSaved(false); }}
           placeholder={t.agents.lab.what_went_wrong}
-          className={`w-full rounded-card border border-primary/10 bg-secondary/20 text-sm text-foreground placeholder:text-foreground px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'text-xs' : ''}`}
+          className={`w-full rounded-card border border-primary/10 bg-secondary/20 typo-body text-foreground placeholder:text-foreground px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'typo-caption' : ''}`}
         />
       )}
     </div>

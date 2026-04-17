@@ -111,7 +111,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                   }}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
@@ -123,7 +123,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               </div>
             ) : (
               <>
-                <h2 id="schema-manager-title" className="text-sm font-semibold text-foreground/90 truncate">
+                <h2 id="schema-manager-title" className="typo-heading font-semibold text-foreground/90 truncate">
                   {credential.name}
                 </h2>
                 <button
@@ -136,7 +136,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
               </>
             )}
           </div>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {db.schema_manager} -- {connector?.label || credential.service_type}
           </p>
         </div>
@@ -157,7 +157,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             <button
               key={tabId}
               onClick={() => { setVisited((prev) => new Set([...prev, tabId])); setActiveTab(tabId); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium transition-colors ${
                 isActive
                   ? 'text-foreground/90'
                   : 'text-foreground hover:text-muted-foreground/70'

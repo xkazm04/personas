@@ -108,10 +108,10 @@ export function PersonaRunner() {
       {executionVerificationFailed && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-modal border border-amber-500/30 bg-amber-500/10">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="text-sm text-amber-200/90 flex-1">
+          <span className="typo-body text-amber-200/90 flex-1">
             {t.agents.executions.verification_failed}
           </span>
-          <button onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
+          <button onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
             <RefreshCw className="w-3 h-3" /> Retry
           </button>
           <button onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title={t.agents.executions.dismiss_abandon}>
@@ -180,7 +180,7 @@ export function PersonaRunner() {
       {/* Empty state */}
       {!(state.isThisPersonasExecution && (isExecuting || state.outputLines.length > 0)) && (
           <div className="animate-fade-slide-in flex flex-col items-center justify-center py-16 gap-4" data-testid="runner-empty-state">
-            {selectedPersona.icon ? (sanitizeIconUrl(selectedPersona.icon) ? <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-modal opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" /> : isIconUrl(selectedPersona.icon) ? null : <span className="text-4xl leading-none opacity-60">{selectedPersona.icon}</span>) : (
+            {selectedPersona.icon ? (sanitizeIconUrl(selectedPersona.icon) ? <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-modal opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" /> : isIconUrl(selectedPersona.icon) ? null : <span className="typo-hero leading-none opacity-60">{selectedPersona.icon}</span>) : (
               <div className="w-12 h-12 rounded-modal flex items-center justify-center typo-heading-lg opacity-50" style={{ backgroundColor: `${selectedPersona.color || '#6B7280'}20`, border: `1px solid ${selectedPersona.color || '#6B7280'}40`, color: selectedPersona.color || '#6B7280' }}>{selectedPersona.name.charAt(0).toUpperCase()}</div>
             )}
             <div className="text-center space-y-1.5">

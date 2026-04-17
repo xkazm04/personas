@@ -92,8 +92,8 @@ export default function TeamList() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground/90">{t.pipeline.agent_teams}</h1>
-            <p className="text-sm text-foreground mt-1">
+            <h1 className="typo-heading-lg font-bold text-foreground/90">{t.pipeline.agent_teams}</h1>
+            <p className="typo-body text-foreground mt-1">
               {t.pipeline.agent_teams_subtitle}
             </p>
           </div>
@@ -151,8 +151,8 @@ export default function TeamList() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-modal bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
-            <p className="text-sm text-foreground mb-6 max-w-sm mx-auto">
+            <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
+            <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">
               {t.pipeline.no_teams_hint}
             </p>
             <div className="flex items-center justify-center gap-3">

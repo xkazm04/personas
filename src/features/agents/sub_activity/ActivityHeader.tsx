@@ -15,7 +15,7 @@ export function ActivityHeader({ itemCount, isLoading, onRefresh }: ActivityHead
       <div className="flex items-center gap-2">
         <Activity className="w-4 h-4 text-blue-400" />
         <h3 className="typo-heading text-foreground/90">{t.agents.activity.title}</h3>
-        <span className="text-sm text-foreground">{tx(t.agents.activity.items, { count: itemCount })}</span>
+        <span className="typo-body text-foreground">{tx(t.agents.activity.items, { count: itemCount })}</span>
       </div>
       <div className="flex items-center gap-2">
         <button

@@ -143,7 +143,7 @@ function BlueprintCell({ dim, index, items, status }: {
           <span className="font-mono text-[10px] text-foreground tabular-nums">
             {String(index + 1).padStart(2, '0')}
           </span>
-          <span className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-foreground">
+          <span className="font-mono typo-code font-bold uppercase tracking-[0.3em] text-foreground">
             {CELL_LABELS[dim.key]}
           </span>
         </div>
@@ -192,13 +192,13 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         {phaseIcon(buildPhase)}
-        <span className="font-mono text-xs text-foreground">
+        <span className="font-mono typo-code text-foreground">
           COMMAND CENTER // BUILD v1.0
         </span>
       </div>
 
       {/* Phase label — full contrast */}
-      <div className="font-mono text-sm text-foreground mb-3">
+      <div className="font-mono typo-code text-foreground mb-3">
         [PHASE: {phaseLabelText}]
       </div>
 
@@ -225,12 +225,12 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       {/* Actions */}
       <div className="mt-auto flex flex-col gap-2">
         {(buildPhase === 'draft_ready' || buildPhase === 'completed') && onStartTest && (
-          <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono text-xs text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
+          <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono typo-code text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
             <Play className="w-3.5 h-3.5" /> RUN TEST
           </button>
         )}
         {buildPhase === 'testing' && (
-          <div className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/20 font-mono text-xs text-emerald-400/70">
+          <div className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/20 font-mono typo-code text-emerald-400/70">
             <span className="flex gap-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -240,12 +240,12 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
           </div>
         )}
         {buildPhase === 'test_complete' && onApproveTest && (
-          <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/30 font-mono text-xs text-emerald-400 cursor-pointer hover:bg-emerald-500/10 transition-colors">
+          <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/30 font-mono typo-code text-emerald-400 cursor-pointer hover:bg-emerald-500/10 transition-colors">
             <Sparkles className="w-3.5 h-3.5" /> APPROVE
           </button>
         )}
         {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
-          <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono text-xs text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
+          <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono typo-code text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
             <Eye className="w-3.5 h-3.5" /> VIEW AGENT
           </button>
         )}

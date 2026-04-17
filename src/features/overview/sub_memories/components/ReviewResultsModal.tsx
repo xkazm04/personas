@@ -23,7 +23,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               {t.overview.review_results.title}
             </h3>
             {reviewResult && (
-              <p className="text-sm text-foreground mt-1">
+              <p className="typo-body text-foreground mt-1">
                 Reviewed {reviewResult.reviewed} memories
               </p>
             )}
@@ -40,7 +40,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="typo-heading text-red-300">{t.overview.review_results.review_failed}</p>
-                <p className="text-sm text-red-400/70 mt-1">{reviewError}</p>
+                <p className="typo-body text-red-400/70 mt-1">{reviewError}</p>
               </div>
             </div>
           ) : reviewResult ? (
@@ -74,7 +74,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                         <p className={`typo-heading truncate ${d.action === 'deleted' ? 'text-foreground line-through' : 'text-foreground'}`}>
                           {d.title}
                         </p>
-                        <p className="text-sm text-foreground mt-0.5">{d.reason}</p>
+                        <p className="typo-body text-foreground mt-0.5">{d.reason}</p>
                       </div>
                       <span className={`typo-heading flex-shrink-0 ${d.action === 'deleted' ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
                         {d.action}

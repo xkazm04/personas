@@ -21,7 +21,7 @@ export function EventTooltip({
 
   return (
     <div
-      className="fixed z-50 pointer-events-none px-3 py-2 rounded-card bg-popover border border-primary/15 shadow-elevation-3 text-xs max-w-[240px]"
+      className="fixed z-50 pointer-events-none px-3 py-2 rounded-card bg-popover border border-primary/15 shadow-elevation-3 typo-caption max-w-[240px]"
       style={{
         left: pos.x,
         top: pos.y,

@@ -184,7 +184,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="bundle-export-title" maxWidthClass="max-w-lg">
       <div className="p-5 space-y-4">
         <div>
-          <h2 id="bundle-export-title" className="text-base font-semibold text-foreground flex items-center gap-2">
+          <h2 id="bundle-export-title" className="typo-body-lg font-semibold text-foreground flex items-center gap-2">
             {mode === 'enclave' ? (
               <Lock className="w-4.5 h-4.5 text-violet-400" />
             ) : (
@@ -192,7 +192,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             )}
             {mode === 'enclave' ? st.seal_enclave_title : st.export_title}
           </h2>
-          <p className="text-xs text-foreground mt-1">
+          <p className="typo-caption text-foreground mt-1">
             {mode === 'enclave'
               ? st.seal_enclave_subtitle
               : st.export_subtitle}
@@ -203,7 +203,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         <div className="flex rounded-card border border-border p-0.5 bg-secondary/20">
           <button
             onClick={() => setMode('bundle')}
-            className={`flex-1 px-3 py-1.5 text-xs rounded-input transition-colors flex items-center justify-center gap-1.5 ${
+            className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'bundle'
                 ? 'bg-background text-foreground shadow-elevation-1'
                 : 'text-foreground hover:text-foreground'
@@ -214,7 +214,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
           </button>
           <button
             onClick={() => setMode('enclave')}
-            className={`flex-1 px-3 py-1.5 text-xs rounded-input transition-colors flex items-center justify-center gap-1.5 ${
+            className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'enclave'
                 ? 'bg-background text-foreground shadow-elevation-1'
                 : 'text-foreground hover:text-foreground'
@@ -226,14 +226,14 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-foreground py-6 justify-center">
+          <div className="flex items-center gap-2 typo-body text-foreground py-6 justify-center">
             <LoadingSpinner />
             {t.common.loading}
           </div>
         ) : mode === 'bundle' ? (
           /* Bundle mode */
           exposedResources.length === 0 ? (
-            <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-foreground">
+            <div className="rounded-modal border border-dashed border-border p-6 text-center typo-body text-foreground">
               <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
               {st.no_resources_exposed}
             </div>
@@ -242,11 +242,11 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               <div className="flex items-center justify-between">
                 <button
                   onClick={toggleAll}
-                  className="text-xs text-primary hover:text-primary/80 transition-colors"
+                  className="typo-caption text-primary hover:text-primary/80 transition-colors"
                 >
                   {selected.size === exposedResources.length ? st.deselect_all : st.select_all}
                 </button>
-                <span className="text-xs text-foreground">
+                <span className="typo-caption text-foreground">
                   {tx(st.selected_of_total, { selected: selected.size, total: exposedResources.length })}
                 </span>
               </div>
@@ -281,7 +281,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50"
+            className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
           >
             {st.cancel}
           </button>
@@ -290,7 +290,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               <button
                 onClick={handleCreateShareLink}
                 disabled={selected.size === 0 || creatingLink || copying || exporting}
-                className="px-3 py-1.5 text-xs rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 title="Generate a one-time share link (expires in 24h)"
               >
                 {creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -299,7 +299,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               <button
                 onClick={handleCopyToClipboard}
                 disabled={selected.size === 0 || copying || exporting || creatingLink}
-                className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 title="Copy bundle as base64 to clipboard (max 256 KB)"
               >
                 {copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Clipboard className="w-3.5 h-3.5" />}
@@ -308,7 +308,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               <button
                 onClick={handleExportBundle}
                 disabled={selected.size === 0 || exporting || copying || creatingLink}
-                className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
                 {exporting ? st.exporting : st.export_to_file}
@@ -318,7 +318,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             <button
               onClick={handleSealEnclave}
               disabled={!selectedPersonaId || exporting}
-              className="px-3 py-1.5 text-xs rounded-card bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-3 py-1.5 typo-caption rounded-card bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
               {exporting ? st.sealing : st.seal_enclave_btn}
@@ -358,18 +358,18 @@ function EnclaveConfigPanel({
       {/* Info banner */}
       <div className="rounded-card border border-violet-500/20 bg-violet-500/5 p-2.5 flex items-start gap-2">
         <Shield className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
-        <span className="text-xs text-violet-300/90">
+        <span className="typo-caption text-violet-300/90">
           {st.enclave_info}
         </span>
       </div>
 
       {/* Persona selector */}
       <div>
-        <label className="text-xs text-foreground mb-1 block">{st.label_persona}</label>
+        <label className="typo-caption text-foreground mb-1 block">{st.label_persona}</label>
         <select
           value={selectedPersonaId}
           onChange={(e) => onSelectPersona(e.target.value)}
-          className="w-full px-2.5 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
+          className="w-full px-2.5 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
         >
           <option value="">{st.select_persona_placeholder}</option>
           {personas.map((p) => (
@@ -383,30 +383,30 @@ function EnclaveConfigPanel({
       {/* Policy configuration */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-foreground mb-1 block">{st.label_max_cost}</label>
+          <label className="typo-caption text-foreground mb-1 block">{st.label_max_cost}</label>
           <input
             type="number"
             min="0.01"
             step="0.01"
             value={maxCostUsd}
             onChange={(e) => onMaxCostChange(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
+            className="w-full px-2.5 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           />
         </div>
         <div>
-          <label className="text-xs text-foreground mb-1 block">{st.label_max_turns}</label>
+          <label className="typo-caption text-foreground mb-1 block">{st.label_max_turns}</label>
           <input
             type="number"
             min="1"
             step="1"
             value={maxTurns}
             onChange={(e) => onMaxTurnsChange(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
+            className="w-full px-2.5 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           />
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+      <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer">
         <input
           type="checkbox"
           checked={allowPersistence}
@@ -443,7 +443,7 @@ function ResourceCheckItem({
         {checked && <Check className="w-3 h-3 text-white" />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm text-foreground truncate">
+        <div className="typo-body text-foreground truncate">
           {resource.display_name || resource.resource_id}
         </div>
         <div className="text-[10px] text-foreground flex items-center gap-1.5">

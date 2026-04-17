@@ -103,15 +103,15 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <Code2 className="w-7 h-7 text-indigo-400/60" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">{t.common.no_results}</p>
-          <p className="text-xs text-foreground max-w-xs">
+          <p className="typo-body font-medium text-foreground">{t.common.no_results}</p>
+          <p className="typo-caption text-foreground max-w-xs">
             Add a project in Dev Tools first to connect a codebase to your agents.
           </p>
         </div>
         <button
           type="button"
           onClick={goToDevTools}
-          className="flex items-center gap-2 px-4 py-2 rounded-card text-sm font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
         >
           Go to Dev Tools
           <ArrowRight className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs text-foreground hover:text-foreground/70 transition-colors"
+          className="typo-caption text-foreground hover:text-foreground/70 transition-colors"
         >
           Cancel
         </button>
@@ -135,7 +135,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
       {/* Credential name input */}
       {onCredentialNameChange && (
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
+          <label className="block typo-body font-medium text-foreground mb-1.5">
             Credential Name
           </label>
           <input
@@ -143,12 +143,12 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             value={credentialName ?? ''}
             onChange={(e) => onCredentialNameChange(e.target.value)}
             placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </div>
       )}
 
-      <p className="text-xs text-foreground">
+      <p className="typo-caption text-foreground">
         {multiSelect
           ? 'Select projects to include in cross-project analysis.'
           : 'Select a project to connect as a codebase source for your agents.'}
@@ -166,14 +166,14 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-card text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-card text-sm text-foreground hover:text-foreground/70 transition-colors"
+          className="px-4 py-2 rounded-card typo-body text-foreground hover:text-foreground/70 transition-colors"
         >
           Cancel
         </button>

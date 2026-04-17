@@ -15,7 +15,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
     <>
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-card text-sm text-red-400">
+        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
           <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -27,19 +27,19 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-1.5 ${testResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
               {testResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-              <span className="text-sm font-medium">{testResult.statusCode}</span>
+              <span className="typo-body font-medium">{testResult.statusCode}</span>
             </div>
-            <span className="text-xs text-foreground">{testResult.durationMs}ms</span>
+            <span className="typo-caption text-foreground">{testResult.durationMs}ms</span>
             <button
               onClick={() => navigator.clipboard.writeText(testResult.body)}
-              className="text-xs text-foreground hover:text-foreground flex items-center gap-1 ml-auto"
+              className="typo-caption text-foreground hover:text-foreground flex items-center gap-1 ml-auto"
             >
               <Copy className="w-3 h-3" /> Copy
             </button>
           </div>
 
           {/* Response Headers (collapsed by default) */}
-          <details className="text-xs">
+          <details className="typo-caption">
             <summary className="text-foreground cursor-pointer hover:text-muted-foreground">
               Response Headers ({Object.keys(testResult.headers).length})
             </summary>
@@ -54,7 +54,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
 
           {/* Response Body */}
           <div className="relative">
-            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-card text-xs font-mono text-foreground overflow-auto max-h-80 whitespace-pre-wrap">
+            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-card typo-code font-mono text-foreground overflow-auto max-h-80 whitespace-pre-wrap">
               {formatJson(testResult.body)}
             </pre>
           </div>

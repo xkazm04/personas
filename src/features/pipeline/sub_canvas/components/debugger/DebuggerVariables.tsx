@@ -23,10 +23,10 @@ export default function DebuggerVariables({
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <Bug className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-sm font-semibold text-foreground/90">
+          <span className="typo-heading font-semibold text-foreground/90">
             {agentName}
           </span>
-          <span className={`px-1.5 py-0.5 text-sm font-mono rounded-card ${
+          <span className={`px-1.5 py-0.5 typo-code font-mono rounded-card ${
             inspectedData.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
             inspectedData.status === 'running' ? 'bg-blue-500/15 text-blue-400' :
             'bg-secondary/40 text-foreground'
@@ -53,24 +53,24 @@ export default function DebuggerVariables({
       <div className="grid grid-cols-2 gap-0 divide-x divide-primary/10 overflow-y-auto max-h-[230px]">
         {/* Input */}
         <div className="p-3">
-          <div className="text-sm font-mono uppercase tracking-wider text-foreground mb-1.5">{t.pipeline.input}</div>
+          <div className="typo-code font-mono uppercase tracking-wider text-foreground mb-1.5">{t.pipeline.input}</div>
           {inspectedData.input ? (
-            <pre className="text-sm text-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
+            <pre className="typo-code text-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
               {JSON.stringify(inspectedData.input, null, 2)}
             </pre>
           ) : (
-            <span className="text-sm text-foreground italic">{t.pipeline.no_input_data}</span>
+            <span className="typo-body text-foreground italic">{t.pipeline.no_input_data}</span>
           )}
         </div>
         {/* Output */}
         <div className="p-3">
-          <div className="text-sm font-mono uppercase tracking-wider text-foreground mb-1.5">{t.pipeline.output}</div>
+          <div className="typo-code font-mono uppercase tracking-wider text-foreground mb-1.5">{t.pipeline.output}</div>
           {inspectedData.output ? (
-            <pre className="text-sm text-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
+            <pre className="typo-code text-foreground font-mono leading-relaxed whitespace-pre-wrap break-all">
               {JSON.stringify(inspectedData.output, null, 2)}
             </pre>
           ) : (
-            <span className="text-sm text-foreground italic">{t.pipeline.awaiting_execution}</span>
+            <span className="typo-body text-foreground italic">{t.pipeline.awaiting_execution}</span>
           )}
         </div>
       </div>

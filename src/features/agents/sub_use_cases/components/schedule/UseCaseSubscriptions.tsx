@@ -73,7 +73,7 @@ export function UseCaseSubscriptions({
           icon={<Radio className="w-3.5 h-3.5" />}
           label={uc.event_subscriptions}
           trailing={(
-            <span className="text-sm text-foreground">
+            <span className="typo-body text-foreground">
               {suggestedSubscriptions.filter((i) => i.stage === 'suggested').length} {uc.configured}
             </span>
           )}
@@ -92,11 +92,11 @@ export function UseCaseSubscriptions({
             >
               <Radio className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-foreground block truncate">
+                <span className="typo-body font-medium text-foreground block truncate">
                   {item.eventType}
                 </span>
                 {item.sourceFilter && (
-                  <span className="text-sm text-foreground block truncate">
+                  <span className="typo-body text-foreground block truncate">
                     filter: {item.sourceFilter}
                   </span>
                 )}
@@ -104,7 +104,7 @@ export function UseCaseSubscriptions({
               <button
                 onClick={() => void onActivate(item)}
                 disabled={activating.has(item.key)}
-                className="flex items-center gap-1 px-2 py-0.5 text-sm rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 typo-body rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 title={uc.activate_db}
               >
                 <Zap className="w-2.5 h-2.5" />
@@ -137,7 +137,7 @@ export function UseCaseSubscriptions({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-dashed border-primary/20 hover:border-primary/30 text-sm text-foreground hover:text-primary/80 transition-all w-full"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-dashed border-primary/20 hover:border-primary/30 typo-body text-foreground hover:text-primary/80 transition-all w-full"
             >
               <Plus className="w-3.5 h-3.5" /> {uc.add_subscription}
             </button>

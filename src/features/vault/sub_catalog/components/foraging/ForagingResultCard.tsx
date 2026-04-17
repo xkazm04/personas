@@ -93,16 +93,16 @@ export function ForagingResultCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Icon className={`w-3.5 h-3.5 ${meta.color} flex-shrink-0`} />
-            <span className="text-sm font-medium text-foreground/90 truncate">
+            <span className="typo-body font-medium text-foreground/90 truncate">
               {credential.label}
             </span>
             {credential.already_imported && (
-              <span className="text-sm px-1.5 py-0.5 rounded bg-muted-foreground/10 text-foreground font-medium">
+              <span className="typo-body px-1.5 py-0.5 rounded bg-muted-foreground/10 text-foreground font-medium">
                 Already in vault
               </span>
             )}
             {isImported && (
-              <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
+              <span className="typo-body px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
                 Imported
               </span>
             )}
@@ -113,7 +113,7 @@ export function ForagingResultCard({
             {Object.entries(credential.fields).map(([key, val]) => (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 text-sm px-1.5 py-0.5 rounded bg-secondary/50 text-foreground font-mono"
+                className="inline-flex items-center gap-1 typo-code px-1.5 py-0.5 rounded bg-secondary/50 text-foreground font-mono"
               >
                 <span className="text-foreground">{key}:</span>
                 <span className="truncate max-w-[120px]">{val}</span>
@@ -123,9 +123,9 @@ export function ForagingResultCard({
 
           {/* Source + confidence */}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sm text-foreground">{meta.label}</span>
+            <span className="typo-body text-foreground">{meta.label}</span>
             <span
-              className={`text-sm px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
+              className={`typo-body px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
             >
               {credential.confidence}
             </span>

@@ -34,13 +34,13 @@ export function RecipeListItem({
           <BookOpen className="w-3 h-3 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
+          <p className="typo-body font-medium text-foreground truncate">{recipe.name}</p>
           {recipe.description && (
-            <p className="text-sm text-foreground truncate">{recipe.description}</p>
+            <p className="typo-body text-foreground truncate">{recipe.description}</p>
           )}
         </div>
         {recipe.category && (
-          <span className="rounded-card border border-border/40 bg-muted/20 px-2 py-0.5 text-sm text-foreground shrink-0">
+          <span className="rounded-card border border-border/40 bg-muted/20 px-2 py-0.5 typo-body text-foreground shrink-0">
             {recipe.category}
           </span>
         )}
@@ -65,10 +65,10 @@ export function RecipeListItem({
           >
             <div className="px-4 pb-3 pt-0 border-t border-border/30 space-y-2">
               <div>
-                <p className="text-sm text-foreground mt-2 mb-0.5">Prompt Template</p>
+                <p className="typo-body text-foreground mt-2 mb-0.5">Prompt Template</p>
                 <PromptTemplateRenderer content={recipe.prompt_template || '(empty)'} maxHeight="max-h-40" />
               </div>
-              <div className="flex gap-4 text-sm text-foreground">
+              <div className="flex gap-4 typo-body text-foreground">
                 <span>Created: {new Date(recipe.created_at).toLocaleDateString()}</span>
                 <span>Updated: {new Date(recipe.updated_at).toLocaleDateString()}</span>
               </div>

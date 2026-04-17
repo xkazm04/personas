@@ -26,16 +26,16 @@ export function IdleSuggestions({
 
   return (
     <div className="p-3 rounded-modal border border-primary/15 bg-secondary/20 space-y-2">
-      <p className="text-sm text-foreground">{t.vault.design_phases.saved_catalog}</p>
+      <p className="typo-body text-foreground">{t.vault.design_phases.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
         placeholder={t.vault.design_phases.search_catalog}
-        className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
+        className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
-        <p className="text-sm text-foreground">{t.vault.design_phases.no_catalog}</p>
+        <p className="typo-body text-foreground">{t.vault.design_phases.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (
@@ -55,8 +55,8 @@ export function IdleSuggestions({
                     <Plug className="w-3.5 h-3.5" style={{ color: conn.color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm text-foreground truncate">{conn.label}</p>
-                    <p className="text-sm text-foreground truncate">{conn.category}</p>
+                    <p className="typo-body text-foreground truncate">{conn.label}</p>
+                    <p className="typo-body text-foreground truncate">{conn.category}</p>
                   </div>
                 </div>
                 <button
@@ -70,7 +70,7 @@ export function IdleSuggestions({
                     }
                   }}
                   disabled={applyingTemplateId === conn.id}
-                  className="px-2 py-1 text-sm rounded-card border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                  className="px-2 py-1 typo-body rounded-card border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                 >
                   {applyingTemplateId === conn.id ? (
                     <span className="inline-flex items-center gap-1">
@@ -86,7 +86,7 @@ export function IdleSuggestions({
                 <div
                   className="animate-fade-slide-in overflow-hidden border-t border-primary/10"
                 >
-                  <div className="px-2.5 py-2 text-sm text-foreground">
+                  <div className="px-2.5 py-2 typo-body text-foreground">
                     {(() => {
                       const meta = (conn.metadata ?? {}) as Record<string, unknown>;
                       if (typeof meta.summary === 'string' && meta.summary.trim()) {

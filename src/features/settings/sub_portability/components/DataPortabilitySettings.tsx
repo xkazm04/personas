@@ -10,8 +10,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 text-center">
-      <div className="text-lg font-semibold text-foreground/90">{value}</div>
-      <div className="text-xs text-foreground">{label}</div>
+      <div className="typo-heading-lg font-semibold text-foreground/90">{value}</div>
+      <div className="typo-caption text-foreground">{label}</div>
     </div>
   );
 }
@@ -37,14 +37,14 @@ export default function DataPortabilitySettings() {
             <SectionHeading title={s.workspace_overview} />
 
             {dp.statsStatus === 'loading' && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
+              <div className="flex items-center gap-2 typo-body text-foreground">
                 <LoadingSpinner />
                 {s.loading_stats}
               </div>
             )}
 
             {dp.statsStatus === 'error' && (
-              <p className="text-sm text-red-400">{s.stats_error}</p>
+              <p className="typo-body text-red-400">{s.stats_error}</p>
             )}
 
             {dp.stats && (
@@ -92,7 +92,7 @@ export default function DataPortabilitySettings() {
           {dp.errorMsg && (
             <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-foreground">
+              <div className="typo-body text-foreground">
                 <p className="font-medium text-red-400/90 mb-1">{s.error_label}</p>
                 <p>{dp.errorMsg}</p>
               </div>

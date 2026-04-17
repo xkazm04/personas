@@ -105,7 +105,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
 
   if (state === 'success') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-emerald-500/15 text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-emerald-500/15 text-emerald-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
         Improvement run started
       </span>
@@ -115,13 +115,13 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
   if (state === 'error') {
     return (
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs text-red-400">
+        <span className="inline-flex items-center gap-1.5 typo-caption text-red-400">
           <AlertCircle className="w-3.5 h-3.5" />
           {errorMsg || 'Failed'}
         </span>
         <button
           onClick={handleClick}
-          className="px-3 py-1.5 rounded-card text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          className="px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           Retry
         </button>
@@ -155,7 +155,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
       <button
         onClick={handleClick}
         disabled={disabled || state === 'loading'}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {state === 'loading' ? (
           <>

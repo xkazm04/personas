@@ -93,9 +93,9 @@ export function ExploreView({
         <div className="mb-6 max-w-5xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
-            <h2 className="text-sm font-semibold text-foreground">{t.templates.explore.ready_to_deploy}</h2>
+            <h2 className="typo-heading font-semibold text-foreground">{t.templates.explore.ready_to_deploy}</h2>
             {!isSimple && (
-            <span className="text-sm text-foreground">{t.templates.explore.ready_to_deploy_hint}</span>
+            <span className="typo-body text-foreground">{t.templates.explore.ready_to_deploy_hint}</span>
             )}
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
@@ -107,12 +107,12 @@ export function ExploreView({
                 onClick={() => onSelectTemplate(tmpl)}
                 className={`flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 ${CARD_PADDING.compact} text-left hover:border-emerald-500/30 hover:bg-secondary/30`}
               >
-                <div className="text-sm font-medium text-foreground truncate">{tmpl.test_case_name}</div>
-                <div className="text-sm text-foreground truncate mt-0.5">
+                <div className="typo-body font-medium text-foreground truncate">{tmpl.test_case_name}</div>
+                <div className="typo-body text-foreground truncate mt-0.5">
                   {(tmpl.instruction ?? '').length > 60 ? (tmpl.instruction ?? '').slice(0, 60) + '...' : (tmpl.instruction ?? '')}
                 </div>
                 {!isSimple && tmpl.adoption_count > 0 && (
-                  <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
+                  <div className="flex items-center gap-1 mt-2 typo-body text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
                     {(tmpl.adoption_count === 1 ? t.templates.explore.adoption_count_one : t.templates.explore.adoption_count_other).replace('{count}', String(tmpl.adoption_count))}
                   </div>

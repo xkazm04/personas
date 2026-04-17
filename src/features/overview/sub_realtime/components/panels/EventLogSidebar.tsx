@@ -100,8 +100,8 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
   return (
     <div className="w-[340px] border-l border-primary/10 flex flex-col bg-background/50 backdrop-blur-sm">
       <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-2">
-        <span className="text-sm font-mono font-medium text-foreground">{t.overview.event_log_sidebar.title}</span>
-        <span className="text-xs font-mono text-foreground ml-auto">{filteredLog.length} entries</span>
+        <span className="typo-code font-mono font-medium text-foreground">{t.overview.event_log_sidebar.title}</span>
+        <span className="typo-code font-mono text-foreground ml-auto">{filteredLog.length} entries</span>
       </div>
 
       <div className="px-3 py-1.5 border-b border-primary/5">
@@ -112,7 +112,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
             value={logSearch}
             onChange={e => setLogSearch(e.target.value)}
             placeholder="Filter events\u2026"
-            className="w-full pl-6 pr-2 py-1 text-xs font-mono bg-secondary/30 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+            className="w-full pl-6 pr-2 py-1 typo-code font-mono bg-secondary/30 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
         </div>
       </div>
@@ -120,7 +120,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
       <div ref={logRef} onScroll={handleLogScroll} className="flex-1 overflow-y-auto">
         {filteredLog.length === 0 && (
           <div className="px-3 py-8 text-center">
-            <span className="text-xs text-foreground font-mono">{t.overview.event_log_sidebar.no_events}</span>
+            <span className="typo-code text-foreground font-mono">{t.overview.event_log_sidebar.no_events}</span>
           </div>
         )}
         {filteredLog.map(entry => {
@@ -142,11 +142,11 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-medium" style={{ color: entry.color }}>
+                      <span className="typo-code font-mono font-medium" style={{ color: entry.color }}>
                         {EVENT_TYPE_LABELS[entry.eventType] ?? entry.eventType}
                       </span>
                       <ArrowRight className="w-2.5 h-2.5 text-foreground flex-shrink-0" />
-                      <span className="text-xs font-mono text-foreground truncate">{entry.target}</span>
+                      <span className="typo-code font-mono text-foreground truncate">{entry.target}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[10px] font-mono text-foreground">{new Date(entry.timestamp).toLocaleTimeString()}</span>

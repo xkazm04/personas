@@ -51,12 +51,12 @@ function DecisionCards({ decisions }: { decisions: DecisionItem[] }) {
         <div key={d.id} className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {d.category && (
-              <span className="text-xs font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
+              <span className="typo-caption font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
             )}
-            <span className="text-sm font-medium text-foreground">{d.label}</span>
+            <span className="typo-body font-medium text-foreground">{d.label}</span>
           </div>
           {d.description && (
-            <p className="text-sm text-foreground mt-1 leading-relaxed">{d.description}</p>
+            <p className="typo-body text-foreground mt-1 leading-relaxed">{d.description}</p>
           )}
         </div>
       ))}
@@ -68,7 +68,7 @@ export function ContextDataPreview({ raw }: { raw: string | null | undefined }) 
   if (!raw) return null;
   let parsed: Record<string, unknown> | null;
   try { parsed = JSON.parse(raw); }
-  catch { return <p className="text-sm text-foreground whitespace-pre-wrap">{raw}</p>; }
+  catch { return <p className="typo-body text-foreground whitespace-pre-wrap">{raw}</p>; }
   if (!parsed || typeof parsed !== 'object') return null;
 
   // Detect decisions array and render as readable cards
@@ -83,13 +83,13 @@ export function ContextDataPreview({ raw }: { raw: string | null | undefined }) 
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
           return (
             <div key={key}>
-              <div className="text-xs font-mono text-foreground uppercase mb-1">{key}</div>
+              <div className="typo-code font-mono text-foreground uppercase mb-1">{key}</div>
               <DecisionCards decisions={val as DecisionItem[]} />
             </div>
           );
         }
         return (
-          <div key={key} className="flex gap-2 text-sm">
+          <div key={key} className="flex gap-2 typo-body">
             <span className="text-foreground font-mono flex-shrink-0">{key}:</span>
             <span className="text-foreground break-all">{typeof val === 'string' ? val : JSON.stringify(val)}</span>
           </div>
@@ -123,9 +123,9 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
-            <span className="text-sm text-foreground flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
+            <span className="typo-body text-foreground flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
           </div>
-          <p className="text-sm text-foreground truncate mt-0.5">{review.content.slice(0, 80)}</p>
+          <p className="typo-body text-foreground truncate mt-0.5">{review.content.slice(0, 80)}</p>
           <div className="flex items-center gap-2 mt-1">
             <SeverityIndicator severity={review.severity} />
             <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bg} ${status.text} ${status.border}`}>

@@ -28,10 +28,10 @@ export function AutomationReviewStep({
           <LoadingSpinner size="lg" className="text-accent" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-foreground/90">
+          <p className="typo-body font-medium text-foreground/90">
             {t.agents.connectors.auto_deploying_to.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
           </p>
-          <p className="text-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             {platform === 'n8n' && t.agents.connectors.auto_deploy_n8n}
             {platform === 'github_actions' && t.agents.connectors.auto_deploy_github}
             {platform === 'zapier' && t.agents.connectors.auto_deploy_zapier}
@@ -52,15 +52,15 @@ export function AutomationReviewStep({
             : <CheckCircle2 className="w-5 h-5 text-brand-emerald" />}
         </div>
         <div className="text-center max-w-md">
-          <p className="text-sm font-medium text-foreground/90">
+          <p className="typo-body font-medium text-foreground/90">
             {hasWarning ? t.agents.connectors.auto_deployed_warning : t.agents.connectors.auto_deployed_ok}
           </p>
-          <p className="text-sm text-foreground mt-1">{deployResult.deploymentMessage}</p>
+          <p className="typo-body text-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
         {hasWarning && (
           <div className="flex items-start gap-2 p-3 rounded-modal bg-brand-amber/5 border border-brand-amber/15 max-w-md">
             <AlertTriangle className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-brand-amber/80">{deployResult.activationWarning}</p>
+            <p className="typo-body text-brand-amber/80">{deployResult.activationWarning}</p>
           </div>
         )}
         {sanitizeExternalUrl(deployResult.platformUrl) && (
@@ -68,7 +68,7 @@ export function AutomationReviewStep({
             href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground hover:bg-accent/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground hover:bg-accent/25 transition-colors"
           >
             {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
             <ExternalLink className="w-3 h-3" />
@@ -76,7 +76,7 @@ export function AutomationReviewStep({
         )}
         <button
           onClick={() => { onComplete(); onClose(); }}
-          className="px-4 py-2 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
+          className="px-4 py-2 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
         >
           {t.agents.connectors.auto_done}
         </button>
@@ -90,15 +90,15 @@ export function AutomationReviewStep({
       <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
         <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-brand-rose/80">{t.agents.connectors.auto_design_failed}</p>
-          <p className="text-sm text-brand-rose/50 mt-0.5">{designError || t.agents.connectors.auto_unknown_error}</p>
+          <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_design_failed}</p>
+          <p className="typo-body text-brand-rose/50 mt-0.5">{designError || t.agents.connectors.auto_unknown_error}</p>
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
           {t.common.close}
         </button>
-        <button onClick={onReset} className="px-4 py-2 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
+        <button onClick={onReset} className="px-4 py-2 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
           {t.agents.connectors.auto_try_again}
         </button>
       </div>

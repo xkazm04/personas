@@ -31,7 +31,7 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryMeta.label}
           <button
@@ -52,7 +52,7 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
@@ -79,7 +79,7 @@ export function FilterChips({
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-violet-500/20 text-violet-300"
                 style={{ backgroundColor: `${cat.color}15` }}
               >
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
@@ -151,7 +151,7 @@ export function FilterChips({
                   tabIndex={isActive ? 0 : -1}
                   data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 text-sm font-medium transition-colors flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 typo-body font-medium transition-colors flex items-center gap-1 ${
                     isActive
                       ? opt.color === 'violet'
                         ? 'bg-violet-500/20 text-violet-300'
@@ -164,7 +164,7 @@ export function FilterChips({
                   {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
                   {count !== undefined && count > 0 && (
-                    <span className={`ml-0.5 text-sm tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
+                    <span className={`ml-0.5 typo-data tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
                       {count}
                     </span>
                   )}

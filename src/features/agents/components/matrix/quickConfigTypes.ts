@@ -23,7 +23,7 @@ export const DAY_LABELS: Record<string, string> = {
 
 export const MONTH_DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
 
-export const INPUT_CLS = 'h-9 px-3 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground outline-none focus-visible:border-primary/30 transition-colors';
+export const INPUT_CLS = 'h-9 px-3 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none focus-visible:border-primary/30 transition-colors';
 
 export interface EventSubscription {
   personaId: string;

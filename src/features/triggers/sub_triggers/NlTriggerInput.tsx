@@ -90,7 +90,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+      <label className="flex items-center gap-1.5 typo-body font-medium text-foreground">
         <Sparkles className="w-3.5 h-3.5 text-violet-400" />
         {t.triggers.describe_trigger}
       </label>
@@ -103,7 +103,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
+          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
         />
         {input && (
           <button
@@ -123,14 +123,14 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             {meta && <meta.Icon className={`w-4 h-4 shrink-0 ${meta.color}`} />}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground/90 truncate">
+                <span className="typo-body font-medium text-foreground/90 truncate">
                   {result.label}
                 </span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-input ${confidence!.bg} ${confidence!.text} border ${confidence!.border}`}>
+                <span className={`typo-caption px-1.5 py-0.5 rounded-input ${confidence!.bg} ${confidence!.text} border ${confidence!.border}`}>
                   {confidence!.label}
                 </span>
               </div>
-              <p className="text-xs text-foreground mt-0.5">
+              <p className="typo-caption text-foreground mt-0.5">
                 Type: <span className="text-foreground">{result.triggerType.replace(/_/g, ' ')}</span>
                 {result.formOverrides.cronExpression && (
                   <> &middot; Cron: <span className="font-mono text-foreground">{result.formOverrides.cronExpression}</span></>
@@ -145,7 +145,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             </div>
             <button
               onClick={handleApply}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card text-xs font-medium transition-colors shrink-0 border border-violet-500/20"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card typo-caption font-medium transition-colors shrink-0 border border-violet-500/20"
             >
               <Check className="w-3 h-3" />
               Apply
@@ -157,7 +157,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
         {noMatch && input.trim().length >= 3 && (
           <div
             key="no-match"
-            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 text-xs text-foreground"
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 typo-caption text-foreground"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>Could not parse a trigger from that description. Try something like &ldquo;{PLACEHOLDER_EXAMPLES[placeholderIdx]}&rdquo;</span>

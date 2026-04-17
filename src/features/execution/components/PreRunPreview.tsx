@@ -160,7 +160,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
         <button
           type="button"
           onClick={onConfirm}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-sm font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-body font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
         >
           <Play className="w-3 h-3" />
           Run Agent

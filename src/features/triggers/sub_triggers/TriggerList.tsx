@@ -103,16 +103,16 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
+            <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">{persona.name}</h4>
+                  <h4 className="typo-heading font-semibold text-foreground">{persona.name}</h4>
                   {onNavigateToPersona && (
                     <button
                       onClick={() => onNavigateToPersona(persona.id)}
-                      className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                      className="typo-body text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                     >
                       Configure
                       <ChevronRight className="w-3 h-3" />
@@ -147,10 +147,10 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-sm font-medium capitalize ${colorClass}`}>
+                              <span className={`typo-body font-medium capitalize ${colorClass}`}>
                                 {trigger.trigger_type}
                               </span>
-                              <span className={`text-sm px-1.5 py-0.5 rounded-card font-mono ${
+                              <span className={`typo-code px-1.5 py-0.5 rounded-card font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-secondary/60 text-foreground border border-border/20'
@@ -159,22 +159,22 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               </span>
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
                               {triggerRateLimits[trigger.id]?.isThrottled && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-sm bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
                                   <Shield className="w-2.5 h-2.5" />
                                   {t.triggers.throttled_label}
                                 </span>
                               )}
                               {(triggerRateLimits[trigger.id]?.queueDepth ?? 0) > 0 && (
-                                <span className="px-1.5 py-0.5 rounded-full text-sm bg-amber-500/15 text-amber-400 border border-amber-500/20 font-mono">
+                                <span className="px-1.5 py-0.5 rounded-full typo-code bg-amber-500/15 text-amber-400 border border-amber-500/20 font-mono">
                                   {tx(t.triggers.queued_label, { count: triggerRateLimits[trigger.id]!.queueDepth })}
                                 </span>
                               )}
                             </div>
 
-                            <div className="mt-1.5 text-sm text-foreground space-y-0.5">
+                            <div className="mt-1.5 typo-body text-foreground space-y-0.5">
                               <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                               {trigger.trigger_type === 'webhook' && (
-                                <div className="font-mono text-sm text-foreground truncate mt-0.5">
+                                <div className="font-mono typo-code text-foreground truncate mt-0.5">
                                   {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/webhook/{trigger.id.slice(0, 8)}...
                                 </div>
                               )}

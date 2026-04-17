@@ -47,7 +47,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
     return (
       <button
         onClick={loadPreview}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
         title="Preview execution cost and prompt"
       >
         <Eye className="w-3 h-3" />
@@ -58,7 +58,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-foreground">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-foreground">
         <div className="w-3 h-3 border border-primary/30 border-t-primary rounded-full animate-spin" />
         {e.estimating}
       </div>
@@ -67,7 +67,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
 
   if (error) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-red-400/70">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption text-red-400/70">
         <AlertTriangle className="w-3 h-3" />
         {error}
       </div>
@@ -87,7 +87,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
       {/* Compact summary row */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-secondary/30 transition-colors"
+        className="w-full flex items-center gap-3 px-3 py-2 typo-caption hover:bg-secondary/30 transition-colors"
       >
         <div className="flex items-center gap-1.5 text-foreground">
           <DollarSign className="w-3 h-3 text-emerald-400" />
@@ -123,7 +123,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
       {/* Expanded detail */}
       {expanded && (
         <div className="px-3 py-2 border-t border-primary/5 space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-2 typo-caption">
             <div>
               <span className="text-foreground uppercase tracking-wider text-[10px]">{e.model}</span>
               <div className="text-foreground font-mono truncate">{preview.model}</div>

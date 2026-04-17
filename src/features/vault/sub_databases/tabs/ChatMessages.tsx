@@ -61,11 +61,11 @@ export function ChatMessages({
             }`}
           >
             {msg.role === 'user' && (
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              <p className="typo-body whitespace-pre-wrap">{msg.content}</p>
             )}
 
             {msg.role === 'assistant' && msg.status === 'generating' && (
-              <div className="flex items-center gap-2 text-sm text-foreground">
+              <div className="flex items-center gap-2 typo-body text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <button
@@ -79,7 +79,7 @@ export function ChatMessages({
             )}
 
             {msg.role === 'assistant' && msg.status === 'failed' && (
-              <p className="text-sm text-red-400">{msg.content}</p>
+              <p className="typo-body text-red-400">{msg.content}</p>
             )}
 
             {msg.role === 'assistant' && msg.sql && msg.status !== 'generating' && msg.status !== 'failed' && (
@@ -116,8 +116,8 @@ function EmptyState({
         <Sparkles className="w-6 h-6 text-violet-400" />
       </div>
       <div>
-        <p className="text-sm font-medium text-foreground">{db.ask_plain_english}</p>
-        <p className="text-sm text-foreground mt-1 max-w-md">
+        <p className="typo-body font-medium text-foreground">{db.ask_plain_english}</p>
+        <p className="typo-body text-foreground mt-1 max-w-md">
           {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
         </p>
       </div>
@@ -127,7 +127,7 @@ function EmptyState({
             <button
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-modal text-sm text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
             >
               {s}
             </button>

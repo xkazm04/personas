@@ -67,7 +67,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-3 text-sm text-foreground">
+      <div className="flex items-center gap-2 py-3 typo-body text-foreground">
         <LoadingSpinner size="xs" /> {t.recipes.loading_linked}
       </div>
     );
@@ -82,7 +82,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         />
         <button
           onClick={() => setPickerOpen(true)}
-          className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+          className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-primary hover:bg-primary/10 transition-colors"
         >
           <Plus className="w-3 h-3" /> {t.common.edit ? 'Add' : 'Add'}
         </button>
@@ -91,7 +91,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       {linkedRecipes.length === 0 ? (
         <div className="rounded-modal border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
           <PuzzlePieceIllustration />
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             No recipes linked yet. Click &quot;Add&quot; to link recipes from the library.
           </p>
         </div>
@@ -106,26 +106,26 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 <BookOpen className="w-3 h-3 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
+                <p className="typo-body font-medium text-foreground truncate">{recipe.name}</p>
                 {recipe.description && (
-                  <p className="text-sm text-foreground truncate">{recipe.description}</p>
+                  <p className="typo-body text-foreground truncate">{recipe.description}</p>
                 )}
               </div>
               {recipe.category && (
-                <span className="rounded-card border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-foreground">
+                <span className="rounded-card border border-border/40 bg-muted/20 px-1.5 py-0.5 typo-body text-foreground">
                   {recipe.category}
                 </span>
               )}
               <button
                 onClick={() => setPlaygroundRecipe(recipe)}
-                className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-emerald-400 hover:bg-emerald-500/10 transition-colors"
               >
                 <Play className="w-3 h-3" /> {t.recipes.run}
               </button>
               <button
                 onClick={() => handleUnlink(recipe.id)}
                 disabled={unlinkingId === recipe.id}
-                className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               >
                 {unlinkingId === recipe.id ? (
                   <LoadingSpinner size="xs" />

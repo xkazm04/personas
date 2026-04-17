@@ -91,25 +91,25 @@ export function MemoryRow({
     <div data-testid={`memory-row-${memory.id}`} className={`animate-fade-slide-in border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
       {/* Desktop row */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
-        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
-        <div className="flex-1 min-w-0"><span className="text-sm text-foreground truncate block">{stripHtml(memory.title)}</span></div>
+        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
+        <div className="flex-1 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
-        <span className="text-sm text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
+        <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
       </div>
 
       {/* Mobile card */}
       <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={onSelect}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
+          <div className="flex items-center gap-2 min-w-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
           <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}</div>
         </div>
-        <span className="text-sm text-foreground line-clamp-2">{stripHtml(memory.title)}</span>
+        <span className="typo-body text-foreground line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {categoryBadge}
           <ImportanceBar value={memory.importance} />
-          <span className="text-sm text-foreground ml-auto">{formatRelativeTime(memory.created_at)}</span>
+          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at)}</span>
         </div>
       </div>
     </div>

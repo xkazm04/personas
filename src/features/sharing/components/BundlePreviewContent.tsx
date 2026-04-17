@@ -39,7 +39,7 @@ export function BundlePreviewContent({
             <ShieldOff className="w-4 h-4 text-red-400" />
           )}
           <div>
-            <div className="text-sm font-medium text-foreground">{preview.signer_display_name}</div>
+            <div className="typo-body font-medium text-foreground">{preview.signer_display_name}</div>
             <div className="text-[10px] text-foreground font-mono">
               {preview.signer_peer_id.slice(0, 8)}...{preview.signer_peer_id.slice(-8)}
             </div>
@@ -75,14 +75,14 @@ export function BundlePreviewContent({
         <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-red-400 space-y-1">
+            <div className="typo-caption text-red-400 space-y-1">
               <p className="font-medium">{st.danger_trusted_title}</p>
               <p className="text-red-400/80">
                 {st.danger_trusted_body}
               </p>
             </div>
           </div>
-          <label className="flex items-center gap-2 text-xs text-red-400 cursor-pointer pt-1">
+          <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
             <input
               type="checkbox"
               checked={dangerConfirmed}
@@ -99,14 +99,14 @@ export function BundlePreviewContent({
         <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-red-400 space-y-1">
+            <div className="typo-caption text-red-400 space-y-1">
               <p className="font-medium">{st.danger_unknown_title}</p>
               <p className="text-red-400/80">
                 {st.danger_unknown_body}
               </p>
             </div>
           </div>
-          <label className="flex items-center gap-2 text-xs text-red-400 cursor-pointer pt-1">
+          <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
             <input
               type="checkbox"
               checked={dangerConfirmed}
@@ -120,7 +120,7 @@ export function BundlePreviewContent({
 
       {/* Resources list */}
       <div>
-        <div className="text-xs text-foreground mb-1.5">
+        <div className="typo-caption text-foreground mb-1.5">
           {preview.resources.length} {preview.resources.length !== 1 ? 'resources' : 'resource'} in bundle
         </div>
         <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
@@ -133,8 +133,8 @@ export function BundlePreviewContent({
       {/* Conflict options */}
       {hasConflicts && (
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-          <div className="text-xs text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
-          <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+          <div className="typo-caption text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
+          <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={skipConflicts}
@@ -145,12 +145,12 @@ export function BundlePreviewContent({
           </label>
           {!skipConflicts && (
             <div>
-              <label className="text-xs text-foreground mb-1 block">{st.rename_prefix_label}</label>
+              <label className="typo-caption text-foreground mb-1 block">{st.rename_prefix_label}</label>
               <input
                 value={renamePrefix}
                 onChange={(e) => setRenamePrefix(e.target.value)}
                 placeholder={st.rename_prefix_placeholder}
-                className="w-full px-2 py-1 text-xs rounded-card border border-border bg-background focus-ring"
+                className="w-full px-2 py-1 typo-caption rounded-card border border-border bg-background focus-ring"
               />
             </div>
           )}
@@ -170,7 +170,7 @@ function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) 
         : 'border-border bg-secondary/10'
     }`}>
       <div className="min-w-0 flex-1">
-        <div className="text-sm text-foreground truncate">{resource.display_name}</div>
+        <div className="typo-body text-foreground truncate">{resource.display_name}</div>
         <div className="text-[10px] text-foreground flex items-center gap-1.5">
           <span>{resource.resource_type}</span>
           <span className="text-foreground">·</span>

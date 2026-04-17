@@ -81,7 +81,7 @@ export function AgentCard({
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
       }`}
     >
-      <div className={`w-9 h-9 rounded-card ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
+      <div className={`w-9 h-9 rounded-card ${ac.bg} border ${ac.border} flex items-center justify-center typo-heading-lg mb-2`}>
         {agent.emoji}
       </div>
       <span className="text-md font-medium text-foreground mb-0.5">{agent.label}</span>

@@ -75,7 +75,7 @@ export default function SkippedRecoveryPanel({
           <p className="typo-heading text-amber-400/90">
             {visibleSkipped.length} agent{visibleSkipped.length !== 1 ? 's' : ''} missed executions
           </p>
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             ~{totalMissed} total runs skipped while app was offline
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function SkippedRecoveryPanel({
                     }} />
 
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground truncate block">
+                    <span className="typo-body text-foreground truncate block">
                       {agent.persona_name}
                     </span>
                     <div className="flex items-center gap-1.5 text-[11px] text-foreground mt-0.5">
@@ -180,7 +180,7 @@ export default function SkippedRecoveryPanel({
                 <button
                   onClick={() => onBatchRecover(recoverableAgents)}
                   disabled={!!recoveringId}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-card border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
                 >
                   {recoveringId ? (
                     <LoadingSpinner size="xs" />

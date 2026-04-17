@@ -88,7 +88,7 @@ export function ConnectorsSection({
                     <Plug className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
-                <span className="text-sm font-medium text-foreground flex-1 truncate">
+                <span className="typo-body font-medium text-foreground flex-1 truncate">
                   {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
                 </span>
                 {!isGeneral && (
@@ -105,7 +105,7 @@ export function ConnectorsSection({
                 <button
                   type="button"
                   onClick={() => onConnectorClick(item.connector)}
-                  className="flex items-center gap-1.5 text-sm text-primary/60 hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
                 >
                   {installed && hasCredential ? (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -135,7 +135,7 @@ export function ConnectorsSection({
                           />
                         )}
                         <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
-                        <span className="text-sm text-foreground/90 truncate">
+                        <span className="typo-body text-foreground/90 truncate">
                           {toolDef?.name || toolName}
                         </span>
                       </div>

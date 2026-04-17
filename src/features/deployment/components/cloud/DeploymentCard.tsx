@@ -59,10 +59,10 @@ export function DeploymentCard({
       {/* Header row: name + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground/90">
+          <span className="typo-body font-medium text-foreground/90">
             {d.label || personaName}
           </span>
-          <span className={`text-xs px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
+          <span className={`typo-caption px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
             {d.status}
           </span>
         </div>
@@ -120,7 +120,7 @@ export function DeploymentCard({
 
       {/* Endpoint URL */}
       <div className="flex items-center gap-1.5">
-        <code className="flex-1 text-xs text-foreground bg-secondary/40 px-2 py-1 rounded-card truncate border border-primary/10">
+        <code className="flex-1 typo-caption text-foreground bg-secondary/40 px-2 py-1 rounded-card truncate border border-primary/10">
           {endpointUrl}
         </code>
         <button
@@ -149,7 +149,7 @@ export function DeploymentCard({
       {/* Budget gauge */}
       {d.max_monthly_budget_usd != null && (
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-foreground">
+          <div className="flex items-center justify-between typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               Budget: {formatCost(d.current_month_cost_usd)} / {formatCost(d.max_monthly_budget_usd)}
@@ -166,7 +166,7 @@ export function DeploymentCard({
       )}
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs text-foreground">
+      <div className="flex items-center gap-4 typo-caption text-foreground">
         <span>Invocations: <span className="text-foreground font-medium">{d.invocation_count}</span></span>
         <span>Last called: <span className="text-foreground">{timeAgo(d.last_invoked_at)}</span></span>
         <span>Created: <span className="text-foreground">{timeAgo(d.created_at)}</span></span>
@@ -175,7 +175,7 @@ export function DeploymentCard({
       {/* Inline test result */}
       {testResult && (
         <div
-          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card border text-xs ${
+          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card border typo-caption ${
             testResult.status === 'pass'
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
               : 'bg-red-500/10 border-red-500/20 text-red-400'

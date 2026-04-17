@@ -21,25 +21,25 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* IDs & metadata */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.events.event_id}</span>
-              <span className="text-sm"><UuidLabel value={event.id} /></span>
+              <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.events.event_id}</span>
+              <span className="typo-body"><UuidLabel value={event.id} /></span>
             </div>
             <div>
-              <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.events.project}</span>
-              <span className="text-sm"><UuidLabel value={event.project_id} /></span>
+              <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.events.project}</span>
+              <span className="typo-body"><UuidLabel value={event.project_id} /></span>
             </div>
             {event.source_id && (
               <div>
-                <span className="text-sm text-foreground font-medium block mb-0.5">{t.overview.events.source}</span>
-                <span className="text-sm">
+                <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.events.source}</span>
+                <span className="typo-body">
                   <UuidLabel value={event.source_id} label={event.source_type || undefined} />
                 </span>
               </div>
             )}
             {event.processed_at && (
               <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
-                <span className="text-sm font-mono text-foreground font-medium">{t.overview.events.processed}</span>
-                <span className="ml-2 text-sm text-foreground">
+                <span className="typo-code font-mono text-foreground font-medium">{t.overview.events.processed}</span>
+                <span className="ml-2 typo-body text-foreground">
                   {new Date(event.processed_at).toLocaleString()}
                 </span>
               </div>
@@ -49,7 +49,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* Payload */}
           {event.payload && (
             <div>
-              <span className="text-sm text-foreground font-medium block mb-1">{t.overview.events.event_data}</span>
+              <span className="typo-body text-foreground font-medium block mb-1">{t.overview.events.event_data}</span>
               <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
                 <HighlightedJson raw={event.payload} />
               </div>
@@ -59,8 +59,8 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* Error */}
           {event.error_message && (
             <div>
-              <span className="text-sm text-red-400 block mb-1">{t.overview.events.error}</span>
-              <pre className="bg-red-500/5 p-2 rounded-card text-red-400 text-sm whitespace-pre-wrap">
+              <span className="typo-body text-red-400 block mb-1">{t.overview.events.error}</span>
+              <pre className="bg-red-500/5 p-2 rounded-card text-red-400 typo-body whitespace-pre-wrap">
                 {event.error_message}
               </pre>
             </div>

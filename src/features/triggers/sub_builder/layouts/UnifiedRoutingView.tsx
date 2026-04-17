@@ -475,7 +475,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                           ? 'Built-in events cannot be renamed'
                           : 'Rename this event across all stores'
                       }
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      className="flex items-center gap-2 w-full px-3 py-2 typo-body text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <Pencil className="w-3.5 h-3.5 text-cyan-400" />
                       {t.triggers.builder.rename_event_action}

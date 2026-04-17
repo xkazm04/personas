@@ -82,14 +82,14 @@ export function FieldCaptureRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-sm font-medium text-foreground">
+        <label className="typo-body font-medium text-foreground">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
         {buttons}
       </div>
 
-      {hint && <p className="text-sm text-foreground">{hint}</p>}
+      {hint && <p className="typo-body text-foreground">{hint}</p>}
 
       {inputType === 'select' && options ? (
         <ThemedSelect
@@ -116,15 +116,15 @@ export function FieldCaptureRow({
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-3 py-2 border rounded-modal text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-modal typo-body focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}
 
       {error ? (
-        <p id={errorId} className="text-sm text-red-400">{error}</p>
+        <p id={errorId} className="typo-body text-red-400">{error}</p>
       ) : (
-        (helpText ? <p className="text-sm text-foreground">{helpText}</p> : null)
+        (helpText ? <p className="typo-body text-foreground">{helpText}</p> : null)
       )}
     </div>
   );

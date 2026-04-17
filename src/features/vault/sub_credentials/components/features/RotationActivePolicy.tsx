@@ -42,7 +42,7 @@ export function RotationActivePolicy({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.text : 'text-foreground'}`} />
-          <div className="text-sm">
+          <div className="typo-body">
             <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.text} font-medium` : 'text-foreground'}>
               {rotationStatus.policy_enabled
                 ? (isOAuth
@@ -111,7 +111,7 @@ export function RotationActivePolicy({
       </div>
       {/* Rotation period editor */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-foreground">{t.vault.rotation_section.rotate_every}</span>
+        <span className="typo-body text-foreground">{t.vault.rotation_section.rotate_every}</span>
         {isEditingPeriod ? (
           <div className="flex items-center gap-1.5">
             <PillGroup
@@ -129,12 +129,12 @@ export function RotationActivePolicy({
                   onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
                   min={1}
                   data-testid="rotation-days-input"
-                  className="w-16 px-2 py-1 bg-transparent text-sm text-foreground text-center focus-visible:outline-none font-mono"
+                  className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none font-mono"
                 />
               }
               data-testid="rotation-edit-presets"
             />
-            <span className="text-sm text-foreground">{t.vault.rotation_section.days}</span>
+            <span className="typo-body text-foreground">{t.vault.rotation_section.days}</span>
             <Button
               variant="accent"
               size="xs"

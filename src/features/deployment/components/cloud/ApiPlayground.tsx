@@ -258,7 +258,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
               <span className="text-foreground">{response.model}</span>
             )}
           </div>
-          <pre className={`text-xs font-mono rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
+          <pre className={`typo-code font-mono rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
                           border max-h-64 overflow-y-auto ${
             response.status === 'success'
               ? 'bg-emerald-500/5 border-emerald-500/15 text-foreground/85'

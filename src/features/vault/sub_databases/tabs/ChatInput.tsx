@@ -41,7 +41,7 @@ export function ChatInput({
             }
             disabled={generating}
             rows={1}
-            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 text-sm text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
+            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 typo-body text-foreground/85 placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
             style={{ minHeight: '42px', maxHeight: '120px' }}
             onInput={(e) => {
               const ta = e.currentTarget;

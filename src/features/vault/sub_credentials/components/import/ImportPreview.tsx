@@ -55,23 +55,23 @@ export function ImportPreview({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h3 className="text-sm font-medium text-foreground">
+            <h3 className="typo-body font-medium text-foreground">
               {secrets.length} secret{secrets.length !== 1 ? 's' : ''} found
             </h3>
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               {selectedCount} selected for import
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onSelectAll} className="text-sm text-primary hover:underline">{t.vault.import.select_all}</button>
+          <button onClick={onSelectAll} className="typo-body text-primary hover:underline">{t.vault.import.select_all}</button>
           <span className="text-foreground">|</span>
-          <button onClick={onDeselectAll} className="text-sm text-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
+          <button onClick={onDeselectAll} className="typo-body text-foreground hover:text-foreground hover:underline">{t.vault.import.deselect_all}</button>
         </div>
       </div>
 
       {errors.length > 0 && (
-        <div className="p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300 space-y-1">
+        <div className="p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 typo-body text-amber-300 space-y-1">
           {errors.map((err, i) => (
             <div key={i} className="flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -96,7 +96,7 @@ export function ImportPreview({
                       : '#6B7280',
                   }}
                 />
-                <span className="text-sm font-medium text-foreground">{service}</span>
+                <span className="typo-body font-medium text-foreground">{service}</span>
                 {mapping?.confidence === 'high' && (
                   <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
                     Auto-detected
@@ -118,12 +118,12 @@ export function ImportPreview({
                         className="rounded border-primary/30 text-primary focus-visible:ring-primary/30"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-mono text-foreground truncate">{secret.key}</p>
+                        <p className="typo-code font-mono text-foreground truncate">{secret.key}</p>
                         {secret.sourcePath && (
                           <p className="text-[11px] text-foreground truncate">{secret.sourcePath}</p>
                         )}
                       </div>
-                      <span className="text-sm text-foreground font-mono">
+                      <span className="typo-code text-foreground font-mono">
                         {secret.value.slice(0, 4)}{'...'}
                       </span>
                     </label>
@@ -148,7 +148,7 @@ export function ImportPreview({
         <button
           onClick={onImport}
           disabled={selectedCount === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Import className="w-4 h-4" />
           Import {selectedCount} Secret{selectedCount !== 1 ? 's' : ''}

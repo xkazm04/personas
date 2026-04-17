@@ -16,7 +16,7 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
     <div className="rounded-modal border border-primary/10 bg-secondary/15 overflow-hidden mb-2" data-testid="connector-health-rail">
       {/* Summary bar */}
       <div className="flex items-center gap-3 px-3.5 py-2.5 bg-secondary/25 border-b border-primary/[0.06]" data-testid="connector-health-summary">
-        <span className="text-sm text-foreground">
+        <span className="typo-body text-foreground">
           <span className={`font-semibold ${readyConnectorCount === connectorRailItems.length ? 'text-emerald-400' : readyConnectorCount > 0 ? 'text-amber-400' : 'text-red-400'}`}>
             {readyConnectorCount}
           </span>
@@ -57,17 +57,17 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
 
               {/* Connector name */}
-              <span className="text-sm font-medium text-foreground truncate min-w-0 flex-1">
+              <span className="typo-body font-medium text-foreground truncate min-w-0 flex-1">
                 {item.name}
               </span>
 
               {/* Credential name or missing label */}
               {item.credentialName ? (
-                <span className="text-sm text-foreground truncate max-w-[140px]">
+                <span className="typo-body text-foreground truncate max-w-[140px]">
                   {item.credentialName}
                 </span>
               ) : (
-                <span className="text-sm text-amber-400/70">{t.templates.n8n.no_credential}</span>
+                <span className="typo-body text-amber-400/70">{t.templates.n8n.no_credential}</span>
               )}
 
               {/* Status icon */}
@@ -75,7 +75,7 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
 
               {/* Error message for failed connectors */}
               {translated && (
-                <span className="text-sm text-red-400/70 truncate max-w-[180px]" title={translated.raw}>
+                <span className="typo-body text-red-400/70 truncate max-w-[180px]" title={translated.raw}>
                   {translated.friendly}
                 </span>
               )}

@@ -29,8 +29,8 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-medium text-foreground">{t.vault.credential_import.import_from_vault}</h3>
-          <p className="text-sm text-foreground">{t.vault.credential_import.import_subtitle}</p>
+          <h3 className="typo-body font-medium text-foreground">{t.vault.credential_import.import_from_vault}</h3>
+          <p className="typo-body text-foreground">{t.vault.credential_import.import_subtitle}</p>
         </div>
       </div>
 
@@ -50,10 +50,10 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                 <Icon className="w-4.5 h-4.5" style={{ color: source.color }} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                <p className="typo-body font-medium text-foreground group-hover:text-primary transition-colors">
                   {source.label}
                 </p>
-                <p className="text-sm text-foreground leading-snug">{source.description}</p>
+                <p className="typo-body text-foreground leading-snug">{source.description}</p>
                 {source.syncSupported && (
                   <span className="inline-block mt-1 px-1.5 py-0.5 text-[11px] rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                     Sync supported

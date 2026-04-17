@@ -32,7 +32,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
           className="rounded border-cyan-500/30 text-cyan-500 focus-visible:ring-cyan-500/30"
         />
         <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-        <span className="text-sm font-medium text-cyan-300">{t.vault.credential_import.enable_sync}</span>
+        <span className="typo-body font-medium text-cyan-300">{t.vault.credential_import.enable_sync}</span>
       </label>
       {showSync && syncConfig && (
         <div className="flex items-center gap-3 pl-6">
@@ -48,7 +48,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
                 sourceId === 'azure_keyvault' ? 'https://myvault.vault.azure.net/...' :
                 'project/config'
               }
-              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
             />
           </div>
           <div className="w-28">
@@ -56,7 +56,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
             <select
               value={syncConfig.intervalMinutes}
               onChange={(e) => onSyncConfigChange({ ...syncConfig, intervalMinutes: Number(e.target.value) })}
-              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 typo-body text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
             >
               <option value={15}>15 min</option>
               <option value={30}>30 min</option>

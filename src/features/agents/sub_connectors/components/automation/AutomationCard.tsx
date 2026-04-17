@@ -53,16 +53,16 @@ export function AutomationCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground truncate" title={automation.name}>{automation.name}</p>
+            <p className="typo-body font-medium text-foreground truncate" title={automation.name}>{automation.name}</p>
             <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0 text-sm font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>
-            {automation.lastTriggeredAt && <span className="text-sm text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
-            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="text-sm text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
-            {automation.deploymentStatus === 'draft' && <span className="text-sm text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
+            <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>
+            {automation.lastTriggeredAt && <span className="typo-body text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
+            {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
+            {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
-              <span className="inline-flex items-center gap-0.5 text-sm text-foreground" title="Falls back to direct connector on failure">
+              <span className="inline-flex items-center gap-0.5 typo-body text-foreground" title="Falls back to direct connector on failure">
                 <ShieldCheck className="w-3 h-3" /> {t.agents.connectors.auto_fallback}
               </span>
             )}
@@ -72,24 +72,24 @@ export function AutomationCard({
           {automation.deploymentStatus === 'active' && (
             <button onClick={() => onTest(automation.id)} disabled={isTesting}
               title={isTesting ? 'Test is already running' : undefined}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-modal border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
               {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
             </button>
           )}
           {automation.deploymentStatus === 'draft' && (
             <button onClick={() => onEdit(automation.id)}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-modal border border-accent/25 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
               title={`Open in ${platformConfig.label}`}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>
       </div>
       {testResult && !isTesting && (
-        <div className={`${TOOLS_SECTION_GAP} px-3 py-2 rounded-modal text-sm ${testResult.success ? 'bg-brand-emerald/5 border border-brand-emerald/15 text-brand-emerald' : 'bg-brand-rose/5 border border-brand-rose/15 text-brand-rose'}`}>
+        <div className={`${TOOLS_SECTION_GAP} px-3 py-2 rounded-modal typo-body ${testResult.success ? 'bg-brand-emerald/5 border border-brand-emerald/15 text-brand-emerald' : 'bg-brand-rose/5 border border-brand-rose/15 text-brand-rose'}`}>
           <div className="flex items-center gap-1.5">
             {testResult.success ? <CheckCircle2 className="w-3 h-3 flex-shrink-0" /> : <XCircle className="w-3 h-3 flex-shrink-0" />}
             <span>{testResult.message}</span>

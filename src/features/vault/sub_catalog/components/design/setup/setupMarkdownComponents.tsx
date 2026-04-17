@@ -28,7 +28,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
     <button
       onClick={handleCopy}
       title={t.vault.design_phases.copy_to_clipboard}
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm transition-all ${
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
         copied
           ? 'text-emerald-400 bg-emerald-500/10'
           : 'text-foreground hover:text-foreground/95 hover:bg-secondary/60'
@@ -51,7 +51,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-card text-sm font-mono overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-primary/10 rounded-card typo-code font-mono overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}
@@ -67,7 +67,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-0.5">
           <code
-            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded text-sm font-mono text-amber-300"
+            className="px-1.5 py-0.5 bg-secondary/60 border border-primary/10 rounded typo-code font-mono text-amber-300"
             {...props}
           >
             {children}
@@ -101,32 +101,32 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       );
     },
     p: ({ children }) => (
-      <p className="text-sm text-foreground my-1 leading-relaxed">{children}</p>
+      <p className="typo-body text-foreground my-1 leading-relaxed">{children}</p>
     ),
     ul: ({ children }) => (
-      <ul className="list-disc list-inside space-y-0.5 my-1 text-sm text-foreground">{children}</ul>
+      <ul className="list-disc list-inside space-y-0.5 my-1 typo-body text-foreground">{children}</ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside space-y-0.5 my-1 text-sm text-foreground">{children}</ol>
+      <ol className="list-decimal list-inside space-y-0.5 my-1 typo-body text-foreground">{children}</ol>
     ),
     li: ({ children }) => (
       <li className="text-foreground">{children}</li>
     ),
     h1: ({ children }) => (
-      <h1 className="text-sm font-bold text-foreground mb-1.5 mt-2">{children}</h1>
+      <h1 className="typo-heading font-bold text-foreground mb-1.5 mt-2">{children}</h1>
     ),
     h2: ({ children }) => (
-      <h2 className="text-sm font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
+      <h2 className="typo-heading font-semibold text-foreground/90 mb-1 mt-2">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-1 mt-1.5">{children}</h3>
+      <h3 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-1 mt-1.5">{children}</h3>
     ),
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),
     hr: () => <hr className="border-primary/10 my-2" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/90 my-2 text-sm">
+      <blockquote className="border-l-2 border-primary/20 pl-3 italic text-foreground/90 my-2 typo-body">
         {children}
       </blockquote>
     ),

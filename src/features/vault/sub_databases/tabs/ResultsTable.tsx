@@ -17,7 +17,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       {error && (
         <div
           key="error"
-          className="animate-fade-slide-in p-3 rounded-modal bg-red-500/8 border border-red-500/15 text-sm text-red-400/90 whitespace-pre-wrap font-mono leading-relaxed"
+          className="animate-fade-slide-in p-3 rounded-modal bg-red-500/8 border border-red-500/15 typo-code text-red-400/90 whitespace-pre-wrap font-mono leading-relaxed"
         >
           {error}
         </div>
@@ -29,7 +29,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       )}
       {!result && !error && !executing && (
         <div key="hint" className="animate-fade-slide-in flex items-center justify-center pt-8">
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {language === 'redis' ? db.redis_run_hint : db.sql_run_hint}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
             <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
             <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
-          <span className="text-sm text-foreground">{db.executing_query}</span>
+          <span className="typo-body text-foreground">{db.executing_query}</span>
         </div>
       )}
     </div>

@@ -53,10 +53,10 @@ export function AutoCredReview({
           <Plug className="w-5 h-5" style={{ color: designResult.connector.color }} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">
+          <h3 className="typo-heading font-semibold text-foreground">
             Review Extracted Credentials
           </h3>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             Values extracted from browser -- verify before saving
           </p>
         </div>
@@ -67,8 +67,8 @@ export function AutoCredReview({
         <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
-            <p className="text-sm text-foreground mt-0.5">
+            <p className="typo-body font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
+            <p className="typo-body text-foreground mt-0.5">
               {completeness
                 ? `${completeness.filledRequired} of ${completeness.totalRequired} required fields filled. Complete the missing fields before saving.`
                 : 'Some fields could not be filled automatically. Please complete the missing fields manually before saving.'}
@@ -79,12 +79,12 @@ export function AutoCredReview({
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">{t.vault.auto_cred_extra.credential_name}</label>
+        <label className="typo-body font-medium text-foreground">{t.vault.auto_cred_extra.credential_name}</label>
         <input
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 rounded-modal border border-primary/15 bg-secondary/25 text-sm text-foreground focus-ring"
+          className="w-full px-3 py-2 rounded-modal border border-primary/15 bg-secondary/25 typo-body text-foreground focus-ring"
         />
       </div>
 

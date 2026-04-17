@@ -127,11 +127,11 @@ export function QueryEditorPane({
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300/90">{db.modifies_data}</p>
-              <p className="text-sm text-foreground">
+              <p className="typo-body font-medium text-amber-300/90">{db.modifies_data}</p>
+              <p className="typo-body text-foreground">
                 {db.modifies_data_hint_short}
               </p>
-              <pre className="text-sm font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
+              <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
                 {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
               </pre>
             </div>
@@ -139,13 +139,13 @@ export function QueryEditorPane({
           <div className="flex items-center gap-2 pl-6">
             <button
               onClick={handleConfirmMutation}
-              className="px-3 py-1.5 rounded-modal text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               {db.execute_anyway}
             </button>
             <button
               onClick={handleCancelMutation}
-              className="px-3 py-1.5 rounded-modal text-sm font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
             >
               {t.common.cancel}
             </button>

@@ -45,7 +45,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
           style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
         />
       </div>
-      <span className="text-sm text-foreground tabular-nums min-w-[24px]">({value}/{maxScale})</span>
+      <span className="typo-data text-foreground tabular-nums min-w-[24px]">({value}/{maxScale})</span>
     </div>
   );
 }
@@ -102,13 +102,13 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void handleSave(); }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor={agentId} className="text-sm font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.agent}</label>
+            <label htmlFor={agentId} className="typo-code font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.agent}</label>
             <ThemedSelect id={agentId} value={personaId} onChange={(e) => setPersonaId(e.target.value)}>
               {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </ThemedSelect>
           </div>
           <fieldset>
-            <legend className="text-sm font-mono uppercase text-foreground mb-1.5">{t.overview.memory_form.category}</legend>
+            <legend className="typo-code font-mono uppercase text-foreground mb-1.5">{t.overview.memory_form.category}</legend>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
                 const colors = MEMORY_CATEGORY_COLORS[cat];
@@ -126,28 +126,28 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label htmlFor={titleId} className="text-sm font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.title}</label>
-          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" autoFocus />
+          <label htmlFor={titleId} className="typo-code font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.title}</label>
+          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" autoFocus />
         </div>
 
         <div>
-          <label htmlFor={contentId} className="text-sm font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.content}</label>
-          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground resize-none" />
+          <label htmlFor={contentId} className="typo-code font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.content}</label>
+          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground resize-none" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <fieldset>
-            <legend className="text-sm font-mono uppercase text-foreground mb-1.5">{t.overview.memory_form.importance}</legend>
+            <legend className="typo-code font-mono uppercase text-foreground mb-1.5">{t.overview.memory_form.importance}</legend>
             <InteractiveImportanceBar value={importance} onChange={setImportance} />
           </fieldset>
           <div>
-            <label htmlFor={tagsId} className="text-sm font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.tags} <span className="normal-case text-foreground">{t.overview.memory_form.tags_hint}</span></label>
-            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" />
+            <label htmlFor={tagsId} className="typo-code font-mono uppercase text-foreground mb-1.5 block">{t.overview.memory_form.tags} <span className="normal-case text-foreground">{t.overview.memory_form.tags_hint}</span></label>
+            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm text-foreground hover:text-foreground/95 transition-colors">{t.common.cancel}</button>
+          <button type="button" onClick={onClose} className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors">{t.common.cancel}</button>
           <button type="submit" disabled={!canSave || saving} title={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined} className="px-4 py-1.5 typo-heading rounded-modal bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</button>
         </div>
       </form>

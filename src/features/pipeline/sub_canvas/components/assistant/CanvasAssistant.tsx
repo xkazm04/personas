@@ -67,7 +67,7 @@ export default function CanvasAssistant({
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-elevation-3 backdrop-blur-sm"
+          className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 typo-body font-medium transition-all shadow-elevation-3 backdrop-blur-sm"
         >
           <Sparkles className="w-3.5 h-3.5" />
           {t.pipeline.assistant}
@@ -85,7 +85,7 @@ export default function CanvasAssistant({
                 <div className="w-5 h-5 rounded-card bg-indigo-500/20 flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-indigo-400" />
                 </div>
-                <span className="text-sm font-semibold text-foreground/90">{t.pipeline.canvas_assistant}</span>
+                <span className="typo-heading font-semibold text-foreground/90">{t.pipeline.canvas_assistant}</span>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

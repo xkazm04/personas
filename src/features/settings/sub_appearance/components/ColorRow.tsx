@@ -39,8 +39,8 @@ export function ColorRow({
         style={{ backgroundColor: displayValue }}
         title={`Pick ${label}`}
       />
-      <span className="text-xs font-medium text-foreground w-24 flex-shrink-0">{label}</span>
-      <span className={`text-xs font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
+      <span className="typo-caption font-medium text-foreground w-24 flex-shrink-0">{label}</span>
+      <span className={`typo-code font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
         {displayValue}
       </span>
       {isOverridden && (

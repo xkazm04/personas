@@ -14,7 +14,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">
           Define template use cases ({validCount} ready)
         </p>
         <div className="flex items-center gap-2">
@@ -27,7 +27,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
             title="Load from .txt or .md file"
           >
             <Upload className="w-3 h-3" />
@@ -35,7 +35,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           </button>
           <button
             onClick={onAdd}
-            className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3 h-3" />
             Add
@@ -56,7 +56,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
             >
               {/* Row 1: number + name + delete */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-foreground w-5 text-right flex-shrink-0 font-mono">
+                <span className="typo-code text-foreground w-5 text-right flex-shrink-0 font-mono">
                   {index + 1}.
                 </span>
                 <input
@@ -64,7 +64,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   value={c.name}
                   onChange={(e) => onUpdateCase(index, 'name', e.target.value)}
                   placeholder="Template name (e.g. Gmail Smart Filter)"
-                  className={`flex-1 px-3 py-1.5 text-sm bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
+                  className={`flex-1 px-3 py-1.5 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
                     nameMissing ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
@@ -85,12 +85,12 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   onChange={(e) => onUpdateCase(index, 'instruction', e.target.value)}
                   placeholder="Describe what this persona should do, which services to integrate, and what triggers should activate it..."
                   rows={3}
-                  className={`w-full px-3 py-2 text-sm bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
+                  className={`w-full px-3 py-2 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
                     instrShort ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
                 {instrShort && (
-                  <p className="text-sm text-amber-400/80 mt-0.5">
+                  <p className="typo-body text-amber-400/80 mt-0.5">
                     {instrLen}/{MIN_INSTRUCTION_LENGTH} characters minimum
                   </p>
                 )}
@@ -101,7 +101,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.category ?? ''}
                   onChange={(e) => onUpdateCase(index, 'category', e.target.value)}
-                  className="px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 >
                   <option value="">Category...</option>
                   {CATEGORY_OPTIONS.map((cat) => (
@@ -111,7 +111,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.trigger ?? ''}
                   onChange={(e) => onUpdateCase(index, 'trigger', e.target.value)}
-                  className="px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 >
                   <option value="">Trigger...</option>
                   {TRIGGER_OPTIONS.map((t) => (
@@ -123,7 +123,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   value={c.tools ?? ''}
                   onChange={(e) => onUpdateCase(index, 'tools', e.target.value)}
                   placeholder="Connectors (e.g. gmail, slack)"
-                  className="flex-1 min-w-[160px] px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="flex-1 min-w-[160px] px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 />
               </div>
             </div>
@@ -133,18 +133,18 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
 
       {/* Guidance + example */}
       <div className="space-y-1">
-        <p className="text-sm text-foreground">
+        <p className="typo-body text-foreground">
           More detail = better results. Include services, triggers, and expected behavior.
         </p>
         <button
           onClick={() => setShowExample((v) => !v)}
-          className="text-sm text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
+          className="typo-body text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
         >
           {showExample ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           {showExample ? 'Hide example' : 'Show example'}
         </button>
         {showExample && (
-          <div className="text-sm text-foreground bg-secondary/20 border border-primary/5 rounded-card p-3 mt-1">
+          <div className="typo-body text-foreground bg-secondary/20 border border-primary/5 rounded-card p-3 mt-1">
             <p className="font-medium text-foreground mb-1">Example: Gmail Smart Filter</p>
             <p className="italic">
               &quot;Create an agent that monitors Gmail for important emails, categorizes them by

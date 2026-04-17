@@ -55,7 +55,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   // Simple mode: just a static badge, no dropdown
   if (isSimple) {
     return (
-      <span className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-card border ${
+      <span className={`flex items-center gap-1.5 typo-caption px-2 py-1.5 rounded-card border ${
         hasPlaintext
           ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
           : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
@@ -67,7 +67,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   }
   const isKeychain = vault.key_source === 'keychain';
 
-  const badgeClass = `flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-card border cursor-pointer transition-colors ${
+  const badgeClass = `flex items-center gap-1.5 typo-caption px-2 py-1.5 rounded-card border cursor-pointer transition-colors ${
     hasPlaintext
       ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15 hover:border-amber-500/30'
       : isKeychain
@@ -107,7 +107,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               ) : (
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
               )}
-              <span className="text-sm font-medium text-foreground">
+              <span className="typo-body font-medium text-foreground">
                 {hasPlaintext ? t.vault.vault_badge.vault_needs_attention : t.vault.vault_badge.vault_secure}
               </span>
             </div>
@@ -115,10 +115,10 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Stats row */}
           <div className="flex gap-3 px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
-            <span className="text-sm text-foreground">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
-            <span className="text-sm text-emerald-400/70">{vault.encrypted} encrypted</span>
+            <span className="typo-body text-foreground">{vault.total} credential{vault.total !== 1 ? 's' : ''}</span>
+            <span className="typo-body text-emerald-400/70">{vault.encrypted} encrypted</span>
             {hasPlaintext && (
-              <span className="text-sm text-amber-400/70">{vault.plaintext} unencrypted</span>
+              <span className="typo-body text-amber-400/70">{vault.plaintext} unencrypted</span>
             )}
           </div>
 
@@ -149,7 +149,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               <button
                 onClick={handleEncryptNow}
                 disabled={isMigrating}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 typo-body font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
                   <><LoadingSpinner size="sm" />{t.vault.vault_badge.encrypting}</>
@@ -162,7 +162,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Migration result */}
           {migrationResult && (
-            <div className={`mx-4 mb-3 px-3 py-2 rounded-modal text-sm ${
+            <div className={`mx-4 mb-3 px-3 py-2 rounded-modal typo-body ${
               migrationResult.failed > 0
                 ? 'bg-red-500/10 border border-red-500/20 text-red-300'
                 : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
@@ -183,8 +183,8 @@ function ExplainerRow({ icon, title, detail }: { icon: React.ReactNode; title: s
     <div className="flex gap-2.5">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div>
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-sm text-foreground leading-relaxed">{detail}</p>
+        <p className="typo-body font-medium text-foreground">{title}</p>
+        <p className="typo-body text-foreground leading-relaxed">{detail}</p>
       </div>
     </div>
   );

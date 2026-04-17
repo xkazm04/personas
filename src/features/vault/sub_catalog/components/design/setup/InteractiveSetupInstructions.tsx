@@ -86,7 +86,7 @@ export function InteractiveSetupInstructions({
           className="flex items-center gap-2 flex-1 text-left rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
         >
           <ListChecks className="w-3.5 h-3.5 text-foreground/90 shrink-0" />
-          <span className="text-sm text-foreground/85 font-medium flex-1">
+          <span className="typo-body text-foreground/85 font-medium flex-1">
             Setup instructions
           </span>
 
@@ -111,7 +111,7 @@ export function InteractiveSetupInstructions({
             onClick={async () => {
               await handleOpenUrl(firstSetupUrl);
             }}
-            className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded text-sm text-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+            className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded typo-body text-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
             title={t.vault.design_phases.open_setup_page}
           >
             <ExternalLink className="w-2.5 h-2.5" />
@@ -156,7 +156,7 @@ export function InteractiveSetupInstructions({
                       className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 mt-1 rounded-modal bg-emerald-500/10 border border-emerald-500/15"
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-sm text-emerald-300/80">
+                      <span className="typo-body text-emerald-300/80">
                         All steps complete -- fill in the fields below and test your connection.
                       </span>
                     </div>

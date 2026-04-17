@@ -96,14 +96,14 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       {/* Connector icons row */}
       {connectorNames.length > 0 && (
         <div className="flex items-center gap-3 px-1">
-          <span className="text-xs font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
+          <span className="typo-label font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
           <div className="flex items-center gap-1.5">
             {connectorNames.map((name) => {
               const meta = getConnectorMeta(name);
               return (
                 <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-card bg-secondary/30 border border-primary/10" title={meta.label}>
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
-                  <span className="text-xs text-foreground">{meta.label}</span>
+                  <span className="typo-caption text-foreground">{meta.label}</span>
                 </div>
               );
             })}

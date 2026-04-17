@@ -41,7 +41,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
     <div className="space-y-6">
       {run.draftPromptJson && (
         <div className="space-y-2">
-          <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" />
             {t.agents.lab.draft_changes}
           </h4>
@@ -54,13 +54,13 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
 
       {scenarios.length > 0 && (
         <div className="space-y-2">
-          <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
             {t.agents.lab.scenario_breakdown}
-            <span className="text-xs font-normal text-foreground ml-1">{t.agents.lab.click_cell_details}</span>
+            <span className="typo-caption font-normal text-foreground ml-1">{t.agents.lab.click_cell_details}</span>
           </h4>
           <div className="overflow-x-auto border border-primary/10 rounded-modal">
-            <table className="w-full text-sm">
+            <table className="w-full typo-body">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
                   <th className="text-left px-3 py-2.5 font-medium text-foreground">Scenario</th>
@@ -98,7 +98,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                               isCurrentSelected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/30'
                             }`}
                           >
-                            <span className={`text-sm font-bold ${scoreColor(currentScore)}`}>{currentScore ?? '--'}</span>
+                            <span className={`typo-heading font-bold ${scoreColor(currentScore)}`}>{currentScore ?? '--'}</span>
                           </button>
                         ) : (
                           <span className={`text-center block font-bold ${scoreColor(currentScore)}`}>{currentScore ?? '--'}</span>
@@ -112,7 +112,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                               isDraftSelected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/30'
                             }`}
                           >
-                            <span className={`text-sm font-bold ${scoreColor(draftScore)}`}>{draftScore ?? '--'}</span>
+                            <span className={`typo-heading font-bold ${scoreColor(draftScore)}`}>{draftScore ?? '--'}</span>
                           </button>
                         ) : (
                           <span className={`text-center block font-bold ${scoreColor(draftScore)}`}>{draftScore ?? '--'}</span>
@@ -163,16 +163,16 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
       {run.status === 'completed' && !run.draftAccepted && run.draftPromptJson && (
         <div className="flex items-center gap-3 pt-2">
           <button onClick={() => void acceptDraft(run.id)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-modal font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
             <Check className="w-4 h-4" />{t.agents.lab.accept_draft}
           </button>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {t.agents.lab.accept_applies_desc}
           </p>
         </div>
       )}
       {run.draftAccepted && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-emerald-500/10 border border-emerald-500/20 typo-body text-emerald-400">
           <Check className="w-4 h-4" />{t.agents.lab.draft_accepted}
         </div>
       )}

@@ -26,8 +26,8 @@ export default function MemoryPanelHeader({
     <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
       <div className="flex items-center gap-2">
         <Brain className="w-4 h-4 text-violet-400" />
-        <span className="text-sm font-semibold text-foreground/90">{t.pipeline.team_memory}</span>
-        <span className="text-sm px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
+        <span className="typo-heading font-semibold text-foreground/90">{t.pipeline.team_memory}</span>
+        <span className="typo-body px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
           {total}
         </span>
       </div>

@@ -57,11 +57,11 @@ export default function ByomSettings() {
         actions={
           <div className="flex items-center gap-2">
             {bm.isDirty && (
-              <span className="text-xs text-amber-400/80 mr-1">{s.unsaved_changes}</span>
+              <span className="typo-caption text-amber-400/80 mr-1">{s.unsaved_changes}</span>
             )}
             <button
               onClick={bm.handleReset}
-              className="px-3 py-1.5 text-sm rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors"
             >
               {s.reset}
             </button>
@@ -69,7 +69,7 @@ export default function ByomSettings() {
               onClick={bm.handleSave}
               disabled={bm.hasBlockingErrors}
               title={bm.hasBlockingErrors ? s.fix_errors : undefined}
-              className={`px-3 py-1.5 text-sm rounded-modal border transition-colors ${
+              className={`px-3 py-1.5 typo-body rounded-modal border transition-colors ${
                 bm.hasBlockingErrors
                   ? 'bg-red-500/15 text-red-400/60 border-red-500/30 cursor-not-allowed'
                   : bm.isDirty
@@ -90,15 +90,15 @@ export default function ByomSettings() {
             <div className="rounded-modal border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-red-300">{s.policy_corrupted}</h3>
-                <p className="text-sm text-red-300/80 mt-1">
+                <h3 className="typo-body font-medium text-red-300">{s.policy_corrupted}</h3>
+                <p className="typo-body text-red-300/80 mt-1">
                   {s.policy_corrupted_desc}
                 </p>
-                <p className="text-xs text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
+                <p className="typo-caption text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
               </div>
               <button
                 onClick={bm.handleReset}
-                className="shrink-0 px-3 py-1.5 text-sm rounded-modal bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                className="shrink-0 px-3 py-1.5 typo-body rounded-modal bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
                 {s.reset_policy}
               </button>
@@ -109,8 +109,8 @@ export default function ByomSettings() {
           <div className="rounded-modal border border-primary/10 bg-card-bg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-foreground">{s.policy_enforcement}</h3>
-                <p className="text-sm text-foreground mt-0.5">
+                <h3 className="typo-body font-medium text-foreground">{s.policy_enforcement}</h3>
+                <p className="typo-body text-foreground mt-0.5">
                   {s.policy_enforcement_desc}
                 </p>
               </div>
@@ -128,7 +128,7 @@ export default function ByomSettings() {
               <button
                 key={tab.id}
                 onClick={() => bm.setActiveSection(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-modal transition-colors ${
+                className={`relative flex-1 flex items-center justify-center gap-1.5 px-3 py-2 typo-body rounded-modal transition-colors ${
                   bm.activeSection === tab.id
                     ? 'text-foreground'
                     : 'text-foreground hover:text-foreground hover:bg-primary/5'

@@ -45,8 +45,8 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             <Workflow className="w-5 h-5 text-violet-400" />
           </div>
           <div>
-            <h2 id="activity-diagram-title" className="text-base font-semibold text-foreground/90">{titleOverride || templateName}</h2>
-            <p className="text-sm text-foreground">
+            <h2 id="activity-diagram-title" className="typo-body-lg font-semibold text-foreground/90">{titleOverride || templateName}</h2>
+            <p className="typo-body text-foreground">
               {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
             </p>
           </div>
@@ -67,7 +67,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 setInspectedNode(null);
                 setPopoverPos(null);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium transition-all whitespace-nowrap ${
                 index === activeFlowIndex
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
                   : 'bg-secondary/40 border border-transparent text-foreground hover:bg-secondary/60 hover:text-muted-foreground'
@@ -124,8 +124,8 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       {/* Footer -- Flow Description */}
       {activeFlow && (
         <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
-          <p className="text-sm text-foreground">{activeFlow.description}</p>
-          <div className="flex items-center gap-4 mt-1.5 text-sm text-foreground">
+          <p className="typo-body text-foreground">{activeFlow.description}</p>
+          <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
             <span>{activeFlow.nodes.length} nodes</span>
             <span>{activeFlow.edges.length} edges</span>
             <span>{activeFlow.nodes.filter(n => n.type === 'connector').length} connector(s)</span>

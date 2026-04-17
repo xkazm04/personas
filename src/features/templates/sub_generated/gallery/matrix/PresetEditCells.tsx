@@ -193,7 +193,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
       {useCases.slice(0, 3).map((uc) => (
         <div key={uc.id} className="flex items-center gap-1.5 group">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400/50 flex-shrink-0" />
-          <span className="text-sm text-foreground leading-snug flex-1 truncate">{uc.title}</span>
+          <span className="typo-body text-foreground leading-snug flex-1 truncate">{uc.title}</span>
           {callbacks.onUseCaseRemove && (
             <button type="button" onClick={() => callbacks.onUseCaseRemove!(uc.id)}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-foreground/5 transition-all">
@@ -203,7 +203,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
         </div>
       ))}
       {useCases.length > 3 && (
-        <span className="text-xs text-foreground pl-3">+{useCases.length - 3} more</span>
+        <span className="typo-caption text-foreground pl-3">+{useCases.length - 3} more</span>
       )}
       {callbacks.onUseCaseAdd && (
         <div className="flex items-center gap-1">
@@ -213,7 +213,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
             placeholder={t.templates.preset_edit.add_use_case}
-            className="flex-1 px-2 py-1 rounded-input border border-primary/10 bg-transparent text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
+            className="flex-1 px-2 py-1 rounded-input border border-primary/10 bg-transparent typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
           <button type="button" onClick={handleAdd} disabled={!newTitle.trim()}
             className="p-1 rounded-input text-primary/60 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">

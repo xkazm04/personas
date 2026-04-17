@@ -95,7 +95,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${stageColor} ${isAnimated ? 'animate-pulse' : ''}`} />
-          <span className={`text-sm font-medium ${stageColor}`}>
+          <span className={`typo-body font-medium ${stageColor}`}>
             {stageLabel}
             {progress.activeTool && (
               <span className="text-foreground font-normal">: {progress.activeTool}</span>
@@ -103,7 +103,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-foreground">
+        <div className="flex items-center gap-3 typo-caption text-foreground">
           {progress.toolCallsCompleted > 0 && (
             <span>{tx(dt.tool_calls, { count: progress.toolCallsCompleted })}</span>
           )}
@@ -114,7 +114,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
       </div>
 
       {progress.message && (
-        <p className="text-xs text-foreground truncate">{progress.message}</p>
+        <p className="typo-caption text-foreground truncate">{progress.message}</p>
       )}
     </div>
   );

@@ -33,7 +33,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-6 text-foreground text-sm">
+      <div className="flex items-center justify-center py-6 text-foreground typo-body">
         <div className="w-3.5 h-3.5 border border-primary/30 border-t-transparent rounded-full animate-spin mr-2" />
         {t.vault.token_metrics.loading}
       </div>
@@ -42,7 +42,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
 
   if (!summary || summary.totalRefreshes === 0) {
     return (
-      <div className="text-sm text-foreground py-4 text-center">
+      <div className="typo-body text-foreground py-4 text-center">
         {t.vault.token_metrics.no_metrics}
       </div>
     );
@@ -60,7 +60,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
     <div className="space-y-3">
       {/* Trend warning */}
       {summary.lifetimeTrendingShorter && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 typo-body">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           <span>{t.vault.token_metrics.trend_warning}</span>
         </div>
@@ -94,11 +94,11 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
 
       {/* Fallback usage */}
       {summary.fallbackCount > 0 && (
-        <div className="flex items-center gap-2 text-sm text-foreground px-1">
+        <div className="flex items-center gap-2 typo-body text-foreground px-1">
           <ArrowDown className="w-3 h-3 text-amber-400" />
           <span>
             Fallback (3600s) used in <span className="font-mono tabular-nums text-amber-400">{fallbackRate}%</span> of
-            refreshes ({summary.fallbackCount}/{summary.totalRefreshes}) — provider omits <code className="text-sm font-mono bg-secondary/40 px-1 rounded">expires_in</code>
+            refreshes ({summary.fallbackCount}/{summary.totalRefreshes}) — provider omits <code className="typo-code font-mono bg-secondary/40 px-1 rounded">expires_in</code>
           </span>
         </div>
       )}
@@ -106,7 +106,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
       {/* Lifetime trend sparkline */}
       {summary.recentPredictedLifetimes.length >= 2 && (
         <div className="space-y-1">
-          <span className="text-sm text-foreground">{t.vault.token_metrics.recent_ttls}</span>
+          <span className="typo-body text-foreground">{t.vault.token_metrics.recent_ttls}</span>
           <div className="flex items-end gap-1 h-8">
             {summary.recentPredictedLifetimes.map((secs, i) => {
               const max = Math.max(...summary.recentPredictedLifetimes);
@@ -128,34 +128,34 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
       {/* Recent refresh history */}
       {recentMetrics.length > 0 && (
         <div className="space-y-1">
-          <span className="text-sm text-foreground">{t.vault.token_metrics.recent_refreshes}</span>
+          <span className="typo-body text-foreground">{t.vault.token_metrics.recent_refreshes}</span>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {recentMetrics.slice(0, 5).map((m) => (
               <div
                 key={m.id}
-                className={`flex items-center justify-between text-sm px-2 py-1 rounded-card ${
+                className={`flex items-center justify-between typo-body px-2 py-1 rounded-card ${
                   m.success
                     ? 'bg-secondary/20 text-foreground'
                     : 'bg-red-500/10 border border-red-500/20 text-red-400'
                 }`}
               >
-                <span className="font-mono text-foreground text-xs">
+                <span className="font-mono text-foreground typo-code">
                   {new Date(m.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <div className="flex items-center gap-2">
                   {m.usedFallback && (
-                    <span className="text-xs bg-amber-500/10 text-amber-400 px-1 rounded">fallback</span>
+                    <span className="typo-caption bg-amber-500/10 text-amber-400 px-1 rounded">fallback</span>
                   )}
                   {m.predictedLifetimeSecs != null && (
-                    <span className="font-mono tabular-nums text-xs">{formatDuration(m.predictedLifetimeSecs)}</span>
+                    <span className="font-mono tabular-nums typo-code">{formatDuration(m.predictedLifetimeSecs)}</span>
                   )}
                   {m.driftSecs != null && (
-                    <span className={`font-mono tabular-nums text-xs ${m.driftSecs < -60 ? 'text-amber-400' : 'text-foreground'}`}>
+                    <span className={`font-mono tabular-nums typo-code ${m.driftSecs < -60 ? 'text-amber-400' : 'text-foreground'}`}>
                       ({m.driftSecs > 0 ? '+' : ''}{formatDuration(Math.abs(m.driftSecs))})
                     </span>
                   )}
                   {!m.success && m.errorMessage && (
-                    <span className="text-xs truncate max-w-[120px]" title={m.errorMessage}>{m.errorMessage}</span>
+                    <span className="typo-caption truncate max-w-[120px]" title={m.errorMessage}>{m.errorMessage}</span>
                   )}
                 </div>
               </div>
@@ -174,8 +174,8 @@ function StatBox({ label, value, icon, alert }: { label: string; value: string; 
     }`}>
       <div className={alert ? 'text-amber-400' : 'text-foreground'}>{icon}</div>
       <div>
-        <div className={`text-sm font-mono tabular-nums ${alert ? 'text-amber-400' : 'text-foreground/90'}`}>{value}</div>
-        <div className="text-xs text-foreground">{label}</div>
+        <div className={`typo-code font-mono tabular-nums ${alert ? 'text-amber-400' : 'text-foreground/90'}`}>{value}</div>
+        <div className="typo-caption text-foreground">{label}</div>
       </div>
     </div>
   );

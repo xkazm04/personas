@@ -43,7 +43,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
           <BookOpen className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
+          <h2 className="typo-heading font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
             onClick={onClose}
             className="flex items-center justify-center w-6 h-6 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -62,7 +62,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.recipes.search_recipes}
               autoFocus
-              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
+              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
             />
           </div>
         </div>
@@ -70,7 +70,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* List */}
         <div className="flex-1 overflow-y-auto p-2">
           {available.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-sm text-foreground">
+            <div className="flex flex-col items-center justify-center py-8 typo-body text-foreground">
               {recipes.length === linkedRecipeIds.size
                 ? t.recipes.all_linked
                 : t.recipes.no_matching}
@@ -87,9 +87,9 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
                     <BookOpen className="w-3 h-3 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{recipe.name}</p>
+                    <p className="typo-body font-medium text-foreground truncate">{recipe.name}</p>
                     {recipe.description && (
-                      <p className="text-sm text-foreground truncate">{recipe.description}</p>
+                      <p className="typo-body text-foreground truncate">{recipe.description}</p>
                     )}
                   </div>
                   <Plus className="w-3.5 h-3.5 text-foreground group-hover:text-primary transition-colors" />

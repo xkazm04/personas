@@ -44,10 +44,10 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           <Globe className="w-6 h-6" style={{ color: designResult.connector.color }} />
         </div>
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="typo-body-lg font-semibold text-foreground">
             {isGuided ? 'Guided Setup' : 'Auto-Setup'}: {designResult.connector.label}
           </h3>
-          <p className="text-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             {isGuided
               ? t.vault.auto_cred.guided_consent_body
               : t.vault.auto_cred.auto_consent_body
@@ -58,7 +58,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 
       {/* What will happen */}
       <div className="space-y-2.5">
-        <p className="text-sm font-medium text-foreground/90">{t.vault.auto_cred.what_will_happen}</p>
+        <p className="typo-body font-medium text-foreground/90">{t.vault.auto_cred.what_will_happen}</p>
         <div className="space-y-2">
           {isGuided ? (
             <>
@@ -83,10 +83,10 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
         <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
-          <p className="text-sm font-medium text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
+          <p className="typo-body font-medium text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
-            className="[&_p]:text-sm [&_p]:text-foreground [&_p]:mb-1.5 [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-foreground [&_code]:text-sm"
+            className="[&_p]:typo-body [&_p]:text-foreground [&_p]:mb-1.5 [&_ul]:typo-body [&_ol]:typo-body [&_li]:text-foreground [&_code]:typo-body"
           />
         </div>
       )}
@@ -94,7 +94,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Pre-login tip */}
       <div className="flex items-start gap-2.5 p-3 rounded-card border border-blue-500/20 bg-blue-500/5">
         <LogIn className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-        <div className="text-sm text-foreground">
+        <div className="typo-body text-foreground">
           <span className="font-medium text-blue-400/90">{t.vault.auto_cred.log_in_first}</span>{' '}
           Make sure you are already registered and logged in to {designResult.connector.label} in your browser before starting.
           This allows the automation to access your account settings directly.
@@ -104,7 +104,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Security notice */}
       <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
         <Shield className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-        <div className="text-sm text-foreground">
+        <div className="typo-body text-foreground">
           <span className="font-medium text-amber-400/90">{t.vault.auto_cred.your_consent}</span>{' '}
           {isGuided
             ? t.vault.auto_cred.guided_consent_hint
@@ -117,7 +117,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {ctx.docsUrl && (
         <button
           onClick={handleDocsClick}
-          className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 typo-body text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           View credential docs
@@ -128,13 +128,13 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onConsent}
-          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 ${
+          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-modal typo-body font-medium transition-all shadow-elevation-3 ${
             isGuided
               ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20'
               : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/20'
@@ -156,12 +156,12 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 function Step({ number, text, guided = false }: { number: number; text: string; guided?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={`w-5 h-5 rounded-full text-sm font-medium flex items-center justify-center shrink-0 ${
+      <span className={`w-5 h-5 rounded-full typo-body font-medium flex items-center justify-center shrink-0 ${
         guided ? 'bg-violet-500/15 text-violet-400' : 'bg-cyan-500/15 text-cyan-400'
       }`}>
         {number}
       </span>
-      <span className="text-sm text-foreground">{text}</span>
+      <span className="typo-body text-foreground">{text}</span>
     </div>
   );
 }

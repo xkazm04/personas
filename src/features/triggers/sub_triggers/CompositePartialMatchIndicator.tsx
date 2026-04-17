@@ -46,14 +46,14 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
     <div className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
-        <span className={`text-sm font-medium ${color}`}>
+        <span className={`typo-body font-medium ${color}`}>
           {conditionsMet}/{conditionsTotal} conditions met
         </span>
-        <span className="text-xs text-foreground ml-auto">
+        <span className="typo-caption text-foreground ml-auto">
           {operator.toUpperCase()}
         </span>
         {suppressed && (
-          <span className="text-xs text-foreground italic">{t.triggers.suppressed_label}</span>
+          <span className="typo-caption text-foreground italic">{t.triggers.suppressed_label}</span>
         )}
       </div>
 
@@ -70,7 +70,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       {/* Per-condition breakdown */}
       <div className="space-y-0.5">
         {conditionDetails.map((c, i) => (
-          <div key={i} className="flex items-center gap-1.5 text-xs">
+          <div key={i} className="flex items-center gap-1.5 typo-caption">
             <span className={c.matched ? 'text-emerald-400' : 'text-foreground'}>
               {c.matched ? '\u2713' : '\u2717'}
             </span>

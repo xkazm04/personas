@@ -76,13 +76,13 @@ export function N8nParserResults({
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">
+                <p className="typo-body font-medium text-foreground">
                   Analyzing workflow and preparing transformation...
                 </p>
-                <p className="text-sm text-foreground mt-1.5">
+                <p className="typo-body text-foreground mt-1.5">
                   Usually takes about 1 minute
                 </p>
-                <p className="text-sm font-mono text-foreground mt-1">
+                <p className="typo-code font-mono text-foreground mt-1">
                   {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
                 </p>
               </div>
@@ -101,14 +101,14 @@ export function N8nParserResults({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground/90">{workflowName}</h3>
+              <h3 className="typo-heading font-semibold text-foreground/90">{workflowName}</h3>
               {platform && (
-                <span className={`text-sm font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                <span className={`typo-code font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
                   {PLATFORM_LABELS[platform]}
                 </span>
               )}
             </div>
-            <p className="text-sm text-foreground">{parsedResult.summary}</p>
+            <p className="typo-body text-foreground">{parsedResult.summary}</p>
           </div>
         </div>
         <Button
@@ -127,7 +127,7 @@ export function N8nParserResults({
           className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-modal border border-amber-500/20 bg-amber-500/5"
         >
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-          <p className="flex-1 text-sm text-amber-300/90">
+          <p className="flex-1 typo-body text-amber-300/90">
             This looks like a <strong>{PLATFORM_LABELS[platform]}</strong> workflow, but we're not 100% sure. Is that correct?
           </p>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -153,7 +153,7 @@ export function N8nParserResults({
 
       {/* Selection summary */}
       {hasSelection && (
-        <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-foreground">
+        <div className="flex items-center gap-2 typo-code font-mono uppercase tracking-wider text-foreground">
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
             {toolCount} tools
           </span>

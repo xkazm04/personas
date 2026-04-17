@@ -55,15 +55,15 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: typeColor }} />
-            <span className="text-sm font-mono font-medium" style={{ color: typeColor }}>
+            <span className="typo-code font-mono font-medium" style={{ color: typeColor }}>
               {event.event_type}
             </span>
           </div>
           <div className={`flex items-center gap-1 ${statusInfo.color}`}>
             <StatusIcon className={`w-3.5 h-3.5 ${event.status === 'processing' ? 'animate-spin' : ''}`} />
-            <span className="text-sm font-mono">{event.status}</span>
+            <span className="typo-code font-mono">{event.status}</span>
           </div>
-          <span className="text-sm text-foreground">{formatRelativeTime(event.created_at)}</span>
+          <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
         </div>
         <button
           onClick={onClose}
@@ -79,20 +79,20 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Metadata grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="text-sm font-mono uppercase text-foreground">Event ID</span>
-            <p className="text-sm"><UuidLabel value={event.id} /></p>
+            <span className="typo-code font-mono uppercase text-foreground">Event ID</span>
+            <p className="typo-body"><UuidLabel value={event.id} /></p>
           </div>
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="text-sm font-mono uppercase text-foreground">Source</span>
-            <p className="text-sm">
+            <span className="typo-code font-mono uppercase text-foreground">Source</span>
+            <p className="typo-body">
               <span className="text-foreground">{event.source_type}</span>
               {event.source_id && <span className="text-foreground"> : </span>}
               {event.source_id && <UuidLabel value={event.source_id} label={event.source_type || undefined} />}
             </p>
           </div>
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="text-sm font-mono uppercase text-foreground">Target</span>
-            <p className="text-sm">
+            <span className="typo-code font-mono uppercase text-foreground">Target</span>
+            <p className="typo-body">
               {event.target_persona_id
                 ? <UuidLabel value={event.target_persona_id} label={getPersonaName(event.target_persona_id)} />
                 : <span className="text-foreground">(broadcast)</span>
@@ -100,13 +100,13 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
             </p>
           </div>
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="text-sm font-mono uppercase text-foreground">Created</span>
-            <p className="text-sm font-mono text-foreground">{new Date(event.created_at).toLocaleTimeString()}</p>
+            <span className="typo-code font-mono uppercase text-foreground">Created</span>
+            <p className="typo-code font-mono text-foreground">{new Date(event.created_at).toLocaleTimeString()}</p>
           </div>
           {event.processed_at && (
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-              <span className="text-sm font-mono uppercase text-foreground">Processed</span>
-              <p className="text-sm font-mono text-foreground">{new Date(event.processed_at).toLocaleTimeString()}</p>
+              <span className="typo-code font-mono uppercase text-foreground">Processed</span>
+              <p className="typo-code font-mono text-foreground">{new Date(event.processed_at).toLocaleTimeString()}</p>
             </div>
           )}
         </div>
@@ -114,16 +114,16 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
         {/* Error message */}
         {event.error_message && (
           <div className="p-3 rounded-card bg-red-500/5 border border-red-500/15">
-            <span className="text-sm font-mono uppercase text-red-400/60 block mb-1">Error</span>
-            <p className="text-sm text-red-300/80 font-mono">{event.error_message}</p>
+            <span className="typo-code font-mono uppercase text-red-400/60 block mb-1">Error</span>
+            <p className="typo-code text-red-300/80 font-mono">{event.error_message}</p>
           </div>
         )}
 
         {/* Payload */}
         {event.payload && (
           <div>
-            <span className="text-sm font-mono uppercase text-foreground block mb-1">Payload</span>
-            <pre className="p-3 rounded-card bg-secondary/40 border border-primary/10 text-sm font-mono text-foreground overflow-x-auto max-h-40 whitespace-pre-wrap">
+            <span className="typo-code font-mono uppercase text-foreground block mb-1">Payload</span>
+            <pre className="p-3 rounded-card bg-secondary/40 border border-primary/10 typo-code font-mono text-foreground overflow-x-auto max-h-40 whitespace-pre-wrap">
               {formatPayload(event.payload)}
             </pre>
           </div>

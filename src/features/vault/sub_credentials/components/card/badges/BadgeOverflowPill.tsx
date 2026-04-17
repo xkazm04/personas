@@ -9,7 +9,7 @@ export interface BadgeEntry {
 export function BadgeOverflowPill({ badges }: { badges: BadgeEntry[] }) {
   return (
     <span
-      className="text-sm font-medium px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground shrink-0 cursor-default"
+      className="typo-body font-medium px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground shrink-0 cursor-default"
       title={badges.map((b) => b.label).join(', ')}
     >
       +{badges.length}

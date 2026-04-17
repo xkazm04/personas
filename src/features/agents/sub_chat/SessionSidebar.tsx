@@ -27,7 +27,7 @@ export function SessionSidebar({
         <button
           onClick={onNewSession}
           data-testid="chat-new-session-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-card bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 typo-body font-medium rounded-card bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
         >
           <Plus className="w-4 h-4" /> {t.agents.chat.new_chat}
         </button>
@@ -38,7 +38,7 @@ export function SessionSidebar({
         {sessions.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
             <MessageSquare className="w-5 h-5 text-foreground" />
-            <p className="text-sm text-foreground">{t.agents.chat.no_conversations}</p>
+            <p className="typo-body text-foreground">{t.agents.chat.no_conversations}</p>
           </div>
         )}
         {sessions.map((s) => {
@@ -50,7 +50,7 @@ export function SessionSidebar({
             <div
               key={s.sessionId}
               data-testid={`chat-session-${s.sessionId}`}
-              className={`group flex items-center gap-2 px-3 py-2 mx-1.5 rounded-card cursor-pointer text-sm transition-colors ${
+              className={`group flex items-center gap-2 px-3 py-2 mx-1.5 rounded-card cursor-pointer typo-body transition-colors ${
                 isActive
                   ? 'bg-primary/12 text-primary'
                   : 'text-foreground hover:bg-primary/5 hover:text-foreground/80'

@@ -114,7 +114,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
         <div className="flex rounded-card border border-primary/15 overflow-hidden">
           <button
             onClick={() => setThemeTab('default')}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 typo-body font-medium transition-colors ${
               themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
@@ -122,7 +122,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
           </button>
           <button
             onClick={() => setThemeTab('custom')}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-primary/15 ${
+            className={`px-3 py-1.5 typo-body font-medium transition-colors border-l border-primary/15 ${
               themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
@@ -349,7 +349,7 @@ export default function AppearanceSettings() {
                     <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                       {level.label}
                     </span>
-                    <span className="text-sm text-foreground">
+                    <span className="typo-body text-foreground">
                       {level.description}
                     </span>
                     {isActive && (

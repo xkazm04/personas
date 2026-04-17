@@ -101,7 +101,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         )}
 
         {error && (
-          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-center gap-2">
+          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
@@ -130,8 +130,8 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     <FileText className="w-4 h-4 text-violet-400/70" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground/90 truncate">{doc.title}</p>
-                    <p className="text-xs text-foreground mt-0.5">
+                    <p className="typo-body font-medium text-foreground/90 truncate">{doc.title}</p>
+                    <p className="typo-caption text-foreground mt-0.5">
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}
                       <span className="ml-1.5">{formatBytes(doc.byteSize)}</span>

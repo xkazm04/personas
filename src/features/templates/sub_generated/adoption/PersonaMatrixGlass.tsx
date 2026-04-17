@@ -112,7 +112,7 @@ function GlassCell({ dim, items, status }: {
           {/* Label with accent dot + status */}
           <div className="flex items-center gap-2.5 mb-3">
             <span className={`w-2 h-2 rounded-full ${dim.dotCls}`} />
-            <span className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground">
+            <span className="typo-heading font-semibold uppercase tracking-[0.2em] text-foreground">
               {CELL_LABELS[dim.key] ?? dim.key}
             </span>
             <div className="ml-auto"><StatusPill status={status} /></div>

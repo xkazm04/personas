@@ -93,7 +93,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <SectionHeading className="text-xs">Cloud Triggers ({triggers.length})</SectionHeading>
+        <SectionHeading className="typo-caption">Cloud Triggers ({triggers.length})</SectionHeading>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -127,14 +127,14 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
 
       {/* No deployments notice */}
       {deployments.filter((d) => d.status === 'active').length === 0 && (
-        <p className="text-sm text-foreground py-6 text-center">
+        <p className="typo-body text-foreground py-6 text-center">
           Deploy a persona first to create cloud triggers.
         </p>
       )}
 
       {/* Trigger list */}
       {triggers.length === 0 && deployedPersonaIds.size > 0 ? (
-        <p className="text-sm text-foreground py-6 text-center">
+        <p className="typo-body text-foreground py-6 text-center">
           No cloud triggers yet. Create one to schedule automated runs.
         </p>
       ) : (

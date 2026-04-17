@@ -32,7 +32,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
         >
           <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-foreground'}`} />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground/90 truncate">{project.name}</p>
+            <p className="typo-body font-medium text-foreground/90 truncate">{project.name}</p>
             <p className="text-[11px] text-foreground truncate">{project.root_path}</p>
             {project.tech_stack && (
               <div className="flex flex-wrap gap-1 mt-1.5">

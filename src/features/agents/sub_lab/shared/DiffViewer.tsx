@@ -17,7 +17,7 @@ export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm font-medium">
+      <div className="flex items-center gap-2 typo-body font-medium">
         <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 font-mono">v{versionA.version_number}</span>
         <ArrowLeftRight className="w-3.5 h-3.5 text-foreground" />
         <span className="px-2 py-0.5 rounded bg-violet-500/15 text-violet-400 font-mono">v{versionB.version_number}</span>
@@ -30,8 +30,8 @@ export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
         const diff = diffStrings(a, b);
         return (
           <div key={key} className="rounded-card border border-primary/10 bg-secondary/20 p-3">
-            <h4 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">{key}</h4>
-            <div className="text-sm leading-relaxed">
+            <h4 className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">{key}</h4>
+            <div className="typo-body leading-relaxed">
               {diff.map((d, i) => (
                 <span
                   key={i}
@@ -52,7 +52,7 @@ export function DiffViewer({ versionA, versionB }: DiffViewerProps) {
       })}
 
       {allKeys.every((key) => (sectionsA[key] ?? '') === (sectionsB[key] ?? '')) && (
-        <p className="text-sm text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
+        <p className="typo-body text-foreground text-center py-4">{t.agents.lab.no_structural_diff}</p>
       )}
     </div>
   );

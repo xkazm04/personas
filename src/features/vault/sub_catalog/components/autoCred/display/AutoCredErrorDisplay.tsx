@@ -37,12 +37,12 @@ export function AutoCredErrorDisplay({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
-            <span className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+            <p className="typo-heading font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
+            <span className={`typo-body font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
           </div>
-          <p className="text-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             {error.guidance}
           </p>
         </div>
@@ -54,13 +54,13 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 typo-body font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>{t.vault.auto_cred.what_happened}</span>
             {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {contextOpen && (
-            <div className="px-4 pb-3 space-y-2 text-sm text-foreground">
+            <div className="px-4 pb-3 space-y-2 typo-body text-foreground">
               {ctx.duration_secs != null && (
                 <div className="flex items-center gap-2">
                   <Clock className="w-3 h-3 shrink-0" />
@@ -106,14 +106,14 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setLogOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 typo-body font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>Session log ({logs.length} entries)</span>
             {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {logOpen && (
             <div className="border-t border-primary/10">
-              <div className="max-h-[26rem] overflow-y-auto p-3 font-mono text-sm space-y-1">
+              <div className="max-h-[26rem] overflow-y-auto p-3 font-mono typo-code space-y-1">
                 {logs.map((entry, i) => (
                   <div key={i} className={`flex items-start gap-2 ${
                     entry.type === 'error' ? 'text-red-400' :
@@ -140,14 +140,14 @@ export function AutoCredErrorDisplay({
       <div className="flex gap-3 justify-center">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           {error.retryable ? 'Cancel' : 'Set Up Manually'}
         </button>
         {error.retryable && (
           <button
             onClick={onRetry}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
           >
             Retry
           </button>

@@ -138,9 +138,9 @@ export function BuildQuestionnaireModal({
     >
       {/* Minimal header — step name only, no icon/title duplication */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-primary/10">
-        <h3 id="build-questionnaire-title" className="text-sm font-medium text-foreground">
+        <h3 id="build-questionnaire-title" className="typo-body font-medium text-foreground">
           {dim ? dim.label : 'Setup'} — Question {activeIndex + 1} of {questions.length}
-          <span className="text-foreground ml-2 text-xs font-normal">
+          <span className="text-foreground ml-2 typo-caption font-normal">
             {answeredCount} answered
           </span>
         </h3>
@@ -187,12 +187,12 @@ export function BuildQuestionnaireModal({
                 {dim ? (
                   <div className="flex items-center gap-2">
                     <dim.Icon className={`w-4 h-4 ${tone.accent}`} />
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${tone.accent}`}>
+                    <span className={`typo-label font-semibold uppercase tracking-wider ${tone.accent}`}>
                       {dim.label}
                     </span>
                   </div>
                 ) : <div />}
-                <span className={`text-xs font-mono tabular-nums px-2 py-0.5 rounded-input bg-foreground/[0.04] text-foreground`}>
+                <span className={`typo-code font-mono tabular-nums px-2 py-0.5 rounded-input bg-foreground/[0.04] text-foreground`}>
                   {activeIndex + 1}/{questions.length}
                 </span>
               </div>
@@ -223,7 +223,7 @@ export function BuildQuestionnaireModal({
                           type="button"
                           data-testid={`question-option-${opt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`w-full text-left px-3.5 py-2.5 text-sm rounded-card border transition-all flex items-center gap-2.5 ${
+                          className={`w-full text-left px-3.5 py-2.5 typo-body rounded-card border transition-all flex items-center gap-2.5 ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
                               : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
@@ -252,10 +252,10 @@ export function BuildQuestionnaireModal({
                       onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                       placeholder={(q as unknown as Record<string, unknown>).placeholder as string ?? q.default ?? 'Type your answer...'}
                       autoFocus
-                      className={`w-full px-4 py-3 text-sm rounded-modal border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
+                      className={`w-full px-4 py-3 typo-body rounded-modal border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
                     />
                     {currentAnswer && currentAnswer !== q.default && (
-                      <p className="text-xs text-foreground px-1">
+                      <p className="typo-caption text-foreground px-1">
                         Default: {q.default || 'none'}
                       </p>
                     )}
@@ -273,7 +273,7 @@ export function BuildQuestionnaireModal({
                           type="button"
                           data-testid={`question-bool-${opt.toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`flex-1 py-3.5 text-sm font-medium rounded-modal border transition-all flex items-center justify-center gap-2 ${
+                          className={`flex-1 py-3.5 typo-body font-medium rounded-modal border transition-all flex items-center justify-center gap-2 ${
                             isSelected
                               ? `${tone.selectBg} shadow-elevation-1`
                               : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
@@ -349,14 +349,14 @@ export function BuildQuestionnaireModal({
       {/* Footer */}
       <div className="flex items-center justify-between px-6 py-4 border-t border-primary/10 mt-2">
         <div className="flex items-center gap-4">
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&larr;</kbd>{' '}
             <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&rarr;</kbd>{' '}navigate
           </p>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-foreground hover:text-muted-foreground/60 transition-colors flex items-center gap-1"
+            className="typo-caption text-foreground hover:text-muted-foreground/60 transition-colors flex items-center gap-1"
           >
             <SkipForward className="w-3 h-3" />
             Skip all
@@ -378,7 +378,7 @@ export function BuildQuestionnaireModal({
               goNext();
             }
           }}
-          className={`inline-flex items-center gap-2 rounded-modal text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-2 rounded-modal typo-body font-medium transition-all ${
             isLast
               ? allAnswered
                 ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-1'

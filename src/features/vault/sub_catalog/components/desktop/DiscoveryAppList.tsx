@@ -42,7 +42,7 @@ export function DiscoveryAppList({
         <>
           {installedApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-foreground uppercase tracking-wide">
+              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
                 Detected on your system
               </h4>
               {installedApps.map((app) => (
@@ -58,7 +58,7 @@ export function DiscoveryAppList({
 
           {notInstalledApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-foreground uppercase tracking-wide">
+              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
                 Not detected
               </h4>
               {notInstalledApps.map((app) => (
@@ -74,7 +74,7 @@ export function DiscoveryAppList({
           )}
 
           {allApps.length === 0 && !scanning && (
-            <div className="text-center py-8 text-foreground text-sm">
+            <div className="text-center py-8 text-foreground typo-body">
               No desktop apps detected. Try refreshing.
             </div>
           )}

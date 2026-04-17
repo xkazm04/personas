@@ -517,7 +517,7 @@ function TriggerStudioInner() {
           >
             <button
               onClick={handleRemoveNode}
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {t.triggers.studio.remove_from_chain}
@@ -529,8 +529,8 @@ function TriggerStudioInner() {
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <div className="text-center max-w-md px-8 py-6 rounded-modal bg-card/80 border border-primary/10">
-              <h3 className="text-sm font-semibold text-foreground mb-2">{t.triggers.studio.studio_title}</h3>
-              <p className="text-xs text-foreground mb-3">
+              <h3 className="typo-heading font-semibold text-foreground mb-2">{t.triggers.studio.studio_title}</h3>
+              <p className="typo-caption text-foreground mb-3">
                 Compose reactive event flows across your personas. Use trigger types as building blocks,
                 add conditional branching and parallel fan-out to create intelligent automation chains.
               </p>

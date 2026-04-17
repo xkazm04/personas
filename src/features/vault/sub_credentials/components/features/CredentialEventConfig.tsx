@@ -103,7 +103,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-3 text-foreground text-sm">
+      <div className="flex items-center gap-2 py-3 text-foreground typo-body">
         <LoadingSpinner size="xs" />
         Loading events...
       </div>
@@ -114,7 +114,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="w-3.5 h-3.5 text-amber-400/70" />
-        <span className="text-sm font-medium text-foreground uppercase tracking-wider">{t.vault.event_config.event_triggers}</span>
+        <span className="typo-body font-medium text-foreground uppercase tracking-wider">{t.vault.event_config.event_triggers}</span>
       </div>
 
       {eventTemplates.map((et) => (

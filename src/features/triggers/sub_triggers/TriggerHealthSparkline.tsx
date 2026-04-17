@@ -49,7 +49,7 @@ function Dot({ dot }: { dot: DotData }) {
       />
       {hovered && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 pointer-events-none">
-          <div className="px-2 py-1 rounded-input bg-zinc-900 border border-zinc-700 shadow-elevation-3 text-xs whitespace-nowrap">
+          <div className="px-2 py-1 rounded-input bg-zinc-900 border border-zinc-700 shadow-elevation-3 typo-caption whitespace-nowrap">
             <div className="text-foreground/90">
               {dot.timestamp ? formatTimestamp(dot.timestamp) : 'No timestamp'}
             </div>

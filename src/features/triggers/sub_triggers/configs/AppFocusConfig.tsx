@@ -34,7 +34,7 @@ export function AppFocusConfig({
                 setAppNames(updated);
               }}
               placeholder="e.g. Code.exe, chrome.exe, Figma.exe"
-              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
+              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
             />
             {appNames.length > 1 && (
               <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
@@ -43,7 +43,7 @@ export function AppFocusConfig({
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 text-sm text-indigo-400/80 hover:text-indigo-400 transition-colors">
+        <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 typo-body text-indigo-400/80 hover:text-indigo-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> {t.triggers.app_focus.add_app}
         </button>
       </TriggerFieldGroup>
@@ -55,7 +55,7 @@ export function AppFocusConfig({
           value={titlePattern}
           onChange={(e) => setTitlePattern(e.target.value)}
           placeholder="e.g. .*\\.rs$ or Project - Visual Studio"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>
@@ -64,7 +64,7 @@ export function AppFocusConfig({
           value={appFocusInterval}
           onChange={(e) => setAppFocusInterval(e.target.value)}
           min="2"
-          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm focus-ring transition-all"
+          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

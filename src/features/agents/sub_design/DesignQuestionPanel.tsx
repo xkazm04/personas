@@ -64,13 +64,13 @@ export function DesignQuestionPanel({
           <div className="w-7 h-7 rounded-[var(--radius-secondary)] bg-accent/10 border border-accent/25 flex items-center justify-center">
             <MessageCircleQuestion className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-sm font-semibold text-accent">{t.agents.design.clarification_needed}</span>
+          <span className="typo-heading font-semibold text-accent">{t.agents.design.clarification_needed}</span>
         </div>
 
-        <p className="text-sm text-foreground leading-relaxed">{question.question}</p>
+        <p className="typo-body text-foreground leading-relaxed">{question.question}</p>
 
         {question.context && (
-          <p className="text-sm text-foreground italic border-l-2 border-accent/25 pl-3">
+          <p className="typo-body text-foreground italic border-l-2 border-accent/25 pl-3">
             {question.context}
           </p>
         )}
@@ -85,11 +85,11 @@ export function DesignQuestionPanel({
                   setQuestionAnswer('');
                   onAnswerQuestion(option);
                 }}
-                className="px-3.5 py-2 rounded-[var(--radius-secondary)] text-sm font-medium bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20 hover:border-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="px-3.5 py-2 rounded-[var(--radius-secondary)] typo-body font-medium bg-accent/10 text-accent border border-accent/25 hover:bg-accent/20 hover:border-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 <span>{option}</span>
                 {i < 4 && (
-                  <span className="ml-2 text-sm border border-accent/30 rounded px-1 text-accent/70">{i + 1}</span>
+                  <span className="ml-2 typo-body border border-accent/30 rounded px-1 text-accent/70">{i + 1}</span>
                 )}
               </button>
             ))}
@@ -99,7 +99,7 @@ export function DesignQuestionPanel({
         {/* Divider */}
         <div className="flex items-center gap-3 pt-1">
           <div className="flex-1 h-px bg-primary/10" />
-          <span className="text-sm text-foreground uppercase tracking-wider">{t.agents.design.or_type_answer}</span>
+          <span className="typo-body text-foreground uppercase tracking-wider">{t.agents.design.or_type_answer}</span>
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 
@@ -110,7 +110,7 @@ export function DesignQuestionPanel({
             value={questionAnswer}
             onChange={(e) => setQuestionAnswer(e.target.value)}
             placeholder={t.agents.design.type_custom_answer}
-            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/20 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent/30 transition-all placeholder-muted-foreground/30"
+            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/20 rounded-[var(--radius-interactive)] px-3 py-2 typo-body text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent/30 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && e.ctrlKey) {
                 e.preventDefault();
@@ -129,7 +129,7 @@ export function DesignQuestionPanel({
               }
             }}
             disabled={!questionAnswer.trim()}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium transition-all ${
               !questionAnswer.trim()
                 ? 'bg-secondary/40 text-foreground cursor-not-allowed'
                 : 'bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25'
@@ -139,13 +139,13 @@ export function DesignQuestionPanel({
             Answer
           </button>
         </div>
-        <p className="text-sm text-foreground">{t.agents.design.ctrl_enter_submit}</p>
+        <p className="typo-body text-foreground">{t.agents.design.ctrl_enter_submit}</p>
       </div>
 
       {/* Cancel */}
       <button
         onClick={onCancelAnalysis}
-        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal text-sm font-medium text-foreground hover:text-foreground/95 transition-colors"
+        className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-foreground/95 transition-colors"
       >
         Cancel Design
       </button>

@@ -29,7 +29,7 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
         <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.iconColor}`} />
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-foreground truncate">{alert.rule_name}</p>
-          <p className="text-xs text-foreground mt-0.5">{alert.message}</p>
+          <p className="typo-caption text-foreground mt-0.5">{alert.message}</p>
         </div>
         <button onClick={onDismiss} className="p-0.5 text-foreground hover:text-muted-foreground transition-colors shrink-0">
           <X className="w-3.5 h-3.5" />

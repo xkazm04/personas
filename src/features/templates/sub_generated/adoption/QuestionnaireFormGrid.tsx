@@ -127,7 +127,7 @@ export function QuestionnaireFormGrid({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-5 h-5 text-primary/80" />
-              <h2 id="questionnaire-form-grid" className="text-lg font-semibold text-foreground">
+              <h2 id="questionnaire-form-grid" className="typo-heading-lg font-semibold text-foreground">
                 {t.templates.adopt_modal.configure_your_persona}
               </h2>
             </div>

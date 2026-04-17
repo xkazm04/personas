@@ -117,10 +117,10 @@ export const OverviewStatCard = memo(function OverviewStatCard({
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>
-            ) : <span className="text-sm text-foreground">--</span>}
+            ) : <span className="typo-body text-foreground">--</span>}
 
             {subtitle && (
-              <p className={`text-sm truncate ${subtitleColor || 'text-foreground'}`}>
+              <p className={`typo-body truncate ${subtitleColor || 'text-foreground'}`}>
                 {subtitle}
               </p>
             )}

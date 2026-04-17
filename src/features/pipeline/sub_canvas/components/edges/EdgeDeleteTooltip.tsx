@@ -58,7 +58,7 @@ export default function EdgeDeleteTooltip({
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: style.stroke }}
           />
-          <span className="text-sm font-medium text-foreground">
+          <span className="typo-body font-medium text-foreground">
             {label || style.label}
           </span>
         </div>
@@ -72,7 +72,7 @@ export default function EdgeDeleteTooltip({
 
       {/* Connection type picker */}
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm uppercase font-mono text-foreground tracking-wider px-1 mb-0.5">
+        <span className="typo-code uppercase font-mono text-foreground tracking-wider px-1 mb-0.5">
           {t.pipeline.connection_type}
         </span>
         {CONNECTION_TYPES.map((ct) => {
@@ -83,7 +83,7 @@ export default function EdgeDeleteTooltip({
               onClick={() => {
                 if (!isActive) onChangeType(ct.value);
               }}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-card text-sm transition-all ${
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-card typo-body transition-all ${
                 isActive
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-foreground hover:bg-primary/5 hover:text-foreground/95'
@@ -120,7 +120,7 @@ export default function EdgeDeleteTooltip({
       {/* Delete button */}
       <button
         onClick={onDelete}
-        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
+        className="flex items-center justify-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >
         <Trash2 className="w-3 h-3" />
         {t.pipeline.delete_connection}

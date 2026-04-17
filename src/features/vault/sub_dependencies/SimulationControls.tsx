@@ -36,7 +36,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Bot className="w-3 h-3" />
         {tx(dep.personas_would_stop, { count: personas.length })}
       </div>
@@ -50,7 +50,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
               className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/30 border border-primary/8"
             >
               <GradeIcon className={`w-3 h-3 flex-shrink-0 ${gradeColor}`} />
-              <span className="text-xs text-foreground flex-1 truncate">{persona.name}</span>
+              <span className="typo-caption text-foreground flex-1 truncate">{persona.name}</span>
               {persona.via && (
                 <span className="text-[10px] text-foreground font-mono">{persona.via}</span>
               )}
@@ -76,7 +76,7 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Workflow className="w-3 h-3" />
         {tx(dep.workflows_would_break, { count: workflows.length })}
       </div>
@@ -88,7 +88,7 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
           >
             <TrendingDown className="w-3 h-3 text-red-400/60 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-xs text-foreground block truncate">{wf.workflowName}</span>
+              <span className="typo-caption text-foreground block truncate">{wf.workflowName}</span>
               <span className="text-[10px] text-foreground">
                 {tx(dep.nodes_broken, { broken: wf.brokenNodeLabels.length, total: wf.totalNodes })}
               </span>
@@ -111,7 +111,7 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
 
   return (
     <div>
-      <div className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <ArrowRightLeft className="w-3 h-3" />
         {tx(dep.failover_credentials, { count: suggestions.length })}
       </div>
@@ -128,7 +128,7 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
             ) : (
               <HelpCircle className="w-3 h-3 text-foreground flex-shrink-0" />
             )}
-            <span className="text-xs text-foreground flex-1 truncate">{fo.credentialName}</span>
+            <span className="typo-caption text-foreground flex-1 truncate">{fo.credentialName}</span>
             <span className="text-[10px] text-foreground font-mono">{fo.serviceType}</span>
           </div>
         ))}
@@ -149,7 +149,7 @@ export function MitigationSummary({ simulation }: MitigationSummaryProps) {
   return (
     <div className="rounded-card bg-primary/5 border border-primary/10 p-2">
       <div className="text-[10px] font-medium text-foreground mb-1">{dep.suggested_mitigations}</div>
-      <ul className="text-xs text-foreground space-y-0.5 list-disc list-inside">
+      <ul className="typo-caption text-foreground space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
           <li>{dep.mitigation_failover}</li>
         )}

@@ -44,7 +44,7 @@ function EventCard({ item }: { item: TimelineEventItem }) {
 
       {/* Content */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <span className="text-xs font-medium text-foreground/90 truncate">
+        <span className="typo-caption font-medium text-foreground/90 truncate">
           {event.event_type.replace(/_/g, ' ')}
         </span>
         <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColor.bg} ${statusColor.text} border ${statusColor.border}`}>
@@ -97,7 +97,7 @@ function MessageCard({ item }: { item: TimelineMessageItem }) {
       </div>
 
       {/* Title / content preview */}
-      <div className={`text-xs truncate ${msg.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>
+      <div className={`typo-caption truncate ${msg.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>
         {msg.title || msg.content.slice(0, 120)}
       </div>
     </div>
@@ -185,7 +185,7 @@ export default function UnifiedActivityTimeline() {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-foreground gap-2">
             <Activity className="w-8 h-8 opacity-40" />
-            <p className="text-sm">{t.overview.activity_timeline.no_activity}</p>
+            <p className="typo-body">{t.overview.activity_timeline.no_activity}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3 p-4 md:p-6 overflow-y-auto flex-1 min-h-0">

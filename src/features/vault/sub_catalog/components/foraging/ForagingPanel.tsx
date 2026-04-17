@@ -46,7 +46,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           Back
         </Button>
         {forage.phase === "results" && forage.scanResult && (
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
             {forage.scanResult.scan_duration_ms}ms
           </span>

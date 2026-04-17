@@ -93,7 +93,7 @@ export function MiniCanvas({ template, hovered }: { template: PipelineTemplate; 
 export function RoleBadge({ role }: { role: string }) {
   const colors = ROLE_COLORS[role] || { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/25' };
   return (
-    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono rounded-card ${colors.bg} ${colors.text} ${colors.border} border`}>
+    <span className={`inline-flex px-1.5 py-0.5 typo-code font-mono rounded-card ${colors.bg} ${colors.text} ${colors.border} border`}>
       {role}
     </span>
   );

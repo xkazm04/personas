@@ -36,10 +36,10 @@ function SourceBadge({ source, isOverridden }: { source: ConfigSource; isOverrid
 }
 
 function CellValue({ field, mask }: { field: ConfigField<string | number>; mask?: boolean }) {
-  if (field.value == null) return <span className="text-foreground italic text-xs">--</span>;
+  if (field.value == null) return <span className="text-foreground italic typo-caption">--</span>;
   const display = mask ? '\u2022\u2022\u2022\u2022\u2022\u2022' : String(field.value);
   return (
-    <span className="font-mono text-xs text-foreground truncate max-w-[120px]" title={mask ? undefined : display}>
+    <span className="font-mono typo-code text-foreground truncate max-w-[120px]" title={mask ? undefined : display}>
       {display}
     </span>
   );
@@ -99,7 +99,7 @@ export default function ConfigResolutionPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary/60" />
-          <h2 className="text-sm font-semibold text-foreground/90">{s.title}</h2>
+          <h2 className="typo-heading font-semibold text-foreground/90">{s.title}</h2>
           <span className="text-[10px] text-foreground">
             {s.subtitle}
           </span>
@@ -108,7 +108,7 @@ export default function ConfigResolutionPanel() {
           type="button"
           onClick={load}
           disabled={globalLoading}
-          className="flex items-center gap-1 px-2 py-1 text-xs text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
+          className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
           {s.refresh}
@@ -126,7 +126,7 @@ export default function ConfigResolutionPanel() {
 
       {/* Table */}
       <div className="border border-primary/10 rounded-card overflow-hidden bg-secondary/10">
-        <table className="w-full text-xs">
+        <table className="w-full typo-caption">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
               <th className="text-left px-3 py-2 font-medium text-foreground">{s.agent}</th>

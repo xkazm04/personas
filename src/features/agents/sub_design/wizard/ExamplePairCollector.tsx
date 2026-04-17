@@ -46,13 +46,13 @@ export function ExamplePairCollector({
   return (
     <div className={`space-y-3 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-foreground leading-relaxed max-w-[80%]">
+        <p className="typo-caption text-foreground leading-relaxed max-w-[80%]">
           {t.agents.design.example_instructions}
         </p>
         <button
           onClick={addPair}
           disabled={disabled}
-          className="flex items-center gap-1 px-2 py-1 rounded-card text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
         >
           <Plus className="w-3 h-3" />
           {t.common.add}
@@ -77,11 +77,11 @@ export function ExamplePairCollector({
                   onClick={() => toggleCollapse(pair.id)}
                   className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
                 >
-                  <span className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider">
+                  <span className="typo-label font-semibold text-emerald-400/80 uppercase tracking-wider">
                     {tx(t.agents.design.example_n, { index: index + 1 })}
                   </span>
                   {isCollapsed && preview && (
-                    <span className="text-xs text-foreground truncate ml-1">
+                    <span className="typo-caption text-foreground truncate ml-1">
                       {preview}
                     </span>
                   )}
@@ -101,7 +101,7 @@ export function ExamplePairCollector({
                 <div className="px-3 pb-3 space-y-2">
                   {/* Input */}
                   <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-foreground">
+                    <label className="flex items-center gap-1 typo-caption font-medium text-foreground">
                       <FileInput className="w-3 h-3" />
                       {t.agents.design.input_label}
                     </label>
@@ -111,7 +111,7 @@ export function ExamplePairCollector({
                       disabled={disabled}
                       placeholder={t.agents.design.input_placeholder}
                       rows={4}
-                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 typo-code text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
                   </div>
 
@@ -122,7 +122,7 @@ export function ExamplePairCollector({
 
                   {/* Output */}
                   <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-foreground">
+                    <label className="flex items-center gap-1 typo-caption font-medium text-foreground">
                       <FileOutput className="w-3 h-3" />
                       {t.agents.design.output_label}
                     </label>
@@ -132,7 +132,7 @@ export function ExamplePairCollector({
                       disabled={disabled}
                       placeholder={t.agents.design.output_placeholder}
                       rows={4}
-                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 typo-code text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export function ExamplePairCollector({
             <ArrowRight className="w-3.5 h-3.5" />
             <FileOutput className="w-4 h-4" />
           </div>
-          <span className="text-sm text-foreground group-hover:text-muted-foreground/80 transition-colors">
+          <span className="typo-body text-foreground group-hover:text-muted-foreground/80 transition-colors">
             {t.agents.design.add_first_example}
           </span>
         </button>

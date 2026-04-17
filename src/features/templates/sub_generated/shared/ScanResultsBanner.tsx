@@ -289,12 +289,12 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         {/* Summary badges */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {result.critical.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-medium rounded bg-red-500/15 text-red-400 border border-red-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body font-medium rounded bg-red-500/15 text-red-400 border border-red-500/20">
               {result.critical.length} critical
             </span>
           )}
           {result.warnings.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-medium rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body font-medium rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
               {result.warnings.length} warn
             </span>
           )}

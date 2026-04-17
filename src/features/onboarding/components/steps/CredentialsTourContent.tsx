@@ -46,7 +46,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
       {/* Category grid */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">{t.onboarding.categories_label}</span>
+          <span className="typo-body font-medium text-foreground">{t.onboarding.categories_label}</span>
           <span className="text-[11px] text-foreground" data-testid="tour-cred-progress">
             {tx(t.onboarding.browsed_progress, { count: browsedCount })}
             {browsedCount >= 2 && <Check className="inline w-3 h-3 text-emerald-400 ml-1" />}
@@ -82,7 +82,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Connection types */}
       <div className="space-y-2">
-        <span className="text-sm font-medium text-foreground">{t.onboarding.connection_types_label}</span>
+        <span className="typo-body font-medium text-foreground">{t.onboarding.connection_types_label}</span>
         <div className="space-y-1.5">
           {CONNECTION_TYPES.map((ct) => (
             <div
@@ -98,7 +98,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
                 <ct.icon className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{t.onboarding[ct.labelKey]}</p>
+                <p className="typo-body font-medium text-foreground">{t.onboarding[ct.labelKey]}</p>
                 <p className="text-[11px] text-foreground leading-relaxed">{t.onboarding[ct.descKey]}</p>
               </div>
             </div>
@@ -108,7 +108,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Benefits callout */}
       <div className="rounded-modal bg-amber-500/5 border border-amber-500/15 p-3">
-        <p className="text-sm text-amber-300/80 font-medium">{t.onboarding.connect_once}</p>
+        <p className="typo-body text-amber-300/80 font-medium">{t.onboarding.connect_once}</p>
         <p className="text-[11px] text-foreground mt-1">
           {t.onboarding.connect_once_hint}
         </p>

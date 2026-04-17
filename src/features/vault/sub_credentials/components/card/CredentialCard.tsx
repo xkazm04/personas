@@ -69,7 +69,7 @@ export function CredentialCard({
       <div
         className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-card overflow-hidden pointer-events-none"
       >
-        <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
+        <div className="flex items-center gap-2 px-4 py-3 typo-body text-red-400/70">
           <LoadingSpinner size="sm" />
           {tx(t.vault.credential_card.deleting, { name: credential.name })}
         </div>
@@ -114,7 +114,7 @@ export function CredentialCard({
           )}
           {!connector && (
             <div className="px-3 pb-3 border-t border-primary/10">
-              <div className="text-sm text-foreground py-3">
+              <div className="typo-body text-foreground py-3">
                 {t.vault.credential_card.no_connector}
               </div>
             </div>

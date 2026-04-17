@@ -15,11 +15,11 @@ export function ResponseView({ response, sendError }: ResponseViewProps) {
 
       {(response || sendError) && (
         <div className="min-w-0 pl-4">
-          <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
+          <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
             Response
           </span>
           {sendError && (
-            <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+            <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
               {sendError}
             </div>
           )}

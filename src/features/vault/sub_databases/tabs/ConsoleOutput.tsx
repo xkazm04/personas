@@ -17,7 +17,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
       {error && (
-        <div className="mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
+        <div className="mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap font-mono">
           {error}
         </div>
       )}
@@ -30,7 +30,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
 
       {!result && !error && !executing && !pendingMutation && (
         <div className="flex items-center justify-center h-full">
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {language === 'redis' ? db.redis_hint : db.sql_hint}
           </p>
         </div>
@@ -39,7 +39,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
       {executing && (
         <div className="flex items-center justify-center h-full gap-2">
           <LoadingSpinner className="text-foreground" />
-          <span className="text-sm text-foreground">{db.executing_query}</span>
+          <span className="typo-body text-foreground">{db.executing_query}</span>
         </div>
       )}
     </div>

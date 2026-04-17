@@ -86,11 +86,11 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
     return () => clearInterval(id);
   }, [remaining === null, computeRemaining]);
 
-  if (!trigger.enabled) return <span className="text-sm text-foreground">{t.triggers.disabled_label}</span>;
-  if (trigger.trigger_type === 'manual') return <span className="text-sm text-foreground">{t.triggers.manual_label}</span>;
-  if (trigger.trigger_type === 'webhook') return <span className="text-sm text-foreground">{t.triggers.webhook_label}</span>;
-  if (trigger.trigger_type === 'chain') return <span className="text-sm text-foreground">{t.triggers.chain_label}</span>;
-  if (remaining === null) return <span className="text-sm text-foreground">{t.triggers.pending_label}</span>;
+  if (!trigger.enabled) return <span className="typo-body text-foreground">{t.triggers.disabled_label}</span>;
+  if (trigger.trigger_type === 'manual') return <span className="typo-body text-foreground">{t.triggers.manual_label}</span>;
+  if (trigger.trigger_type === 'webhook') return <span className="typo-body text-foreground">{t.triggers.webhook_label}</span>;
+  if (trigger.trigger_type === 'chain') return <span className="typo-body text-foreground">{t.triggers.chain_label}</span>;
+  if (remaining === null) return <span className="typo-body text-foreground">{t.triggers.pending_label}</span>;
 
   const total = getTotalIntervalSeconds(trigger);
   const accentColor = TRIGGER_RING_COLORS[accentColorClass] ?? '#c084fc';
@@ -98,7 +98,7 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
   if (firing || remaining <= 0) {
     return (
       <RadialCountdownRing remaining={0} total={total} firing accentColor={accentColor}>
-        <span className="text-sm font-semibold text-emerald-400 leading-none">{t.triggers.fire_label}</span>
+        <span className="typo-heading font-semibold text-emerald-400 leading-none">{t.triggers.fire_label}</span>
       </RadialCountdownRing>
     );
   }
@@ -112,7 +112,7 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
 
   return (
     <RadialCountdownRing remaining={remaining} total={total} firing={false} accentColor={accentColor}>
-      <span className="text-sm font-mono font-semibold text-foreground leading-none" title={`in ${formatCountdown(remaining)}`}>
+      <span className="typo-code font-mono font-semibold text-foreground leading-none" title={`in ${formatCountdown(remaining)}`}>
         {compactLabel}
       </span>
     </RadialCountdownRing>

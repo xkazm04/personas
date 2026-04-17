@@ -121,7 +121,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   }}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
@@ -133,7 +133,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               </div>
             ) : (
               <>
-                <h2 id="vector-kb-title" className="text-sm font-semibold text-foreground/90 truncate">
+                <h2 id="vector-kb-title" className="typo-heading font-semibold text-foreground/90 truncate">
                   {kb?.name || credential.name}
                 </h2>
                 <button
@@ -146,10 +146,10 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               </>
             )}
           </div>
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             {sh.vector_kb}
             {kb && (
-              <span className="ml-2 text-xs">
+              <span className="ml-2 typo-caption">
                 -- {kb.documentCount} docs, {kb.chunkCount} chunks
               </span>
             )}
@@ -172,7 +172,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             <button
               key={tab.id}
               onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium transition-colors ${
                 isActive
                   ? 'text-foreground/90'
                   : 'text-foreground hover:text-muted-foreground/70'
@@ -224,7 +224,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
             <div>
               <Brain className="w-10 h-10 text-violet-400/30 mx-auto mb-3" />
-              <p className="text-sm text-foreground">{sh.kb_not_found}</p>
+              <p className="typo-body text-foreground">{sh.kb_not_found}</p>
             </div>
           </div>
         )}

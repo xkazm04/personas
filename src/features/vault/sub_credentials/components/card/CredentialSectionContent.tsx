@@ -40,8 +40,8 @@ export function CredentialSectionContent({
             >
               <Wrench className="w-3.5 h-3.5 text-foreground" />
               <div>
-                <span className="text-sm text-foreground">{service.label}</span>
-                <span className="ml-2 text-sm font-mono text-foreground">{service.toolName}</span>
+                <span className="typo-body text-foreground">{service.label}</span>
+                <span className="ml-2 typo-code font-mono text-foreground">{service.toolName}</span>
               </div>
             </div>
           ))}

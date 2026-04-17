@@ -83,7 +83,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
           <Users className="w-4 h-4 text-emerald-400" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="typo-heading font-semibold text-foreground">
               {eventLabel ? `Connect persona to "${eventLabel}"` : 'Add Persona'}
             </h3>
             <p className="text-[10px] text-foreground">{availableCount} available</p>
@@ -102,7 +102,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search personas..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
+              className="w-full pl-8 pr-3 py-1.5 typo-caption bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
               autoFocus
             />
           </div>
@@ -132,7 +132,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         {/* Persona list */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {grouped.length === 0 && (
-            <div className="text-center py-8 text-xs text-foreground">
+            <div className="text-center py-8 typo-caption text-foreground">
               {search ? (
                 <div className="flex flex-col items-center gap-2">
                   <span>No matching personas found</span>

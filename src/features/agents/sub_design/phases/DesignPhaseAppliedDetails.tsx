@@ -79,7 +79,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           {stats.map((s) => (
             <span
               key={s.label}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-mono bg-secondary/50 border border-primary/10 text-foreground"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-code font-mono bg-secondary/50 border border-primary/10 text-foreground"
             >
               <span className="text-foreground/90 font-semibold">{s.count}</span>
               {s.label}
@@ -92,7 +92,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
       <div
         className="animate-fade-slide-in w-full max-w-sm"
       >
-        <p className="text-sm font-mono text-foreground uppercase tracking-widest mb-2 text-center">
+        <p className="typo-code font-mono text-foreground uppercase tracking-widest mb-2 text-center">
           {t.agents.design.next_steps}
         </p>
         <div className="space-y-1.5">
@@ -114,10 +114,10 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                   <Icon className="w-4 h-4" style={{ color: colorWithAlpha(step.color, 0.8) }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
+                  <div className="typo-body font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
                     {step.title}
                   </div>
-                  <div className="text-sm text-foreground">
+                  <div className="typo-body text-foreground">
                     {step.description}
                   </div>
                 </div>

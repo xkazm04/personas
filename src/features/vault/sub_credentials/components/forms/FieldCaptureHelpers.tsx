@@ -91,7 +91,7 @@ export function FieldActionButtons({
     buttons: (
       <div className="flex items-center gap-1">
         {mode === 'confirming' && value && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 typo-body">
             <Check className="w-2.5 h-2.5" />
             captured
           </span>
@@ -125,7 +125,7 @@ export function FieldActionButtons({
               )}
             </button>
             {isSecret && copied && (
-              <span className="absolute top-full mt-0.5 text-sm text-foreground whitespace-nowrap">
+              <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
                 Copied to clipboard
               </span>
             )}

@@ -45,9 +45,9 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
           <BookOpen className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 id="recipe-playground-title" className="text-sm font-semibold text-foreground truncate">{currentRecipe.name}</h2>
+          <h2 id="recipe-playground-title" className="typo-heading font-semibold text-foreground truncate">{currentRecipe.name}</h2>
           {currentRecipe.description && (
-            <p className="text-sm text-foreground truncate">{currentRecipe.description}</p>
+            <p className="typo-body text-foreground truncate">{currentRecipe.description}</p>
           )}
         </div>
         <button
@@ -67,14 +67,14 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors ${
                 isActive ? 'text-foreground' : 'text-foreground hover:text-foreground/80'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               {tab.label}
               {tab.id === 'history' && testRunner.history.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary/20 px-1.5 py-0.5 text-sm text-primary">
+                <span className="ml-1 rounded-full bg-primary/20 px-1.5 py-0.5 typo-body text-primary">
                   {testRunner.history.length}
                 </span>
               )}

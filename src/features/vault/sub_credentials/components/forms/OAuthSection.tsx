@@ -44,7 +44,7 @@ export function OAuthSection({
     <>
       <div className="border-t border-primary/8" />
       <div>
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
+        <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
           Authentication
         </h4>
 
@@ -66,20 +66,20 @@ export function OAuthSection({
                 onClick={onConsent}
                 type="button"
                 disabled={consentDisabled}
-                className="flex items-center gap-2 px-4 py-2 border rounded-modal text-sm font-medium transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 border rounded-modal typo-body font-medium transition-all bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/25 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Shield className="w-4 h-4" />
                 {consentLabel || 'Authorize with Google'}
               </button>
             </Tooltip>
             {consentHint && (
-              <p className="mt-1.5 text-sm text-foreground">{consentHint}</p>
+              <p className="mt-1.5 typo-body text-foreground">{consentHint}</p>
             )}
           </>
         )}
 
         {consentSuccessBadge && !ringPhase && (
-          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm">
+          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body">
             <CheckCircle className="w-3.5 h-3.5" />
             {consentSuccessBadge}
           </div>

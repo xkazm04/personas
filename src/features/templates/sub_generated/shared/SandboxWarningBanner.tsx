@@ -48,14 +48,14 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className={`text-sm font-semibold ${titleColor}`}>
+            <h4 className={`typo-heading font-semibold ${titleColor}`}>
               {isUntrusted ? t.templates.sandbox.title_unverified : t.templates.sandbox_banner.community_sandbox}
             </h4>
-            <span className={`text-sm px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
+            <span className={`typo-body px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
               {ORIGIN_LABELS[origin]}
             </span>
           </div>
-          <p className={`text-sm ${textColor} leading-relaxed mb-3`}>
+          <p className={`typo-body ${textColor} leading-relaxed mb-3`}>
             {isUntrusted
               ? t.templates.sandbox.desc_unverified
               : t.templates.sandbox.desc_community}
@@ -66,7 +66,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
               {restrictions.map((r) => (
                 <span
                   key={r}
-                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 typo-body rounded-card ${
                     isUntrusted
                       ? 'bg-red-500/10 text-red-400/70 border border-red-500/15'
                       : 'bg-amber-500/10 text-amber-400/70 border border-amber-500/15'
@@ -94,7 +94,7 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
   const isUntrusted = verification.trustLevel === 'untrusted';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-sm ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-body ${
       isUntrusted
         ? 'bg-red-500/8 text-red-400/70 border border-red-500/15'
         : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'

@@ -28,7 +28,7 @@ export function OverviewTab({
       {/* Summary */}
       {designResult?.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
-          <p className="text-sm text-foreground/90 leading-relaxed">{designResult.summary}</p>
+          <p className="typo-body text-foreground/90 leading-relaxed">{designResult.summary}</p>
         </div>
       )}
 
@@ -37,7 +37,7 @@ export function OverviewTab({
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground/80 animate-spin" />
-            <span className="text-sm text-foreground">{t.templates.overview_tab.loading_metrics}</span>
+            <span className="typo-body text-foreground">{t.templates.overview_tab.loading_metrics}</span>
           </div>
         </div>
       )}
@@ -45,74 +45,74 @@ export function OverviewTab({
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="text-sm text-amber-400/80">{t.templates.overview_tab.metrics_unavailable}</span>
+            <span className="typo-body text-amber-400/80">{t.templates.overview_tab.metrics_unavailable}</span>
           </div>
-          <p className="text-sm text-foreground mt-1">{t.templates.overview_tab.metrics_load_error}</p>
+          <p className="typo-body text-foreground mt-1">{t.templates.overview_tab.metrics_load_error}</p>
         </div>
       )}
       {!perfLoading && !perfError && performance && !performance.data_available && (
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400/70" />
-            <span className="text-sm text-amber-400/80">{t.templates.overview_tab.incomplete_data}</span>
+            <span className="typo-body text-amber-400/80">{t.templates.overview_tab.incomplete_data}</span>
           </div>
-          <p className="text-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             {t.templates.overview_tab.incomplete_data_hint}
           </p>
         </div>
       )}
       {!perfLoading && !perfError && performance && performance.data_available && (
         <div>
-          <h4 className="text-sm font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.performance}
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Users className="w-3.5 h-3.5 text-violet-400/70" />
-                <span className="text-sm text-foreground">{t.templates.overview_tab.adoptions_label}</span>
+                <span className="typo-body text-foreground">{t.templates.overview_tab.adoptions_label}</span>
               </div>
-              <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_adoptions}</span>
+              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{performance.total_adoptions}</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Activity className="w-3.5 h-3.5 text-blue-400/70" />
-                <span className="text-sm text-foreground">{t.templates.overview_tab.executions_label}</span>
+                <span className="typo-body text-foreground">{t.templates.overview_tab.executions_label}</span>
               </div>
-              <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_executions}</span>
+              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{performance.total_executions}</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
-                <span className="text-sm text-foreground">{t.templates.overview_tab.success_label}</span>
+                <span className="typo-body text-foreground">{t.templates.overview_tab.success_label}</span>
               </div>
-              <span className="text-lg font-semibold text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
+              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
-                <span className="text-sm text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
+                <span className="typo-body text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
-              <span className="text-lg font-semibold text-foreground/90 font-mono">${performance.avg_cost_usd.toFixed(3)}</span>
+              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">${performance.avg_cost_usd.toFixed(3)}</span>
             </div>
           </div>
           {/* Feedback summary */}
           {(performance.positive_count > 0 || performance.negative_count > 0) && (
             <div className="flex items-center gap-4 mt-3">
               {performance.positive_count > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-emerald-400/80">
+                <span className="flex items-center gap-1.5 typo-body text-emerald-400/80">
                   <ThumbsUp className="w-3.5 h-3.5" />
                   {performance.positive_count}
                 </span>
               )}
               {performance.negative_count > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-red-400/80">
+                <span className="flex items-center gap-1.5 typo-body text-red-400/80">
                   <ThumbsDown className="w-3.5 h-3.5" />
                   {performance.negative_count}
                 </span>
               )}
               {performance.derived_quality_score > 0 && (
-                <span className="text-sm text-foreground ml-auto">
+                <span className="typo-body text-foreground ml-auto">
                   {t.templates.overview_tab.quality_score}: <span className="font-mono font-semibold text-foreground">{Math.round(performance.derived_quality_score)}</span>/100
                 </span>
               )}
@@ -124,7 +124,7 @@ export function OverviewTab({
       {/* Use Case Flows */}
       {flows.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.use_case_flows}
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
@@ -136,11 +136,11 @@ export function OverviewTab({
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="text-sm font-medium text-foreground group-hover:text-foreground/95 truncate">
+                  <span className="typo-body font-medium text-foreground group-hover:text-foreground/95 truncate">
                     {flow.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-foreground">
+                <div className="flex items-center gap-3 typo-body text-foreground">
                   <span>{t.templates.overview_tab.nodes.replace('{count}', String(flow.nodes.length))}</span>
                   <span>{t.templates.overview_tab.edges.replace('{count}', String(flow.edges.length))}</span>
                 </div>
@@ -155,7 +155,7 @@ export function OverviewTab({
         <div className="bg-amber-500/5 border border-amber-500/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-400/80" />
-            <h4 className="text-sm font-medium text-amber-400/80 uppercase">
+            <h4 className="typo-body font-medium text-amber-400/80 uppercase">
               {t.templates.overview_tab.suggested_adjustment}
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-foreground normal-case">
@@ -164,8 +164,8 @@ export function OverviewTab({
               )}
             </h4>
           </div>
-          <p className="text-sm text-foreground">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-modal px-3 py-2 text-sm text-foreground/90 border border-primary/10">
+          <p className="typo-body text-foreground">{adjustment.reason}</p>
+          <div className="bg-background/50 rounded-modal px-3 py-2 typo-body text-foreground/90 border border-primary/10">
             {adjustment.suggestion}
           </div>
           {adjustment.appliedFixes.length > 0 && (
@@ -173,7 +173,7 @@ export function OverviewTab({
               {adjustment.appliedFixes.map((fix: string, i: number) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
+                  className="px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/15 text-amber-400/70"
                 >
                   {fix}
                 </span>
@@ -186,7 +186,7 @@ export function OverviewTab({
       {/* Dimension completion */}
       {review.structural_score !== null && (
         <div>
-          <h4 className="text-sm font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.dimension_completion}
           </h4>
           <div className="flex items-center gap-3">
@@ -198,12 +198,12 @@ export function OverviewTab({
                 style={{ width: `${Math.min(review.structural_score, 100)}%` }}
               />
             </div>
-            <span className={`text-sm font-mono font-semibold ${
+            <span className={`typo-code font-mono font-semibold ${
               review.structural_score >= 80 ? 'text-emerald-400' : review.structural_score >= 60 ? 'text-amber-400' : 'text-red-400'
             }`}>
               {review.structural_score}%
             </span>
-            <span className="text-sm text-foreground">
+            <span className="typo-body text-foreground">
               {t.templates.overview_tab.dimensions_score.replace('{score}', String(Math.round(review.structural_score / 100 * 9)))}
             </span>
           </div>

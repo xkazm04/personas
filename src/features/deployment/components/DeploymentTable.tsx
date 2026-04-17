@@ -59,7 +59,7 @@ export function DeploymentTable({
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
   return (
-    <table className="w-full text-sm">
+    <table className="w-full typo-body">
       <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
         <tr>
           <th className="px-4 py-2.5 w-10">
@@ -75,10 +75,10 @@ export function DeploymentTable({
           <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-foreground uppercase tracking-wider">{dt.col_health}</th>
+          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_health}</th>
           <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-foreground uppercase tracking-wider">{dt.col_actions}</th>
+          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
@@ -103,13 +103,13 @@ export function DeploymentTable({
                 <span className="font-medium text-foreground/90">{row.name}</span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-card border ${tb.cls}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${tb.cls}`}>
                   <TargetIcon className="w-3 h-3" />
                   {tb.label}
                 </span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-card border ${statusBadge(row.status)}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}>
                   {statusIcon(row.status)}
                   {row.status}
                 </span>

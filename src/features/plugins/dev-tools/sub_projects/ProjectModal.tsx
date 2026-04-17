@@ -148,7 +148,7 @@ export function ProjectModal({
               <div className="space-y-4">
                 {/* Folder picker (read-only in edit mode) */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1.5 block">Project Folder</label>
+                  <label className="typo-caption font-medium text-foreground mb-1.5 block">Project Folder</label>
                   <div className="flex gap-2">
                     <div
                       onClick={isEdit ? undefined : handleSelectFolder}
@@ -173,7 +173,7 @@ export function ProjectModal({
 
                 {/* Project Name */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Project Name
                     {!isEdit && path && !nameEdited && (
                       <span className="text-[10px] text-foreground font-normal">(auto-filled from folder)</span>
@@ -192,7 +192,7 @@ export function ProjectModal({
 
                 {/* Project Type */}
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     Project Type
                     <span className="text-[10px] text-foreground font-normal">(optional, visual only)</span>
                   </label>
@@ -201,7 +201,7 @@ export function ProjectModal({
                       <button
                         key={pt.id}
                         onClick={() => setProjectType(pt.id)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card border transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-all ${
                           projectType === pt.id
                             ? `${pt.color} ring-1 ring-current/20 scale-105`
                             : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
@@ -242,7 +242,7 @@ export function ProjectModal({
                 <h2 className="typo-section-title mb-1">
                   Project Created
                 </h2>
-                <p className="text-xs text-foreground mb-6">
+                <p className="typo-caption text-foreground mb-6">
                   <span className="font-medium text-foreground">{createdProject?.name}</span> is ready.
                   Would you like to generate a context map now?
                 </p>
@@ -252,7 +252,7 @@ export function ProjectModal({
                     <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <h4 className="typo-card-label mb-1">Generate Context Map</h4>
-                      <p className="text-xs text-foreground">
+                      <p className="typo-caption text-foreground">
                         Scans your codebase to identify business features and organize them into context groups.
                         This runs in the background -- you&apos;ll get a notification when it&apos;s done.
                       </p>

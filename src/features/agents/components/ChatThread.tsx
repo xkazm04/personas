@@ -26,10 +26,10 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="space-y-1.5">
-              <p className="text-sm text-foreground">
+              <p className="typo-body text-foreground">
                 {t.agents.chat_thread.welcome}
               </p>
-              <p className="text-sm text-foreground">
+              <p className="typo-body text-foreground">
                 {t.agents.chat_thread.welcome_example}
               </p>
             </div>
@@ -51,7 +51,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
-            <p className="text-sm text-foreground whitespace-pre-wrap pt-1 min-w-0">
+            <p className="typo-body text-foreground whitespace-pre-wrap pt-1 min-w-0">
               {msg.content}
             </p>
           </div>
@@ -65,14 +65,14 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             </div>
             <div className="flex items-center gap-2 pt-1.5">
               <LoadingSpinner size="sm" className="text-primary/50" />
-              <span className="text-sm text-foreground">{thinkingLabel}</span>
+              <span className="typo-body text-foreground">{thinkingLabel}</span>
             </div>
           </div>
         )}
 
         {/* Error */}
         {error && (
-          <p className="text-sm text-red-400 px-10">{error}</p>
+          <p className="typo-body text-red-400 px-10">{error}</p>
         )}
       </div>
     );

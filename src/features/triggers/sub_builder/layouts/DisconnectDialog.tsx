@@ -26,8 +26,8 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
             <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Disconnect persona?</h3>
-            <p className="text-xs text-foreground leading-relaxed">
+            <h3 className="typo-heading font-semibold text-foreground mb-1">Disconnect persona?</h3>
+            <p className="typo-caption text-foreground leading-relaxed">
               <span className="font-medium text-foreground">{personaName}</span> will no longer react to{' '}
               <span className="font-medium text-foreground">{eventLabel}</span> events. You can reconnect later.
             </p>
@@ -40,13 +40,13 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-card text-xs font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="px-3 py-1.5 rounded-card typo-caption font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="px-3 py-1.5 rounded-card text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
+            className="px-3 py-1.5 rounded-card typo-caption font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
           >
             Disconnect
           </button>

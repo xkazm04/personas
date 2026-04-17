@@ -153,7 +153,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={cycleSpeed}
           aria-label={t.overview.realtime_page.cycle_speed}
-          className="flex items-center gap-1 px-2 py-1 rounded-card bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]"
+          className="flex items-center gap-1 px-2 py-1 rounded-card bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all typo-heading font-bold tracking-wide active:scale-[0.97]"
           title={t.overview.realtime_page.cycle_speed}
         >
           <Gauge className="w-3 h-3" />
@@ -162,7 +162,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <div className="w-px h-5 bg-primary/10" />
 
-        <div className="flex items-center gap-2 text-sm font-mono text-foreground">
+        <div className="flex items-center gap-2 typo-code font-mono text-foreground">
           <span className="text-foreground">{formatDate(cursorTime)}</span>
           <ChevronRight className="w-3 h-3 text-foreground" />
           <span>{formatDate(rangeEnd)}</span>
@@ -172,13 +172,13 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-primary/5 border border-primary/8">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" />
-          <span className="text-sm font-bold text-foreground">{emittedCount}</span>
-          <span className="text-sm text-foreground">/</span>
-          <span className="text-sm text-foreground">{totalEventCount}</span>
-          <span className="text-sm text-foreground ml-0.5">events</span>
+          <span className="typo-heading font-bold text-foreground">{emittedCount}</span>
+          <span className="typo-body text-foreground">/</span>
+          <span className="typo-body text-foreground">{totalEventCount}</span>
+          <span className="typo-body text-foreground ml-0.5">events</span>
         </div>
 
-        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-foreground font-bold tracking-wider">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 typo-heading text-foreground font-bold tracking-wider">
           <History className="w-3 h-3" />
           {range === '1d' ? '24H' : '7D'}
         </div>

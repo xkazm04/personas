@@ -170,7 +170,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
             >
               <BarChart3 className="w-5 h-5" />
-              <span className="text-sm font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
+              <span className="typo-body font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
             </button>
             <button
               onClick={handleRefresh}
@@ -179,7 +179,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               title={t.common.refresh}
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">{t.common.refresh}</span>
+              <span className="typo-body font-medium">{t.common.refresh}</span>
             </button>
           </div>
         }
@@ -203,7 +203,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
           />
 
           {globalExecutionsWarning && (
-            <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
+            <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 typo-body text-amber-300/90" role="status" aria-live="polite">
               {globalExecutionsWarning}
             </div>
           )}
@@ -270,7 +270,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             {status.label}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-foreground">
+                        <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
                           <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
                           <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
                         </div>
@@ -285,7 +285,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
-                          <span className="text-sm text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
+                          <span className="typo-body text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
                         <div className="px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-heading ${badgeClass(status)}`}>
@@ -293,9 +293,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             {status.label}
                           </span>
                         </div>
-                        <div className="px-4 text-right"><span className="text-sm text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="text-sm text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
-                        <div className="px-4 min-w-0"><span className="text-sm text-foreground font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 min-w-0"><span className="typo-code text-foreground font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
                       </div>
                     );
                   })}

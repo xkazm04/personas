@@ -62,11 +62,11 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground/90 truncate">{memory.title}</p>
-          <p className="text-sm text-foreground line-clamp-2 mt-0.5">{memory.content}</p>
+          <p className="typo-body font-medium text-foreground/90 truncate">{memory.title}</p>
+          <p className="typo-body text-foreground line-clamp-2 mt-0.5">{memory.content}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <CategoryChip category={memory.category} source="team" />
-            <span className="text-sm px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground">
+            <span className="typo-body px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground">
               {isAuto ? pt.auto_label : pt.manual_label}
             </span>
             <div className="flex items-center gap-0.5">
@@ -82,7 +82,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             {revisions.length > 0 && (
               <button
                 onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center gap-0.5 text-sm text-foreground hover:text-violet-400 transition-colors"
+                className="flex items-center gap-0.5 typo-body text-foreground hover:text-violet-400 transition-colors"
                 title={`${revisions.length} revision${revisions.length > 1 ? 's' : ''}`}
               >
                 <History className="w-3 h-3" /><span>{revisions.length}</span>
@@ -93,7 +93,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           {showHistory && revisions.length > 0 && (
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">{pt.version_history}</span>
+                <span className="typo-body font-medium text-foreground">{pt.version_history}</span>
                 <button onClick={() => setShowHistory(false)} className="p-0.5 text-foreground hover:text-muted-foreground/60">
                   <ChevronUp className="w-3 h-3" />
                 </button>
@@ -101,11 +101,11 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
               {[...revisions].reverse().map((rev, i) => (
                 <div key={i} className="pl-2 border-l-2 border-primary/10 space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground truncate">{rev.title}</span>
-                    <span className="text-sm text-foreground capitalize">{rev.category}</span>
+                    <span className="typo-body font-medium text-foreground truncate">{rev.title}</span>
+                    <span className="typo-body text-foreground capitalize">{rev.category}</span>
                   </div>
-                  <p className="text-sm text-foreground line-clamp-1">{rev.content}</p>
-                  <span className="text-sm text-foreground">
+                  <p className="typo-body text-foreground line-clamp-1">{rev.content}</p>
+                  <span className="typo-body text-foreground">
                     {new Date(rev.edited_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

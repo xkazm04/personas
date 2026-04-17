@@ -95,7 +95,7 @@ export default function ScheduleCalendar({
           </button>
           <button
             onClick={goToday}
-            className="px-2.5 py-1 text-xs rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
+            className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
           >
             Today
           </button>
@@ -127,7 +127,7 @@ export default function ScheduleCalendar({
           <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => setView('week')}
-              className={`px-2.5 py-1 text-xs transition-colors ${
+              className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'week'
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-foreground hover:text-foreground/70'
@@ -137,7 +137,7 @@ export default function ScheduleCalendar({
             </button>
             <button
               onClick={() => setView('month')}
-              className={`px-2.5 py-1 text-xs transition-colors ${
+              className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'month'
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-foreground hover:text-foreground/70'

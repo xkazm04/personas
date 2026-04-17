@@ -59,8 +59,8 @@ export function ConnectorRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground truncate">{status.name}</p>
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${config.bg} ${config.color}`}>
+            <p className="typo-body font-medium text-foreground truncate">{status.name}</p>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 typo-body font-medium rounded-full border ${config.bg} ${config.color}`}>
               {statusKey === 'testing' && <LoadingSpinner size="xs" className="!w-2.5 !h-2.5" />}
               {statusKey === 'ready' && <CheckCircle2 className="w-2.5 h-2.5" />}
               {statusKey === 'failed' && <XCircle className="w-2.5 h-2.5" />}
@@ -68,7 +68,7 @@ export function ConnectorRow({
               {config.label}
             </span>
           </div>
-          <p className="text-sm text-foreground mt-0.5">
+          <p className="typo-body text-foreground mt-0.5">
             {status.credentialName
               ? tx(t.templates.n8n.credential_label, { name: status.credentialName })
               : tx(t.templates.n8n.n8n_type_label, { type: status.n8nType })}
@@ -81,7 +81,7 @@ export function ConnectorRow({
             <button
               onClick={onTest}
               disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />}
               {t.templates.n8n.test}
@@ -91,7 +91,7 @@ export function ConnectorRow({
               {credentials.length > 0 && (
                 <button
                   onClick={onToggleLink}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
                     isLinking
                       ? 'border-violet-500/30 text-violet-300 bg-violet-500/15'
                       : 'border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95'
@@ -103,7 +103,7 @@ export function ConnectorRow({
               )}
               <button
                 onClick={onAddCredential}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.n8n.add_new}
@@ -120,7 +120,7 @@ export function ConnectorRow({
           {tools.map((tool) => (
             <span
               key={tool.name}
-              className="px-2 py-0.5 text-sm font-mono rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20"
+              className="px-2 py-0.5 typo-code font-mono rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20"
               title={tool.description ?? undefined}
             >
               {tool.name}
@@ -140,7 +140,7 @@ export function ConnectorRow({
 
       {/* Test result detail */}
       {status.result && !status.testing && (
-        <div className={`mt-2.5 px-3 py-2 rounded-modal text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-modal typo-body ${
           status.result.success
             ? 'bg-emerald-500/5 border border-emerald-500/15 text-emerald-400'
             : 'bg-red-500/5 border border-red-500/15 text-red-400'
@@ -157,7 +157,7 @@ export function ConnectorRow({
                 <span>{translated?.friendly ?? status.result.message}</span>
               </div>
               {translated?.suggestion && (
-                <p className="text-sm text-red-400/60 pl-4.5">{translated.suggestion}</p>
+                <p className="typo-body text-red-400/60 pl-4.5">{translated.suggestion}</p>
               )}
             </div>
           )}

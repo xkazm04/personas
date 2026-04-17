@@ -22,7 +22,7 @@ export function N8nQuestionListbox({ options, value, onChange, selectedClassName
           type="button"
           onClick={toggle}
           className={[
-            'w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-modal border transition-all',
+            'w-full flex items-center justify-between px-3 py-2.5 typo-body rounded-modal border transition-all',
             value && selectedClassName
               ? selectedClassName
               : 'border-primary/15 bg-background/50 text-foreground',
@@ -49,7 +49,7 @@ export function N8nQuestionListbox({ options, value, onChange, selectedClassName
                 type="button"
                 onClick={() => { onChange(opt); close(); }}
                 className={[
-                  'w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors',
+                  'w-full text-left px-3 py-2 typo-body flex items-center gap-2 transition-colors',
                   isFocused ? 'bg-primary/10' : isSelected ? 'bg-primary/5' : 'hover:bg-secondary/40',
                   isSelected ? 'text-foreground font-medium' : 'text-foreground',
                 ].join(' ')}

@@ -98,8 +98,8 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
               <Bot className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
-              <p className="text-sm text-foreground">
+              <h3 className="typo-heading font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
+              <p className="typo-body text-foreground">
                 {negotiator.phase === 'idle' && (authDetectLoading ? t.vault.negotiator_extra.checking_auth : t.vault.negotiator_extra.auto_provisioning)}
                 {negotiator.phase === 'planning' && t.vault.negotiator_extra.generating_plan}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}

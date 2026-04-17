@@ -43,7 +43,7 @@ export function AutomationTriggerStep({
   const { t, tx } = useTranslation();
   return (
     <div key="idle" className="animate-fade-slide-in space-y-4">
-      <p className="text-sm text-foreground">
+      <p className="typo-body text-foreground">
         {t.agents.connectors.auto_describe}
       </p>
 
@@ -53,7 +53,7 @@ export function AutomationTriggerStep({
         onChange={(e) => setDescription(e.target.value)}
         rows={4}
         autoFocus
-        className="w-full px-3.5 py-3 text-sm rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none"
+        className="w-full px-3.5 py-3 typo-body rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canDesign) {
             e.preventDefault();
@@ -64,9 +64,9 @@ export function AutomationTriggerStep({
 
       {/* Platform selector */}
       <div className="flex items-center gap-3">
-        <label className="text-sm text-foreground">{t.agents.connectors.auto_target_platform}</label>
+        <label className="typo-body text-foreground">{t.agents.connectors.auto_target_platform}</label>
         {editAutomation ? (
-          <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 typo-body font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
             {PLATFORM_CONFIG[platform]?.label ?? platform}
           </span>
         ) : (
@@ -75,7 +75,7 @@ export function AutomationTriggerStep({
               <button
                 key={p}
                 onClick={() => { setPlatform(p); setGithubRepo(null); }}
-                className={`px-2.5 py-1 text-sm rounded-modal border transition-colors ${
+                className={`px-2.5 py-1 typo-body rounded-modal border transition-colors ${
                   platform === p
                     ? `${PLATFORM_CONFIG[p]?.bg ?? ''} ${PLATFORM_CONFIG[p]?.color ?? ''} border-current/30`
                     : 'border-border/60 text-foreground hover:text-muted-foreground hover:border-border'
@@ -93,12 +93,12 @@ export function AutomationTriggerStep({
         <div className="flex items-start gap-3 p-3.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
           <KeyRound className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
-            <p className="text-sm text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
+            <p className="typo-body font-medium text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
+            <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
             {platformConnector && (
               <button
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-sm font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}
@@ -114,7 +114,7 @@ export function AutomationTriggerStep({
         <div className="flex items-center gap-2.5 p-3 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
           <CheckCircle2 className="w-4 h-4 text-brand-emerald/70 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               <span className="font-medium text-brand-emerald">{tx(t.agents.connectors.auto_connected, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</span>
               {' -- '}
               <span className="text-foreground">{platformCredentials[0]?.name}</span>
@@ -137,8 +137,8 @@ export function AutomationTriggerStep({
             <div className="flex items-start gap-2.5 p-3 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
               <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
-                <p className="text-sm text-foreground mt-0.5">
+                <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
+                <p className="typo-body text-foreground mt-0.5">
                   Your token needs{!githubPerms.hasRepo ? " 'repo'" : ''}{!githubPerms.hasRepo && !githubPerms.hasWorkflow ? ' and' : ''}{!githubPerms.hasWorkflow ? " 'workflow'" : ''} scope{(!githubPerms.hasRepo && !githubPerms.hasWorkflow) ? 's' : ''}.
                   Update your token at github.com/settings/tokens.
                 </p>
@@ -146,10 +146,10 @@ export function AutomationTriggerStep({
             </div>
           )}
           <div>
-            <label className="text-sm font-medium text-foreground">{t.agents.connectors.auto_repo_required}</label>
+            <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_repo_required}</label>
             <div className="mt-1.5">
               {loadingRepos ? (
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-foreground">
+                <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
                   <LoadingSpinner size="sm" />
                   {t.agents.connectors.auto_loading_repos}
                 </div>
@@ -164,7 +164,7 @@ export function AutomationTriggerStep({
               )}
             </div>
             {githubRepos.length === 0 && !loadingRepos && (
-              <p className="mt-1 text-sm text-foreground">{t.agents.connectors.auto_no_repos}</p>
+              <p className="mt-1 typo-body text-foreground">{t.agents.connectors.auto_no_repos}</p>
             )}
           </div>
         </div>
@@ -173,9 +173,9 @@ export function AutomationTriggerStep({
       {/* Zapier: Existing zaps listing */}
       {platform === 'zapier' && hasPlatformCredential && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">{t.agents.connectors.auto_your_zaps}</label>
+          <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_your_zaps}</label>
           {loadingZaps ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-foreground">
+            <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
               <LoadingSpinner size="sm" />
               {t.agents.connectors.auto_loading_zaps}
             </div>
@@ -184,8 +184,8 @@ export function AutomationTriggerStep({
               {zapierZaps.map((zap) => (
                 <div key={zap.id} className="flex items-center gap-2.5 px-3 py-2">
                   <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${zap.status === 'on' ? 'text-brand-amber' : 'text-foreground'}`} />
-                  <span className="text-sm text-foreground truncate flex-1">{zap.title}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-card ${
+                  <span className="typo-body text-foreground truncate flex-1">{zap.title}</span>
+                  <span className={`typo-caption px-1.5 py-0.5 rounded-card ${
                     zap.status === 'on' ? 'bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/20' :
                     zap.status === 'off' ? 'bg-secondary/60 text-foreground border border-border/40' :
                     'bg-brand-amber/10 text-brand-amber border border-brand-amber/20'
@@ -194,21 +194,21 @@ export function AutomationTriggerStep({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-foreground px-1">{t.agents.connectors.auto_no_zaps}</p>
+            <p className="typo-body text-foreground px-1">{t.agents.connectors.auto_no_zaps}</p>
           )}
-          <p className="text-xs text-foreground px-1">
+          <p className="typo-caption text-foreground px-1">
             {t.agents.connectors.auto_zaps_ref}
           </p>
         </div>
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-sm text-foreground">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
+        <span className="typo-body text-foreground">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
         <button
           onClick={onDesign}
           disabled={!canDesign}
           title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3.5 h-3.5" />
           {t.agents.connectors.auto_design_ai}

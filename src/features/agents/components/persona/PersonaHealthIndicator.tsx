@@ -64,7 +64,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
               aria-label={`Run ${si + 1}: ${s}`}
             />
           ))}
-          <span className="text-sm text-foreground ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
+          <span className="typo-body text-foreground ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
         </div>
       )}
     </div>

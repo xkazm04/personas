@@ -17,8 +17,8 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
         <Rss className="w-8 h-8 text-foreground" />
-        <p className="text-sm text-foreground">{t.triggers.subscription_list.no_active_subs}</p>
-        <p className="text-xs text-foreground">
+        <p className="typo-body text-foreground">{t.triggers.subscription_list.no_active_subs}</p>
+        <p className="typo-caption text-foreground">
           {t.triggers.subscription_list.browse_marketplace}
         </p>
       </div>
@@ -27,7 +27,7 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <table className="w-full text-xs">
+      <table className="w-full typo-caption">
         <thead className="sticky top-0 bg-background/95 backdrop-blur">
           <tr className="border-b border-primary/5 text-foreground">
             <th className="text-left px-4 py-2 font-medium">{t.triggers.subscription_list.col_feed}</th>
@@ -45,7 +45,7 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
               <tr key={sub.id} className="border-b border-primary/5 hover:bg-secondary/30 transition-colors">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{entry?.icon ?? '📡'}</span>
+                    <span className="typo-body">{entry?.icon ?? '📡'}</span>
                     <span className="font-medium text-foreground">{entry?.name ?? sub.slug}</span>
                   </div>
                 </td>

@@ -32,7 +32,7 @@ export function SortDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 text-sm rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
       >
         <ArrowUpDown className="w-3.5 h-3.5" />
         {currentOption.label}
@@ -51,7 +51,7 @@ export function SortDropdown({
                   onSortChange(optSort, option.dir);
                   setIsOpen(false);
                 }}
-                className={`w-full px-3.5 py-2.5 text-left text-sm transition-colors ${
+                className={`w-full px-3.5 py-2.5 text-left typo-body transition-colors ${
                   isSelected
                     ? 'text-violet-300 bg-violet-500/10'
                     : 'text-foreground hover:bg-primary/5'

@@ -104,23 +104,23 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                 <div className="flex items-center gap-2">
                   {dim && <dim.Icon className={`w-4 h-4 ${tone.accent}`} />}
                   {dim && (
-                    <span className={`text-sm font-semibold uppercase tracking-wider ${tone.accent}`}>
+                    <span className={`typo-heading font-semibold uppercase tracking-wider ${tone.accent}`}>
                       {dim.label}
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-foreground tabular-nums">
+                <span className="typo-data text-foreground tabular-nums">
                   {activeIndex + 1} / {questions.length}
                 </span>
               </div>
 
               {/* Question text */}
-              <p className="text-base font-medium text-foreground/90 leading-relaxed mb-1">
+              <p className="typo-body-lg font-medium text-foreground/90 leading-relaxed mb-1">
                 {q.question}
               </p>
 
               {q.context && (
-                <p className="text-sm text-foreground mb-4 leading-relaxed">
+                <p className="typo-body text-foreground mb-4 leading-relaxed">
                   {q.context}
                 </p>
               )}
@@ -142,7 +142,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                     value={userAnswers[q.id] ?? q.default ?? ''}
                     onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                     placeholder={q.default ?? 'Type your answer\u2026'}
-                    className="w-full px-4 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
+                    className="w-full px-4 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
                   />
                 )}
 
@@ -155,7 +155,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                           key={opt}
                           type="button"
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`px-4 py-2 text-sm rounded-modal border transition-all ${
+                          className={`px-4 py-2 typo-body rounded-modal border transition-all ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
                               : 'text-foreground border-primary/10 hover:bg-secondary/40'
@@ -212,11 +212,11 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
       </div>
 
       {/* Keyboard hint */}
-      <p className="text-sm text-foreground mt-2">
+      <p className="typo-body text-foreground mt-2">
         Use{' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&larr;</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&larr;</kbd>
         {' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&rarr;</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&rarr;</kbd>
         {' '}to navigate
       </p>
     </div>

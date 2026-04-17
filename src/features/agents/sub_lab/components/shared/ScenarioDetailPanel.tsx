@@ -71,8 +71,8 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
         <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-foreground">{label}</span>
-            <span className={`text-xs font-semibold ${scoreColor(s)}`}>{scoreLabel(s)}</span>
+            <span className="typo-caption font-medium text-foreground">{label}</span>
+            <span className={`typo-caption font-semibold ${scoreColor(s)}`}>{scoreLabel(s)}</span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
             <div
@@ -81,11 +81,11 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
             />
           </div>
         </div>
-        <span className={`text-lg font-bold tabular-nums ${scoreColor(s)}`}>{s}</span>
+        <span className={`typo-heading-lg font-bold tabular-nums ${scoreColor(s)}`}>{s}</span>
       </div>
       {rationale && (
         <div className="px-3 pb-2.5 -mt-0.5">
-          <p className="text-xs text-foreground leading-relaxed">{rationale}</p>
+          <p className="typo-caption text-foreground leading-relaxed">{rationale}</p>
         </div>
       )}
     </div>
@@ -106,8 +106,8 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border-b border-primary/10">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium text-foreground/90 truncate">{result.scenarioName}</span>
-          {result.modelId && <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
+          <span className="typo-body font-medium text-foreground/90 truncate">{result.scenarioName}</span>
+          {result.modelId && <span className="typo-caption px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
         </div>
         <button onClick={onClose} aria-label="Close details" className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
           <X className="w-3.5 h-3.5" />
@@ -119,19 +119,19 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {structured?.verdict && (
           <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-card bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">
             <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-foreground leading-relaxed">{structured.verdict}</p>
+            <p className="typo-body text-foreground leading-relaxed">{structured.verdict}</p>
           </div>
         )}
 
         {/* Composite score header */}
         <div className="flex items-center gap-4 py-2">
-          <div className={`text-4xl font-black tracking-tight ${scoreColor(composite)}`}>{composite}</div>
+          <div className={`typo-hero font-black tracking-tight ${scoreColor(composite)}`}>{composite}</div>
           <div>
-            <span className={`text-sm font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
-            <p className="text-xs text-foreground">Composite Score (TA 40% + OQ 40% + PC 20%)</p>
+            <span className={`typo-heading font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
+            <p className="typo-caption text-foreground">Composite Score (TA 40% + OQ 40% + PC 20%)</p>
           </div>
           <div className="flex-1" />
-          <div className="text-right text-xs text-foreground">
+          <div className="text-right typo-caption text-foreground">
             <div>${result.costUsd.toFixed(4)}</div>
             <div>{(result.durationMs / 1000).toFixed(1)}s</div>
           </div>
@@ -168,11 +168,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Plain rationale fallback (for older results without structured data) */}
         {plain && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider">
+            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider">
               <MessageSquare className="w-3 h-3" />
               {t.agents.lab.evaluation_notes}
             </h5>
-            <p className="text-sm text-foreground leading-relaxed bg-secondary/20 rounded-card px-3 py-2.5 border border-primary/5">
+            <p className="typo-body text-foreground leading-relaxed bg-secondary/20 rounded-card px-3 py-2.5 border border-primary/5">
               {plain}
             </p>
           </div>
@@ -181,11 +181,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Suggestions */}
         {result.suggestions && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/80 uppercase tracking-wider">
+            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/80 uppercase tracking-wider">
               <Lightbulb className="w-3 h-3" />
               {t.agents.lab.how_to_fix}
             </h5>
-            <p className="text-sm text-foreground leading-relaxed bg-amber-500/5 rounded-card px-3 py-2.5 border border-amber-500/10">
+            <p className="typo-body text-foreground leading-relaxed bg-amber-500/5 rounded-card px-3 py-2.5 border border-amber-500/10">
               {result.suggestions}
             </p>
           </div>
@@ -205,11 +205,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Output preview */}
         {result.outputPreview && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.agent_output}
             </summary>
-            <pre className="mt-2 text-xs text-foreground bg-background/50 rounded-card p-3 border border-primary/5 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
+            <pre className="mt-2 typo-caption text-foreground bg-background/50 rounded-card p-3 border border-primary/5 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
               {result.outputPreview}
             </pre>
           </details>
@@ -218,20 +218,20 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Tool calls */}
         {(result.toolCallsExpected || result.toolCallsActual) && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.tool_calls}
             </summary>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>
-                <span className="text-xs text-foreground block mb-1">Expected</span>
-                <pre className="text-xs text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                <span className="typo-caption text-foreground block mb-1">Expected</span>
+                <pre className="typo-caption text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                   {result.toolCallsExpected ?? t.agents.lab.none_specified}
                 </pre>
               </div>
               <div>
-                <span className="text-xs text-foreground block mb-1">Actual</span>
-                <pre className="text-xs text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                <span className="typo-caption text-foreground block mb-1">Actual</span>
+                <pre className="typo-caption text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                   {result.toolCallsActual ?? t.agents.lab.none_label}
                 </pre>
               </div>
@@ -241,7 +241,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
 
         {/* Error */}
         {result.errorMessage && (
-          <div className="text-sm text-red-400 bg-red-500/10 rounded-card px-3 py-2 border border-red-500/20">
+          <div className="typo-body text-red-400 bg-red-500/10 rounded-card px-3 py-2 border border-red-500/20">
             {result.errorMessage}
           </div>
         )}

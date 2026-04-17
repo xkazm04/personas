@@ -34,7 +34,7 @@ export function WizardDetectGrid({
       {/* Detected services */}
       {detected.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-emerald-400/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <h3 className="typo-body font-medium text-emerald-400/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <Sparkles className="w-3 h-3" />
             Detected ({detected.length})
           </h3>
@@ -62,7 +62,7 @@ export function WizardDetectGrid({
       {/* Available services */}
       {available.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
+          <h3 className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
             Available ({available.length})
           </h3>
           <motion.div
@@ -89,7 +89,7 @@ export function WizardDetectGrid({
       {/* Already added */}
       {alreadyAdded.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-foreground uppercase tracking-wider mb-2">
+          <h3 className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
             Already added ({alreadyAdded.length})
           </h3>
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>

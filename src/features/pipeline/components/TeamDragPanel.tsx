@@ -26,7 +26,7 @@ export default function TeamDragPanel() {
 
   return (
     <div>
-      <div className="text-sm font-mono text-foreground uppercase tracking-widest px-1 mb-2">
+      <div className="typo-code font-mono text-foreground uppercase tracking-widest px-1 mb-2">
         {t.pipeline.drag_to_canvas}
       </div>
       <div className="space-y-0.5">
@@ -40,11 +40,11 @@ export default function TeamDragPanel() {
           >
             <GripVertical className="w-3 h-3 text-foreground group-hover:text-muted-foreground/50 shrink-0" />
             <PersonaAvatar icon={p.icon} color={p.color} size="sm" />
-            <span className="text-sm font-medium text-foreground truncate flex-1">
+            <span className="typo-body font-medium text-foreground truncate flex-1">
               {p.name}
             </span>
             {memberPersonaIds.has(p.id) && (
-              <span className="text-sm font-mono text-emerald-400/50 shrink-0">
+              <span className="typo-code font-mono text-emerald-400/50 shrink-0">
                 {t.pipeline.added}
               </span>
             )}
@@ -52,7 +52,7 @@ export default function TeamDragPanel() {
         ))}
       </div>
       {personas.length === 0 && (
-        <div className="text-center py-6 text-sm text-foreground">
+        <div className="text-center py-6 typo-body text-foreground">
           {t.pipeline.no_agents_created}
         </div>
       )}

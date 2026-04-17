@@ -31,7 +31,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
       {fixtures.map((f) => (
         <div
           key={f.id}
-          className={`group flex items-center justify-between px-3 py-2 text-sm transition-colors cursor-pointer ${
+          className={`group flex items-center justify-between px-3 py-2 typo-body transition-colors cursor-pointer ${
             selectedFixtureId === f.id
               ? 'bg-primary/10 text-foreground/90'
               : 'text-foreground hover:bg-secondary/50'
@@ -41,7 +41,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
           <div className="min-w-0 flex-1">
             <span className="block truncate font-medium">{f.name}</span>
             {f.description && (
-              <span className="block truncate text-xs text-foreground">
+              <span className="block truncate typo-caption text-foreground">
                 {f.description}
               </span>
             )}
@@ -59,7 +59,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
             {confirmDeleteId === f.id ? (
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(f.id); }}
-                className="px-1.5 py-0.5 text-xs font-medium text-red-400 bg-red-500/15 rounded hover:bg-red-500/25 transition-colors"
+                className="px-1.5 py-0.5 typo-caption font-medium text-red-400 bg-red-500/15 rounded hover:bg-red-500/25 transition-colors"
               >
                 {uc.confirm}
               </button>
@@ -108,7 +108,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder={uc.fixture_name_placeholder}
-            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 typo-body text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave();
@@ -120,19 +120,19 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder={uc.description_optional}
-            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 typo-body text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
           />
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               disabled={!newName.trim()}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-card text-xs font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-card typo-caption font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
               <Save className="w-3 h-3" /> {t.common.save}
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="px-2.5 py-1 text-xs text-foreground hover:text-foreground/80 transition-colors"
+              className="px-2.5 py-1 typo-caption text-foreground hover:text-foreground/80 transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -141,7 +141,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
       ) : (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:text-primary/80 hover:bg-secondary/30 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 typo-body text-foreground hover:text-primary/80 hover:bg-secondary/30 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           {uc.save_current_as_fixture}

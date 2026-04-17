@@ -107,7 +107,7 @@ export function DesignPhasePreview({
       {intentResult && <IntentResultExtras result={intentResult} />}
 
       {error && (
-        <p className="text-sm text-red-400 px-1">{error}</p>
+        <p className="typo-body text-red-400 px-1">{error}</p>
       )}
 
       {/* Change summary */}
@@ -115,7 +115,7 @@ export function DesignPhasePreview({
         <div className="px-3 py-2.5 rounded-modal bg-primary/5 border border-primary/10">
           <div className="flex items-start gap-2">
             <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               <span className="font-medium text-foreground/90">Will apply: </span>
               {changeSummary.join(', ').toLowerCase()}
             </p>
@@ -127,14 +127,14 @@ export function DesignPhasePreview({
       <div className="flex items-center gap-2">
         <button
           onClick={actions.onApply}
-          className="flex items-center gap-2 px-4 py-2 rounded-modal font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          className="flex items-center gap-2 px-4 py-2 rounded-modal font-medium typo-body bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           <Check className="w-3.5 h-3.5" />
           Apply Changes
         </button>
         <button
           onClick={actions.onRefine}
-          className="flex items-center gap-2 px-3 py-2 rounded-modal font-medium text-sm bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-modal font-medium typo-body bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refine
@@ -148,7 +148,7 @@ export function DesignPhasePreview({
             }
             setConfirmDiscard(true);
           }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-modal font-medium text-sm transition-colors ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-modal font-medium typo-body transition-colors ${
             confirmDiscard
               ? 'text-red-400 hover:text-red-300'
               : 'text-foreground hover:text-foreground/95'
@@ -164,7 +164,7 @@ export function DesignPhasePreview({
           value={refinement.message}
           onChange={(e) => refinement.onMessageChange(e.target.value)}
           placeholder={t.agents.design.describe_changes_to_refine}
-          className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-modal px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+          className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-modal px-3 py-2 typo-body text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -175,7 +175,7 @@ export function DesignPhasePreview({
         <button
           onClick={refinement.onSend}
           disabled={!refinement.message.trim()}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium transition-all ${
             !refinement.message.trim()
               ? 'bg-secondary/40 text-foreground cursor-not-allowed'
               : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
@@ -185,7 +185,7 @@ export function DesignPhasePreview({
           Send
         </button>
       </div>
-      <p className="text-sm text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="typo-body text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
     </div>
   );
 }

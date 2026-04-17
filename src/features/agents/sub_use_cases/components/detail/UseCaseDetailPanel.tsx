@@ -47,7 +47,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
   if (!useCase) {
     return (
-      <div className="flex items-center justify-center py-2 text-sm text-foreground">
+      <div className="flex items-center justify-center py-2 typo-body text-foreground">
         {uc.use_case_not_found}
       </div>
     );
@@ -97,7 +97,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             <button
               onClick={handleCancelTest}
               disabled={!canCancel}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={!canCancel ? uc.waiting_for_test : uc.stop_test}
             >
               <Square className="w-3.5 h-3.5" /> {uc.stop}
@@ -106,7 +106,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             <button
               onClick={handleRunTest}
               disabled={!hasPrompt || !modelConfig}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={!hasPrompt ? uc.no_prompt_configured : uc.test_this_use_case}
             >
               <Play className="w-3.5 h-3.5" /> {uc.test}
@@ -114,7 +114,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           )}
           <button
             onClick={() => setEditorTab('lab')}
-            className="flex items-center gap-1 text-sm text-foreground hover:text-primary/70 transition-colors"
+            className="flex items-center gap-1 typo-body text-foreground hover:text-primary/70 transition-colors"
             title={uc.view_full_test_history_title}
           >
             {uc.tests} <ArrowRight className="w-3 h-3" />
@@ -124,11 +124,11 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
 
       {/* Pipeline stage labels */}
       <div className="flex items-center gap-0.5 px-1">
-        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
+        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
+        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
         <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center text-sm text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
+        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
         <div className="flex-shrink-0 ml-1.5" style={{ width: 130 }} />
       </div>
 
@@ -138,7 +138,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           {isTestRunning && testRunProgress && (
             <span className="flex items-center gap-1.5 text-foreground">
               <LoadingSpinner size="sm" className="text-primary" />
-              <span className="capitalize text-sm">
+              <span className="capitalize typo-body">
                 {testRunProgress.phase === 'generating'
                   ? uc.generating
                   : testRunProgress.phase === 'executing'
@@ -149,7 +149,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
           )}
           {saveError && (
             <span
-              className="text-sm text-red-400/80 cursor-pointer hover:text-red-400 transition-colors"
+              className="typo-body text-red-400/80 cursor-pointer hover:text-red-400 transition-colors"
               title={saveError}
               onClick={() => setSaveError(null)}
             >

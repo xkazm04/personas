@@ -80,8 +80,8 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
         >
           {/* Step header */}
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-foreground/85">{currentStep.title}</h3>
-            <p className="text-sm text-foreground mt-0.5">{currentStep.description}</p>
+            <h3 className="typo-heading font-semibold text-foreground/85">{currentStep.title}</h3>
+            <p className="typo-body text-foreground mt-0.5">{currentStep.description}</p>
           </div>
 
           {/* Questions or review */}
@@ -95,22 +95,22 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                       key={item.label}
                       className="flex items-start gap-3 px-3 py-2 rounded-modal bg-secondary/30 border border-primary/10"
                     >
-                      <span className="text-sm font-semibold uppercase tracking-wider text-foreground w-24 flex-shrink-0 mt-0.5">
+                      <span className="typo-heading font-semibold uppercase tracking-wider text-foreground w-24 flex-shrink-0 mt-0.5">
                         {item.label}
                       </span>
-                      <span className="text-sm text-foreground/90">{item.value}</span>
+                      <span className="typo-body text-foreground/90">{item.value}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-foreground text-center py-4">
+                <p className="typo-body text-foreground text-center py-4">
                   Go back and answer the questions to configure your agent.
                 </p>
               )}
 
               {/* Additional context textarea */}
               <div className="space-y-1.5">
-                <label className="text-sm text-foreground">
+                <label className="typo-body text-foreground">
                   Additional instructions or context (optional)
                 </label>
                 <textarea
@@ -118,7 +118,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   onChange={(e) => setAdditionalContext(e.target.value)}
                   placeholder={t.agents.design.additional_instructions_placeholder}
                   rows={4}
-                  className="w-full bg-background/50 border border-primary/20 rounded-modal px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
+                  className="w-full bg-background/50 border border-primary/20 rounded-modal px-3 py-2 typo-body text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
             <button
               type="button"
               onClick={onCancel}
-              className="text-sm text-foreground hover:text-muted-foreground transition-colors px-2 py-1"
+              className="typo-body text-foreground hover:text-muted-foreground transition-colors px-2 py-1"
             >
               Switch to manual
             </button>
@@ -146,7 +146,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm text-foreground hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body text-foreground hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Back
@@ -158,7 +158,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
           type="button"
           onClick={handleNext}
           disabled={!canProceed()}
-          className={`flex items-center gap-2 px-4 py-2 rounded-modal font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-modal font-medium typo-body transition-all ${
             isLastStep
               ? !canProceed() || summary.length === 0
                 ? 'bg-secondary/60 text-foreground cursor-not-allowed'

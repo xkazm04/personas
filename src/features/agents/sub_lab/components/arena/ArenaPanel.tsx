@@ -77,7 +77,7 @@ export function ArenaPanel() {
         {(!hasPrompt || !hasTools) && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-modal bg-amber-500/10 border border-amber-500/20">
             <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-amber-400/90">
+            <div className="typo-body text-amber-400/90">
               {!hasPrompt && <p>{t.agents.lab.no_prompt_warning}</p>}
               {!hasTools && <p>{t.agents.lab.no_tools_warning}</p>}
             </div>

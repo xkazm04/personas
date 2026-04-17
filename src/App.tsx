@@ -129,7 +129,7 @@ export default function App() {
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:typo-body focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {t.chrome.skip_to_content}
           </a>
@@ -161,7 +161,7 @@ export default function App() {
           <ChartGradientDefs />
           <ToastContainer />
           {import.meta.env.DEV && isMobilePreview && (
-            <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white text-xs font-bold shadow-elevation-3 pointer-events-none select-none">
+            <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white typo-caption font-bold shadow-elevation-3 pointer-events-none select-none">
               MOBILE PREVIEW
             </div>
           )}

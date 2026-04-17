@@ -5,7 +5,7 @@ export function EventTypeChip({ eventType }: { eventType: string }) {
   const { Icon, text, bg, border } = meta;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card text-sm font-mono border ${bg} ${text} ${border} truncate max-w-full`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-code font-mono border ${bg} ${text} ${border} truncate max-w-full`}
       title={eventType}
     >
       <Icon className="w-3 h-3 flex-shrink-0" />

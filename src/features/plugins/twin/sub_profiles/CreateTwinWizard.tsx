@@ -210,7 +210,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                           gender === g ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                         }`}
                       >
-                        <span className="text-base">{glyph}</span>
+                        <span className="typo-body-lg">{glyph}</span>
                         <span className="typo-caption">{labelMap[g]}</span>
                       </button>
                     );
@@ -278,7 +278,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                     placeholder={t.wizard.urlPlaceholder}
                     value={bioUrl}
                     onChange={(e) => setBioUrl(e.target.value)}
-                    className={`${INPUT_FIELD} font-mono text-xs`}
+                    className={`${INPUT_FIELD} font-mono typo-code`}
                   />
                   <div className="flex justify-end">
                     <Button onClick={handleIngestUrl} disabled={ingesting || !bioUrl.trim()} size="sm" variant="accent" accentColor="violet">

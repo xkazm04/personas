@@ -122,7 +122,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           <div className="animate-fade-slide-in overflow-hidden">
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
-                <div className="text-center py-6 text-sm text-foreground">
+                <div className="text-center py-6 typo-body text-foreground">
                   <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
                   All conflicts resolved
                 </div>

@@ -185,14 +185,14 @@ export function CredentialSchemaForm({
       />
 
       {!hasHealthcheck && activeSubType.noHealthcheckHint && (
-        <p className="text-sm text-foreground italic">{activeSubType.noHealthcheckHint}</p>
+        <p className="typo-body text-foreground italic">{activeSubType.noHealthcheckHint}</p>
       )}
 
       {config.extraFields?.map((ef) => (
         <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
       ))}
 
-      {error && <p id="schema-form-error" role="alert" className="text-sm text-red-400">{error}</p>}
+      {error && <p id="schema-form-error" role="alert" className="typo-body text-red-400">{error}</p>}
     </div>
   );
 }

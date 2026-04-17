@@ -49,30 +49,30 @@ export function ConnectorStatusCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground truncate" title={status.name}>{status.name}</p>
+            <p className="typo-body font-medium text-foreground truncate" title={status.name}>{status.name}</p>
             {roleLabel && (
               <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-sky-500/10 border border-sky-500/15 text-sky-400/70 whitespace-nowrap">{roleLabel}</span>
             )}
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
+              className={`inline-flex items-center gap-1 px-2 py-0.5 typo-body font-medium rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
               <span className="inline-flex transition-transform duration-300 ease-in-out">
                 {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
               </span>
               <span>{config.label}</span>
             </span>
           </div>
-          {status.credentialName && <p className="text-sm text-foreground mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}
+          {status.credentialName && <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.st_credential, { name: status.credentialName })}</p>}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {alternatives && alternatives.length > 0 && onSwap && (
             <button onClick={() => setSwapOpen((o) => !o)}
-              className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-modal border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'}`}
+              className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-modal border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'}`}
               title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
             <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
               <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.st_test}
               </button>
             </Tooltip>
@@ -80,12 +80,12 @@ export function ConnectorStatusCard({
             <>
               {credentials.length > 0 && (
                 <button onClick={() => onToggleLinking(isLinking ? null : status.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/95'}`}>
                   <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> {t.agents.connectors.st_link_existing}
                 </button>
               )}
               <button onClick={() => onAddCredential(status.name)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors">
                 <Plus className="w-3 h-3" /> {t.agents.connectors.st_add_new}
               </button>
             </>

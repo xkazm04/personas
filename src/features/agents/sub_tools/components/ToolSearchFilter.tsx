@@ -43,7 +43,7 @@ export function ToolSearchFilter({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.agents.tools.search_placeholder}
-            className="w-full pl-9 pr-3 py-2 rounded-modal border border-primary/20 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
+            className="w-full pl-9 pr-3 py-2 rounded-modal border border-primary/20 bg-secondary/25 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
           />
         </div>
         <div className="flex gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10">
@@ -78,7 +78,7 @@ export function ToolSearchFilter({
           <button
             key={category}
             onClick={() => { onCategoryChange(category); onSearchChange(''); }}
-            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal text-sm font-medium transition-all ${
+            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium transition-all ${
               selectedCategory === category
                 ? 'text-foreground shadow-elevation-3 shadow-primary/20'
                 : 'bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground/95 border border-primary/20'
@@ -92,7 +92,7 @@ export function ToolSearchFilter({
               />
             )}
             <span className="relative z-10">{category}</span>
-            <span className={`text-sm px-1.5 py-0.5 rounded-full font-bold ${
+            <span className={`typo-heading px-1.5 py-0.5 rounded-full font-bold ${
               selectedCategory === category
                 ? 'relative z-10 bg-foreground/15 text-foreground/90'
                 : 'bg-muted/30 text-foreground'
@@ -106,27 +106,27 @@ export function ToolSearchFilter({
       {/* Assigned tools summary bar */}
       {assignedTools.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-modal px-4 py-2">
-          <span className="text-sm text-foreground flex-shrink-0">
+          <span className="typo-body text-foreground flex-shrink-0">
             {tx(t.agents.tools.assigned_summary, { assigned: assignedTools.length, total: totalToolCount })}
           </span>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden ml-2">
             {assignedTools.slice(0, 5).map((tool) => (
               <span
                 key={tool.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-sm bg-primary/10 text-foreground/90 border border-primary/20 truncate max-w-[120px] flex-shrink-0"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-body bg-primary/10 text-foreground/90 border border-primary/20 truncate max-w-[120px] flex-shrink-0"
               >
                 {tool.name}
               </span>
             ))}
             {assignedTools.length > 5 && (
-              <span className="text-sm text-foreground flex-shrink-0">
+              <span className="typo-body text-foreground flex-shrink-0">
                 {tx(t.agents.tools.more, { count: assignedTools.length - 5 })}
               </span>
             )}
           </div>
           <button
             onClick={onClearAll}
-            className="flex-shrink-0 text-sm text-foreground hover:text-red-400 transition-colors flex items-center gap-1"
+            className="flex-shrink-0 typo-body text-foreground hover:text-red-400 transition-colors flex items-center gap-1"
           >
             <X className="w-3 h-3" />
             {t.agents.tools.clear_all}

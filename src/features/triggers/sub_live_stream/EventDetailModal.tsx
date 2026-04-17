@@ -50,17 +50,17 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex items-center gap-2.5 mb-1.5">
               <h3
                 id="event-detail-modal-title"
-                className="text-base font-semibold text-foreground tracking-tight"
+                className="typo-body-lg font-semibold text-foreground tracking-tight"
               >
                 {event.event_type}
               </h3>
               {/* Improvement #4: Status badge with color coding */}
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
                 {event.status}
               </span>
             </div>
             {/* Improvement #6: Relative + absolute timestamp */}
-            <div className="flex items-center gap-1.5 text-xs text-foreground">
+            <div className="flex items-center gap-1.5 typo-caption text-foreground">
               <Clock className="w-3 h-3" />
               <span>{formatRelativeTime(event.created_at)}</span>
               <span className="text-foreground">&middot;</span>
@@ -91,7 +91,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <MetaCell icon={SourceIcon ?? Hash} iconColor={sourceConfig?.color} label="Source">
                 <div className="flex items-center gap-1.5">
                   {event.source_type && (
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground'}`}>
+                    <span className={`typo-caption font-medium px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground'}`}>
                       {event.source_type}
                     </span>
                   )}
@@ -113,13 +113,13 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Improvement #3: Themed section label */}
               <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/8 flex-shrink-0 bg-secondary/5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
                   Event Data
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
                 <button
                   onClick={handleCopy}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium transition-all duration-200 ${
                     copiedPayload
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : 'text-foreground hover:text-foreground hover:bg-secondary/60 border border-transparent hover:border-primary/10'
@@ -148,7 +148,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
 
           {/* If no payload, show empty state */}
           {!event.payload && !event.error_message && (
-            <div className="flex-1 flex items-center justify-center text-foreground text-sm">
+            <div className="flex-1 flex items-center justify-center text-foreground typo-body">
               {t.triggers.no_event_data}
             </div>
           )}
@@ -158,12 +158,12 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             <div className="flex-shrink-0 border-t border-red-500/15 bg-red-500/3">
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-red-500/10">
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-red-400/70">
+                <span className="typo-label font-semibold uppercase tracking-wider text-red-400/70">
                   Error
                 </span>
               </div>
               <div className="px-5 py-3">
-                <pre className="text-sm font-mono text-red-400/90 whitespace-pre-wrap break-words leading-relaxed">
+                <pre className="typo-code font-mono text-red-400/90 whitespace-pre-wrap break-words leading-relaxed">
                   {event.error_message}
                 </pre>
               </div>
@@ -189,7 +189,7 @@ function MetaCell({ icon: Icon, iconColor, label, children }: {
           {label}
         </span>
       </div>
-      <div className="text-sm text-foreground truncate">
+      <div className="typo-body text-foreground truncate">
         {children}
       </div>
     </div>

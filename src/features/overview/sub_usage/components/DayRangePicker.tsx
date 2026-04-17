@@ -50,11 +50,11 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
       <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button key={opt.value} onClick={() => { onChange(opt.value); setShowCustom(false); }} aria-pressed={!isCustomActive && value === opt.value}
-            className={`px-3 py-1 rounded-modal text-sm font-medium transition-all ${!isCustomActive && value === opt.value ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-foreground hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            className={`px-3 py-1 rounded-modal typo-body font-medium transition-all ${!isCustomActive && value === opt.value ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-foreground hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
           >{opt.label}</button>
         ))}
         <button ref={buttonRef} onClick={() => setShowCustom((p) => !p)} aria-pressed={isCustomActive}
-          className={`px-3 py-1 rounded-modal text-sm font-medium transition-all flex items-center gap-1.5 ${isCustomActive ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-foreground hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+          className={`px-3 py-1 rounded-modal typo-body font-medium transition-all flex items-center gap-1.5 ${isCustomActive ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-foreground hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
         >
           <Calendar className="w-3 h-3" />
           {isCustomActive ? formatRangeLabel(customDateRange) : 'Custom'}
@@ -95,17 +95,17 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
       <div ref={ref} className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-modal shadow-elevation-3 p-4 min-w-[280px]">
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-foreground mb-1">Start Date</label>
-            <input type="date" value={startDate} max={endDate || today} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
+            <label className="block typo-body text-foreground mb-1">Start Date</label>
+            <input type="date" value={startDate} max={endDate || today} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
           <div>
-            <label className="block text-sm text-foreground mb-1">End Date</label>
-            <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
+            <label className="block typo-body text-foreground mb-1">End Date</label>
+            <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
-          {isValid && <p className="text-sm text-foreground">{dayCount} day{dayCount !== 1 ? 's' : ''} selected</p>}
+          {isValid && <p className="typo-body text-foreground">{dayCount} day{dayCount !== 1 ? 's' : ''} selected</p>}
           <div className="flex items-center gap-2">
-            <button onClick={handleApply} disabled={!isValid} title={!isValid ? 'Select a valid date range to apply' : undefined} className="flex-1 px-3 py-1.5 text-sm font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{t.overview.day_range.apply}</button>
-            {value && <button onClick={() => onChange(null)} className="px-3 py-1.5 text-sm font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">Clear</button>}
+            <button onClick={handleApply} disabled={!isValid} title={!isValid ? 'Select a valid date range to apply' : undefined} className="flex-1 px-3 py-1.5 typo-body font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{t.overview.day_range.apply}</button>
+            {value && <button onClick={() => onChange(null)} className="px-3 py-1.5 typo-body font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">Clear</button>}
           </div>
         </div>
       </div>

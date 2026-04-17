@@ -111,7 +111,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : labRuns.length === 0 ? (
-          <p className="text-xs text-foreground text-center py-4">{t.agents.ops_lab.no_lab_runs}</p>
+          <p className="typo-caption text-foreground text-center py-4">{t.agents.ops_lab.no_lab_runs}</p>
         ) : (
           labRuns.map((run, i) => {
             const modeCfg = MODE_CONFIG[run.mode] ?? MODE_CONFIG['matrix']!;
@@ -126,7 +126,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
               >
                 <ModeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${modeCfg.color}`} />
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-medium text-foreground">{modeCfg.label}</span>
+                  <span className="typo-caption font-medium text-foreground">{modeCfg.label}</span>
                   <span className="text-[11px] text-foreground ml-1.5">{time}</span>
                 </div>
                 <StatusIcon className={`w-3 h-3 flex-shrink-0 ${statusCfg.color} ${run.status === 'running' ? 'animate-spin' : ''}`} />

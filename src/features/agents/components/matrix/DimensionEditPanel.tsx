@@ -140,7 +140,7 @@ function CredentialPickerCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <h4 className="font-medium text-foreground text-sm truncate" title={credential.name}>
+          <h4 className="font-medium text-foreground typo-body truncate" title={credential.name}>
             {credential.name}
           </h4>
           <CompositeHealthDot healthResult={healthResult} rotationStatus={null} />
@@ -193,7 +193,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="min-w-0">
-            <h2 id="dimension-swap-credential-title" className="text-sm font-semibold text-foreground/90 truncate">
+            <h2 id="dimension-swap-credential-title" className="typo-heading font-semibold text-foreground/90 truncate">
               {tx(t.agents.dimension_edit.replace_connector, { name: connectorName })}
             </h2>
             <p className="text-[11px] text-foreground mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
@@ -212,12 +212,12 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
           {connectedCredentials.length === 0 ? (
             <div className="text-center py-10">
               <Key className="w-8 h-8 text-foreground mx-auto mb-2" />
-              <p className="text-sm text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
+              <p className="typo-body text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
               <p className="text-[11px] text-foreground mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
               <button
                 type="button"
                 onClick={() => { setSidebarSection('credentials'); onClose(); }}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 bg-primary/10 typo-caption text-primary hover:bg-primary/20 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {t.agents.dimension_edit.open_keys}

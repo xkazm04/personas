@@ -21,7 +21,7 @@ export function AuthMethodTabs({
         <button
           key={method.id}
           onClick={() => onMethodChange(method)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${
             activeAuthMethodId === method.id
               ? `border ${getAuthBadgeClasses(method)}`
               : 'text-foreground hover:bg-secondary/40 border border-transparent'

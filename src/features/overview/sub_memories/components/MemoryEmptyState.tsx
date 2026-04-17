@@ -12,7 +12,7 @@ export function MemoryEmptyState({ hasFilters }: MemoryEmptyStateProps) {
       </div>
       <div className="text-center">
         <p className="typo-heading">No memories yet</p>
-        <p className="text-sm text-foreground mt-1 max-w-xs">
+        <p className="typo-body text-foreground mt-1 max-w-xs">
           {hasFilters
             ? 'No memories match your filters. Try adjusting your search.'
             : 'When agents run, they can store valuable notes and learnings here.'}

@@ -122,8 +122,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
-          <p className="text-sm text-foreground">
+          <h3 className="typo-heading font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
+          <p className="typo-body text-foreground">
             Connect local applications or import Claude Desktop MCP servers
           </p>
         </div>
@@ -141,7 +141,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       <div className="flex gap-1 p-1 bg-secondary/30 rounded-card">
         <button
           onClick={() => setTab('apps')}
-          className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
             tab === 'apps'
               ? 'bg-secondary/80 text-foreground'
               : 'text-foreground hover:text-foreground'
@@ -153,7 +153,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
-          className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
             tab === 'mcp-import'
               ? 'bg-secondary/80 text-foreground'
               : 'text-foreground hover:text-foreground'

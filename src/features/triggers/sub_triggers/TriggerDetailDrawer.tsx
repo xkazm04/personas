@@ -48,7 +48,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
         {/* Test Result */}
         {detail.testResult && (
           <div
-            className={`animate-fade-slide-in px-2.5 py-1.5 rounded-modal text-sm font-mono ${
+            className={`animate-fade-slide-in px-2.5 py-1.5 rounded-modal typo-code font-mono ${
               detail.testResult.success
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
                 : 'bg-red-500/10 text-red-400 border border-red-500/15'
@@ -64,7 +64,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
         {trigger.trigger_type === 'webhook' && (
           <button
             onClick={detail.copyCurlCommand}
-            className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
+            className={`inline-flex items-center gap-1.5 typo-body transition-colors ${
               detail.copiedCurl ? 'text-emerald-400' : 'text-foreground hover:text-muted-foreground'
             }`}
           >
@@ -80,7 +80,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
             <button
               onClick={detail.handleTestFire}
               disabled={detail.testing}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-card transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 typo-body text-primary/70 hover:text-primary hover:bg-primary/10 rounded-card transition-colors disabled:opacity-50"
               title="Validate trigger config, then fire"
             >
               {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
@@ -90,7 +90,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
             <button
               onClick={detail.handleDryRun}
               disabled={detail.dryRunning || detail.testing}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-card transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 typo-body text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-card transition-colors disabled:opacity-50"
               title="Simulate trigger without executing"
             >
               {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
@@ -115,7 +115,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
                 </Button>
               </div>
             ) : (
-              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-card transition-colors" title={t.triggers.detail.delete_trigger}>
+              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-card transition-colors" title={t.triggers.detail.delete_trigger}>
                 <Trash2 className="w-4 h-4" />{t.common.delete}
               </button>
             )}

@@ -43,14 +43,14 @@ export function RunMarker({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground font-mono truncate">
+            <span className="typo-code font-medium text-foreground font-mono truncate">
               {shortRunId(group.runId)}
             </span>
-            <span className="text-sm text-violet-400/80 font-medium">
+            <span className="typo-body text-violet-400/80 font-medium">
               {group.memories.length} memor{group.memories.length !== 1 ? 'ies' : 'y'}
             </span>
           </div>
-          <span className="text-sm text-foreground">{formatTime(group.firstCreatedAt)}</span>
+          <span className="typo-body text-foreground">{formatTime(group.firstCreatedAt)}</span>
         </div>
         <ChevronRight className={`w-3 h-3 text-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
       </button>
@@ -64,7 +64,7 @@ export function RunMarker({
           {!isFiltered && (
             <button
               onClick={() => onFilterRun(group.runId)}
-              className="text-sm text-violet-400/60 hover:text-violet-400 transition-colors pl-1 py-0.5"
+              className="typo-body text-violet-400/60 hover:text-violet-400 transition-colors pl-1 py-0.5"
             >
               Filter to this run
             </button>

@@ -164,7 +164,7 @@ function DiffSection({
     <div className="border border-primary/8 rounded-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-primary/5 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 typo-caption font-medium text-foreground hover:bg-primary/5 transition-colors"
         aria-expanded={open}
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -183,7 +183,7 @@ function DiffSection({
           >
             <div className="px-3 pb-2 space-y-1">
               {entries.map((entry, i) => (
-                <div key={i} className={`flex items-start gap-2 text-xs ${kindColors[entry.kind]}`}>
+                <div key={i} className={`flex items-start gap-2 typo-caption ${kindColors[entry.kind]}`}>
                   <span className="mt-0.5 flex-shrink-0">{kindIcons[entry.kind]}</span>
                   <div className="min-w-0">
                     <span className="break-words">{entry.label}</span>
@@ -222,7 +222,7 @@ export function GenomeDiffView({
 
   return (
     <div className="space-y-2" role="region" aria-label="Genome comparison">
-      <div className="flex items-center gap-2 text-xs text-foreground">
+      <div className="flex items-center gap-2 typo-caption text-foreground">
         <GitCompare className="w-3.5 h-3.5 text-violet-400" />
         <span className="font-medium">{t.agents.lab.genome_diff}</span>
         <span className="text-foreground">

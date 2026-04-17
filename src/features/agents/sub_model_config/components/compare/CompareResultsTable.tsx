@@ -46,10 +46,10 @@ export function ComparisonResults({
       {winner && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-primary/5 border border-primary/20">
           <Trophy className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground/90">
+          <span className="typo-body font-medium text-foreground/90">
             {winner === 'A' ? modelA.label : modelB.label} {mc.wins}
           </span>
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             ({(winner === 'A' ? metricsA : metricsB).composite} vs {(winner === 'A' ? metricsB : metricsA).composite} {mc.composite})
           </span>
         </div>
@@ -71,12 +71,12 @@ export function ComparisonResults({
       {/* Per-scenario breakdown */}
       {scenarios.length > 1 && (
         <div className="overflow-x-auto border border-primary/10 rounded-modal">
-          <table className="w-full text-sm">
+          <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/30">
-                <th className="text-left px-3 py-2 font-medium text-foreground text-xs">{mc.scenario}</th>
-                <th className="text-center px-3 py-2 font-medium text-blue-400/80 text-xs">{modelA.label}</th>
-                <th className="text-center px-3 py-2 font-medium text-amber-400/80 text-xs">{modelB.label}</th>
+                <th className="text-left px-3 py-2 font-medium text-foreground typo-caption">{mc.scenario}</th>
+                <th className="text-center px-3 py-2 font-medium text-blue-400/80 typo-caption">{modelA.label}</th>
+                <th className="text-center px-3 py-2 font-medium text-amber-400/80 typo-caption">{modelB.label}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,11 +91,11 @@ export function ComparisonResults({
                     <td className="px-3 py-2 text-foreground max-w-[180px] truncate">{scenario}</td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'A' ? 'font-bold' : ''}`}>
                       <span className={scoreColor(scoreA)}>{scoreA ?? '-'}</span>
-                      {rA && <span className="text-foreground ml-1.5 text-xs">{(rA.durationMs / 1000).toFixed(1)}s</span>}
+                      {rA && <span className="text-foreground ml-1.5 typo-caption">{(rA.durationMs / 1000).toFixed(1)}s</span>}
                     </td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'B' ? 'font-bold' : ''}`}>
                       <span className={scoreColor(scoreB)}>{scoreB ?? '-'}</span>
-                      {rB && <span className="text-foreground ml-1.5 text-xs">{(rB.durationMs / 1000).toFixed(1)}s</span>}
+                      {rB && <span className="text-foreground ml-1.5 typo-caption">{(rB.durationMs / 1000).toFixed(1)}s</span>}
                     </td>
                   </tr>
                 );

@@ -79,7 +79,7 @@ export function ReviewInboxPanel({
           <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => { setViewMode('default'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
                 viewMode === 'default'
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-foreground hover:text-foreground/70'
@@ -91,7 +91,7 @@ export function ReviewInboxPanel({
             </button>
             <button
               onClick={() => { setViewMode('table'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
                 viewMode === 'table'
                   ? 'bg-primary/10 text-foreground/90'
                   : 'text-foreground hover:text-foreground/70'
@@ -175,7 +175,7 @@ export function ReviewInboxPanel({
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="w-8 h-8 text-foreground mx-auto mb-2" />
-                    <p className="text-sm text-foreground">{t.overview.review.select_review}</p>
+                    <p className="typo-body text-foreground">{t.overview.review.select_review}</p>
                   </div>
                 </div>
               )}

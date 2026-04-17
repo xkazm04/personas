@@ -62,7 +62,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
         }`}
       >
         <Cpu className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/85 flex-1">
+        <span className="typo-body font-medium text-foreground/85 flex-1">
           {label}
           {provider && (
             <span className="text-foreground font-normal ml-1.5">{provider}</span>
@@ -73,17 +73,17 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
         {(budgetLabel || turnsLabel || cacheLabel) && (
           <span className="flex items-center gap-1.5">
             {budgetLabel && (
-              <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
+              <span className="flex items-center gap-0.5 typo-code font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
                 <DollarSign className="w-2.5 h-2.5" />{budgetLabel.replace('$', '')}
               </span>
             )}
             {turnsLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
+              <span className="typo-code font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
                 {turnsLabel}
               </span>
             )}
             {cacheLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
+              <span className="typo-code font-mono px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
                 {cacheLabel}
               </span>
             )}
@@ -103,7 +103,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="pt-1">
-              <p className="text-sm text-foreground mb-2 ml-[34px]">
+              <p className="typo-body text-foreground mb-2 ml-[34px]">
                 {uc.inherit_hint}
               </p>
               <ModelSelector

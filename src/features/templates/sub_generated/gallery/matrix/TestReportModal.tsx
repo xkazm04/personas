@@ -48,11 +48,11 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
               {allPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-amber-400" />}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground/90">Test Report</h2>
+              <h2 className="typo-body-lg font-semibold text-foreground/90">Test Report</h2>
               <div className="flex items-center gap-3 mt-1">
-                {passedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{passedCount} passed</span>}
-                {failedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{failedCount} failed</span>}
-                {skippedCount > 0 && <span className="inline-flex items-center gap-1 text-xs text-foreground"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>}
+                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{passedCount} passed</span>}
+                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{failedCount} failed</span>}
+                {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>}
               </div>
               {results.length > 0 && (
                 <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
@@ -191,21 +191,21 @@ function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: stri
     <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         <Key className="w-4 h-4 text-primary/50" />
-        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Connector Credentials</h4>
+        <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">Connector Credentials</h4>
       </div>
       <div className="space-y-1.5">
         {matched.map((c) => (
-          <div key={c.name} className="flex items-center gap-2 text-sm">
+          <div key={c.name} className="flex items-center gap-2 typo-body">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             <span className="text-foreground">{c.name}</span>
-            <span className="text-emerald-400/60 text-xs">matched</span>
+            <span className="text-emerald-400/60 typo-caption">matched</span>
           </div>
         ))}
         {missing.map((c) => (
-          <div key={c.name} className="flex items-center gap-2 text-sm">
+          <div key={c.name} className="flex items-center gap-2 typo-body">
             <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
             <span className="text-foreground">{c.name}</span>
-            <span className="text-red-400/60 text-xs">not found</span>
+            <span className="text-red-400/60 typo-caption">not found</span>
           </div>
         ))}
       </div>
@@ -229,7 +229,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
     return (
       <div className="space-y-5">
         <ConnectorHandshakeCard connectors={connectors} />
-        <p className="text-sm text-foreground leading-relaxed">
+        <p className="typo-body text-foreground leading-relaxed">
           {failed.length === 0 && credentialMissing.length === 0 && passed.length > 0
             ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
             : (failed.length > 0 || credentialMissing.length > 0)
@@ -355,9 +355,9 @@ function MarkdownLine({ text }: { text: string }) {
   });
 
   return (
-    <div className="flex gap-2 text-sm text-foreground leading-relaxed">
+    <div className="flex gap-2 typo-body text-foreground leading-relaxed">
       {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&bull;</span>}
-      {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 font-medium text-xs min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
+      {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 font-medium typo-caption min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
       <span>{parts}</span>
     </div>
   );
@@ -388,7 +388,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       }`}>
         {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
         <div className="flex-1">
-          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+          <span className={`typo-heading font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
             {isPassed ? 'Passed' : isSkipped ? 'Skipped (Built-in)' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
           </span>
           {result.http_status && (
@@ -398,23 +398,23 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
           )}
         </div>
         {result.latency_ms != null && result.latency_ms > 0 && (
-          <div className="flex items-center gap-1 text-foreground"><Clock className="w-3 h-3" /><span className="text-xs font-mono">{result.latency_ms}ms</span></div>
+          <div className="flex items-center gap-1 text-foreground"><Clock className="w-3 h-3" /><span className="typo-code font-mono">{result.latency_ms}ms</span></div>
         )}
       </div>
 
       <div>
-        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">What happened</h4>
+        <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">What happened</h4>
         {toolSummaryLine ? <MarkdownLine text={toolSummaryLine} /> : (
-          <div className="text-sm text-foreground leading-relaxed space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
+          <div className="typo-body text-foreground leading-relaxed space-y-1">{fallbackDescription.split('\n').map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         )}
       </div>
 
-      {result.connector && <div><h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-1">Service</h4><p className="text-sm text-foreground">{result.connector}</p></div>}
+      {result.connector && <div><h4 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-1">Service</h4><p className="typo-body text-foreground">{result.connector}</p></div>}
 
       {result.output_preview && isPassed && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Response Preview</h4>
+            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">Response Preview</h4>
             <InlineCopyButton text={result.output_preview} />
           </div>
           <div className="rounded-card bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
@@ -426,7 +426,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       {!isPassed && !isSkipped && result.error && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Error Detail</h4>
+            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">Error Detail</h4>
             <InlineCopyButton text={result.error} />
           </div>
           <div className="rounded-card bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">

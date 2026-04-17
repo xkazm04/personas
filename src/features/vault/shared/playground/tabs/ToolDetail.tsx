@@ -29,10 +29,10 @@ export function ToolDetail({
   return (
     <div className="border-t border-primary/8 pt-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm uppercase tracking-wider text-foreground font-semibold">
+        <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
           Test Tool
         </span>
-        <span className="font-mono text-sm text-foreground">{currentTool.name}</span>
+        <span className="font-mono typo-code text-foreground">{currentTool.name}</span>
         <div className="flex-1" />
         <Button
           variant="ghost"
@@ -65,7 +65,7 @@ export function ToolDetail({
 
       {/* Error */}
       {execError && (
-        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
           {execError}
         </div>
       )}
@@ -88,8 +88,8 @@ export function ToolEmptyList({ hasLoaded, toolCount, loading }: ToolEmptyListPr
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-2">
       <Server className="w-8 h-8 text-foreground" />
-      <p className="text-sm text-foreground">No tools found on this MCP server</p>
-      <p className="text-sm text-foreground">
+      <p className="typo-body text-foreground">No tools found on this MCP server</p>
+      <p className="typo-body text-foreground">
         The server responded but reported no available tools.
       </p>
     </div>

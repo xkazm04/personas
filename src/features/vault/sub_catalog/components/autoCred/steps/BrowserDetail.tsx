@@ -32,14 +32,14 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${config.color}`}>{config.label}</p>
-          <p className="text-sm text-foreground mt-0.5">
+          <p className={`typo-heading font-semibold ${config.color}`}>{config.label}</p>
+          <p className="typo-body text-foreground mt-0.5">
             {isGuided ? config.guidedSublabel : config.sublabel}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {elapsed && (
-            <span className="flex items-center gap-1 text-sm text-foreground tabular-nums">
+            <span className="flex items-center gap-1 typo-data text-foreground tabular-nums">
               <Clock className="w-3 h-3" />
               {elapsed}
             </span>
@@ -54,7 +54,7 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
       {!isGuided && (sessionState === 'connecting' || sessionState === 'working') && (
         <div className="flex items-start gap-2.5 px-3 py-2 rounded-card border border-orange-500/20 bg-orange-500/5">
           <MonitorX className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-foreground">
+          <p className="typo-body text-foreground">
             <span className="font-medium text-orange-400/90">{t.vault.auto_cred_extra.do_not_interact}</span>{' '}
             The automation controls the browser window directly -- clicking, scrolling or typing in it may break the process.
           </p>

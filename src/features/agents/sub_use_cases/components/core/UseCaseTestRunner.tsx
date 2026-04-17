@@ -103,14 +103,14 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
   return (
     <div className="space-y-2">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <FlaskConical className="w-3.5 h-3.5" />
         {uc.test}
       </h5>
 
       <div className="bg-secondary/30 border border-primary/10 rounded-modal p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-foreground min-w-0">
+          <p className="typo-body text-foreground min-w-0">
             {uc.run_with} <span className="text-foreground font-medium">{resolved.label}</span>
           </p>
           <UseCaseFixtureDropdown
@@ -126,7 +126,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
         {/* Show active fixture inputs preview */}
         {selectedFixture && Object.keys(selectedFixture.inputs).length > 0 && (
-          <div className="px-2.5 py-2 rounded-card bg-amber-500/5 border border-amber-500/15 text-xs">
+          <div className="px-2.5 py-2 rounded-card bg-amber-500/5 border border-amber-500/15 typo-caption">
             <span className="text-amber-400/70 font-medium">{uc.fixture_inputs}</span>
             <pre className="mt-1 text-foreground whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
               {JSON.stringify(selectedFixture.inputs, null, 2)}
@@ -139,7 +139,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
             <button
               onClick={handleCancel}
               disabled={!canCancel}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium typo-body bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               title={!canCancel ? uc.waiting_for_test : uc.cancel_test}
             >
               <Square className="w-3.5 h-3.5" /> {t.common.cancel}
@@ -150,7 +150,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
                 <div
                   className="animate-fade-slide-in overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 text-sm text-foreground">
+                  <div className="flex items-center gap-2 typo-body text-foreground">
                     <LoadingSpinner size="sm" className="text-primary" />
                     <span className="capitalize">
                       {testRunProgress.phase === 'generating'
@@ -174,7 +174,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
           <button
             onClick={handleRun}
             disabled={!hasPrompt || !resolved.config}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium typo-body bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-3.5 h-3.5" /> {uc.test_use_case}
           </button>
@@ -182,7 +182,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
         <button
           onClick={() => setEditorTab('lab')}
-          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary/80 transition-colors"
+          className="flex items-center gap-1.5 typo-body text-foreground hover:text-primary/80 transition-colors"
         >
           {uc.view_full_test_history} <ArrowRight className="w-3 h-3" />
         </button>

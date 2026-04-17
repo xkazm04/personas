@@ -19,10 +19,10 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
   };
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-modal text-sm font-semibold border ${gradeColors[score.grade]}`}>
+    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading font-semibold border ${gradeColors[score.grade]}`}>
       <Activity className="w-4 h-4" />
       <span>{score.value}</span>
-      <span className="text-xs font-normal opacity-70">{gradeLabels[score.grade]}</span>
+      <span className="typo-caption font-normal opacity-70">{gradeLabels[score.grade]}</span>
     </div>
   );
 }
@@ -48,7 +48,7 @@ export function ScoreRing({ score }: { score: HealthScore }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xl font-bold text-foreground/90">{score.value}</span>
+        <span className="typo-heading-lg font-bold text-foreground/90">{score.value}</span>
       </div>
     </div>
   );

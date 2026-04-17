@@ -99,12 +99,12 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     <div className="flex flex-col h-full">
       {/* Generate Section */}
       <div className="p-4 border-b border-border/40 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
           Create New Version
         </h3>
 
         <div>
-          <label className="block text-sm text-foreground mb-1.5">
+          <label className="block typo-body text-foreground mb-1.5">
             {t.recipes.what_changes}
           </label>
           <textarea
@@ -112,7 +112,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
             onChange={(e) => setRequirements(e.target.value)}
             placeholder="e.g., Add error handling for rate limits, include retry logic..."
             rows={3}
-            className="w-full rounded-modal border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-none"
+            className="w-full rounded-modal border border-border/50 bg-background/80 px-3 py-2 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
         </div>
 
@@ -121,7 +121,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
           <button
             onClick={handleGenerate}
             disabled={!requirements.trim()}
-            className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             {t.recipes.generate_new_version}
@@ -131,7 +131,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         {/* Progress */}
         {versioning.phase === 'versioning' && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-foreground">
+            <div className="flex items-center gap-2 typo-body text-foreground">
               <RecipePageFlipLoader className="text-primary" />
               <span>{t.recipes.generating_version}</span>
             </div>
@@ -150,7 +150,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
         {/* Error */}
         {(error || versioning.error) && (
-          <div className="rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <div className="rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 typo-body text-red-400">
             {error || versioning.error}
           </div>
         )}
@@ -170,17 +170,17 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               />
             )}
 
-            <h4 className="text-sm font-semibold text-foreground">{t.recipes.generated_version}</h4>
+            <h4 className="typo-heading font-semibold text-foreground">{t.recipes.generated_version}</h4>
 
             {versioning.draft.changes_summary && (
               <div>
-                <p className="text-sm text-foreground mb-0.5">{t.recipes.changes}</p>
-                <p className="text-sm text-foreground">{versioning.draft.changes_summary}</p>
+                <p className="typo-body text-foreground mb-0.5">{t.recipes.changes}</p>
+                <p className="typo-body text-foreground">{versioning.draft.changes_summary}</p>
               </div>
             )}
 
             <div>
-              <p className="text-sm text-foreground mb-0.5">{t.recipes.updated_prompt}</p>
+              <p className="typo-body text-foreground mb-0.5">{t.recipes.updated_prompt}</p>
               <PromptTemplateRenderer content={versioning.draft.prompt_template} maxHeight="max-h-40" />
             </div>
 
@@ -188,7 +188,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {accepting ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                 {t.recipes.accept_apply}
@@ -199,13 +199,13 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                   handleGenerate();
                 }}
                 disabled={!requirements.trim()}
-                className="rounded-modal px-3 py-1.5 text-sm text-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
               >
                 Regenerate
               </button>
               <button
                 onClick={() => versioning.reset()}
-                className="rounded-modal px-3 py-1.5 text-sm text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
               >
                 Discard
               </button>
@@ -216,16 +216,16 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
       {/* {t.recipes.version_history} */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
-        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">
+        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide mb-3">
           Version History {!loading && versions.length > 0 && `(${versions.length})`}
         </h3>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-foreground">
+          <div className="flex items-center gap-2 typo-body text-foreground">
             <LoadingSpinner size="sm" /> {t.recipes.loading_versions}
           </div>
         ) : versions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-sm text-foreground gap-2">
+          <div className="flex flex-col items-center justify-center py-8 typo-body text-foreground gap-2">
             <VersionTimelineIllustration />
             {t.recipes.no_versions}
           </div>
@@ -262,33 +262,33 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                     <div className="flex-1 rounded-modal border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="typo-heading font-semibold text-foreground">
                             v{version.version_number}
                           </span>
                           {isLatest && (
-                            <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
+                            <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 typo-body text-primary font-medium">
                               Latest
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-foreground">
+                        <span className="typo-body text-foreground">
                           {new Date(version.created_at).toLocaleDateString()}
                         </span>
                       </div>
 
                       {version.description && (
-                        <p className="text-sm text-foreground mb-1">{version.description}</p>
+                        <p className="typo-body text-foreground mb-1">{version.description}</p>
                       )}
 
                       {version.changes_summary && (
-                        <p className="text-sm text-foreground mb-2">{version.changes_summary}</p>
+                        <p className="typo-body text-foreground mb-2">{version.changes_summary}</p>
                       )}
 
                       {!isLatest && (
                         <button
                           onClick={() => handleRevert(version.id)}
                           disabled={isRevertTarget}
-                          className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                         >
                           {isRevertTarget ? (
                             <LoadingSpinner size="xs" />

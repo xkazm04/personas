@@ -50,10 +50,10 @@ export default function OptimizerPanel({
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
           )}
         </div>
-        <span className={`text-sm font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-foreground'}`}>
+        <span className={`typo-body font-medium flex-1 ${hasSuggestions ? 'text-foreground/90' : 'text-foreground'}`}>
           {pt.topology_optimizer}
           {hasSuggestions && (
-            <span className="ml-1.5 text-sm text-indigo-400">
+            <span className="ml-1.5 typo-body text-indigo-400">
               {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
             </span>
           )}
@@ -81,13 +81,13 @@ export default function OptimizerPanel({
                 <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
                     <BarChart3 className="w-3 h-3 text-foreground" />
-                    <span className="text-sm text-foreground font-mono">
+                    <span className="typo-code text-foreground font-mono">
                       {analytics.total_runs} run{analytics.total_runs !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="w-3 h-3 text-foreground" />
-                    <span className="text-sm text-foreground font-mono">
+                    <span className="typo-code text-foreground font-mono">
                       {Math.round(analytics.success_rate * 100)}% success
                     </span>
                   </div>

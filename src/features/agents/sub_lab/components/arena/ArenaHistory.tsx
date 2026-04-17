@@ -58,14 +58,14 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       key: 'models',
       label: t.agents.lab.models_column,
       render: (run) => (
-        <span className="text-sm text-foreground font-medium">{parseModels(run).join(', ') || '--'}</span>
+        <span className="typo-body text-foreground font-medium">{parseModels(run).join(', ') || '--'}</span>
       ),
     },
     {
       key: 'scenarios',
       label: t.agents.lab.scenarios_column,
       className: 'w-[70px]',
-      render: (run) => <span className="text-sm text-foreground">{run.scenariosCount || '--'}</span>,
+      render: (run) => <span className="typo-body text-foreground">{run.scenariosCount || '--'}</span>,
     },
     {
       key: 'best',
@@ -74,8 +74,8 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       render: (run) => {
         const s = parseSummary(run);
         return s?.best_quality_model
-          ? <span className="flex items-center gap-1 text-sm text-primary/70"><Trophy className="w-3 h-3" />{s.best_quality_model}</span>
-          : <span className="text-sm text-foreground">--</span>;
+          ? <span className="flex items-center gap-1 typo-body text-primary/70"><Trophy className="w-3 h-3" />{s.best_quality_model}</span>
+          : <span className="typo-body text-foreground">--</span>;
       },
     },
     {
@@ -84,9 +84,9 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       className: 'w-[200px]',
       render: (run) => {
         const scores = computeWinnerScore(resultsMap[run.id]);
-        if (!scores) return <span className="text-sm text-foreground">--</span>;
+        if (!scores) return <span className="typo-body text-foreground">--</span>;
         return (
-          <div className="flex items-center gap-2.5 text-xs">
+          <div className="flex items-center gap-2.5 typo-caption">
             <span className={`font-bold ${scoreColor(scores.comp)}`}>{scores.comp}</span>
             <span className="text-foreground">|</span>
             <span className="flex items-center gap-0.5" title="Tool Accuracy"><Target className="w-2.5 h-2.5 text-foreground" /><span className={scoreColor(scores.ta)}>{scores.ta}</span></span>
@@ -126,8 +126,8 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
           modeLabel={t.agents.lab.arena_mode_label}
           headerChips={
             <>
-              <span className="text-xs text-foreground">{parseModels(activeRun).join(', ')}</span>
-              {activeRun.scenariosCount > 0 && <span className="text-xs text-foreground">{activeRun.scenariosCount} scenarios</span>}
+              <span className="typo-caption text-foreground">{parseModels(activeRun).join(', ')}</span>
+              {activeRun.scenariosCount > 0 && <span className="typo-caption text-foreground">{activeRun.scenariosCount} scenarios</span>}
             </>
           }
           footerActions={

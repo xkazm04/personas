@@ -18,7 +18,7 @@ export function ExtraFieldRenderer({
         <>
           <div className="border-t border-primary/8" />
           <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-3">
+            <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
               {def.sectionTitle}
             </h4>
             <textarea
@@ -26,9 +26,9 @@ export function ExtraFieldRenderer({
               onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.value }))}
               placeholder={def.placeholder}
               rows={def.rows ?? 4}
-              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground text-sm font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
             />
-            {def.helpText && <p className="mt-1 text-sm text-foreground">{def.helpText}</p>}
+            {def.helpText && <p className="mt-1 typo-body text-foreground">{def.helpText}</p>}
           </div>
         </>
       );
@@ -42,7 +42,7 @@ export function ExtraFieldRenderer({
             onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.checked }))}
             className="w-3.5 h-3.5 rounded border-border/50 bg-background/50 text-primary focus-visible:ring-primary/40"
           />
-          <span className="text-sm text-foreground group-hover:text-muted-foreground/90 transition-colors">
+          <span className="typo-body text-foreground group-hover:text-muted-foreground/90 transition-colors">
             {def.label}
           </span>
         </label>
@@ -85,12 +85,12 @@ function KeyValueListField({
       <div className="border-t border-primary/8" />
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+          <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground">
             {def.sectionTitle}
           </h4>
           <button
             onClick={() => update([...pairs, { key: '', value: '' }])}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-modal border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${
               def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
             }`}
           >
@@ -100,7 +100,7 @@ function KeyValueListField({
         </div>
 
         {pairs.length === 0 && (
-          <p className="text-sm text-foreground italic">{def.emptyMessage ?? t.vault.schemas.none_configured}</p>
+          <p className="typo-body text-foreground italic">{def.emptyMessage ?? t.vault.schemas.none_configured}</p>
         )}
 
         <div className="space-y-2">
@@ -115,7 +115,7 @@ function KeyValueListField({
                   update(next);
                 }}
                 placeholder="KEY"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
               />
               <span className="text-foreground">=</span>
               <div className="flex-1 relative">
@@ -128,7 +128,7 @@ function KeyValueListField({
                     update(next);
                   }}
                   placeholder="value"
-                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
                 />
                 <button
                   type="button"

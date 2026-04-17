@@ -123,12 +123,12 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
           </div>
           <div>
             <h3 className="typo-heading text-foreground/90">{t.overview.predictive_alerts_extra.title}</h3>
-            <p className="text-xs text-foreground">{t.overview.predictive_alerts_extra.all_nominal}</p>
+            <p className="typo-caption text-foreground">{t.overview.predictive_alerts_extra.all_nominal}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-4 rounded-card bg-emerald-500/5 border border-emerald-500/15">
           <Shield className="w-5 h-5 text-emerald-400" />
-          <p className="text-sm text-emerald-400/80">{t.overview.predictive_alerts_extra.no_alerts}</p>
+          <p className="typo-body text-emerald-400/80">{t.overview.predictive_alerts_extra.no_alerts}</p>
         </div>
       </div>
     );
@@ -142,7 +142,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
         </div>
         <div>
           <h3 className="typo-heading text-foreground/90">Predictive Alerts</h3>
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {alerts.length} alert{alerts.length !== 1 ? 's' : ''}{recommendations.length > 0 ? `, ${recommendations.length} recommendation${recommendations.length !== 1 ? 's' : ''}` : ''}
           </p>
         </div>
@@ -162,7 +162,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
                     <span className="typo-caption text-foreground/90">{alert.title}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${styles.badge}`}>{alert.severity}</span>
                   </div>
-                  <p className="text-xs text-foreground">{alert.description}</p>
+                  <p className="typo-caption text-foreground">{alert.description}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-[10px] text-foreground">
                       {alert.personaIcon && <span className="mr-0.5">{alert.personaIcon}</span>}

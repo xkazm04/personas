@@ -158,7 +158,7 @@ export function ChatTab() {
         {/* Pending experiments indicator */}
         {pendingExperiments.length > 0 && (
           <div className="border-t border-violet-500/15 bg-violet-500/5 px-6 py-2" data-testid="chat-experiments-pending">
-            <div className="max-w-3xl mx-auto flex items-center gap-2 text-xs text-violet-400/70">
+            <div className="max-w-3xl mx-auto flex items-center gap-2 typo-caption text-violet-400/70">
               <FlaskConical className="w-3.5 h-3.5 animate-pulse" />
               <span>{tx(pendingExperiments.length === 1 ? t.agents.chat.experiments_running_one : t.agents.chat.experiments_running_other, { count: pendingExperiments.length })}</span>
             </div>

@@ -22,12 +22,12 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
         <StatusIcon status={pipeline.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground/90">#{pipeline.id}</span>
-            <span className={`text-xs font-medium capitalize ${statusColor(pipeline.status)}`}>
+            <span className="typo-body font-medium text-foreground/90">#{pipeline.id}</span>
+            <span className={`typo-caption font-medium capitalize ${statusColor(pipeline.status)}`}>
               {pipeline.status}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-foreground">
+          <div className="flex items-center gap-2 mt-0.5 typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <GitBranch className="w-3 h-3" />
               {pipeline.ref}

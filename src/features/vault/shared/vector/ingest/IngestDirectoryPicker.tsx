@@ -87,7 +87,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
             <FolderOpen className="w-3.5 h-3.5 text-violet-400" />
           </div>
-          <h2 className="text-sm font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
+          <h2 className="typo-heading font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
@@ -99,9 +99,9 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         {/* Body */}
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">{sh.directory_path}</label>
+            <label className="typo-caption font-medium text-foreground mb-1.5 block">{sh.directory_path}</label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono min-h-[36px] flex items-center">
+              <div className="flex-1 px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono min-h-[36px] flex items-center">
                 {dirPath ? (
                   <span className="truncate">{dirPath}</span>
                 ) : (
@@ -111,7 +111,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
               <button
                 onClick={() => void handleBrowse()}
                 disabled={browsing || ingesting}
-                className="px-3 py-2 text-sm font-medium rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 typo-body font-medium rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 {browsing ? sh.browsing : sh.browse}
@@ -120,14 +120,14 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           </div>
 
           <div>
-            <label className="text-xs font-medium text-foreground mb-1.5 block">
+            <label className="typo-caption font-medium text-foreground mb-1.5 block">
               {sh.file_patterns}
               <span className="text-foreground font-normal ml-1">{sh.file_patterns_hint}</span>
             </label>
 
             {/* Default patterns hint */}
             {patterns.length === 0 && (
-              <p className="text-xs text-foreground mb-2">
+              <p className="typo-caption text-foreground mb-2">
                 Default: {DEFAULT_PATTERNS.slice(0, 6).join(', ')}...
               </p>
             )}
@@ -136,7 +136,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             {patterns.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {patterns.map((p) => (
-                  <span key={p} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 border border-violet-500/15">
+                  <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 border border-violet-500/15">
                     {p}
                     <button onClick={() => removePattern(p)} className="hover:text-red-400 transition-colors">
                       <Minus className="w-3 h-3" />
@@ -154,7 +154,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 onChange={(e) => setCustomPattern(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
                 placeholder="*.pdf"
-                className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+                className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               />
               <button
                 onClick={addPattern}
@@ -167,7 +167,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           </div>
 
           {error && (
-            <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+            <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400">
               {error}
             </div>
           )}
@@ -177,14 +177,14 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-card hover:bg-secondary/50 text-foreground transition-colors"
+            className="px-4 py-2 typo-body rounded-card hover:bg-secondary/50 text-foreground transition-colors"
           >
             {t.common.cancel}
           </button>
           <button
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {ingesting ? (
               <span className="flex items-center gap-2">

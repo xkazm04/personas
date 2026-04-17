@@ -104,7 +104,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                   {`Step ${i + 1} of ${VISIBLE_STEPS.length}: ${label} (${statusText})`}
                 </span>
                 <span
-                  className={`text-sm font-medium truncate transition-colors duration-300 block ${
+                  className={`typo-body font-medium truncate transition-colors duration-300 block ${
                     isActive
                       ? 'text-violet-300'
                       : isCompleted
@@ -115,13 +115,13 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                   {label}
                 </span>
                 {isActive && showTimer && (
-                  <span className="text-sm font-mono text-foreground tabular-nums leading-none">
+                  <span className="typo-code font-mono text-foreground tabular-nums leading-none">
                     {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
                     <span className="ml-1 text-foreground">{hint}</span>
                   </span>
                 )}
                 {isActive && !showTimer && hint && (
-                  <span className="text-sm text-foreground leading-none">{hint}</span>
+                  <span className="typo-body text-foreground leading-none">{hint}</span>
                 )}
               </div>
             </div>

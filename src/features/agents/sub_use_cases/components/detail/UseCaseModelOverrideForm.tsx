@@ -20,7 +20,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
         >
           <div className="bg-secondary/30 border border-primary/10 rounded-modal p-3 space-y-2">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">{mc.provider}</label>
+              <label className="block typo-body font-medium text-foreground mb-1">{mc.provider}</label>
               <ThemedSelect
                 value={customConfig.provider || 'anthropic'}
                 onChange={(e) => onFieldChange('provider', e.target.value)}
@@ -33,7 +33,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               </ThemedSelect>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">{mc.model_name}</label>
+              <label className="block typo-body font-medium text-foreground mb-1">{mc.model_name}</label>
               <input
                 type="text"
                 value={customConfig.model || ''}
@@ -43,7 +43,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">{mc.base_url}</label>
+              <label className="block typo-body font-medium text-foreground mb-1">{mc.base_url}</label>
               <input
                 type="text"
                 value={customConfig.base_url || ''}
@@ -53,7 +53,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">{mc.auth_token}</label>
+              <label className="block typo-body font-medium text-foreground mb-1">{mc.auth_token}</label>
               <input
                 type="password"
                 value={customConfig.auth_token || ''}

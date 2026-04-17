@@ -129,16 +129,16 @@ export function MetricsCharts({
               const pct = (p.total_cost / maxCost) * 100;
               return (
                 <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-primary/10 bg-secondary/20">
-                  <span className="text-sm font-mono text-foreground w-4 text-right">#{i + 1}</span>
+                  <span className="typo-code font-mono text-foreground w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="typo-heading text-foreground truncate">{p.persona_name}</span>
-                      <span className="text-sm font-mono text-violet-400">{fmtCost(p.total_cost)}</span>
+                      <span className="typo-code font-mono text-violet-400">{fmtCost(p.total_cost)}</span>
                     </div>
                     <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-sm text-foreground">
+                    <div className="flex items-center gap-3 mt-1 typo-body text-foreground">
                       <span>{tx(t.overview.activity.executions_label, { count: p.total_executions })}</span>
                       <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
                     </div>

@@ -177,8 +177,8 @@ export default function CanvasOverlays({
             <div className="w-16 h-16 mx-auto mb-4 rounded-modal bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">{pt.no_agents_in_team}</p>
-            <p className="text-sm text-foreground">{pt.drag_agents_hint}</p>
+            <p className="typo-body font-medium text-foreground mb-1">{pt.no_agents_in_team}</p>
+            <p className="typo-body text-foreground">{pt.drag_agents_hint}</p>
           </div>
         </div>
       )}

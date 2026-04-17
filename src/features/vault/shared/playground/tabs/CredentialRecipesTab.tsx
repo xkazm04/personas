@@ -128,8 +128,8 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground/90">{vt.recipes_title}</h3>
-          <p className="text-sm text-foreground mt-0.5">
+          <h3 className="typo-heading font-semibold text-foreground/90">{vt.recipes_title}</h3>
+          <p className="typo-body text-foreground mt-0.5">
             Reusable automation templates for this credential
           </p>
         </div>

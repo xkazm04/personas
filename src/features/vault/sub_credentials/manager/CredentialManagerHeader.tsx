@@ -84,7 +84,7 @@ export function CredentialToolbar({
                 ? t.vault.manager.search_catalog
                 : t.vault.manager.search_credentials
             }
-            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
+            className="w-full pl-8 pr-8 py-1.5 rounded-card border border-primary/15 bg-background/80 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
           />
           {credentialSearch && (
             <button
