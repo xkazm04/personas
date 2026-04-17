@@ -183,7 +183,7 @@ function FilterableSelect({
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 && (
-              <div className="px-3 py-2.5 typo-body text-foreground">No matches</div>
+              <div className="px-3 py-2.5 typo-body text-foreground">{t.shared.forms_extra.no_matches}</div>
             )}
             {filtered.map((opt, idx) => {
               const isSelected = opt.value === value;

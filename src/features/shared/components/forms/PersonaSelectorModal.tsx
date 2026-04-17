@@ -122,7 +122,7 @@ export function PersonaSelectorModal({
                     : 'text-foreground hover:bg-secondary/40'
                 }`}
               >
-                <span className="text-sm truncate">All ({personas.length})</span>
+                <span className="text-sm truncate">{t.shared.forms_extra.all_prefix}{personas.length})</span>
                 {!value && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
               </button>
             )}

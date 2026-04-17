@@ -208,7 +208,7 @@ function DrawerContent({ onClose }: DrawerProps) {
               <button
                 className="px-2 py-1 rounded text-[10px] text-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
                 onClick={() => useOverviewStore.getState().clearNonActive()}
-                title="Clear completed and queued items"
+                title={t.shared.sidebar_extra.clear_completed_title}
               >
                 {t.common.clear}
               </button>

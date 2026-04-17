@@ -78,7 +78,7 @@ export function PluginsSidebarNav() {
               }`}
             >
               <Wrench className="w-4 h-4 flex-shrink-0" />
-              Dev Tools
+              {t.shared.sidebar_extra.dev_tools_label}
             </button>
             {/* Dev Tools sub-tabs */}
             {pluginTab === 'dev-tools' && (
@@ -125,7 +125,7 @@ export function PluginsSidebarNav() {
             }`}
           >
             <Brain className="w-4 h-4 flex-shrink-0" />
-            Obsidian Brain
+            {t.shared.sidebar_extra.obsidian_brain}
           </button>
         )}
 
@@ -183,7 +183,7 @@ export function PluginsSidebarNav() {
                 </div>
                 {activeTwin && (
                   <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/15">
-                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">Active Twin</p>
+                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">{t.shared.sidebar_extra.active_twin}</p>
                     <p className="typo-caption text-foreground truncate">{activeTwin.name}</p>
                     {activeTwin.role && (
                       <p className="text-[10px] text-foreground truncate mt-0.5">{activeTwin.role}</p>
@@ -208,7 +208,7 @@ export function PluginsSidebarNav() {
               }`}
             >
               <BookOpen className="w-4 h-4 flex-shrink-0" />
-              Research Lab
+              {t.shared.sidebar_extra.research_lab}
             </button>
             {pluginTab === 'research-lab' && (
               <div className="ml-4 space-y-0.5">

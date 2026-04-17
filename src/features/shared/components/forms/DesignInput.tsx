@@ -191,7 +191,7 @@ export function DesignInput({
             disabled={disabled}
             icon={<Paperclip className="w-3.5 h-3.5" />}
             className="text-foreground hover:text-foreground"
-            title="Attach file (API spec, schema, MCP config)"
+            title={t.shared.forms_extra.attach_file_title}
           >
             {t.common.attach}
           </Button>
@@ -213,7 +213,7 @@ export function DesignInput({
               ? 'text-indigo-400 bg-indigo-500/10'
               : 'text-foreground hover:text-foreground'
             }
-            title="Add reference URLs or connection strings"
+            title={t.shared.forms_extra.add_references_title}
           >
             {t.common.references}
           </Button>

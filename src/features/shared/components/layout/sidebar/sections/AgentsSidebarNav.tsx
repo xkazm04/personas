@@ -144,7 +144,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           }`}
         >
           <List className="w-4 h-4 flex-shrink-0" />
-          All Agents
+          {t.shared.sidebar_extra.all_agents_label}
           <span className="ml-auto text-[11px] text-foreground/90">{personas.length}</span>
         </button>
 
@@ -154,7 +154,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <div className="mt-1 space-y-0.5">
             <div className="flex items-center justify-between px-3 py-1">
               <span className="text-[10px] uppercase tracking-wider text-violet-400/50 font-medium">
-                Draft builds {activeDrafts.length > 1 ? `(${activeDrafts.length})` : ''}
+                {t.shared.sidebar_extra.draft_builds}{activeDrafts.length > 1 ? ` (${activeDrafts.length})` : ''}
               </span>
             </div>
             {activeDrafts.map((draft) => {
